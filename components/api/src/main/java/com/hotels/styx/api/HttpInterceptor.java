@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.api;
 
+import java.util.Optional;
+
 import rx.Observable;
 
 /**
@@ -57,6 +59,11 @@ public interface HttpInterceptor {
                 return null;
             }
         };
+
+        default <T> Optional<T> getOptional(String key, Class<T> clazz){
+            return Optional.ofNullable(get(key,clazz));
+        }
+
     }
 
     /**
