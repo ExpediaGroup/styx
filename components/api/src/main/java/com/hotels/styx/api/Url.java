@@ -157,15 +157,7 @@ public final class Url implements Comparable<Url> {
      */
     public URI toURI() {
         try {
-            String auth = authority.map(Authority::toString).orElse(null);
-
-            String query = query()
-                    .map(q -> q.parameters().stream()
-                            .map(UrlQuery.Parameter::toString)
-                            .collect(joining("&")))
-                    .orElse(null);
-
-            return new URI(scheme, auth, path, query, fragment);
+            return new URI(toString());
         } catch (URISyntaxException e) {
             throw propagate(e);
         }
@@ -236,36 +228,7 @@ public final class Url implements Comparable<Url> {
      * @return the encoded url string
      */
     public String encodedUri() {
-        StringBuilder url = new StringBuilder();
-        if (authority.isPresent()) {
-            if (!isNullOrEmpty(scheme)) {
-                url.append(scheme).append("://");
-            }
-            url.append(authority.get());
-        }
-        url.append(encodePathAndQuery());
-        if (!isNullOrEmpty(fragment)) {
-            url.append("#").append(fragment);
-        }
-
-        return url.toString();
-    }
-
-    private String encodePathAndQuery() {
-        return encodePath(path()) + query.map(query -> "?" + query.encodedQuery()).orElse("");
-    }
-
-    private static String encodePath(String path) {
-        Iterable<String> pathElements = Splitter.on(PATH_DELIMITER).omitEmptyStrings().split(path);
-        StringBuilder encodedPath = new StringBuilder();
-        for (String pathElement : pathElements) {
-            encodedPath.append(PATH_DELIMITER);
-            encodedPath.append(encodePathElement(pathElement));
-        }
-        if (path.endsWith(PATH_DELIMITER)) {
-            encodedPath.append(PATH_DELIMITER);
-        }
-        return encodedPath.toString();
+        return toString();
     }
 
     private static CharSequence encodePathElement(String pathElement) {
@@ -490,7 +453,7 @@ public final class Url implements Comparable<Url> {
             return new Builder()
                     .scheme(uri.getScheme())
                     .authority(uri.getAuthority())
-                    .path(uri.getPath())
+                    .path(uri.getRawPath())
                     .rawQuery(uri.getRawQuery())
                     .fragment(uri.getFragment());
         }
