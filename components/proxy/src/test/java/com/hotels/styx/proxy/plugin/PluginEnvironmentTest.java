@@ -1,0 +1,77 @@
+/**
+ * Copyright (C) 2013-2017 Expedia Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hotels.styx.proxy.plugin;
+
+import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.infrastructure.configuration.ObjectFactory;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+public class PluginEnvironmentTest {
+
+    private MetricRegistry styxMetrics;
+    private Environment styxEnvironment;
+
+    @BeforeMethod
+    public void setUp() throws Exception {
+        styxMetrics = new CodaHaleMetricRegistry();
+        styxEnvironment = mock(PluginFactory.Environment.class);
+        when(styxEnvironment.metricRegistry()).thenReturn(styxMetrics);
+    }
+
+    @Test
+    public void emptyStringMapsToRootScope() throws Exception {
+        pluginEnvironment("PluginX", "").metricRegistry().counter("x.count").inc();
+        assertThat(styxMetrics.counter("PluginX.x.count").getCount(), is(1L));
+    }
+
+    @Test
+    public void nullScopeIsTreatedAsEmptyString() throws Exception {
+        pluginEnvironment("PluginX", null).metricRegistry().counter("x.count").inc();
+        assertThat(styxMetrics.counter("PluginX.x.count").getCount(), is(1L));
+    }
+
+    @Test
+    public void exposesPluginMetricsInIsolatedScope() throws Exception {
+        String styxScope = "styx.plugins";
+
+        pluginEnvironment("PluginX", styxScope).metricRegistry().counter("x.count").inc();
+        pluginEnvironment("PluginY", styxScope).metricRegistry().counter("x.count").inc();
+
+        assertThat(styxMetrics.counter("styx.plugins.PluginX.x.count").getCount(), is(1L));
+        assertThat(styxMetrics.counter("styx.plugins.PluginY.x.count").getCount(), is(1L));
+    }
+
+
+    private PluginEnvironment pluginEnvironment(String pluginName, String styxScope) {
+        return new PluginEnvironment(styxEnvironment, pluginMetadata(pluginName), styxScope);
+    }
+
+    private static PluginMetadata pluginMetadata(String pluginName) {
+        ObjectFactory factory = new ObjectFactory("PluginXFactory", "/path");
+
+        return new PluginMetadata(pluginName, factory, null);
+    }
+
+}

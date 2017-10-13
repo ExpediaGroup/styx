@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <artifactId>styx-support</artifactId>
+    <groupId>com.hotels.styx</groupId>
+    <version>0.7-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>styx-test-api</artifactId>
+  <name>Styx - Support - Test API</name>
+
+  <description>
+    Provides a Test API for Styx plugin developers, allowing Styx server
+    to be configured and started programmatically. This API is intended for external
+    consumption and therefore should be stable with emphasis on ensuring backwards
+    compatibility.
+  </description>
+
+  <properties>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>com.hotels.styx</groupId>
+      <artifactId>styx-proxy</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.hotels.styx</groupId>
+      <artifactId>styx-common</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-tcnative-boringssl-static</artifactId>
+      <classifier>${netty-tcnative.classifier}</classifier>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testng</groupId>
+      <artifactId>testng</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.hotels.styx</groupId>
+      <artifactId>styx-testsupport</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.hotels.styx</groupId>
+      <artifactId>styx-api-testsupport</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.github.tomakehurst</groupId>
+      <artifactId>wiremock</artifactId>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+    </dependency>
+
+  </dependencies>
+
+</project>

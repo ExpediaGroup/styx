@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Styx Dashboard</title>
+    <link href="css/styx.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid main-offcanvas flexit">
+        <div class="sidebar sidebar-offcanvas">
+        <span id="toggle-menu">
+            <span class="glyphicon glyphicon-chevron-right">☰</span>
+        </span>
+            <ul class="nav nav-sidebar">
+                <li><a href="/admin/jvm">JVM metrics</a></li>
+                <li><a href="/admin/metrics">Styx and Origins Metrics</a></li>
+                <li><a href="/admin/configuration">Styx Configuration</a></li>
+                <li><a href="/admin/configuration/origins">Origins Configuration</a></li>
+                <li><a href="/admin/origins/status">Origins Status</a></li>
+                <li><a href="/admin/healthcheck">Healthcheck</a></li>
+                <li><a href="/admin/ping">Ping</a></li>
+                <li><a href="/admin/status">Status</a></li>
+                <li><a href="/admin/threads">Threads</a></li>
+                <li><a href="/version.txt">Version.txt</a></li>
+            </ul>
+        </div>
+
+        <div class="offset-main">
+            <div class="status-graphs">
+            </div>
+        </div>
+        <div class="info-bar">
+            <a class="navbar-brand" href="#"><img src="images/styx_logo_text_only.png" /><span></span></a>
+            <div class="uptime">
+                <h5>Uptime</h5>
+                <span></span>
+            </div>
+            <div class="styx-statuses">
+                <h5>Styx</h5>
+                <div class="styx-status-responses">
+
+                </div>
+            </div>
+
+            <div class="origins-statuses">
+                <h5>Origins</h5>
+                <div class="origins-status-responses">
+
+                </div>
+            </div>
+            <div class="publish-time">Last updated <span></span></div>
+        </div>
+    </div>
+
+    <script src="js/dashboard-lib.js"></script>
+
+    <!-- StyxCommand -->
+    <script type="text/javascript" src="components/styxCommand/styxCommand.js"></script>
+
+    <script>
+
+        var styxMonitor = new StyxCommandMonitor('status-graphs', {
+            includeDetailIcon: false
+        });
+
+        var commandStream = 'data.json';
+
+        (function poll(delay){
+            setTimeout(function(){
+                $.ajax({ url: commandStream, dataType: "json" }).done(function(data){
+                    styxMonitor.handleAjaxSuccess(data);
+                }).fail(function(){
+                    console.log('Something went wrong');
+                });
+                return poll(5000)
+            }, delay = delay || 0);
+        }());
+
+        (function() {
+            $('.sidebar').hover(
+                function() {
+                    $('.main-offcanvas').addClass('active');
+                },
+                function() {
+                    $('.main-offcanvas').removeClass('active');
+                }
+            );
+        })();
+
+    </script>
+
+</body>
+</html>

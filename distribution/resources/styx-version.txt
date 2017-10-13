@@ -1,0 +1,11 @@
+#Build Information
+#${timestamp}
+
+release.date=${timestamp}
+release.tag=${release.label}
+app.name=${release.name}
+
+${release.name}.version=${project.version}
+build.date=${timestamp}
+build.number=${build.number}
+build.branch=${branch}

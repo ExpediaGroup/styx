@@ -1,0 +1,5 @@
+services:
+  factories:
+    backendServiceRegistry:
+      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry$Factory"
+      config: {originsFile: "${CONFIG_LOCATION:classpath:}/conf/origins/backend-factory-origins.yml"}

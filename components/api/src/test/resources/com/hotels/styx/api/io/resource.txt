@@ -1,0 +1,2 @@
+This is an example resource.
+It has content to use in automated tests.

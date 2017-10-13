@@ -1,0 +1,11 @@
+#!/bin/sh
+
+OS_NAME=`uname`
+
+if [ "$OS_NAME" = "Linux" ]
+then
+    ps ax | grep -i 'StyxServer' | grep -v grep | awk '{print $1}' | xargs -r kill -SIGTERM
+else
+    # Darwin/Mac OSX:
+    ps ax | grep -i 'StyxServer' | grep -v grep | awk '{print $1}' | xargs kill -SIGTERM
+fi

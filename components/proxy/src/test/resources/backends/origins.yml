@@ -1,0 +1,49 @@
+# See origins-default.yaml for explanation of config format
+---
+- id: "webapp"
+  path: "/"
+  connectionPool:
+    maxConnectionsPerHost: 45
+    maxPendingConnectionsPerHost: 15
+    socketTimeoutMillis: 120000
+    connectTimeoutMillis: 1000
+    pendingConnectionTimeoutMillis: 8000
+  healthCheck:
+    uri: "/version.txt"
+    intervalMillis: 5000
+  responseTimeoutMillis: 60000
+  origins:
+  - { id: "webapp-01", host: "localhost:9090" }
+  - { id: "webapp-02", host: "localhost:9091" }
+
+- id: "landing"
+  path: "/landing/"
+  connectionPool:
+    maxConnectionsPerHost: 45
+    maxPendingConnectionsPerHost: 15
+    socketTimeoutMillis: 120000
+    connectTimeoutMillis: 1000
+    pendingConnectionTimeoutMillis: 8000
+  healthCheck:
+      uri: "/version.txt"
+      intervalMillis: 5000
+  responseTimeoutMillis: 60000
+  origins:
+  - { id: "landing-01", host: "localhost:9080" }
+  - { id: "landing-02", host: "localhost:9081" }
+  - { id: "landing-03", host: "localhost:9082" }
+
+- id: "shopping"
+  path: "/shop/"
+  connectionPool:
+    maxConnectionsPerHost: 45
+    maxPendingConnectionsPerHost: 15
+    socketTimeoutMillis: 120000
+    connectTimeoutMillis: 1000
+    pendingConnectionTimeoutMillis: 8000
+  healthCheck:
+      uri: "/version.txt"
+      intervalMillis: 5000
+  responseTimeoutMillis: 60000
+  origins:
+  - { id: "shopping-01", host: "localhost:9094" }

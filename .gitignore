@@ -1,0 +1,37 @@
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Maven
+target/
+*.ser
+*.ec
+
+# Intellij
+*.ipr
+*.iml
+*.iws
+.idea/
+.idea_modules/
+test-output
+
+# Other
+.DS_Store
+.clover
+jmeter.log
+atlassian-ide-plugin.xml
+dependency-reduced-pom.xml
+.vagrant/
+result/
+logs/
+**/*.pyc
+load-test-latest
+wrk2/
+
+**/*.out
+**/*.jtl
+**/*.log
+
+# Jekyll Docs
+docs/_site

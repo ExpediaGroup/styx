@@ -1,0 +1,30 @@
+# See origins-default.yaml for explanation of configuration format
+---
+- id: "webapp"
+  path: "/"
+  healthCheck:
+    uri: "/version.txt"
+    intervalMillis: 23456
+    healthyThreshold: 3
+    unhealthyThreshold: 5
+  stickySession:
+    enabled: true
+    timeoutSeconds: 86400
+  connectionPool:
+    maxConnectionsPerHost: 300
+    maxPendingConnectionsPerHost: 50
+    socketTimeoutMillis: 120000
+    connectTimeoutMillis: 8000
+  origins:
+  - id: "webapp-01"
+    host: "localhost:9090"
+  - id: "webapp-02"
+    host: "localhost:9091"
+
+- id: "shopping"
+  path: "/shop/"
+  healthCheck:
+    uri: "/version.txt"
+  origins:
+  - id: "shopping-01"
+    host: "localhost:9094"

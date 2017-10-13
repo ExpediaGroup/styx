@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE module PUBLIC "-//Puppy Crawl//DTD Check Configuration 1.2//EN"
+    "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
+<module name="Checker">
+  <property name="severity" value="warning"/>
+  <module name="SuppressionCommentFilter">
+    <property name="offCommentFormat" value="CHECKSTYLE\:OFF"/>
+    <property name="onCommentFormat" value="CHECKSTYLE\:ON"/>
+  </module>
+  <module name="SuppressionFilter">
+    <property name="file" value="${checkstyle.suppressions.file}"/>
+  </module>
+  <module name="TreeWalker">
+    <property name="tabWidth" value="4"/>
+    <module name="FileContentsHolder"/>
+    <module name="JavadocMethod">
+      <property name="scope" value="protected"/>
+      <property name="allowUndeclaredRTE" value="true"/>
+      <property name="allowMissingPropertyJavadoc" value="true"/>
+    </module>
+    <module name="JavadocType">
+      <property name="severity" value="error"/>
+      <property name="scope" value="public"/>
+    </module>
+    <module name="JavadocStyle">
+      <property name="severity" value="error"/>
+      <property name="checkEmptyJavadoc" value="true"/>
+    </module>
+    <module name="ConstantName">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="LocalFinalVariableName">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="LocalVariableName">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="MemberName">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="MethodName">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="PackageName">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="ParameterName">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="StaticVariableName">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="TypeName">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="AvoidStarImport">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="IllegalImport">
+      <property name="severity" value="error"/>
+      <property name="illegalPkgs" value="sun,org.easymock.classextension"/>
+    </module>
+    <module name="RedundantImport">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="LineLength">
+      <property name="severity" value="error"/>
+      <property name="max" value="180"/>
+    </module>
+    <module name="MethodLength">
+      <property name="max" value="40"/>
+      <property name="id" value="MethodLength_Warning"/>
+    </module>
+    <module name="MethodLength">
+      <property name="max" value="50"/>
+    </module>
+    <module name="MethodLength">
+      <property name="severity" value="error"/>
+      <property name="max" value="70"/>
+      <property name="id" value="MethodLength_Error"/>
+    </module>
+    <module name="ParameterNumber">
+      <property name="max" value="4"/>
+      <property name="id" value="ParameterNumber_Warning"/>
+    </module>
+    <module name="ParameterNumber">
+      <property name="severity" value="error"/>
+      <property name="max" value="7"/>
+      <property name="id" value="ParameterNumber_Error"/>
+    </module>
+    <module name="ParameterNumber">
+      <property name="severity" value="error"/>
+      <property name="max" value="7"/>
+      <property name="id" value="ParameterNumber_Severe_Error"/>
+    </module>
+    <module name="EmptyForIteratorPad">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="MethodParamPad">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="NoWhitespaceAfter">
+      <property name="severity" value="error"/>
+      <property name="tokens" value="ARRAY_INIT,BNOT,DEC,DOT,INC,LNOT,UNARY_MINUS,UNARY_PLUS"/>
+    </module>
+    <module name="NoWhitespaceBefore">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="OperatorWrap">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="ParenPad">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="TypecastParenPad">
+      <property name="severity" value="error"/>
+      <property name="tokens" value="RPAREN,TYPECAST"/>
+    </module>
+    <module name="WhitespaceAfter">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="WhitespaceAround">
+      <property name="severity" value="error"/>
+      <property name="tokens"
+                value="ASSIGN,BAND,BAND_ASSIGN,BOR,BOR_ASSIGN,BSR,BSR_ASSIGN,BXOR,BXOR_ASSIGN,COLON,DIV,DIV_ASSIGN,EQUAL,GE,GT,LAND,LCURLY,LE,LITERAL_ASSERT,LITERAL_CATCH,LITERAL_DO,LITERAL_ELSE,LITERAL_FINALLY,LITERAL_FOR,LITERAL_IF,LITERAL_RETURN,LITERAL_SYNCHRONIZED,LITERAL_TRY,LITERAL_WHILE,LOR,LT,MINUS,MINUS_ASSIGN,MOD,MOD_ASSIGN,NOT_EQUAL,PLUS,PLUS_ASSIGN,QUESTION,SL,SLIST,SL_ASSIGN,SR,SR_ASSIGN,STAR,STAR_ASSIGN,LITERAL_ASSERT,TYPE_EXTENSION_AND"/>
+    </module>
+    <module name="ModifierOrder">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="AvoidNestedBlocks">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="EmptyBlock">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="LeftCurly">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="NeedBraces">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="RightCurly">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="EmptyStatement">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="EqualsHashCode">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="IllegalInstantiation">
+      <property name="severity" value="error"/>
+      <property name="classes"
+                value="java.lang.String,java.lang.Boolean,java.lang.Integer,java.lang.Long,java.util.GregorianCalendar,java.util.StringTokenizer,java.util.Vector,java.util.Stack,java.util.Hashtable,java.util.Locale.class"/>
+    </module>
+    <module name="InnerAssignment">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="MagicNumber">
+      <property name="ignoreHashCodeMethod" value="true"/>
+    </module>
+    <module name="MissingSwitchDefault"/>
+    <module name="SimplifyBooleanExpression">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="SimplifyBooleanReturn">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="HideUtilityClassConstructor"/>
+    <module name="InterfaceIsType">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="VisibilityModifier">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="ArrayTypeStyle">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="TodoComment"/>
+    <module name="CyclomaticComplexity">
+      <property name="severity" value="error"/>
+      <property name="max" value="15"/>
+      <property name="id" value="CyclomaticComplexity_Error"/>
+    </module>
+    <module name="BooleanExpressionComplexity">
+      <property name="max" value="5"/>
+    </module>
+    <module name="ClassFanOutComplexity"/>
+    <module name="ClassFanOutComplexity">
+      <property name="severity" value="error"/>
+      <property name="max" value="75"/>
+      <property name="id" value="ClassFanOutComplexity_Error"/>
+    </module>
+    <module name="NPathComplexity">
+      <property name="max" value="100"/>
+    </module>
+    <module name="NPathComplexity">
+      <property name="severity" value="error"/>
+      <property name="max" value="200"/>
+      <property name="id" value="NPathComplexity_Error"/>
+    </module>
+    <module name="FallThrough"/>
+    <module name="DeclarationOrder">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="IllegalThrows">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="IllegalType">
+      <property name="severity" value="error"/>
+      <property name="tokens" value="METHOD_DEF,PARAMETER_DEF,VARIABLE_DEF"/>
+    </module>
+    <module name="ModifiedControlVariable">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="ReturnCount">
+      <property name="severity" value="error"/>
+      <property name="max" value="1"/>
+    </module>
+    <module name="StringLiteralEquality">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="SuperClone">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="SuperFinalize">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="UnnecessaryParentheses">
+      <property name="severity" value="error"/>
+    </module>
+    <!--<module name="Indentation">-->
+    <!--<property name="severity" value="error" />-->
+    <!--<property name="caseIndent" value="4" />-->
+    <!--</module>-->
+    <module name="ExplicitInitialization">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="MissingDeprecated">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="MissingOverride">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="ClassTypeParameterName">
+      <property name="severity" value="error"/>
+      <property name="format" value="^[A-Z]+[_A-Z]*$"/>
+    </module>
+    <module name="MethodTypeParameterName">
+      <property name="severity" value="error"/>
+      <property name="format" value="^[A-Z]+[_A-Z]*$"/>
+    </module>
+    <module name="PackageAnnotation">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="GenericWhitespace">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="EmptyForInitializerPad">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="DefaultComesLast">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="EqualsAvoidNull">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="MultipleVariableDeclarations">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="NoFinalizer">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="PackageDeclaration">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="ParameterAssignment">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="MutableException">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="ThrowsCount">
+      <property name="max" value="3"/>
+    </module>
+    <module name="SuppressWarnings">
+      <property name="severity" value="error"/>
+      <property name="format" value="^((?!unchecked|rawtypes).)*$"/>
+    </module>
+    <module name="AnonInnerLength">
+      <property name="max" value="40"/>
+    </module>
+    <module name="AnonInnerLength">
+      <property name="severity" value="error"/>
+      <property name="max" value="100"/>
+      <property name="id" value="AnonInnerLength_Error"/>
+    </module>
+    <module name="AnnotationUseStyle">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="OuterTypeNumber">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="UpperEll"/>
+    <module name="ClassDataAbstractionCoupling"/>
+    <module name="ClassDataAbstractionCoupling">
+      <property name="max" value="15"/>
+      <property name="id" value="ClassDataAbstractionCoupling_Error"/>
+    </module>
+    <module name="InnerTypeLast">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="NestedForDepth">
+      <property name="max" value="1"/>
+      <property name="severity" value="error"/>
+    </module>
+    <module name="MethodCount">
+      <property name="maxTotal" value="40"/>
+      <property name="maxPackage" value="8"/>
+      <property name="maxProtected" value="8"/>
+    </module>
+    <module name="MethodCount">
+      <property name="severity" value="error"/>
+      <property name="maxTotal" value="50"/>
+      <property name="id" value="MethodCountTotal_Error"/>
+    </module>
+    <module name="MethodCount">
+      <property name="severity" value="error"/>
+      <property name="maxProtected" value="20"/>
+      <property name="id" value="MethodCountProtected_Error"/>
+    </module>
+    <module name="MethodCount">
+      <property name="severity" value="error"/>
+      <property name="maxPackage" value="20"/>
+      <property name="id" value="MethodCountPrivate_Error"/>
+    </module>
+    <module name="OneStatementPerLine">
+      <property name="severity" value="error"/>
+    </module>
+    <module name="UnusedImports">
+      <property name="severity" value="error"/>
+    </module>
+  </module>
+
+  <module name="FileLength">
+    <property name="max" value="300"/>
+  </module>
+  <module name="NewlineAtEndOfFile">
+    <property name="severity" value="error"/>
+  </module>
+  <module name="FileTabCharacter">
+    <property name="severity" value="error"/>
+  </module>
+  <module name="RegexpSingleline">
+    <property name="severity" value="error"/>
+    <property name="format" value="\s+$"/>
+    <property name="message" value="Line has trailing spaces"/>
+    <property name="id" value="TrailingSpaces_Error"/>
+  </module>
+  <module name="RegexpSingleline">
+    <property name="severity" value="error"/>
+    <property name="format"
+              value="\.exit\(|\.halt\(|\.traceMethodCalls\(|\.traceInstructions\(|\.runFinalization\(|\.gc\("/>
+    <property name="message" value="Suspicious invocation of dangerous JVM level operation"/>
+    <property name="id" value="DangerousJVMOperation_Error"/>
+  </module>
+  <module name="RegexpSingleline">
+    <property name="severity" value="error"/>
+    <property name="format" value="long serialVersionUID"/>
+    <property name="message" value="Do not declare a serialVersionUID"/>
+    <property name="id" value="SerialVersionUIDDeclared_Error"/>
+  </module>
+  <module name="RegexpSingleline">
+    <property name="severity" value="error"/>
+    <property name="format"
+              value="\.printStackTrace\(\)|System\.out|System\.err|org\.apache\.commons\.logging\.Log|java\.util\.logging"/>
+    <property name="message" value="use SLF4J for logging"/>
+    <property name="id" value="InvalidLoggingMethod_Error"/>
+  </module>
+  <module name="RegexpSingleline">
+    <property name="severity" value="error"/>
+    <property name="format"
+              value="org.springframework.web.util.JavaScriptUtils|org.springframework.web.util.HtmlUtils|org.apache.commons.lang.StringEscapeUtils|org.\apache.\commons.\codec|org\.owasp\.esapi"/>
+    <property name="message" value="use EncodingSupport for encoding"/>
+    <property name="id" value="BannedEncodingLibraryReference_Error"/>
+  </module>
+  <module name="RegexpSingleline">
+    <property name="severity" value="error"/>
+    <property name="format" value="null !=|null =="/>
+    <property name="message" value="Check for null in reverse order"/>
+    <property name="id" value="ReverseOrderNullCheck_Error"/>
+  </module>
+</module>

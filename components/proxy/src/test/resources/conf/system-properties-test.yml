@@ -1,0 +1,59 @@
+---
+
+#jvmRouteName: "${jvm.route.test.only:noJvmRouteSet}"
+jvmRouteName: "${jvm.route.test.only}"
+
+proxy:
+  connectors:
+    http:
+      port: 8080
+  bossThreadsCount: 1
+  clientWorkerThreadsCount: 0
+  workerThreadsCount: 0
+  tcpNoDelay: true
+  nioReuseAddress: true
+  nioKeepAlive: true
+  maxInitialLength: 4096
+  maxHeaderSize: 8192
+  maxChunkSize: 8192
+  maxContentLength: 65536
+  requestTimeoutMillis: 12000
+
+jvm:
+  route:
+    test:
+      only:
+        "weofnsofndskjfds"
+
+admin:
+  connectors:
+    http:
+      port: 9000
+  bossThreadsCount: 1
+  workerThreadsCount: 1
+  tcpNoDelay: true
+  nioReuseAddress: true
+  nioKeepAlive: true
+  maxInitialLength: 4096
+  maxHeaderSize: 8192
+  maxChunkSize: 8192
+  maxContentLength: 65536
+
+loadBalancing:
+  strategy: adaptive
+  strategies:
+    adaptive:
+      factory: {class: "com.hotels.styx.client.loadbalancing.strategies.StrategyFactory"}
+      warmUpCount: 12345
+    roundrobin:
+      factory: {class: "com.hotels.styx.client.loadbalancing.strategies.StrategyFactory"}
+
+metrics:
+  graphite:
+    enabled: true
+    host: "graphite.com"
+    port: 2003
+    intervalMillis: 5000
+  jmx:
+    enabled: true
+  reportingPrefix: test

@@ -1,0 +1,63 @@
+/**
+ * Copyright (C) 2013-2017 Expedia Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hotels.styx.routing.interceptors;
+
+import com.google.common.collect.ImmutableList;
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.client.RewriteConfig;
+import com.hotels.styx.client.RewriteRule;
+import com.hotels.styx.client.RewriteRuleset;
+import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
+import com.hotels.styx.routing.config.RoutingConfigDefinition;
+import com.hotels.styx.routing.config.HttpInterceptorFactory;
+import rx.Observable;
+
+/**
+ * A built-in interceptor for URL rewrite.
+ */
+public class RewriteInterceptor implements HttpInterceptor {
+    private final RewriteRuleset rewriteRuleset;
+
+    private RewriteInterceptor(RewriteRuleset rewriteRuleset) {
+        this.rewriteRuleset = rewriteRuleset;
+    }
+
+    @Override
+    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        return chain.proceed(this.rewriteRuleset.rewrite(request));
+    }
+
+    /**
+     * A factory for built-in interceptors.
+     */
+    public static class ConfigFactory implements HttpInterceptorFactory {
+        @Override
+        public HttpInterceptor build(RoutingConfigDefinition configBlock) {
+            ImmutableList.Builder<RewriteRule> rules = ImmutableList.builder();
+            configBlock.config().iterator().forEachRemaining(
+                    node -> {
+                        RewriteConfig rewriteConfig = new JsonNodeConfig(node).as(RewriteConfig.class);
+                        rules.add(rewriteConfig);
+                    }
+            );
+
+            return new RewriteInterceptor(new RewriteRuleset(rules.build()));
+        }
+
+    }
+}

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+
+  <id>singlezip-server</id>
+
+  <formats>
+    <format>zip</format>
+    <format>tar.gz</format>
+  </formats>
+
+  <includeBaseDirectory>false</includeBaseDirectory>
+
+  <!-- Include NOTICE and version txt -->
+  <files>
+    <file>
+      <source>${main.basedir}/NOTICE</source>
+      <filtered>true</filtered>
+    </file>
+    <file>
+      <source>${basedir}/resources/styx-version.txt</source>
+      <filtered>true</filtered>
+    </file>
+  </files>
+
+  <fileSets>
+    <!-- Include lib jars -->
+    <fileSet>
+      <directory>${project.basedir}/target/lib</directory>
+      <outputDirectory>lib</outputDirectory>
+      <includes>
+        <include>*.jar</include>
+      </includes>
+    </fileSet>
+
+    <!-- Include installation scripts -->
+    <fileSet>
+      <directory>${project.basedir}/bin</directory>
+      <outputDirectory>bin</outputDirectory>
+      <includes>
+        <include>**/*</include>
+      </includes>
+      <excludes>
+        <exclude>*.formatted</exclude>
+      </excludes>
+      <lineEnding>unix</lineEnding>
+      <fileMode>755</fileMode>
+    </fileSet>
+
+    <!-- Include configuration -->
+    <fileSet>
+      <directory>${project.basedir}/conf</directory>
+      <outputDirectory>conf</outputDirectory>
+      <includes>
+        <include>**/*</include>
+      </includes>
+      <excludes>
+        <exclude>*.formatted</exclude>
+      </excludes>
+      <lineEnding>unix</lineEnding>
+    </fileSet>
+
+    <fileSet>
+      <directory>${project.basedir}/plugins</directory>
+      <outputDirectory>plugins</outputDirectory>
+    </fileSet>
+
+  </fileSets>
+
+</assembly>

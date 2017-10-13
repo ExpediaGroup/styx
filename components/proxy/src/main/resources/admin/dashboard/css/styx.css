@@ -1,0 +1,532 @@
+/* http://meyerweb.com/eric/tools/css/reset/ 
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    font: inherit;
+    vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+    display: block;
+}
+body {
+    line-height: 1;
+}
+ol, ul {
+    list-style: none;
+}
+blockquote, q {
+    quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+    content: '';
+    content: none;
+}
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+
+/* #TODO icons for side and error states */
+/* #TODO navigation */
+
+/* overrides */
+body {
+   font-family: 'Helvetica Neue', Helvetica, Arial, “Liberation Sans”, sans-serif; 
+}
+
+/* Off canvas navigation */
+.main-offcanvas {
+  position: relative;
+  -webkit-transition: all .25s ease-out;
+       -o-transition: all .25s ease-out;
+          transition: all .25s ease-out;
+}
+
+.main-offcanvas {
+  left: 0;
+}
+
+.main-offcanvas .sidebar-offcanvas {
+  left: -200px;
+}
+
+.main-offcanvas.active {
+  left: 200px;
+}
+
+.sidebar-offcanvas {
+  position: absolute;
+  top: 0;
+  width: 230px;
+  bottom: 0;
+  z-index: 1;
+  display: block;
+  overflow-x: hidden;
+  overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+  background-color: #407394;
+}
+
+#toggle-menu {
+  position: fixed;
+  top: 5px;
+  left: 8px;
+  z-index: 2;
+  background: transparent;
+  border: none;
+  color: #fff;
+}
+
+
+.status-graphs {
+    padding-top: 5px;
+    margin-left:30px;
+    overflow: hidden;
+}
+
+.info-bar {
+    clear: both;
+    overflow: hidden;
+    background-color: #FAFAFA;
+    margin-left:30px;
+}
+
+@media(min-width:768px) {
+
+    .offset-main {
+        float: left;
+        width: 100%;
+    }
+
+    .flexit {
+        display: flex;
+    }
+
+    .status-graphs {
+        margin-right: 200px;
+    }
+
+    .info-bar {
+        clear: none;
+        float: right;
+        width: 200px;
+        margin-left: -201px;
+        border-left:1px solid #ccc;
+    }
+
+}
+
+
+/* Navigation */
+.nav {
+    margin-top: 30px;
+}
+
+.nav a {
+    color: #fff;
+    display: block;
+    border-bottom: 1px solid transparent;
+    text-decoration: none;
+    padding: 10px;
+    -webkit-transition: border-color 1s ease;
+    -moz-transition: border-color 1s ease;
+    -o-transition: border-color 1s ease;
+    -ms-transition: border-color 1s ease;
+    transition: border-color 1s ease;    
+}
+
+
+
+.nav li:first-child a {
+    border-top: 1px solid transparent;
+}
+
+.nav>li>a:focus,
+.nav>li>a:hover {
+  color: #fff;
+  background-color: #335B7A;
+}
+
+.active .nav li:first-child a,
+.active .nav a {
+    border-color: #5481A3;
+}
+
+
+
+.row {
+    overflow: hidden;
+}
+
+.styx-statuses,
+.origins-statuses {
+    float: left;
+    width: 48%;
+    margin: 0 1%;
+}
+
+.bar-header {
+    border-bottom: 1px solid #ccc;
+    padding: 5px 10px;
+    margin-bottom: 5px;
+}
+
+.bar-header .bar-title {
+    text-transform: uppercase;
+}
+
+.menu-legend {
+    font-size: 12px;
+}
+
+
+@media (min-width: 768px){
+    .bar-header {
+        overflow: hidden;
+    }
+
+    .bar-header .bar-title {
+        display: inline-block;
+        font-weight: bold;
+    }
+
+    .menu-legend {
+        float: right;
+    }
+}
+
+.utf8-symbol {
+    position: absolute;
+    font-weight: bold;
+    top: -30%;
+    left: 25%;
+    font-size: 180px;
+    color: #f00;
+    padding: 0;
+} 
+
+
+/* monitor graphs */
+.monitor {
+    float: left;
+    margin:5px 5px 10px 0px;
+    width: 270px;
+    height: 170px;
+    position: relative;
+}
+
+.styx-title {
+    position:absolute;
+    top:0px;
+    text-align: right;
+    width:100%;
+    height:20px;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+/* size chart */
+.styx-chart {
+    width:100%;
+    height:100%;
+    opacity:0.2;
+    background:white;
+}
+
+.styx-chart svg text {
+    fill: white;
+}
+
+/* timeline chart */
+.styx-graph {
+    position:absolute;
+    top:20px;
+    left:0;
+    width:150px;
+    height:62px;
+}
+
+/* sparkline */
+.styx-graph path {
+    stroke: steelblue;
+    stroke-width: 1;
+    fill: none;
+}
+
+/* details chart */
+.styx-monitor {
+    position:absolute;
+    top:20px;
+    right: 0;
+    width:100%;
+    min-height: 120px;
+}
+
+table {
+    clear: right;
+    float: right;
+    font-size: 12px;
+    margin-bottom: 3px;
+}
+
+table td {
+    font-weight: bold;
+    text-align: right;
+    padding: 2px 4px;
+}
+
+.styx-monitor .count-rate {
+    font-size: 14px;
+}
+
+.styx-monitor .count-rate .error-percentage {
+    font-size: 16px;
+}
+
+.styx-monitor .count-rate th {
+    display: none;
+}
+
+.styx-monitor .count-rate td:last-child,
+.styx-monitor .count-rate td:nth-child(n+1) {
+    border-right: 1px solid #bbb;
+}
+
+.styx-monitor .count-rate td:last-child {
+    border-right: none;
+}
+
+.stats {
+    margin-bottom: 8px;
+}
+
+.stats caption {
+    text-align: right;
+    font-size: 13px;
+}
+
+.stats th {
+    color: #555;
+    font-weight: normal;
+    text-align: right;
+    padding: 2px 4px;
+}
+
+.stats td {
+    padding: 2px 0 2px 4px;
+}
+
+.stats th {
+    padding-left: 20px;
+}
+
+.request-rate {
+    clear: right;
+    float: right;
+    text-align: right;
+    color: #9B9B9B;
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.request-rate span {
+    font-size: 14px;
+    color: #222;
+}
+
+.error-percentage {
+    color: #999;
+}
+
+.status {
+    clear: right;
+    float: right;
+    margin-bottom: 4px;
+    font-size: 13px;
+    text-align: right;
+}
+
+.status .origin {
+    display: inline-block;
+}
+
+.status .origin-active {
+    background-color: green;
+    margin: 0 1px 2px 1px;
+    width: 7px;
+    height: 6px;
+}
+
+.status .origin-inactive:after,
+.status .origin-disabled:after {
+    content: '\002716';
+    color: red;
+    width: 10px;
+}
+
+.status span {
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status .active {
+    color: green;
+}
+
+.status .inactive {
+    color: red;
+}
+
+.status .disabled {
+    color: orange;
+}
+
+/* legends */
+.shortCircuited {
+    color: blue;    
+}
+
+.timeout {
+    color: #FF9900;  /* shade of orange */
+}
+
+.success {
+    color: green;
+}
+
+.failure {
+    color: red; 
+}
+
+.rejected {
+    color: purple;
+}
+
+.exceptionsThrown {
+    color: brown;
+}
+
+
+/* HTTP status counters */
+.info-bar {
+    text-align: center;
+}
+
+.info-bar:after { 
+   content: "."; 
+   visibility: hidden; 
+   display: block; 
+   height: 0; 
+   clear: both;
+}
+
+.navbar-brand {
+    background: #407394;
+    display: block;
+    color: #fff;
+    text-decoration: none;
+    overflow: hidden;
+    padding:4px 10px;
+    text-align: left;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #5481A3;
+}
+
+.navbar-brand img {
+    float: left;
+    margin-right: .5em;
+    padding: 14px 0;
+    width: 60px;
+}
+
+.navbar-brand span {
+    display: inline-block;
+    margin: 14px 0 0 2px;
+}
+
+/* #todo fix css */
+.info-bar h5 {
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.uptime {
+    background: #cfcfcf;
+    margin: -8px 0 8px 0;
+    padding:8px 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+/* Colour code for HTTP error */
+.danger-bg {
+  color: white;
+  background: #cc3739;
+}
+
+.info-bg {
+  color: white;
+  background: #4177a6;
+}
+
+.warning-bg {
+  color: white;
+  background: #ff9407;
+}
+
+.default-bg {
+  background: #ecf0f5;
+  color: #666666;
+}
+
+.status-counter {
+    padding: 8px 4px;
+    margin-bottom: 5px;
+}
+
+.status-counter .title {
+    margin: 0;
+    font-size: 12px;
+}    
+
+.status-counter .lead {
+    margin: 0;
+    font-weight: bold;
+}
+
+.publish-time {
+    position: fixed;
+    bottom: 0;
+    padding: 10px;
+    font-size: 12px;
+    color: #333;
+    background: #ccc;
+    opacity: 0.8;
+}
+.publish-time span {
+    display: inline-block;
+    padding: 2px 0;
+}

@@ -1,0 +1,17 @@
+include: ${STYX_HOME:classpath:}/conf/default.yml
+
+proxy:
+  connectors:
+    https:
+      sslProvider: JDK
+      certificateFile: ${STYX_HOME:classpath:}/conf/tls/testCredentials.crt
+      certificateKeyFile: ${STYX_HOME:classpath:}/conf/tls/testCredentials.key
+      cipherSuites:
+        - TLS_RSA_WITH_AES_128_GCM_SHA256
+
+services:
+  factories:
+    graphite:
+      enabled: false
+
+originsFile: ${STYX_HOME:classpath:}/conf/origins/origins-perf-local.yml

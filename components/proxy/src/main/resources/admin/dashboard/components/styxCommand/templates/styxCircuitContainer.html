@@ -1,0 +1,39 @@
+<div class="monitor" id="CIRCUIT_<%= name %>" rate_value="" error_then_volume="">
+    <span class="utf8-symbol"></span>
+    <%
+        var displayName = name;
+        if (displayName.length > 32) {
+            displayName = displayName.substring(0,10) + '…' + displayName.substring(displayName.length-16, displayName.length);
+        }
+    %>
+
+    <div id="chart_CIRCUIT_<%= name %>" class="chart styx-chart"></div>
+
+    <div class="styx-title">
+        <p class="name" title="<%= id %>"><%= displayName %></p>
+    </div>
+
+    <div class="styx-monitor">
+        <div class="monitor_data"></div>
+    </div>
+
+    <% if(typeof requests !== 'undefined'){ %>
+
+    <div id="graph_CIRCUIT_<%= name %>" class="graph styx-graph"></div>
+
+    <script>
+        var y = 200;
+        /* escape with two backslashes */
+        var vis = d3.select("#chart_CIRCUIT_<%= name.replace(/([ !"#$%&'()*+,./:;<=>?@[\]^`{|}~])/g,'\\\\$1') %>").append("svg:svg").attr("width", "100%").attr("height", "100%");
+        /* add a circle -- we don't use the data point, we set it manually, so just passing in [1] */
+        var circle = vis.selectAll("circle").data([1]).enter().append("svg:circle");
+        /* setup the initial styling and sizing of the circle */
+        circle.style("fill", "green").attr("cx", "30%").attr("cy", "30%").attr("r", 5);
+
+        /* add the line graph - it will be populated by javascript, no default to show here */
+        /* escape with two backslashes */
+        var graph = d3.select("#graph_CIRCUIT_<%= name.replace(/([ !"#$%&'()*+,./:;<=>?@[\]^`{|}~])/g,'\\\\$1') %>").append("svg:svg").attr("width", "100%").attr("height", "100%");
+    </script>
+    <% } %>
+
+</div>

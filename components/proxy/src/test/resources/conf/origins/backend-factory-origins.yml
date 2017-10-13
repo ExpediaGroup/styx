@@ -1,0 +1,16 @@
+---
+- id: "backend-factory-test-origin1"
+  path: "/long/"
+  connectionPool:
+    connectTimeoutMillis: 10000
+  origins:
+  - id: "l1"
+    host: "localhost:60000"
+
+- id: "backend-factory-test-origin2"
+  path: "/short/"
+  connectionPool:
+    connectTimeoutMillis: 1
+  origins:
+  - id: "s1"
+    host: "localhost:60001"

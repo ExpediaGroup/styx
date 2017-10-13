@@ -1,0 +1,6 @@
+theme: minima
+title: Styx Docs
+description: 'Styx Documentation'
+sass:
+    sass_dir: ./_scss
+gems:

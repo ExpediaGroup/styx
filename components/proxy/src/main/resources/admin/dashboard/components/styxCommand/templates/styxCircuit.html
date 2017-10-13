@@ -1,0 +1,95 @@
+<table class="count-rate">
+    <tr>
+        <th>Success</th>
+        <th>Failures</th>
+        <th>Error Percentage</th>
+    </tr>
+    <tr>
+        <td class="success"><%= addCommas(requests.successRate.count) %></td>
+        <td class="failure"><%= addCommas(requests.errorRate.count) %></td>
+        <td class="error-percentage"><%= roundNumber(requests.errorPercentage) %>%</td>
+    </tr>
+    <tr>
+        <th>Thread Timeouts</th>
+        <th>Thread Pool rejections</th>
+    </tr>
+    <tr>
+        <td class="timeout">x</td>
+        <td class="rejected"><%= addCommas(responses['400']) %></td>
+    </tr>
+</table>
+
+<div class="request-rate">
+    <% if (requests['ratePerSecondPerHost']){ %>
+    <p>Host: <span class="ratePerSecondPerHost"><%= requests['ratePerSecondPerHost'] %>/s</span></p>
+    <% } %>
+    <% if(typeof parent.received != 'undefined') { %>
+    <p>Cluster: <span class="ratePerSecond"><span class=""><%= roundNumber(parent.received.m15) %>/s</span>
+    <% } %>
+
+    <% if(typeof parent.requests != 'undefined') { %>
+    <p>Cluster: <span class="ratePerSecond"><span class=""><%= roundNumber(parent.requests.successRate.m15) %>/s</span>
+    <% } %>
+</p>
+</div>
+
+<div class="status">
+    <% if (status && status.match(/(inactive|disabled|active|\-$)+/)) { %>
+        <p>Status: <span class="<%= status %>"><%= status %></span></p>
+    <% } else if (statuses && statuses.length && typeof statuses === 'object') { %>
+        <p>Origin Statuses:
+            <% for(var i=0; i<statuses.length; i++){ %><span class="origin origin-<%= statuses[i] %>"></span><% } %>
+        </p>
+    <% } %>
+</div>
+
+<% if(typeof requests !== 'undefined' && requests.successRate){ %>
+<table class="stats">
+    <tr>
+        <th>Host</th>
+        <td>Single</td>
+        <th>90th</th>
+        <td><%= roundNumber(requests.latency.p95) %>ms</td>
+    </tr>
+    <tr>
+        <th>Median</th>
+        <td><span class="value"><%= roundNumber(requests.latency.p50) %>ms</td>
+        <th>99th</th>
+        <td><%= roundNumber(requests.latency.p99) %>ms</td>
+    </tr>
+    <tr>
+        <th>Mean</th>
+        <td><span class="value"><%= roundNumber(requests.latency.mean) %>ms</td>
+        <th>99.9th</th>
+        <td><%= roundNumber(requests.latency.p999) %>ms</td>
+    </tr>
+</table>
+<% } %>
+
+<% if(typeof connectionsPool !== 'undefined'){ %>
+<table class="stats">
+    <caption>Connections</caption>
+    <tr>
+        <th>Available</th>
+        <td class="available"><%= addCommas(connectionsPool['available']) %></td>
+        <th>Busy</th>
+        <td class="busy"><%= addCommas(connectionsPool['busy']) %></td>
+        <th>Pending</th>
+        <td class="pending"><%= addCommas(connectionsPool['pending']) %></td>
+    </tr>
+</table>
+<% } %>
+
+<% if(typeof totalConnections !== 'undefined'){ %>
+<table class="stats">
+    <caption>Total Connections</caption>
+    <tr>
+        <th>Available</th>
+        <td class="available"><%= addCommas(totalConnections['available']) %></td>
+        <th>Busy</th>
+        <td class="busy"><%= addCommas(totalConnections['busy']) %></td>
+        <th>Pending</th>
+        <td class="pending"><%= addCommas(totalConnections['pending']) %></td>
+    </tr>
+</table>
+<% } %>

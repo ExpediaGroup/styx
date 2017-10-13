@@ -1,0 +1,18 @@
+include: ${CONFIG_LOCATION}/conf/environment/default.yaml
+
+metrics:
+  graphite:
+    enabled: false
+
+originsFile: /styx_conf/origins.yml
+
+plugins:
+  active: rewrite
+  all:
+    rewrite:
+      factory:
+        class: "${groupId}.RenameThisPluginFactory"
+        classPath: "/plugins/${artifactId}-${version}.jar"
+      config:
+        requestHeaderValue: "/olduri"
+        responseHeaderValue: "/newuri"

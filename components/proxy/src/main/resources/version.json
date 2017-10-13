@@ -1,0 +1,3 @@
+{
+    "release.tag": "${release.label}"
+}

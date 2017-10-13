@@ -1,0 +1,121 @@
+/**
+ * Copyright (C) 2013-2017 Expedia Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hotels.styx.client.ssl;
+
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
+/**
+ * SSL certificate.
+ */
+public class Certificate {
+    private String alias;
+    private String certificatePath;
+
+    @JsonCreator
+    Certificate(@JsonProperty("alias") String alias,
+                @JsonProperty("path") String certificatePath) {
+        this.alias = checkNotNull(alias);
+        this.certificatePath = checkNotNull(certificatePath);
+    }
+
+    public static Certificate certificate(String alias, String certificatePath) {
+        return new Builder()
+                .setAlias(alias)
+                .setCertificatePath(certificatePath)
+                .build();
+    }
+
+    private Certificate(Builder builder) {
+        this.alias = builder.alias;
+        this.certificatePath = builder.certificatePath;
+    }
+
+    public String getAlias() {
+        return this.alias;
+    }
+
+    public String getCertificatePath() {
+        return this.certificatePath;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        Certificate that = (Certificate) o;
+
+        if (alias != null ? !alias.equals(that.alias) : that.alias != null) {
+            return false;
+        }
+        return certificatePath != null ? certificatePath.equals(that.certificatePath) : that.certificatePath == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = alias != null ? alias.hashCode() : 0;
+        result = 31 * result + (certificatePath != null ? certificatePath.hashCode() : 0);
+        return result;
+    }
+
+    /**
+     * certificate builder.
+     */
+    public static final class Builder {
+        private String alias;
+        private String certificatePath;
+
+        private Builder() {
+        }
+
+        /**
+         * set alias.
+         * @param alias alias
+         * @return this
+         */
+        public Certificate.Builder setAlias(String alias) {
+            this.alias = alias;
+            return this;
+        }
+
+        /**
+         * set certificate path.
+         * @param certificatePath certificate path
+         * @return this
+         */
+        public Certificate.Builder setCertificatePath(String certificatePath) {
+            this.certificatePath = certificatePath;
+            return this;
+        }
+
+        /**
+         * build certificate.
+         * @return new certificate
+         */
+        public Certificate build() {
+            return new Certificate(this);
+        }
+    }
+}

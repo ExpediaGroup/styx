@@ -1,0 +1,27 @@
+---
+- id: "app1"
+  path: "/app1/"
+  connectionPool:
+    connectTimeoutMillis: 10000
+  origins:
+  - id: "app1-1"
+    host: "localhost:60000"
+
+- id: "app1-https"
+  path: "/app1/"
+  connectionPool:
+    connectTimeoutMillis: 10000
+  origins:
+  - id: "app1-https"
+    host: "localhost:60001"
+
+  sslSettings:
+    trustAllCerts: false
+    sslProvider: JDK
+    addlCerts:
+      - alias: "my certificate"
+        path: /path/to/mycert
+      - alias: "alt certificatfe"
+        path: /path/to/altcert
+    trustStorePath: /path/to/truststore
+    trustStorePassword: truststore-123

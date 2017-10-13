@@ -1,0 +1,53 @@
+---
+- id: "webapp"
+  path: "/"
+  healthCheck:
+    uri: "/version.txt"
+    intervalMillis: 23456
+    timeoutMillis: 1500
+    healthyThreshold: 3
+    unhealthyThreshold: 5
+  stickySession:
+    enabled: true
+  connectionPool:
+    socketTimeoutMillis: 3001
+    connectTimeoutMillis: 3000
+  origins:
+  - id: "webapp-01"
+    host: "webapphost1:9094"
+
+- id: "landing"
+  path: "/landing/"
+  healthCheck:
+    uri: "/alternative.txt"
+  stickySession:
+    enabled: true
+    timeoutSeconds: 14321
+  connectionPool:
+    socketTimeoutMillis: 4001
+    connectTimeoutMillis: 4000
+  origins:
+  - id: "landing-01"
+    host: "landinghost1:9091"
+  - id: "landing-02"
+    host: "landinghost2:9092"
+  - id: "landing-03"
+    host: "landinghost3:9093"
+
+- id: "shopping"
+  path: "/shop/"
+  rewrites:
+  - urlPattern: "/shop/(.*)"
+    replacement: "/$1"
+  - urlPattern: "/shop2/(.*)/foobar/(.*)"
+    replacement: "/$1/barfoo/$2"
+  healthCheck:
+    intervalMillis: 23456
+  connectionPool:
+    maxConnectionsPerHost: 200
+    maxPendingConnectionsPerHost: 250
+    socketTimeoutMillis: 5001
+    connectTimeoutMillis: 5000
+  origins:
+  - id: "shopping-01"
+    host: "shoppinghost1:9090"

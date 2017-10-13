@@ -1,0 +1,35 @@
+---
+- id: "longtimeout"
+  path: "/long/"
+  connectionPool:
+    connectTimeoutMillis: 10000
+  origins:
+  - id: "l1"
+    host: "localhost:60000"
+
+- id: "longtimeout-https"
+  connectionPool:
+    connectTimeoutMillis: 10000
+
+  origins:
+  - id: "l1"
+    host: "localhost:60000"
+
+  tlsSettings:
+    trustAllCerts: false
+    sslProvider: JDK
+    addlCerts:
+      - alias: "my certificate"
+        path: /path/to/mycert
+      - alias: "alt certificatfe"
+        path: /path/to/altcert
+    trustStorePath: /path/to/truststore
+    trustStorePassword: truststore-123
+
+- id: "shorttimeout"
+  path: "/short/"
+  connectionPool:
+    connectTimeoutMillis: 1
+  origins:
+  - id: "s1"
+    host: "localhost:60001"

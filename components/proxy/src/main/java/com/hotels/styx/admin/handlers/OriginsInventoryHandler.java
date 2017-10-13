@@ -1,0 +1,98 @@
+/**
+ * Copyright (C) 2013-2017 Expedia Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hotels.styx.admin.handlers;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.Id;
+import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.OriginsInventoryStateChangeListener;
+import com.hotels.styx.api.http.handlers.BaseHttpHandler;
+import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
+import org.slf4j.Logger;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
+import static com.google.common.net.MediaType.JSON_UTF_8;
+import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static org.slf4j.LoggerFactory.getLogger;
+
+/**
+ * Returns an origins inventory snapshot in an HTTP response.
+ */
+public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsInventoryStateChangeListener {
+    private static final Logger LOG = getLogger(OriginsInventoryHandler.class);
+
+    private final ObjectMapper mapper = new ObjectMapper().disable(FAIL_ON_EMPTY_BEANS);
+
+    private final Map<Id, OriginsInventorySnapshot> originsInventorySnapshotMap = new ConcurrentHashMap<>();
+
+    /**
+     * Construct an instance.
+     *
+     * @param eventBus an event-bus to listen to for inventory state changes
+     */
+    public OriginsInventoryHandler(EventBus eventBus) {
+        eventBus.register(this);
+        eventBus.post(new GetOriginsInventorySnapshot());
+    }
+
+    @Override
+    protected HttpResponse doHandle(HttpRequest request) {
+        return response(OK)
+                .contentType(JSON_UTF_8)
+                .disableCaching()
+                .body(content(isPrettyPrint(request)))
+                .build();
+    }
+
+    private String content(boolean pretty) {
+        return originsInventorySnapshotMap.isEmpty() ? "{}" : marshall(originsInventorySnapshotMap, pretty);
+    }
+
+    private String marshall(Map<Id, OriginsInventorySnapshot> originsInventorySnapshotMap, boolean pretty) {
+        try {
+            return writer(pretty).writeValueAsString(originsInventorySnapshotMap);
+        } catch (JsonProcessingException e) {
+            return e.getMessage();
+        }
+    }
+
+    private ObjectWriter writer(boolean prettyPrint) {
+        return prettyPrint
+                ? this.mapper.writerWithDefaultPrettyPrinter()
+                : this.mapper.writer();
+    }
+
+    private static boolean isPrettyPrint(HttpRequest request) {
+        return request.queryParam("pretty").isPresent();
+    }
+
+    @Subscribe
+    @Override
+    public void originsInventoryStateChanged(OriginsInventorySnapshot snapshot) {
+        LOG.debug("received origins inventory state change {}", snapshot);
+        originsInventorySnapshotMap.put(snapshot.appId(), snapshot);
+    }
+}
