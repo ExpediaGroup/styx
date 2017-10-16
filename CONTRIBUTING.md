@@ -108,7 +108,7 @@ reduces the need for Styx to buffer the incoming messages and therefore conserve
 
 ### 2.2.1 Overall structure
 
- ![picture alt](assets/styx-overview.png)
+ ![Styx Overview](docs/assets/styx-overview.png)
 
 - Backend Services Registry - Manages configured backend services. Currently,
   Styx only implements a file backed back-end service registry. However this is behind
