@@ -1,6 +1,8 @@
 
 # STYX
 
+[![Build Status](https://travis-ci.org/mikkokar/styx.svg?branch=master)](https://travis-ci.org/mikkokar/styx)
+
 Styx is a programmable reverse proxy for JVM (Java Virtual Machine). It can be used
 as a stand-alone application, or as a platform to build custom networking applications. 
 It is non-blocking, fully asynchronous and event driven therefore very scalable.
