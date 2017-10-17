@@ -2,4 +2,3 @@ language: java
 script: mvn verify -Plinux
 jdk:
  - oraclejdk8
- - openjdk8
