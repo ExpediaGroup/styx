@@ -21,8 +21,10 @@ import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api._
 import com.hotels.styx.infrastructure.HttpResponseImplicits
+import com.hotels.styx.proxy.ProtocolsSpec
+import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
+import com.hotels.styx.support.configuration._
 import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
@@ -37,8 +39,12 @@ class HealthCheckSpec extends FunSpec
   with Eventually {
 
   val originOne = FakeHttpServer.HttpStartupConfig(appId = "app", originId="h1").start()
+  val logback = fixturesHome(classOf[ProtocolsSpec], "/conf/logback/logback-suppress-errors.xml")
 
-  override val styxConfig = StyxConfig(plugins = List("faulty" -> new FaultyPlugin))
+  override val styxConfig = StyxConfig(
+    plugins = List("faulty" -> new FaultyPlugin),
+    logbackXmlLocation = logback
+  )
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
