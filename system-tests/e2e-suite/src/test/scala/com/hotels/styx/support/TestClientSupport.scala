@@ -33,11 +33,13 @@ trait TestClientSupport {
     client
   }
 
-  def aggregatingTestClient(hostname: String, port: Int): HttpTestClient = {
+  def aggregatingTestClient(hostname: String, port: Int, log: Boolean = false): HttpTestClient = {
     val client = new HttpTestClient(fromParts(hostname, port),
       new ChannelInitializer[Channel] {
         override def initChannel(ch: Channel): Unit = {
-          ch.pipeline().addLast(new LoggingHandler(LogLevel.WARN))
+          if (log) {
+            ch.pipeline().addLast(new LoggingHandler(LogLevel.WARN))
+          }
           ch.pipeline().addLast(new HttpClientCodec(4096, 2 * 8192, 8192))
           ch.pipeline().addLast(new HttpObjectAggregator(2 * 8192))
         }

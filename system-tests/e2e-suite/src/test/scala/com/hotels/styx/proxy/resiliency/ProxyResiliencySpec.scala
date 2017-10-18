@@ -20,7 +20,9 @@ import java.util.concurrent.TimeUnit._
 import com.google.common.base.Charsets._
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import com.hotels.styx.generators.HttpRequestGenerator
-import com.hotels.styx.support.configuration.{HttpBackend, Origins}
+import com.hotels.styx.proxy.ProtocolsSpec
+import com.hotels.styx.support.ResourcePaths.fixturesHome
+import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
 import com.hotels.styx.utils.HttpTestClient
 import io.netty.channel.ChannelHandlerContext
@@ -34,7 +36,6 @@ import scala.util.{Failure, Success, Try}
 
 class ProxyResiliencySpec extends FunSpec
   with PropertyChecks
-  with DefaultStyxConfiguration
   with StyxProxySpec
   with HttpRequestGenerator
   with Checkers
@@ -44,6 +45,11 @@ class ProxyResiliencySpec extends FunSpec
   with BeforeAndAfter {
 
   val (originOne, originOneServer) = originAndCustomResponseWebServer("NettyOrigin")
+
+  val logback = fixturesHome(classOf[ProtocolsSpec], "/conf/logback/logback-suppress-errors.xml")
+  override val styxConfig = StyxConfig(
+    logbackXmlLocation = logback
+  )
 
   private var testClient: HttpTestClient = _
 

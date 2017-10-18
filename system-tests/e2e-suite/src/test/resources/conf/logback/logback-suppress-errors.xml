@@ -8,8 +8,9 @@
 
   <logger name="org.apache" level="WARN"/>
   <logger name="io.netty" level="WARN"/>
+  <logger name="com.hotels.styx.api.metrics.HttpErrorStatusCauseLogger" level="OFF"/>
 
-  <root level="DEBUG">
+  <root level="INFO">
     <appender-ref ref="CONSOLE"/>
   </root>
 </configuration>
