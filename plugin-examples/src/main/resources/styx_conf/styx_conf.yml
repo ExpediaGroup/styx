@@ -11,7 +11,7 @@ plugins:
   all:
     rewrite:
       factory:
-        class: "${groupId}.RenameThisPluginFactory"
+        class: "${groupId}.ExamplePluginFactory"
         classPath: "/plugins/${artifactId}-${version}.jar"
       config:
         requestHeaderValue: "/olduri"
