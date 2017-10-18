@@ -1,7 +1,9 @@
 # STYX
-## Quick Start Guide
+## Quick-Start Guide
 
-1. TODO where is ZIP file?
+### Step-by-Step
+
+1. TODO Explain how to get release ZIP
 2. Unzip into a location of your choosing, which we will call `<YOUR_INSTALL_DIR>`.
 3. run `<YOUR_INSTALL_DIR>/bin/startup`
 4. look for a log message similar to: 
@@ -19,7 +21,7 @@
 
 **Note:** the default Styx config file is located at `<YOUR_INSTALL_DIR>/conf/default.yml`
 
-## Troubleshooting
+### Troubleshooting
 
 **Problem**
 

@@ -45,8 +45,8 @@ info here](https://conferences.oreilly.com/software-architecture/sa-eu/public/sc
 
 ### Quick Start
 
-* [Quick start guide](./docs/quick-start.md) explains how to get Styx up and running quickly
-* [Quick start plugin development guide](./docs/quick-start-plugins.md) explains how to start developing plugins quickly
+* [Quick-start guide](./docs/quick-start.md) explains how to get Styx up and running quickly
+* [Quick-start plugin-development guide](./docs/quick-start-plugins.md) explains how to start developing plugins quickly
 
 ### User Manual
 
