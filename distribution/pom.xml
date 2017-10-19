@@ -15,7 +15,7 @@
 
 
   <properties>
-    <artifact.finalName>styx</artifact.finalName>
+    <artifact.finalName>styx-${project.version}-${netty-tcnative.classifier}</artifact.finalName>
     <distribution.dir>${project.basedir}/target</distribution.dir>
     <main.basedir>${project.parent.basedir}</main.basedir>
     <skipCheckstyle>true</skipCheckstyle>
