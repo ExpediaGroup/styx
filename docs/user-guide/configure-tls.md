@@ -68,7 +68,7 @@ backend services configuration, as follows:
     addlCerts:
       - alias:           "my certificate"
         path:            "/path/to/mycert"
-      - alias:           "alt certificatfe"
+      - alias:           "alt certificate"
         path:            "/path/to/altcert"
     trustStorePath:      "/path/to/truststore"
     trustStorePassword:  "your_password"
