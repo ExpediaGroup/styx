@@ -45,8 +45,7 @@ info here](https://conferences.oreilly.com/software-architecture/sa-eu/public/sc
 
 ### Quick Start
 
-* [Quick-start guide](./docs/quick-start.md) explains how to get Styx up and running quickly
-* [Introduction to developing plugins](./docs/plugins-dev-intro.md) explains how to start developing plugins quickly
+A [quick-start guide](https://github.com/HotelsDotCom/styx/wiki/Quick-Start-Guide) can be found on our [wiki](https://github.com/HotelsDotCom/styx/wiki). 
 
 ### User Manual
 
@@ -61,8 +60,8 @@ If you want to help to contribute to Styx project, please check [Contributor gui
 
 ### Links
 
-* Styx Wiki (coming soon)
-* Binary Downloads (coming soon)
+* [Styx Wiki](https://github.com/HotelsDotCom/styx/wiki)
+* [Binary Downloads](https://github.com/HotelsDotCom/styx/releases)
 * [User guide](./docs/user-guide.md)
 * [Developer guide](./docs/developer-guide.md)
 
