@@ -47,7 +47,7 @@
 #In the list of origins, an origin has the following properties:
 #
 #id: a unique name used to identify origins
-#host: the hostname and port number that requests will be routed to
+#host: the hostname and port number that requests will be routed to (in the format HOST:PORT - note that PORT is mandatory; it cannot be excluded)
 
 
 Here is an example application:
