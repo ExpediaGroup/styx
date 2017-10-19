@@ -10,12 +10,16 @@
     <format>tar.gz</format>
   </formats>
 
-  <includeBaseDirectory>false</includeBaseDirectory>
+  <baseDirectory>styx-${project.version}</baseDirectory>
 
   <!-- Include NOTICE and version txt -->
   <files>
     <file>
       <source>${main.basedir}/NOTICE</source>
+      <filtered>true</filtered>
+    </file>
+    <file>
+      <source>${main.basedir}/LICENSE.txt</source>
       <filtered>true</filtered>
     </file>
     <file>
