@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.sonatype.oss</groupId>
@@ -12,7 +11,7 @@
 
   <groupId>com.hotels.styx</groupId>
   <artifactId>styx-parent</artifactId>
-  <version>0.7-SNAPSHOT</version>
+  <version>0.7.1</version>
   <url>https://github.com/HotelsDotCom/styx</url>
   <name>Styx</name>
 
@@ -170,7 +169,7 @@
     <jacoco.branchRatio>58</jacoco.branchRatio>
     <jacoco.complexityRatio>72</jacoco.complexityRatio>
     <jacoco.lineRatio>86</jacoco.lineRatio>
-    <jacoco.excludes/>
+    <jacoco.excludes />
 
     <!-- Checkstyle -->
     <checkstyle.maxAllowedViolations>2</checkstyle.maxAllowedViolations>
@@ -180,7 +179,7 @@
 
     <surefire.skip.tests>false</surefire.skip.tests>
 
-    <netty-transport-native-epoll.classifier/>
+    <netty-transport-native-epoll.classifier />
   </properties>
 
   <dependencyManagement>
