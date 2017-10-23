@@ -67,11 +67,11 @@ backend services configuration, as follows:
     sslProvider:         OPENSSL     # Also supports JDK
     addlCerts:
       - alias:           "my certificate"
-        path:            /path/to/mycert
-      - alias:           "alt certificatfe"
-        path:            /path/to/altcert
-    trustStorePath:      /path/to/truststore
-    trustStorePassword:  your_password
+        path:            "/path/to/mycert"
+      - alias:           "alt certificate"
+        path:            "/path/to/altcert"
+    trustStorePath:      "/path/to/truststore"
+    trustStorePassword:  "your_password"
   ...
 ```
 
