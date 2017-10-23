@@ -1,5 +1,7 @@
 include: ${STYX_HOME:classpath:}/conf/default.yml
 
+jvmRouteName: styx-perf-local
+
 proxy:
   connectors:
     https:
@@ -14,4 +16,4 @@ services:
     graphite:
       enabled: false
 
-originsFile: ${STYX_HOME:classpath:}/conf/origins/origins-perf-local.yml
+originsFile: ${STYX_HOME:classpath:}/conf/env-perf-local/origins.yml
