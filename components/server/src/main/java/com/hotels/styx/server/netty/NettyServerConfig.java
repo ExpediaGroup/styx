@@ -27,6 +27,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Objects.firstNonNull;
+
+import static java.lang.Math.max;
 import static java.lang.Runtime.getRuntime;
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
@@ -38,7 +40,7 @@ import static java.util.stream.Collectors.toList;
  */
 @JsonDeserialize(builder = NettyServerConfig.Builder.class)
 public class NettyServerConfig {
-    public static final int HALF_OF_AVAILABLE_PROCESSORS = getRuntime().availableProcessors() / 2;
+    public static final int HALF_OF_AVAILABLE_PROCESSORS = max(1, getRuntime().availableProcessors() / 2);
 
     private int bossThreadsCount = 1;
     private int workerThreadsCount = HALF_OF_AVAILABLE_PROCESSORS;
