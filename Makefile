@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 .PHONY: all test clean
-ALL_PROFILES = release,quality,perf
+ALL_PROFILES = release,quality
 STACK = development
 
 CURRENT_DIR := $(shell pwd)
@@ -104,12 +104,11 @@ stop-origins:
 	(support/origins-starter-app/bin/styx-originsstopper.sh 2>&1)
 
 ## Starts netty-based origins (release-styx needs to have been run first)
-start-origins: stop-origins
+start-origins: release-styx stop-origins
 	(support/origins-starter-app/bin/styx-originsstarter.sh $(STYX_HOME) $(CONFIG_ROOT)/styx-config.yml &)
 
 ## Start with netty-based origins running on the ports Styx expects to find them
 start-with-origins: release-styx start-origins
-	echo " - - - - - - - - - - - - - Running start-with-origins"
 	$(STYX_HOME)/bin/startup \
 	-e $(CONFIG_ROOT)/styx-env.sh \
 	-l $(CONFIG_ROOT)/logback.xml \
@@ -117,7 +116,6 @@ start-with-origins: release-styx start-origins
 
 ## Start with no origins (they can be launched separately if desired)
 start: release-styx
-	echo " - - - - - - - - - - - - - Running start-with-origins"
 	$(STYX_HOME)/bin/startup \
 	-e $(CONFIG_ROOT)/styx-env.sh \
 	-l $(CONFIG_ROOT)/logback.xml \
