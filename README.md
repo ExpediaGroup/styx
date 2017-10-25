@@ -88,4 +88,3 @@ This project is licensed under the Apache License v2.0 - see the [LICENSE.txt](L
 Copyright 2013-2017 Expedia Inc.
 
 Licencing terms for any derived work and dependant libraries are documented in `NOTICE` files.
-

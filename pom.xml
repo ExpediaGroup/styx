@@ -73,20 +73,10 @@
     <maven.build.timestamp.format>yyyy-MM-dd|HH\:mm\:ss</maven.build.timestamp.format>
     <timestamp>${maven.build.timestamp}</timestamp>
 
-    <build.number>${buildNumber}</build.number>
     <build.timestamp>${maven.build.timestamp}</build.timestamp>
-    <build.branch>${branch}</build.branch>
     <main.basedir>${project.basedir}</main.basedir>
 
-    <release.name>styx</release.name>
-    <release.label>${shortname}.${releaseVersion}.${build.number}</release.label>
-
-    <shortname>STYX</shortname>
-    <canonical.name>styx</canonical.name>
-    <releaseVersion>dev</releaseVersion>
-    <buildNumber>0</buildNumber>
-    <changeset>0</changeset>
-    <branch>master</branch>
+    <release.label>STYX.${project.version}</release.label>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
