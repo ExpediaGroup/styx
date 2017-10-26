@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 .PHONY: all test clean
-ALL_PROFILES = release,quality,perf
+ALL_PROFILES = release,quality
 STACK = development
 
 CURRENT_DIR := $(shell pwd)
@@ -90,31 +90,36 @@ quality: clean
 quality-no-tests:
 	mvn -Dmaven.test.skip=true clean install -Pquality -Dmaven.test.skip=true
 
-STYX_HOME := $(CURRENT_DIR)/distribution/target/styx
-STYX_BUILD_ARTIFACT = $(shell find  distribution/target -name "styx.zip")
-STYX_DEPLOY_FOLDER := $(CURRENT_DIR)/distribution/target/styx
+STYX_BUILD_ARTIFACT = $(shell find  distribution/target -name "styx*.zip")
+STYX_HOME = $(CURRENT_DIR)/distribution/target/styx/styx
+CONFIG_ROOT := $(STYX_HOME)/conf/env-$(STACK)
 
 ## Compile and create styx.zip then unzip into a directory defined by STYX_HOME
 release-styx: release-no-tests
-	unzip -oq ${STYX_BUILD_ARTIFACT} -d ${STYX_HOME}
+	unzip -oq ${STYX_BUILD_ARTIFACT} -d $(dir ${STYX_HOME})
+	mv `find $(CURRENT_DIR)/distribution/target/styx -type d -name "styx-*"` ${STYX_HOME}
 
 ## Stops running netty-based origins (i.e. the origins started by start-origins)
 stop-origins:
 	(support/origins-starter-app/bin/styx-originsstopper.sh 2>&1)
 
 ## Starts netty-based origins (release-styx needs to have been run first)
-start-origins: stop-origins
-	(support/origins-starter-app/bin/styx-originsstarter.sh $(STYX_HOME) $(STYX_DEPLOY_FOLDER)/conf/$(STACK).yml &)
+start-origins: release-styx stop-origins
+	(support/origins-starter-app/bin/styx-originsstarter.sh $(STYX_HOME) $(CONFIG_ROOT)/styx-config.yml &)
 
 ## Start with netty-based origins running on the ports Styx expects to find them
 start-with-origins: release-styx start-origins
-	APP_CONFIG_FILE_LOCATION=$(STYX_DEPLOY_FOLDER)/conf/$(STACK).yml \
-	APP_LOG_CONFIG_LOCATION=$(STYX_DEPLOY_FOLDER)/conf/logback/logback-$(STACK).xml $(STYX_DEPLOY_FOLDER)/bin/startup
+	$(STYX_HOME)/bin/startup \
+	-e $(CONFIG_ROOT)/styx-env.sh \
+	-l $(CONFIG_ROOT)/logback.xml \
+	$(CONFIG_ROOT)/styx-config.yml
 
 ## Start with no origins (they can be launched separately if desired)
 start: release-styx
-	APP_CONFIG_FILE_LOCATION=$(STYX_DEPLOY_FOLDER)/conf/$(STACK).yml \
-	APP_LOG_CONFIG_LOCATION=$(STYX_DEPLOY_FOLDER)/conf/logback/logback-$(STACK).xml $(STYX_DEPLOY_FOLDER)/bin/startup
+	$(STYX_HOME)/bin/startup \
+	-e $(CONFIG_ROOT)/styx-env.sh \
+	-l $(CONFIG_ROOT)/logback.xml \
+	$(CONFIG_ROOT)/styx-config.yml
 
 ## Build site-docs
 docs:
