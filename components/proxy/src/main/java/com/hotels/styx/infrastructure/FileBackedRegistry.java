@@ -28,6 +28,7 @@ import java.io.IOException;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.io.ByteStreams.toByteArray;
+import static java.lang.String.format;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -40,6 +41,8 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     private final Resource configurationFile;
     private final Reader<T> reader;
     private HashCode fileHash;
+    private String previousFileContent;
+    private String fileContent;
 
     public FileBackedRegistry(Resource configurationFile, Reader<T> reader) {
         this.configurationFile = checkNotNull(configurationFile);
@@ -47,7 +50,7 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
         this.fileHash = md5(configurationFile);
     }
 
-    private HashCode md5(Resource resource) {
+    private static HashCode md5(Resource resource) {
         try {
             return Files.hash(new File(resource.absolutePath()), Hashing.md5());
         } catch (IOException e) {
@@ -59,6 +62,7 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     protected void startUp() {
         LOG.info("starting {}", getClass().getSimpleName());
 
+        fileContent = readFileAsString();
         Iterable<T> resources = reader.read(readFile());
         snapshot.set(resources);
         Changes<T> changes = new Changes.Builder<T>()
@@ -92,14 +96,28 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     }
 
     private boolean updateResources() {
+        previousFileContent = fileContent;
+        fileContent = readFileAsString();
+
         Iterable<T> resources = reader.read(readFile());
         fileHash = md5(configurationFile);
         Changes<T> changes = changes(resources, snapshot.get());
 
         if (!changes.isEmpty()) {
             snapshot.set(resources);
-            notifyListeners(changes);
+
+            try {
+                notifyListeners(changes);
+            } catch (Exception e) {
+                String message = format("Exception during reload: %s : previousFileContent=%s, newFileContent=%s",
+                        e.getMessage(),
+                        previousFileContent,
+                        fileContent);
+
+                throw new ReloadException(message, e);
+            }
         }
+
 
         return !changes.isEmpty();
     }
@@ -116,6 +134,10 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
         } catch (IOException e) {
             throw propagate(e);
         }
+    }
+
+    private String readFileAsString() {
+        return new String(readFile());
     }
 
     /**
