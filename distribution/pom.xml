@@ -90,7 +90,8 @@
               <file>${project.basedir}/target/${artifact.finalName}.zip</file>
               <groupId>com.hotels.styx</groupId>
               <artifactId>styx</artifactId>
-              <version>${releaseVersion}.${build.number}</version>
+              <version>${project.version}</version>
+              <classifier>${netty-tcnative.classifier}</classifier>
               <packaging>zip</packaging>
               <generatePom>false</generatePom>
             </configuration>
@@ -120,7 +121,8 @@
               <file>${project.basedir}/target/${artifact.finalName}.zip</file>
               <groupId>com.hotels.styx</groupId>
               <artifactId>styx</artifactId>
-              <version>${releaseVersion}.${build.number}</version>
+              <version>${project.version}</version>
+              <classifier>${netty-tcnative.classifier}</classifier>
               <packaging>zip</packaging>
               <generatePom>false</generatePom>
             </configuration>

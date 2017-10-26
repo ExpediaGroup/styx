@@ -60,7 +60,7 @@ class VersionPresentInResponseHeaderSpec extends FunSpec
       val (resp, body) = decodedRequest(req)
       backend.verify(getRequestedFor(urlPathEqualTo("/")))
       assert(resp.status() == OK)
-      assertThat(resp.header(STYX_INFO_DEFAULT), matches(matchesRegex("^STYX.[._a-zA-Z0-9]+;[0-9a-f-]+;noJvmRouteSet$")))
+      assertThat(resp.header(STYX_INFO_DEFAULT), matches(matchesRegex("^STYX.[._a-zA-Z0-9-]+;[0-9a-f-]+;noJvmRouteSet$")))
     }
   }
 }
