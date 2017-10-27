@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.api;
 
+import java.util.Optional;
+
 import rx.Observable;
 
 /**
@@ -43,8 +45,14 @@ public interface HttpInterceptor {
          * @param clazz class of value
          * @param <T>   class of value
          * @return value
+         * @deprecated  use getIfAvailable instead
          */
+        @Deprecated
         <T> T get(String key, Class<T> clazz);
+
+        default <T> Optional<T> getIfAvailable(String key, Class<T> clazz){
+            return Optional.ofNullable(get(key,clazz));
+        }
 
         Context EMPTY = new Context() {
             @Override
