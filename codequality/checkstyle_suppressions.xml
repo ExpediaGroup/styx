@@ -40,4 +40,6 @@
   <suppress checks="RegexpSingleline" id="InvalidLoggingMethod_Error" files="LOGBackConfigurer.java"/>
 
   <suppress checks="VisibilityModifier" files=".*.java"/>
+
+  <suppress checks="IllegalInstantiation" files="FileBackedRegistry.java" />
 </suppressions>
