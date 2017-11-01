@@ -68,12 +68,12 @@ public class FileBackedBackendServicesRegistry extends FileBackedRegistry<Backen
     }
 
     public FileBackedBackendServicesRegistry(Resource resource) {
-        super(resource, new YAMLBackendServicesReader());
+        super(resource, new YAMLBackendServicesParser());
 
         this.originsFileName = resource.absolutePath();
     }
 
-    private static class YAMLBackendServicesReader implements Reader<BackendService> {
+    private static class YAMLBackendServicesParser implements Parser<BackendService> {
         private final YamlReader<List<BackendService>> delegate = new YamlReader<>();
 
         @Override
