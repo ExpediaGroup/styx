@@ -34,6 +34,7 @@ import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
+import com.hotels.styx.metrics.reporting.sets.NettyAllocatorMetricSet;
 import com.hotels.styx.proxy.ProxyServerBuilder;
 import com.hotels.styx.proxy.interceptors.ConfigurationContextResolverInterceptor;
 import com.hotels.styx.proxy.interceptors.HopByHopHeadersRemovingInterceptor;
@@ -48,6 +49,8 @@ import com.hotels.styx.routing.UserConfiguredPipelineFactory;
 import com.hotels.styx.routing.config.ConfigVersionResolver;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.server.HttpServer;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.ResourceLeakDetector;
 import org.slf4j.Logger;
 
@@ -271,6 +274,8 @@ public final class StyxServer extends AbstractService {
         scoped.register("gc", new GarbageCollectorMetricSet());
         scoped.register("uptime", (Gauge<Long>) runtimeMxBean::getUptime);
         scoped.register("uptime.formatted", (Gauge<String>) () -> formatTime(runtimeMxBean.getUptime()));
+        scoped.register("netty", new NettyAllocatorMetricSet("pooled-allocator", PooledByteBufAllocator.DEFAULT.metric()));
+        scoped.register("netty", new NettyAllocatorMetricSet("unpooled-allocator", UnpooledByteBufAllocator.DEFAULT.metric()));
     }
 
     private static String formatTime(long timeInMilliseconds) {
