@@ -50,8 +50,8 @@ public interface HttpInterceptor {
         @Deprecated
         <T> T get(String key, Class<T> clazz);
 
-        default <T> Optional<T> getIfAvailable(String key, Class<T> clazz){
-            return Optional.ofNullable(get(key,clazz));
+        default <T> Optional<T> getIfAvailable(String key, Class<T> clazz) {
+            return Optional.ofNullable(get(key, clazz));
         }
 
         Context EMPTY = new Context() {
