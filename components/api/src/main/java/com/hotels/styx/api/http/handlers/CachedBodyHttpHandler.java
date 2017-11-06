@@ -79,6 +79,9 @@ public class CachedBodyHttpHandler extends BaseHttpHandler {
         }
     }
 
+    /**
+     * A builder for CachedBodyHttpHandler class.
+     */
     public static final class Builder {
         private final Supplier<String> contentSupplier;
 

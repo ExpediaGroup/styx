@@ -23,10 +23,9 @@ import io.netty.buffer.ByteBufAllocatorMetric;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.codahale.metrics.SharedMetricRegistries.names;
 import static com.google.common.collect.ImmutableMap.copyOf;
 import static com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry.name;
-import static java.util.Objects.*;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Creates a set of gauges that monitor metrics of netty {#ByteBufAllocatorMetric} instance.
