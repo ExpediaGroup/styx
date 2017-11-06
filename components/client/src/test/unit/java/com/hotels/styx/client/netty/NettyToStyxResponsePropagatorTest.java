@@ -21,7 +21,7 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.netty.exceptions.TransportLostException;
 import com.hotels.styx.client.BadHttpResponseException;
-import com.hotels.styx.client.StyxClientError;
+import com.hotels.styx.client.StyxClientException;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.DecoderResult;
@@ -38,6 +38,7 @@ import rx.observers.TestSubscriber;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Optional;
 
@@ -278,18 +279,20 @@ public class NettyToStyxResponsePropagatorTest {
 
         channel.pipeline().fireExceptionCaught(newOutOfDirectMemoryError("Simulated out of direct memory error in a test."));
 
-        assertThat(responseSubscriber.getOnErrorEvents().get(0), is(instanceOf(StyxClientError.class)));
+        assertThat(responseSubscriber.getOnErrorEvents().get(0), is(instanceOf(StyxClientException.class)));
     }
 
-    private OutOfDirectMemoryError newOutOfDirectMemoryError(String message) throws InstantiationException, IllegalAccessException, java.lang.reflect.InvocationTargetException {
+    private OutOfDirectMemoryError newOutOfDirectMemoryError(String message) throws IllegalAccessException, InvocationTargetException, InstantiationException {
+        // OutOfDirectMemoryError has a package-private constructor.
+        // Use reflection to instantiate it for testing purposes.
         Constructor<OutOfDirectMemoryError> constructor = null;
         try {
             constructor = OutOfDirectMemoryError.class.getDeclaredConstructor(String.class);
         } catch (NoSuchMethodException e) {
-            Throwables.propagate(e);
+            throw Throwables.propagate(e);
         }
         constructor.setAccessible(true);
-        return constructor.newInstance("message");
+        return constructor.newInstance(message);
     }
 
     @Test

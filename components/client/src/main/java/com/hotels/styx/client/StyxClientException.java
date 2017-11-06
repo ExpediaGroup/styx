@@ -16,15 +16,15 @@
 package com.hotels.styx.client;
 
 /**
- * Signifies an unexpected error from StyxClient.
+ * Signifies an unexpected exception from StyxClient.
  *
  * A root cause for the error is stored in the `cause` field.
  * This could be thrown for example if StyxClient runs out of
  * direct memory.
  *
  */
-public class StyxClientError extends RuntimeException {
-    public StyxClientError(String message, Throwable cause) {
+public class StyxClientException extends RuntimeException {
+    public StyxClientException(String message, Throwable cause) {
         super(message, cause);
     }
 }
