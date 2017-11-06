@@ -24,6 +24,7 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.netty.exceptions.TransportLostException;
 import com.hotels.styx.client.BadHttpResponseException;
+import com.hotels.styx.client.StyxClientException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.ChannelHandlerContext;
@@ -104,7 +105,15 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         ensureContentProducerIsCreated(ctx);
-        contentProducer.ifPresent(producer -> producer.channelException(new BadHttpResponseException(origin, cause)));
+        contentProducer.ifPresent(producer -> producer.channelException(toStyxException(cause)));
+    }
+
+    private RuntimeException toStyxException(Throwable cause) {
+        if (cause instanceof OutOfMemoryError) {
+            return new StyxClientException("Styx Client out of memory. " + cause.getMessage(), cause);
+        } else {
+            return new BadHttpResponseException(origin, cause);
+        }
     }
 
     @Override

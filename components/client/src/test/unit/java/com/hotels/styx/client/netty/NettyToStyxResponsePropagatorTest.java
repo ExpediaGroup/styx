@@ -15,17 +15,20 @@
  */
 package com.hotels.styx.client.netty;
 
+import com.google.common.base.Throwables;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.netty.exceptions.TransportLostException;
 import com.hotels.styx.client.BadHttpResponseException;
+import com.hotels.styx.client.StyxClientException;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
+import io.netty.util.internal.OutOfDirectMemoryError;
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -34,6 +37,8 @@ import rx.observers.TestSubscriber;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Optional;
 
@@ -265,6 +270,29 @@ public class NettyToStyxResponsePropagatorTest {
         channel.pipeline().fireExceptionCaught(new RuntimeException("Some Error"));
 
         assertThat(httpContentOne.refCnt(), is(0));
+    }
+
+    @Test
+    public void mapsOutOfDirectMemoryExceptionsToResourceExhaustedException() throws Exception {
+        EmbeddedChannel channel = new EmbeddedChannel(new NettyToStyxResponsePropagator(responseSubscriber, SOME_ORIGIN));
+        channel.writeInbound(new DefaultHttpResponse(HTTP_1_1, OK));
+
+        channel.pipeline().fireExceptionCaught(newOutOfDirectMemoryError("Simulated out of direct memory error in a test."));
+
+        assertThat(responseSubscriber.getOnErrorEvents().get(0), is(instanceOf(StyxClientException.class)));
+    }
+
+    private OutOfDirectMemoryError newOutOfDirectMemoryError(String message) throws IllegalAccessException, InvocationTargetException, InstantiationException {
+        // OutOfDirectMemoryError has a package-private constructor.
+        // Use reflection to instantiate it for testing purposes.
+        Constructor<OutOfDirectMemoryError> constructor = null;
+        try {
+            constructor = OutOfDirectMemoryError.class.getDeclaredConstructor(String.class);
+        } catch (NoSuchMethodException e) {
+            throw Throwables.propagate(e);
+        }
+        constructor.setAccessible(true);
+        return constructor.newInstance(message);
     }
 
     @Test

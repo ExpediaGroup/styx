@@ -24,6 +24,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.HttpErrorStatusListener;
 import com.hotels.styx.api.metrics.RequestStatsCollector;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.RequestTimeoutException;
 import com.hotels.styx.server.netty.codec.NettyToStyxRequestDecoder;
@@ -76,7 +77,6 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static io.netty.handler.codec.http.HttpResponseStatus.REQUEST_TIMEOUT;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
@@ -221,10 +221,6 @@ public class HttpPipelineHandlerTest {
 
     @Test
     public void mapsUnrecoverableInternalErrorsToInternalServerError500ResponseCode() {
-        HttpInterceptor filter = (request, chain) -> {
-            throw new RuntimeException("Forced exception for testing");
-        };
-
         HttpHandler2 handler = (request, context) -> {
             throw new RuntimeException("Forced exception for testing");
         };
@@ -620,6 +616,30 @@ public class HttpPipelineHandlerTest {
         writerFuture.complete(null);
         verify(statsCollector).onComplete(request.id(), 502);
         verify(errorListener).proxyErrorOccurred(any(HttpRequest.class), eq(BAD_GATEWAY), any(RuntimeException.class));
+
+        // NOTE: channel closure is not verified. This is because cannot mock channel future.
+        verify(ctx).close();
+        assertThat(handler.state(), is(TERMINATED));
+    }
+
+    @Test
+    public void mapsStyxClientExceptionToInternalServerErrorInWaitingForResponseState() throws Exception {
+        // In Waiting For Response state,
+        // The response observable emits a StyxClientException.
+        // Then, respond with INTERNAL_SERVER_ERROR and close the channel.
+        setupHandlerTo(WAITING_FOR_RESPONSE);
+
+        responseObservable.onError(new StyxClientException("Client error occurred", new RuntimeException("Something went wrong")));
+
+        assertThat(responseUnsubscribed.get(), is(true));
+        verify(responseWriter).write(response(INTERNAL_SERVER_ERROR)
+                .header(CONTENT_LENGTH, "29")
+                .body("Site temporarily unavailable.")
+                .build());
+
+        writerFuture.complete(null);
+        verify(statsCollector).onComplete(request.id(), 500);
+        verify(errorListener).proxyErrorOccurred(any(HttpRequest.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
 
         // NOTE: channel closure is not verified. This is because cannot mock channel future.
         verify(ctx).close();

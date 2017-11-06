@@ -32,6 +32,7 @@ import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.netty.exceptions.TransportLostException;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.client.BadHttpResponseException;
+import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.client.connectionpool.ResourceExhaustedException;
 import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
@@ -94,6 +95,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
             )
             .add(SERVICE_UNAVAILABLE, ResourceExhaustedException.class)
             .add(GATEWAY_TIMEOUT, ResponseTimeoutException.class)
+            .add(INTERNAL_SERVER_ERROR, StyxClientException.class)
             .build();
 
     private final HttpHandler2 httpPipeline;
