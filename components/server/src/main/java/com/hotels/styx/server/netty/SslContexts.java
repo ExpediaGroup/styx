@@ -29,6 +29,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSessionContext;
 import java.io.File;
 import java.security.cert.CertificateException;
+import java.util.List;
 
 import static com.google.common.base.Throwables.propagate;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -99,6 +100,7 @@ public final class SslContexts {
     private static SslContextBuilder sslContextFromSelfSignedCertificate(HttpsConnectorConfig httpsConnectorConfig) {
         SelfSignedCertificate certificate = newSelfSignedCertificate();
         return SslContextBuilder.forServer(certificate.certificate(), certificate.privateKey())
+                .protocols(toSslContextProtocols(httpsConnectorConfig.protocols()))
                 .sslProvider(SslProvider.valueOf(httpsConnectorConfig.sslProvider()));
     }
 
@@ -107,6 +109,15 @@ public final class SslContexts {
                 .sslProvider(SslProvider.valueOf(httpsConnectorConfig.sslProvider()))
                 .ciphers(httpsConnectorConfig.ciphers())
                 .sessionTimeout(MILLISECONDS.toSeconds(httpsConnectorConfig.sessionTimeoutMillis()))
-                .sessionCacheSize(httpsConnectorConfig.sessionCacheSize());
+                .sessionCacheSize(httpsConnectorConfig.sessionCacheSize())
+                .protocols(toSslContextProtocols(httpsConnectorConfig.protocols()));
+    }
+
+    private static String[] toSslContextProtocols(List<String> elems) {
+        if (elems != null && elems.size() > 0) {
+            return elems.toArray(new String[elems.size()]);
+        } else {
+            return null;
+        }
     }
 }

@@ -34,7 +34,8 @@ case class HttpsConnectorConfig(port: Int = 0,
                                 certificateKeyFile: String = defaultHttpsConfig.certificateKeyFile(),
                                 cipherSuites: Seq[String] = defaultHttpsConfig.ciphers().asScala.toSeq,
                                 sessionTimeoutMillis: Long = defaultHttpsConfig.sessionTimeoutMillis(),
-                                sessionCacheSize: Long = defaultHttpsConfig.sessionCacheSize()
+                                sessionCacheSize: Long = defaultHttpsConfig.sessionCacheSize(),
+                                protocols: Seq[String] = defaultHttpsConfig.protocols().asScala
                                ) extends StyxServerConnector {
   def asJava: com.hotels.styx.server.HttpsConnectorConfig = new com.hotels.styx.server.HttpsConnectorConfig.Builder()
     .port(port)
@@ -44,6 +45,7 @@ case class HttpsConnectorConfig(port: Int = 0,
     .cipherSuites(cipherSuites.asJava)
     .sessionTimeout(sessionTimeoutMillis, TimeUnit.MILLISECONDS)
     .sessionCacheSize(sessionCacheSize)
+    .protocols(protocols.toArray:_*)
     .build()
 }
 

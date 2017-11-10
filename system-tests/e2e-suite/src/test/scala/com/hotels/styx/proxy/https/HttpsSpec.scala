@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.proxy
+package com.hotels.styx.proxy.https
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_PROTO
@@ -21,7 +21,7 @@ import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.support.configuration.{Connectors, HttpConnectorConfig, HttpsBackend, HttpsConnectorConfig, Origins, ProxyConfig, TlsSettings, StyxConfig}
+import com.hotels.styx.support.configuration._
 import com.hotels.styx.{SSLSetup, StyxClientSupplier, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpMethod._
@@ -35,8 +35,8 @@ class HttpsSpec extends FunSpec
   with ShouldMatchers
   with SSLSetup {
 
-  val crtFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.crt").toString
-  val keyFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.key").toString
+  val crtFile = fixturesHome(this.getClass, "/ssl/testCredentials.crt").toString
+  val keyFile = fixturesHome(this.getClass, "/ssl/testCredentials.key").toString
 
   override val styxConfig = StyxConfig(
     ProxyConfig(

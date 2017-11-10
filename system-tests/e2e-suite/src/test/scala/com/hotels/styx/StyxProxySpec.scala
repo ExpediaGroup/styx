@@ -49,11 +49,13 @@ trait StyxProxySpec extends StyxClientSupplier
 
   override protected def beforeAll() = {
     styxServer = startServer(styxConfig, backendsRegistry)
-    println("Styx port is: [%d]".format(styxServer.httpPort))
+    println("Styx http port is: [%d]".format(styxServer.httpPort))
+    println("Styx https port is: [%d]".format(styxServer.secureHttpPort))
   }
 
   override protected def afterAll() = {
-    println("Styx port was: [%d]".format(styxServer.httpPort))
+    println("Styx http port was: [%d]".format(styxServer.httpPort))
+    println("Styx https port was: [%d]".format(styxServer.secureHttpPort))
     styxServer.stopAsync().awaitTerminated()
   }
 }

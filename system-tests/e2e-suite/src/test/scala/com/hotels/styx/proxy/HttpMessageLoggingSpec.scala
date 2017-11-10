@@ -19,11 +19,11 @@ import ch.qos.logback.classic.Level._
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT
-import com.hotels.styx.support.matchers.LoggingEventMatcher._
-import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
+import com.hotels.styx.support.matchers.LoggingEventMatcher._
+import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
@@ -41,8 +41,8 @@ class HttpMessageLoggingSpec extends FunSpec
   with StyxClientSupplier
   with Eventually {
 
-  val crtFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.crt").toString
-  val keyFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.key").toString
+  val crtFile = fixturesHome(this.getClass, "/ssl/testCredentials.crt").toString
+  val keyFile = fixturesHome(this.getClass, "/ssl/testCredentials.key").toString
 
   override val styxConfig = StyxConfig(
     ProxyConfig(

@@ -122,7 +122,11 @@ trait StyxServerSupplements {
 
   def adminURL(path: String) = s"http://$adminHost$path"
 
-  def secureHttpPort = styxServer.proxyHttpsAddress().getPort
+  def secureHttpPort = if(styxServer.proxyHttpsAddress() != null) {
+    styxServer.proxyHttpsAddress().getPort
+  } else {
+    -1
+  }
 
   def httpPort = styxServer.proxyHttpAddress().getPort
 

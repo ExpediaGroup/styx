@@ -19,7 +19,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
+import com.hotels.styx.api.common.Joiners;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -45,6 +48,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
     private final Iterable<String> cipherSuites;
     private final long sessionTimeoutMillis;
     private final long sessionCacheSize;
+    private final List<String> protocols;
 
     private HttpsConnectorConfig(Builder builder) {
         super(builder.port);
@@ -54,6 +58,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
         this.cipherSuites = Objects.firstNonNull(builder.cipherSuites, DEFAULT_CIPHER_SUITES);
         this.sessionTimeoutMillis = builder.sessionTimeoutMillis;
         this.sessionCacheSize = builder.sessionCacheSize;
+        this.protocols = builder.protocols;
     }
 
     @Override
@@ -83,6 +88,10 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
 
     public long sessionCacheSize() {
         return sessionCacheSize;
+    }
+
+    public List<String> protocols() {
+        return protocols;
     }
 
     @Override
@@ -119,6 +128,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
                 .add("sessionTimeoutMillis", sessionTimeoutMillis)
                 .add("sessionCacheSize", sessionCacheSize)
                 .add("cipherSuites", cipherSuites)
+                .add("protocols", protocols != null ? Joiners.JOINER_ON_COMMA.join(protocols) : "None")
                 .toString();
     }
 
@@ -156,6 +166,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
         private long sessionTimeoutMillis = 300_000;
         private long sessionCacheSize;
         private List<String> cipherSuites;
+        private List<String> protocols = Collections.emptyList();
 
         @JsonProperty("port")
         public Builder port(int port) {
@@ -190,6 +201,11 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
 
         public Builder sessionCacheSize(long sessionCacheSize) {
             this.sessionCacheSize = sessionCacheSize;
+            return this;
+        }
+
+        public Builder protocols(String... protocols) {
+            this.protocols = ImmutableList.copyOf(protocols);
             return this;
         }
 
