@@ -17,9 +17,9 @@ package com.hotels.styx.proxy
 
 import java.util.concurrent.TimeUnit
 
-import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
+import com.hotels.styx.StyxProxySpec
 import com.hotels.styx.support._
-import com.hotels.styx.support.configuration.{HttpBackend, Origins}
+import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig, StyxConfig}
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpMethod.GET
@@ -34,14 +34,17 @@ import scala.concurrent.duration._
 
 class OutstandingRequestsSpec extends FunSpec
   with StyxProxySpec
-  with DefaultStyxConfiguration
   with NettyOrigins
   with TestClientSupport
   with Eventually {
 
   val LOGGER = LoggerFactory.getLogger(classOf[OutstandingRequestsSpec])
+  val requestTimeoutMillis = 3000
+
   val server1Handler = new CustomResponseHandler()
   val (originOne, originOneServer) = originAndCustomResponseWebServer("appOne", "NettyOrigin", server1Handler)
+
+  override val styxConfig = StyxConfig(proxyConfig = ProxyConfig(requestTimeoutMillis = requestTimeoutMillis))
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -93,8 +96,6 @@ class OutstandingRequestsSpec extends FunSpec
         styxServer.metricsSnapshot.count("requests.outstanding").get should be(1)
       }
 
-      val requestTimeoutMillis: Int = styxServer.staticConfig.proxyConfig.requestTimeoutMillis
-
       eventually(timeout((requestTimeoutMillis + 500) millis)) {
         styxServer.metricsSnapshot.count("requests.outstanding").get should be(0)
       }
@@ -108,7 +109,7 @@ class OutstandingRequestsSpec extends FunSpec
       client.write(vanillaHttpGet("/outstandingRequestsSpec/3"))
 
       val response = client.waitForResponse(1, TimeUnit.SECONDS).asInstanceOf[HttpResponse]
-      response.getStatus.code() should be(200)
+      response.status.code() should be(200)
 
       eventually(timeout(1 seconds)) {
         styxServer.metricsSnapshot.count("requests.outstanding").get should be(1)

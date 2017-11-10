@@ -42,8 +42,20 @@ case class Connectors(httpConnectorConfig: HttpConnectorConfig,
 
 sealed trait StyxBaseConfig {
   def logbackXmlLocation: Path
+  def additionalServices: Map[String, Service]
+  def plugins: List[NamedPlugin]
 
   def startServer(backendsRegistry: Registry[com.hotels.styx.client.applications.BackendService]): StyxServer
+
+  def services(backendsRegistry: Registry[_]): Map[String, Service] = if (additionalServices.nonEmpty) {
+    this.additionalServices
+  } else {
+    Map("backendServiceRegistry" -> backendsRegistry)
+  }
+}
+
+object StyxBaseConfig {
+  val defaultLogbackXml = ResourcePaths.fixturesHome(this.getClass, "/conf/logback/logback.xml")
 }
 
 case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
@@ -53,51 +65,11 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
                       adminPort: Int = 0,
                       additionalServices: Map[String, Service] = Map.empty
                      ) extends StyxBaseConfig {
+
   override def startServer(backendsRegistry: Registry[com.hotels.styx.client.applications.BackendService]): StyxServer = {
-    StyxConfig.startServer(this, backendsRegistry)
-  }
-}
 
-case class StyxYamlConfig(yamlConfig: String,
-                          logbackXmlLocation: Path = StyxBaseConfig.defaultLogbackXml
-                         ) extends StyxBaseConfig {
-  override def startServer(backendsRegistry: Registry[com.hotels.styx.client.applications.BackendService]): StyxServer = {
-    val config: YamlConfig = new YamlConfig(yamlConfig)
-    val styxConfig = new com.hotels.styx.StyxConfig(yamlConfig)
-    val styxServer = new StyxServerBuilder(styxConfig)
-      .logConfigLocation(logbackXmlLocation.toString).build()
-    styxServer.startAsync().awaitRunning()
-    styxServer
-  }
-}
-
-object StyxBaseConfig {
-  val defaultLogbackXml = ResourcePaths.fixturesHome(this.getClass, "/conf/logback/logback.xml")
-}
-
-object StyxConfig {
-
-  private def adminPort(config: StyxConfig) = if (config.adminPort == 0) freePort() else config.adminPort
-
-  private def httpConnectorWithPort(config: HttpConnectorConfig) = if (config != null && config.port == 0) {
-    config.copy(port = freePort())
-  } else {
-    config
-  }
-
-  private def httpsConnectorWithPort(config: HttpsConnectorConfig) = if (config != null && config.port == 0) {
-    config.copy(port = freePort())
-  } else {
-    config
-  }
-
-  def startServer(config: StyxConfig, backendsRegistry: Registry[com.hotels.styx.client.applications.BackendService]): StyxServer = {
-
-    val newAdminPort = adminPort(config)
-    val newHttpConnectorConfig = httpConnectorWithPort(config.proxyConfig.connectors.httpConnectorConfig)
-    val newHttpsConnectorConfig = httpsConnectorWithPort(config.proxyConfig.connectors.httpsConnectorConfig)
-
-    val proxyConfig = config.proxyConfig.copy(connectors = Connectors(newHttpConnectorConfig, newHttpsConnectorConfig))
+    val newAdminPort = if (adminPort == 0) freePort() else adminPort
+    val proxyConfig = this.proxyConfig.copy(connectors = Connectors(httpConnectorWithPort(), httpsConnectorWithPort()))
 
     val proxyConfigBuilder = new ProxyServerConfig.Builder()
       .setConnectors(proxyConfig.connectors.asJava)
@@ -116,22 +88,53 @@ object StyxConfig {
       .setRequestTimeoutMillis(proxyConfig.requestTimeoutMillis)
       .setClientWorkerThreadsCount(proxyConfig.clientWorkerThreadsCount)
 
-    val styxConfig = newStyxConfig(config.yamlText,
+    val styxConfig = newStyxConfig(this.yamlText,
       proxyConfigBuilder,
       newAdminServerConfigBuilder(newHttpConnConfig(newAdminPort))
     )
 
-    val services = if (config.additionalServices.nonEmpty) {
-      config.additionalServices
-    } else {
-      Map("backendServiceRegistry" -> backendsRegistry)
-    }
-
-    val styxServerBuilder = newStyxServerBuilder(styxConfig, backendsRegistry, config.plugins)
-      .additionalServices(services.asJava)
-      .logConfigLocation(config.logbackXmlLocation.toString)
+    val styxServerBuilder = newStyxServerBuilder(styxConfig, backendsRegistry, this.plugins)
+      .additionalServices(services(backendsRegistry).asJava)
+      .logConfigLocation(this.logbackXmlLocation.toString)
 
     val styxServer = styxServerBuilder.build()
+    styxServer.startAsync().awaitRunning()
+    styxServer
+  }
+
+  private def httpConnectorWithPort() = {
+    val config = this.proxyConfig.connectors.httpConnectorConfig
+    if (config != null && config.port == 0) {
+      config.copy(port = freePort())
+    } else {
+      config
+    }
+  }
+
+  private def httpsConnectorWithPort() = {
+    val config =  this.proxyConfig.connectors.httpsConnectorConfig
+    if (config != null && config.port == 0) {
+      config.copy(port = freePort())
+    } else {
+      config
+    }
+  }
+}
+
+case class StyxYamlConfig(yamlConfig: String,
+                          logbackXmlLocation: Path = StyxBaseConfig.defaultLogbackXml,
+                          additionalServices: Map[String, Service] = Map.empty,
+                          plugins: List[NamedPlugin] = List()
+                         ) extends StyxBaseConfig {
+
+  override def startServer(backendsRegistry: Registry[com.hotels.styx.client.applications.BackendService]): StyxServer = {
+    val config: YamlConfig = new YamlConfig(yamlConfig)
+    val styxConfig = new com.hotels.styx.StyxConfig(yamlConfig)
+
+    val styxServer = new StyxServerBuilder(styxConfig)
+      .additionalServices(services(backendsRegistry).asJava)
+      .logConfigLocation(logbackXmlLocation.toString).build()
+
     styxServer.startAsync().awaitRunning()
     styxServer
   }

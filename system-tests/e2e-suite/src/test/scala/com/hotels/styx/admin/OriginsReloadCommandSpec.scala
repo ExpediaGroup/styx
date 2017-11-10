@@ -22,7 +22,6 @@ import com.google.common.io.Files.createTempDir
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry
 import com.hotels.styx.support.ResourcePaths.fixturesHome
-import com.hotels.styx.support.configuration.StyxConfig.startServer
 import com.hotels.styx.support.configuration.{BackendService, ConnectionPoolSettings, HealthCheckConfig, Origin, Origins, StyxConfig}
 import com.hotels.styx.{StyxClientSupplier, StyxServer, StyxServerSupport}
 import io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST
@@ -47,7 +46,7 @@ class OriginsReloadCommandSpec extends FunSpec
 
   it("Responds with BAD_REQUEST when the origins cannot be read") {
     val fileBasedBackendsRegistry = new FileBackedBackendServicesRegistry(styxOriginsFile.toString)
-    styxServer = startServer(StyxConfig(), fileBasedBackendsRegistry)
+    styxServer = StyxConfig().startServer(fileBasedBackendsRegistry)
     styxServer.isRunning should be(true)
 
     Files.copy(originsNok, styxOriginsFile, REPLACE_EXISTING)

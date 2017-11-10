@@ -39,16 +39,19 @@ class Tls12Spec extends FunSpec
   val clientV12 = newClient("TLSv1.2")
   val clientV11 = newClient("TLSv1.1")
 
-  override val styxConfig = StyxConfig(
-    ProxyConfig(
-      Connectors(
-        HttpConnectorConfig(),
-        HttpsConnectorConfig(
-          certificateFile = crtFile,
-          certificateKeyFile = keyFile,
-          protocols = List("TLSv1.2")
-        ))
-    )
+  override val styxConfig = StyxYamlConfig(
+    yamlConfig =
+      s"""
+        |proxy:
+        |  connectors:
+        |    https:
+        |      port: 8443
+        |      sslProvider: JDK
+        |      certificateFile: $crtFile
+        |      certificateKeyFile: $keyFile
+        |      protocols:
+        |       - TLSv1.2
+      """.stripMargin
   )
 
   val recordingBackend = FakeHttpServer.HttpsStartupConfig(needClientAuth = false)

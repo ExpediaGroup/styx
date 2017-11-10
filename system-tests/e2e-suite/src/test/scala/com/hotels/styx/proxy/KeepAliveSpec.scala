@@ -19,10 +19,10 @@ import java.lang.Thread.sleep
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets.UTF_8
-import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
+import com.hotels.styx.StyxProxySpec
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.support.configuration.{HttpBackend, Origins}
+import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig, StyxConfig}
 import io.netty.channel.ChannelFuture
 import io.netty.handler.codec.http.HttpHeaders.Names.{CONNECTION, HOST}
 import io.netty.handler.codec.http.HttpHeaders.Values.CLOSE
@@ -37,11 +37,13 @@ import scala.concurrent.duration._
 
 class KeepAliveSpec extends FunSpec
   with StyxProxySpec
-  with DefaultStyxConfiguration
   with TestClientSupport
   with Eventually {
 
   val recordingBackend = FakeHttpServer.HttpStartupConfig().start()
+  val keepAliveTimeoutMillis = 3000
+
+  override val styxConfig = StyxConfig(proxyConfig = ProxyConfig(keepAliveTimeoutMillis = keepAliveTimeoutMillis))
 
   override protected def beforeEach() = {
     recordingBackend
@@ -111,7 +113,7 @@ class KeepAliveSpec extends FunSpec
       val client = aggregatingTestClient("localhost", styxServer.httpPort)
       val future: ChannelFuture = client.connect().channelFuture()
 
-      val maxTimeout: Int = styxServer.staticConfig.proxyConfig.keepAliveTimeoutMillis * 5
+      val maxTimeout: Int = keepAliveTimeoutMillis * 5
       eventually(timeout(maxTimeout milliseconds)) {
         assert(future.channel().isActive == false, "channel should be closed")
       }

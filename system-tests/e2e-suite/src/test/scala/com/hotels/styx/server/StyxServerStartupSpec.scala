@@ -19,7 +19,6 @@ import com.hotels.styx.StyxClientSupplier
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.configuration.StyxConfig
-import com.hotels.styx.support.configuration.StyxConfig.startServer
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{FunSpec, ShouldMatchers}
 
@@ -30,10 +29,9 @@ class StyxServerStartupSpec extends FunSpec
 
   val origins = fixturesHome(classOf[StyxServerStartupSpec], "/conf/origins/origins-incorrect.yml")
   val fileBasedBackendsRegistry = new FileBackedBackendServicesRegistry(origins.toString)
-  val styxConfig = StyxConfig()
 
   it ("should not start up when incorrect origins file is encountered") {
-    an [IllegalStateException] should be thrownBy startServer(styxConfig, fileBasedBackendsRegistry)
+    an [IllegalStateException] should be thrownBy StyxConfig().startServer(fileBasedBackendsRegistry)
   }
 
 }
