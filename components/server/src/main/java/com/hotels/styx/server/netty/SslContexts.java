@@ -100,24 +100,24 @@ public final class SslContexts {
     private static SslContextBuilder sslContextFromSelfSignedCertificate(HttpsConnectorConfig httpsConnectorConfig) {
         SelfSignedCertificate certificate = newSelfSignedCertificate();
         return SslContextBuilder.forServer(certificate.certificate(), certificate.privateKey())
-                .protocols(toSslContextProtocols(httpsConnectorConfig.protocols()))
+                .protocols(toProtocolsOrDefault(httpsConnectorConfig.protocols()))
                 .sslProvider(SslProvider.valueOf(httpsConnectorConfig.sslProvider()));
     }
 
     private static SslContextBuilder sslContextFromConfiguration(HttpsConnectorConfig httpsConnectorConfig) {
         return SslContextBuilder.forServer(new File(httpsConnectorConfig.certificateFile()), new File(httpsConnectorConfig.certificateKeyFile()))
                 .sslProvider(SslProvider.valueOf(httpsConnectorConfig.sslProvider()))
-                .ciphers(httpsConnectorConfig.ciphers())
+                .ciphers(toCiphersOrDefault(httpsConnectorConfig.ciphers()))
                 .sessionTimeout(MILLISECONDS.toSeconds(httpsConnectorConfig.sessionTimeoutMillis()))
                 .sessionCacheSize(httpsConnectorConfig.sessionCacheSize())
-                .protocols(toSslContextProtocols(httpsConnectorConfig.protocols()));
+                .protocols(toProtocolsOrDefault(httpsConnectorConfig.protocols()));
     }
 
-    private static String[] toSslContextProtocols(List<String> elems) {
-        if (elems != null && elems.size() > 0) {
-            return elems.toArray(new String[elems.size()]);
-        } else {
-            return null;
-        }
+    private static Iterable<String> toCiphersOrDefault(List<String> ciphers) {
+        return ciphers.isEmpty() ? null : ciphers;
+    }
+
+    private static String[] toProtocolsOrDefault(List<String> elems) {
+        return (elems != null && elems.size() > 0) ? elems.toArray(new String[elems.size()]) : null;
     }
 }

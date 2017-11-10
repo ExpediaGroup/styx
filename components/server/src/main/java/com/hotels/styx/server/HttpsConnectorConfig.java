@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.common.Joiners;
 
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -31,21 +30,16 @@ import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
-import static java.util.stream.Collectors.toSet;
 
 /**
  * Https Connector configuration.
  */
 @JsonDeserialize(builder = HttpsConnectorConfig.Builder.class)
 public final class HttpsConnectorConfig extends HttpConnectorConfig {
-    private static final Iterable<String> DEFAULT_CIPHER_SUITES = EnumSet.allOf(CipherSuite.class).stream()
-            .map(CipherSuite::name)
-            .collect(toSet());
-
     private final String sslProvider;
     private final String certificateFile;
     private final String certificateKeyFile;
-    private final Iterable<String> cipherSuites;
+    private final List<String> cipherSuites;
     private final long sessionTimeoutMillis;
     private final long sessionCacheSize;
     private final List<String> protocols;
@@ -55,7 +49,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
         this.sslProvider = builder.sslProvider;
         this.certificateFile = builder.certificateFile;
         this.certificateKeyFile = builder.certificateKeyFile;
-        this.cipherSuites = Objects.firstNonNull(builder.cipherSuites, DEFAULT_CIPHER_SUITES);
+        this.cipherSuites = builder.cipherSuites;
         this.sessionTimeoutMillis = builder.sessionTimeoutMillis;
         this.sessionCacheSize = builder.sessionCacheSize;
         this.protocols = builder.protocols;
@@ -78,7 +72,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
         return certificateKeyFile;
     }
 
-    public Iterable<String> ciphers() {
+    public List<String> ciphers() {
         return cipherSuites;
     }
 
@@ -137,23 +131,6 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
     }
 
     /**
-     * Supported cipher suites are in order of preference.
-     */
-    public enum CipherSuite {
-        TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-        TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-        TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
-        TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-        TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
-        TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-        TLS_RSA_WITH_AES_256_GCM_SHA384,
-        TLS_RSA_WITH_AES_128_GCM_SHA256,
-        TLS_RSA_WITH_AES_256_CBC_SHA256,
-        TLS_RSA_WITH_AES_128_CBC_SHA256,
-        TLS_RSA_WITH_AES_128_CBC_SHA;
-    }
-
-    /**
      * Builder for {@link HttpsConnectorConfig}.
      */
     @JsonPOJOBuilder(buildMethodName = "build", withPrefix = "")
@@ -165,7 +142,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
         private String certificateKeyFile;
         private long sessionTimeoutMillis = 300_000;
         private long sessionCacheSize;
-        private List<String> cipherSuites;
+        private List<String> cipherSuites = Collections.emptyList();
         private List<String> protocols = Collections.emptyList();
 
         @JsonProperty("port")
