@@ -55,11 +55,9 @@ TLS-protected HTTPS ports simultaneously.
     objects, in seconds. Set `0` to use the default value.
     This is an optional attribute. When absent, it reverts to a default value.
 
-  - *cipherSuites* - Specifies the cipher suites to enable, in the order
-    of preference. Leave absent to use default cipher suites. Note that
-    cipher suite names are specific to the enabled `sslProvider`. `JDK` and
-    `OPENSSL` support different cipher suites, and they may use different
-    names for the same cipher suite.
+  - *cipherSuites* - A list of enabled cipher suites, in order
+    of preference. Leave absent to use the SSL provider defaults.
+    Note that the cipher suite names are specific to a SSL provider.
 
   - *protocols* - A list of TLS protocol versions to use.
     Use this attribute to enforce a more secure version like `TLSv1.2`.
