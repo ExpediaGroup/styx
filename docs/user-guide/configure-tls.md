@@ -25,6 +25,12 @@ TLS-protected HTTPS ports simultaneously.
         certificateKeyFile:   /conf/tls/testCredentials.key
         sessionTimeoutMillis: 300000
         sessionCacheSize:     20000
+        protocols:
+          - TLSv1.2
+        cipherSuites:
+          - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+          - ECDHE-RSA-AES256-GCM-SHA384
+          - ECDHE-RSA-AES128-GCM-SHA256
 ```
 
 
@@ -50,7 +56,20 @@ TLS-protected HTTPS ports simultaneously.
     This is an optional attribute. When absent, it reverts to a default value.
 
   - *cipherSuites* - Specifies the cipher suites to enable, in the order
-    of preference. Leave absent to use default cipher suites.
+    of preference. Leave absent to use default cipher suites. Note that
+    cipher suite names are specific to the enabled `sslProvider`. `JDK` and
+    `OPENSSL` support different cipher suites, and they may use different
+    names for the same cipher suite.
+
+  - *protocols* - A list of TLS protocol versions to use.
+    Use this attribute to enforce a more secure version like `TLSv1.2`.
+    In this case Styx will only accept connections secured with `TLSv1.2`,
+    and willo reject any connection attempts with older versions.
+    When absent, enables all default protocols depending on the `sslProvider`.
+    Possible protocol names are: `TLS`, `TLSv1`, `TLSv1.1`, and `TLSv1.2`.
+
+The accepted protocol names and cipher suite names for `JDK` provider
+are listed in [Oracle Java Cryptography Architecture documentation](https://docs.oracle.com/javase/8/docs/technotes/guides/security/SunProviders.html).
 
 
 ## Backend Applications Configuration
