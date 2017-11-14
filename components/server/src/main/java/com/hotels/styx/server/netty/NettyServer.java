@@ -35,9 +35,9 @@ import org.slf4j.Logger;
 
 import java.net.BindException;
 import java.net.InetSocketAddress;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -49,7 +49,6 @@ import static io.netty.channel.ChannelOption.SO_REUSEADDR;
 import static io.netty.channel.ChannelOption.TCP_NODELAY;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -62,13 +61,13 @@ final class NettyServer extends AbstractService implements HttpServer {
     private final ChannelGroup channelGroup;
     private final ServerEventLoopFactory serverEventLoopFactory;
 
-    private final InetSocketAddress httpAddress;
-    private final InetSocketAddress httpsAddress;
     private final Optional<ServerConnector> httpConnector;
     private final Optional<ServerConnector> httpsConnector;
 
     private final Iterable<Runnable> startupActions;
     private final HttpHandler2 httpHandler;
+    private final Optional<ServerSocketBinder> httpServerSocketBinder;
+    private final Optional<ServerSocketBinder> httpsServerSocketBinder;
 
     private Callable<?> stopper;
 
@@ -81,27 +80,26 @@ final class NettyServer extends AbstractService implements HttpServer {
         this.httpConnector = nettyServerBuilder.httpConnector();
         this.httpsConnector = nettyServerBuilder.httpsConnector();
 
-
-        this.httpAddress = address(httpConnector);
-        this.httpsAddress = address(httpsConnector);
+        this.httpServerSocketBinder = httpConnector.map(ServerSocketBinder::new);
+        this.httpsServerSocketBinder = httpsConnector.map(ServerSocketBinder::new);
 
         this.startupActions = nettyServerBuilder.startupActions();
     }
 
-    private InetSocketAddress address(Optional<ServerConnector> connectorConfig) {
-        return connectorConfig
-                .map(config -> new InetSocketAddress(host, config.port()))
+    @Override
+    public InetSocketAddress httpAddress() {
+        return httpServerSocketBinder
+                .map(ServerSocketBinder::port)
+                .map(port -> new InetSocketAddress(host, port))
                 .orElse(null);
     }
 
     @Override
-    public InetSocketAddress httpAddress() {
-        return httpAddress;
-    }
-
-    @Override
     public InetSocketAddress httpsAddress() {
-        return httpsAddress;
+        return httpsServerSocketBinder
+                .map(ServerSocketBinder::port)
+                .map(port -> new InetSocketAddress(host, port))
+                .orElse(null);
     }
 
     @Override
@@ -116,7 +114,12 @@ final class NettyServer extends AbstractService implements HttpServer {
             }
         });
 
-        ServiceManager serviceManager = new ServiceManager(serverSocketBinders());
+        ServiceManager serviceManager = new ServiceManager(
+                Stream.of(httpServerSocketBinder, httpsServerSocketBinder)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList())
+        );
 
         serviceManager.addListener(new ServerListener(this));
         serviceManager.startAsync().awaitHealthy();
@@ -125,14 +128,6 @@ final class NettyServer extends AbstractService implements HttpServer {
             serviceManager.stopAsync().awaitStopped();
             return null;
         };
-    }
-
-    private List<ServerSocketBinder> serverSocketBinders() {
-        return Stream.of(httpConnector, httpsConnector)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .map(ServerSocketBinder::new)
-                    .collect(toList());
     }
 
     @Override
@@ -173,6 +168,7 @@ final class NettyServer extends AbstractService implements HttpServer {
     private final class ServerSocketBinder extends AbstractService {
         private final ServerConnector serverConnector;
         private volatile Callable<?> connectorStopper;
+        private volatile InetSocketAddress address;
 
         private ServerSocketBinder(ServerConnector serverConnector) {
             this.serverConnector = serverConnector;
@@ -210,13 +206,20 @@ final class NettyServer extends AbstractService implements HttpServer {
                         if (future.isSuccess()) {
                             Channel channel = future.channel();
                             channelGroup.add(channel);
-                            LOGGER.info("server connector {} bound successfully on port {}", serverConnector.getClass(), port);
+                            address = (InetSocketAddress) channel.localAddress();
+                            LOGGER.info("server connector {} bound successfully on port {} socket port {}", new Object[] {serverConnector.getClass(), port, address});
                             connectorStopper = new Stopper(bossGroup, workerGroup);
                             notifyStarted();
                         } else {
                             notifyFailed(mapToBetterException(future.cause(), port));
                         }
                     });
+        }
+
+        public int port() {
+            return Optional.ofNullable(address)
+                    .map(InetSocketAddress::getPort)
+                    .orElse(-1);
         }
 
         private Throwable mapToBetterException(Throwable cause, int port) {

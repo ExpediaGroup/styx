@@ -45,7 +45,7 @@ class Tls12Spec extends FunSpec
         |proxy:
         |  connectors:
         |    https:
-        |      port: 8443
+        |      port: 0
         |      sslProvider: JDK
         |      certificateFile: $crtFile
         |      certificateKeyFile: $keyFile
