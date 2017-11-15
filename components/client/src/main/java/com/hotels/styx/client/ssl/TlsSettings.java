@@ -22,6 +22,8 @@ import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -46,6 +48,7 @@ public class TlsSettings {
     private final Set<Certificate> additionalCerts;
     private final String trustStorePath;
     private final char[] trustStorePassword;
+    private final List<String> protocols;
 
     private TlsSettings(Builder builder) {
         this.trustAllCerts = checkNotNull(builder.trustAllCerts);
@@ -53,6 +56,7 @@ public class TlsSettings {
         this.additionalCerts = builder.additionalCerts;
         this.trustStorePath = builder.trustStorePath;
         this.trustStorePassword = toCharArray(builder.trustStorePassword);
+        this.protocols = builder.protocols;
     }
 
     private char[] toCharArray(String password) {
@@ -87,6 +91,11 @@ public class TlsSettings {
     @JsonProperty("trustStorePassword")
     public char[] trustStorePassword() {
         return trustStorePassword;
+    }
+
+    @JsonProperty("protocols")
+    public List<String> protocols() {
+        return protocols;
     }
 
     @Override
@@ -133,6 +142,7 @@ public class TlsSettings {
         private String trustStorePath = firstNonNull(System.getProperty("javax.net.ssl.trustStore"),
                 DEFAULT_TRUST_STORE_PATH);
         private String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");
+        private List<String> protocols = Collections.emptyList();
 
         /**
          * @deprecated
@@ -200,6 +210,12 @@ public class TlsSettings {
         @JsonProperty("trustStorePassword")
         public Builder trustStorePassword(String trustStorePwd) {
             this.trustStorePassword = trustStorePwd;
+            return this;
+        }
+
+        @JsonProperty("protocols")
+        public Builder protocols(List<String> protocols) {
+            this.protocols = protocols;
             return this;
         }
 
