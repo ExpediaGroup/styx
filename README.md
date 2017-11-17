@@ -58,12 +58,17 @@ It also explains how to build and run Styx.
 
 If you want to help to contribute to Styx project, please check [Contributor guide](./CONTRIBUTING.md) to find out how to start.
 
+### Got a Question?
+
+Contact us via [styx-user](https://groups.google.com/forum/#!forum/styx-user) group.
+
 ### Links
 
 * [Styx Wiki](https://github.com/HotelsDotCom/styx/wiki)
 * [Binary Downloads](https://github.com/HotelsDotCom/styx/releases)
 * [User guide](./docs/user-guide.md)
 * [Developer guide](./docs/developer-guide.md)
+* [styx-user](https://groups.google.com/forum/#!forum/styx-user) @ Google Groups
 
 
 ## Dependencies
