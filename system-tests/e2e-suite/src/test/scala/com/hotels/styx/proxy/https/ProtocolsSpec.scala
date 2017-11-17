@@ -56,9 +56,9 @@ class ProtocolsSpec extends FunSpec
 
   val httpsOriginWithCert = FakeHttpServer.HttpsStartupConfig(
     appId = "app-ssl",
-    originId = "app-ssl-01",
-    keyStorePath = keystore,
-    keyStorePassword = "123456"
+    originId = "app-ssl-02",
+    certificateFile =  crtFile,
+    certificateKeyFile = keyFile
   )
     .start()
     .stub(WireMock.get(urlMatching("/.*")), originResponse("httpsOriginWithCert"))

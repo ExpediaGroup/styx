@@ -21,32 +21,33 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.hotels.styx.api.HttpHeaderNames
 import com.hotels.styx.api.support.HostAndPorts.freePort
-import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
+import com.hotels.styx.server.HttpsConnectorConfig
+import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import com.hotels.styx.support.server.{FakeHttpServer => JavaFakeHttpServer}
+import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 
 object FakeHttpServer {
+
+  private def portNumber(port: Int) = if (port == 0) freePort() else port
 
   case class HttpsStartupConfig(httpsPort: Int = 0,
                                 adminPort: Int = 0,
                                 appId: String = "generic-app",
                                 originId: String = "generic-app",
-                                keyStorePath: String = WireMockDefaults.https.keyStorePath(),
-                                keyStorePassword: String = WireMockDefaults.https.keyStorePassword(),
-                                trustStorePath: String = WireMockDefaults.https.trustStorePath(),
-                                trustStorePassword: String = WireMockDefaults.https.trustStorePassword(),
-                                needClientAuth: Boolean = WireMockDefaults.https.needClientAuth()
+                                certificateFile: String = null,
+                                certificateKeyFile: String = null
                                ) {
-    private def asJava: WireMockConfiguration = new WireMockConfiguration()
-      .port(if (adminPort == 0) freePort() else adminPort)
-      .httpsPort(if (httpsPort == 0) freePort() else httpsPort)
-      .keystorePath(keyStorePath)
-      .keystorePassword(keyStorePassword)
-      .trustStorePath(trustStorePath)
-      .trustStorePassword(trustStorePassword)
-      .needClientAuth(needClientAuth)
 
-    def start(): JavaFakeHttpServer = JavaFakeHttpServer.newHttpServer(appId, originId, this.asJava).start()
+    def start(): MockOriginServer = {
+
+      var builder = new HttpsConnectorConfig.Builder()
+        .port(portNumber(httpsPort))
+      builder = if (certificateFile != null) builder.certificateFile(certificateFile) else builder
+      builder = if (certificateKeyFile != null) builder.certificateFile(certificateKeyFile) else builder
+
+      MockOriginServer.create(appId, originId, portNumber(adminPort), builder.build()).start()
+    }
   }
 
   case class HttpStartupConfig(port: Int = 0,

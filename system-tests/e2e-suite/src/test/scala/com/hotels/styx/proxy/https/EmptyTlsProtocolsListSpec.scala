@@ -51,7 +51,7 @@ class EmptyTlsProtocolsListSpec extends FunSpec
     )
   )
 
-  val recordingBackend = FakeHttpServer.HttpsStartupConfig(needClientAuth = false)
+  val recordingBackend = FakeHttpServer.HttpsStartupConfig()
     .start()
 
   override protected def beforeAll() = {

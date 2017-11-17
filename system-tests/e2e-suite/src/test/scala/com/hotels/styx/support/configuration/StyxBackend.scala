@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit
 
 import com.hotels.styx.api.client.ConnectionPool.Settings
 import com.hotels.styx.server.HttpServer
+import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.configuration.BackendsCommon.toOrigin
 import com.hotels.styx.support.server.FakeHttpServer
 
@@ -32,6 +33,12 @@ trait ImplicitOriginConversions {
     appId = fakeServer.appId(),
     host = "localhost",
     port = fakeServer.port())
+
+  implicit def mockOrigin2Origin(server: MockOriginServer): Origin = Origin(
+    id = server.originId(),
+    appId = server.appId(),
+    host = "localhost",
+    port = server.port())
 
   implicit def httpServer2Origin(httpServer: HttpServer): Origin = Origin(
     host = "localhost", port = httpServer.httpAddress().getPort

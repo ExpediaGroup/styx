@@ -49,8 +49,7 @@ class HttpsSpec extends FunSpec
     )
   )
 
-  val recordingBackend = FakeHttpServer.HttpsStartupConfig(needClientAuth = false)
-    .start()
+  val recordingBackend = FakeHttpServer.HttpsStartupConfig().start()
 
   override protected def afterAll() = {
     recordingBackend.stop()

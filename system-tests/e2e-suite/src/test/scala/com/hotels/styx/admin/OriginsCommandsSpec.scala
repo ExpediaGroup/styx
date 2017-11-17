@@ -21,11 +21,11 @@ import _root_.io.netty.handler.codec.http.HttpResponseStatus.{BAD_GATEWAY, METHO
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.google.common.net.HttpHeaders.CONTENT_LENGTH
 import com.hotels.styx.api._
-import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.support.backends.FakeHttpServer.HttpStartupConfig
 import com.hotels.styx.support.configuration.{HealthCheckConfig, HttpBackend, Origins}
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
+import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import org.scalatest._
 import org.scalatest.concurrent.Eventually

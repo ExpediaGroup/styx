@@ -38,4 +38,40 @@ public class HttpServers {
                 .build();
     }
 
+    /**
+     * Returns a new {@link com.hotels.styx.server.HttpServer} object, which runs on the provided port.
+     *
+     * @param name - Name of the server and associated IO thread.
+     * @param httpConnectorConfig - HTTP connector configuration.
+     * @param handler - Request handler.
+     *
+     * @return {@link com.hotels.styx.server.HttpServer} object
+     * @see com.hotels.styx.server.netty.NettyServer
+     */
+    public static HttpServer createHttpServer(String name, HttpConnectorConfig httpConnectorConfig, HttpHandler2 handler) {
+        return NettyServerBuilder.newBuilder()
+                .name(name)
+                .setHttpsConnector(new WebServerConnectorFactory().create(httpConnectorConfig))
+                .httpHandler(handler)
+                .build();
+    }
+
+    /**
+     * Returns a new {@link com.hotels.styx.server.HttpServer} object, using secure HTTPS protocol.
+     *
+     * @param name - Name of the server and associated IO thread.
+     * @param httpsConnectorConfig - HTTPS endpoint configuration.
+     * @param handler - Request handler.
+     *
+     * @return {@link com.hotels.styx.server.HttpServer} object
+     * @see com.hotels.styx.server.netty.NettyServer
+     */
+    public static HttpServer createHttpsServer(String name, HttpsConnectorConfig httpsConnectorConfig, HttpHandler2 handler) {
+        return NettyServerBuilder.newBuilder()
+                .name(name)
+                .setHttpsConnector(new WebServerConnectorFactory().create(httpsConnectorConfig))
+                .httpHandler(handler)
+                .build();
+    }
+
 }

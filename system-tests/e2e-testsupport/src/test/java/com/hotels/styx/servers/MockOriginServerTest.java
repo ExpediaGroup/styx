@@ -1,0 +1,144 @@
+/**
+ * Copyright (C) 2013-2017 Expedia Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hotels.styx.servers;
+
+import com.github.tomakehurst.wiremock.client.ValueMatchingStrategy;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.client.UrlConnectionHttpClient;
+import com.hotels.styx.server.HttpConnectorConfig;
+import com.hotels.styx.server.HttpsConnectorConfig;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
+import java.util.Optional;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
+public class MockOriginServerTest {
+
+    private MockOriginServer server;
+    private UrlConnectionHttpClient client;
+    private HostnameVerifier oldHostNameVerifier;
+
+    @BeforeMethod
+    public void setUp() throws Exception {
+        client = new UrlConnectionHttpClient(1000, 1000);
+        oldHostNameVerifier = disableHostNameVerification();
+    }
+
+    @AfterMethod
+    public void tearDown() throws Exception {
+        server.stop();
+        HttpsURLConnection.setDefaultHostnameVerifier(oldHostNameVerifier);
+    }
+
+    @Test
+    public void configuresEndpoints() throws Exception {
+        int adminPort = 43080;
+        int serverPort = 43081;
+
+        server = MockOriginServer.create("", "", adminPort, new HttpConnectorConfig(serverPort))
+                .start()
+                .stub(WireMock.get(urlMatching("/.*")), aResponse()
+                        .withStatus(200)
+                        .withHeader("a", "b")
+                        .withBody("Hello, World!"));
+
+        HttpResponse response = send(client,
+                get(format("http://localhost:%d/mock", serverPort))
+                        .header("X-Forwarded-Proto", "http")
+                        .build())
+                .responseBuilder()
+                .build();
+
+        assertThat(response.status(), is(OK));
+        assertThat(response.header("a"), is(Optional.of("b")));
+
+        server.verify(getRequestedFor(urlEqualTo("/mock"))
+                .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")));
+    }
+
+    @Test
+    public void configuresTlsEndpoints() throws Exception {
+        int adminPort = 43082;
+        int serverPort = 43083;
+
+        server = MockOriginServer.create("", "", adminPort,
+                new HttpsConnectorConfig.Builder()
+                        .port(serverPort)
+                        .build())
+                .start()
+                .stub(WireMock.get(urlMatching("/.*")), aResponse()
+                        .withStatus(200)
+                        .withHeader("a", "b")
+                        .withBody("Hello, World!"));
+
+        HttpResponse response = send(client,
+                get(format("https://localhost:%d/mock", serverPort))
+                        .header("X-Forwarded-Proto", "http")
+                        .build())
+                .responseBuilder()
+                .build();
+
+        assertThat(response.status(), is(OK));
+        assertThat(response.header("a"), is(Optional.of("b")));
+
+        server.verify(getRequestedFor(urlEqualTo("/mock"))
+                .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")));
+    }
+
+
+    private HttpResponse.DecodedResponse send(HttpClient client, HttpRequest request) {
+        return client.sendRequest(request)
+                .flatMap(response -> response.decode(bytebuf -> bytebuf.toString(UTF_8), 256 * 1024))
+                .toBlocking()
+                .first();
+    }
+
+    private ValueMatchingStrategy valueMatchingStrategy(String matches) {
+        ValueMatchingStrategy strategy = new ValueMatchingStrategy();
+        strategy.setMatches(matches);
+        return strategy;
+    }
+
+    private HostnameVerifier disableHostNameVerification() {
+        HostnameVerifier old = HttpsURLConnection.getDefaultHostnameVerifier();
+        HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
+            @Override
+            public boolean verify(String s, SSLSession sslSession) {
+                return true;
+            }
+        });
+        return old;
+    }
+
+}
