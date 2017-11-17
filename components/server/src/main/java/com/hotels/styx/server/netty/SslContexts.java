@@ -118,6 +118,8 @@ public final class SslContexts {
     }
 
     private static String[] toProtocolsOrDefault(List<String> elems) {
-        return (elems != null && elems.size() > 0) ? elems.toArray(new String[elems.size()]) : null;
+        return (elems != null && elems.size() > 0)
+                ? elems.toArray(new String[elems.size()])
+                : null;
     }
 }

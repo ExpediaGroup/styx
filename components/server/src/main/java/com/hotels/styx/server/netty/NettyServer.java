@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 
 import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -66,8 +67,8 @@ final class NettyServer extends AbstractService implements HttpServer {
 
     private final Iterable<Runnable> startupActions;
     private final HttpHandler2 httpHandler;
-    private final Optional<ServerSocketBinder> httpServerSocketBinder;
-    private final Optional<ServerSocketBinder> httpsServerSocketBinder;
+    private final ServerSocketBinder httpServerSocketBinder;
+    private final ServerSocketBinder httpsServerSocketBinder;
 
     private Callable<?> stopper;
 
@@ -80,26 +81,28 @@ final class NettyServer extends AbstractService implements HttpServer {
         this.httpConnector = nettyServerBuilder.httpConnector();
         this.httpsConnector = nettyServerBuilder.httpsConnector();
 
-        this.httpServerSocketBinder = httpConnector.map(ServerSocketBinder::new);
-        this.httpsServerSocketBinder = httpsConnector.map(ServerSocketBinder::new);
+        this.httpServerSocketBinder = httpConnector.map(ServerSocketBinder::new).orElse(null);
+        this.httpsServerSocketBinder = httpsConnector.map(ServerSocketBinder::new).orElse(null);
 
         this.startupActions = nettyServerBuilder.startupActions();
     }
 
     @Override
     public InetSocketAddress httpAddress() {
-        return httpServerSocketBinder
-                .map(ServerSocketBinder::port)
-                .map(port -> new InetSocketAddress(host, port))
-                .orElse(null);
+        if (httpServerSocketBinder != null) {
+            return new InetSocketAddress(host, httpServerSocketBinder.port());
+        } else {
+            return null;
+        }
     }
 
     @Override
     public InetSocketAddress httpsAddress() {
-        return httpsServerSocketBinder
-                .map(ServerSocketBinder::port)
-                .map(port -> new InetSocketAddress(host, port))
-                .orElse(null);
+        if (httpsServerSocketBinder != null) {
+            return new InetSocketAddress(host, httpsServerSocketBinder.port());
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -116,8 +119,7 @@ final class NettyServer extends AbstractService implements HttpServer {
 
         ServiceManager serviceManager = new ServiceManager(
                 Stream.of(httpServerSocketBinder, httpsServerSocketBinder)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList())
         );
 
@@ -217,9 +219,7 @@ final class NettyServer extends AbstractService implements HttpServer {
         }
 
         public int port() {
-            return Optional.ofNullable(address)
-                    .map(InetSocketAddress::getPort)
-                    .orElse(-1);
+            return (address != null) ? address.getPort() : -1;
         }
 
         private Throwable mapToBetterException(Throwable cause, int port) {

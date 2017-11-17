@@ -16,15 +16,15 @@
 package com.hotels.styx.proxy.https
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.hotels.styx.api.HttpClient
+import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.client.UrlConnectionHttpClient
-import com.hotels.styx.api.{HttpClient, HttpRequest}
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.{SSLSetup, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
-import io.netty.handler.codec.http.HttpMethod._
 import io.netty.handler.codec.http.HttpResponseStatus.OK
 import org.scalatest.{FunSpec, ShouldMatchers}
 
@@ -70,7 +70,7 @@ class EmptyTlsProtocolsListSpec extends FunSpec
     recordingBackend.stub(urlPathEqualTo("/secure"), aResponse.withStatus(200))
 
     it("Empty TLS protocols list activates all supported protocols") {
-      val req = new HttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
+      val req = Builder.get(styxServer.secureRouterURL("/secure"))
         .header(HOST, styxServer.httpsProxyHost)
         .secure(true)
         .build()

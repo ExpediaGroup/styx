@@ -62,7 +62,7 @@ TLS-protected HTTPS ports simultaneously.
   - *protocols* - A list of TLS protocol versions to use.
     Use this attribute to enforce a more secure version like `TLSv1.2`.
     In this case Styx will only accept connections secured with `TLSv1.2`,
-    and willo reject any connection attempts with older versions.
+    and will reject any connection attempts with older versions.
     When absent, enables all default protocols depending on the `sslProvider`.
     Possible protocol names are: `TLS`, `TLSv1`, `TLSv1.1`, and `TLSv1.2`.
 
