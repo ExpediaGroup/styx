@@ -22,25 +22,26 @@ import com.github.tomakehurst.wiremock.http.QueryParameter;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.RequestMethod;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.HttpRequest;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
+import static com.github.tomakehurst.wiremock.http.HttpHeader.httpHeader;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
 
 public class WiremockStyxRequestAdapter implements Request {
     private final HttpRequest styxRequest;
     private final String body;
 
     public WiremockStyxRequestAdapter(HttpRequest styxRequest, String body) {
-        this.styxRequest = styxRequest;
-        this.body = body;
+        this.styxRequest = requireNonNull(styxRequest);
+        this.body = requireNonNull(body);
     }
 
     @Override
@@ -69,7 +70,7 @@ public class WiremockStyxRequestAdapter implements Request {
     @Override
     public HttpHeader header(String key) {
         ImmutableList<String> values = styxRequest.headers(key);
-        return HttpHeader.httpHeader(key, values.toArray(new String[values.size()]));
+        return httpHeader(key, values.toArray(new String[values.size()]));
     }
 
     @Override
@@ -81,9 +82,9 @@ public class WiremockStyxRequestAdapter implements Request {
 
     @Override
     public HttpHeaders getHeaders() {
-        List<HttpHeader> list = StreamSupport.stream(styxRequest.headers().spliterator(), false)
-                .map(styxHeader -> HttpHeader.httpHeader(styxHeader.name(), styxHeader.value()))
-                .collect(Collectors.toList());
+        List<HttpHeader> list = stream(styxRequest.headers().spliterator(), false)
+                .map(styxHeader -> httpHeader(styxHeader.name(), styxHeader.value()))
+                .collect(toList());
 
         return new HttpHeaders(list);
     }

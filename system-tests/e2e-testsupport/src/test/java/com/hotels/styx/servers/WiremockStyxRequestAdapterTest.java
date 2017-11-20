@@ -16,18 +16,14 @@
 package com.hotels.styx.servers;
 
 import com.github.tomakehurst.wiremock.http.ContentTypeHeader;
-import com.github.tomakehurst.wiremock.http.HttpHeader;
-import com.github.tomakehurst.wiremock.http.HttpHeaders;
 import com.github.tomakehurst.wiremock.http.QueryParameter;
-import com.github.tomakehurst.wiremock.http.RequestMethod;
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.hotels.styx.api.HttpRequest;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.Collections;
-
+import static com.github.tomakehurst.wiremock.http.RequestMethod.POST;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
@@ -36,6 +32,8 @@ import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static io.netty.handler.codec.http.HttpHeaderNames.USER_AGENT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.testng.Assert.assertEquals;
@@ -43,6 +41,7 @@ import static org.testng.Assert.assertEquals;
 public class WiremockStyxRequestAdapterTest {
     private WiremockStyxRequestAdapter adapter;
     private String content;
+    private HttpRequest.Builder wireMockRequestBuilder;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -60,15 +59,15 @@ public class WiremockStyxRequestAdapterTest {
         "    }\n" +
         "}";
 
-        adapter = new WiremockStyxRequestAdapter(
-                post("/__admin/mappings/new?msg=6198.1")
+        wireMockRequestBuilder = post("/__admin/mappings/new?msg=6198.1")
                 .header(CONTENT_LENGTH, "208")
                 .header(CONTENT_TYPE, "application/json; charset=UTF-8")
                 .header(HOST, "localhost")
                 .header(CONNECTION, "Keep-Alive")
                 .header(USER_AGENT, "Apache-HttpClient/4.3.5 (java 1.5)")
-                .body(content)
-                .build(), content);
+                .body(content);
+
+        adapter = new WiremockStyxRequestAdapter(wireMockRequestBuilder.build(), content);
     }
 
     @Test
@@ -95,7 +94,7 @@ public class WiremockStyxRequestAdapterTest {
 
     @Test
     public void adaptsGetMethod() throws Exception {
-        assertThat(adapter.getMethod(), is(RequestMethod.POST));
+        assertThat(adapter.getMethod(), is(POST));
     }
 
     @Test
@@ -104,22 +103,15 @@ public class WiremockStyxRequestAdapterTest {
         assertThat(adapter.getHeader("Foo-Bar"), is(nullValue()));
     }
 
-    @Test(enabled = false)
+    @Test
     public void adaptsGetHeaders() throws Exception {
-        HttpHeaders headers = adapter.getHeaders();
+        assertThat(adapter.getHeaders().keys(), containsInAnyOrder("Content-Type", "host", "Connection", "user-agent", "Content-Length"));
 
-        assertThat(headers, is(
-                new com.github.tomakehurst.wiremock.http.HttpHeaders(
-                        wireMockHeader("Content-Type", "application/json; charset=UTF-8"),
-                        wireMockHeader("Host", "localhost"),
-                        wireMockHeader("Connection", "Keep-Alive"),
-                        wireMockHeader("User-Agent", "Apache-HttpClient/4.3.5 (java 1.5)"),
-                        wireMockHeader("Content-Length", "208")
-                )));
-    }
-
-    private HttpHeader wireMockHeader(String key, String value) {
-        return new HttpHeader(key, value);
+        assertThat(adapter.getHeader("Content-Type"), is("application/json; charset=UTF-8"));
+        assertThat(adapter.getHeader("host"), is("localhost"));
+        assertThat(adapter.getHeader("Connection"), is("Keep-Alive"));
+        assertThat(adapter.getHeader("user-agent"), is("Apache-HttpClient/4.3.5 (java 1.5)"));
+        assertThat(adapter.getHeader("Content-Length"), is("246"));
     }
 
     @Test
@@ -155,7 +147,7 @@ public class WiremockStyxRequestAdapterTest {
         QueryParameter msg = adapter.queryParameter("msg");
 
         assertThat(msg.key(), is("msg"));
-        assertThat(msg.values(), is(ImmutableList.of("6198.1")));
+        assertThat(msg.values(), is(contains("6198.1")));
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
@@ -163,12 +155,21 @@ public class WiremockStyxRequestAdapterTest {
         QueryParameter msg = adapter.queryParameter("foobar");
 
         assertThat(msg.key(), is("foobar"));
-        assertThat(msg.values(), is(Collections.emptyList()));
+        msg.values();
     }
 
-    @Test(enabled = false)
+    @Test
     public void adaptsContentTypeHeaderWhenAbsent() throws Exception {
-        assertThat(adapter.contentTypeHeader(), is(ContentTypeHeader.absent()));
+        adapter = new WiremockStyxRequestAdapter(
+                wireMockRequestBuilder
+                        .removeHeader(CONTENT_TYPE)
+                        .build(), content);
+
+
+        // NOTE: We don't call actual.mimeTypePart() or encodingPart() methods.
+        // WireMock will throw a NullPointerException when they are called on an
+        // absent ContentTypeHeader. Possibly a bug.
+        assertThat(adapter.contentTypeHeader().key(), is("Content-Type"));
     }
 
     @Test

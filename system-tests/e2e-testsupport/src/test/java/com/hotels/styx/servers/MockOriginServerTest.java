@@ -20,6 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.HttpResponse.DecodedResponse;
 import com.hotels.styx.api.client.UrlConnectionHttpClient;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
@@ -28,8 +29,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSession;
 import java.util.Optional;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -40,6 +39,8 @@ import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static javax.net.ssl.HttpsURLConnection.getDefaultHostnameVerifier;
+import static javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -58,7 +59,7 @@ public class MockOriginServerTest {
     @AfterMethod
     public void tearDown() throws Exception {
         server.stop();
-        HttpsURLConnection.setDefaultHostnameVerifier(oldHostNameVerifier);
+        setDefaultHostnameVerifier(oldHostNameVerifier);
     }
 
     @Test
@@ -76,12 +77,16 @@ public class MockOriginServerTest {
         HttpResponse response = send(client,
                 get(format("http://localhost:%d/mock", serverPort))
                         .header("X-Forwarded-Proto", "http")
-                        .build())
-                .responseBuilder()
-                .build();
+                        .build());
 
         assertThat(response.status(), is(OK));
         assertThat(response.header("a"), is(Optional.of("b")));
+
+        String content = response.decode(bytebuf -> bytebuf.toString(UTF_8), 1024)
+                .map(DecodedResponse::body)
+                .toBlocking()
+                .first();
+        assertThat(content, is("Hello, World!"));
 
         server.verify(getRequestedFor(urlEqualTo("/mock"))
                 .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")));
@@ -105,9 +110,7 @@ public class MockOriginServerTest {
         HttpResponse response = send(client,
                 get(format("https://localhost:%d/mock", serverPort))
                         .header("X-Forwarded-Proto", "http")
-                        .build())
-                .responseBuilder()
-                .build();
+                        .build());
 
         assertThat(response.status(), is(OK));
         assertThat(response.header("a"), is(Optional.of("b")));
@@ -117,11 +120,11 @@ public class MockOriginServerTest {
     }
 
 
-    private HttpResponse.DecodedResponse send(HttpClient client, HttpRequest request) {
+    private HttpResponse send(HttpClient client, HttpRequest request) {
         return client.sendRequest(request)
-                .flatMap(response -> response.decode(bytebuf -> bytebuf.toString(UTF_8), 256 * 1024))
                 .toBlocking()
                 .first();
+
     }
 
     private ValueMatchingStrategy valueMatchingStrategy(String matches) {
@@ -131,13 +134,8 @@ public class MockOriginServerTest {
     }
 
     private HostnameVerifier disableHostNameVerification() {
-        HostnameVerifier old = HttpsURLConnection.getDefaultHostnameVerifier();
-        HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
-            @Override
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        });
+        HostnameVerifier old = getDefaultHostnameVerifier();
+        setDefaultHostnameVerifier((s, sslSession) -> true);
         return old;
     }
 

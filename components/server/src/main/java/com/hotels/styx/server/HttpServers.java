@@ -51,7 +51,7 @@ public class HttpServers {
     public static HttpServer createHttpServer(String name, HttpConnectorConfig httpConnectorConfig, HttpHandler2 handler) {
         return NettyServerBuilder.newBuilder()
                 .name(name)
-                .setHttpsConnector(new WebServerConnectorFactory().create(httpConnectorConfig))
+                .setHttpConnector(new WebServerConnectorFactory().create(httpConnectorConfig))
                 .httpHandler(handler)
                 .build();
     }
