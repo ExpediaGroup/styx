@@ -18,8 +18,7 @@ package com.hotels.styx
 import com.hotels.styx.infrastructure.MemoryBackedRegistry
 import com.hotels.styx.plugins.PluginPipelineSpec
 import com.hotels.styx.support.{ImplicitStyxConversions, configuration}
-import com.hotels.styx.support.configuration.{ImplicitOriginConversions, StyxBackend}
-import com.hotels.styx.support.configuration.StyxConfig.startServer
+import com.hotels.styx.support.configuration.{ImplicitOriginConversions, StyxBackend, StyxBaseConfig}
 import org.scalatest._
 
 
@@ -38,7 +37,6 @@ trait StyxProxySpec extends StyxClientSupplier
 
   implicit class StyxServerOperations(val styxServer: StyxServer) extends StyxServerSupplements
     with BackendServicesRegistrySupplier {
-    def staticConfig = styxConfig
     def setBackends(backends: (String, StyxBackend)*): Unit = setBackends(backendsRegistry, backends:_*)
   }
 
@@ -48,20 +46,22 @@ trait StyxProxySpec extends StyxClientSupplier
   }
 
   override protected def beforeAll() = {
-    styxServer = startServer(styxConfig, backendsRegistry)
-    println("Styx port is: [%d]".format(styxServer.httpPort))
+    styxServer = styxConfig.startServer(backendsRegistry)
+    println("Styx http port is: [%d]".format(styxServer.httpPort))
+    println("Styx https port is: [%d]".format(styxServer.secureHttpPort))
   }
 
   override protected def afterAll() = {
-    println("Styx port was: [%d]".format(styxServer.httpPort))
+    println("Styx http port was: [%d]".format(styxServer.httpPort))
+    println("Styx https port was: [%d]".format(styxServer.secureHttpPort))
     styxServer.stopAsync().awaitTerminated()
   }
 }
 
 trait StyxConfiguration {
-  def styxConfig: configuration.StyxConfig
+  def styxConfig: StyxBaseConfig
 }
 
 trait DefaultStyxConfiguration extends StyxConfiguration {
-  lazy val styxConfig = configuration.StyxConfig()
+  lazy val styxConfig: StyxBaseConfig = configuration.StyxConfig()
 }

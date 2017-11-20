@@ -122,16 +122,21 @@ trait StyxServerSupplements {
 
   def adminURL(path: String) = s"http://$adminHost$path"
 
-  def secureHttpPort = styxServer.proxyHttpsAddress().getPort
+  def secureHttpPort = portNumberOrElse(styxServer.proxyHttpsAddress())
 
-  def httpPort = styxServer.proxyHttpAddress().getPort
+  def httpPort = portNumberOrElse(styxServer.proxyHttpAddress())
 
-  def adminPort = styxServer.adminHttpAddress().getPort
+  def adminPort = portNumberOrElse(styxServer.adminHttpAddress())
 
   def metricsSnapshot = {
     val adminHostName = styxServer.adminHttpAddress().getHostName
     new CodaHaleMetricsFacade(StyxMetrics.downloadFrom(adminHostName, adminPort))
   }
+
+  private def portNumberOrElse(address: InetSocketAddress) = Option(address)
+    .map(_.getPort)
+    .orElse(Some(-1))
+    .get
 }
 
 class PluginAdapter extends Plugin {

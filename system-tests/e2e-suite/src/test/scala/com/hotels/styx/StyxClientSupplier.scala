@@ -69,4 +69,20 @@ trait StyxClientSupplier {
       .toBlocking
       .first
   }
+
+  def decodedRequestWithClient(client: HttpClient,
+                               request: HttpRequest,
+                               debug: Boolean = false,
+                               maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds): (HttpResponse, String) = {
+    toScalaObservable(client.sendRequest(request))
+      .doOnNext(response => if (debug) println("StyxClientSupplier: received response for: " + request.url().path()))
+      .flatMap(response => {
+        val decoder = (buf: ByteBuf) => buf.toString(StandardCharsets.UTF_8)
+        response.decode(decoder.asJava, maxSize)
+      })
+      .map(decodedResponse => (decodedResponse.responseBuilder().build(), decodedResponse.body()))
+      .timeout(timeout)
+      .toBlocking
+      .first
+  }
 }

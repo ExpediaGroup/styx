@@ -38,7 +38,6 @@ import rx.functions.Func1
 
 import scala.compat.java8.OptionConverters.RichOptionalGeneric
 import scala.concurrent.duration._
-import com.hotels.styx.support.configuration.StyxConfig.startServer
 
 class ErrorMetricsSpec extends FunSpec
   with StyxServerSupport
@@ -73,7 +72,7 @@ class ErrorMetricsSpec extends FunSpec
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     backendsRegistry = new MemoryBackedRegistry[com.hotels.styx.client.applications.BackendService]
-    styxServer = startServer(styxConfig, backendsRegistry)
+    styxServer = styxConfig.startServer(backendsRegistry)
         setBackends(
           backendsRegistry,
           "/" -> HttpBackend(

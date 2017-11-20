@@ -18,9 +18,8 @@ package com.hotels.styx.proxy.resiliency
 import java.util.concurrent.TimeUnit._
 
 import com.google.common.base.Charsets._
-import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
+import com.hotels.styx.StyxProxySpec
 import com.hotels.styx.generators.HttpRequestGenerator
-import com.hotels.styx.proxy.ProtocolsSpec
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
@@ -46,7 +45,7 @@ class ProxyResiliencySpec extends FunSpec
 
   val (originOne, originOneServer) = originAndCustomResponseWebServer("NettyOrigin")
 
-  val logback = fixturesHome(classOf[ProtocolsSpec], "/conf/logback/logback-suppress-errors.xml")
+  val logback = fixturesHome(this.getClass, "/conf/logback/logback-suppress-errors.xml")
   override val styxConfig = StyxConfig(
     logbackXmlLocation = logback
   )

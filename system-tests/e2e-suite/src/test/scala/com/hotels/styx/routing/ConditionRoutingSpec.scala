@@ -19,11 +19,10 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.infrastructure.MemoryBackedRegistry
-import com.hotels.styx.proxy.ProtocolsSpec
 import com.hotels.styx.support.ResourcePaths.fixturesHome
-import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
+import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.{BackendServicesRegistrySupplier, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.{FunSpec, SequentialNestedSuiteExecution}
 
@@ -35,11 +34,11 @@ class ConditionRoutingSpec extends FunSpec
   with SequentialNestedSuiteExecution
   with BackendServicesRegistrySupplier {
 
-  val logback = fixturesHome(classOf[ConditionRoutingSpec], "/conf/logback/logback-debug-stdout.xml")
+  val logback = fixturesHome(this.getClass, "/conf/logback/logback-debug-stdout.xml")
   val httpBackendRegistry = new MemoryBackedRegistry[com.hotels.styx.client.applications.BackendService]()
   val httpsBackendRegistry = new MemoryBackedRegistry[com.hotels.styx.client.applications.BackendService]()
-  val crtFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.crt").toString
-  val keyFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.key").toString
+  val crtFile = fixturesHome(this.getClass, "/ssl/testCredentials.crt").toString
+  val keyFile = fixturesHome(this.getClass, "/ssl/testCredentials.key").toString
 
   val httpServer = FakeHttpServer.HttpStartupConfig(
     appId = "app",

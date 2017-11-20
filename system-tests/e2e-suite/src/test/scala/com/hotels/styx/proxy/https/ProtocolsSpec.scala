@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.proxy
+package com.hotels.styx.proxy.https
 
 import java.nio.charset.StandardCharsets.UTF_8
 
@@ -22,9 +22,9 @@ import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
 import com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_PROTO
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.support.ResourcePaths.fixturesHome
-import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.support.configuration.{Connectors, HttpBackend, HttpConnectorConfig, HttpsBackend, HttpsConnectorConfig, Origins, ProxyConfig, StyxConfig, TlsSettings}
+import com.hotels.styx.support.configuration._
+import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import io.netty.buffer.{ByteBuf, Unpooled}
 import org.scalatest.{FunSpec, SequentialNestedSuiteExecution}
@@ -36,11 +36,11 @@ class ProtocolsSpec extends FunSpec
   with StyxClientSupplier
   with SequentialNestedSuiteExecution {
 
-  val logback = fixturesHome(classOf[ProtocolsSpec], "/conf/logback/logback-debug-stdout.xml")
-  val crtFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.crt").toString
-  val keyFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.key").toString
-  val keystore = fixturesHome(classOf[ProtocolsSpec], "/ssl/protocolsSpec/keystore").toString
-  val truststore = fixturesHome(classOf[ProtocolsSpec], "/ssl/protocolsSpec/truststore").toString
+  val logback = fixturesHome(this.getClass, "/conf/logback/logback-debug-stdout.xml")
+  val crtFile = fixturesHome(this.getClass, "/ssl/testCredentials.crt").toString
+  val keyFile = fixturesHome(this.getClass, "/ssl/testCredentials.key").toString
+  val keystore = fixturesHome(this.getClass, "/ssl/protocolsSpec/keystore").toString
+  val truststore = fixturesHome(this.getClass, "/ssl/protocolsSpec/truststore").toString
 
   val httpServer = FakeHttpServer.HttpStartupConfig(
     appId = "app",

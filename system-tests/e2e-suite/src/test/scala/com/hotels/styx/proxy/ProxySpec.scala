@@ -26,7 +26,7 @@ import com.hotels.styx.support.matchers.RegExMatcher.matchesRegex
 import com.hotels.styx.api.support.HostAndPorts._
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.support.configuration.{HttpBackend, Origins}
+import com.hotels.styx.support.configuration.{HttpBackend, Origin, Origins}
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
@@ -157,10 +157,9 @@ class ProxySpec extends FunSpec
 
     describe("backend services unavailable") {
       it("should return a 502 BAD_GATEWAY if the connection to the backend is refused") {
-        val unavailableService = new MockServer(freePort())
         styxServer.setBackends(
           "/" -> HttpBackend("app-1", Origins(recordingBackend)),
-          "/unavailable" -> HttpBackend("http10", Origins(unavailableService))
+          "/unavailable" -> HttpBackend("http10", Origins(Origin("localhost", freePort(), "app-1-01")))
         )
 
         val req = new Builder(GET, "/unavailable")

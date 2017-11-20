@@ -81,7 +81,18 @@ public class UrlConnectionHttpClient implements HttpClient {
      * @param readTimeoutMillis    socket read/write timeout in milliseconds
      */
     public UrlConnectionHttpClient(int connectTimeoutMillis, int readTimeoutMillis) {
-        this(connectTimeoutMillis, readTimeoutMillis, sslSocketFactory());
+        this(connectTimeoutMillis, readTimeoutMillis, sslSocketFactory("TLS"));
+    }
+
+    /**
+     * Constructs a new client.
+     *
+     * @param connectTimeoutMillis socket connection timeout in milliseconds
+     * @param readTimeoutMillis    socket read/write timeout in milliseconds
+     * @param protocol             supported TLS protocol, TLSv1.1, TLSv1.2, etc.
+     */
+    public UrlConnectionHttpClient(int connectTimeoutMillis, int readTimeoutMillis, String protocol) {
+        this(connectTimeoutMillis, readTimeoutMillis, sslSocketFactory(protocol));
     }
 
     private UrlConnectionHttpClient(int connectTimeoutMillis, int readTimeoutMillis, SSLSocketFactory sslSocketFactory) {
@@ -90,9 +101,9 @@ public class UrlConnectionHttpClient implements HttpClient {
         this.sslSocketFactory = checkNotNull(sslSocketFactory);
     }
 
-    private static SSLSocketFactory sslSocketFactory() {
+    private static SSLSocketFactory sslSocketFactory(String protocol) {
         try {
-            SSLContext context = SSLContext.getInstance("TLS");
+            SSLContext context = SSLContext.getInstance(protocol);
             context.init(null, new TrustManager[]{TRUST_ALL}, new SecureRandom());
             return context.getSocketFactory();
         } catch (KeyManagementException | NoSuchAlgorithmException e) {
