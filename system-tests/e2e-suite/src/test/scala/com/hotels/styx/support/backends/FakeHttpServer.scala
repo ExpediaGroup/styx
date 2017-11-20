@@ -36,13 +36,15 @@ object FakeHttpServer {
                                 appId: String = "generic-app",
                                 originId: String = "generic-app",
                                 certificateFile: String = null,
-                                certificateKeyFile: String = null
+                                certificateKeyFile: String = null,
+                                protocols: Seq[String] = Seq("TLSv1.1", "TLSv1.2")
                                ) {
 
     def start(): MockOriginServer = {
 
       var builder = new HttpsConnectorConfig.Builder()
         .port(portNumber(httpsPort))
+        .protocols(protocols:_*)
       builder = if (certificateFile != null) builder.certificateFile(certificateFile) else builder
       builder = if (certificateKeyFile != null) builder.certificateFile(certificateKeyFile) else builder
 

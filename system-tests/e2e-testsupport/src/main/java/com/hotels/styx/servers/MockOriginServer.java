@@ -82,7 +82,7 @@ public final class MockOriginServer {
         HttpServer mockServer = HttpServers.createHttpServer(
                 "mock-stub-" + originId,
                 httpConfig,
-                mockHandler(wireMockApp, new WireMockConfiguration()));
+                mockHandler(originId, wireMockApp, new WireMockConfiguration()));
         int serverPort = httpConfig.port();
 
         return new MockOriginServer(appId, originId, adminPort, serverPort, adminServer, mockServer);
@@ -94,12 +94,43 @@ public final class MockOriginServer {
         HttpServer mockServer = HttpServers.createHttpsServer(
                 "mock-stub-" + originId,
                 httpsConfig,
-                mockHandler(wireMockApp, new WireMockConfiguration()));
+                mockHandler(originId, wireMockApp, new WireMockConfiguration()));
         int serverPort = httpsConfig.port();
 
         return new MockOriginServer(appId, originId, adminPort, serverPort, adminServer, mockServer);
     }
 
+
+    private static HttpHandler2 mockHandler(String originId, WireMockApp wireMockApp, WireMockConfiguration defaultConfig) {
+        return newHandler(originId, new StubRequestHandler(
+                wireMockApp,
+                new StubResponseRenderer(
+                        defaultConfig.filesRoot().child(FILES_ROOT),
+                        wireMockApp.getGlobalSettingsHolder(),
+                        new ProxyResponseRenderer(
+                                defaultConfig.proxyVia(),
+                                defaultConfig.httpsSettings().trustStore(),
+                                defaultConfig.shouldPreserveHostHeader(),
+                                defaultConfig.proxyHostHeader()
+                        )
+                )
+        ));
+    }
+
+    private static HttpHandler2 adminHandler(String originId, WireMockApp wireMockApp) {
+        return newHandler(originId, new AdminRequestHandler(wireMockApp, new BasicResponseRenderer()));
+    }
+
+    private static HttpHandler2 newHandler(String originId, RequestHandler wireMockHandler) {
+        return (httpRequest, ctx) ->
+                httpRequest.decode(byteBuf -> byteBuf.toString(UTF_8), MAX_CONTENT_LENGTH)
+                        .doOnNext(decoded -> LOGGER.info("{} received: {}\n{}", new Object[]{originId, decoded.requestBuilder().build().url(), decoded.body()}))
+                        .flatMap(decoded -> {
+                            Request wmRequest = new WiremockStyxRequestAdapter(decoded.requestBuilder().build(), decoded.body());
+                            com.github.tomakehurst.wiremock.http.Response wmResponse = wireMockHandler.handle(wmRequest);
+                            return just(toStyxResponse(wmResponse));
+                        });
+    }
 
     public MockOriginServer start() {
         services = new ServiceManager(ImmutableList.of(adminServer, mockServer));
@@ -183,22 +214,6 @@ public final class MockOriginServer {
                 "mock-admin-" + originId,
                 new HttpConnectorConfig(adminPort),
                 adminHandler(wireMockApp));
-    }
-
-    private static HttpHandler2 mockHandler(WireMockApp wireMockApp, WireMockConfiguration defaultConfig) {
-        return newHandler(new StubRequestHandler(
-                wireMockApp,
-                new StubResponseRenderer(
-                        defaultConfig.filesRoot().child(FILES_ROOT),
-                        wireMockApp.getGlobalSettingsHolder(),
-                        new ProxyResponseRenderer(
-                                defaultConfig.proxyVia(),
-                                defaultConfig.httpsSettings().trustStore(),
-                                defaultConfig.shouldPreserveHostHeader(),
-                                defaultConfig.proxyHostHeader()
-                        )
-                )
-        ));
     }
 
     private static HttpHandler2 adminHandler(WireMockApp wireMockApp) {

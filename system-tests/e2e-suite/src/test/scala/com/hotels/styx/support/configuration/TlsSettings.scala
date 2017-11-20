@@ -43,6 +43,7 @@ case class TlsSettings(authenticate: Boolean = default.authenticate(),
         addlCerts.map(_.asJava): _*)
       .trustStorePath(trustStorePath)
       .trustStorePassword(trustStorePassword)
+      .protocols(protocols.asJava)
       .build()
   }
 }
