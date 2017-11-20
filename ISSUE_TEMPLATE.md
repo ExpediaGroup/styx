@@ -1,15 +1,14 @@
+<!--
 Hey there and thank you for using issue tracker! :+1:
 
-## Prerequisites
 We realise there is a lot of information requested here. We ask only that you do your best to provide as much as possible so we can better help.
 
 - Read the [contributing guidelines](https://github.com/HotelsDotCom/styx/blob/master/CONTRIBUTING.md)
 - Ensure the issue isn't already reported
 - Its helpful to use the bug or enhancement label
 
-Please delete the above section and any instructions in the sections below before submitting. Thanks.
-
-<!-- This is for bug reports and feature requests only -->
+Thanks.
+-->
 
 ## The problem
 > Briefly describe the issue you are experiencing or the feature you want to see added to Styx. Tell us what you were trying to do and what happened instead.
@@ -18,7 +17,7 @@ Please delete the above section and any instructions in the sections below befor
 
 ## Detailed description
 > Please provide as much detail as possible.
-> Remember that providing sample code and or failing tests it's much faster to understand and fix.
+> Remember that providing sample code and or failing tests makes it much faster to understand and fix.
 
 ## Acceptance criteria
 > What you expect to happen in a list format.
