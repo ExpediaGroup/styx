@@ -28,11 +28,11 @@ import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
 /**
  * Contains static methods for inspecting different properties of HTTP requests.
  */
-final class HttpMessageSupport {
+public final class HttpMessageSupport {
     private HttpMessageSupport() {
     }
 
-    static boolean chunked(HttpHeaders headers) {
+    public static boolean chunked(HttpHeaders headers) {
         for (String value : headers.getAll(TRANSFER_ENCODING)) {
             if (value.equalsIgnoreCase(CHUNKED.toString())) {
                 return true;
@@ -41,7 +41,7 @@ final class HttpMessageSupport {
         return false;
     }
 
-    static boolean keepAlive(HttpHeaders headers, HttpVersion version) {
+    public static boolean keepAlive(HttpHeaders headers, HttpVersion version) {
         Optional<String> connection = headers.get(CONNECTION);
 
         if (connection.isPresent()) {

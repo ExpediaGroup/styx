@@ -25,7 +25,7 @@
   <suppress checks="DeclarationOrder" files=".*.java"/>
 
   <!-- String instantiation is the normal way to convert from a byte array to a UTF-8 String -->
-  <suppress checks="IllegalInstantiation" files="AdminServiceSupplier.java"/>
+  <suppress checks="IllegalInstantiation" files="AdminServiceSupplier.java|FullHttpMessage.java"/>
   <!-- Checkstyle seems to be confused by switch statements -->
   <suppress checks="Indentation" files="ApacheLogFormat.java"/>
   <suppress checks="CyclomaticComplexity" files="ApacheLogFormat.java"/>

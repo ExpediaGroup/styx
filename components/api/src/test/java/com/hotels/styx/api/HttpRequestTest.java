@@ -17,6 +17,8 @@ package com.hotels.styx.api;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.api.messages.FullHttpRequest;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -24,6 +26,7 @@ import rx.Observable;
 
 import java.net.InetSocketAddress;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.api.HttpHeader.header;
@@ -43,10 +46,11 @@ import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.multipart.HttpPostRequestDecoder.ErrorDataDecoderException;
-import static io.netty.util.CharsetUtil.UTF_8;
 import static java.lang.String.valueOf;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -55,6 +59,8 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
+import static rx.Observable.empty;
+import static rx.Observable.just;
 
 public class HttpRequestTest {
 
@@ -391,7 +397,7 @@ public class HttpRequestTest {
         assertThat(put("/home").body("").build().header(CONTENT_LENGTH).get(), equalTo("0"));
         assertThat(put("/home").body("Hello").build().header(CONTENT_LENGTH).get(), equalTo(valueOf(bytes("Hello").length)));
         assertThat(put("/home").body(bytes("Hello")).build().header(CONTENT_LENGTH).get(), equalTo(valueOf(bytes("Hello").length)));
-        assertThat(put("/home").body(Observable.just(Unpooled.copiedBuffer("Hello", UTF_8))).build().header(CONTENT_LENGTH), isAbsent());
+        assertThat(put("/home").body(just(Unpooled.copiedBuffer("Hello", UTF_8))).build().header(CONTENT_LENGTH), isAbsent());
     }
 
     @Test
@@ -509,5 +515,53 @@ public class HttpRequestTest {
         HttpRequest newRequest = request.newBuilder().build();
 
         assertThat(newRequest.clientAddress(), is(address));
+    }
+
+    @Test
+    public void decodesToFullHttpRequest() throws Exception {
+        HttpRequest request = get("/foo/bar")
+                .body(stream("foo", "bar", "baz"))
+                .build();
+
+        FullHttpRequest<String> full = request.toFullHttpRequest(byteBuf -> byteBuf.toString(UTF_8), 0x100000)
+                .toBlocking()
+                .single();
+
+        assertThat(full.url().toString(), is("/foo/bar"));
+        assertThat(full.body(), is("foobarbaz"));
+    }
+
+    @Test
+    public void decodesToFullHttpRequestWithEmptyBody() throws Exception {
+        HttpRequest request = get("/foo/bar")
+                .body(empty())
+                .build();
+
+        FullHttpRequest<String> full = request.toFullHttpRequest(byteBuf -> byteBuf.toString(UTF_8), 0x100000)
+                .toBlocking()
+                .single();
+
+        assertThat(full.url().toString(), is("/foo/bar"));
+        assertThat(full.body(), is(""));
+    }
+
+    @Test
+    public void decodingToFullHttpRequestDefaultsToUTF8() throws Exception {
+        HttpRequest request = get("/foo/bar")
+                .body(stream("foo", "bar", "baz"))
+                .build();
+
+        FullHttpRequest<String> full = request.toFullHttpRequest(0x100000)
+                .toBlocking()
+                .single();
+
+        assertThat(full.url().toString(), is("/foo/bar"));
+        assertThat(full.body(), is("foobarbaz"));
+    }
+
+    private static Observable<ByteBuf> stream(String... strings) {
+        return Observable.from(Stream.of(strings)
+                .map(string -> Unpooled.copiedBuffer(string, UTF_8))
+                .collect(toList()));
     }
 }

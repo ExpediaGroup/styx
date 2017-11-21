@@ -108,7 +108,7 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
      *
      * @return a new builder
      */
-    Builder newBuilder() {
+    public Builder newBuilder() {
         return new Builder(this);
     }
 
@@ -134,7 +134,7 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
         return Objects.equals(toString(), other.toString());
     }
 
-    static class Builder {
+    public static class Builder {
         private final DefaultHttpHeaders nettyHeaders;
 
         public Builder() {
