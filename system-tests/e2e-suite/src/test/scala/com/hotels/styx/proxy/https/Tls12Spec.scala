@@ -54,7 +54,7 @@ class Tls12Spec extends FunSpec
       """.stripMargin
   )
 
-  val recordingBackend = FakeHttpServer.HttpsStartupConfig(needClientAuth = false)
+  val recordingBackend = FakeHttpServer.HttpsStartupConfig()
     .start()
 
   override protected def beforeAll() = {
