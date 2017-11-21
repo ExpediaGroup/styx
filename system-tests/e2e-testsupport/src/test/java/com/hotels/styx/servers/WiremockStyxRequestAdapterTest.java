@@ -1,12 +1,12 @@
 /**
  * Copyright (C) 2013-2017 Expedia Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,7 +18,6 @@ package com.hotels.styx.servers;
 import com.github.tomakehurst.wiremock.http.ContentTypeHeader;
 import com.github.tomakehurst.wiremock.http.QueryParameter;
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.HttpRequest;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -41,25 +40,25 @@ import static org.testng.Assert.assertEquals;
 public class WiremockStyxRequestAdapterTest {
     private WiremockStyxRequestAdapter adapter;
     private String content;
-    private HttpRequest.Builder wireMockRequestBuilder;
+    private HttpRequest.Builder styxRequestBuilder;
 
     @BeforeMethod
     public void setUp() throws Exception {
         content = "{\n" +
-        "    \"request\" : {\n" +
-        "        \"urlPattern\" : \"/.*\",\n" +
-        "        \"method\" : \"GET\"\n" +
-        "    },\n" +
-        "    \"response\" : {\n" +
-        "        \"status\" : 200,\n" +
-        "        \"body\" : \"Hello, World!\",\n" +
-        "        \"headers\" : {\n" +
-        "            \"Stub-Origin-Info\" : \"App TLS v1.1\"\n" +
-        "        }\n" +
-        "    }\n" +
-        "}";
+                "    \"request\" : {\n" +
+                "        \"urlPattern\" : \"/.*\",\n" +
+                "        \"method\" : \"GET\"\n" +
+                "    },\n" +
+                "    \"response\" : {\n" +
+                "        \"status\" : 200,\n" +
+                "        \"body\" : \"Hello, World!\",\n" +
+                "        \"headers\" : {\n" +
+                "            \"Stub-Origin-Info\" : \"App TLS v1.1\"\n" +
+                "        }\n" +
+                "    }\n" +
+                "}";
 
-        wireMockRequestBuilder = post("/__admin/mappings/new?msg=6198.1")
+        styxRequestBuilder = post("/__admin/mappings/new?msg=6198.1")
                 .header(CONTENT_LENGTH, "208")
                 .header(CONTENT_TYPE, "application/json; charset=UTF-8")
                 .header(HOST, "localhost")
@@ -67,7 +66,7 @@ public class WiremockStyxRequestAdapterTest {
                 .header(USER_AGENT, "Apache-HttpClient/4.3.5 (java 1.5)")
                 .body(content);
 
-        adapter = new WiremockStyxRequestAdapter(wireMockRequestBuilder.build(), content);
+        adapter = new WiremockStyxRequestAdapter(styxRequestBuilder.build(), content);
     }
 
     @Test
@@ -77,9 +76,14 @@ public class WiremockStyxRequestAdapterTest {
         assertThat(adapter.containsHeader("host"), is(true));
     }
 
+
+    // Disabled due to a failing test.
+    // Looks like it is an underlying problem with Netty, which doesn't convert
+    // HTTP header names from AsciiString to String when toArray() is called on
+    // CharSequenceDelegatingStringSet.
     @Test(enabled = false)
     public void adaptsGetAllHeaderKeys() throws Exception {
-        assertEquals(adapter.getAllHeaderKeys(), ImmutableSet.of("Connection", "user-agent", "Content-Type", "Content-Length", "host"));
+        assertEquals(adapter.getAllHeaderKeys(), contains("Connection", "user-agent", "Content-Type", "Content-Length", "host"));
     }
 
     @Test
@@ -161,10 +165,9 @@ public class WiremockStyxRequestAdapterTest {
     @Test
     public void adaptsContentTypeHeaderWhenAbsent() throws Exception {
         adapter = new WiremockStyxRequestAdapter(
-                wireMockRequestBuilder
+                styxRequestBuilder
                         .removeHeader(CONTENT_TYPE)
                         .build(), content);
-
 
         // NOTE: We don't call actual.mimeTypePart() or encodingPart() methods.
         // WireMock will throw a NullPointerException when they are called on an
