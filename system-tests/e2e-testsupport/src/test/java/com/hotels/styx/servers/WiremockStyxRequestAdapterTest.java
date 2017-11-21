@@ -76,6 +76,7 @@ public class WiremockStyxRequestAdapterTest {
         assertThat(adapter.containsHeader("host"), is(true));
     }
 
+
     // Disabled due to a failing test.
     // Looks like it is an underlying problem with Netty, which doesn't convert
     // HTTP header names from AsciiString to String when toArray() is called on
