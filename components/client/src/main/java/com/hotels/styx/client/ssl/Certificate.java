@@ -19,6 +19,9 @@ package com.hotels.styx.client.ssl;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Objects;
+
+import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -60,24 +63,27 @@ public class Certificate {
         if (this == o) {
             return true;
         }
+
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
 
         Certificate that = (Certificate) o;
-
-        if (alias != null ? !alias.equals(that.alias) : that.alias != null) {
-            return false;
-        }
-        return certificatePath != null ? certificatePath.equals(that.certificatePath) : that.certificatePath == null;
-
+        return Objects.equals(alias, that.alias)
+                && Objects.equals(certificatePath, that.certificatePath);
     }
 
     @Override
     public int hashCode() {
-        int result = alias != null ? alias.hashCode() : 0;
-        result = 31 * result + (certificatePath != null ? certificatePath.hashCode() : 0);
-        return result;
+        return Objects.hash(alias, certificatePath);
+    }
+
+    @Override
+    public String toString() {
+        return toStringHelper(this)
+                .add("alias", this.alias)
+                .add("certificatePath", this.certificatePath)
+                .toString();
     }
 
     /**

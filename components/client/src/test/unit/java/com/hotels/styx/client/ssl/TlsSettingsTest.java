@@ -17,12 +17,14 @@ package com.hotels.styx.client.ssl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hotels.styx.client.ssl.Certificate.certificate;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
@@ -155,14 +157,19 @@ public class TlsSettingsTest {
     }
 
     @Test
-    public void protocolsIsImmutable() throws Exception {
-        List<String> protocols = new ArrayList<>();
-        protocols.add("TLSv1");
+    public void isImmutable() throws Exception {
+        List<String> protocols = new ArrayList<String>() {{ add("TLSv1"); }};
+        Certificate[] certificates = new Certificate[] { certificate("x", "x") };
 
-        TlsSettings tlsSettings = new TlsSettings.Builder().protocols(protocols).build();
+        TlsSettings tlsSettings = new TlsSettings.Builder()
+                .additionalCerts(certificates)
+                .protocols(protocols)
+                .build();
 
         protocols.add("TLSv1.2");
+        certificates[0] = certificate("y", "y");
 
         assertThat(tlsSettings.protocols(), equalTo(ImmutableList.of("TLSv1")));
+        assertThat(tlsSettings.additionalCerts(), equalTo(ImmutableSet.of(certificate("x", "x"))));
     }
 }
