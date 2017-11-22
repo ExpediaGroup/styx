@@ -16,12 +16,17 @@
 package com.hotels.styx.client.ssl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 public class TlsSettingsTest {
@@ -96,4 +101,68 @@ public class TlsSettingsTest {
         assertThat(result, containsString("\"trustStorePassword\" : \"foobar\""));
     }
 
+    @Test
+    public void equalsToConsidersProtocols() throws Exception {
+        TlsSettings tlsSettings1 = new TlsSettings.Builder()
+                .protocols(ImmutableList.of("TLSv1", "TLSv1.1"))
+                .build();
+
+        TlsSettings tlsSettings2 = new TlsSettings.Builder()
+                .build();
+
+        assertThat(tlsSettings1.equals(tlsSettings2), is(false));
+
+        tlsSettings1 = new TlsSettings.Builder()
+                .protocols(ImmutableList.of("TLSv1", "TLSv1.1"))
+                .build();
+
+        tlsSettings2 = new TlsSettings.Builder()
+                .protocols(ImmutableList.of("TLSv1", "TLSv1.1"))
+                .build();
+
+        assertThat(tlsSettings1.equals(tlsSettings2), is(true));
+    }
+
+    @Test
+    public void hashCodeConsidersProtocols() throws Exception {
+        TlsSettings tlsSettings1 = new TlsSettings.Builder()
+                .protocols(ImmutableList.of("TLSv1", "TLSv1.1"))
+                .build();
+
+        TlsSettings tlsSettings2 = new TlsSettings.Builder()
+                .build();
+
+        assertThat(tlsSettings1.hashCode() == tlsSettings2.hashCode(), is(false));
+
+        tlsSettings1 = new TlsSettings.Builder()
+                .protocols(ImmutableList.of("TLSv1", "TLSv1.1"))
+                .build();
+
+        tlsSettings2 = new TlsSettings.Builder()
+                .protocols(ImmutableList.of("TLSv1", "TLSv1.1"))
+                .build();
+
+        assertThat(tlsSettings1.hashCode() == tlsSettings2.hashCode(), is(true));
+    }
+
+    @Test
+    public void toStringPrintsprotocols() throws Exception {
+        TlsSettings tlsSettings = new TlsSettings.Builder()
+                .protocols(ImmutableList.of("TLSv1", "TLSv1.2"))
+                .build();
+
+        assertThat(tlsSettings.toString(), containsString("protocols=[TLSv1, TLSv1.2]"));
+    }
+
+    @Test
+    public void protocolsIsImmutable() throws Exception {
+        List<String> protocols = new ArrayList<>();
+        protocols.add("TLSv1");
+
+        TlsSettings tlsSettings = new TlsSettings.Builder().protocols(protocols).build();
+
+        protocols.add("TLSv1.2");
+
+        assertThat(tlsSettings.protocols(), equalTo(ImmutableList.of("TLSv1")));
+    }
 }

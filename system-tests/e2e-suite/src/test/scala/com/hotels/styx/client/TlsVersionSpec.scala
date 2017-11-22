@@ -105,9 +105,6 @@ class TlsVersionSpec extends FunSpec
     )
   }
 
-  println("TLSv1.1 origin: " + appOriginTlsv11.port())
-  println("TLSv1.2 origin: " + appOriginTlsv12.port())
-
   override protected def afterAll(): Unit = {
     appOriginTlsv11.stop()
     appOriginTlsv12.stop()

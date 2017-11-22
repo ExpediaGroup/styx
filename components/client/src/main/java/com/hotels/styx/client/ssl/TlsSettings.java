@@ -18,6 +18,7 @@ package com.hotels.styx.client.ssl;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 
 import java.io.File;
@@ -56,7 +57,7 @@ public class TlsSettings {
         this.additionalCerts = builder.additionalCerts;
         this.trustStorePath = builder.trustStorePath;
         this.trustStorePassword = toCharArray(builder.trustStorePassword);
-        this.protocols = builder.protocols;
+        this.protocols = ImmutableList.copyOf(builder.protocols);
     }
 
     private char[] toCharArray(String password) {
@@ -111,7 +112,8 @@ public class TlsSettings {
                 && Objects.equals(this.sslProvider, other.sslProvider)
                 && Objects.equals(this.additionalCerts, other.additionalCerts)
                 && Objects.equals(this.trustStorePath, other.trustStorePath)
-                && Arrays.equals(this.trustStorePassword, other.trustStorePassword);
+                && Arrays.equals(this.trustStorePassword, other.trustStorePassword)
+                && Objects.equals(this.protocols, other.protocols);
     }
 
     @Override
@@ -122,13 +124,14 @@ public class TlsSettings {
                 .add("additionalCerts", this.additionalCerts)
                 .add("trustStorePath", this.trustStorePath)
                 .add("trustStorePassword", this.trustStorePassword)
+                .add("protocols", this.protocols)
                 .toString();
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(trustAllCerts, sslProvider, additionalCerts,
-                trustStorePath, trustStorePassword);
+                trustStorePath, Arrays.hashCode(trustStorePassword), protocols);
     }
 
     /**

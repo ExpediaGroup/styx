@@ -117,10 +117,6 @@ public final class MockOriginServer {
         ));
     }
 
-    private static HttpHandler2 adminHandler(String originId, WireMockApp wireMockApp) {
-        return newHandler(originId, new AdminRequestHandler(wireMockApp, new BasicResponseRenderer()));
-    }
-
     private static HttpHandler2 newHandler(String originId, RequestHandler wireMockHandler) {
         return (httpRequest, ctx) ->
                 httpRequest.decode(byteBuf -> byteBuf.toString(UTF_8), MAX_CONTENT_LENGTH)

@@ -19,7 +19,7 @@ import java.nio.charset.Charset
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import com.hotels.styx.api.HttpHeaderNames
+import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.support.HostAndPorts.freePort
 import com.hotels.styx.server.HttpsConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
@@ -70,7 +70,7 @@ object FakeHttpServer {
 
       server.stub(urlStartingWith("/"), aResponse
         .withStatus(200)
-        .withHeader(HttpHeaderNames.CONTENT_LENGTH.toString, response.getBytes(Charset.defaultCharset()).size.toString)
+        .withHeader(CONTENT_LENGTH.toString, response.getBytes(Charset.defaultCharset()).size.toString)
         .withHeader(STUB_ORIGIN_INFO.toString, s"{appId.toUpperCase}-$originId")
         .withBody(response))
 
