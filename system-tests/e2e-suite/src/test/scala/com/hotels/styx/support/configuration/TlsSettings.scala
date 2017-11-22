@@ -32,7 +32,8 @@ case class TlsSettings(authenticate: Boolean = default.authenticate(),
                        sslProvider: String = default.sslProvider(),
                        addlCerts: Seq[Certificate] = Seq.empty,
                        trustStorePath: String = default.trustStorePath,
-                       trustStorePassword: String = default.trustStorePassword.toString
+                       trustStorePassword: String = default.trustStorePassword.toString,
+                       protocols: Seq[String] = default.protocols.asScala
 ) {
   def asJava: com.hotels.styx.client.ssl.TlsSettings = {
     new com.hotels.styx.client.ssl.TlsSettings.Builder()
@@ -42,6 +43,7 @@ case class TlsSettings(authenticate: Boolean = default.authenticate(),
         addlCerts.map(_.asJava): _*)
       .trustStorePath(trustStorePath)
       .trustStorePassword(trustStorePassword)
+      .protocols(protocols.asJava)
       .build()
   }
 }
@@ -55,5 +57,7 @@ object TlsSettings {
       sslProvider = from.sslProvider(),
       addlCerts = from.additionalCerts().asScala.map(Certificate.fromJava).toSeq,
       trustStorePath = from.trustStorePath,
-      trustStorePassword = from.trustStorePassword.toString)
+      trustStorePassword = from.trustStorePassword.toString,
+      protocols = from.protocols().asScala
+    )
 }

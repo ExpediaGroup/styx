@@ -89,6 +89,8 @@ backend services configuration, as follows:
         path:            "/path/to/altcert"
     trustStorePath:      "/path/to/truststore"
     trustStorePassword:  "your_password"
+    protocols:
+      - TLSv1.2
   ...
 ```
 
@@ -123,3 +125,7 @@ be specified as separate backends.
   - *trustStorePassword* - A password for the keystore file specified in
     *trustStorePath* attribute.
 
+  - *protocols* - A list of TLS protocol versions to use.
+    Use this attribute to enforce a more secure version like `TLSv1.2`.
+    When absent, enables all default protocols depending on the `sslProvider`.
+    Possible protocol names are: `TLS`, `TLSv1`, `TLSv1.1`, and `TLSv1.2`.

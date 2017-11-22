@@ -90,7 +90,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
 
     @Override
     public int hashCode() {
-        return 31 * super.hashCode() + Objects.hashCode(sslProvider, certificateFile, certificateKeyFile, sessionTimeoutMillis, sessionCacheSize);
+        return 31 * super.hashCode() + Objects.hashCode(sslProvider, certificateFile, certificateKeyFile, sessionTimeoutMillis, sessionCacheSize, protocols);
     }
 
     @Override
@@ -109,7 +109,8 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
                 && Objects.equal(this.certificateFile, other.certificateFile)
                 && Objects.equal(this.certificateKeyFile, other.certificateKeyFile)
                 && Objects.equal(this.sessionTimeoutMillis, other.sessionTimeoutMillis)
-                && Objects.equal(this.sessionCacheSize, other.sessionCacheSize);
+                && Objects.equal(this.sessionCacheSize, other.sessionCacheSize)
+                && Objects.equal(this.protocols, other.protocols);
     }
 
     @Override
@@ -167,7 +168,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
         }
 
         public Builder cipherSuites(List<String> cipherSuites) {
-            this.cipherSuites = checkNotNull(cipherSuites);
+            this.cipherSuites = ImmutableList.copyOf(checkNotNull(cipherSuites));
             return this;
         }
 

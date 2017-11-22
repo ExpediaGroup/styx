@@ -19,7 +19,7 @@ import java.nio.charset.Charset
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import com.hotels.styx.api.HttpHeaderNames
+import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.support.HostAndPorts.freePort
 import com.hotels.styx.server.HttpsConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
@@ -36,13 +36,15 @@ object FakeHttpServer {
                                 appId: String = "generic-app",
                                 originId: String = "generic-app",
                                 certificateFile: String = null,
-                                certificateKeyFile: String = null
+                                certificateKeyFile: String = null,
+                                protocols: Seq[String] = Seq("TLSv1.1", "TLSv1.2")
                                ) {
 
     def start(): MockOriginServer = {
 
       var builder = new HttpsConnectorConfig.Builder()
         .port(portNumber(httpsPort))
+        .protocols(protocols:_*)
       builder = if (certificateFile != null) builder.certificateFile(certificateFile) else builder
       builder = if (certificateKeyFile != null) builder.certificateFile(certificateKeyFile) else builder
 
@@ -68,7 +70,7 @@ object FakeHttpServer {
 
       server.stub(urlStartingWith("/"), aResponse
         .withStatus(200)
-        .withHeader(HttpHeaderNames.CONTENT_LENGTH.toString, response.getBytes(Charset.defaultCharset()).size.toString)
+        .withHeader(CONTENT_LENGTH.toString, response.getBytes(Charset.defaultCharset()).size.toString)
         .withHeader(STUB_ORIGIN_INFO.toString, s"{appId.toUpperCase}-$originId")
         .withBody(response))
 

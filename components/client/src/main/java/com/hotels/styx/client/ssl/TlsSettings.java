@@ -18,10 +18,13 @@ package com.hotels.styx.client.ssl;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -46,6 +49,7 @@ public class TlsSettings {
     private final Set<Certificate> additionalCerts;
     private final String trustStorePath;
     private final char[] trustStorePassword;
+    private final List<String> protocols;
 
     private TlsSettings(Builder builder) {
         this.trustAllCerts = checkNotNull(builder.trustAllCerts);
@@ -53,6 +57,7 @@ public class TlsSettings {
         this.additionalCerts = builder.additionalCerts;
         this.trustStorePath = builder.trustStorePath;
         this.trustStorePassword = toCharArray(builder.trustStorePassword);
+        this.protocols = ImmutableList.copyOf(builder.protocols);
     }
 
     private char[] toCharArray(String password) {
@@ -89,6 +94,11 @@ public class TlsSettings {
         return trustStorePassword;
     }
 
+    @JsonProperty("protocols")
+    public List<String> protocols() {
+        return protocols;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -102,7 +112,8 @@ public class TlsSettings {
                 && Objects.equals(this.sslProvider, other.sslProvider)
                 && Objects.equals(this.additionalCerts, other.additionalCerts)
                 && Objects.equals(this.trustStorePath, other.trustStorePath)
-                && Arrays.equals(this.trustStorePassword, other.trustStorePassword);
+                && Arrays.equals(this.trustStorePassword, other.trustStorePassword)
+                && Objects.equals(this.protocols, other.protocols);
     }
 
     @Override
@@ -113,13 +124,14 @@ public class TlsSettings {
                 .add("additionalCerts", this.additionalCerts)
                 .add("trustStorePath", this.trustStorePath)
                 .add("trustStorePassword", this.trustStorePassword)
+                .add("protocols", this.protocols)
                 .toString();
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(trustAllCerts, sslProvider, additionalCerts,
-                trustStorePath, trustStorePassword);
+                trustStorePath, Arrays.hashCode(trustStorePassword), protocols);
     }
 
     /**
@@ -133,6 +145,7 @@ public class TlsSettings {
         private String trustStorePath = firstNonNull(System.getProperty("javax.net.ssl.trustStore"),
                 DEFAULT_TRUST_STORE_PATH);
         private String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");
+        private List<String> protocols = Collections.emptyList();
 
         /**
          * @deprecated
@@ -200,6 +213,12 @@ public class TlsSettings {
         @JsonProperty("trustStorePassword")
         public Builder trustStorePassword(String trustStorePwd) {
             this.trustStorePassword = trustStorePwd;
+            return this;
+        }
+
+        @JsonProperty("protocols")
+        public Builder protocols(List<String> protocols) {
+            this.protocols = protocols;
             return this;
         }
 

@@ -30,6 +30,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -66,7 +67,16 @@ public final class SslContextFactory {
                 .forClient()
                 .sslProvider(SslProvider.valueOf(tlsSettings.sslProvider()))
                 .trustManager(trustManagerFactory(tlsSettings))
+                .protocols(toNettyProtocols(tlsSettings.protocols()))
                 .build();
+    }
+
+    private static String[] toNettyProtocols(List<String> protocols) {
+        if (protocols == null || protocols.isEmpty()) {
+            return null;
+        } else {
+            return protocols.toArray(new String[protocols.size()]);
+        }
     }
 
     private static TrustManagerFactory trustManagerFactory(TlsSettings tlsSettings) throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException {
