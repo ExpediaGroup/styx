@@ -91,6 +91,10 @@ backend services configuration, as follows:
     trustStorePassword:  "your_password"
     protocols:
       - TLSv1.2
+    cipherSuites:
+      - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+      - ECDHE-RSA-AES256-GCM-SHA384
+      - ECDHE-RSA-AES128-GCM-SHA256
   ...
 ```
 
@@ -124,6 +128,10 @@ be specified as separate backends.
 
   - *trustStorePassword* - A password for the keystore file specified in
     *trustStorePath* attribute.
+
+  - *cipherSuites* - A list of enabled cipher suites, in order
+    of preference. Leave absent to use the SSL provider defaults.
+    Note that the cipher suite names are specific to a SSL provider.
 
   - *protocols* - A list of TLS protocol versions to use.
     Use this attribute to enforce a more secure version like `TLSv1.2`.

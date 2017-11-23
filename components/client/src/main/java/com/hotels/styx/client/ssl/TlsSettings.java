@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ public class TlsSettings {
     private final String trustStorePath;
     private final char[] trustStorePassword;
     private final List<String> protocols;
+    private final List<String> cipherSuites;
 
     private TlsSettings(Builder builder) {
         this.trustAllCerts = checkNotNull(builder.trustAllCerts);
@@ -58,6 +59,7 @@ public class TlsSettings {
         this.trustStorePath = builder.trustStorePath;
         this.trustStorePassword = toCharArray(builder.trustStorePassword);
         this.protocols = ImmutableList.copyOf(builder.protocols);
+        this.cipherSuites = ImmutableList.copyOf(builder.cipherSuites);
     }
 
     private char[] toCharArray(String password) {
@@ -113,7 +115,8 @@ public class TlsSettings {
                 && Objects.equals(this.additionalCerts, other.additionalCerts)
                 && Objects.equals(this.trustStorePath, other.trustStorePath)
                 && Arrays.equals(this.trustStorePassword, other.trustStorePassword)
-                && Objects.equals(this.protocols, other.protocols);
+                && Objects.equals(this.protocols, other.protocols)
+                && Objects.equals(this.cipherSuites, other.cipherSuites);
     }
 
     @Override
@@ -125,13 +128,18 @@ public class TlsSettings {
                 .add("trustStorePath", this.trustStorePath)
                 .add("trustStorePassword", this.trustStorePassword)
                 .add("protocols", this.protocols)
+                .add("cipherSuites", this.cipherSuites)
                 .toString();
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(trustAllCerts, sslProvider, additionalCerts,
-                trustStorePath, Arrays.hashCode(trustStorePassword), protocols);
+                trustStorePath, Arrays.hashCode(trustStorePassword), protocols, cipherSuites);
+    }
+
+    public List<String> cipherSuites() {
+        return this.cipherSuites;
     }
 
     /**
@@ -146,6 +154,7 @@ public class TlsSettings {
                 DEFAULT_TRUST_STORE_PATH);
         private String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");
         private List<String> protocols = Collections.emptyList();
+        private List<String> cipherSuites = Collections.emptyList();
 
         /**
          * @deprecated
@@ -219,6 +228,12 @@ public class TlsSettings {
         @JsonProperty("protocols")
         public Builder protocols(List<String> protocols) {
             this.protocols = protocols;
+            return this;
+        }
+
+        @JsonProperty("cipherSuites")
+        public Builder cipherSuites(List<String> cipherSuites) {
+            this.cipherSuites = cipherSuites;
             return this;
         }
 

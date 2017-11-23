@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,6 +101,7 @@ public final class SslContexts {
         SelfSignedCertificate certificate = newSelfSignedCertificate();
         return SslContextBuilder.forServer(certificate.certificate(), certificate.privateKey())
                 .protocols(toProtocolsOrDefault(httpsConnectorConfig.protocols()))
+                .ciphers(toCiphersOrDefault(httpsConnectorConfig.ciphers()))
                 .sslProvider(SslProvider.valueOf(httpsConnectorConfig.sslProvider()));
     }
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,8 @@ case class TlsSettings(authenticate: Boolean = default.authenticate(),
                        addlCerts: Seq[Certificate] = Seq.empty,
                        trustStorePath: String = default.trustStorePath,
                        trustStorePassword: String = default.trustStorePassword.toString,
-                       protocols: Seq[String] = default.protocols.asScala
+                       protocols: Seq[String] = default.protocols.asScala,
+                       cipherSuites: Seq[String] = default.cipherSuites.asScala
 ) {
   def asJava: com.hotels.styx.client.ssl.TlsSettings = {
     new com.hotels.styx.client.ssl.TlsSettings.Builder()
@@ -44,6 +45,7 @@ case class TlsSettings(authenticate: Boolean = default.authenticate(),
       .trustStorePath(trustStorePath)
       .trustStorePassword(trustStorePassword)
       .protocols(protocols.asJava)
+      .cipherSuites(cipherSuites.asJava)
       .build()
   }
 }
@@ -58,6 +60,7 @@ object TlsSettings {
       addlCerts = from.additionalCerts().asScala.map(Certificate.fromJava).toSeq,
       trustStorePath = from.trustStorePath,
       trustStorePassword = from.trustStorePassword.toString,
-      protocols = from.protocols().asScala
+      protocols = from.protocols().asScala,
+      cipherSuites = from.cipherSuites().asScala
     )
 }
