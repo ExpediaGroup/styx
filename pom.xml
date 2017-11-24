@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.sonatype.oss</groupId>
-    <artifactId>oss-parent</artifactId>
-    <version>9</version>
-  </parent>
 
   <packaging>pom</packaging>
 
@@ -16,7 +11,7 @@
   <name>Styx</name>
 
   <description>
-      Programmable, asynchronous, event-based reverse proxy for JVM.
+    Programmable, asynchronous, event-based reverse proxy for JVM.
   </description>
 
   <inceptionYear>2013</inceptionYear>
@@ -34,10 +29,10 @@
   </licenses>
 
   <scm>
-     <connection>scm:git:git@github.com:HotelsDotCom/styx.git</connection>
-     <developerConnection>scm:git:git@github.com:HotelsDotCom/styx.git</developerConnection>
-     <url>https://github.com/HotelsDotCom/styx</url>
-     <tag>HEAD</tag>
+    <connection>scm:git:git@github.com:HotelsDotCom/styx.git</connection>
+    <developerConnection>scm:git:git@github.com:HotelsDotCom/styx.git</developerConnection>
+    <url>https://github.com/HotelsDotCom/styx</url>
+    <tag>HEAD</tag>
   </scm>
 
   <distributionManagement>
@@ -129,7 +124,7 @@
     <maven-install-plugin.version>2.5.1</maven-install-plugin.version>
     <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
     <maven-pmd-plugin.version>3.5</maven-pmd-plugin.version>
-    <maven-javadoc-plugin.version>2.9</maven-javadoc-plugin.version>
+    <maven-javadoc-plugin.version>3.0.0-M1</maven-javadoc-plugin.version>
     <maven-project-info-reports-plugin.version>2.6</maven-project-info-reports-plugin.version>
     <maven-release-plugin.version>2.4</maven-release-plugin.version>
     <maven-resources-plugin.version>2.6</maven-resources-plugin.version>
@@ -755,6 +750,14 @@
           <artifactId>maven-resources-plugin</artifactId>
           <version>${maven-resources-plugin.version}</version>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${maven-javadoc-plugin.version}</version>
+          <configuration>
+            <doclint>none</doclint>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
 
@@ -942,7 +945,6 @@
       </properties>
     </profile>
 
-
     <profile>
       <id>release</id>
       <modules>
@@ -1058,7 +1060,57 @@
         </plugins>
       </build>
     </profile>
-
+    <profile>
+      <id>sonatype-oss-release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.1.2</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>${maven-javadoc-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.1</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <properties>
+        <libs.release.url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</libs.release.url>
+        <libs.snapshot.url>https://oss.sonatype.org/content/repositories/snapshots/</libs.snapshot.url>
+      </properties>
+    </profile>
   </profiles>
 
 

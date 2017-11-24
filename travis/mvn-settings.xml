@@ -1,0 +1,14 @@
+<settings>
+    <servers>
+        <server>
+            <id>central</id>
+            <username>${env.SONATYPE_JIRA_USERNAME}</username>
+            <password>${env.SONATYPE_JIRA_PASSWORD}</password>
+        </server>
+        <server>
+            <id>snapshots</id>
+            <username>${env.SONATYPE_JIRA_USERNAME}</username>
+            <password>${env.SONATYPE_JIRA_PASSWORD}</password>
+        </server>
+    </servers>
+</settings>
