@@ -2,3 +2,6 @@ language: java
 script: mvn verify -Pquality,linux
 jdk:
  - oraclejdk8
+cache:
+  directories:
+  - ~/.m2/repository
