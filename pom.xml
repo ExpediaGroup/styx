@@ -35,6 +35,16 @@
     <tag>HEAD</tag>
   </scm>
 
+  <developers>
+    <developer>
+      <id>styx.developers</id>
+      <name>The Styx Project Committers</name>
+      <url>https://github.com/orgs/HotelsDotCom/teams/styx-committers</url>
+      <organization>Hotels.com</organization>
+      <organizationUrl>https://github.com/HotelsDotCom</organizationUrl>
+    </developer>
+  </developers>
+
   <distributionManagement>
     <repository>
       <id>central</id>
