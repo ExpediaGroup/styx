@@ -452,13 +452,13 @@ public class FullHttpRequestTest {
     }
 
     private static FullHttpRequest.Builder<String> get(String uri) {
-        return FullHttpRequest.Builder.get(uri);
+        return FullHttpRequest.get(uri);
     }
 
     private static FullHttpRequest.Builder<String> post(String uri) {
-        return FullHttpRequest.Builder.post(uri);
+        return FullHttpRequest.post(uri);
     }
     private static FullHttpRequest.Builder<String> patch(String uri) {
-        return FullHttpRequest.Builder.patch(uri);
+        return FullHttpRequest.patch(uri);
     }
 }

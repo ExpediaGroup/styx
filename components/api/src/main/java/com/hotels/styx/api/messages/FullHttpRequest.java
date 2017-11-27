@@ -85,6 +85,138 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
         this.cookies = builder.cookies();
     }
 
+    /**
+     * Creates a request with the GET method.
+     *
+     * @param uri URI
+     * @return {@code this}
+     */
+    public static <T> Builder<T> get(String uri) {
+        return new Builder<>(GET, uri);
+    }
+
+    /**
+     * Creates a request with the HEAD method.
+     *
+     * @param uri URI
+     * @return {@code this}
+     */
+    public static <T> Builder<T> head(String uri) {
+        return new Builder<>(HEAD, uri);
+    }
+
+    /**
+     * Creates a request with the POST method.
+     *
+     * @param uri URI
+     * @return {@code this}
+     */
+    public static <T> Builder<T> post(String uri) {
+        return new Builder<>(POST, uri);
+    }
+
+    /**
+     * Creates a request with the DELETE method.
+     *
+     * @param uri URI
+     * @return {@code this}
+     */
+    public static <T> Builder<T> delete(String uri) {
+        return new Builder<>(DELETE, uri);
+    }
+
+    /**
+     * Creates a request with the PUT method.
+     *
+     * @param uri URI
+     * @return {@code this}
+     */
+    public static <T> Builder<T> put(String uri) {
+        return new Builder<>(PUT, uri);
+    }
+
+    /**
+     * Creates a request with the PATCH method.
+     *
+     * @param uri URI
+     * @return {@code this}
+     */
+    public static <T> Builder<T> patch(String uri) {
+        return new Builder<>(PATCH, uri);
+    }
+
+    /**
+     * Creates a request with the GET method.
+     *
+     * @param uri URI
+     * @param body body
+     * @param <T> body type
+     * @return {@code this}
+     */
+    public static <T> Builder<T> get(String uri, T body) {
+        return new Builder<T>(GET, uri).body(body);
+    }
+
+    /**
+     * Creates a request with the HEAD method.
+     *
+     * @param uri URI
+     * @param body body
+     * @param <T> body type
+     * @return {@code this}
+     */
+    public static <T> Builder<T> head(String uri, T body) {
+        return new Builder<T>(HEAD, uri).body(body);
+    }
+
+    /**
+     * Creates a request with the POST method.
+     *
+     * @param uri URI
+     * @param body body
+     * @param <T> body type
+     * @return {@code this}
+     */
+    public static <T> Builder<T> post(String uri, T body) {
+        return new Builder<T>(POST, uri).body(body);
+    }
+
+    /**
+     * Creates a request with the DELETE method.
+     *
+     * @param uri URI
+     * @param body body
+     * @param <T> body type
+     * @return {@code this}
+     */
+    public static <T> Builder<T> delete(String uri, T body) {
+        return new Builder<T>(DELETE, uri).body(body);
+    }
+
+    /**
+     * Creates a request with the PUT method.
+     *
+     * @param uri URI
+     * @param body body
+     * @param <T> body type
+     * @return {@code this}
+     */
+    public static <T> Builder<T> put(String uri, T body) {
+        return new Builder<T>(PUT, uri).body(body);
+    }
+
+    /**
+     * Creates a request with the PATCH method.
+     *
+     * @param uri URI
+     * @param body body
+     * @param <T> body type
+     * @return {@code this}
+     */
+    public static <T> Builder<T> patch(String uri, T body) {
+        return new Builder<T>(PATCH, uri).body(body);
+    }
+
     @Override
     public HttpVersion version() {
         return this.version;
@@ -330,66 +462,6 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
             this.headers = request.headers().newBuilder();
             this.body = null;
             this.cookies = new ArrayList<>(request.cookies());
-        }
-
-        /**
-         * Creates a request with the GET method.
-         *
-         * @param uri URI
-         * @return {@code this}
-         */
-        public static <T> Builder<T> get(String uri) {
-            return new Builder<>(GET, uri);
-        }
-
-        /**
-         * Creates a request with the HEAD method.
-         *
-         * @param uri URI
-         * @return {@code this}
-         */
-        public static <T> Builder<T> head(String uri) {
-            return new Builder<>(HEAD, uri);
-        }
-
-        /**
-         * Creates a request with the POST method.
-         *
-         * @param uri URI
-         * @return {@code this}
-         */
-        public static <T> Builder<T> post(String uri) {
-            return new Builder<>(POST, uri);
-        }
-
-        /**
-         * Creates a request with the DELETE method.
-         *
-         * @param uri URI
-         * @return {@code this}
-         */
-        public static <T> Builder<T> delete(String uri) {
-            return new Builder<>(DELETE, uri);
-        }
-
-        /**
-         * Creates a request with the PUT method.
-         *
-         * @param uri URI
-         * @return {@code this}
-         */
-        public static <T> Builder<T> put(String uri) {
-            return new Builder<>(PUT, uri);
-        }
-
-        /**
-         * Creates a request with the PATCH method.
-         *
-         * @param uri URI
-         * @return {@code this}
-         */
-        public static <T> Builder<T> patch(String uri) {
-            return new Builder<>(PATCH, uri);
         }
 
         /**
