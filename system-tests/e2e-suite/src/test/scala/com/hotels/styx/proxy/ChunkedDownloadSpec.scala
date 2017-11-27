@@ -64,12 +64,12 @@ class ChunkedDownloadSpec extends FunSpec
       originRespondingWith(response200OkWithThreeChunks("a" * 10, "b" * 20, "c" * 30))
 
       val request = api.HttpRequest.Builder.get(styxServer.routerURL("/chunkedDownloadSpec/1")).build()
-      val (response, content) = decodedRequest(request)
+      val response = decodedRequest(request)
 
       response.status() should be(OK)
       response.contentLength().isPresent should be(false)
 
-      assert(content == "a" * 10 + "b" * 20 + "c" * 30, s"\nReceived incorrect content: $content")
+      assert(response.body() == "a" * 10 + "b" * 20 + "c" * 30, s"\nReceived incorrect content: ${response.body()}")
     }
 
     it("Proxies long lasting HTTP Chunked downloads without triggering gateway read timeout.") {
@@ -77,11 +77,11 @@ class ChunkedDownloadSpec extends FunSpec
       originRespondingWith(response200OkWithSlowChunkedMessageBody(messageBody))
 
       val request = api.HttpRequest.Builder.get(styxServer.routerURL("/chunkedDownloadSpec/2")).build()
-      val (response, content) = decodedRequest(request)
+      val response = decodedRequest(request)
 
       response.status() should be(OK)
 
-      assert(content.hashCode() == messageBody.hashCode, s"\nReceived incorrect content: $content, \nexpected: $messageBody")
+      assert(response.body().hashCode() == messageBody.hashCode, s"\nReceived incorrect content: ${response.body()}, \nexpected: $messageBody")
     }
 
     it("Cancels the HTTP download request when browser closes the connection.") {

@@ -21,6 +21,7 @@ import _root_.io.netty.handler.codec.http.HttpResponseStatus.{BAD_GATEWAY, METHO
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.google.common.net.HttpHeaders.CONTENT_LENGTH
 import com.hotels.styx.api._
+import com.hotels.styx.api.messages.FullHttpResponse
 import com.hotels.styx.support.backends.FakeHttpServer.HttpStartupConfig
 import com.hotels.styx.support.configuration.{HealthCheckConfig, HttpBackend, Origins}
 import com.hotels.styx.support.server.FakeHttpServer
@@ -74,9 +75,8 @@ class OriginsCommandsSpec extends FeatureSpec
   }
 
   override protected def afterAll() = {
-    val (response, body) = get(styxServer.adminURL("/admin/origins/status"))
-    val originsStatus: String = body
-    println("after test: " + originsStatus)
+    val response = get(styxServer.adminURL("/admin/origins/status"))
+    println("after test: " + response.body)
     println("Styx metrics: " + getStyxMetricsSnapshot)
 
     origin1.stop()
@@ -94,8 +94,8 @@ class OriginsCommandsSpec extends FeatureSpec
       Given("an active origin")
       enableOrigin("appOne", "appOne-01")
       eventually(timeout(5 seconds)) {
-        val (response, body) = get(styxServer.routerURL("/appOne/"))
-        body should include(s"Response From appOne-01")
+        val response = get(styxServer.routerURL("/appOne/"))
+        response.body should include(s"Response From appOne-01")
       }
 
       When("a disable command is issued")
@@ -103,7 +103,7 @@ class OriginsCommandsSpec extends FeatureSpec
 
       Then("no more traffic should be routed")
       eventually(timeout(5 seconds)) {
-        val (response, body) = get(styxServer.routerURL("/appOne/"))
+        val response = get(styxServer.routerURL("/appOne/"))
         assert(response.status() == BAD_GATEWAY)
       }
 
@@ -129,8 +129,8 @@ class OriginsCommandsSpec extends FeatureSpec
 
       Then("traffic should be routed to the newly enabled origin")
       eventually(timeout(5 seconds)) {
-        val (response, body) = get(styxServer.routerURL("/appOne/"))
-        body should include(s"Response From appOne-01")
+        val response = get(styxServer.routerURL("/appOne/"))
+        response.body should include(s"Response From appOne-01")
       }
 
       And("origins status page shows the origin as active")
@@ -143,11 +143,11 @@ class OriginsCommandsSpec extends FeatureSpec
 
     scenario("Only POST method is allowed") {
       When("a command with GET method is issued")
-      val (response, body) = sendAGetRequest("appOne", "appOne-01")
+      val response = sendAGetRequest("appOne", "appOne-01")
 
       Then("A Method not allowed error should be shown")
       response.status() should be(METHOD_NOT_ALLOWED)
-      body should include("Method Not Allowed. Only [POST] is allowed for this request.")
+      response.body should include("Method Not Allowed. Only [POST] is allowed for this request.")
     }
 
     def disableOrigin(appId: String, originId: String) = {
@@ -163,20 +163,15 @@ class OriginsCommandsSpec extends FeatureSpec
     get(styxServer.adminURL("/admin/tasks/origins?cmd=enable_origin&appId=%s&originId=%s".format(appId, originId)))
   }
 
-  def getOriginsStatus = get(styxServer.adminURL("/admin/origins/status"))
 
+  def getCurrentOriginsStatusSnapshot: String = get(styxServer.adminURL("/admin/origins/status")).body()
 
-  def getCurrentOriginsStatusSnapshot: String = {
-    val (response, body) = getOriginsStatus
-    body
-  }
 
   def getStyxMetricsSnapshot: String = {
-    val (originsStatus, body) = get(styxServer.adminURL("/admin/metrics"))
-    body
+    get(styxServer.adminURL("/admin/metrics")).body()
   }
 
-  private def get(url: String) = {
+  private def get(url: String): FullHttpResponse[String] = {
     decodedRequest(HttpRequest.Builder.get(url).build())
   }
 

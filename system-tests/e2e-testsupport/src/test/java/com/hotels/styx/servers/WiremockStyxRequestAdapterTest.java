@@ -18,7 +18,7 @@ package com.hotels.styx.servers;
 import com.github.tomakehurst.wiremock.http.ContentTypeHeader;
 import com.github.tomakehurst.wiremock.http.QueryParameter;
 import com.google.common.base.Optional;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.messages.FullHttpRequest;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -26,7 +26,6 @@ import static com.github.tomakehurst.wiremock.http.RequestMethod.POST;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static com.hotels.styx.api.HttpRequest.Builder.post;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static io.netty.handler.codec.http.HttpHeaderNames.USER_AGENT;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -37,10 +36,11 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.testng.Assert.assertEquals;
 
+
 public class WiremockStyxRequestAdapterTest {
     private WiremockStyxRequestAdapter adapter;
     private String content;
-    private HttpRequest.Builder styxRequestBuilder;
+    private FullHttpRequest.Builder<String> styxRequestBuilder;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -58,7 +58,7 @@ public class WiremockStyxRequestAdapterTest {
                 "    }\n" +
                 "}";
 
-        styxRequestBuilder = post("/__admin/mappings/new?msg=6198.1")
+        styxRequestBuilder = FullHttpRequest.Builder.<String>post("/__admin/mappings/new?msg=6198.1")
                 .header(CONTENT_LENGTH, "208")
                 .header(CONTENT_TYPE, "application/json; charset=UTF-8")
                 .header(HOST, "localhost")
@@ -66,7 +66,7 @@ public class WiremockStyxRequestAdapterTest {
                 .header(USER_AGENT, "Apache-HttpClient/4.3.5 (java 1.5)")
                 .body(content);
 
-        adapter = new WiremockStyxRequestAdapter(styxRequestBuilder.build(), content);
+        adapter = new WiremockStyxRequestAdapter(styxRequestBuilder.build());
     }
 
     @Test
@@ -167,7 +167,7 @@ public class WiremockStyxRequestAdapterTest {
         adapter = new WiremockStyxRequestAdapter(
                 styxRequestBuilder
                         .removeHeader(CONTENT_TYPE)
-                        .build(), content);
+                        .build());
 
         // NOTE: We don't call actual.mimeTypePart() or encodingPart() methods.
         // WireMock will throw a NullPointerException when they are called on an

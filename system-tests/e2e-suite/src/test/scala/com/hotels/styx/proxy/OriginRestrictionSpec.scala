@@ -57,7 +57,7 @@ class OriginRestrictionSpec extends FunSpec
         .addCookie("originRestrictionCookie", "h2")
         .build()
 
-      val (response, _) = decodedRequest(request)
+      val response = decodedRequest(request)
 
       backend2.verify(getRequestedFor(urlEqualTo("/app/")).withHeader("Cookie", equalTo("originRestrictionCookie=h2")))
       response.header(ORIGIN_ID_DEFAULT).get() should be("h2")
@@ -69,7 +69,7 @@ class OriginRestrictionSpec extends FunSpec
         .addCookie("originRestrictionCookie", "h(2|3)")
         .build()
 
-      val (response, _) = decodedRequest(request)
+      val response = decodedRequest(request)
 
       response.header(ORIGIN_ID_DEFAULT).get() should (be("h2") or be("h3"))
     }
@@ -80,7 +80,7 @@ class OriginRestrictionSpec extends FunSpec
         .addCookie("originRestrictionCookie", "(?!)")
         .build()
 
-      val (response, _) = decodedRequest(request)
+      val response = decodedRequest(request)
 
       response.status() should be(BAD_GATEWAY)
     }
@@ -91,7 +91,7 @@ class OriginRestrictionSpec extends FunSpec
         .addCookie("originRestrictionCookie", "h2,h[3-4]")
         .build()
 
-      val (response, _) = decodedRequest(request)
+      val response = decodedRequest(request)
 
       response.header(ORIGIN_ID_DEFAULT).get() should (be("h2") or be("h3") or be("h4"))
     }

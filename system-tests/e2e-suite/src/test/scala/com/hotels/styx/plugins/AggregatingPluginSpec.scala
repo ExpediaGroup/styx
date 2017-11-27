@@ -54,13 +54,13 @@ class AggregatingPluginSpec extends FunSpec
     it("Gets response from aggregating plugin (no body)") {
       mockServer.stub("/", responseSupplier(() => response(OK).build()))
 
-      val request = get(styxServer.routerURL("/"))
-        .build()
-      val (resp, body) = decodedRequest(request)
+      val request = get(styxServer.routerURL("/")).build()
+      val resp = decodedRequest(request)
+
       assert(resp.status().code() == 200)
       assert(resp.header("test_plugin").get() == "yes")
       assert(resp.header("bytes_aggregated").get() == "0")
-      assert(body == "")
+      assert(resp.body == "")
     }
 
     it("Gets response from aggregating plugin (with body)") {
@@ -68,13 +68,13 @@ class AggregatingPluginSpec extends FunSpec
         () => response(OK).body(Observable.just(chunk("a"), chunk("b"), chunk("c"), chunk("d"), chunk("e"))).build()
       ))
 
-      val request = get(styxServer.routerURL("/body"))
-        .build()
-      val (resp, body) = decodedRequest(request)
+      val request = get(styxServer.routerURL("/body")).build()
+      val resp = decodedRequest(request)
+
       assert(resp.status().code() == 200)
       assert(resp.header("test_plugin").get() == "yes")
       assert(resp.header("bytes_aggregated").get() == "2500")
-      assert(body == chunkString("a") + chunkString("b") + chunkString("c") + chunkString("d") + chunkString("e"))
+      assert(resp.body == chunkString("a") + chunkString("b") + chunkString("c") + chunkString("d") + chunkString("e"))
     }
   }
 

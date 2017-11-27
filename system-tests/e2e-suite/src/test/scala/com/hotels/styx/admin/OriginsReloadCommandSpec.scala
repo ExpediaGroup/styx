@@ -51,7 +51,7 @@ class OriginsReloadCommandSpec extends FunSpec
 
     Files.copy(originsNok, styxOriginsFile, REPLACE_EXISTING)
 
-    val (resp, body) = decodedRequest(HttpRequest.Builder.post(styxServer.adminURL("/admin/tasks/origins/reload")).build())
+    val resp = decodedRequest(HttpRequest.Builder.post(styxServer.adminURL("/admin/tasks/origins/reload")).build())
     resp.status() should be(BAD_REQUEST)
 
     BackendService.fromJava(fileBasedBackendsRegistry.get().asScala.head) should be(

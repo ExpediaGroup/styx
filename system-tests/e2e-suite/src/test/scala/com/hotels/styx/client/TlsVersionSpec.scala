@@ -122,18 +122,18 @@ class TlsVersionSpec extends FunSpec
   describe("Backend Service TLS Protocol Setting") {
 
     it("Proxies to TLSv1.1 origin when TLSv1.1 support enabled.") {
-      val (response1, body1) = decodedRequest(httpRequest("/tls11/a"))
+      val response1 = decodedRequest(httpRequest("/tls11/a"))
       assert(response1.status().code() == 200)
-      assert(body1 == "Hello, World!")
+      assert(response1.body() == "Hello, World!")
 
       appOriginTlsv11.verify(
         getRequestedFor(
           urlEqualTo("/tls11/a"))
           .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")))
 
-      val (response2, body2) = decodedRequest(httpRequest("/tlsDefault/a2"))
+      val response2 = decodedRequest(httpRequest("/tlsDefault/a2"))
       assert(response2.status().code() == 200)
-      assert(body2 == "Hello, World!")
+      assert(response2.body() == "Hello, World!")
 
       appOriginTlsDefault.verify(
         getRequestedFor(
@@ -142,18 +142,18 @@ class TlsVersionSpec extends FunSpec
     }
 
     it("Proxies to TLSv1.2 origin when TLSv1.2 support is enabled.") {
-      val (response1, body1) = decodedRequest(httpRequest("/tlsDefault/b1"))
+      val response1 = decodedRequest(httpRequest("/tlsDefault/b1"))
       assert(response1.status().code() == 200)
-      assert(body1 == "Hello, World!")
+      assert(response1.body() == "Hello, World!")
 
       appOriginTlsDefault.verify(
         getRequestedFor(urlEqualTo("/tlsDefault/b1"))
           .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")))
 
 
-      val (response, body) = decodedRequest(httpRequest("/tls12/b2"))
+      val response = decodedRequest(httpRequest("/tls12/b2"))
       assert(response.status().code() == 200)
-      assert(body == "Hello, World!")
+      assert(response.body() == "Hello, World!")
 
       appOriginTlsv12.verify(
         getRequestedFor(urlEqualTo("/tls12/b2"))
@@ -161,10 +161,10 @@ class TlsVersionSpec extends FunSpec
     }
 
     it("Refuses to connect to TLSv1.1 origin when TLSv1.1 is disabled") {
-      val (response, body) = decodedRequest(httpRequest("/tls11-to-tls12/c"))
+      val response = decodedRequest(httpRequest("/tls11-to-tls12/c"))
 
       assert(response.status().code() == 502)
-      assert(body == "Site temporarily unavailable.")
+      assert(response.body == "Site temporarily unavailable.")
 
       appOriginTlsv12B.verify(0, getRequestedFor(urlEqualTo("/tls11-to-tls12/c")))
     }

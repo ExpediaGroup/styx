@@ -52,14 +52,14 @@ class PluginPipelineSpec extends FunSpec with StyxProxySpec {
   describe("plugins ") {
 
     it("Styx loads the plugins during startup.") {
-      val (response, _) = decodedRequest(anHttpRequest)
+      val response = decodedRequest(anHttpRequest)
 
       response.header("X-Hcom-Plugins").get() should be("test-plugin-a")
       response.header("X-Hcom-Plugins-List").get() should be("PluginA")
     }
 
     it("Styx exposes the plugin configuration directory") {
-      val (response, _) = decodedRequest(anHttpRequest)
+      val response = decodedRequest(anHttpRequest)
       response.header("X-Hcom-Plugin-Configuration-Path").get() should be("/my/plugin/config/directory")
       response.header("X-Hcom-Plugins-List").get() should be("PluginA")
     }

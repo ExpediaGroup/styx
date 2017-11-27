@@ -90,7 +90,7 @@ class BadFramingSpec extends FunSpec
         .addHeader(CONTENT_LENGTH, "60")
         .build()
 
-      val (response, _) = decodedRequest(request)
+      val response = decodedRequest(request)
       response.status() should be(BAD_REQUEST)
     }
 
@@ -102,7 +102,7 @@ class BadFramingSpec extends FunSpec
         .header(CONTENT_LENGTH, "50, 60")
         .build()
 
-      val (response, _) = decodedRequest(request)
+      val response = decodedRequest(request)
       response.status() should be(BAD_REQUEST)
     }
 
@@ -114,7 +114,7 @@ class BadFramingSpec extends FunSpec
         .header(CONTENT_LENGTH, "50, 50")
         .build()
 
-      val (response, _) = decodedRequest(request)
+      val response = decodedRequest(request)
       response.status() should be(BAD_REQUEST)
     }
 
@@ -133,11 +133,11 @@ class BadFramingSpec extends FunSpec
       })
       val request = api.HttpRequest.Builder.get(styxServer.routerURL("/badFramingSpec/one/foo/i"))
         .build()
-      val (response, body) = decodedRequest(request)
+      val response = decodedRequest(request)
       response.status() should be(OK)
       response.header(CONTENT_LENGTH).isPresent should be(false)
 
-      assert(body == "a" * 10 + "b" * 20 + "c" * 30, s"\nReceived incorrect body: $body")
+      assert(response.body == "a" * 10 + "b" * 20 + "c" * 30, s"\nReceived incorrect body: ${response.body()}")
     }
 
 

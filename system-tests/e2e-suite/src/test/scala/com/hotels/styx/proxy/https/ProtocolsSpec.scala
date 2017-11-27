@@ -134,10 +134,10 @@ class ProtocolsSpec extends FunSpec
 
   describe("Styx routing of HTTP requests") {
     it("Proxies HTTP protocol to HTTP origins") {
-      val (response, body) = decodedRequest(httpRequest("/http/app.x.1"))
+      val response = decodedRequest(httpRequest("/http/app.x.1"))
 
       assert(response.status().code() == 200)
-      assert(body == "Hello, World!")
+      assert(response.body == "Hello, World!")
 
       httpServer.verify(
         getRequestedFor(urlEqualTo("/http/app.x.1"))
@@ -145,10 +145,10 @@ class ProtocolsSpec extends FunSpec
     }
 
     it("Proxies HTTP protocol to HTTPS origins") {
-      val (response, body) = decodedRequest(httpRequest("/https/trustAllCerts/foo.2"))
+      val response = decodedRequest(httpRequest("/https/trustAllCerts/foo.2"))
 
       assert(response.status().code() == 200)
-      assert(body == "Hello, World!")
+      assert(response.body == "Hello, World!")
 
       httpsOriginWithoutCert.verify(
         getRequestedFor(urlEqualTo("/https/trustAllCerts/foo.2"))
@@ -156,14 +156,14 @@ class ProtocolsSpec extends FunSpec
     }
 
     it("Retains existing X-Forwarded-Proto header unmodified") {
-      val (response, body) = decodedRequest(
+      val response = decodedRequest(
         httpRequest("/http/app.x.3")
           .newBuilder().header(X_FORWARDED_PROTO, "https")
           .build
       )
 
       assert(response.status().code() == 200)
-      assert(body == "Hello, World!")
+      assert(response.body == "Hello, World!")
 
       httpServer.verify(
         getRequestedFor(urlEqualTo("/http/app.x.3"))
@@ -174,10 +174,10 @@ class ProtocolsSpec extends FunSpec
   describe("Styx routing of HTTPS requests") {
 
     it("Proxies HTTPS requests to HTTP backend") {
-      val (response, body) = decodedRequest(httpsRequest("/http/app.x.4"))
+      val response = decodedRequest(httpsRequest("/http/app.x.4"))
 
       assert(response.status().code() == 200)
-      assert(body == "Hello, World!")
+      assert(response.body == "Hello, World!")
       httpServer.verify(
         getRequestedFor(urlEqualTo("/http/app.x.4"))
           .withHeader("X-Forwarded-Proto", valueMatchingStrategy("https"))
@@ -185,10 +185,10 @@ class ProtocolsSpec extends FunSpec
     }
 
     it("Proxies HTTPS requests to HTTPS backend") {
-      val (response, body) = decodedRequest(httpsRequest("/https/trustAllCerts/foo.5"))
+      val response = decodedRequest(httpsRequest("/https/trustAllCerts/foo.5"))
 
       assert(response.status().code() == 200)
-      assert(body == "Hello, World!")
+      assert(response.body == "Hello, World!")
       httpsOriginWithoutCert.verify(
         getRequestedFor(urlEqualTo("/https/trustAllCerts/foo.5"))
           .withHeader("X-Forwarded-Proto", valueMatchingStrategy("https"))
@@ -196,14 +196,14 @@ class ProtocolsSpec extends FunSpec
     }
 
     it("Retains existing X-Forwarded-Proto header unmodified") {
-      val (response, body) = decodedRequest(
+      val response = decodedRequest(
         httpsRequest("/https/trustAllCerts/foo.6")
           .newBuilder().header(X_FORWARDED_PROTO, "http")
           .build
       )
 
       assert(response.status().code() == 200)
-      assert(body == "Hello, World!")
+      assert(response.body == "Hello, World!")
       httpsOriginWithoutCert.verify(
         getRequestedFor(urlEqualTo("/https/trustAllCerts/foo.6"))
           .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http"))
@@ -217,10 +217,10 @@ class ProtocolsSpec extends FunSpec
       val request = get(styxServer.secureRouterURL("/https/authenticate/secure/foo.7"))
         .build()
 
-      val (response, body) = decodedRequest(request)
+      val response = decodedRequest(request)
 
       assert(response.status().code() == 200)
-      assert(body == "Hello, World!")
+      assert(response.body == "Hello, World!")
       httpsOriginWithCert.verify(getRequestedFor(urlEqualTo("/https/authenticate/secure/foo.7")))
     }
 
@@ -228,7 +228,7 @@ class ProtocolsSpec extends FunSpec
       val request = get(styxServer.secureRouterURL("/https/authenticate/insecure/foo.8"))
         .build()
 
-      val (response, body) = decodedRequest(request)
+      val response = decodedRequest(request)
       assert(response.status().code() == 502)
 
       httpsOriginWithCert.verify(0, getRequestedFor(urlEqualTo("/https/authenticate/insecure/foo.8")))
@@ -238,10 +238,10 @@ class ProtocolsSpec extends FunSpec
       val request = get(styxServer.secureRouterURL("/https/trustAllCerts/foo.9"))
         .build()
 
-      val (response, body) = decodedRequest(request)
+      val response = decodedRequest(request)
 
       assert(response.status().code() == 200)
-      assert(body == "Hello, World!")
+      assert(response.body == "Hello, World!")
       httpsOriginWithoutCert.verify(getRequestedFor(urlEqualTo("/https/trustAllCerts/foo.9")))
     }
 

@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.http.HttpHeaders;
 import com.github.tomakehurst.wiremock.http.ResponseDefinition;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpHeader;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import io.netty.util.AsciiString;
 import org.testng.annotations.Test;
 
@@ -34,7 +34,6 @@ import static com.github.tomakehurst.wiremock.http.HttpHeader.httpHeader;
 import static io.netty.handler.codec.http.HttpResponseStatus.CREATED;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.net.HttpURLConnection.HTTP_OK;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
@@ -43,12 +42,12 @@ public class WiremockResponseConverterTest {
 
     @Test
     public void convertsCreatedResponse() throws Exception {
-        HttpResponse styxResponse = WiremockResponseConverter.toStyxResponse(new BasicResponseRenderer().render(ResponseDefinition.created()));
+        FullHttpResponse<String> styxResponse = WiremockResponseConverter.toStyxResponse(new BasicResponseRenderer().render(ResponseDefinition.created()));
 
         assertThat(styxResponse.status(), is(CREATED));
         assertThat(styxResponse.headers().names(), contains(new AsciiString("Content-Length")));
         assertThat(styxResponse.header("Content-Length"), is(Optional.of("0")));
-        assertThat(aggregatedContent(styxResponse), is(""));
+        assertThat(styxResponse.body(), is(""));
     }
 
     @Test
@@ -56,21 +55,17 @@ public class WiremockResponseConverterTest {
         ResponseDefinition response = new ResponseDefinition(HTTP_OK, "{ \"count\" : 0, \"requestJournalDisabled\" : false}");
         response.setHeaders(new HttpHeaders(httpHeader("Content-Type", "application/json")));
 
-        HttpResponse styxResponse = WiremockResponseConverter.toStyxResponse(new BasicResponseRenderer().render(response));
+        FullHttpResponse<String> styxResponse = WiremockResponseConverter.toStyxResponse(new BasicResponseRenderer().render(response));
 
         assertThat(styxResponse.status(), is(OK));
-        assertThat(headersAsMap(styxResponse), is(ImmutableMap.of("Content-Type", "application/json", "Content-Length", "48")));
-        assertThat(aggregatedContent(styxResponse), is("{ \"count\" : 0, \"requestJournalDisabled\" : false}"));
+        Map<String, String> actual = headersAsMap(styxResponse);
+        Map<String, String> of = ImmutableMap.of("Content-Length", "48", "Content-Type", "application/json");
+
+        assertThat(actual, is(of));
+        assertThat(styxResponse.body(), is("{ \"count\" : 0, \"requestJournalDisabled\" : false}"));
     }
 
-    private String aggregatedContent(HttpResponse styxResponse) {
-        return styxResponse.decode(bytebuf -> bytebuf.toString(UTF_8), 256*1024)
-                .map(HttpResponse.DecodedResponse::body)
-                .toBlocking()
-                .first();
-    }
-
-    private Map<String, String> headersAsMap(HttpResponse response) {
+    private Map<String, String> headersAsMap(FullHttpResponse<?> response) {
         Spliterator<HttpHeader> spliterator = response.headers().spliterator();
 
         return StreamSupport.stream(spliterator, false)

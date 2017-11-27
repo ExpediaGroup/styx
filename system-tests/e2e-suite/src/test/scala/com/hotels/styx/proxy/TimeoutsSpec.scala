@@ -87,7 +87,7 @@ class TimeoutsSpec extends FunSpec
           .body(delayedRequestBody)
           .build()
 
-        val (resp, _) = decodedRequest(slowRequest, debug = true)
+        val resp = decodedRequest(slowRequest, debug = true)
 
         assert(resp.status() == REQUEST_TIMEOUT)
       }
@@ -114,7 +114,7 @@ class TimeoutsSpec extends FunSpec
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         slowBackend.verify(getRequestedFor(urlPathEqualTo("/slowResponseBody")))
 

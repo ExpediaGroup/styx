@@ -79,7 +79,7 @@ class AggregatingPluginContentOverflowSpec extends FunSpec
 
       val request = get(styxServer.routerURL("/body"))
         .build()
-      val (resp, body) = decodedRequest(request)
+      val resp = decodedRequest(request)
 
       assert(resp.status().code() == 502)
 

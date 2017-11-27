@@ -69,7 +69,7 @@ class HeadersSpec extends FunSpec
         .addHeader("User-Agent", "Styx/1.0")
         .build()
 
-      val (resp, _) = decodedRequest(req)
+      val resp = decodedRequest(req)
 
       assert(resp.status() == OK)
 
@@ -84,7 +84,7 @@ class HeadersSpec extends FunSpec
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
-      val (resp, _) = decodedRequest(req)
+      val resp = decodedRequest(req)
 
       assert(resp.status() == OK)
 
@@ -98,7 +98,7 @@ class HeadersSpec extends FunSpec
         val req = new HttpRequest.Builder(GET, s"http://localhost:${recordingBackend.port()}/headers")
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         assert(resp.status() == OK)
 
@@ -111,7 +111,7 @@ class HeadersSpec extends FunSpec
           .addHeader(HOST, "www.example.com")
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         assert(resp.status() == OK)
 
@@ -128,7 +128,7 @@ class HeadersSpec extends FunSpec
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         assert(resp.status() == OK)
 
@@ -143,7 +143,7 @@ class HeadersSpec extends FunSpec
           .addHeader(HttpHeaderNames.X_FORWARDED_FOR, "10.9.8.7")
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         assert(resp.status() == OK)
 
@@ -160,7 +160,7 @@ class HeadersSpec extends FunSpec
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         assert(resp.status() == OK)
 
@@ -174,7 +174,7 @@ class HeadersSpec extends FunSpec
           .addHeader(VIA, "1.1 apache")
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         assert(resp.status() == OK)
 
@@ -187,7 +187,7 @@ class HeadersSpec extends FunSpec
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
         resp.headers(VIA).toSeq should equal(Iterable("1.1 styx"))
       }
 
@@ -199,7 +199,7 @@ class HeadersSpec extends FunSpec
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         recordingBackend.verify(getRequestedFor(urlPathEqualTo("/headers")))
 
@@ -222,7 +222,7 @@ class HeadersSpec extends FunSpec
           .addHeader("Test-Case", "1")
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         recordingBackend.verify(getRequestedFor(urlPathEqualTo("/headers")))
       }
@@ -244,7 +244,7 @@ class HeadersSpec extends FunSpec
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         recordingBackend.verify(getRequestedFor(urlPathEqualTo("/headers")))
 
@@ -269,7 +269,7 @@ class HeadersSpec extends FunSpec
           .addHeader("Test-Case", "2")
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         recordingBackend.verify(getRequestedFor(urlEqualTo("/headers"))
           .withoutHeader(CONNECTION)
@@ -297,7 +297,7 @@ class HeadersSpec extends FunSpec
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         resp.status() should be(OK)
         resp.header(CONNECTION).isPresent should be(false)
@@ -320,7 +320,7 @@ class HeadersSpec extends FunSpec
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         recordingBackend.verify(getRequestedFor(urlPathEqualTo("/headers")))
 
@@ -336,7 +336,7 @@ class HeadersSpec extends FunSpec
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         assert(resp.status() == BAD_GATEWAY)
       }
@@ -350,7 +350,7 @@ class HeadersSpec extends FunSpec
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         assert(resp.status() == BAD_GATEWAY)
       }
@@ -365,7 +365,7 @@ class HeadersSpec extends FunSpec
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         assert(resp.status() == OK)
         assert(!resp.contentLength.isPresent, "content length header should be empty")
@@ -389,7 +389,7 @@ class HeadersSpec extends FunSpec
           .addCookie("test-cookie", "\"hu_hotels_com,HCOM_HU,hu_HU,\"")
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         recordingBackend.verify(getRequestedFor(urlPathEqualTo("/quotedCookies"))
           .withHeader("Cookie", equalTo("test-cookie=\"hu_hotels_com,HCOM_HU,hu_HU,\""))
@@ -412,7 +412,7 @@ class HeadersSpec extends FunSpec
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
-        val (resp, _) = decodedRequest(req)
+        val resp = decodedRequest(req)
         assert(resp.cookies().size() == 2)
         assert(resp.cookie("abc").get == HttpCookie.cookie("abc", "1", domain(".example.com"), path("/")))
         assert(resp.cookie("SESSID").get == HttpCookie.cookie("SESSID", "sessid", domain(".example.com"), path("/"), httpOnly()))

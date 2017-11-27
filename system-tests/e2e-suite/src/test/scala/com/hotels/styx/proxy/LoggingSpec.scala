@@ -68,9 +68,9 @@ class LoggingSpec extends FunSpec
     )
 
     val request = get(s"http://localhost:${mockServer.port()}/foobar").build()
-    val (resp, body) = decodedRequest(request)
+    val resp = decodedRequest(request)
     resp.status().code() should be (200)
-    body should be ("I should be here!")
+    resp.body should be ("I should be here!")
   }
 
   override protected def afterAll(): Unit = {
@@ -117,7 +117,7 @@ class LoggingSpec extends FunSpec
         .addHeader(X_THROW_AT, AT_RESPONSE)
         .build()
 
-      val (resp, body) = decodedRequest(request)
+      val resp = decodedRequest(request)
       assertThat(resp.status(), is(INTERNAL_SERVER_ERROR))
 
       eventually(timeout(3.seconds)) {

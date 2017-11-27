@@ -75,10 +75,10 @@ class EmptyTlsProtocolsListSpec extends FunSpec
         .secure(true)
         .build()
 
-      val (resp1, _) = decodedRequestWithClient(clientV11, req)
+      val resp1 = decodedRequestWithClient(clientV11, req)
       resp1.status() should be(OK)
 
-      val (resp2, _) = decodedRequestWithClient(clientV12, req)
+      val resp2 = decodedRequestWithClient(clientV12, req)
       resp2.status() should be(OK)
     }
   }

@@ -39,13 +39,13 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
   override protected def beforeEach(): Unit = {
     setPluginEnabled("true")
 
-    val (resp1, body1) = decodedRequest(get(styxServer.adminURL("/admin/plugins")).build())
+    val resp1 = decodedRequest(get(styxServer.adminURL("/admin/plugins")).build())
     resp1.status() should be (OK)
-    body1 should include("<h3>Enabled</h3><a href='/admin/plugins/pluginUnderTest'>pluginUnderTest</a><br /><h3>Disabled</h3>")
+    resp1.body should include("<h3>Enabled</h3><a href='/admin/plugins/pluginUnderTest'>pluginUnderTest</a><br /><h3>Disabled</h3>")
 
-    val (resp2, body2) = decodedRequest(get(styxServer.routerURL("/")).build())
+    val resp2 = decodedRequest(get(styxServer.routerURL("/")).build())
     resp2.status() should be (OK)
-    body2 should include("response-from-plugin")
+    resp2.body should include("response-from-plugin")
 
     checkPluginEnabled() should be("enabled\n")
   }
@@ -59,16 +59,16 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
     it("Should move the plugin to disabled when toggled") {
       disablePlugin()
 
-      val (resp, body) = decodedRequest(get(styxServer.adminURL("/admin/plugins")).build())
+      val resp = decodedRequest(get(styxServer.adminURL("/admin/plugins")).build())
 
       resp.status() should be (OK)
-      body should include("<h3>Enabled</h3><h3>Disabled</h3><a href='/admin/plugins/pluginUnderTest'>pluginUnderTest</a><br />")
+      resp.body should include("<h3>Enabled</h3><h3>Disabled</h3><a href='/admin/plugins/pluginUnderTest'>pluginUnderTest</a><br />")
     }
 
     it("Plugin should not be called when disabled") {
       disablePlugin()
 
-      val (resp, body) = decodedRequest(get(styxServer.routerURL("/")).build())
+      val resp = decodedRequest(get(styxServer.routerURL("/")).build())
 
       resp.status() should be (OK)
     }
@@ -91,22 +91,22 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
   }
 
   private def setPluginEnabled(enabled : String): String = {
-    val (resp, body) = decodedRequest(
+    val resp = decodedRequest(
       put(styxServer.adminURL("/admin/tasks/plugin/pluginUnderTest/enabled"))
         .body(enabled)
         .build())
 
     resp.status() should be (OK)
-    body
+    resp.body
   }
 
   private def checkPluginEnabled(): String = {
-    val (resp, body) = decodedRequest(
+    val resp = decodedRequest(
       get(styxServer.adminURL("/admin/tasks/plugin/pluginUnderTest/enabled"))
         .build())
 
     resp.status() should be(OK)
-    body
+    resp.body
   }
 
   private class PluginUnderTest extends PluginAdapter {

@@ -101,7 +101,7 @@ class ErrorMetricsSpec extends FunSpec
           .header("Fail_at_onCompleted", "true")
           .build()
 
-        val (response, body) = decodedRequest(request)
+        val response = decodedRequest(request)
 
         assert(response.status().code() == 200)
       }
@@ -116,7 +116,8 @@ class ErrorMetricsSpec extends FunSpec
         .addHeader(HOST, styxServer.proxyHost)
         .header("Generate_error_status", "true")
         .build()
-      val (response, body) = decodedRequest(request)
+
+      val response = decodedRequest(request)
 
       assert(response.status().code() == 500)
 
@@ -138,7 +139,8 @@ class ErrorMetricsSpec extends FunSpec
         .addHeader(HOST, styxServer.proxyHost)
         .header("Map_to_error_status", "true")
         .build()
-      val (response, body) = decodedRequest(request)
+
+      val response = decodedRequest(request)
 
       assert(response.status().code() == 500)
 
@@ -159,7 +161,8 @@ class ErrorMetricsSpec extends FunSpec
       val request = get("/fail")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
-      val (response, body) = decodedRequest(request)
+
+      val response = decodedRequest(request)
 
       assert(response.status().code() == 500)
 
@@ -183,7 +186,8 @@ class ErrorMetricsSpec extends FunSpec
         .addHeader(HOST, styxServer.proxyHost)
         .header("Generate_bad_gateway_status", "true")
         .build()
-      val (response, body) = decodedRequest(request)
+
+      val response = decodedRequest(request)
 
       assert(response.status().code() == 502)
 
@@ -199,7 +203,8 @@ class ErrorMetricsSpec extends FunSpec
         .addHeader(HOST, styxServer.proxyHost)
         .header("Map_to_bad_gateway_status", "true")
         .build()
-      val (response, body) = decodedRequest(request)
+
+      val response = decodedRequest(request)
 
       assert(response.status().code() == 502)
 
@@ -215,7 +220,8 @@ class ErrorMetricsSpec extends FunSpec
         .addHeader(HOST, styxServer.proxyHost)
         .header("Throw_an_exception", "true")
         .build()
-      val (response, body) = decodedRequest(request)
+
+      val response = decodedRequest(request)
 
       assert(response.status().code() == 500)
 
@@ -239,7 +245,8 @@ class ErrorMetricsSpec extends FunSpec
         .addHeader(HOST, styxServer.proxyHost)
         .header("Map_to_exception", "true")
         .build()
-      val (response, body) = decodedRequest(request)
+
+      val response = decodedRequest(request)
 
       assert(response.status().code() == 500)
 

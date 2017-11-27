@@ -16,8 +16,6 @@
 package com.hotels.styx.proxy
 
 import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.infrastructure.MemoryBackedRegistry
-import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
@@ -60,11 +58,11 @@ class OriginsReloadRepetitionSpec extends FunSpec
       )
 
       eventually(timeout(1 seconds)) {
-        val (_, body) = get(styxServer.adminURL("/admin/origins/status"))
+        val response = get(styxServer.adminURL("/admin/origins/status"))
 
-        body should include("localhost:" + backend1.port())
-        body should not include ("localhost:" + backend2.port())
-        body should include("localhost:" + backend3.port())
+        response.body should include("localhost:" + backend1.port())
+        response.body should not include ("localhost:" + backend2.port())
+        response.body should include("localhost:" + backend3.port())
       }
 
       styxServer.setBackends(
@@ -72,11 +70,11 @@ class OriginsReloadRepetitionSpec extends FunSpec
       )
 
       eventually(timeout(1 seconds)) {
-        val (_, body) = get(styxServer.adminURL("/admin/origins/status"))
+        val response = get(styxServer.adminURL("/admin/origins/status"))
 
-        body should not include ("localhost:" + backend1.port())
-        body should not include ("localhost:" + backend2.port())
-        body should include("localhost:" + backend3.port())
+        response.body should not include ("localhost:" + backend1.port())
+        response.body should not include ("localhost:" + backend2.port())
+        response.body should include("localhost:" + backend3.port())
       }
 
       styxServer.setBackends(
@@ -84,11 +82,11 @@ class OriginsReloadRepetitionSpec extends FunSpec
       )
 
       eventually(timeout(1 seconds)) {
-        val (_, body) = get(styxServer.adminURL("/admin/origins/status"))
+        val response = get(styxServer.adminURL("/admin/origins/status"))
 
-        body should include("localhost:" + backend1.port())
-        body should include("localhost:" + backend2.port())
-        body should include("localhost:" + backend3.port())
+        response.body should include("localhost:" + backend1.port())
+        response.body should include("localhost:" + backend2.port())
+        response.body should include("localhost:" + backend3.port())
       }
     }
   }

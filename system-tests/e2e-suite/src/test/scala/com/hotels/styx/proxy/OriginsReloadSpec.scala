@@ -52,13 +52,13 @@ class OriginsReloadSpec extends FunSpec
 
   describe("Reload Origins Endpoint") {
     it("should return 200 for POST /admin/tasks/origins/reload") {
-      val (response, _) = post(styxServer.adminURL("/admin/tasks/origins/reload"))
+      val response = post(styxServer.adminURL("/admin/tasks/origins/reload"))
 
       assert(response.status() == OK)
     }
 
     it("should return 405 for GET /admin/tasks/origins/reload") {
-      val (response, _) = get(styxServer.adminURL("/admin/tasks/origins/reload"))
+      val response = get(styxServer.adminURL("/admin/tasks/origins/reload"))
 
       assert(response.status() == METHOD_NOT_ALLOWED)
     }
@@ -69,11 +69,11 @@ class OriginsReloadSpec extends FunSpec
       )
 
       eventually(timeout(1.seconds)) {
-        val (_, body) = get(styxServer.adminURL("/admin/origins/status"))
+        val response = get(styxServer.adminURL("/admin/origins/status"))
 
-        body should include("localhost:" + backend1.port())
-        body should include("localhost:" + backend2.port())
-        body should include("localhost:" + backend3.port())
+        response.body should include("localhost:" + backend1.port())
+        response.body should include("localhost:" + backend2.port())
+        response.body should include("localhost:" + backend3.port())
       }
     }
 
@@ -83,11 +83,11 @@ class OriginsReloadSpec extends FunSpec
       )
 
       eventually(timeout(1.seconds)) {
-        val (_, body) = get(styxServer.adminURL("/admin/origins/status"))
+        val response = get(styxServer.adminURL("/admin/origins/status"))
 
-        body should include("localhost:" + backend1.port())
-        body should not include ("localhost:" + backend2.port())
-        body should not include ("localhost:" + backend3.port())
+        response.body should include("localhost:" + backend1.port())
+        response.body should not include ("localhost:" + backend2.port())
+        response.body should not include ("localhost:" + backend3.port())
       }
     }
   }

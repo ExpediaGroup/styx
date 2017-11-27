@@ -18,15 +18,16 @@ package com.hotels.styx.proxy
 import com.github.tomakehurst.wiremock.client.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.MockServer.responseSupplier
+import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.HttpResponse.Builder.response
-import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
-import com.hotels.styx.support.matchers.IsOptional.{isValue, matches}
-import com.hotels.styx.support.matchers.RegExMatcher.matchesRegex
+import com.hotels.styx.api.messages.FullHttpResponse
 import com.hotels.styx.api.support.HostAndPorts._
-import com.hotels.styx.api.{HttpRequest, HttpResponse}
+import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origin, Origins}
+import com.hotels.styx.support.matchers.IsOptional.{isValue, matches}
+import com.hotels.styx.support.matchers.RegExMatcher.matchesRegex
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
@@ -77,12 +78,12 @@ class ProxySpec extends FunSpec
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
-      val (resp, body) = decodedRequest(req)
+      val resp = decodedRequest(req)
 
       recordingBackend.verify(getRequestedFor(urlPathEqualTo("/")))
       assert(resp.status() == OK)
       assertThat(resp.header("headerName"), isValue("headerValue"))
-      assert(body == "bodyContent")
+      assert(resp.body == "bodyContent")
       assertThat(resp.header(STYX_INFO_DEFAULT), matches(matchesRegex("noJvmRouteSet;[0-9a-f-]+")))
     }
   }
@@ -101,7 +102,7 @@ class ProxySpec extends FunSpec
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
-      val (resp, _) = decodedRequest(req)
+      val resp = decodedRequest(req)
 
 
       val recordedReq = mockServer.takeRequest()
@@ -119,12 +120,12 @@ class ProxySpec extends FunSpec
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
-      val (resp, body) = decodedRequest(req)
+      val resp = decodedRequest(req)
 
       recordingBackend.verify(headRequestedFor(urlPathEqualTo("/bodiless")))
 
       assert(resp.status() == OK)
-      assertThatResponseIsBodiless(resp, body)
+      assertThatResponseIsBodiless(resp)
     }
 
     it("should remove body from the 204 No Content responses") {
@@ -135,10 +136,10 @@ class ProxySpec extends FunSpec
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
-      val (response, body) = decodedRequest(request)
+      val response = decodedRequest(request)
       recordingBackend.verify(getRequestedFor(urlPathEqualTo(request.path())))
       assert(response.status() == NO_CONTENT)
-      assertThatResponseIsBodiless(response, body)
+      assertThatResponseIsBodiless(response)
     }
 
     ignore("should remove body from the 304 Not Modified responses") {
@@ -149,10 +150,10 @@ class ProxySpec extends FunSpec
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
-      val (response, body) = decodedRequest(request)
+      val response = decodedRequest(request)
       recordingBackend.verify(getRequestedFor(urlPathEqualTo(request.path())))
       assert(response.status() == NOT_MODIFIED)
-      assertThatResponseIsBodiless(response, body)
+      assertThatResponseIsBodiless(response)
     }
 
     describe("backend services unavailable") {
@@ -166,7 +167,7 @@ class ProxySpec extends FunSpec
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
-        val (resp, body) = decodedRequest(req)
+        val resp = decodedRequest(req)
         assert(resp.status() == BAD_GATEWAY)
       }
     }
@@ -179,10 +180,10 @@ class ProxySpec extends FunSpec
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
-        val (resp, body) = decodedRequest(req)
+        val resp = decodedRequest(req)
 
         println("resp: " + resp)
-        println("body: " + body)
+        println("body: " + resp.body)
 
         assert(resp.status() == BAD_GATEWAY)
       }
@@ -223,11 +224,11 @@ class ProxySpec extends FunSpec
     }
 
 
-    def assertThatResponseIsBodiless(response: HttpResponse, body: String) {
+    def assertThatResponseIsBodiless(response: FullHttpResponse[String]) {
       val headers = response.headers()
       assert(response.contentLength().orElse(0) == 0, s"\nexpected headers with no Content-Length header but found $headers")
       assert(!response.chunked(), s"\nexpected headers with no Transfer-Encoding header but found $headers")
-      assert(body.isEmpty, s"\nexpected response with no body but found $response.body()")
+      assert(response.body.isEmpty, s"\nexpected response with no body but found $response.body()")
     }
   }
 

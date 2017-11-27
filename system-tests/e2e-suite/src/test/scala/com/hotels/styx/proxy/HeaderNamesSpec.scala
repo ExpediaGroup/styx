@@ -65,7 +65,7 @@ class HeaderNamesSpec  extends FunSpec
       val req = new HttpRequest.Builder(GET, "/")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
-      val (resp, body) = decodedRequest(req)
+      val resp = decodedRequest(req)
       backend.verify(getRequestedFor(urlPathEqualTo("/")))
       assert(resp.status() == OK)
       assertThat(resp.header("styx-info-foo"), matches(matchesRegex("^noJvmRouteSet;[0-9a-f-]+$")))

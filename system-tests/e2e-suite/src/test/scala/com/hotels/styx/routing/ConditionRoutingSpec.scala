@@ -128,10 +128,10 @@ class ConditionRoutingSpec extends FunSpec
 
   describe("Styx routing of HTTP requests") {
     it("Routes HTTP protocol to HTTP origins") {
-      val (response, body) = decodedRequest(httpRequest("/app.1"))
+      val response = decodedRequest(httpRequest("/app.1"))
 
       assert(response.status().code() == 200)
-      assert(body == "Hello, World!")
+      assert(response.body == "Hello, World!")
 
       httpServer.verify(
         getRequestedFor(urlEqualTo("/app.1"))
@@ -139,10 +139,10 @@ class ConditionRoutingSpec extends FunSpec
     }
 
     it("Routes HTTPS protocol to HTTPS origins") {
-      val (response, body) = decodedRequest(httpsRequest("/app.2"))
+      val response = decodedRequest(httpsRequest("/app.2"))
 
       assert(response.status().code() == 200)
-      assert(body == "Hello, World!")
+      assert(response.body == "Hello, World!")
 
       httpsServer.verify(
         getRequestedFor(urlEqualTo("/app.2"))

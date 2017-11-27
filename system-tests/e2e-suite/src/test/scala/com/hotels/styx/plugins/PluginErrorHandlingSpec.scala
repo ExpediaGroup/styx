@@ -63,7 +63,7 @@ class PluginErrorHandlingSpec extends FunSpec
       val request = get(styxServer.routerURL("/foo"))
         .header("Fail_before_handle", "true")
         .build()
-      val (resp, _) = decodedRequest(request)
+      val resp = decodedRequest(request)
       assert(resp.status().code() == 500)
     }
 
@@ -73,7 +73,7 @@ class PluginErrorHandlingSpec extends FunSpec
           .header("Fail_after_handle", "true")
           .body("foo")
           .build()
-        val (resp, _) = decodedRequest(request)
+        val resp = decodedRequest(request)
         assert(resp.status().code() == 500)
       }
     }
@@ -83,7 +83,7 @@ class PluginErrorHandlingSpec extends FunSpec
         val request = get(styxServer.routerURL("/foo"))
           .header("Fail_after_content", "true")
           .build()
-        val (resp, _) = decodedRequest(request)
+        val resp = decodedRequest(request)
         assert(resp.status().code() == 500)
       }
     }
@@ -93,7 +93,7 @@ class PluginErrorHandlingSpec extends FunSpec
         val request = get(styxServer.routerURL("/foo"))
           .header("Fail_during_decoder", "true")
           .build()
-        val (resp, _) = decodedRequest(request)
+        val resp = decodedRequest(request)
         assert(resp.status().code() == 500)
       }
     }
