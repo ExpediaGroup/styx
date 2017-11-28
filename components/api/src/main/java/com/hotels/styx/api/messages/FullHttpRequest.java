@@ -58,7 +58,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 
 /**
- * Request.
+ * HTTP request with a fully aggregated/decoded body.
  *
  * @param <T> content type
  */

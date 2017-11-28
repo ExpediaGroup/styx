@@ -45,7 +45,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Response.
+ * HTTP response with a fully aggregated/decoded body.
  *
  * @param <T> content type
  */
