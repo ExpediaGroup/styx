@@ -132,3 +132,12 @@ docs-run:
 ## Test Styx's resilence against denial-of-service attack
 ddos:
 	slowhttptest -c 4000 -B -g -o my_body_stats -i 110 -r 200 -s 8192 -t POST -u http://localhost:8080/demo
+
+## Generates change log between two github tags. If TAG2 value is not provided it will generate changes until HEAD.
+# Requires authentication token set either in environment variable CHANGELOG_GITHUB_TOKEN or make argument with a same name.
+# example: make changelog TAG2=styx-0.7.3 CHANGELOG_GITHUB_TOKEN=xxx
+TAG1 = 'styx-0.7.1'
+CHANGELOG_GITHUB_TOKEN ?= $(shell $CHANGELOG_GITHUB_TOKEN)
+changelog:
+	docker run --rm --interactive --tty --net "host" -v "$(CURRENT_DIR):/tmp/" -w "/tmp/" \
+	-it muccg/github-changelog-generator --between-tags $(TAG1),$(TAG2) -u HotelsDotCom -p 'styx' --token '$(CHANGELOG_GITHUB_TOKEN)'
