@@ -32,6 +32,10 @@ import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpRequest.Builder.put;
 import static com.hotels.styx.api.Url.Builder.url;
+import static com.hotels.styx.api.messages.FullHttpRequest.get;
+import static com.hotels.styx.api.messages.FullHttpRequest.patch;
+import static com.hotels.styx.api.messages.FullHttpRequest.post;
+import static com.hotels.styx.api.messages.FullHttpRequest.toStreamingHttpRequest;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
@@ -58,12 +62,9 @@ import static rx.Observable.just;
 public class FullHttpRequestTest {
     @Test
     public void encodesToStreamingHttpRequest() throws Exception {
-        FullHttpRequest<String> fullRequest = get("/foo/bar")
-                .body("foobar")
-                .build();
+        FullHttpRequest<String> fullRequest = get("/foo/bar", "foobar").build();
 
         HttpRequest streaming = fullRequest.toStreamingHttpRequest(string -> copiedBuffer(string, UTF_8));
-
 
         TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
         subscriber.requestMore(1);
@@ -92,25 +93,17 @@ public class FullHttpRequestTest {
     @DataProvider(name = "emptyBodyRequests")
     private Object[][] emptyBodyRequests() {
         return new Object[][]{
-                { get("/foo/bar")
-                        .build()},
-                { get("/foo/bar")
-                        .body(null)
-                        .build()},
-                { get("/foo/bar")
-                        .body("")
-                        .build()},
+                {get("/foo/bar").build()},
+                {get("/foo/bar", null).build()},
+                {get("/foo/bar", "").build()},
         };
     }
 
     @Test
     public void encodingToStreamingHttpRequestDefaultsToUTF8() throws Exception {
-        FullHttpRequest<String> fullRequest = get("/foo/bar")
-                .body("foobar")
-                .build();
+        FullHttpRequest<String> fullRequest = get("/foo/bar", "foobar").build();
 
-        HttpRequest streaming = FullHttpRequest.toStreamingHttpRequest(fullRequest);
-
+        HttpRequest streaming = toStreamingHttpRequest(fullRequest);
 
         TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
         subscriber.requestMore(1);
@@ -124,7 +117,7 @@ public class FullHttpRequestTest {
 
     @Test
     public void createsARequestWithDefaultValues() {
-        FullHttpRequest<String> request = get("/index").build();
+        FullHttpRequest<?> request = get("/index").build();
         assertThat(request.version(), is(HTTP_1_1));
         assertThat(request.url().toString(), is("/index"));
         assertThat(request.path(), is("/index"));
@@ -146,7 +139,7 @@ public class FullHttpRequestTest {
 
     @Test
     public void canUseBuilderToSetRequestProperties() {
-        FullHttpRequest<String> request = patch("https://hotels.com")
+        FullHttpRequest<?> request = patch("https://hotels.com")
                 .version(HTTP_1_0)
                 .id("id")
                 .header("headerName", "a")
@@ -161,11 +154,11 @@ public class FullHttpRequestTest {
 
     @Test
     public void canModifyPreviouslyCreatedRequest() {
-        FullHttpRequest<String> request = get("/foo")
+        FullHttpRequest<?> request = get("/foo")
                 .header("remove", "remove")
                 .build();
 
-        FullHttpRequest<String> newRequest = request.newBuilder()
+        FullHttpRequest<?> newRequest = request.newBuilder()
                 .method(DELETE)
                 .uri("/home")
                 .header("remove", "notanymore")
@@ -186,26 +179,26 @@ public class FullHttpRequestTest {
 
     @Test
     public void decodesQueryParams() {
-        FullHttpRequest<String> request = get("http://example.com/?foo=bar")
+        FullHttpRequest<?> request = get("http://example.com/?foo=bar")
                 .build();
         assertThat(request.queryParam("foo"), isValue("bar"));
     }
 
     @Test
     public void decodesQueryParamsContainingEncodedEquals() {
-        FullHttpRequest<String> request = get("http://example.com/?foo=a%2Bb%3Dc")
+        FullHttpRequest<?> request = get("http://example.com/?foo=a%2Bb%3Dc")
                 .build();
         assertThat(request.queryParam("foo"), isValue("a+b=c"));
     }
 
     @Test
     public void createsRequestBuilderFromRequest() {
-        FullHttpRequest<String> originalRequest = get("/home")
+        FullHttpRequest<?> originalRequest = get("/home")
                 .addCookie(cookie("fred", "blogs"))
                 .header("some", "header")
                 .build();
 
-        FullHttpRequest<String> clonedRequest = originalRequest.newBuilder().build();
+        FullHttpRequest<?> clonedRequest = originalRequest.newBuilder().build();
 
         assertThat(clonedRequest.method(), is(originalRequest.method()));
         assertThat(clonedRequest.url(), is(originalRequest.url()));
@@ -215,20 +208,20 @@ public class FullHttpRequestTest {
 
     @Test
     public void extractsSingleQueryParameter() {
-        FullHttpRequest<String> req = get("http://host.com:8080/path?fish=cod&fruit=orange")
+        FullHttpRequest<?> req = get("http://host.com:8080/path?fish=cod&fruit=orange")
                 .build();
         assertThat(req.queryParam("fish"), isValue("cod"));
     }
 
     @Test
     public void extractsMultipleQueryParameterValues() {
-        FullHttpRequest<String> req = get("http://host.com:8080/path?fish=cod&fruit=orange&fish=smørflyndre").build();
+        FullHttpRequest<?> req = get("http://host.com:8080/path?fish=cod&fruit=orange&fish=smørflyndre").build();
         assertThat(req.queryParams("fish"), contains("cod", "smørflyndre"));
     }
 
     @Test
     public void extractsMultipleQueryParams() {
-        FullHttpRequest<String> req = get("http://example.com?foo=bar&foo=hello&abc=def")
+        FullHttpRequest<?> req = get("http://example.com?foo=bar&foo=hello&abc=def")
                 .build();
 
         assertThat(req.queryParamNames(), containsInAnyOrder("foo", "abc"));
@@ -241,21 +234,21 @@ public class FullHttpRequestTest {
 
     @Test
     public void alwaysReturnsEmptyListWhenThereIsNoQueryString() {
-        FullHttpRequest<String> req = get("http://host.com:8080/path").build();
+        FullHttpRequest<?> req = get("http://host.com:8080/path").build();
         assertThat(req.queryParams("fish"), is(emptyIterable()));
         assertThat(req.queryParam("fish"), isAbsent());
     }
 
     @Test
     public void returnsEmptyListWhenThereIsNoSuchParameter() {
-        FullHttpRequest<String> req = get("http://host.com:8080/path?poisson=cabillaud").build();
+        FullHttpRequest<?> req = get("http://host.com:8080/path?poisson=cabillaud").build();
         assertThat(req.queryParams("fish"), is(emptyIterable()));
         assertThat(req.queryParam("fish"), isAbsent());
     }
 
     @Test
     public void canExtractCookies() {
-        FullHttpRequest<String> request = get("/")
+        FullHttpRequest<?> request = get("/")
                 .addCookie("cookie1", "foo")
                 .addCookie("cookie3", "baz")
                 .addCookie("cookie2", "bar")
@@ -268,7 +261,7 @@ public class FullHttpRequestTest {
 
     @Test
     public void cannotExtractNonExistentCookie() {
-        FullHttpRequest<String> request = get("/")
+        FullHttpRequest<?> request = get("/")
                 .addCookie("cookie1", "foo")
                 .addCookie("cookie3", "baz")
                 .addCookie("cookie2", "bar")
@@ -279,7 +272,7 @@ public class FullHttpRequestTest {
 
     @Test
     public void extractsAllCookies() {
-        FullHttpRequest<String> request = get("/")
+        FullHttpRequest<?> request = get("/")
                 .addCookie("cookie1", "foo")
                 .addCookie("cookie3", "baz")
                 .addCookie("cookie2", "bar")
@@ -293,18 +286,18 @@ public class FullHttpRequestTest {
 
     @Test
     public void extractsEmptyIterableIfCookieHeaderNotSet() {
-        FullHttpRequest<String> request = get("/").build();
+        FullHttpRequest<?> request = get("/").build();
         assertThat(request.cookies(), is(emptyIterable()));
     }
 
     @Test
     public void canRemoveAHeader() {
         Object hdValue = "b";
-        FullHttpRequest<String> request = get("/")
+        FullHttpRequest<?> request = get("/")
                 .header("a", hdValue)
                 .addHeader("c", hdValue)
                 .build();
-        FullHttpRequest<String> shouldRemoveHeader = request.newBuilder()
+        FullHttpRequest<?> shouldRemoveHeader = request.newBuilder()
                 .removeHeader("c")
                 .build();
 
@@ -333,7 +326,7 @@ public class FullHttpRequestTest {
 
     @Test
     public void removesCookies() throws Exception {
-        FullHttpRequest<String> request = get("/")
+        FullHttpRequest<?> request = get("/")
                 .addCookie("lang", "en_US|en-us_hotels_com")
                 .addCookie("styx_origin_hpt", "hpt1")
                 .removeCookie("lang")
@@ -343,7 +336,7 @@ public class FullHttpRequestTest {
 
     @Test
     public void removesACookieSetInCookie() throws Exception {
-        FullHttpRequest<String> request = get("/")
+        FullHttpRequest<?> request = get("/")
                 .addCookie("lang", "en_US|en-us_hotels_com")
                 .addCookie("styx_origin_hpt", "hpt1")
                 .removeCookie("lang")
@@ -372,9 +365,7 @@ public class FullHttpRequestTest {
 
     @Test
     public void builderSetsRequestContent() {
-        FullHttpRequest<String> request = post("/foo/bar")
-                .body("Foo bar")
-                .build();
+        FullHttpRequest<String> request = post("/foo/bar", "Foo bar").build();
 
         assertThat(request.body(), is("Foo bar"));
     }
@@ -418,25 +409,23 @@ public class FullHttpRequestTest {
 
     @Test
     public void createARequestWithFullUrl() throws Exception {
-        FullHttpRequest<String> request = get("http://www.hotels.com")
-                .build();
+        FullHttpRequest<?> request = get("http://www.hotels.com").build();
 
         assertThat(request.url(), is(url("http://www.hotels.com").build()));
     }
 
     @Test
     public void setsHostHeaderFromAuthorityIfSet() throws Exception {
-        FullHttpRequest<String> request = get("http://www.hotels.com")
-                .build();
+        FullHttpRequest<?> request = get("http://www.hotels.com").build();
 
         assertThat(request.header(HOST), isValue("www.hotels.com"));
     }
 
     @Test
     public void createsANewRequestWithSameVersionAsBefore() {
-        FullHttpRequest<String> v10Request = get("/foo/bar").version(HTTP_1_0).build();
+        FullHttpRequest<?> v10Request = get("/foo/bar").version(HTTP_1_0).build();
 
-        FullHttpRequest<String> newRequest = v10Request.newBuilder().uri("/blah/blah").build();
+        FullHttpRequest<?> newRequest = v10Request.newBuilder().uri("/blah/blah").build();
 
         assertThat(newRequest.version(), is(HTTP_1_0));
     }
@@ -444,21 +433,10 @@ public class FullHttpRequestTest {
     @Test
     public void builderCopiesClientIpAddress() throws Exception {
         InetSocketAddress address = InetSocketAddress.createUnresolved("styx.io", 8080);
-        FullHttpRequest<String> request = post("/foo").clientAddress(address).build();
+        FullHttpRequest<?> request = post("/foo").clientAddress(address).build();
 
-        FullHttpRequest<String> newRequest = request.newBuilder().build();
+        FullHttpRequest<?> newRequest = request.newBuilder().build();
 
         assertThat(newRequest.clientAddress(), is(address));
-    }
-
-    private static FullHttpRequest.Builder<String> get(String uri) {
-        return FullHttpRequest.get(uri);
-    }
-
-    private static FullHttpRequest.Builder<String> post(String uri) {
-        return FullHttpRequest.post(uri);
-    }
-    private static FullHttpRequest.Builder<String> patch(String uri) {
-        return FullHttpRequest.patch(uri);
     }
 }
