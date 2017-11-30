@@ -20,49 +20,14 @@ import rx.Observable;
 
 import java.util.function.Function;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static rx.Observable.empty;
 import static rx.Observable.just;
 
 /**
  * Common logic for new HTTP message classes.
  */
-public final class HttpSupport {
+final class HttpSupport {
     private HttpSupport() {
-    }
-
-    /**
-     * Determine the content-length of a full aggregated body.
-     * This method only covers some common cases, and others will
-     * need the content-length to be set manually.
-     *
-     * Cases covered:
-     * <ul>
-     * <li> null - no content, so content-length = 0 </li>
-     * <li> byte array - content-length = array length </li>
-     * <li> String - content-length = number of bytes, assuming UTF-8 encoding </li>
-     * </ul>
-     *
-     * Any other object will be converted to a String with its toString method, and
-     * then treated as UTF-8.
-     *
-     * @param body body
-     * @return content-length
-     */
-    public static int contentLength(Object body) {
-        if (body == null) {
-            return 0;
-        }
-
-        if (body instanceof byte[]) {
-            return ((byte[]) body).length;
-        }
-
-        if (body instanceof String) {
-            return contentLength(((String) body).getBytes(UTF_8));
-        }
-
-        return contentLength(body.toString());
     }
 
     /**
@@ -74,7 +39,7 @@ public final class HttpSupport {
      * @param <T> body type
      * @return an observable of buffers, may be empty
      */
-    public static <T> Observable<ByteBuf> encodeBody(T body, Function<T, ByteBuf> encoder) {
+    static <T> Observable<ByteBuf> encodeBody(T body, Function<T, ByteBuf> encoder) {
         return  body == null || "".equals(body)
                 ? empty()
                 : just(encoder.apply(body));

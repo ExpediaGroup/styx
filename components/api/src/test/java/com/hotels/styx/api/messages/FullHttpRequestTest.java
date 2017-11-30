@@ -62,7 +62,7 @@ import static rx.Observable.just;
 public class FullHttpRequestTest {
     @Test
     public void encodesToStreamingHttpRequest() throws Exception {
-        FullHttpRequest<String> fullRequest = get("/foo/bar", "foobar").build();
+        FullHttpRequest<String> fullRequest = post("/foo/bar", "foobar").build();
 
         HttpRequest streaming = fullRequest.toStreamingHttpRequest(string -> copiedBuffer(string, UTF_8));
 
@@ -94,14 +94,14 @@ public class FullHttpRequestTest {
     private Object[][] emptyBodyRequests() {
         return new Object[][]{
                 {get("/foo/bar").build()},
-                {get("/foo/bar", null).build()},
-                {get("/foo/bar", "").build()},
+                {post("/foo/bar", null).build()},
+                {post("/foo/bar", "").build()},
         };
     }
 
     @Test
     public void encodingToStreamingHttpRequestDefaultsToUTF8() throws Exception {
-        FullHttpRequest<String> fullRequest = get("/foo/bar", "foobar").build();
+        FullHttpRequest<String> fullRequest = post("/foo/bar", "foobar").build();
 
         HttpRequest streaming = toStreamingHttpRequest(fullRequest);
 

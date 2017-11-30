@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.HttpMessageSupport;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Url;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -74,15 +75,15 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
     private final List<HttpCookie> cookies;
 
     FullHttpRequest(Builder<T> builder) {
-        this.id = builder.id();
-        this.clientAddress = builder.clientAddress();
-        this.version = builder.version();
-        this.method = builder.method();
-        this.url = builder.url();
-        this.secure = builder.secure();
-        this.headers = builder.headers();
-        this.body = builder.body();
-        this.cookies = builder.cookies();
+        this.id = builder.id == null ? randomUUID() : builder.id;
+        this.clientAddress = builder.clientAddress;
+        this.version = builder.version;
+        this.method = builder.method;
+        this.url = builder.url;
+        this.secure = builder.secure;
+        this.headers = builder.headers.build();
+        this.body = builder.body;
+        this.cookies = ImmutableList.copyOf(builder.cookies);
     }
 
     /**
@@ -146,30 +147,6 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
     }
 
     /**
-     * Creates a request with the GET method.
-     *
-     * @param uri URI
-     * @param body body
-     * @param <T> body type
-     * @return {@code this}
-     */
-    public static <T> Builder<T> get(String uri, T body) {
-        return new Builder<T>(GET, uri).body(body);
-    }
-
-    /**
-     * Creates a request with the HEAD method.
-     *
-     * @param uri URI
-     * @param body body
-     * @param <T> body type
-     * @return {@code this}
-     */
-    public static <T> Builder<T> head(String uri, T body) {
-        return new Builder<T>(HEAD, uri).body(body);
-    }
-
-    /**
      * Creates a request with the POST method.
      *
      * @param uri URI
@@ -179,18 +156,6 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
      */
     public static <T> Builder<T> post(String uri, T body) {
         return new Builder<T>(POST, uri).body(body);
-    }
-
-    /**
-     * Creates a request with the DELETE method.
-     *
-     * @param uri URI
-     * @param body body
-     * @param <T> body type
-     * @return {@code this}
-     */
-    public static <T> Builder<T> delete(String uri, T body) {
-        return new Builder<T>(DELETE, uri).body(body);
     }
 
     /**
@@ -365,8 +330,8 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
      * @param encoder an encoding function
      * @return an encoded (streaming) request
      */
-    public com.hotels.styx.api.HttpRequest toStreamingHttpRequest(Function<T, ByteBuf> encoder) {
-        return new com.hotels.styx.api.HttpRequest.Builder(this, encodeBody(this.body, encoder))
+    public HttpRequest toStreamingHttpRequest(Function<T, ByteBuf> encoder) {
+        return new HttpRequest.Builder(this, encodeBody(this.body, encoder))
                 .build();
     }
 
@@ -376,7 +341,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
      * @param request a request
      * @return an encoded (streaming) request
      */
-    public static com.hotels.styx.api.HttpRequest toStreamingHttpRequest(FullHttpRequest<String> request) {
+    public static HttpRequest toStreamingHttpRequest(FullHttpRequest<String> request) {
         return request.toStreamingHttpRequest(string -> Unpooled.copiedBuffer(string, UTF_8));
     }
 
@@ -408,7 +373,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
         private boolean validate = true;
         private Url url;
         private boolean secure;
-        private final HttpHeaders.Builder headers;
+        private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
         private T body;
         private final List<HttpCookie> cookies;
@@ -427,7 +392,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
             this.secure = url.isSecure();
         }
 
-        public Builder(com.hotels.styx.api.HttpRequest request, T body) {
+        public Builder(HttpRequest request, T body) {
             this.id = request.id();
             this.method = request.method();
             this.clientAddress = request.clientAddress();
@@ -451,19 +416,6 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
             this.cookies = new ArrayList<>(request.cookies());
         }
 
-        private Builder(FullHttpRequest<?> request, boolean doNotCopyBody) {
-            checkArgument(doNotCopyBody);
-            this.id = request.id();
-            this.method = request.method();
-            this.clientAddress = request.clientAddress();
-            this.url = request.url();
-            this.secure = request.isSecure();
-            this.version = request.version();
-            this.headers = request.headers().newBuilder();
-            this.body = null;
-            this.cookies = new ArrayList<>(request.cookies());
-        }
-
         /**
          * Sets the request URI.
          *
@@ -474,92 +426,112 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
             return this.url(Url.Builder.url(uri).build());
         }
 
+        /**
+         * Sets the request body.
+         *
+         * @param content request body
+         * @return {@code this}
+         */
         public Builder<T> body(T content) {
-            setContentLength(content);
-
             this.body = content;
             return this;
         }
 
-        private void setContentLength(Object content) {
-            header(CONTENT_LENGTH, HttpSupport.contentLength(content));
+        /**
+         * Sets the unique ID for this request.
+         *
+         * @param id request ID
+         * @return {@code this}
+         */
+        public Builder<T> id(Object id) {
+            this.id = id;
+            return this;
         }
 
-        public Object id() {
-            if (id == null) {
-                id = randomUUID();
-            }
-
-            return id;
-        }
-
+        /**
+         * Sets the (only) value for the header with the specified name.
+         * <p/>
+         * All existing values for the same header will be removed.
+         *
+         * @param name  The name of the header
+         * @param value The value of the header
+         * @return {@code this}
+         */
         public Builder<T> header(CharSequence name, Object value) {
             checkNotCookie(name);
             this.headers.set(name, value);
             return this;
         }
 
-        public Builder<T> id(Object id) {
-            this.id = id;
+        /**
+         * Sets the headers.
+         *
+         * @param headers headers
+         * @return {@code this}
+         */
+        public Builder<T> headers(HttpHeaders headers) {
+            this.headers = headers.newBuilder();
             return this;
         }
 
+        /**
+         * Adds a new header with the specified {@code name} and {@code value}.
+         * <p/>
+         * Will not replace any existing values for the header.
+         *
+         * @param name  The name of the header
+         * @param value The value of the header
+         * @return {@code this}
+         */
         public Builder<T> addHeader(CharSequence name, Object value) {
             checkNotCookie(name);
             this.headers.add(name, value);
             return this;
         }
 
+        /**
+         * Removes the header with the specified name.
+         *
+         * @param name The name of the header to remove
+         * @return {@code this}
+         */
+        public Builder<T> removeHeader(CharSequence name) {
+            headers.remove(name);
+            return this;
+        }
+
+        /**
+         * Sets the request fully qualified url.
+         *
+         * @param url fully qualified url
+         * @return {@code this}
+         */
         public Builder<T> url(Url url) {
             this.url = url;
             this.secure = url.isSecure();
             return this;
         }
 
-        public HttpMethod method() {
-            return method;
-        }
-
-        public InetSocketAddress clientAddress() {
-            return clientAddress;
-        }
-
-        public boolean validate() {
-            return validate;
-        }
-
-        public Url url() {
-            return url;
-        }
-
-        public boolean secure() {
-            return secure;
-        }
-
-        public HttpHeaders headers() {
-            return headers.build();
-        }
-
-        public HttpVersion version() {
-            return version;
-        }
-
-        public T body() {
-            return body;
-        }
-
+        /**
+         * Sets the HTTP version.
+         *
+         * @param version HTTP version
+         * @return {@code this}
+         */
         public Builder<T> version(HttpVersion version) {
             this.version = requireNonNull(version);
             return this;
         }
 
+        /**
+         * Sets the HTTP method.
+         *
+         * @param method HTTP method
+         * @return {@code this}
+         */
         public Builder<T> method(HttpMethod method) {
             this.method = requireNonNull(method);
             return this;
-        }
-
-        public List<HttpCookie> cookies() {
-            return ImmutableList.copyOf(cookies);
         }
 
         /**
@@ -572,7 +544,6 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
             cookies.add(checkNotNull(cookie));
             return this;
         }
-
 
         /**
          * Adds a response cookie (adds a new Set-Cookie header).
@@ -595,27 +566,28 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
             cookies.stream()
                     .filter(cookie -> cookie.name().equalsIgnoreCase(name))
                     .findFirst()
-                    .ifPresent(cookie -> cookies.remove(cookie));
+                    .ifPresent(cookies::remove);
 
-            return this;
-        }
-
-        public Builder<T> clientAddress(InetSocketAddress clientAddress) {
-            this.clientAddress = requireNonNull(clientAddress);
             return this;
         }
 
         /**
-         * Removes the header with the specified name.
+         * Sets the client IP address.
          *
-         * @param name The name of the header to remove
+         * @param address IP address
          * @return {@code this}
          */
-        public Builder<T> removeHeader(CharSequence name) {
-            headers.remove(name);
+        public Builder<T> clientAddress(InetSocketAddress address) {
+            this.clientAddress = requireNonNull(address);
             return this;
         }
 
+        /**
+         * Sets whether the request is be secure.
+         *
+         * @param secure true if secure
+         * @return {@code this}
+         */
         public Builder<T> secure(boolean secure) {
             this.secure = secure;
             return this;
@@ -631,18 +603,32 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
             return this;
         }
 
-
+        /**
+         * Enables Keep-Alive.
+         *
+         * @return {@code this}
+         */
         public Builder<T> enableKeepAlive() {
             return header(CONNECTION, KEEP_ALIVE);
         }
 
+        /**
+         * Builds a new full request based on the settings configured in this builder.
+         * If {@code validate} is set to true:
+         * <ul>
+         * <li>the host header will be set if absent</li>
+         * <li>an exception will be thrown if the content length is not an integer, or more than one content length exists</li>
+         * <li>an exception will be thrown if the request method is not a valid HTTP method</li>
+         * </ul>
+         *
+         * @return a new full request
+         */
         public FullHttpRequest<T> build() {
             if (validate) {
                 ensureContentLengthIsValid();
                 ensureMethodIsValid();
+                setHostHeader();
             }
-
-            setHostHeader();
 
             return new FullHttpRequest<T>(this);
         }
@@ -673,7 +659,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
         }
 
         private void ensureContentLengthIsValid() {
-            List<String> contentLengths = headers().getAll(CONTENT_LENGTH);
+            List<String> contentLengths = headers.build().getAll(CONTENT_LENGTH);
 
             checkArgument(contentLengths.size() <= 1, "Duplicate Content-Length found. %s", contentLengths);
 

@@ -213,32 +213,6 @@ public final class HttpResponse implements HttpMessage {
     }
 
     /**
-     * Decodes this response into a full/aggregated form, using UTF-8 decoding to transform the body from a buffer of bytes
-     * to a String. If the number of content bytes exceeds the provided maximum, an exception will be thrown.
-     *
-     * @param maxContentBytes maximum content bytes before an exception is thrown
-     * @return a decoded (aggregated/full) response
-     */
-    public Observable<com.hotels.styx.api.messages.FullHttpResponse<String>> toFullHttpResponse(int maxContentBytes) {
-        return toFullHttpResponse(byteBuf -> byteBuf.toString(UTF_8), maxContentBytes);
-    }
-
-    /**
-     * Decodes this response into a full/aggregated form, using the provided decoder to transform the body from a buffer of bytes
-     * to an arbitrary type. If the number of content bytes exceeds the provided maximum, an exception will be thrown.
-     *
-     * @param decoder a decoding function
-     * @param maxContentBytes maximum content bytes before an exception is thrown
-     * @param <T> full body type
-     * @return a decoded (aggregated/full) response
-     */
-    public <T> Observable<com.hotels.styx.api.messages.FullHttpResponse<T>> toFullHttpResponse(Function<ByteBuf, T> decoder, int maxContentBytes) {
-        return body.decode(decoder, maxContentBytes)
-                .map(decoded -> new com.hotels.styx.api.messages.FullHttpResponse.Builder<>(this, decoded))
-                .map(com.hotels.styx.api.messages.FullHttpResponse.Builder::build);
-    }
-
-    /**
      * Decodes HTTP content into a business object of type T, using the provided decoder function.
      * <p>
      * The method aggregates HTTP response content fully into a composed byte buffer, and applies the provided
@@ -290,7 +264,7 @@ public final class HttpResponse implements HttpMessage {
      * representation, Styx can safely release the original direct memory byteBuf.
      * <p>
      * If in-place modification is absolutely necessary for the performance reasons, the decoder function
-     * must retain the contents manually. Like so:
+     * must retain the contents manually.z Like so:
      *
      * <pre>
      *     {@code (byteBuf) -> { byteBuf.retain(); return byteBuf }}
@@ -301,13 +275,42 @@ public final class HttpResponse implements HttpMessage {
      * <p>
      * @param maxContentBytes maximum allowed size for the aggregated content. If the content exceeds
      *  this amount, an exception is raised
+     * @deprecated please use {@link #toFullHttpResponse(Function, int)}
      *
      * @return an observable that provides an object representing an aggregated response
      */
+    @Deprecated
     public <T> Observable<DecodedResponse<T>> decode(Function<ByteBuf, T> decoder, int maxContentBytes) {
         return body.decode(decoder, maxContentBytes)
                 .map(content -> new DecodedResponse<>(this, content));
     }
+
+    /**
+     * Decodes this response into a full/aggregated form, using UTF-8 decoding to transform the body from a buffer of bytes
+     * to a String. If the number of content bytes exceeds the provided maximum, an exception will be thrown.
+     *
+     * @param maxContentBytes maximum content bytes before an exception is thrown
+     * @return a decoded (aggregated/full) response
+     */
+    public Observable<FullHttpResponse<String>> toFullHttpResponse(int maxContentBytes) {
+        return toFullHttpResponse(byteBuf -> byteBuf.toString(UTF_8), maxContentBytes);
+    }
+
+    /**
+     * Decodes this response into a full/aggregated form, using the provided decoder to transform the body from a buffer of bytes
+     * to an arbitrary type. If the number of content bytes exceeds the provided maximum, an exception will be thrown.
+     *
+     * @param decoder a decoding function
+     * @param maxContentBytes maximum content bytes before an exception is thrown
+     * @param <T> full body type
+     * @return a decoded (aggregated/full) response
+     */
+    public <T> Observable<FullHttpResponse<T>> toFullHttpResponse(Function<ByteBuf, T> decoder, int maxContentBytes) {
+        return body.decode(decoder, maxContentBytes)
+                .map(decoded -> new FullHttpResponse.Builder<>(this, decoded))
+                .map(FullHttpResponse.Builder::build);
+    }
+
 
     @Override
     public String toString() {

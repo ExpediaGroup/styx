@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpHeaders;
+import com.hotels.styx.api.HttpResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -57,11 +58,44 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
     private final List<HttpCookie> cookies;
 
     FullHttpResponse(Builder<T> builder) {
-        this.version = builder.version();
-        this.status = builder.status();
-        this.headers = builder.headers();
-        this.body = builder.body();
-        this.cookies = builder.cookies();
+        this.version = builder.version;
+        this.status = builder.status;
+        this.headers = builder.headers.build();
+        this.body = builder.body;
+        this.cookies = ImmutableList.copyOf(builder.cookies);
+    }
+
+    /**
+     * Creates an HTTP response builder with a status of 200 OK and empty body.
+     *
+     * @param <T> response type
+     * @return a new builder
+     */
+    public static <T> Builder<T> response() {
+        return new Builder<>();
+    }
+
+    /**
+     * Creates an HTTP response builder with a given status and empty body.
+     *
+     * @param status response status
+     * @param <T> response type
+     * @return a new builder
+     */
+    public static <T> Builder<T> response(HttpResponseStatus status) {
+        return new Builder<>(status);
+    }
+
+    /**
+     * Creates an HTTP response builder with a given status and body.
+     *
+     * @param status response status
+     * @param body repsonse body
+     * @param <T> response type
+     * @return a new builder
+     */
+    public static <T> Builder<T> response(HttpResponseStatus status, T body) {
+        return new Builder<T>(status).body(body);
     }
 
     @Override
@@ -113,8 +147,8 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
      * @param encoder an encoding function
      * @return an encoded (streaming) response
      */
-    public com.hotels.styx.api.HttpResponse toStreamingHttpResponse(Function<T, ByteBuf> encoder) {
-        return new com.hotels.styx.api.HttpResponse.Builder(this, encodeBody(this.body, encoder))
+    public HttpResponse toStreamingHttpResponse(Function<T, ByteBuf> encoder) {
+        return new HttpResponse.Builder(this, encodeBody(this.body, encoder))
                 .build();
     }
 
@@ -124,7 +158,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
      * @param response a response
      * @return an encoded (streaming) response
      */
-    public static com.hotels.styx.api.HttpResponse toStreamingHttpResponse(FullHttpResponse<String> response) {
+    public static HttpResponse toStreamingHttpResponse(FullHttpResponse<String> response) {
         return response.toStreamingHttpResponse(string -> Unpooled.copiedBuffer(string, UTF_8));
     }
 
@@ -167,6 +201,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
         private HttpResponseStatus status = OK;
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
+        private boolean validate = true;
         private T body;
         private final List<HttpCookie> cookies;
 
@@ -189,7 +224,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
             this.cookies = new ArrayList<>(response.cookies());
         }
 
-        public Builder(com.hotels.styx.api.HttpResponse response, T decoded) {
+        public Builder(HttpResponse response, T decoded) {
             this.status = response.status();
             this.version = response.version();
             this.headers = response.headers().newBuilder();
@@ -197,75 +232,55 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
             this.cookies = new ArrayList<>(response.cookies());
         }
 
-        public static <T> Builder<T> response(HttpResponseStatus status) {
-            return new Builder<>(status);
-        }
-
-        public static <T> Builder<T> response(HttpResponseStatus status, T body) {
-            return new Builder<T>(status).body(body);
-        }
-
-        public static <T> Builder<T> response() {
-            return new Builder<>();
-        }
-
-        public Builder<T> header(CharSequence name, Object value) {
-            this.headers.set(name, value);
-            return this;
-        }
-
+        /**
+         * Sets the response status.
+         *
+         * @param status response status
+         * @return {@code this}
+         */
         public Builder<T> status(HttpResponseStatus status) {
             this.status = requireNonNull(status);
             return this;
         }
 
+        /**
+         * Sets the response body.
+         *
+         * @param content response body
+         * @return {@code this}
+         */
         public Builder<T> body(T content) {
-            setContentLength(content);
-
             this.body = content;
             return this;
         }
 
-        private void setContentLength(Object content) {
-            header(CONTENT_LENGTH, HttpSupport.contentLength(content));
-        }
-
+        /**
+         * Sets the HTTP version.
+         *
+         * @param version HTTP version
+         * @return {@code this}
+         */
         public Builder<T> version(HttpVersion version) {
             this.version = requireNonNull(version);
             return this;
         }
 
+        /**
+         * Sets the value of the {@code Content-Type} header.
+         * @param contentType content type
+         *
+         * @return {@code this}
+         */
         public Builder<T> contentType(MediaType contentType) {
             headers.set(CONTENT_TYPE, contentType.toString());
             return this;
         }
 
-        public HttpResponseStatus status() {
-            return status;
-        }
-
-        public HttpHeaders headers() {
-            return headers.build();
-        }
-
-        public HttpVersion version() {
-            return version;
-        }
-
-        public T body() {
-            return body;
-        }
-
-        public Builder<T> addHeader(CharSequence name, Object value) {
-            headers.add(name, value);
-            return this;
-        }
-
-        public Builder<T> removeHeader(CharSequence name) {
-            headers.remove(name);
-            return this;
-        }
-
+        /**
+         * Disables client-side caching of this response.
+         *
+         * @return {@code this}
+         */
         public Builder<T> disableCaching() {
             header("Pragma", "no-cache");
             header("Expires", "Mon, 1 Jan 2007 08:00:00 GMT");
@@ -273,34 +288,15 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
             return this;
         }
 
-        public Builder<T> chunked() {
+        /**
+         * Makes this response chunked.
+         *
+         * @return {@code this}
+         */
+        public Builder<T> setChunked() {
             headers.add(TRANSFER_ENCODING, CHUNKED);
             headers.remove(CONTENT_LENGTH);
             return this;
-        }
-
-        public Builder<T> validateContentLength() {
-            List<String> contentLengths = headers().getAll(CONTENT_LENGTH);
-
-            checkArgument(contentLengths.size() <= 1, "Duplicate Content-Length found. %s", contentLengths);
-
-            if (contentLengths.size() == 1) {
-                checkArgument(isInteger(contentLengths.get(0)), "Invalid Content-Length found. %s", contentLengths.get(0));
-            }
-            return this;
-        }
-
-        private static boolean isInteger(String contentLength) {
-            try {
-                parseInt(contentLength);
-                return true;
-            } catch (NumberFormatException e) {
-                return false;
-            }
-        }
-
-        public List<HttpCookie> cookies() {
-            return ImmutableList.copyOf(cookies);
         }
 
         /**
@@ -340,18 +336,101 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
             return this;
         }
 
+        /**
+         * Sets the (only) value for the header with the specified name.
+         * <p/>
+         * All existing values for the same header will be removed.
+         *
+         * @param name  The name of the header
+         * @param value The value of the header
+         * @return {@code this}
+         */
+        public Builder<T> header(CharSequence name, Object value) {
+            this.headers.set(name, value);
+            return this;
+        }
+
+        /**
+         * Adds a new header with the specified {@code name} and {@code value}.
+         * <p/>
+         * Will not replace any existing values for the header.
+         *
+         * @param name  The name of the header
+         * @param value The value of the header
+         * @return {@code this}
+         */
+        public Builder<T> addHeader(CharSequence name, Object value) {
+            headers.add(name, value);
+            return this;
+        }
+
+        /**
+         * Removes the header with the specified name.
+         *
+         * @param name The name of the header to remove
+         * @return {@code this}
+         */
+        public Builder<T> removeHeader(CharSequence name) {
+            headers.remove(name);
+            return this;
+        }
+
+        /**
+         * Sets the headers.
+         *
+         * @param headers headers
+         * @return {@code this}
+         */
         public Builder<T> headers(HttpHeaders headers) {
             this.headers = headers.newBuilder();
             return this;
         }
 
-        public Builder<T> removeBody() {
-            body = null;
+        /**
+         * Enable validation of uri and some headers.
+         *
+         * @return {@code this}
+         */
+        public Builder<T> disableValidation() {
+            this.validate = false;
             return this;
         }
 
+        /**
+         * Builds a new full response based on the settings configured in this builder.
+         * If {@code validate} is set to true:
+         * <ul>
+         * <li>an exception will be thrown if the content length is not an integer, or more than one content length exists</li>
+         * </ul>
+         *
+         * @return a new full response
+         */
         public FullHttpResponse<T> build() {
+            if (validate) {
+                ensureContentLengthIsValid();
+            }
+
             return new FullHttpResponse<>(this);
+        }
+
+        Builder<T> ensureContentLengthIsValid() {
+            List<String> contentLengths = headers.build().getAll(CONTENT_LENGTH);
+
+            checkArgument(contentLengths.size() <= 1, "Duplicate Content-Length found. %s", contentLengths);
+
+            if (contentLengths.size() == 1) {
+                checkArgument(isInteger(contentLengths.get(0)), "Invalid Content-Length found. %s", contentLengths.get(0));
+            }
+            return this;
+        }
+
+        private static boolean isInteger(String contentLength) {
+            try {
+                parseInt(contentLength);
+                return true;
+            } catch (NumberFormatException e) {
+                return false;
+            }
         }
     }
 }

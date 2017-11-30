@@ -16,6 +16,7 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableList;
+import com.hotels.styx.api.messages.FullHttpRequest;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpRequest;
@@ -234,8 +235,10 @@ public final class HttpRequest implements HttpMessage {
      *                        <p>
      * @param maxContentBytes maximum allowed size for the aggregated content. If the content exceeds
      *                        this amount, an exception is raised
+     * @deprecated please use {@link #toFullHttpRequest(Function, int)}
      * @return an observable that provides an object representing an aggregated request
      */
+    @Deprecated
     public <T> Observable<DecodedRequest<T>> decode(Function<ByteBuf, T> decoder, int maxContentBytes) {
         return body.decode(decoder, maxContentBytes)
                 .map(DecodedRequest::new);
@@ -248,7 +251,7 @@ public final class HttpRequest implements HttpMessage {
      * @param maxContentBytes maximum content bytes before an exception is thrown
      * @return a decoded (aggregated/full) request
      */
-    public Observable<com.hotels.styx.api.messages.FullHttpRequest<String>> toFullHttpRequest(int maxContentBytes) {
+    public Observable<FullHttpRequest<String>> toFullHttpRequest(int maxContentBytes) {
         return toFullHttpRequest(byteBuf -> byteBuf.toString(UTF_8), maxContentBytes);
     }
 
@@ -261,10 +264,10 @@ public final class HttpRequest implements HttpMessage {
      * @param <T> full body type
      * @return a decoded (aggregated/full) request
      */
-    public <T> Observable<com.hotels.styx.api.messages.FullHttpRequest<T>> toFullHttpRequest(Function<ByteBuf, T> decoder, int maxContentBytes) {
+    public <T> Observable<FullHttpRequest<T>> toFullHttpRequest(Function<ByteBuf, T> decoder, int maxContentBytes) {
         return body.decode(decoder, maxContentBytes)
-                .map(decoded -> new com.hotels.styx.api.messages.FullHttpRequest.Builder<>(this, decoded))
-                .map(com.hotels.styx.api.messages.FullHttpRequest.Builder::build);
+                .map(decoded -> new FullHttpRequest.Builder<>(this, decoded))
+                .map(FullHttpRequest.Builder::build);
     }
 
     /**

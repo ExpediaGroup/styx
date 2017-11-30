@@ -228,7 +228,7 @@ public class FullHttpResponseTest {
                 .build();
 
         FullHttpResponse<String> shouldClearBody = response.newBuilder()
-                .removeBody()
+                .body(null)
                 .build();
 
         assertThat(shouldClearBody.body(), is(nullValue()));
@@ -254,13 +254,13 @@ public class FullHttpResponseTest {
     @Test
     public void shouldCreateAChunkedResponse() {
         assertThat(response().build().chunked(), is(false));
-        assertThat(response().chunked().build().chunked(), is(true));
+        assertThat(response().setChunked().build().chunked(), is(true));
     }
 
     @Test
     public void shouldRemoveContentLengthFromChunkedMessages() {
         FullHttpResponse<String> response = response().header(CONTENT_LENGTH, 5).build();
-        FullHttpResponse<String> chunkedResponse = response.newBuilder().chunked().build();
+        FullHttpResponse<String> chunkedResponse = response.newBuilder().setChunked().build();
 
         assertThat(chunkedResponse.chunked(), is(true));
         assertThat(chunkedResponse.header(CONTENT_LENGTH).isPresent(), is(false));
@@ -269,18 +269,10 @@ public class FullHttpResponseTest {
     @Test
     public void shouldNotFailToRemoveNonExistentContentLength() {
         FullHttpResponse<String> response = response().build();
-        FullHttpResponse<String> chunkedResponse = response.newBuilder().chunked().build();
+        FullHttpResponse<String> chunkedResponse = response.newBuilder().setChunked().build();
 
         assertThat(chunkedResponse.chunked(), is(true));
         assertThat(chunkedResponse.header(CONTENT_LENGTH).isPresent(), is(false));
-    }
-
-    @Test
-    public void shouldSetsContentLengthForNonStreamingBodyMessage() throws Exception {
-        String helloLength = valueOf(contentLength("Hello"));
-
-        assertThat(contentLength(response().body("")), isValue("0"));
-        assertThat(contentLength(response().body("Hello")), isValue(helloLength));
     }
 
     @Test
@@ -292,7 +284,6 @@ public class FullHttpResponseTest {
                 .build();
 
         assertThat(response.body(), is("Extra content"));
-        assertThat(response.contentLength(), isValue(contentLength("Extra content")));
     }
 
     @Test
@@ -346,7 +337,7 @@ public class FullHttpResponseTest {
     public void rejectsMultipleContentLengthInSingleHeader() throws Exception {
         response()
                 .addHeader(CONTENT_LENGTH, "15, 16")
-                .validateContentLength()
+                .ensureContentLengthIsValid()
                 .build();
     }
 
@@ -355,7 +346,7 @@ public class FullHttpResponseTest {
         response()
                 .addHeader(CONTENT_LENGTH, "15")
                 .addHeader(CONTENT_LENGTH, "16")
-                .validateContentLength()
+                .ensureContentLengthIsValid()
                 .build();
     }
 
@@ -363,7 +354,7 @@ public class FullHttpResponseTest {
     public void rejectsInvalidContentLength() throws Exception {
         response()
                 .addHeader(CONTENT_LENGTH, "foo")
-                .validateContentLength()
+                .ensureContentLengthIsValid()
                 .build();
     }
 
@@ -397,11 +388,11 @@ public class FullHttpResponseTest {
     }
 
     private static FullHttpResponse.Builder<String> response() {
-        return FullHttpResponse.Builder.response();
+        return FullHttpResponse.response();
     }
 
     private static FullHttpResponse.Builder<String> response(HttpResponseStatus status) {
-        return FullHttpResponse.Builder.response(status);
+        return FullHttpResponse.response(status);
     }
 
     private static int contentLength(String content) {
