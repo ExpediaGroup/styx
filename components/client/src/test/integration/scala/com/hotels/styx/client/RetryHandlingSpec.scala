@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.support.api.BlockingObservables.responseHeaders
+import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.api.HttpRequest.Builder.get
 import StyxHeaderConfig.ORIGIN_ID_DEFAULT
 import com.hotels.styx.api.client.Origin
@@ -97,7 +97,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
 
     val request: HttpRequest = get("/version.txt").build
 
-    val response = responseHeaders(client.sendRequest(request))
+    val response = waitForResponse(client.sendRequest(request))
   }
 
   test("retries the next available origin on failure") {
@@ -109,7 +109,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
 
     val request: HttpRequest = get("/version.txt").build
 
-    val response = responseHeaders(client.sendRequest(request))
+    val response = waitForResponse(client.sendRequest(request))
 
     assertThat(response.header(ORIGIN_ID_DEFAULT).get(), containsString("HEALTHY_ORIGIN_TWO"))
   }
@@ -138,7 +138,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .retryPolicy(new RetryNTimes(1))
       .build
     val request: HttpRequest = get("/version.txt").build
-    val response: HttpResponse = responseHeaders(client.sendRequest(request))
+    val response = waitForResponse(client.sendRequest(request))
   }
 
   test("It should add sticky session id after a retry succeeded") {
@@ -155,7 +155,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
 
     val request: HttpRequest = get("/version.txt").build
 
-    val response = responseHeaders(client.sendRequest(request))
+    val response = waitForResponse(client.sendRequest(request))
 
     response.cookie("styx_origin_generic-app").get().toString should fullyMatch regex "styx_origin_generic-app=HEALTHY_ORIGIN_TWO; Max-Age=.*; Path=/; HttpOnly"
   }
@@ -197,7 +197,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .build
 
     val request = get("/version.txt").build
-    val response = responseHeaders(client.sendRequest(request))
+    val response = waitForResponse(client.sendRequest(request))
   }
 
   // Instead of origins, use an injected connection pool as the means to track & control the styx HTTP client retries.

@@ -18,8 +18,9 @@ package com.hotels.styx.proxy
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.support.api.BlockingObservables.decodeAsString
+import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.api.HttpHeaderNames._
+import com.hotels.styx.api.messages.FullHttpResponse
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.TestClientSupport
@@ -101,7 +102,7 @@ class TimeoutsSpec extends FunSpec
           .build()
 
         val transaction = client.sendRequest(req)
-        val (resp, responseTime, _) = responseAndResponseTime(transaction)
+        val (resp, responseTime) = responseAndResponseTime(transaction)
 
         slowBackend.verify(getRequestedFor(urlPathEqualTo("/slowResponseHeader")))
 
@@ -123,16 +124,14 @@ class TimeoutsSpec extends FunSpec
     }
   }
 
-  def responseAndResponseTime(transaction: Observable[HttpResponse]): (HttpResponse, Long, String) = {
-    var response: HttpResponse = HttpResponse.Builder.response().build()
+  def responseAndResponseTime(transaction: Observable[HttpResponse]): (FullHttpResponse[String], Long) = {
+    var response: FullHttpResponse[String] = FullHttpResponse.response().build()
 
     val duration = time {
-      response = transaction
-        .toBlocking
-        .first()
+      response = waitForResponse(transaction)
     }
 
-    (response, duration, decodeAsString(response))
+    (response, duration)
   }
 
 

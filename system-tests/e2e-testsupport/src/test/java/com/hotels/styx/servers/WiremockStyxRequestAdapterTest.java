@@ -58,7 +58,7 @@ public class WiremockStyxRequestAdapterTest {
                 "    }\n" +
                 "}";
 
-        styxRequestBuilder = FullHttpRequest.Builder.<String>post("/__admin/mappings/new?msg=6198.1")
+        styxRequestBuilder = FullHttpRequest.<String>post("/__admin/mappings/new?msg=6198.1")
                 .header(CONTENT_LENGTH, "208")
                 .header(CONTENT_TYPE, "application/json; charset=UTF-8")
                 .header(HOST, "localhost")
@@ -103,7 +103,7 @@ public class WiremockStyxRequestAdapterTest {
 
     @Test
     public void adaptsGetHeader() throws Exception {
-        assertThat(adapter.getHeader("Content-Length"), is("246"));
+        assertThat(adapter.getHeader("Content-Length"), is("208"));
         assertThat(adapter.getHeader("Foo-Bar"), is(nullValue()));
     }
 
@@ -115,7 +115,7 @@ public class WiremockStyxRequestAdapterTest {
         assertThat(adapter.getHeader("host"), is("localhost"));
         assertThat(adapter.getHeader("Connection"), is("Keep-Alive"));
         assertThat(adapter.getHeader("user-agent"), is("Apache-HttpClient/4.3.5 (java 1.5)"));
-        assertThat(adapter.getHeader("Content-Length"), is("246"));
+        assertThat(adapter.getHeader("Content-Length"), is("208"));
     }
 
     @Test

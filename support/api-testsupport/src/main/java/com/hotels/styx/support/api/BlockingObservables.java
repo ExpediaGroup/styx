@@ -16,97 +16,26 @@
 package com.hotels.styx.support.api;
 
 import com.hotels.styx.api.HttpResponse;
-import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import rx.Observable;
 
-import java.util.function.Consumer;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static rx.Observable.error;
-import static rx.Observable.just;
-
 public final class BlockingObservables {
-
-    private static final int MEGABYTE = 1024 * 1024;
-    private static final int TEN_MEGABYTES = 10 * MEGABYTE;
 
     public static <T> T getFirst(Observable<T> observable) {
         return observable.toBlocking().single();
     }
 
-    public static HttpResponse responseHeaders(Observable<HttpResponse> responseObs) {
-        return responseObs.flatMap(
-                response -> response.decode(BlockingObservables::toUtf8, TEN_MEGABYTES)
-                        .map(decodedResponse -> decodedResponse.responseBuilder().build())
-        ).toBlocking().single();
-    }
-
-    public static HttpResponse.DecodedResponse<String> stringResponse(Observable<HttpResponse> responseObs) {
-        return stringResponse(responseObs, 10 * MEGABYTE);
-    }
-
-    public static HttpResponse.DecodedResponse<String> stringResponse(Observable<HttpResponse> responseObs, int maxSize) {
-        return responseObs.flatMap(
-                response -> response.decode(BlockingObservables::toUtf8, maxSize)
-        ).toBlocking().single();
-    }
-
-    public static String decodeAsString(HttpResponse response) {
-        return decodeAsString(response, MEGABYTE);
-    }
-
-    public static String decodeAsString(HttpResponse response, int maxSize) {
-        return response.decode(byteBuf -> byteBuf.toString(UTF_8), maxSize).toBlocking().single().body();
-    }
-
-    public static String responseBody(Observable<HttpResponse> responseObs, Consumer<HttpResponse> headersAssertions, int maxSize) {
+    public static FullHttpResponse<String> waitForResponse(Observable<HttpResponse> responseObs) {
         return responseObs
-                .flatMap(response -> applyAssertionsAndEnhanceErrors(response, headersAssertions, maxSize))
-                .flatMap(response -> response.decode(BlockingObservables::toUtf8, maxSize))
-                .map(HttpResponse.DecodedResponse::body)
+                .flatMap(response -> response.toFullHttpResponse(120*1024))
                 .toBlocking()
-                .single();
+                .first();
     }
 
-    private static Observable<HttpResponse> applyAssertionsAndEnhanceErrors(HttpResponse response, Consumer<HttpResponse> headersAssertions, int maxSize) {
-        return applyAssertions(response, headersAssertions)
-                .onErrorResumeNext(error -> failureWithBody(response, maxSize, error));
-    }
-
-    private static Observable<HttpResponse> applyAssertions(HttpResponse response, Consumer<HttpResponse> headersAssertions) {
-        try {
-            headersAssertions.accept(response);
-            return just(response);
-        } catch (Throwable t) {
-            return error(t);
-        }
-    }
-
-    private static Observable<HttpResponse> failureWithBody(HttpResponse response, int maxSize, Throwable error) {
-        return response
-                .decode(BlockingObservables::toUtf8, maxSize)
-                .flatMap(decodedResponse ->
-                        error(new AssertionError(error.getMessage() + ", body = " + decodedResponse.body(), error)));
-    }
-
-    private static String toUtf8(ByteBuf buf) {
-        return buf.toString(UTF_8);
-    }
-
-    public static String responseBody(Observable<HttpResponse> responseObs, Consumer<HttpResponse> headersAssertions) {
-        return responseBody(responseObs, headersAssertions, TEN_MEGABYTES);
-    }
-
-    public static String responseBody(Observable<HttpResponse> responseObs) {
-        return responseBody(responseObs, response -> {
-        }, TEN_MEGABYTES);
-    }
-
-    public static String responseBody(Observable<HttpResponse> responseObs, HttpResponseStatus expectedStatus) {
-        return responseBody(responseObs, response -> assertThat(response.status(), is(expectedStatus)));
+    public static HttpResponse waitForStreamingResponse(Observable<HttpResponse> responseObs) {
+        return responseObs
+                .toBlocking()
+                .first();
     }
 
     private BlockingObservables() {

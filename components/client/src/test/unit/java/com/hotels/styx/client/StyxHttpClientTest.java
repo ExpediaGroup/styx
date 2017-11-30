@@ -27,6 +27,7 @@ import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
@@ -100,6 +101,7 @@ public class StyxHttpClientTest {
     private static final Observer<HttpResponse> DO_NOTHING = Observers.empty();
     private static final Origin SOME_ORIGIN = newOriginBuilder(localhost(9090)).applicationId(GENERIC_APP).build();
     private static final HttpRequest SOME_REQ = get("/some-req").build();
+    private static final int MAX_LENGTH = 1024;
 
     private final OriginStatsFactory originStatsFactory = new OriginStatsFactory(new CodaHaleMetricRegistry());
     private final StickySessionConfig stickySessionConfig = stickySessionDisabled();
@@ -115,8 +117,8 @@ public class StyxHttpClientTest {
     @Test
     public void sendsHttp() throws IOException {
         withOrigin(HTTP, port -> {
-            HttpResponse response = httpClient(port).sendRequest(httpRequest(8080))
-                    .doOnNext(StyxHttpClientTest::consumeBody)
+            FullHttpResponse<String> response = httpClient(port).sendRequest(httpRequest(8080))
+                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
@@ -127,8 +129,8 @@ public class StyxHttpClientTest {
     @Test
     public void sendsHttps() throws IOException {
         withOrigin(HTTPS, port -> {
-            HttpResponse response = httpsClient(port).sendRequest(httpsRequest(8080))
-                    .doOnNext(StyxHttpClientTest::consumeBody)
+            FullHttpResponse<String> response = httpsClient(port).sendRequest(httpsRequest(8080))
+                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
@@ -139,8 +141,8 @@ public class StyxHttpClientTest {
     @Test(expectedExceptions = Exception.class)
     public void cannotSendHttpsWhenConfiguredForHttp() throws IOException {
         withOrigin(HTTPS, port -> {
-            HttpResponse response = httpClient(port).sendRequest(httpsRequest(8080))
-                    .doOnNext(StyxHttpClientTest::consumeBody)
+            FullHttpResponse<String> response = httpClient(port).sendRequest(httpsRequest(8080))
+                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
@@ -151,8 +153,8 @@ public class StyxHttpClientTest {
     @Test(expectedExceptions = Exception.class)
     public void cannotSendHttpWhenConfiguredForHttps() throws IOException {
         withOrigin(HTTP, port -> {
-            HttpResponse response = httpsClient(port).sendRequest(httpRequest(8080))
-                    .doOnNext(StyxHttpClientTest::consumeBody)
+            FullHttpResponse<String> response = httpsClient(port).sendRequest(httpRequest(8080))
+                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
@@ -207,10 +209,6 @@ public class StyxHttpClientTest {
         return get("https://localhost:" + port)
                 .header(HOST, "localhost:" + port)
                 .build();
-    }
-
-    private static Subscription consumeBody(HttpResponse response) {
-        return response.body().content().subscribe();
     }
 
     private static void withOrigin(Protocol protocol, IntConsumer portConsumer) {

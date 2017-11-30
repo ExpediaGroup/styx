@@ -19,16 +19,16 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.http.handlers.BaseHttpHandler;
-import com.hotels.styx.server.HttpInterceptorContext;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
+import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class StatusHandlerTest {
@@ -36,15 +36,15 @@ public class StatusHandlerTest {
     @Test
     public void returnsOKForHealthyHealthcheck() {
         StatusHandler statusHandler = new StatusHandler(underlyingHealthCheckIs(OK));
-        HttpResponse response = handle(statusHandler, get("/status").build());
-        assertThat(response, hasBody("OK"));
+        FullHttpResponse<String> response = waitForResponse(statusHandler.handle(get("/status").build()));
+        assertThat(response.body(), is("OK"));
     }
 
     @Test
     public void returnsNOT_OKForFaultyHealthcheck() {
         StatusHandler statusHandler = new StatusHandler(underlyingHealthCheckIs(INTERNAL_SERVER_ERROR));
-        HttpResponse response = handle(statusHandler, get("/status").build());
-        assertThat(response, hasBody("NOT_OK"));
+        FullHttpResponse<String> response = waitForResponse(statusHandler.handle(get("/status").build()));
+        assertThat(response.body(), is("NOT_OK"));
     }
 
     private static HttpHandler underlyingHealthCheckIs(HttpResponseStatus status) {
@@ -58,7 +58,4 @@ public class StatusHandlerTest {
         };
     }
 
-    private static HttpResponse handle(HttpHandler handler, HttpRequest request) {
-        return getFirst(handler.handle(request));
-    }
 }

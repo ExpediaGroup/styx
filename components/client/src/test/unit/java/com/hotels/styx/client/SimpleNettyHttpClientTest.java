@@ -22,6 +22,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionDestination;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
@@ -58,6 +59,7 @@ import static org.mockito.Mockito.when;
 
 public class SimpleNettyHttpClientTest {
     private HttpRequest anyRequest;
+    private static int MAX_LENGTH = 1024;
 
     @BeforeMethod
     public void setUp() {
@@ -69,8 +71,8 @@ public class SimpleNettyHttpClientTest {
     @Test
     public void sendsHttp() throws IOException {
         withOrigin(HTTP, port -> {
-            HttpResponse response = httpClient().sendRequest(httpRequest(port))
-                    .doOnNext(this::consumeBody)
+            FullHttpResponse<String> response = httpClient().sendRequest(httpRequest(port))
+                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
@@ -81,8 +83,8 @@ public class SimpleNettyHttpClientTest {
     @Test
     public void sendsHttps() throws IOException {
         withOrigin(HTTPS, port -> {
-            HttpResponse response = httpsClient().sendRequest(httpsRequest(port))
-                    .doOnNext(this::consumeBody)
+            FullHttpResponse<String> response = httpsClient().sendRequest(httpsRequest(port))
+                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
@@ -93,8 +95,8 @@ public class SimpleNettyHttpClientTest {
     @Test(expectedExceptions = Exception.class)
     public void cannotSendHttpsWhenConfiguredForHttp() throws IOException {
         withOrigin(HTTPS, port -> {
-            HttpResponse response = httpClient().sendRequest(httpsRequest(port))
-                    .doOnNext(this::consumeBody)
+            FullHttpResponse<String> response = httpClient().sendRequest(httpsRequest(port))
+                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
@@ -105,8 +107,8 @@ public class SimpleNettyHttpClientTest {
     @Test(expectedExceptions = Exception.class)
     public void cannotSendHttpWhenConfiguredForHttps() throws IOException {
         withOrigin(HTTP, port -> {
-            HttpResponse response = httpsClient().sendRequest(httpRequest(port))
-                    .doOnNext(this::consumeBody)
+            FullHttpResponse<String> response = httpsClient().sendRequest(httpRequest(port))
+                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
@@ -155,11 +157,6 @@ public class SimpleNettyHttpClientTest {
         } finally {
             server.stop();
         }
-    }
-
-
-    private Subscription consumeBody(HttpResponse response) {
-        return response.body().content().subscribe();
     }
 
     @Test
@@ -228,7 +225,7 @@ public class SimpleNettyHttpClientTest {
                 .build();
 
         client.sendRequest(request)
-                .doOnNext(this::consumeBody)
+                .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
                 .toBlocking()
                 .single();
     }

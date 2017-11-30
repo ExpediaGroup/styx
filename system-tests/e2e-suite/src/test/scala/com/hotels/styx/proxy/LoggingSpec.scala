@@ -24,7 +24,7 @@ import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.api.metrics.HttpErrorStatusCauseLogger
 import com.hotels.styx.api.plugins.spi.PluginException
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
-import com.hotels.styx.support.api.BlockingObservables
+import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
@@ -94,8 +94,7 @@ class LoggingSpec extends FunSpec
         .addHeader(X_THROW_AT, AT_REQUEST)
         .build()
 
-      val aggregatedResponse = BlockingObservables.stringResponse(client.sendRequest(request))
-      val response = aggregatedResponse.responseBuilder().build()
+      val response = waitForResponse(client.sendRequest(request))
 
       assertThat(response.status(), is(INTERNAL_SERVER_ERROR))
 

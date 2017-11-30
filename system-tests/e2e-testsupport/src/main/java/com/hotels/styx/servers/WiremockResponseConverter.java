@@ -30,7 +30,7 @@ final class WiremockResponseConverter {
         HttpHeaders headers = toStyxHeaders(response.getHeaders());
         String content = response.getBodyAsString();
 
-        return FullHttpResponse.Builder.<String>response(status).headers(headers).body(content).build();
+        return FullHttpResponse.<String>response(status).headers(headers).body(content).build();
     }
 
     private static HttpHeaders toStyxHeaders(com.github.tomakehurst.wiremock.http.HttpHeaders headers) {

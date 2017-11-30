@@ -20,7 +20,7 @@ import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
-import com.hotels.styx.support.api.BlockingObservables
+import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -62,7 +62,7 @@ class AsyncRequestSpec extends FunSpec
         .addHeader("Content-Length", "0")
         .build()
 
-      val response = BlockingObservables.stringResponse(client.sendRequest(request))
+      val response = waitForResponse(client.sendRequest(request))
 
       mockServer.verify(1, getRequestedFor(urlStartingWith("/foobar")))
       response.body() should be("I should be here!")

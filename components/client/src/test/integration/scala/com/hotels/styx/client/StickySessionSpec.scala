@@ -18,7 +18,7 @@ package com.hotels.styx.client
 import com.hotels.styx.support.api.BlockingObservables._
 import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.Id.id
-import com.hotels.styx.api.{HttpRequest, HttpResponse}
+import com.hotels.styx.api.{HttpRequest}
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.client.stickysession.StickySessionConfig
@@ -51,7 +51,6 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
     server2.stop
   }
 
-  implicit def responseToRichResponse(rsp: HttpResponse) = new RichHttpResponse(rsp)
 
   test("Responds with sticky session cookie when STICKY_SESSION_ENABLED=true") {
     val client: StyxHttpClient = newHttpClientBuilder(
@@ -65,7 +64,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
     val request: HttpRequest = Builder.get("/")
       .build
 
-    val response: HttpResponse = responseHeaders(client.sendRequest(request))
+    val response = waitForResponse(client.sendRequest(request))
     response.status() should be(OK)
     response.cookie("styx_origin_app").get().toString should fullyMatch regex "styx_origin_app=app-0[12]; Max-Age=.*; Path=/; HttpOnly"
   }
@@ -82,7 +81,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
     val request: HttpRequest = Builder.get("/")
       .build
 
-    val response = responseHeaders(client.sendRequest(request))
+    val response = waitForResponse(client.sendRequest(request))
     response.status() should be(OK)
     response.cookies().asScala should have size (0)
   }
@@ -101,13 +100,13 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build
 
 
-    val response1 = responseHeaders(client.sendRequest(request))
-    val response2 = responseHeaders(client.sendRequest(request))
-    val response3 = responseHeaders(client.sendRequest(request))
+    val response1 = waitForResponse(client.sendRequest(request))
+    val response2 = waitForResponse(client.sendRequest(request))
+    val response3 = waitForResponse(client.sendRequest(request))
 
-    response1.originInfo should be(s"APP-localhost:${server2.port}")
-    response2.originInfo should be(s"APP-localhost:${server2.port}")
-    response3.originInfo should be(s"APP-localhost:${server2.port}")
+    response1.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
+    response2.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
+    response3.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
   }
 
   test("Routes to origins indicated by sticky session cookie when other cookies are provided.") {
@@ -126,13 +125,13 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build()
 
 
-    val response1 = responseHeaders(client.sendRequest(request))
-    val response2 = responseHeaders(client.sendRequest(request))
-    val response3 = responseHeaders(client.sendRequest(request))
+    val response1 = waitForResponse(client.sendRequest(request))
+    val response2 = waitForResponse(client.sendRequest(request))
+    val response3 = waitForResponse(client.sendRequest(request))
 
-    response1.originInfo should be(s"APP-localhost:${server2.port}")
-    response2.originInfo should be(s"APP-localhost:${server2.port}")
-    response3.originInfo should be(s"APP-localhost:${server2.port}")
+    response1.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
+    response2.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
+    response3.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
   }
 
   test("Routes to new origin when the origin indicated by sticky session cookie does not exist.") {
@@ -148,7 +147,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .addCookie("styx_origin_app", "h3")
       .build
 
-    val response = responseHeaders(client.sendRequest(request))
+    val response = waitForResponse(client.sendRequest(request))
 
     response.status() should be(OK)
     response.cookies().asScala should have size (1)
@@ -173,20 +172,13 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .addCookie("styx_origin_app", "app-02")
       .build
 
-    val response = responseHeaders(client.sendRequest(request))
+    val response = waitForResponse(client.sendRequest(request))
 
     response.status() should be(OK)
     response.cookies() should have size (1)
     response.cookie("styx_origin_app").get().toString should fullyMatch regex "styx_origin_app=app-02; Max-Age=.*; Path=/; HttpOnly"
-
-    response.body().content().subscribe()
-
   }
 
   private def healthCheckIntervalFor(appId: String) = 1000
-
-  class RichHttpResponse(val response: HttpResponse) {
-    def originInfo = response.header("Stub-Origin-Info").get()
-  }
 
 }

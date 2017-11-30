@@ -35,25 +35,25 @@ import static io.netty.handler.codec.http.HttpResponseStatus.CREATED;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 
 public class WiremockResponseConverterTest {
 
     @Test
-    public void convertsCreatedResponse() throws Exception {
+    public void convertsCreatedResponse() {
         FullHttpResponse<String> styxResponse = WiremockResponseConverter.toStyxResponse(new BasicResponseRenderer().render(ResponseDefinition.created()));
 
         assertThat(styxResponse.status(), is(CREATED));
-        assertThat(styxResponse.headers().names(), contains(new AsciiString("Content-Length")));
-        assertThat(styxResponse.header("Content-Length"), is(Optional.of("0")));
+        assertThat(styxResponse.header("Content-Length"), is(Optional.empty()));
         assertThat(styxResponse.body(), is(""));
     }
 
     @Test
-    public void convertsResponseWithBody() throws Exception {
+    public void convertsResponseWithBody() {
         ResponseDefinition response = new ResponseDefinition(HTTP_OK, "{ \"count\" : 0, \"requestJournalDisabled\" : false}");
-        response.setHeaders(new HttpHeaders(httpHeader("Content-Type", "application/json")));
+        response.setHeaders(new HttpHeaders(
+                httpHeader("Content-Length", "48"),
+                httpHeader("Content-Type", "application/json")));
 
         FullHttpResponse<String> styxResponse = WiremockResponseConverter.toStyxResponse(new BasicResponseRenderer().render(response));
 

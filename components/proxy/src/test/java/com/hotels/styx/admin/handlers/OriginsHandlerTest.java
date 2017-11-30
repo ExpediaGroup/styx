@@ -16,15 +16,13 @@
 package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.support.ApplicationConfigurationMatcher;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.applications.BackendServices;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry;
-import com.hotels.styx.server.HttpInterceptorContext;
+import com.hotels.styx.support.ApplicationConfigurationMatcher;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -33,15 +31,13 @@ import java.io.IOException;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
-import static com.hotels.styx.support.api.matchers.HttpResponseStatusMatcher.hasStatus;
-import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadFromPath;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
+import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
+import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -67,13 +63,12 @@ public class OriginsHandlerTest {
 
     @Test
     public void respondsToRequestWithJsonResponse() throws IOException {
-        HttpResponse response = handle(get("/admin/configuration/origins").build());
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
 
-        assertThat(response, hasStatus(OK));
+        assertThat(response.status(), is(OK));
         assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
 
-        String content = bodyAsString(response);
-        assertThat(content, unmarshalApplications(content), containsInAnyOrder(expected()));
+        assertThat(response.body(), unmarshalApplications(response.body()), containsInAnyOrder(expected()));
     }
 
     @Test
@@ -81,13 +76,12 @@ public class OriginsHandlerTest {
         Registry<BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
         OriginsHandler handler = new OriginsHandler(backendServicesRegistry);
 
-        HttpResponse response = handle(handler, get("/admin/configuration/origins").build());
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
 
-        assertThat(response, hasStatus(OK));
+        assertThat(response.status(), is(OK));
         assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
 
-        String content = bodyAsString(response);
-        assertThat(content, is("[]"));
+        assertThat(response.body(), is("[]"));
     }
 
     private ApplicationConfigurationMatcher[] expected() {
@@ -102,19 +96,5 @@ public class OriginsHandlerTest {
 
     private static BackendServices unmarshalApplications(String content) throws IOException {
         return MAPPER.readValue(content, BackendServices.class);
-    }
-
-    private HttpResponse handle(HttpRequest request) {
-        return handle(this.handler, request);
-    }
-
-    private static HttpResponse handle(OriginsHandler handler, HttpRequest request) {
-        return handler.handle(request).flatMap(response ->
-                response.decode(buffer -> buffer.toString(UTF_8), 0x10000))
-                .map(decodedResponse -> decodedResponse.responseBuilder()
-                        .body(decodedResponse.body())
-                        .build())
-                .toBlocking()
-                .single();
     }
 }
