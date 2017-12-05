@@ -109,7 +109,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
 
     @VisibleForTesting
     static DefaultHttpRequest toNettyRequest(HttpRequest request) {
-        DefaultHttpRequest nettyRequest = new DefaultHttpRequest(request.version(), request.method(), request.url().encodedUri(), false);
+        DefaultHttpRequest nettyRequest = new DefaultHttpRequest(request.version(), request.method(), request.url().toString(), false);
 
         request.headers().forEach((name, value) ->
                 nettyRequest.headers().add(name, value));

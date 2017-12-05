@@ -149,7 +149,7 @@ public class UrlTest {
     public void handlesPathSegmentEncodedInUTF8() {
         Url url = url("http://example.com/foo/\u2603")
                 .build();
-        assertThat(url.encodedUri(), is("http://example.com/foo/%E2%98%83"));
+        assertThat(url.encodedUri(), is("http://example.com/foo/\u2603"));
     }
 
     @Test
@@ -248,6 +248,15 @@ public class UrlTest {
         String path = "/customercare/subscribe.html" + character + "sessid=nXF5jQ8rTW3bAbh6djb2hYJE3D.web-app-02";
         assertThat(url(path).build().encodedUri(), is(path));
     }
+    @Test
+    public void spaceIsAlsoPlusIsAlsoHex20() {
+        String ENCODED_SPACE = "/customercare/subscribe.html%20sessid=nXF5jQ8rTW3bAbh6djb2hYJE3D.web-app-02";
+
+        String path = "/customercare/subscribe.html+sessid=nXF5jQ8rTW3bAbh6djb2hYJE3D.web-app-02";
+        assertThat(url(path).build().encodedUri(), is(path));
+
+        assertThat(url(ENCODED_SPACE).build().encodedUri(), is(ENCODED_SPACE));
+    }
 
     @Test
     public void shouldCreateAValidUrlIfAuthorityIsMissing() {
@@ -265,6 +274,18 @@ public class UrlTest {
 
         assertThat(url.encodedUri(), is("/webapp/assets/images/icons.eot?"));
         assertThat(url.queryParams().isEmpty(), is(true));
+    }
+
+    @Test
+    public void exposesDecodedPath() throws Exception {
+        Url url = Url.Builder.url("http://localhost/foo%20bar").build();
+        assertThat(url.toURI().getPath(), is("/foo bar"));
+    }
+
+    @Test
+    public void exposesRawPath() throws Exception {
+        Url url = Url.Builder.url("http://localhost/foo%20bar").build();
+        assertThat(url.toURI().getRawPath(), is("/foo%20bar"));
     }
 
     @DataProvider(name = "pathSegmentAllowedChars")

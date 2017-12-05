@@ -66,7 +66,7 @@ class UnwiseCharactersSpec extends FunSpec with StyxProxySpec {
 
       decodedRequest(req)
 
-      recordingBackend.verify(receivedRewrittenUrl("/url/unwiseQQblah"))
+      recordingBackend.verify(receivedRewrittenUrl("/url/unwise%51%51blah"))
       assertThat(logger.log(), hasItem(loggingEvent(WARN, "Value contains unwise chars. you should fix this. raw=/url/unwiseQQblah, escaped=/url/unwise%51%51blah.*")))
     }
   }

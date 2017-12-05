@@ -31,12 +31,12 @@ public class HttpRequestOperationTest {
                 .header("X-Forwarded-Proto", "https")
                 .addCookie("HASESSION_V3", "asdasdasd")
                 .addCookie("has", "123456789")
-                .uri("https://www.example.com/foo")
+                .uri("https://www.example.com/foo%2Cbar?foo,baf=2")
                 .build();
 
         DefaultHttpRequest nettyRequest = HttpRequestOperation.toNettyRequest(request);
         assertThat(nettyRequest.getMethod(), is(GET));
-        assertThat(nettyRequest.getUri(), is("https://www.example.com/foo"));
+        assertThat(nettyRequest.getUri(), is("https://www.example.com/foo%2Cbar?foo%2Cbaf=2"));
         assertThat(nettyRequest.headers().get("X-Forwarded-Proto"), is("https"));
         assertThat(nettyRequest.headers().getAll("Cookie"), contains("HASESSION_V3=asdasdasd; has=123456789"));
     }
