@@ -17,7 +17,9 @@ package com.hotels.styx.api;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -29,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.net.MediaType.ANY_AUDIO_TYPE;
@@ -39,11 +42,11 @@ import static com.hotels.styx.api.HttpCookieAttribute.path;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.LOCATION;
-import static com.hotels.styx.api.TestSupport.bodyAsString;
 import static com.hotels.styx.api.HttpMessageBody.NO_BODY;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.newBuilder;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.TestSupport.bodyAsString;
 import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
@@ -62,12 +65,14 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static java.lang.String.valueOf;
 import static java.time.ZoneOffset.UTC;
+import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static rx.Observable.empty;
 import static rx.Observable.just;
 
 public class HttpResponseTest {
@@ -383,11 +388,69 @@ public class HttpResponseTest {
         assertThat(bodyAsString(newResponse.body()), is("foobarx"));
     }
 
-    private Function<ByteBuf, String> toStringDecoder(Charset charset) {
+
+    @Test
+    public void decodesToFullHttpResponse() throws Exception {
+        HttpResponse request = response(CREATED)
+                .version(HTTP_1_0)
+                .header("HeaderName", "HeaderValue")
+                .addCookie("CookieName", "CookieValue")
+                .body("foobar")
+                .body(stream("foo", "bar", "baz"))
+                .build();
+
+        FullHttpResponse<String> full = request.toFullHttpResponse(byteBuf -> byteBuf.toString(StandardCharsets.UTF_8), 0x100000)
+                .toBlocking()
+                .single();
+
+        assertThat(full.status(), is(CREATED));
+        assertThat(full.version(), is(HTTP_1_0));
+        assertThat(full.headers(), hasItem(header("HeaderName", "HeaderValue")));
+        assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
+
+        assertThat(full.status(), is(CREATED));
+        assertThat(full.body(), is("foobarbaz"));
+    }
+
+    @Test
+    public void decodesToFullHttpResponseWithEmptyBody() throws Exception {
+        HttpResponse request = response(CREATED)
+                .body(empty())
+                .build();
+
+        FullHttpResponse<String> full = request.toFullHttpResponse(byteBuf -> byteBuf.toString(StandardCharsets.UTF_8), 0x100000)
+                .toBlocking()
+                .single();
+
+        assertThat(full.status(), is(CREATED));
+        assertThat(full.body(), is(""));
+    }
+
+    @Test
+    public void decodingToFullHttpResponseDefaultsToUTF8() throws Exception {
+        HttpResponse request = response(CREATED)
+                .body(stream("foo", "bar", "baz"))
+                .build();
+
+        FullHttpResponse<String> full = request.toFullHttpResponse(0x100000)
+                .toBlocking()
+                .single();
+
+        assertThat(full.status(), is(CREATED));
+        assertThat(full.body(), is("foobarbaz"));
+    }
+
+    private static Observable<ByteBuf> stream(String... strings) {
+        return Observable.from(Stream.of(strings)
+                .map(string -> Unpooled.copiedBuffer(string, StandardCharsets.UTF_8))
+                .collect(toList()));
+    }
+
+    private static Function<ByteBuf, String> toStringDecoder(Charset charset) {
         return byteBuf -> byteBuf.toString(charset);
     }
 
-    private Function<ByteBuf, String> utf8Decoder = toStringDecoder(Charsets.UTF_8);
+    private final Function<ByteBuf, String> utf8Decoder = toStringDecoder(Charsets.UTF_8);
 
     private byte[] bytes(String content) {
         return content.getBytes(UTF_8);

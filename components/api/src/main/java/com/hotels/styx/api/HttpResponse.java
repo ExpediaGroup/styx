@@ -18,6 +18,7 @@ package com.hotels.styx.api;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
@@ -42,6 +43,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.MULTIPLE_CHOICES;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
 import static io.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Represents an HTTP response.
@@ -49,12 +51,19 @@ import static io.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
  * You can build a {@link HttpResponse} using a {@link HttpResponse.Builder}.
  */
 public final class HttpResponse implements HttpMessage {
+    private static final Set<HttpResponseStatus> REDIRECT_STATUS = newHashSet(
+            FOUND,
+            SEE_OTHER,
+            TEMPORARY_REDIRECT,
+            MULTIPLE_CHOICES,
+            MOVED_PERMANENTLY,
+            TEMPORARY_REDIRECT);
+
     private final HttpRequest request;
     private final HttpVersion version;
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
     private final HttpMessageBody body;
-    private final boolean validate;
 
     private final ImmutableList<HttpCookie> cookies;
 
@@ -65,7 +74,6 @@ public final class HttpResponse implements HttpMessage {
         this.headers = builder.headers().build();
         this.cookies = ImmutableList.copyOf(builder.cookies);
         this.body = builder.body();
-        this.validate = builder.validate;
     }
 
     /**
@@ -168,14 +176,6 @@ public final class HttpResponse implements HttpMessage {
         return new Builder(this);
     }
 
-    private static final Set<HttpResponseStatus> REDIRECT_STATUS = newHashSet(
-            FOUND,
-            SEE_OTHER,
-            TEMPORARY_REDIRECT,
-            MULTIPLE_CHOICES,
-            MOVED_PERMANENTLY,
-            TEMPORARY_REDIRECT);
-
     /**
      * Returns {@code true} if this HttpResponse redirects to another resource.
      *
@@ -264,7 +264,7 @@ public final class HttpResponse implements HttpMessage {
      * representation, Styx can safely release the original direct memory byteBuf.
      * <p>
      * If in-place modification is absolutely necessary for the performance reasons, the decoder function
-     * must retain the contents manually. Like so:
+     * must retain the contents manually.z Like so:
      *
      * <pre>
      *     {@code (byteBuf) -> { byteBuf.retain(); return byteBuf }}
@@ -275,13 +275,42 @@ public final class HttpResponse implements HttpMessage {
      * <p>
      * @param maxContentBytes maximum allowed size for the aggregated content. If the content exceeds
      *  this amount, an exception is raised
+     * @deprecated please use {@link #toFullHttpResponse(Function, int)}
      *
      * @return an observable that provides an object representing an aggregated response
      */
+    @Deprecated
     public <T> Observable<DecodedResponse<T>> decode(Function<ByteBuf, T> decoder, int maxContentBytes) {
         return body.decode(decoder, maxContentBytes)
                 .map(content -> new DecodedResponse<>(this, content));
     }
+
+    /**
+     * Decodes this response into a full/aggregated form, using UTF-8 decoding to transform the body from a buffer of bytes
+     * to a String. If the number of content bytes exceeds the provided maximum, an exception will be thrown.
+     *
+     * @param maxContentBytes maximum content bytes before an exception is thrown
+     * @return a decoded (aggregated/full) response
+     */
+    public Observable<FullHttpResponse<String>> toFullHttpResponse(int maxContentBytes) {
+        return toFullHttpResponse(byteBuf -> byteBuf.toString(UTF_8), maxContentBytes);
+    }
+
+    /**
+     * Decodes this response into a full/aggregated form, using the provided decoder to transform the body from a buffer of bytes
+     * to an arbitrary type. If the number of content bytes exceeds the provided maximum, an exception will be thrown.
+     *
+     * @param decoder a decoding function
+     * @param maxContentBytes maximum content bytes before an exception is thrown
+     * @param <T> full body type
+     * @return a decoded (aggregated/full) response
+     */
+    public <T> Observable<FullHttpResponse<T>> toFullHttpResponse(Function<ByteBuf, T> decoder, int maxContentBytes) {
+        return body.decode(decoder, maxContentBytes)
+                .map(decoded -> new FullHttpResponse.Builder<>(this, decoded))
+                .map(FullHttpResponse.Builder::build);
+    }
+
 
     @Override
     public String toString() {
@@ -290,14 +319,13 @@ public final class HttpResponse implements HttpMessage {
                 .add("version", version)
                 .add("status", status)
                 .add("headers", headers)
-                .add("validate", validate)
                 .add("cookies", cookies)
                 .toString();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(request, version, status, headers, validate, cookies);
+        return Objects.hashCode(request, version, status, headers, cookies);
     }
 
     @Override
@@ -313,7 +341,6 @@ public final class HttpResponse implements HttpMessage {
                 && Objects.equal(this.version, other.version)
                 && Objects.equal(this.status, other.status)
                 && Objects.equal(this.headers, other.headers)
-                && Objects.equal(this.validate, other.validate)
                 && Objects.equal(this.cookies, other.cookies);
     }
 
@@ -384,11 +411,18 @@ public final class HttpResponse implements HttpMessage {
         private Builder(HttpResponse response) {
             this.request = response.request;
             this.status = response.status;
-            this.validate = response.validate;
             headers(response.headers.newBuilder());
             this.cookies = new ArrayList<>(response.cookies);
             version(response.version);
             body(response.body);
+        }
+
+        public Builder(FullHttpResponse<?> response, Observable<ByteBuf> body) {
+            this.status = response.status();
+            headers(response.headers().newBuilder());
+            this.cookies = new ArrayList<>(response.cookies());
+            version(response.version());
+            body(body);
         }
 
         /**
@@ -492,7 +526,6 @@ public final class HttpResponse implements HttpMessage {
                     .ifPresent(cookie -> cookies.remove(cookie));
 
             return this;
-
         }
 
         /**

@@ -90,17 +90,16 @@ public final class HttpMessageBody {
                     composite.addComponent(part);
                     composite.writerIndex(composite.writerIndex() + part.readableBytes());
                 })
+
                 .map((CompositeByteBuf aggregate) -> decodeAndRelease(decoder, aggregate));
     }
 
-    private <T> T decodeAndRelease(Function<ByteBuf, T> decoder, CompositeByteBuf aggregate) {
-        T temp;
+    private static <T> T decodeAndRelease(Function<ByteBuf, T> decoder, CompositeByteBuf aggregate) {
         try {
-            temp = decoder.apply(aggregate);
+            return decoder.apply(aggregate);
         } finally {
             aggregate.release();
         }
-        return temp;
     }
 
     /**
