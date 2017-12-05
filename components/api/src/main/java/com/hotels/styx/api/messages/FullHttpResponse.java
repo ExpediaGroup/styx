@@ -90,7 +90,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
      * Creates an HTTP response builder with a given status and body.
      *
      * @param status response status
-     * @param body repsonse body
+     * @param body response body
      * @param <T> response type
      * @return a new builder
      */

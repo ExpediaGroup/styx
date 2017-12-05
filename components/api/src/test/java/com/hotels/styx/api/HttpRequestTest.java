@@ -43,6 +43,7 @@ import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
 import static io.netty.handler.codec.http.HttpMethod.DELETE;
 import static io.netty.handler.codec.http.HttpMethod.GET;
+import static io.netty.handler.codec.http.HttpMethod.POST;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.multipart.HttpPostRequestDecoder.ErrorDataDecoderException;
@@ -58,7 +59,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.core.Is.is;
+import static org.hamcrest.Matchers.is;
 import static rx.Observable.empty;
 import static rx.Observable.just;
 
@@ -519,7 +520,12 @@ public class HttpRequestTest {
 
     @Test
     public void decodesToFullHttpRequest() throws Exception {
-        HttpRequest request = get("/foo/bar")
+        HttpRequest request = post("/foo/bar")
+                .clientAddress(InetSocketAddress.createUnresolved("example.org", 8080))
+                .secure(true)
+                .version(HTTP_1_0)
+                .header("HeaderName", "HeaderValue")
+                .addCookie("CookieName", "CookieValue")
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
@@ -527,6 +533,13 @@ public class HttpRequestTest {
                 .toBlocking()
                 .single();
 
+        assertThat(full.method(), is(POST));
+        assertThat(full.clientAddress().getHostName(), is("example.org"));
+        assertThat(full.clientAddress().getPort(), is(8080));
+        assertThat(full.isSecure(), is(true));
+        assertThat(full.version(), is(HTTP_1_0));
+        assertThat(full.headers(), contains(header("HeaderName", "HeaderValue")));
+        assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
         assertThat(full.url().toString(), is("/foo/bar"));
         assertThat(full.body(), is("foobarbaz"));
     }

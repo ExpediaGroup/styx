@@ -67,11 +67,11 @@ import static java.lang.String.valueOf;
 import static java.time.ZoneOffset.UTC;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static rx.Observable.empty;
 import static rx.Observable.just;
 
@@ -392,12 +392,21 @@ public class HttpResponseTest {
     @Test
     public void decodesToFullHttpResponse() throws Exception {
         HttpResponse request = response(CREATED)
+                .version(HTTP_1_0)
+                .header("HeaderName", "HeaderValue")
+                .addCookie("CookieName", "CookieValue")
+                .body("foobar")
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
         FullHttpResponse<String> full = request.toFullHttpResponse(byteBuf -> byteBuf.toString(StandardCharsets.UTF_8), 0x100000)
                 .toBlocking()
                 .single();
+
+        assertThat(full.status(), is(CREATED));
+        assertThat(full.version(), is(HTTP_1_0));
+        assertThat(full.headers(), hasItem(header("HeaderName", "HeaderValue")));
+        assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
 
         assertThat(full.status(), is(CREATED));
         assertThat(full.body(), is("foobarbaz"));

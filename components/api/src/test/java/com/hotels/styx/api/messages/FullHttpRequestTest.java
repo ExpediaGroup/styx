@@ -42,6 +42,7 @@ import static com.hotels.styx.support.matchers.MapMatcher.isMap;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpMethod.DELETE;
 import static io.netty.handler.codec.http.HttpMethod.GET;
+import static io.netty.handler.codec.http.HttpMethod.POST;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static java.lang.String.valueOf;
@@ -61,19 +62,32 @@ import static rx.Observable.just;
 
 public class FullHttpRequestTest {
     @Test
-    public void encodesToStreamingHttpRequest() throws Exception {
-        FullHttpRequest<String> fullRequest = post("/foo/bar", "foobar").build();
+    public void encodesToStreamingHttpRequest() {
+        FullHttpRequest<String> fullRequest = post("/foo/bar", "foobar")
+                .clientAddress(InetSocketAddress.createUnresolved("example.org", 8080))
+                .secure(true)
+                .version(HTTP_1_0)
+                .header("HeaderName", "HeaderValue")
+                .addCookie("CookieName", "CookieValue")
+                .build();
 
         HttpRequest streaming = fullRequest.toStreamingHttpRequest(string -> copiedBuffer(string, UTF_8));
 
-        TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
-        subscriber.requestMore(1);
+        assertThat(streaming.method(), is(POST));
+        assertThat(streaming.url(), is(url("/foo/bar").build()));
+        assertThat(streaming.clientAddress().getHostName(), is("example.org"));
+        assertThat(streaming.clientAddress().getPort(), is(8080));
+        assertThat(streaming.isSecure(), is(true));
+        assertThat(streaming.version(), is(HTTP_1_0));
+        assertThat(streaming.headers(), contains(header("HeaderName", "HeaderValue")));
+        assertThat(streaming.cookies(), contains(cookie("CookieName", "CookieValue")));
 
-        streaming.body().content().subscribe(subscriber);
+        String body = streaming.body()
+                .decode(byteBuf -> byteBuf.toString(UTF_8), 0x100000)
+                .toBlocking()
+                .single();
 
-        assertThat(subscriber.getOnNextEvents().size(), is(1));
-        ByteBuf buf = subscriber.getOnNextEvents().get(0);
-        assertThat(buf.toString(UTF_8), is("foobar"));
+        assertThat(body, is("foobar"));
     }
 
     @Test(dataProvider = "emptyBodyRequests")

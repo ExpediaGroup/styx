@@ -50,39 +50,42 @@ import static io.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
 import static io.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-import static java.lang.String.valueOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 
 public class FullHttpResponseTest {
     @Test
     public void encodesToStreamingHttpResponse() {
-        FullHttpResponse<String> response = response()
+        FullHttpResponse<String> response = response(CREATED)
+                .version(HTTP_1_0)
+                .header("HeaderName", "HeaderValue")
+                .addCookie("CookieName", "CookieValue")
                 .body("foobar")
                 .build();
 
         HttpResponse streaming = response.toStreamingHttpResponse(string -> copiedBuffer(string, UTF_8));
 
-        TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
-        subscriber.requestMore(1);
+        assertThat(streaming.status(), is(CREATED));
+        assertThat(streaming.version(), is(HTTP_1_0));
+        assertThat(streaming.headers(), contains(header("HeaderName", "HeaderValue")));
+        assertThat(streaming.cookies(), contains(cookie("CookieName", "CookieValue")));
 
-        streaming.body().content().subscribe(subscriber);
+        String body = streaming.body()
+                .decode(byteBuf -> byteBuf.toString(UTF_8), 0x100000)
+                .toBlocking()
+                .single();
 
-        assertThat(subscriber.getOnNextEvents().size(), is(1));
-        ByteBuf buf = subscriber.getOnNextEvents().get(0);
-        assertThat(buf.toString(UTF_8), is("foobar"));
+        assertThat(body, is("foobar"));
     }
 
     @Test(dataProvider = "emptyBodyResponses")
     public void encodesToStreamingHttpResponseWithEmptyBody(FullHttpResponse<String> response) {
-        System.out.println(response.contentLength() + " => " + response.body());
-
         HttpResponse streaming = response.toStreamingHttpResponse(string -> copiedBuffer(string, UTF_8));
 
         TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
@@ -156,7 +159,7 @@ public class FullHttpResponseTest {
     }
 
     @Test
-    public void setsASingleOutboundCookie() throws Exception {
+    public void setsASingleOutboundCookie() {
         FullHttpResponse<String> response = response()
                 .addCookie(cookie("user", "QSplbl9HX1VL", domain(".hotels.com"), path("/"), maxAge(3600)))
                 .build();
