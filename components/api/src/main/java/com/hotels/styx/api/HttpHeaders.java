@@ -134,6 +134,9 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
         return Objects.equals(toString(), other.toString());
     }
 
+    /**
+     * Builds headers.
+     */
     public static class Builder {
         private final DefaultHttpHeaders nettyHeaders;
 
