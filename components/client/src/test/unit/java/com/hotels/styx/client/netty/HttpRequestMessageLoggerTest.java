@@ -15,22 +15,26 @@
  */
 package com.hotels.styx.client.netty;
 
+import ch.qos.logback.classic.Level;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static ch.qos.logback.classic.Level.INFO;
+import static ch.qos.logback.classic.Level.WARN;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -75,13 +79,13 @@ public class HttpRequestMessageLoggerTest {
 
         assertThat(log.lastMessage(), is(loggingEvent(INFO,
                 format("requestId=%s, request=\\{method=GET, secure=false, uri=%s, origin=\"%s\", headers=\\[Host=www.hotels.com\\], cookies=\\[\\]\\}",
-                styxRequest.id(), styxRequest.url(), origin.hostAsString()))));
+                        styxRequest.id(), styxRequest.url(), origin.hostAsString()))));
     }
 
     @Test
     public void logsClientSideResponseDetailsShortFormat() {
         HttpRequest styxRequest = get("http://www.hotels.com/foo/bar/request").build();
-        HttpResponse styxResponse = HttpResponse.Builder.response(HttpResponseStatus.OK).build();
+        HttpResponse styxResponse = response(OK).build();
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false).logResponse(styxRequest, styxResponse);
 
         assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, response=\\{status=200 OK\\}", styxRequest.id()))));
@@ -90,9 +94,35 @@ public class HttpRequestMessageLoggerTest {
     @Test
     public void logsClientSideResponseDetailsLongFormat() {
         HttpRequest styxRequest = get("http://www.hotels.com/foo/bar/request").build();
-        HttpResponse styxResponse = HttpResponse.Builder.response(HttpResponseStatus.OK).build();
+        HttpResponse styxResponse = response(OK).build();
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", true).logResponse(styxRequest, styxResponse);
 
         assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, response=\\{status=200 OK\\, headers=\\[\\], cookies=\\[\\]}", styxRequest.id()))));
+    }
+
+    @Test
+    public void requestLoggingDoesNotThrowExceptionWhenReceivingNullArguments() {
+        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false).logRequest(null, origin);
+
+        assertThat(log.lastMessage(), is(loggingEvent(WARN, "Unable to log null request, origin=MyApp:h1:hostA:80")));
+    }
+
+    @Test(dataProvider = "responseLogUnexpectedArguments")
+    public void responseLoggingDoesNotThrowExceptionWhenReceivingNullArguments(HttpRequest request, HttpResponse response, Level expectedLogLevel, String expectedLogMessage) {
+        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false).logResponse(request, response);
+
+        assertThat(log.lastMessage(), is(loggingEvent(expectedLogLevel, expectedLogMessage)));
+    }
+
+    @DataProvider(name = "responseLogUnexpectedArguments")
+    private Object[][] responseLogUnexpectedArguments() {
+        HttpRequest normalRequest = get("http://www.hotels.com/foo/bar/request").build();
+        HttpResponse normalResponse = response(OK).build();
+
+        return new Object[][]{
+                {normalRequest, null, WARN, "Unable to log null response, request=HttpRequest\\{.*\\}"},
+                {null, normalResponse, INFO, "requestId=null, response=\\{status=200 OK\\}"},
+                {null, null, WARN, "Unable to log null response, request=null"},
+        };
     }
 }
