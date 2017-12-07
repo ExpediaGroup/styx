@@ -54,7 +54,9 @@ class ClientConnectionPoolSpec extends FunSuite with BeforeAndAfterAll with Even
   test("Removes connections from pool when they terminate.") {
     waitForResponse(client.sendRequest(get("/foo"))).status() should be(OK)
 
-    busConnections should be(0)
+    eventually {
+      busConnections should be(0)
+    }
 
     terminateConnections()
 
