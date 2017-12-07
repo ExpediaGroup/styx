@@ -24,7 +24,6 @@ import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.messages.FullHttpResponse;
-import com.hotels.styx.support.matchers.RegExMatcher;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -36,6 +35,7 @@ import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
+import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -83,7 +83,7 @@ public class OriginsInventoryHandlerTest {
         eventBus.post(new OriginsInventorySnapshot(APP_ID, pool(emptySet()), pool(emptySet()), pool(disabledOrigins)));
 
         FullHttpResponse<String> response = waitForResponse(handler.handle(get("/?pretty=1").build()));
-        assertThat(response.body(), RegExMatcher.matchesRegex("\\{\n" +
+        assertThat(response.body(), matchesRegex("\\{\n" +
                 "  \"" + APP_ID + "\" : \\{\n" +
                 "    \"appId\" : \"" + APP_ID + "\",\n" +
                 "    \"activeOrigins\" : \\[ ],\n" +
@@ -100,7 +100,7 @@ public class OriginsInventoryHandlerTest {
     }
 
     @Test
-    public void returnsEmptyObjectWhenNoOrigins() throws IOException {
+    public void returnsEmptyObjectWhenNoOrigins() {
         OriginsInventoryHandler handler = new OriginsInventoryHandler(new EventBus());
 
         FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
