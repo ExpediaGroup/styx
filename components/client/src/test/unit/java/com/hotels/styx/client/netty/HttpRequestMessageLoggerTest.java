@@ -104,7 +104,7 @@ public class HttpRequestMessageLoggerTest {
     public void requestLoggingDoesNotThrowExceptionWhenReceivingNullArguments() {
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false).logRequest(null, origin);
 
-        assertThat(log.lastMessage(), is(loggingEvent(WARN, "Unable to log null request, origin=MyApp:h1:hostA:80")));
+        assertThat(log.lastMessage(), is(loggingEvent(WARN, "requestId=N/A, request=null, origin=MyApp:h1:hostA:80")));
     }
 
     @Test(dataProvider = "responseLogUnexpectedArguments")
@@ -120,9 +120,9 @@ public class HttpRequestMessageLoggerTest {
         HttpResponse normalResponse = response(OK).build();
 
         return new Object[][]{
-                {normalRequest, null, WARN, "Unable to log null response, request=HttpRequest\\{.*\\}"},
+                {normalRequest, null, WARN, "requestId=.*, response=null"},
                 {null, normalResponse, INFO, "requestId=null, response=\\{status=200 OK\\}"},
-                {null, null, WARN, "Unable to log null response, request=null"},
+                {null, null, WARN, "requestId=null, response=null"},
         };
     }
 }

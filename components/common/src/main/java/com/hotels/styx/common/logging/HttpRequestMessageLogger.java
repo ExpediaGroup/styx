@@ -36,7 +36,7 @@ public class HttpRequestMessageLogger {
 
     public void logRequest(HttpRequest request, Origin origin) {
         if (request == null) {
-            logger.warn("Unable to log null request, origin={}", origin);
+            logger.warn("requestId=N/A, request=null, origin={}", origin);
         } else {
             logger.info("requestId={}, request={}", request.id(), information(request, origin, longFormatEnabled));
         }
@@ -44,7 +44,7 @@ public class HttpRequestMessageLogger {
 
     public void logResponse(HttpRequest request, HttpResponse response) {
         if (response == null) {
-            logger.warn("Unable to log null response, request={}", request);
+            logger.warn("requestId={}, response=null", id(request));
         } else {
             logger.info("requestId={}, response={}", id(request), information(response, longFormatEnabled));
         }
