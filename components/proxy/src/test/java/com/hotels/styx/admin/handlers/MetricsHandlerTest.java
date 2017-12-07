@@ -15,19 +15,15 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import java.util.Optional;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
-import static com.hotels.styx.support.api.matchers.HttpResponseStatusMatcher.hasStatus;
+import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -38,19 +34,15 @@ public class MetricsHandlerTest {
 
     @Test
     public void respondsToRequestWithJsonResponse() {
-        HttpResponse response = handle(get("/metrics").build());
-        assertThat(response, hasStatus(OK));
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/metrics").build()));
+        assertThat(response.status(), is(OK));
         assertThat(response.contentType().get(), is(JSON_UTF_8.toString()));
     }
 
     @Test
     public void exposesRegisteredMetrics() {
         metricRegistry.counter("foo").inc();
-        HttpResponse response = handle(get("/metrics").build());
-        assertThat(response, hasBody("{\"version\":\"3.0.0\",\"gauges\":{},\"counters\":{\"foo\":{\"count\":1}},\"histograms\":{},\"meters\":{},\"timers\":{}}"));
-    }
-
-    private HttpResponse handle(HttpRequest request) {
-        return getFirst(handler.handle(request));
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/metrics").build()));
+        assertThat(response.body(), is("{\"version\":\"3.0.0\",\"gauges\":{},\"counters\":{\"foo\":{\"count\":1}},\"histograms\":{},\"meters\":{},\"timers\":{}}"));
     }
 }

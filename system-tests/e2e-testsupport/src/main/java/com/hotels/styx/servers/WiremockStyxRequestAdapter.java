@@ -22,10 +22,11 @@ import com.github.tomakehurst.wiremock.http.QueryParameter;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.RequestMethod;
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.messages.FullHttpRequest;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.github.tomakehurst.wiremock.http.HttpHeader.httpHeader;
@@ -36,12 +37,10 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 
 public class WiremockStyxRequestAdapter implements Request {
-    private final HttpRequest styxRequest;
-    private final String body;
+    private final FullHttpRequest<String> styxRequest;
 
-    public WiremockStyxRequestAdapter(HttpRequest styxRequest, String body) {
+    public WiremockStyxRequestAdapter(FullHttpRequest<String> styxRequest) {
         this.styxRequest = requireNonNull(styxRequest);
-        this.body = requireNonNull(body);
     }
 
     @Override
@@ -69,7 +68,7 @@ public class WiremockStyxRequestAdapter implements Request {
 
     @Override
     public HttpHeader header(String key) {
-        ImmutableList<String> values = styxRequest.headers(key);
+        List<String> values = styxRequest.headers(key);
         return httpHeader(key, values.toArray(new String[values.size()]));
     }
 
@@ -108,12 +107,12 @@ public class WiremockStyxRequestAdapter implements Request {
 
     @Override
     public byte[] getBody() {
-        return body.getBytes();
+        return styxRequest.body().getBytes();
     }
 
     @Override
     public String getBodyAsString() {
-        return body;
+        return styxRequest.body();
     }
 
     @Override

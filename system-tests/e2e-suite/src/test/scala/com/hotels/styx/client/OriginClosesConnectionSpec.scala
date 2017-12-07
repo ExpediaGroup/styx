@@ -71,15 +71,15 @@ class OriginClosesConnectionSpec extends FunSuite
     originRespondingWith(response200OkFollowedFollowedByServerConnectionClose("Test message body." * 1024))
 
     for (i <- 1 to 10) {
-      val (response, body) = decodedRequest(
+      val response = decodedRequest(
         get("/foo/3")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
       )
 
       assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
-      assert(body.nonEmpty, s"\nResponse body is absent.")
-      assert(body == "Test message body." * 1024, s"\nIncorrect response body.")
+      assert(response.body.nonEmpty, s"\nResponse body is absent.")
+      assert(response.body == "Test message body." * 1024, s"\nIncorrect response body.")
     }
 
     eventually {

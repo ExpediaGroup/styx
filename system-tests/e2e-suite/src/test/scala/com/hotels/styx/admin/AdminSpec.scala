@@ -31,24 +31,24 @@ class AdminSpec extends FunSpec
 
   describe("health check") {
     it("should return 200 and string 'OK' on /admin/status") {
-      val (response, body) = decodedRequest(get(styxServer.adminURL("/admin/status")).build())
-      assert(response.status() == OK)
+      val response = decodedRequest(get(styxServer.adminURL("/admin/status")).build())
+      assert(response.status == OK)
       assert(response.isNotCacheAble())
-      assert(body == "OK")
+      assert(response.body == "OK")
     }
 
     it("should return 200 and string 'OK' on /admin/healthcheck") {
-      val (response, body) = decodedRequest(get(styxServer.adminURL("/admin/healthcheck")).build())
-      assert(response.status() == OK)
+      val response = decodedRequest(get(styxServer.adminURL("/admin/healthcheck")).build())
+      assert(response.status == OK)
       assert(response.isNotCacheAble())
-      body should include("\"healthy\":true")
+      response.body should include("\"healthy\":true")
     }
 
     it("should return 200 and string 'PONG' on /admin/ping") {
-      val (response, body) = decodedRequest(get(styxServer.adminURL("/admin/ping")).build())
-      assert(response.status() == OK)
+      val response = decodedRequest(get(styxServer.adminURL("/admin/ping")).build())
+      assert(response.status == OK)
       assert(response.isNotCacheAble())
-      body should include("pong")
+      response.body should include("pong")
     }
   }
 }

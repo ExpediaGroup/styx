@@ -24,7 +24,7 @@ import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.api.metrics.HttpErrorStatusCauseLogger
 import com.hotels.styx.api.plugins.spi.PluginException
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
-import com.hotels.styx.support.api.BlockingObservables
+import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
@@ -68,9 +68,9 @@ class LoggingSpec extends FunSpec
     )
 
     val request = get(s"http://localhost:${mockServer.port()}/foobar").build()
-    val (resp, body) = decodedRequest(request)
+    val resp = decodedRequest(request)
     resp.status().code() should be (200)
-    body should be ("I should be here!")
+    resp.body should be ("I should be here!")
   }
 
   override protected def afterAll(): Unit = {
@@ -94,8 +94,7 @@ class LoggingSpec extends FunSpec
         .addHeader(X_THROW_AT, AT_REQUEST)
         .build()
 
-      val aggregatedResponse = BlockingObservables.stringResponse(client.sendRequest(request))
-      val response = aggregatedResponse.responseBuilder().build()
+      val response = waitForResponse(client.sendRequest(request))
 
       assertThat(response.status(), is(INTERNAL_SERVER_ERROR))
 
@@ -117,7 +116,7 @@ class LoggingSpec extends FunSpec
         .addHeader(X_THROW_AT, AT_RESPONSE)
         .build()
 
-      val (resp, body) = decodedRequest(request)
+      val resp = decodedRequest(request)
       assertThat(resp.status(), is(INTERNAL_SERVER_ERROR))
 
       eventually(timeout(3.seconds)) {

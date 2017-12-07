@@ -37,6 +37,8 @@ import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.HttpServers;
 import com.hotels.styx.server.HttpsConnectorConfig;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,13 +121,17 @@ public final class MockOriginServer {
 
     private static HttpHandler2 newHandler(String originId, RequestHandler wireMockHandler) {
         return (httpRequest, ctx) ->
-                httpRequest.decode(byteBuf -> byteBuf.toString(UTF_8), MAX_CONTENT_LENGTH)
-                        .doOnNext(decoded -> LOGGER.info("{} received: {}\n{}", new Object[]{originId, decoded.requestBuilder().build().url(), decoded.body()}))
-                        .flatMap(decoded -> {
-                            Request wmRequest = new WiremockStyxRequestAdapter(decoded.requestBuilder().build(), decoded.body());
+                httpRequest.toFullHttpRequest(MAX_CONTENT_LENGTH)
+                        .doOnNext(fullRequest -> LOGGER.info("{} received: {}\n{}", new Object[]{originId, fullRequest.url(), fullRequest.body()}))
+                        .flatMap(fullRequest -> {
+                            Request wmRequest = new WiremockStyxRequestAdapter(fullRequest);
                             com.github.tomakehurst.wiremock.http.Response wmResponse = wireMockHandler.handle(wmRequest);
-                            return just(toStyxResponse(wmResponse));
+                            return just(toStyxResponse(wmResponse).toStreamingHttpResponse(MockOriginServer::toByteBuf));
                         });
+    }
+
+    private static ByteBuf toByteBuf(String string) {
+        return Unpooled.copiedBuffer(string, UTF_8);
     }
 
     public MockOriginServer start() {
@@ -218,12 +224,12 @@ public final class MockOriginServer {
 
     private static HttpHandler2 newHandler(RequestHandler wireMockHandler) {
         return (httpRequest, ctx) ->
-                httpRequest.decode(byteBuf -> byteBuf.toString(UTF_8), MAX_CONTENT_LENGTH)
-                        .doOnNext(decoded -> LOGGER.info("Received: {}\n{}", new Object[]{decoded.requestBuilder().build().url(), decoded.body()}))
-                        .flatMap(decoded -> {
-                            Request wmRequest = new WiremockStyxRequestAdapter(decoded.requestBuilder().build(), decoded.body());
+                httpRequest.toFullHttpRequest(MAX_CONTENT_LENGTH)
+                        .doOnNext(fullRequest -> LOGGER.info("Received: {}\n{}", new Object[]{fullRequest.url(), fullRequest.body()}))
+                        .flatMap(fullRequest -> {
+                            Request wmRequest = new WiremockStyxRequestAdapter(fullRequest);
                             com.github.tomakehurst.wiremock.http.Response wmResponse = wireMockHandler.handle(wmRequest);
-                            return just(toStyxResponse(wmResponse));
+                            return just(toStyxResponse(wmResponse).toStreamingHttpResponse(MockOriginServer::toByteBuf));
                         });
     }
 }

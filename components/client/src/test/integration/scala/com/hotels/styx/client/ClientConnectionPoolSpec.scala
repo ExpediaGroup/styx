@@ -17,7 +17,7 @@ package com.hotels.styx.client
 
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.support.api.BlockingObservables.responseHeaders
+import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.client.Origin
 import com.hotels.styx.api.metrics.MetricRegistry
@@ -52,10 +52,11 @@ class ClientConnectionPoolSpec extends FunSuite with BeforeAndAfterAll with Even
   }
 
   test("Removes connections from pool when they terminate.") {
-    responseHeaders(client.sendRequest(get("/foo"))).status() should be(OK)
+    waitForResponse(client.sendRequest(get("/foo"))).status() should be(OK)
 
-    availableConnections should be(1)
-    busConnections should be(0)
+    eventually {
+      busConnections should be(0)
+    }
 
     terminateConnections()
 

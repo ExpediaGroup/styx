@@ -58,12 +58,12 @@ class HealthCheckSpec extends FunSpec
   describe("Styx admin health check") {
     it("Reports unhealthy if error rate is greater than the configured error threshold") {
       for (i <- 1 to 120) {
-        val (response, body) = decodedRequest(
+        val response = decodedRequest(
           get("/")
             .addHeader(HOST, styxServer.proxyHost)
             .build())
 
-        assert(response.status() == INTERNAL_SERVER_ERROR)
+        assert(response.status == INTERNAL_SERVER_ERROR)
       }
 
       eventually(timeout(5.seconds)) {
@@ -71,11 +71,11 @@ class HealthCheckSpec extends FunSpec
           .addHeader(HOST, styxServer.adminHost)
           .build()
 
-        val (healthCheckResponse, body) = decodedRequest(healthCheckRequest)
+        val healthCheckResponse = decodedRequest(healthCheckRequest)
 
-        assert(healthCheckResponse.status() == INTERNAL_SERVER_ERROR)
+        assert(healthCheckResponse.status == INTERNAL_SERVER_ERROR)
         assert(healthCheckResponse.isNotCacheAble())
-        body should include regex "\\{\"errors.rate.500\":\\{\"healthy\":false,\"message\":\"error count=[0-9]+ m1_rate=[0-9.]+ is greater than 1.0\"}"
+        healthCheckResponse.body should include regex "\\{\"errors.rate.500\":\\{\"healthy\":false,\"message\":\"error count=[0-9]+ m1_rate=[0-9.]+ is greater than 1.0\"}"
       }
     }
   }

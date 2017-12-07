@@ -78,7 +78,7 @@ class Tls12Spec extends FunSpec
         .secure(true)
         .build()
 
-      val (resp, _) = decodedRequestWithClient(clientV12, req)
+      val resp = decodedRequestWithClient(clientV12, req)
 
       resp.status() should be(OK)
     }

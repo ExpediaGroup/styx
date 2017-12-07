@@ -15,16 +15,12 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.server.HttpInterceptorContext;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
-import static com.hotels.styx.support.api.matchers.HttpHeadersMatcher.isNotCacheable;
-import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
-import static com.hotels.styx.support.api.matchers.HttpResponseStatusMatcher.hasStatus;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
+import static com.hotels.styx.support.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -34,14 +30,11 @@ public class PingHandlerTest {
 
     @Test
     public void respondsPongToPingRequest() {
-        HttpResponse response = handle(get("/ping").build());
-        assertThat(response, hasStatus(OK));
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/ping").build()));
+        assertThat(response.status(), is(OK));
         assertThat(response.headers(), isNotCacheable());
         assertThat(response.contentType().get(), is("text/plain; charset=utf-8"));
-        assertThat(response, hasBody("pong"));
+        assertThat(response.body(), is("pong"));
     }
 
-    private HttpResponse handle(HttpRequest request) {
-        return getFirst(handler.handle(request));
-    }
 }

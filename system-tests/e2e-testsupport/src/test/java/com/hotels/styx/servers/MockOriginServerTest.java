@@ -19,9 +19,8 @@ import com.github.tomakehurst.wiremock.client.ValueMatchingStrategy;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.HttpResponse.DecodedResponse;
 import com.hotels.styx.api.client.UrlConnectionHttpClient;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
 import org.testng.annotations.AfterMethod;
@@ -36,9 +35,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.support.HostAndPorts.freePort;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.net.ssl.HttpsURLConnection.getDefaultHostnameVerifier;
 import static javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -64,8 +63,8 @@ public class MockOriginServerTest {
 
     @Test
     public void configuresEndpoints() throws Exception {
-        int adminPort = 43080;
-        int serverPort = 43081;
+        int adminPort = freePort();
+        int serverPort = freePort();
 
         server = MockOriginServer.create("", "", adminPort, new HttpConnectorConfig(serverPort))
                 .start()
@@ -74,19 +73,14 @@ public class MockOriginServerTest {
                         .withHeader("a", "b")
                         .withBody("Hello, World!"));
 
-        HttpResponse response = send(client,
-                get(format("http://localhost:%d/mock", serverPort))
+        FullHttpResponse<String> response = send(client,
+                get(format("http://localhost:%d/mock", server.port()))
                         .header("X-Forwarded-Proto", "http")
                         .build());
 
         assertThat(response.status(), is(OK));
         assertThat(response.header("a"), is(Optional.of("b")));
-
-        String content = response.decode(bytebuf -> bytebuf.toString(UTF_8), 1024)
-                .map(DecodedResponse::body)
-                .toBlocking()
-                .first();
-        assertThat(content, is("Hello, World!"));
+        assertThat(response.body(), is("Hello, World!"));
 
         server.verify(getRequestedFor(urlEqualTo("/mock"))
                 .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")));
@@ -94,8 +88,8 @@ public class MockOriginServerTest {
 
     @Test
     public void configuresTlsEndpoints() throws Exception {
-        int adminPort = 43082;
-        int serverPort = 43083;
+        int adminPort = freePort();
+        int serverPort = freePort();
 
         server = MockOriginServer.create("", "", adminPort,
                 new HttpsConnectorConfig.Builder()
@@ -107,8 +101,8 @@ public class MockOriginServerTest {
                         .withHeader("a", "b")
                         .withBody("Hello, World!"));
 
-        HttpResponse response = send(client,
-                get(format("https://localhost:%d/mock", serverPort))
+        FullHttpResponse<String> response = send(client,
+                get(format("https://localhost:%d/mock", server.port()))
                         .header("X-Forwarded-Proto", "http")
                         .build());
 
@@ -120,8 +114,9 @@ public class MockOriginServerTest {
     }
 
 
-    private HttpResponse send(HttpClient client, HttpRequest request) {
+    private FullHttpResponse<String> send(HttpClient client, HttpRequest request) {
         return client.sendRequest(request)
+                .flatMap(req -> req.toFullHttpResponse(10*1024))
                 .toBlocking()
                 .first();
 

@@ -15,19 +15,16 @@
  */
 package com.hotels.styx
 
-import java.nio.charset.StandardCharsets
-
 import com.hotels.styx.api.client.UrlConnectionHttpClient
+import com.hotels.styx.api.messages.FullHttpResponse
 import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse}
 import com.hotels.styx.client.HttpConfig.newHttpConfigBuilder
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination.Factory
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory
 import com.hotels.styx.client.{ConnectionSettings, SimpleNettyHttpClient}
-import io.netty.buffer.ByteBuf
 import rx.lang.scala.JavaConversions.toScalaObservable
 import rx.lang.scala.Observable
 
-import scala.compat.java8.FunctionConverters._
 import scala.concurrent.duration._
 
 trait StyxClientSupplier {
@@ -57,14 +54,10 @@ trait StyxClientSupplier {
 
   def decodedRequest(request: HttpRequest,
                      debug: Boolean = false,
-                     maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds): (HttpResponse, String) = {
+                     maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds): FullHttpResponse[String] = {
     doRequest(request, debug = debug)
       .doOnNext(response => if (debug) println("StyxClientSupplier: received response for: " + request.url().path()))
-      .flatMap(response => {
-        val decoder = (buf: ByteBuf) => buf.toString(StandardCharsets.UTF_8)
-        response.decode(decoder.asJava, maxSize)
-      })
-      .map(decodedResponse => (decodedResponse.responseBuilder().build(), decodedResponse.body()))
+      .flatMap(response => response.toFullHttpResponse(maxSize))
       .timeout(timeout)
       .toBlocking
       .first
@@ -73,14 +66,10 @@ trait StyxClientSupplier {
   def decodedRequestWithClient(client: HttpClient,
                                request: HttpRequest,
                                debug: Boolean = false,
-                               maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds): (HttpResponse, String) = {
+                               maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds): FullHttpResponse[String] = {
     toScalaObservable(client.sendRequest(request))
       .doOnNext(response => if (debug) println("StyxClientSupplier: received response for: " + request.url().path()))
-      .flatMap(response => {
-        val decoder = (buf: ByteBuf) => buf.toString(StandardCharsets.UTF_8)
-        response.decode(decoder.asJava, maxSize)
-      })
-      .map(decodedResponse => (decodedResponse.responseBuilder().build(), decodedResponse.body()))
+      .flatMap(response => response.toFullHttpResponse(maxSize))
       .timeout(timeout)
       .toBlocking
       .first

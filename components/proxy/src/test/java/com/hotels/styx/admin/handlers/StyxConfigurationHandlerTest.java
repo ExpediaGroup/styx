@@ -16,15 +16,15 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.StyxConfig;
-import com.hotels.styx.support.api.BlockingObservables;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.server.HttpInterceptorContext;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import org.testng.annotations.Test;
 import rx.Observable;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
+import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
@@ -42,9 +42,9 @@ public class StyxConfigurationHandlerTest {
                 "  strategy: ROUND_ROBIN\n" +
                 "originsFile: " + ORIGINS_FILE + "\n";
 
-        String adminPage = BlockingObservables.responseBody(browseForCurrentConfiguration(yaml, false));
+        FullHttpResponse<String> adminPageResponse = waitForResponse(browseForCurrentConfiguration(yaml, false));
 
-        assertThat(adminPage, is("{\"proxy\":{\"connectors\":{\"http\":{\"port\":8080}}},\"loadBalancing\":{\"strategy\":\"ROUND_ROBIN\"},\"originsFile\":\"" + ORIGINS_FILE + "\"}\n"));
+        assertThat(adminPageResponse.body(), is("{\"proxy\":{\"connectors\":{\"http\":{\"port\":8080}}},\"loadBalancing\":{\"strategy\":\"ROUND_ROBIN\"},\"originsFile\":\"" + ORIGINS_FILE + "\"}\n"));
     }
 
     @Test
@@ -58,9 +58,9 @@ public class StyxConfigurationHandlerTest {
                 "  strategy: ROUND_ROBIN\n" +
                 "originsFile: " + ORIGINS_FILE + "\n";
 
-        String adminPage = BlockingObservables.responseBody(browseForCurrentConfiguration(yaml, true));
+        FullHttpResponse<String> adminPageResponse = waitForResponse(browseForCurrentConfiguration(yaml, true));
 
-        assertThat(adminPage, is("{\n" +
+        assertThat(adminPageResponse.body(), is("{\n" +
                         "  \"proxy\" : {\n" +
                         "    \"connectors\" : {\n" +
                         "      \"http\" : {\n" +

@@ -102,10 +102,10 @@ class BadResponseFromOriginSpec extends FunSpec
 
 
       val request = api.HttpRequest.Builder.get(styxServer.routerURL("/badResponseFromOriginSpec/3")).build()
-      val (response, body) = decodedRequest(request)
+      val response = decodedRequest(request)
       response.status() should be(BAD_GATEWAY)
       assertThat(response.headers().get(STYX_INFO_DEFAULT), matches(matchesRegex("noJvmRouteSet;[0-9a-f-]+")))
-      body should be("Site temporarily unavailable.")
+      response.body should be("Site temporarily unavailable.")
       eventually(timeout(7.seconds)) {
         styxServer.metricsSnapshot.count("styx.response.status.502").get should be(1)
       }

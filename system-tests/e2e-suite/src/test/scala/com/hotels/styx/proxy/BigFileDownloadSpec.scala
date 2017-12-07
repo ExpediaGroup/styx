@@ -24,7 +24,7 @@ import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponse.Builder._
 import com.hotels.styx.api.support.HostAndPorts._
-import com.hotels.styx.support.configuration.{HttpBackend, ImplicitOriginConversions, Origins}
+import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names.HOST
 import io.netty.handler.codec.http.HttpMethod._
@@ -71,10 +71,10 @@ class BigFileDownloadSpec extends FunSpec
 
       // Note: It is very important to consume the body. Otherwise
       // it won't get transmitted over the TCP connection:
-      val (resp, body) = decodedRequest(req, maxSize = 2*ONE_HUNDRED_MB.toInt, timeout = 60.seconds)
+      val resp = decodedRequest(req, maxSize = 2*ONE_HUNDRED_MB.toInt, timeout = 60.seconds)
 
       assert(resp.status() == OK)
-      val actualContentSize = body.getBytes.length
+      val actualContentSize = resp.body.getBytes.length
 
       println("Actual content size was: " + actualContentSize)
       actualContentSize should be(ONE_HUNDRED_MB)

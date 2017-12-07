@@ -77,9 +77,9 @@ class HttpOutboundMessageLoggingSpec extends FunSpec
     )
 
     val request = get(s"http://localhost:${mockServer.port()}/foobar").build()
-    val (resp, body) = decodedRequest(request)
+    val resp = decodedRequest(request)
     resp.status().code() should be (200)
-    body should be ("I should be here!")
+    resp.body should be ("I should be here!")
   }
 
   override protected def afterAll(): Unit = {
@@ -102,7 +102,7 @@ class HttpOutboundMessageLoggingSpec extends FunSpec
       val request = get(styxServer.routerURL("/foobar"))
         .build()
 
-      val (resp, body) = decodedRequest(request)
+      val resp = decodedRequest(request)
 
       assertThat(resp.status(), is(OK))
 

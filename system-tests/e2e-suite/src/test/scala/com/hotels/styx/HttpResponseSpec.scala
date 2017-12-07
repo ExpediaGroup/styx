@@ -16,14 +16,12 @@
 package com.hotels.styx
 
 import com.google.common.base.Charsets._
-import com.hotels.styx.support.api.BlockingObservables
-import com.hotels.styx.support.api.BlockingObservables._
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.client.StyxHttpClient._
 import com.hotels.styx.support.NettyOrigins
+import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.configuration.{BackendService, ImplicitOriginConversions, Origins}
-import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled._
 import io.netty.channel.ChannelFutureListener.CLOSE
 import io.netty.channel.ChannelHandlerContext
@@ -31,7 +29,6 @@ import io.netty.handler.codec.http.HttpResponseStatus._
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
-import rx.functions.{Func1, Func2}
 import rx.observers.TestSubscriber
 
 import scala.concurrent.duration._
@@ -69,12 +66,10 @@ class HttpResponseSpec extends FunSuite
   test("Determines response content length from server closing the connection.") {
     originRespondingWith(response200OkFollowedFollowedByServerConnectionClose("Test message body."))
 
-    val response = BlockingObservables.stringResponse(client.sendRequest(get("/foo/3").build()))
-    val headers = response.responseBuilder().build()
-    val body = response.body()
+    val response = waitForResponse(client.sendRequest(get("/foo/3").build()))
 
-    assert(headers.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
-    assert(body == "Test message body.", s"\nIncorrect response body.")
+    assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
+    assert(response.body() == "Test message body.", s"\nIncorrect response body.")
   }
 
   def response200OkFollowedFollowedByServerConnectionClose(content: String): (ChannelHandlerContext, Any) => Any = {
@@ -86,13 +81,4 @@ class HttpResponseSpec extends FunSuite
     }
   }
 
-  def bodyFrom(response: api.HttpResponse): Option[String] =
-    getFirst(response.body.content.map[String](new Func1[ByteBuf, String]() {
-      override def call(t1: ByteBuf): String = t1.toString(UTF_8)
-    }).reduce(None, new Func2[Option[String], String, Option[String]] {
-      override def call(t1: Option[String], t2: String): Option[String] = t1 match {
-        case Some(string) => Some(string + t2)
-        case None => Some(t2)
-      }
-    }))
 }

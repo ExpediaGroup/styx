@@ -18,14 +18,13 @@ package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.server.HttpInterceptorContext;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
-import static com.hotels.styx.support.api.matchers.HttpHeadersMatcher.isNotCacheable;
-import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
-import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.support.api.BlockingObservables.getFirst;
+import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
+import static com.hotels.styx.support.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -36,11 +35,11 @@ public class ThreadsHandlerTest {
 
     @Test
     public void dumpsCurrentThreadsState() {
-        HttpResponse response = handle(get("/threads").build());
-        assertThat(response, hasStatus(OK));
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/threads").build()));
+        assertThat(response.status(), is(OK));
         assertThat(response.headers(), isNotCacheable());
         assertThat(response.contentType().get(), is("text/plain; charset=utf-8"));
-        assertThat(response, hasBody(containsString("Finalizer")));
+        assertThat(response.body(), containsString("Finalizer"));
     }
 
     private HttpResponse handle(HttpRequest request) {

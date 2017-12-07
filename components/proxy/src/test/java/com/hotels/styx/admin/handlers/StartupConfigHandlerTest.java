@@ -16,11 +16,12 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.StartupConfig;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
-import static com.hotels.styx.support.api.BlockingObservables.responseBody;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -36,9 +37,10 @@ public class StartupConfigHandlerTest {
 
         StartupConfigHandler handler = new StartupConfigHandler(startupConfig);
 
-        String responseBody = responseBody(handler.handle(get("/").build()), OK);
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
 
-        assertThat(responseBody, is("<html><body>" +
+        assertThat(response.status(), is(OK));
+        assertThat(response.body(), is("<html><body>" +
                 "Styx Home='/foo'" +
                 "<br />Config File Location='/bar/configure-me.yml'" +
                 "<br />Log Config Location='/baz/logback-conf.xml'" +

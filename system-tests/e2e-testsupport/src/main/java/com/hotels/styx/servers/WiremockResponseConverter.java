@@ -17,45 +17,30 @@ package com.hotels.styx.servers;
 
 import com.github.tomakehurst.wiremock.http.Response;
 import com.hotels.styx.api.HttpHeaders;
-import com.hotels.styx.api.HttpResponse;
-import io.netty.buffer.ByteBuf;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
-import static io.netty.buffer.Unpooled.copiedBuffer;
 
 final class WiremockResponseConverter {
 
     private WiremockResponseConverter() {
     }
 
-    static HttpResponse toStyxResponse(Response response) {
+    static FullHttpResponse<String> toStyxResponse(Response response) {
         HttpResponseStatus status = HttpResponseStatus.valueOf(response.getStatus());
         HttpHeaders headers = toStyxHeaders(response.getHeaders());
-        ByteBuf content = toNettyContent(response);
+        String content = response.getBodyAsString();
 
-        return response(status).headers(headers).body(content).build();
+        return FullHttpResponse.<String>response(status).headers(headers).body(content).build();
     }
 
     private static HttpHeaders toStyxHeaders(com.github.tomakehurst.wiremock.http.HttpHeaders headers) {
-        HttpResponse.Builder builder = response();
+        HttpHeaders.Builder builder = new HttpHeaders.Builder();
 
         if (headers != null) {
-            headers.all().forEach(header -> builder.addHeader(header.key(), header.values()));
+            headers.all().forEach(header -> builder.add(header.key(), header.values()));
         }
 
-        return builder.build().headers();
-    }
-
-    private static ByteBuf toNettyContent(Response response) {
-        ByteBuf content;
-        if (response.getBody() != null) {
-            content = copiedBuffer(response.getBody());
-        } else {
-            content = EMPTY_BUFFER;
-        }
-        return content;
+        return builder.build();
     }
 
 }

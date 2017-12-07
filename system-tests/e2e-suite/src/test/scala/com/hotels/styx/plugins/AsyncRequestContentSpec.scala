@@ -17,7 +17,7 @@ package com.hotels.styx.plugins
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
-import com.hotels.styx.support.api.BlockingObservables.stringResponse
+import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
@@ -65,7 +65,7 @@ class AsyncRequestContentSpec extends FunSpec
         .addHeader("Content-Length", "0")
         .build()
 
-      val response = stringResponse(client.sendRequest(request))
+      val response = waitForResponse(client.sendRequest(request))
 
       mockServer.verify(1, getRequestedFor(urlStartingWith("/foobar")))
       response.body() should be("I should be here!")

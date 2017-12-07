@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post => wmpost}
-import com.hotels.styx.support.api.BlockingObservables.stringResponse
+import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.api.HttpRequest.Builder.post
 import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.support.matchers.LoggingTestSupport
@@ -61,10 +61,9 @@ class OriginsConnectionSpec extends FunSpec
           .addHeader("Content-Length", "0")
           .build()
 
-        val response = stringResponse(client.sendRequest(request))
-        val builtResponse: HttpResponse = response.responseBuilder().build()
+        val response = waitForResponse(client.sendRequest(request))
 
-        builtResponse.status().code() should be(200)
+        response.status().code() should be(200)
         response.body() should be("")
       }
 
@@ -84,10 +83,9 @@ class OriginsConnectionSpec extends FunSpec
           .addHeader("Content-Length", "0")
           .build()
 
-        val response = stringResponse(client.sendRequest(request))
-        val builtResponse: HttpResponse = response.responseBuilder().build()
+        val response = waitForResponse(client.sendRequest(request))
 
-        builtResponse.status().code() should be(204)
+        response.status().code() should be(204)
         response.body() should be("")
       }
 

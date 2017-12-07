@@ -19,14 +19,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.admin.tasks.StubConnectionPool;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
-import com.hotels.styx.server.HttpInterceptorContext;
-import com.hotels.styx.support.matchers.RegExMatcher;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -37,7 +34,8 @@ import java.util.Set;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
+import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -60,10 +58,10 @@ public class OriginsInventoryHandlerTest {
 
         eventBus.post(new OriginsInventorySnapshot(APP_ID, pool(activeOrigins), pool(inactiveOrigins), pool(disabledOrigins)));
 
-        String response = handle(handler, get("/").build());
-        assertThat(response.split("\n").length, is(1));
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
+        assertThat(response.body().split("\n").length, is(1));
 
-        Map<Id, OriginsInventorySnapshot> output = deserialiseJson(response);
+        Map<Id, OriginsInventorySnapshot> output = deserialiseJson(response.body());
 
         assertThat(output.keySet(), contains(APP_ID));
 
@@ -84,8 +82,8 @@ public class OriginsInventoryHandlerTest {
 
         eventBus.post(new OriginsInventorySnapshot(APP_ID, pool(emptySet()), pool(emptySet()), pool(disabledOrigins)));
 
-        String response = handle(handler, get("/?pretty=1").build());
-        assertThat(response, RegExMatcher.matchesRegex("\\{\n" +
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/?pretty=1").build()));
+        assertThat(response.body(), matchesRegex("\\{\n" +
                 "  \"" + APP_ID + "\" : \\{\n" +
                 "    \"appId\" : \"" + APP_ID + "\",\n" +
                 "    \"activeOrigins\" : \\[ ],\n" +
@@ -102,26 +100,18 @@ public class OriginsInventoryHandlerTest {
     }
 
     @Test
-    public void returnsEmptyObjectWhenNoOrigins() throws IOException {
+    public void returnsEmptyObjectWhenNoOrigins() {
         OriginsInventoryHandler handler = new OriginsInventoryHandler(new EventBus());
 
-        String response = handle(handler, get("/").build());
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
 
-        assertThat(response, is("{}"));
+        assertThat(response.body(), is("{}"));
     }
 
     private static Map<Id, OriginsInventorySnapshot> deserialiseJson(String json) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         MapType type = mapper.getTypeFactory().constructMapType(Map.class, Id.class, OriginsInventorySnapshot.class);
         return mapper.readValue(json, type);
-    }
-
-    private static String handle(OriginsInventoryHandler handler, HttpRequest request) {
-        return handler.handle(request).flatMap(response ->
-                response.decode(buffer -> buffer.toString(UTF_8), 0x1000000))
-                .map(HttpResponse.DecodedResponse::body)
-                .toBlocking()
-                .first();
     }
 
     private static Set<Origin> generateOrigins(int numberOfOrigins) {

@@ -15,16 +15,15 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.plugins.spi.Plugin.PASS_THROUGH;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
+import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -44,13 +43,10 @@ public class PluginListHandlerTest {
 
         PluginListHandler handler = new PluginListHandler(plugins);
 
-        String body = handler.handle(get("/").build())
-                .doOnNext(response -> assertThat(response.status(), is(OK)))
-                .flatMap(response -> response.decode(byteBuf -> byteBuf.toString(UTF_8), 0x100000))
-                .map(HttpResponse.DecodedResponse::body)
-                .toBlocking().single();
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
 
-        assertThat(body, is("" +
+        assertThat(response.status(), is(OK));
+        assertThat(response.body(), is("" +
                 "<h3>Enabled</h3>" +
                 "<a href='/admin/plugins/one'>one</a><br />" +
                 "<a href='/admin/plugins/four'>four</a><br />" +

@@ -70,7 +70,7 @@ class HttpsSpec extends FunSpec
 
       req.isSecure should be(true)
 
-      val (resp, _) = decodedRequest(req)
+      val resp = decodedRequest(req)
       resp.status() should be(OK)
 
       recordingBackend.verify(getRequestedFor(urlPathEqualTo("/secure"))

@@ -18,18 +18,15 @@ package com.hotels.styx.client
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets._
-import com.hotels.styx.api
-import com.hotels.styx.support.api.BlockingObservables._
 import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.client.Origin
+import com.hotels.styx.api.client.Origin._
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException
-import Origin._
 import com.hotels.styx.api.support.HostAndPorts._
 import com.hotels.styx.client.StyxHttpClient._
 import com.hotels.styx.client.applications.BackendService
+import com.hotels.styx.support.api.BlockingObservables.{waitForResponse, waitForStreamingResponse}
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
-import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled._
 import io.netty.channel.ChannelFutureListener.CLOSE
 import io.netty.channel.ChannelHandlerContext
@@ -38,7 +35,6 @@ import io.netty.handler.codec.http.HttpResponseStatus._
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
-import rx.functions.{Func1, Func2}
 import rx.observers.TestSubscriber
 
 class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers with BeforeAndAfter with Matchers {
@@ -75,13 +71,13 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
   test("Emits an HTTP response that contains the original request.") {
     originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
     val request = get("/foo/1").build()
-    val response = responseHeaders(client.sendRequest(request))
+    val response = waitForStreamingResponse(client.sendRequest(request))
     response.request() shouldBe request
   }
 
   test("Emits an HTTP response even when content observable remains un-subscribed.") {
     originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
-    val response = responseHeaders(client.sendRequest(get("/foo/1").build()))
+    val response = waitForResponse(client.sendRequest(get("/foo/1").build()))
     assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
   }
 
@@ -89,25 +85,21 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
   test("Emits an HTTP response containing Content-Length from persistent connection that stays open.") {
     originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
 
-    val decodedResponse = stringResponse(client.sendRequest(get("/foo/2").build()))
+    val response = waitForResponse(client.sendRequest(get("/foo/2").build()))
 
-    val response = decodedResponse.responseBuilder().build()
     assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
-
-    val body = decodedResponse.body()
-    assert(body == "Test message body.", s"\nReceived wrong/unexpected response body.")
+    assert(response.body() == "Test message body.", s"\nReceived wrong/unexpected response body.")
   }
 
 
   ignore("Determines response content length from server closing the connection.") {
     // originRespondingWith(response200OkFollowedFollowedByServerConnectionClose("Test message body."))
 
-    val response = responseHeaders(client.sendRequest(get("/foo/3").build()))
+    val response = waitForResponse(client.sendRequest(get("/foo/3").build()))
     assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
 
-    val body = bodyFrom(response)
-    assert(body.nonEmpty, s"\nResponse body is absent.")
-    assert(body.get == "Test message body.", s"\nIncorrect response body.")
+    assert(response.body().nonEmpty, s"\nResponse body is absent.")
+    assert(response.body() == "Test message body.", s"\nIncorrect response body.")
   }
 
   test("Emits onError when origin responds too slowly") {
@@ -152,15 +144,5 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
       // Do noting
     }
   }
-
-  def bodyFrom(response: api.HttpResponse): Option[String] =
-    getFirst(response.body.content.map[String](new Func1[ByteBuf, String]() {
-      override def call(t1: ByteBuf): String = t1.toString(UTF_8)
-    }).reduce(None, new Func2[Option[String], String, Option[String]] {
-      override def call(t1: Option[String], t2: String): Option[String] = t1 match {
-        case Some(string) => Some(string + t2)
-        case None => Some(t2)
-      }
-    }))
 
 }

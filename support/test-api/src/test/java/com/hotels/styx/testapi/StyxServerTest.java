@@ -20,9 +20,8 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.UrlConnectionHttpClient;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.client.SimpleNettyHttpClient;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
@@ -39,13 +38,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static com.google.common.base.Charsets.UTF_8;
-import static com.hotels.styx.support.api.BlockingObservables.responseHeaders;
-import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
+import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
+import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.testapi.Origins.origin;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;
@@ -122,7 +119,7 @@ public class StyxServerTest {
                 .addRoute("/", originServer1.port())
                 .start();
 
-        HttpResponse response = doGet("/");
+        FullHttpResponse<String> response = sendGet("/");
 
         assertThat(response.status(), is(OK));
 
@@ -156,7 +153,7 @@ public class StyxServerTest {
                 .addRoute("/", backendService)
                 .start();
 
-        HttpResponse response = doHttpsGet(styxServer.proxyHttpsPort(), "/");
+        FullHttpResponse<String> response = sendHttpsGet(styxServer.proxyHttpsPort(), "/");
 
         assertThat(response.status(), is(OK));
 
@@ -174,7 +171,7 @@ public class StyxServerTest {
                 .addRoute("/", backendService)
                 .start();
 
-        HttpResponse response = doGet(styxServer.proxyHttpPort(), "/");
+        FullHttpResponse<String> response = sendGet("/");
 
         assertThat(response.status(), is(OK));
 
@@ -189,11 +186,11 @@ public class StyxServerTest {
                 .addRoute("/o2/", originServer2.port())
                 .start();
 
-        HttpResponse response1 = doGet("/foo");
+        FullHttpResponse<String> response1 = sendGet("/foo");
         assertThat(response1.status(), is(OK));
         assertThat(response1.header("origin"), isValue("first"));
 
-        HttpResponse response2 = doGet("/o2/foo");
+        FullHttpResponse<String> response2 = sendGet("/o2/foo");
         assertThat(response2.status(), is(OK));
         assertThat(response2.header("origin"), isValue("second"));
 
@@ -215,7 +212,7 @@ public class StyxServerTest {
                 .addPlugin("response-decorator", responseDecorator)
                 .start();
 
-        HttpResponse response = doGet("/foo");
+        FullHttpResponse<String> response = sendGet("/foo");
         assertThat(response.status(), is(OK));
         assertThat(response.header("origin"), isValue("first"));
         assertThat(response.header("plugin-executed"), isValue("yes"));
@@ -230,19 +227,19 @@ public class StyxServerTest {
                 .addRoute("/", originServer1.port())
                 .start();
 
-        HttpResponse response = doAdminRequest("/");
+        FullHttpResponse<String> response = doAdminRequest("/");
         assertThat(response.status(), is(OK));
-        assertThat(bodyAsString(response), containsString("/admin/plugins"));
+        assertThat(response.body(), containsString("/admin/plugins"));
     }
 
     @Test
     public void addsPluginLinkToPluginsIndex() {
         setUpStyxAndPlugins("plugin-foo", "plugin-bar", "plugin-baz");
 
-        HttpResponse response = doAdminRequest("/admin/plugins");
+        FullHttpResponse<String> response = doAdminRequest("/admin/plugins");
         assertThat(response.status(), is(OK));
 
-        assertThat(bodyAsString(response), allOf(
+        assertThat(response.body(), allOf(
                 containsString("/admin/plugins/plugin-foo"),
                 containsString("/admin/plugins/plugin-bar"),
                 containsString("/admin/plugins/plugin-baz")));
@@ -255,9 +252,9 @@ public class StyxServerTest {
                 "adminPage2", request -> just(response(OK).header("AdminPage2", "yes").build())
         ));
 
-        HttpResponse response = doAdminRequest("/admin/plugins/plugin-with-admin-pages");
+        FullHttpResponse<String> response = doAdminRequest("/admin/plugins/plugin-with-admin-pages");
         assertThat(response.status(), is(OK));
-        assertThat(bodyAsString(response), allOf(
+        assertThat(response.body(), allOf(
                 containsString("/admin/plugins/plugin-with-admin-pages/adminPage1"),
                 containsString("/admin/plugins/plugin-with-admin-pages/adminPage2")));
     }
@@ -269,7 +266,7 @@ public class StyxServerTest {
                 "adminPage2", request -> just(response(OK).header("AdminPage2", "yes").build())
         ));
 
-        HttpResponse response = doAdminRequest("/admin/plugins/plugin-with-admin-pages/adminPage1");
+        FullHttpResponse<String> response = doAdminRequest("/admin/plugins/plugin-with-admin-pages/adminPage1");
         assertThat(response.status(), is(OK));
         assertThat(response.header("AdminPage1"), isValue("yes"));
 
@@ -302,12 +299,9 @@ public class StyxServerTest {
         return plugin;
     }
 
-    private HttpResponse doAdminRequest(String path) {
-        HttpResponse.DecodedResponse<String> decodedResponse = doDecodedRequest(client, "http", styxServer.adminPort(), path);
-
-        return decodedResponse.responseBuilder()
-                .body(decodedResponse.body())
-                .build();
+    private FullHttpResponse<String> doAdminRequest(String path) {
+        String url = format("%s://localhost:%s%s", "http", styxServer.adminPort(), startWithSlash(path));
+        return waitForResponse(client.sendRequest(get(url).build()));
     }
 
     @Test
@@ -331,11 +325,11 @@ public class StyxServerTest {
                 .addRoute("/o2/", origin(originServer2.port()))
                 .start();
 
-        HttpResponse response1 = doGet("/foo");
+        FullHttpResponse<String> response1 = sendGet("/foo");
         assertThat(response1.status(), is(OK));
         assertThat(response1.header("origin"), isValue("first"));
 
-        HttpResponse response2 = doGet("/o2/foo");
+        FullHttpResponse<String> response2 = sendGet("/o2/foo");
         assertThat(response2.status(), is(OK));
         assertThat(response2.header("origin"), isValue("second"));
 
@@ -352,11 +346,11 @@ public class StyxServerTest {
                 .addRoute("/o2/", new BackendService().addOrigin(originServer2.port()))
                 .start();
 
-        HttpResponse response1 = doGet("/foo");
+        FullHttpResponse<String> response1 = sendGet("/foo");
         assertThat(response1.status(), is(OK));
         assertThat(response1.header("origin"), isValue("first"));
 
-        HttpResponse response2 = doGet("/o2/foo");
+        FullHttpResponse<String> response2 = sendGet("/o2/foo");
         assertThat(response2.status(), is(OK));
         assertThat(response2.header("origin"), isValue("second"));
 
@@ -366,36 +360,18 @@ public class StyxServerTest {
         WireMock.verify(getRequestedFor(urlPathEqualTo("/o2/foo")));
     }
 
-    private HttpResponse doGet(String path) {
-        return doGet(styxServer.proxyHttpPort(), startWithSlash(path));
+    private FullHttpResponse<String> sendGet(String path) {
+        return doRequest(client, "http", styxServer.proxyHttpPort(), startWithSlash(path));
     }
 
-    private HttpResponse doGet(int port, String path) {
-        return doRequest(client, "http", port, path);
-    }
-
-    private HttpResponse doHttpsGet(int port, String path) {
+    private FullHttpResponse<String> sendHttpsGet(int port, String path) {
         UrlConnectionHttpClient client = new UrlConnectionHttpClient(2000, 5000);
-
         return doRequest(client, "https", port, path);
     }
 
-    private HttpResponse.DecodedResponse<String> doDecodedRequest(HttpClient client, String protocol, int port, String path) {
+    private FullHttpResponse<String> doRequest(HttpClient client, String protocol, int port, String path) {
         String url = format("%s://localhost:%s%s", protocol, port, startWithSlash(path));
-
-        HttpRequest request = get(url).build();
-
-        return client.sendRequest(request)
-                .flatMap(response -> response.decode(buf -> buf.toString(UTF_8), 10000000))
-                .toBlocking().single();
-    }
-
-    private HttpResponse doRequest(HttpClient client, String protocol, int port, String path) {
-        String url = format("%s://localhost:%s%s", protocol, port, startWithSlash(path));
-
-        HttpRequest request = get(url).build();
-
-        return responseHeaders(client.sendRequest(request));
+        return waitForResponse(client.sendRequest(get(url).build()));
     }
 
     private String startWithSlash(String path) {

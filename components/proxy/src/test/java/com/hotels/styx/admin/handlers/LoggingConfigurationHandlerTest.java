@@ -17,14 +17,15 @@ package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.api.io.ClasspathResource;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
 
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
-import static com.hotels.styx.support.api.BlockingObservables.responseBody;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
+import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -37,9 +38,10 @@ public class LoggingConfigurationHandlerTest {
                 .build();
         LoggingConfigurationHandler handler = new LoggingConfigurationHandler(startupConfig.logConfigLocation());
 
-        String responseBody = responseBody(handler.handle(get("/").build()), OK);
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
 
-        assertThat(responseBody, is("Could not load resource='/foo/bar'"));
+        assertThat(response.status(), is(OK));
+        assertThat(response.body(), is("Could not load resource='/foo/bar'"));
     }
 
     @Test
@@ -49,10 +51,11 @@ public class LoggingConfigurationHandlerTest {
                 .build();
         LoggingConfigurationHandler handler = new LoggingConfigurationHandler(startupConfig.logConfigLocation());
 
-        String responseBody = responseBody(handler.handle(get("/").build()), OK);
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
 
         String expected = Resources.load(new ClasspathResource("conf/environment/styx-config-test.yml", LoggingConfigurationHandlerTest.class));
 
-        assertThat(responseBody, is(expected));
+        assertThat(response.status(), is(OK));
+        assertThat(response.body(), is(expected));
     }
 }

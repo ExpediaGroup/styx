@@ -16,17 +16,17 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.List;
 
-import static com.hotels.styx.support.api.BlockingObservables.responseBody;
 import static com.hotels.styx.api.HttpRequest.Builder.put;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
+import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -57,11 +57,10 @@ public class PluginToggleHandlerTest {
     public void enablesDisabledPlugin() {
         HttpRequest request = put("/foo/off/enabled").body("true").build();
 
-        String body = responseBody(handler.handle(request), response ->
-                assertThat(response.status(), is(OK)));
+        FullHttpResponse<String> response = waitForResponse(handler.handle(request));
 
-        assertThat(body, is("{\"message\":\"State of 'off' changed to 'enabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"enabled\"}}\n"));
-
+        assertThat(response.status(), is(OK));
+        assertThat(response.body(), is("{\"message\":\"State of 'off' changed to 'enabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"enabled\"}}\n"));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(true));
     }
@@ -70,11 +69,10 @@ public class PluginToggleHandlerTest {
     public void disablesEnabledPlugin() {
         HttpRequest request = put("/foo/on/enabled").body("false").build();
 
-        String body = responseBody(handler.handle(request), response ->
-                assertThat(response.status(), is(OK)));
+        FullHttpResponse<String> response = waitForResponse(handler.handle(request));
 
-        assertThat(body, is("{\"message\":\"State of 'on' changed to 'disabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"disabled\"}}\n"));
-
+        assertThat(response.status(), is(OK));
+        assertThat(response.body(), is("{\"message\":\"State of 'on' changed to 'disabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"disabled\"}}\n"));
         assertThat(initiallyEnabled.enabled(), is(false));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -83,11 +81,10 @@ public class PluginToggleHandlerTest {
     public void notifiesWhenPluginAlreadyDisabled() {
         HttpRequest request = put("/foo/off/enabled").body("false").build();
 
-        String body = responseBody(handler.handle(request), response ->
-                assertThat(response.status(), is(OK)));
+        FullHttpResponse<String> response = waitForResponse(handler.handle(request));
 
-        assertThat(body, is("{\"message\":\"State of 'off' was already 'disabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"disabled\"}}\n"));
-
+        assertThat(response.status(), is(OK));
+        assertThat(response.body(), is("{\"message\":\"State of 'off' was already 'disabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"disabled\"}}\n"));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -96,11 +93,10 @@ public class PluginToggleHandlerTest {
     public void notifiesWhenPluginAlreadyEnabled() {
         HttpRequest request = put("/foo/on/enabled").body("true").build();
 
-        String body = responseBody(handler.handle(request), response ->
-                assertThat(response.status(), is(OK)));
+        FullHttpResponse<String> response = waitForResponse(handler.handle(request));
 
-        assertThat(body, is("{\"message\":\"State of 'on' was already 'enabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"enabled\"}}\n"));
-
+        assertThat(response.status(), is(OK));
+        assertThat(response.body(), is("{\"message\":\"State of 'on' was already 'enabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"enabled\"}}\n"));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -109,11 +105,10 @@ public class PluginToggleHandlerTest {
     public void saysBadRequestWhenUrlIsInvalid() {
         HttpRequest request = put("/foo//enabled").body("true").build();
 
-        String body = responseBody(handler.handle(request), response ->
-                assertThat(response.status(), is(BAD_REQUEST)));
+        FullHttpResponse<String> response = waitForResponse(handler.handle(request));
 
-        assertThat(body, is("Invalid URL\n"));
-
+        assertThat(response.status(), is(BAD_REQUEST));
+        assertThat(response.body(), is("Invalid URL\n"));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -122,11 +117,10 @@ public class PluginToggleHandlerTest {
     public void saysBadRequestWhenNoStateSpecified() {
         HttpRequest request = put("/foo/on/enabled").build();
 
-        String body = responseBody(handler.handle(request), response ->
-                assertThat(response.status(), is(BAD_REQUEST)));
+        FullHttpResponse<String> response = waitForResponse(handler.handle(request));
 
-        assertThat(body, is("No such state: only 'true' and 'false' are valid.\n"));
-
+        assertThat(response.status(), is(BAD_REQUEST));
+        assertThat(response.body(), is("No such state: only 'true' and 'false' are valid.\n"));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -135,11 +129,10 @@ public class PluginToggleHandlerTest {
     public void saysBadRequestWhenPluginDoesNotExist() {
         HttpRequest request = put("/foo/nonexistent/enabled").body("true").build();
 
-        String body = responseBody(handler.handle(request), response ->
-                assertThat(response.status(), is(NOT_FOUND)));
+        FullHttpResponse<String> response = waitForResponse(handler.handle(request));
 
-        assertThat(body, is("No such plugin\n"));
-
+        assertThat(response.status(), is(NOT_FOUND));
+        assertThat(response.body(), is("No such plugin\n"));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -148,11 +141,10 @@ public class PluginToggleHandlerTest {
     public void saysBadRequestWhenValueIsInvalid() {
         HttpRequest request = put("/foo/off/enabled").body("invalid").build();
 
-        String body = responseBody(handler.handle(request), response ->
-                assertThat(response.status(), is(BAD_REQUEST)));
+        FullHttpResponse<String> response = waitForResponse(handler.handle(request));
 
-        assertThat(body, is("No such state: only 'true' and 'false' are valid.\n"));
-
+        assertThat(response.status(), is(BAD_REQUEST));
+        assertThat(response.body(), is("No such state: only 'true' and 'false' are valid.\n"));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }

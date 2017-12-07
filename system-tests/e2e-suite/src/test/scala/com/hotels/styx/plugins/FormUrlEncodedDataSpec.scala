@@ -39,9 +39,9 @@ class FormUrlEncodedDataSpec extends FunSpec with StyxProxySpec with Eventually 
         .body("version=54.0")
         .addHeader("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
         .build()
-      val (resp, body) = decodedRequest(request)
+      val resp = decodedRequest(request)
       assert(resp.status().code() == 200)
-      assert(body == "version: 54.0")
+      assert(resp.body == "version: 54.0")
     }
 
     it("decodes correctly multiple post parameter") {
@@ -49,9 +49,9 @@ class FormUrlEncodedDataSpec extends FunSpec with StyxProxySpec with Eventually 
         .body("version=54.0&app=bar")
         .addHeader("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
         .build()
-      val (resp, body) = decodedRequest(request)
+      val resp = decodedRequest(request)
       assert(resp.status().code() == 200)
-      assert(body == "app: bar\nversion: 54.0")
+      assert(resp.body == "app: bar\nversion: 54.0")
     }
   }
 
