@@ -15,7 +15,7 @@
  */
 package com.hotels.styx;
 
-import com.google.common.util.concurrent.Service;
+import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.proxy.plugin.PluginSuppliers;
 
@@ -33,8 +33,8 @@ import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLoggi
  */
 public final class StyxServerBuilder {
     private final Environment environment;
+    private final Map<String, StyxService> additionalServices = new HashMap<>();
     private Supplier<Iterable<NamedPlugin>> pluginsSupplier;
-    private Map<String, Service> additionalServices = new HashMap<>();
 
     private Consumer<Environment> loggingSetUp = env -> {
     };
@@ -51,17 +51,17 @@ public final class StyxServerBuilder {
         return environment;
     }
 
-    public StyxServerBuilder additionalServices(String name, Service service) {
+    public StyxServerBuilder additionalServices(String name, StyxService service) {
         this.additionalServices.put(name, checkNotNull(service));
         return this;
     }
 
-    public StyxServerBuilder additionalServices(Map<String, Service> namedServices) {
-        namedServices.forEach((name, value) -> this.additionalServices.put(name, value));
+    public StyxServerBuilder additionalServices(Map<String, StyxService> namedServices) {
+        namedServices.forEach(this.additionalServices::put);
         return this;
     }
 
-    public Map<String, Service> additionalServices() {
+    public Map<String, StyxService> additionalServices() {
         return this.additionalServices;
     }
 

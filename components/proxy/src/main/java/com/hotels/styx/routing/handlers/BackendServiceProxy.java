@@ -16,12 +16,12 @@
 package com.hotels.styx.routing.handlers;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.Service;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
@@ -66,7 +66,7 @@ public class BackendServiceProxy implements HttpHandler2 {
      */
     public static class ConfigFactory implements HttpHandlerFactory {
         private final BackendServiceClientFactory serviceClientFactory;
-        private final Map<String, Service> services;
+        private final Map<String, StyxService> services;
 
         private static StyxBackendServiceClientFactory serviceClientFactory(Environment environment) {
             ProxyServerConfig proxyConfig = environment.styxConfig().proxyServerConfig();
@@ -74,12 +74,12 @@ public class BackendServiceProxy implements HttpHandler2 {
         }
 
         @VisibleForTesting
-        ConfigFactory(BackendServiceClientFactory serviceClientFactory, Map<String, Service> services) {
+        ConfigFactory(BackendServiceClientFactory serviceClientFactory, Map<String, StyxService> services) {
             this.serviceClientFactory = serviceClientFactory;
             this.services = services;
         }
 
-        public ConfigFactory(Environment environment, Map<String, Service> services) {
+        public ConfigFactory(Environment environment, Map<String, StyxService> services) {
             this.services = services;
             this.serviceClientFactory = serviceClientFactory(environment);
         }
@@ -90,7 +90,7 @@ public class BackendServiceProxy implements HttpHandler2 {
             String provider = config.get("backendProvider")
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "backendProvider"));
 
-            Service service = services.get(provider);
+            StyxService service = services.get(provider);
             if (service == null) {
                 throw new IllegalArgumentException(
                         format("No such backend service provider exists, attribute='%s', name='%s'",

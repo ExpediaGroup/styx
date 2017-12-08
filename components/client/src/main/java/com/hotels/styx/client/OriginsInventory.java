@@ -43,6 +43,7 @@ import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
 import com.hotels.styx.common.StateMachine;
+import com.hotels.styx.common.StyxFutures;
 import org.slf4j.Logger;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -59,6 +60,7 @@ import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
 import static com.hotels.styx.client.OriginsInventory.OriginState.INACTIVE;
+import static com.hotels.styx.common.StyxFutures.await;
 import static java.util.Collections.singleton;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -118,7 +120,7 @@ public final class OriginsInventory
                     .peek(MonitoredOrigin::close)
                     .map(o -> o.connectionPool)
                     .forEach(ConnectionPool::close);
-            originHealthStatusMonitor.stopAsync();
+            originHealthStatusMonitor.stop();
         }
     }
 
@@ -380,7 +382,7 @@ public final class OriginsInventory
         }
 
         private OriginsInventory originsInventory(OriginHealthStatusMonitor originHealthStatusMonitor, HttpConfig httpConfig, MetricRegistry metricsRegistry) {
-            originHealthStatusMonitor.startAsync().awaitRunning();
+            await(originHealthStatusMonitor.start());
 
             ConnectionPool.Factory hostConnectionPoolFactory = connectionPoolFactory(backendService.connectionPoolConfig(), httpConfig, metricsRegistry);
             OriginsInventory originsInventory = new OriginsInventory(eventBus, backendService.id(), originHealthStatusMonitor, hostConnectionPoolFactory, metricsRegistry);

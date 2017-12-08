@@ -42,6 +42,7 @@ import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
+import com.hotels.styx.common.StyxFutures;
 
 public class OriginsHandlerTest {
     static final ObjectMapper MAPPER = new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES);
@@ -53,12 +54,12 @@ public class OriginsHandlerTest {
 
     @BeforeClass
     public void startRegistry() {
-        backendServicesRegistry.startAsync().awaitRunning();
+        StyxFutures.await(backendServicesRegistry.start());
     }
 
     @AfterClass
     public void stopRegistry() {
-        backendServicesRegistry.stopAsync().awaitTerminated();
+        StyxFutures.await(backendServicesRegistry.stop());
     }
 
     @Test

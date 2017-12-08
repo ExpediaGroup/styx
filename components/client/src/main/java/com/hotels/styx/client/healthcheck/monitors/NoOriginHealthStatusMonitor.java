@@ -15,23 +15,25 @@
  */
 package com.hotels.styx.client.healthcheck.monitors;
 
-import com.google.common.util.concurrent.AbstractIdleService;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * An {@link com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor} that does nothing. Using this monitor is
  * a way to disable monitoring.
  */
-public class NoOriginHealthStatusMonitor extends AbstractIdleService implements OriginHealthStatusMonitor {
+public class NoOriginHealthStatusMonitor implements OriginHealthStatusMonitor {
     @Override
-    protected void startUp() {
+    public CompletableFuture<Void> start() {
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    protected void shutDown() {
+    public CompletableFuture<Void> stop() {
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override

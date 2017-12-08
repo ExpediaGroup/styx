@@ -17,16 +17,16 @@ package com.hotels.styx.routing;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.util.concurrent.Service;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.routing.config.RoutingConfigDefinition;
-import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.BuiltinHandlersFactory;
+import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
+import com.hotels.styx.routing.config.RoutingConfigDefinition;
 import com.hotels.styx.routing.handlers.BackendServiceProxy;
 import com.hotels.styx.routing.handlers.ConditionRouter;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
@@ -46,9 +46,9 @@ public class UserConfiguredPipelineFactory implements HttpPipelineFactory {
     private final Environment environment;
     private final Configuration configuration;
     private final Supplier<Iterable<NamedPlugin>> pluginsSupplier;
-    private final Map<String, Service> registries;
+    private final Map<String, StyxService> registries;
 
-    public UserConfiguredPipelineFactory(Environment environment, Configuration configuration, Supplier<Iterable<NamedPlugin>> pluginsSupplier, Map<String, Service> services) {
+    public UserConfiguredPipelineFactory(Environment environment, Configuration configuration, Supplier<Iterable<NamedPlugin>> pluginsSupplier, Map<String, StyxService> services) {
         this.environment = environment;
         this.configuration = checkNotNull(configuration);
         this.pluginsSupplier = checkNotNull(pluginsSupplier);

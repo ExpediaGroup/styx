@@ -18,7 +18,9 @@ package com.hotels.styx.proxy.backends.file;
 import com.google.common.collect.Iterables;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Resource;
+import com.hotels.styx.api.service.spi.ServiceFailureException;
 import com.hotels.styx.client.applications.BackendService;
+import com.hotels.styx.common.StyxFutures;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.infrastructure.Registry.ReloadListener;
 import org.hamcrest.Description;
@@ -28,6 +30,7 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.CompletionException;
 
 import static com.google.common.io.Files.copy;
 import static com.hotels.styx.api.Id.id;
@@ -63,7 +66,7 @@ public class FileBackedBackendServicesRegistryTest {
 
         registry = new FileBackedBackendServicesRegistry(givenOrigins("/backends/origins.yml"));
         registry.addListener(changeListener);
-        registry.startAsync().awaitRunning();
+        StyxFutures.await(registry.start());
     }
 
     @Test
@@ -71,20 +74,27 @@ public class FileBackedBackendServicesRegistryTest {
         verify(changeListener).onChange(anyChanges());
     }
 
-    @Test(expectedExceptions = IllegalStateException.class,
-            expectedExceptionsMessageRegExp = "Expected the service to be RUNNING, but the service has FAILED")
-    public void discardsInvalidPaths() throws IOException {
+    @Test(expectedExceptions = ServiceFailureException.class,
+            expectedExceptionsMessageRegExp = "Service failed to start.")
+    public void discardsInvalidPaths() throws Throwable {
         registry = new FileBackedBackendServicesRegistry(givenOrigins("/backends/origins-with-invalid-path.yml"));
         registry.addListener(changeListener);
-        registry.startAsync().awaitRunning();
+        unwrapException(() -> registry.start().join());
     }
 
-    @Test(expectedExceptions = IllegalStateException.class,
-            expectedExceptionsMessageRegExp = "Expected the service to be RUNNING, but the service has FAILED")
-    public void discardsInvalidHealthCheckURIs() throws IOException {
+    @Test(expectedExceptions = ServiceFailureException.class,
+            expectedExceptionsMessageRegExp = "Service failed to start.")
+    public void discardsInvalidHealthCheckURIs() throws Throwable {
         registry = new FileBackedBackendServicesRegistry(givenOrigins("/backends/origins-with-invalid-healthcheck-uri.yml"));
         registry.addListener(changeListener);
-        registry.startAsync().awaitRunning();
+        unwrapException(() -> registry.start().join());
+    }
+
+    @Test
+    public void discardsInvalidHealthCheckURIs2() throws Throwable {
+        registry = new FileBackedBackendServicesRegistry(givenOrigins("/backends/origins-with-invalid-healthcheck-uri.yml"));
+        registry.addListener(changeListener);
+        unwrapException(() -> registry.start());
     }
 
     @Test
@@ -211,7 +221,7 @@ public class FileBackedBackendServicesRegistryTest {
         ADD, REMOVE, UPDATE
     }
 
-    void deleteFile(File file) {
+    private static void deleteFile(File file) {
         if (file.isDirectory()) {
             for (File f : file.listFiles()) {
                 deleteFile(f);
@@ -220,4 +230,13 @@ public class FileBackedBackendServicesRegistryTest {
 
         file.delete();
     }
+
+    private static void unwrapException(Runnable x) throws Throwable {
+        try {
+            x.run();
+        } catch (CompletionException e) {
+            throw e.getCause();
+        }
+    }
+
 }

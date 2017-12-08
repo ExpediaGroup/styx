@@ -16,27 +16,30 @@
 package com.hotels.styx.client.healthcheck.monitors;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.AbstractIdleService;
 import com.hotels.styx.api.Announcer;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.service.spi.AbstractStyxService;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.Schedule;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableSet.copyOf;
+import static com.hotels.styx.api.service.spi.StyxServiceStatus.RUNNING;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * An {@link com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor} that monitors the origins state
  * periodically.
  */
 @ThreadSafe
-public class ScheduledOriginHealthStatusMonitor extends AbstractIdleService implements OriginHealthStatusMonitor {
+public class ScheduledOriginHealthStatusMonitor extends AbstractStyxService implements OriginHealthStatusMonitor {
     private final Announcer<OriginHealthStatusMonitor.Listener> listeners = Announcer.to(OriginHealthStatusMonitor.Listener.class);
 
     private final ScheduledExecutorService hostHealthMonitorExecutor;
@@ -53,6 +56,7 @@ public class ScheduledOriginHealthStatusMonitor extends AbstractIdleService impl
      */
     public ScheduledOriginHealthStatusMonitor(ScheduledExecutorService hostHealthMonitorExecutor, OriginHealthCheckFunction healthCheckingFunction,
                                               Schedule schedule) {
+        super("ScheduledOriginHealthStatusMonitor");
         this.hostHealthMonitorExecutor = checkNotNull(hostHealthMonitorExecutor);
         this.healthCheckingFunction = checkNotNull(healthCheckingFunction);
         this.schedule = checkNotNull(schedule);
@@ -67,7 +71,7 @@ public class ScheduledOriginHealthStatusMonitor extends AbstractIdleService impl
     @Override
     public OriginHealthStatusMonitor monitor(Set<Origin> origins) {
         this.origins.addAll(origins);
-        if (this.isRunning()) {
+        if (status() == RUNNING) {
             healthCheck(origins);
         }
         return this;
@@ -93,13 +97,15 @@ public class ScheduledOriginHealthStatusMonitor extends AbstractIdleService impl
     }
 
     @Override
-    protected void startUp() {
+    protected CompletableFuture<Void> startService() {
         scheduleHealthCheck();
+        return completedFuture(null);
     }
 
     @Override
-    protected void shutDown() {
+    protected CompletableFuture<Void> stopService() {
         this.hostHealthMonitorExecutor.shutdown();
+        return completedFuture(null);
     }
 
     private void scheduleHealthCheck() {

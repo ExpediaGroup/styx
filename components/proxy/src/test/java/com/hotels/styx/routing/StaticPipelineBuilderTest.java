@@ -33,6 +33,7 @@ import java.util.function.Supplier;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.client.applications.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.common.StyxFutures.await;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -77,12 +78,13 @@ public class StaticPipelineBuilderTest {
 
     private Registry<BackendService> backendRegistry(BackendService... backendServices) {
         TestRegistry registry = new TestRegistry(backendServices);
-        registry.startAsync().awaitRunning();
+        await(registry.start());
         return registry;
     }
 
     class TestRegistry extends AbstractRegistry<BackendService> {
-        public TestRegistry(BackendService... backendServices) {
+        TestRegistry(BackendService... backendServices) {
+            super("TestRegistry");
             snapshot.set(asList(backendServices));
         }
 
@@ -93,11 +95,11 @@ public class StaticPipelineBuilderTest {
         }
     }
 
-    private NamedPlugin interceptor(String name, Plugin plugin) {
+    private static NamedPlugin interceptor(String name, Plugin plugin) {
         return NamedPlugin.namedPlugin(name, plugin);
     }
 
-    private Plugin appendResponseHeader(String header, String value) {
+    private static Plugin appendResponseHeader(String header, String value) {
         return (request, chain) -> chain.proceed(request).map(response -> response.newBuilder().addHeader(header, value).build());
     }
 

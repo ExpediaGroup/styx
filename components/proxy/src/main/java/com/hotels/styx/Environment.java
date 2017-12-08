@@ -102,6 +102,8 @@ public final class Environment implements com.hotels.styx.api.Environment {
         private EventBus eventBus;
 
         /**
+         * Sets aggregated configuration.
+         *
          * @deprecated see {@link AggregatedConfiguration}
          */
         @Deprecated

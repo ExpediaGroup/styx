@@ -31,6 +31,7 @@ import com.hotels.styx.admin.AdminServerBuilder;
 import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
@@ -144,12 +145,12 @@ public final class StyxServer extends AbstractService {
         registerVersionMetric(environment);
         registerJvmMetrics(environment.metricRegistry());
 
-        final Map<String, Service> servicesFromConfig = mergeServices(
+        Map<String, StyxService> servicesFromConfig = mergeServices(
                 loadServices(
                         environment.configuration(),
                         environment,
                         "services",
-                        Service.class),
+                        StyxService.class),
                 builder.additionalServices());
 
         Supplier<Iterable<NamedPlugin>> pluginsSupplier = builder.getPluginsSupplier();
@@ -179,6 +180,7 @@ public final class StyxServer extends AbstractService {
                 add(adminServer);
                 servicesFromConfig.entrySet().stream()
                         .map(Map.Entry::getValue)
+                        .map(StyxServer::toGuavaService)
                         .forEach(this::add);
             }
         });
@@ -207,7 +209,7 @@ public final class StyxServer extends AbstractService {
         return new HttpInterceptorPipeline(builder.build(), interceptorsPipeline);
     }
 
-    private HttpHandler2 userConfiguredHttpPipeline(Environment environment, Map<String, Service> servicesFromConfig, Supplier<Iterable<NamedPlugin>> pluginsSupplier) {
+    private HttpHandler2 userConfiguredHttpPipeline(Environment environment, Map<String, StyxService> servicesFromConfig, Supplier<Iterable<NamedPlugin>> pluginsSupplier) {
         HttpPipelineFactory pipelineBuilder;
         ConfigVersionResolver configVersionResolver = new ConfigVersionResolver(environment.styxConfig());
 
@@ -221,8 +223,8 @@ public final class StyxServer extends AbstractService {
         return pipelineBuilder.build();
     }
 
-    private Map<String, Service> mergeServices(Map<String, Service> configServices, Map<String, Service> additionalServices) {
-        ImmutableMap.Builder<String, Service> merged = new ImmutableMap.Builder<>();
+    private Map<String, StyxService> mergeServices(Map<String, StyxService> configServices, Map<String, StyxService> additionalServices) {
+        ImmutableMap.Builder<String, StyxService> merged = new ImmutableMap.Builder<>();
 
         merged.putAll(configServices);
         merged.putAll(additionalServices);
@@ -368,6 +370,34 @@ public final class StyxServer extends AbstractService {
         }
     }
 
+    // TODO: Move into a separate class and TDD:
+    private static Service toGuavaService(StyxService styxService) {
+        return new AbstractService() {
+            @Override
+            protected void doStart() {
+                styxService.start()
+                        .thenAccept((x) -> {
+                            notifyStarted();
+                        })
+                        .exceptionally((e) -> {
+                            notifyFailed(e);
+                            return null;
+                        });
+            }
+
+            @Override
+            protected void doStop() {
+                styxService.stop()
+                        .thenAccept((x) -> {
+                            notifyStopped();
+                        })
+                        .exceptionally((e) -> {
+                            notifyFailed(e);
+                            return null;
+                        });
+            }
+        };
+    }
 
     private static class PluginsNotifierOfProxyState extends Service.Listener {
         private final Supplier<Iterable<NamedPlugin>> pluginsSupplier;

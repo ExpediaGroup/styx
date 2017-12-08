@@ -15,17 +15,20 @@
  */
 package com.hotels.styx.infrastructure;
 
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
+import com.google.common.io.Files;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.Resource;
 import org.slf4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.function.Function;
+import java.util.concurrent.CompletableFuture;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.io.ByteStreams.toByteArray;
-import static java.lang.String.format;
-import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -35,56 +38,57 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry<T> {
     private static final Logger LOG = getLogger(FileBackedRegistry.class);
-    private final Parser<T> parser;
-    private final FileMonitor fileMonitor;
+    private final Resource configurationFile;
+    private final Reader<T> reader;
+    private HashCode fileHash;
 
-    public FileBackedRegistry(Resource configurationFile, Parser<T> parser) {
-        this(parser, configurationFile.absolutePath(), path -> {
-            try {
-                return toByteArray(configurationFile.inputStream());
-            } catch (IOException e) {
-                throw propagate(e);
-            }
-        });
+    public FileBackedRegistry(Resource configurationFile, Reader<T> reader) {
+        super("FileBackedRegistry");
+        this.configurationFile = checkNotNull(configurationFile);
+        this.reader = checkNotNull(reader);
+        this.fileHash = md5(configurationFile);
     }
 
-    FileBackedRegistry(Parser<T> parser, String absolutePath, Function<String, byte[]> byteLoader) {
-        this.fileMonitor = new FileMonitor(byteLoader, absolutePath);
-        this.parser = requireNonNull(parser);
+    private HashCode md5(Resource resource) {
+        try {
+            return Files.hash(new File(resource.absolutePath()), Hashing.md5());
+        } catch (IOException e) {
+            throw propagate(e);
+        }
     }
 
     @Override
-    protected void startUp() {
-        LOG.info("starting {}", getClass().getSimpleName());
+    protected CompletableFuture<Void> startService() {
+        return CompletableFuture.runAsync(() -> {
+            LOG.info("starting {}", getClass().getSimpleName());
 
-        fileMonitor.load();
-
-        Iterable<T> resources = parser.read(fileMonitor.bytes());
-        snapshot.set(resources);
-        Changes<T> changes = new Changes.Builder<T>()
-                .added(resources)
-                .build();
-        notifyListeners(changes);
+            Iterable<T> resources = reader.read(readFile());
+            snapshot.set(resources);
+            Changes<T> changes = new Changes.Builder<T>()
+                    .added(resources)
+                    .build();
+            notifyListeners(changes);
+        });
     }
 
     @Override
     public synchronized void reload(ReloadListener listener) {
-        if (!fileMonitor.load()) {
-            LOG.info("Not reloading {} as content did not change", fileMonitor.path());
+        if (!hasFileContentChanged()) {
+            LOG.info("Not reloading {} as content did not change", configurationFile.absolutePath());
             listener.onNoMeaningfulChanges("file content did not change");
         } else {
             try {
                 boolean changesPerformed = updateResources();
 
                 if (!changesPerformed) {
-                    LOG.info("Not firing change event for {} as content was not semantically different", fileMonitor.path());
+                    LOG.info("Not firing change event for {} as content was not semantically different", configurationFile.absolutePath());
                     listener.onNoMeaningfulChanges("file content was not semantically different");
                 } else {
                     LOG.debug("Changes applied!");
                     listener.onChangesApplied();
                 }
             } catch (Exception e) {
-                LOG.error("Not reloading {} as there was an error reading content", fileMonitor.path(), e);
+                LOG.error("Not reloading {} as there was an error reading content", configurationFile.absolutePath(), e);
                 notifyListenersOnError(e);
                 listener.onErrorDuringReload(e);
             }
@@ -92,38 +96,38 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     }
 
     private boolean updateResources() {
-        Iterable<T> resources = parser.read(fileMonitor.bytes());
+        Iterable<T> resources = reader.read(readFile());
+        fileHash = md5(configurationFile);
         Changes<T> changes = changes(resources, snapshot.get());
 
         if (!changes.isEmpty()) {
             snapshot.set(resources);
-
-            try {
-                notifyListeners(changes);
-            } catch (Exception e) {
-                return throwReloadException(e);
-            }
+            notifyListeners(changes);
         }
 
         return !changes.isEmpty();
     }
 
-    // return type can be anything because it never returns normally
-    private <X> X throwReloadException(Exception e) {
-        String message = format("Exception during reload: %s : previousFileContent=%s, newFileContent=%s",
-                e.getMessage(),
-                new String(fileMonitor.previousBytes()),
-                new String(fileMonitor.bytes()));
+    private boolean hasFileContentChanged() {
+        HashCode newFileHash = md5(configurationFile);
 
-        throw new ReloadException(message, e);
+        return !newFileHash.equals(fileHash);
+    }
+
+    private byte[] readFile() {
+        try {
+            return toByteArray(configurationFile.inputStream());
+        } catch (IOException e) {
+            throw propagate(e);
+        }
     }
 
     /**
-     * Parses file contents into the element type.
+     * Reader.
      *
-     * @param <T> element type
+     * @param <T>
      */
-    public interface Parser<T> {
+    public interface Reader<T> {
         Iterable<T> read(byte[] content);
     }
 }

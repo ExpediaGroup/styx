@@ -16,11 +16,10 @@
 package com.hotels.styx.infrastructure;
 
 import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Service;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Identifiable;
-import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.configuration.ServiceFactory;
 
 import java.util.EventListener;
 import java.util.Objects;
@@ -36,7 +35,7 @@ import static java.util.Collections.emptyList;
  *
  * @param <T> the type of resource to store
  */
-public interface Registry<T extends Identifiable> extends Service, Supplier<Iterable<T>> {
+public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> {
 
     /**
      * Register a {@link com.hotels.styx.infrastructure.Registry.ChangeListener} to be notified when registry changes.

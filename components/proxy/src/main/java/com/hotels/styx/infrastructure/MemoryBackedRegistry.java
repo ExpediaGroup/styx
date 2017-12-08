@@ -50,6 +50,7 @@ public class MemoryBackedRegistry<T extends Identifiable> extends AbstractRegist
     }
 
     private MemoryBackedRegistry(boolean autoReload) {
+        super("MemoryBackedRegistry");
         this.autoReload = autoReload;
     }
 
