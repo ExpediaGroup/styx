@@ -22,10 +22,12 @@ import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.BackendServicesRouter;
+import com.hotels.styx.proxy.ConnectionPoolProviderFactory;
 import com.hotels.styx.proxy.InterceptorPipelineBuilder;
 import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
+import com.hotels.styx.proxy.StyxConnectionPoolProviderFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 
 import java.util.function.Supplier;
@@ -36,31 +38,39 @@ import java.util.function.Supplier;
  */
 public class StaticPipelineFactory implements HttpPipelineFactory {
     private final BackendServiceClientFactory clientFactory;
+    private final ConnectionPoolProviderFactory connectionPoolProviderFactory;
     private final Environment environment;
     private final Registry<BackendService> registry;
     private final Supplier<Iterable<NamedPlugin>> pluginsSupplier;
 
     @VisibleForTesting
-    StaticPipelineFactory(BackendServiceClientFactory clientFactory, Environment environment, Registry<BackendService> registry, Supplier<Iterable<NamedPlugin>> pluginsSupplier) {
+    StaticPipelineFactory(BackendServiceClientFactory clientFactory, ConnectionPoolProviderFactory connectionPoolProviderFactory,
+                          Environment environment, Registry<BackendService> registry,
+                          Supplier<Iterable<NamedPlugin>> pluginsSupplier) {
         this.clientFactory = clientFactory;
+        this.connectionPoolProviderFactory = connectionPoolProviderFactory;
         this.environment = environment;
         this.registry = registry;
         this.pluginsSupplier = pluginsSupplier;
     }
 
     public StaticPipelineFactory(Environment environment, Registry<BackendService> registry, Supplier<Iterable<NamedPlugin>> pluginsSupplier) {
-        this(createClientFactory(environment), environment, registry, pluginsSupplier);
+        this(createClientFactory(environment), connectionPoolProviderFactory(environment), environment, registry, pluginsSupplier);
     }
 
     private static BackendServiceClientFactory createClientFactory(Environment environment) {
+        return new StyxBackendServiceClientFactory(environment);
+    }
+
+    private static ConnectionPoolProviderFactory connectionPoolProviderFactory(Environment environment) {
         ProxyServerConfig proxyConfig = environment.styxConfig().proxyServerConfig();
         int clientWorkerThreadsCount = proxyConfig.clientWorkerThreadsCount();
-        return new StyxBackendServiceClientFactory(environment, clientWorkerThreadsCount);
+        return new StyxConnectionPoolProviderFactory(environment, clientWorkerThreadsCount);
     }
 
     @Override
     public HttpHandler2 build() {
-        BackendServicesRouter backendServicesRouter = new BackendServicesRouter(clientFactory);
+        BackendServicesRouter backendServicesRouter = new BackendServicesRouter(clientFactory, connectionPoolProviderFactory);
         registry.addListener(backendServicesRouter);
         RouteHandlerAdapter router = new RouteHandlerAdapter(backendServicesRouter);
 

@@ -16,7 +16,7 @@
 package com.hotels.styx.client.retry;
 
 
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.api.client.ConnectionPoolProvider;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 
 /**
@@ -39,7 +39,7 @@ abstract class AbstractRetryPolicy implements RetryPolicy {
     }
 
     @Override
-    public abstract Outcome evaluate(Context context, LoadBalancingStrategy loadBalancingStrategy);
+    public abstract Outcome evaluate(Context context, ConnectionPoolProvider connectionPoolProvider);
 
     public int deltaBackoffMillis() {
         return deltaBackoffMillis;

@@ -17,12 +17,11 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.api.client.ConnectionPoolProvider;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.client.applications.BackendService;
-import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy;
-import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.retry.RetryNTimes;
 import org.slf4j.Logger;
 
@@ -36,45 +35,36 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
     private static final Logger LOG = getLogger(BackendServiceClientFactory.class);
 
     private final Environment environment;
-    private final int clientWorkerThreadsCount;
 
     // Todo: This can be package private if/when backend service router is created in a separate builder in styx.proxy package.
-    public StyxBackendServiceClientFactory(Environment environment, int clientWorkerThreadsCount) {
+    public StyxBackendServiceClientFactory(Environment environment) {
         this.environment = environment;
-        this.clientWorkerThreadsCount = clientWorkerThreadsCount;
     }
 
     @Override
-    public HttpClient createClient(BackendService backendService) {
+    public HttpClient createClient(BackendService backendService, ConnectionPoolProvider connectionPoolProvider) {
         RetryPolicy retryPolicy = loadService(environment.configuration(), environment, "retrypolicy.policy.factory", RetryPolicy.class)
                 .orElseGet(() -> defaultRetryPolicy(environment));
-
-        LoadBalancingStrategy loadBalancingStrategy = loadService(environment.configuration(), environment, "loadBalancing.strategy.factory", LoadBalancingStrategy.class)
-                .orElseGet(RoundRobinStrategy::new);
 
         boolean requestLoggingEnabled = environment.styxConfig().get("request-logging.outbound.enabled", Boolean.class)
                 .orElse(false);
 
         boolean longFormat = environment.styxConfig().get("request-logging.outbound.longFormat", Boolean.class)
                 .orElse(false);
+        OriginStatsFactory originStatsFactory = new OriginStatsFactory(environment.metricRegistry());
+
 
         return new StyxHttpClient.Builder(backendService)
                 .styxHeaderNames(environment.styxConfig().styxHeaderConfig())
-                .version(environment.buildInfo().releaseVersion())
-                .eventBus(environment.eventBus())
-                .loadBalancingStrategy(loadBalancingStrategy)
-                .originRestrictionCookie(environment.configuration().get("originRestrictionCookie").orElse(null))
                 .metricsRegistry(environment.metricRegistry())
-                .connectionFactory(new NettyConnectionFactory.Builder()
-                        .name("Styx")
-                        .clientWorkerThreadsCount(clientWorkerThreadsCount)
-                        .tlsSettings(backendService.tlsSettings().orElse(null)).build())
                 .retryPolicy(retryPolicy)
                 .flowControlEnabled(true)
                 .enableContentValidation()
                 .rewriteRules(backendService.rewrites())
                 .requestLoggingEnabled(requestLoggingEnabled)
                 .longFormat(longFormat)
+                .connectionPoolProvider(connectionPoolProvider)
+                .originStatsFactory(originStatsFactory)
                 .build();
     }
 

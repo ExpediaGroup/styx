@@ -16,15 +16,13 @@
 package com.hotels.styx.client.retry;
 
 import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.api.client.ConnectionPoolProvider;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.netty.exceptions.IsRetryableException;
 
 import java.util.Optional;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.collect.Iterables.contains;
-import static java.util.stream.StreamSupport.stream;
 
 /**
  * A {@link RetryPolicy} that tries a configurable <code>maxAttempts</code>.
@@ -35,7 +33,7 @@ public class RetryNTimes extends AbstractRetryPolicy {
     }
 
     @Override
-    public RetryPolicy.Outcome evaluate(Context context, LoadBalancingStrategy loadBalancingStrategy) {
+    public RetryPolicy.Outcome evaluate(Context context, ConnectionPoolProvider connectionPoolProvider) {
         return new RetryPolicy.Outcome() {
             @Override
             public long retryIntervalMillis() {
@@ -44,9 +42,7 @@ public class RetryNTimes extends AbstractRetryPolicy {
 
             @Override
             public Optional<ConnectionPool> nextOrigin() {
-                return stream(context.origins().spliterator(), false)
-                        .filter(origin -> !contains(context.previousOrigins(), origin))
-                        .findFirst();
+                return connectionPoolProvider.connectionPool(context.currentRequest(), context.previousOrigins());
             }
 
             @Override
