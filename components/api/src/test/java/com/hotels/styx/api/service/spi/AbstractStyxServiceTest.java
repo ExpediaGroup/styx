@@ -16,18 +16,16 @@
 package com.hotels.styx.api.service.spi;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.STARTING;
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.RUNNING;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.FAILED;
+import static com.hotels.styx.api.service.spi.StyxServiceStatus.RUNNING;
+import static com.hotels.styx.api.service.spi.StyxServiceStatus.STARTING;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.STOPPED;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.STOPPING;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -40,8 +38,12 @@ public class AbstractStyxServiceTest {
     public void exposesNameAndStatusViaAdminInterface() {
         DerivedStyxService service = new DerivedStyxService("derived-service", new CompletableFuture());
 
-        Observable<HttpResponse> responseObs = service.adminInterfaceHandlers().get("status").handle(GET);
-        assertThat(responseBody(responseObs), is("{ name: \"derived-service\" status: \"CREATED\" }"));
+        FullHttpResponse<String> response = service.adminInterfaceHandlers().get("status").handle(GET)
+                .flatMap(r -> r.toFullHttpResponse(1024))
+                .toBlocking()
+                .first();
+
+        assertThat(response.body(), is("{ name: \"derived-service\" status: \"CREATED\" }"));
     }
 
     @Test
@@ -107,7 +109,7 @@ public class AbstractStyxServiceTest {
     }
 
     @Test
-    public void inStoppingStateAfterStopIsCalled() throws Exception {
+    public void inStoppingStateAfterStopIsCalled() {
         DerivedStyxService service = new DerivedStyxService("derived-service", completedFuture(null), new CompletableFuture());
 
         CompletableFuture<Void> started = service.start();
@@ -120,7 +122,7 @@ public class AbstractStyxServiceTest {
     }
 
     @Test
-    public void inStoppedStateAfterSubClassHasStopped() throws Exception {
+    public void inStoppedStateAfterSubClassHasStopped() {
         CompletableFuture<Void> subclassStopped = new CompletableFuture<>();
         DerivedStyxService service = new DerivedStyxService("derived-service", completedFuture(null), subclassStopped);
 
@@ -138,7 +140,7 @@ public class AbstractStyxServiceTest {
     }
 
     @Test
-    public void inFailedStateWhenSubclassFailsToStop() throws Exception {
+    public void inFailedStateWhenSubclassFailsToStop() {
         CompletableFuture<Void> subclassStopped = new CompletableFuture<>();
         DerivedStyxService service = new DerivedStyxService("derived-service", completedFuture(null), subclassStopped);
 
@@ -204,16 +206,6 @@ public class AbstractStyxServiceTest {
         protected CompletableFuture<Void> stopService() {
             return stopFuture;
         }
-    }
-
-    private static String responseBody(Observable<HttpResponse> responseObs) {
-        return responseBody(responseObs, 1024);
-    }
-
-    private static String responseBody(Observable<HttpResponse> responseObs, int maxSize) {
-        return responseObs.flatMap(
-                response -> response.decode((byteBuf) -> byteBuf.toString(UTF_8), maxSize)
-        ).toBlocking().single().body();
     }
 
 }

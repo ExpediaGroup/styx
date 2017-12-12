@@ -18,6 +18,8 @@ package com.hotels.styx.common;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static java.lang.Thread.currentThread;
+
 /**
  * An utility class to make your life easier with CompletableFutures.
  */
@@ -26,8 +28,6 @@ public final class StyxFutures {
     }
 
     /**
-     *
-     * TODO: Mikko: Probably not a great idea to consume InterruptedException like this? Esp. from production code?
      *
      * Blocks on the CompletableFuture. Wraps the InterruptedException and/or ExecutionException
      * into a RuntimeException.
@@ -40,6 +40,7 @@ public final class StyxFutures {
         try {
             return future.get();
         } catch (InterruptedException | ExecutionException e) {
+            currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }
