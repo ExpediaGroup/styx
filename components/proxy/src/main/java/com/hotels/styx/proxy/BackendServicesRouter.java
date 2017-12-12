@@ -20,6 +20,7 @@ import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.client.ConnectionPoolProvider;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.server.HttpRouter;
@@ -44,10 +45,13 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     private static final Logger LOG = getLogger(BackendServicesRouter.class);
 
     private final BackendServiceClientFactory clientFactory;
+    private final ConnectionPoolProviderFactory connectionPoolProviderFactory;
     private final ConcurrentMap<String, ProxyToClientPipeline> routes;
 
-    public BackendServicesRouter(BackendServiceClientFactory clientFactory) {
+    public BackendServicesRouter(BackendServiceClientFactory clientFactory,
+                                 ConnectionPoolProviderFactory connectionPoolProviderFactory) {
         this.clientFactory = checkNotNull(clientFactory);
+        this.connectionPoolProviderFactory = connectionPoolProviderFactory;
         this.routes = new ConcurrentSkipListMap<>(
                 comparingInt(String::length).reversed()
                         .thenComparing(naturalOrder()));
@@ -70,7 +74,8 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     @Override
     public void onChange(Registry.Changes<BackendService> changes) {
         concat(changes.added(), changes.updated()).forEach(backendService -> {
-            ProxyToClientPipeline pipeline = new ProxyToClientPipeline(newClientHandler(backendService));
+            ConnectionPoolProvider cpp = connectionPoolProviderFactory.createProvider(backendService);
+            ProxyToClientPipeline pipeline = new ProxyToClientPipeline(newClientHandler(backendService, cpp), cpp);
 
             ProxyToClientPipeline updated = routes.put(backendService.path(), pipeline);
             LOG.info("added path={} current routes={}", backendService.path(), routes.keySet());
@@ -86,8 +91,8 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                         .close());
     }
 
-    private HttpClient newClientHandler(BackendService backendService) {
-        return clientFactory.createClient(backendService);
+    private HttpClient newClientHandler(BackendService backendService, ConnectionPoolProvider cpp) {
+        return clientFactory.createClient(backendService, cpp);
     }
 
     @Override
@@ -97,9 +102,11 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
     private static class ProxyToClientPipeline implements HttpHandler2 {
         private final HttpClient client;
+        private final ConnectionPoolProvider connectionPoolProvider;
 
-        ProxyToClientPipeline(HttpClient httpClient) {
+        ProxyToClientPipeline(HttpClient httpClient, ConnectionPoolProvider connectionPoolProvider) {
             this.client = checkNotNull(httpClient);
+            this.connectionPoolProvider = connectionPoolProvider;
         }
 
         @Override
@@ -109,11 +116,11 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         }
 
         public void close() {
-            client.close();
+            connectionPoolProvider.close();
         }
 
         public void registerStatusGauges() {
-            client.registerStatusGauges();
+            connectionPoolProvider.registerStatusGauges();
         }
 
         private static void handleError(HttpRequest request, Throwable throwable) {

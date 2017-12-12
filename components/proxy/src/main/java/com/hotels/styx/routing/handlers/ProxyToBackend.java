@@ -24,6 +24,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
+import com.hotels.styx.proxy.ConnectionPoolProviderFactory;
 import com.hotels.styx.routing.config.BuiltinHandlersFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingConfigDefinition;
@@ -55,9 +56,12 @@ public class ProxyToBackend implements HttpHandler2 {
      */
     public static class ConfigFactory implements HttpHandlerFactory {
         private final BackendServiceClientFactory clientFactory;
+        private final ConnectionPoolProviderFactory connectionPoolProviderFactory;
 
-        public ConfigFactory(BackendServiceClientFactory clientFactory) {
+        public ConfigFactory(BackendServiceClientFactory clientFactory,
+                             ConnectionPoolProviderFactory connectionPoolProviderFactory) {
             this.clientFactory = clientFactory;
+            this.connectionPoolProviderFactory = connectionPoolProviderFactory;
         }
 
         @Override
@@ -72,7 +76,8 @@ public class ProxyToBackend implements HttpHandler2 {
                     .get("backend.origins", JsonNode.class)
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", append(parents, "backend")), "origins"));
 
-            return new ProxyToBackend(clientFactory.createClient(backendService));
+            return new ProxyToBackend(clientFactory.createClient(backendService,
+                    connectionPoolProviderFactory.createProvider(backendService)));
         }
     }
 }

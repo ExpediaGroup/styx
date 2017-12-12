@@ -18,7 +18,7 @@ package com.hotels.styx.api.client.retrypolicy.spi;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.api.client.ConnectionPoolProvider;
 
 import java.util.Optional;
 
@@ -59,13 +59,6 @@ public interface RetryPolicy {
         Optional<Throwable> lastException();
 
         /**
-         * The list of currently active origins.
-         *
-         * @return connection pools for the active origins
-         */
-        Iterable<ConnectionPool> origins();
-
-        /**
          * Previously tried origins.
          *
          * @return connection pools for the previously tried origins
@@ -104,10 +97,10 @@ public interface RetryPolicy {
      *
      * @param context               A {@link Context} object that indicates the number of retries,
      *                              last requests results, etc
-     * @param loadBalancingStrategy
+     * @param connectionPoolProvider
      * @return A {@link com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy.Outcome}
      * whether the request should be retried and specifies the delay before the next retry
      */
-    Outcome evaluate(Context context, LoadBalancingStrategy loadBalancingStrategy);
+    Outcome evaluate(Context context, ConnectionPoolProvider connectionPoolProvider);
 }
 

@@ -19,6 +19,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.api.client.ConnectionPoolProvider;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import org.slf4j.Logger;
 import rx.Observable;
@@ -47,6 +48,7 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
     private final HttpRequest request;
     private final Iterable<ConnectionPool> previouslyUsedOrigins;
     private HttpTransaction txn;
+    private final ConnectionPoolProvider connectionPoolProvider;
 
     private RetryOnErrorHandler(Builder builder) {
         this.client = builder.client;
@@ -54,6 +56,7 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
         this.request = builder.request;
         this.previouslyUsedOrigins = builder.previouslyUsedOrigins;
         this.txn = builder.transaction;
+        this.connectionPoolProvider = builder.connectionPoolProvider;
     }
 
     @Override
@@ -61,8 +64,8 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
         if (txn.isCancelled()) {
             return Observable.error(throwable);
         }
-        RetryPolicyContext context = new RetryPolicyContext(client.id(), attemptCount, throwable, request, previouslyUsedOrigins, client.originsInventory().snapshot());
-        RetryPolicy.Outcome outcome = client.retryPolicy().evaluate(context, client.loadBalancingStrategy());
+        RetryPolicyContext context = new RetryPolicyContext(client.id(), attemptCount, throwable, request, previouslyUsedOrigins);
+        RetryPolicy.Outcome outcome = client.retryPolicy().evaluate(context, connectionPoolProvider);
         if (!outcome.shouldRetry() || !outcome.nextOrigin().isPresent()) {
             return Observable.error(throwable);
         }
@@ -116,16 +119,14 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
         private final Throwable lastException;
         private final HttpRequest request;
         private final Iterable<ConnectionPool> previouslyUsedOrigins;
-        private final Iterable<ConnectionPool> origins;
 
         RetryPolicyContext(Id appId, int retryCount, Throwable lastException, HttpRequest request,
-                           Iterable<ConnectionPool> previouslyUsedOrigins, Iterable<ConnectionPool> origins) {
+                           Iterable<ConnectionPool> previouslyUsedOrigins) {
             this.appId = appId;
             this.retryCount = retryCount;
             this.lastException = lastException;
             this.request = request;
             this.previouslyUsedOrigins = previouslyUsedOrigins;
-            this.origins = origins;
         }
 
         @Override
@@ -141,11 +142,6 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
         @Override
         public Optional<Throwable> lastException() {
             return Optional.ofNullable(lastException);
-        }
-
-        @Override
-        public Iterable<ConnectionPool> origins() {
-            return origins;
         }
 
         @Override
@@ -166,7 +162,6 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
                     .add("lastException", lastException)
                     .add("request", request.url())
                     .add("previouslyUsedOrigins", hosts(previouslyUsedOrigins))
-                    .add("origins", hosts(origins))
                     .toString();
         }
 
@@ -183,6 +178,7 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
         private HttpRequest request;
         private Iterable<ConnectionPool> previouslyUsedOrigins = emptyList();
         private HttpTransaction transaction;
+        private ConnectionPoolProvider connectionPoolProvider;
 
         public Builder client(StyxHttpClient client) {
             this.client = client;
@@ -196,6 +192,11 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
 
         public Builder request(HttpRequest request) {
             this.request = request;
+            return this;
+        }
+
+        public Builder connectionPoolProvider(ConnectionPoolProvider connectionPoolProvider) {
+            this.connectionPoolProvider = connectionPoolProvider;
             return this;
         }
 

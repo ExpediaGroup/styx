@@ -21,8 +21,10 @@ import com.google.common.util.concurrent.Service;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.proxy.ConnectionPoolProviderFactory;
 import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
+import com.hotels.styx.proxy.StyxConnectionPoolProviderFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.config.RoutingConfigDefinition;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
@@ -55,9 +57,13 @@ public class UserConfiguredPipelineFactory implements HttpPipelineFactory {
         this.registries = checkNotNull(services);
     }
 
-    private static StyxBackendServiceClientFactory serviceClientFactory(Environment environment) {
+    private static ConnectionPoolProviderFactory serviceConnectionPoolProviderFactory(Environment environment) {
         ProxyServerConfig proxyConfig = environment.styxConfig().proxyServerConfig();
-        return new StyxBackendServiceClientFactory(environment, proxyConfig.clientWorkerThreadsCount());
+        return new StyxConnectionPoolProviderFactory(environment, proxyConfig.clientWorkerThreadsCount());
+    }
+
+    private static StyxBackendServiceClientFactory serviceClientFactory(Environment environment) {
+        return new StyxBackendServiceClientFactory(environment);
     }
 
     @Override
@@ -72,7 +78,8 @@ public class UserConfiguredPipelineFactory implements HttpPipelineFactory {
                         "ConditionRouter", new ConditionRouter.ConfigFactory(),
                         "BackendServiceProxy", new BackendServiceProxy.ConfigFactory(environment, registries),
                         "InterceptorPipeline", new HttpInterceptorPipeline.ConfigFactory(pluginsSupplier, builtinInterceptorsFactory),
-                        "ProxyToBackend", new ProxyToBackend.ConfigFactory(serviceClientFactory(environment))
+                        "ProxyToBackend", new ProxyToBackend.ConfigFactory(serviceClientFactory(environment),
+                                serviceConnectionPoolProviderFactory(environment))
                 ));
 
         RoutingConfigDefinition pipelineConfig = configuration.get("httpPipeline", RoutingConfigDefinition.class).get();
