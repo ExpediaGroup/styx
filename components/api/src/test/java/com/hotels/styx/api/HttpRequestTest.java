@@ -529,7 +529,7 @@ public class HttpRequestTest {
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpRequest<String> full = request.toFullHttpRequest(byteBuf -> byteBuf.toString(UTF_8), 0x100000)
+        FullHttpRequest full = request.toFullHttpRequest(byteBuf -> byteBuf.toString(UTF_8), 0x100000)
                 .toBlocking()
                 .single();
 
@@ -550,7 +550,7 @@ public class HttpRequestTest {
                 .body(empty())
                 .build();
 
-        FullHttpRequest<String> full = request.toFullHttpRequest(byteBuf -> byteBuf.toString(UTF_8), 0x100000)
+        FullHttpRequest full = request.toFullHttpRequest(byteBuf -> byteBuf.toString(UTF_8), 0x100000)
                 .toBlocking()
                 .single();
 
@@ -564,7 +564,7 @@ public class HttpRequestTest {
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpRequest<String> full = request.toFullHttpRequest(0x100000)
+        FullHttpRequest full = request.toFullHttpRequest(0x100000)
                 .toBlocking()
                 .single();
 

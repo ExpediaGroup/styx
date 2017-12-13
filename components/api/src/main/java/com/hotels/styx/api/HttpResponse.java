@@ -292,7 +292,7 @@ public final class HttpResponse implements HttpMessage {
      * @param maxContentBytes maximum content bytes before an exception is thrown
      * @return a decoded (aggregated/full) response
      */
-    public Observable<FullHttpResponse<String>> toFullHttpResponse(int maxContentBytes) {
+    public Observable<FullHttpResponse> toFullHttpResponse(int maxContentBytes) {
         return toFullHttpResponse(byteBuf -> byteBuf.toString(UTF_8), maxContentBytes);
     }
 
@@ -305,9 +305,9 @@ public final class HttpResponse implements HttpMessage {
      * @param <T> full body type
      * @return a decoded (aggregated/full) response
      */
-    public <T> Observable<FullHttpResponse<T>> toFullHttpResponse(Function<ByteBuf, T> decoder, int maxContentBytes) {
+    public <T> Observable<FullHttpResponse> toFullHttpResponse(Function<ByteBuf, String> decoder, int maxContentBytes) {
         return body.decode(decoder, maxContentBytes)
-                .map(decoded -> new FullHttpResponse.Builder<>(this, decoded))
+                .map(decoded -> new FullHttpResponse.Builder(this, decoded))
                 .map(FullHttpResponse.Builder::build);
     }
 
@@ -417,7 +417,7 @@ public final class HttpResponse implements HttpMessage {
             body(response.body);
         }
 
-        public Builder(FullHttpResponse<?> response, Observable<ByteBuf> body) {
+        public Builder(FullHttpResponse response, Observable<ByteBuf> body) {
             this.status = response.status();
             headers(response.headers().newBuilder());
             this.cookies = new ArrayList<>(response.cookies());
