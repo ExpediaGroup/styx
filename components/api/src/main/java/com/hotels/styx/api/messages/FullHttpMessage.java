@@ -28,10 +28,8 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 
 /**
  * All behaviour common to both full requests and full responses.
- *
- * @param <T> body type
  */
-public interface FullHttpMessage<T> {
+public interface FullHttpMessage {
     /**
      * Returns the protocol version of this.
      *
@@ -58,7 +56,7 @@ public interface FullHttpMessage<T> {
      *
      * @return the body
      */
-    T body();
+    String body();
 
     /**
      * Returns the value of the header with the specified {@code name}.
