@@ -251,7 +251,7 @@ public final class HttpRequest implements HttpMessage {
      * @param maxContentBytes maximum content bytes before an exception is thrown
      * @return a decoded (aggregated/full) request
      */
-    public Observable<FullHttpRequest<String>> toFullHttpRequest(int maxContentBytes) {
+    public Observable<FullHttpRequest> toFullHttpRequest(int maxContentBytes) {
         return toFullHttpRequest(byteBuf -> byteBuf.toString(UTF_8), maxContentBytes);
     }
 
@@ -264,9 +264,9 @@ public final class HttpRequest implements HttpMessage {
      * @param <T> full body type
      * @return a decoded (aggregated/full) request
      */
-    public <T> Observable<FullHttpRequest<T>> toFullHttpRequest(Function<ByteBuf, T> decoder, int maxContentBytes) {
+    public <T> Observable<FullHttpRequest> toFullHttpRequest(Function<ByteBuf, String> decoder, int maxContentBytes) {
         return body.decode(decoder, maxContentBytes)
-                .map(decoded -> new FullHttpRequest.Builder<>(this, decoded))
+                .map(decoded -> new FullHttpRequest.Builder(this, decoded))
                 .map(FullHttpRequest.Builder::build);
     }
 
@@ -479,7 +479,7 @@ public final class HttpRequest implements HttpMessage {
             version(request.version);
         }
 
-        public Builder(com.hotels.styx.api.messages.FullHttpRequest<?> request, Observable<ByteBuf> body) {
+        public Builder(com.hotels.styx.api.messages.FullHttpRequest request, Observable<ByteBuf> body) {
             this.id = request.id();
             this.secure = request.isSecure();
             this.url = request.url();

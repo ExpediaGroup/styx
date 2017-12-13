@@ -62,7 +62,7 @@ import static org.hamcrest.Matchers.nullValue;
 public class FullHttpResponseTest {
     @Test
     public void encodesToStreamingHttpResponse() {
-        FullHttpResponse<String> response = response(CREATED)
+        FullHttpResponse response = response(CREATED)
                 .version(HTTP_1_0)
                 .header("HeaderName", "HeaderValue")
                 .addCookie("CookieName", "CookieValue")
@@ -85,7 +85,7 @@ public class FullHttpResponseTest {
     }
 
     @Test(dataProvider = "emptyBodyResponses")
-    public void encodesToStreamingHttpResponseWithEmptyBody(FullHttpResponse<String> response) {
+    public void encodesToStreamingHttpResponseWithEmptyBody(FullHttpResponse response) {
         HttpResponse streaming = response.toStreamingHttpResponse(string -> copiedBuffer(string, UTF_8));
 
         TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
@@ -114,7 +114,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void encodingToStreamingHttpResponseDefaultsToUTF8() {
-        FullHttpResponse<String> response = response()
+        FullHttpResponse response = response()
                 .body("foobar")
                 .build();
 
@@ -132,7 +132,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void createsAResponseWithDefaultValues() {
-        FullHttpResponse<String> response = response().build();
+        FullHttpResponse response = response().build();
         assertThat(response.version(), is(HTTP_1_1));
         assertThat(response.cookies(), is(emptyIterable()));
         assertThat(response.headers(), is(emptyIterable()));
@@ -141,7 +141,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void createsResponseWithMinimalInformation() {
-        FullHttpResponse<String> response = response()
+        FullHttpResponse response = response()
                 .status(BAD_GATEWAY)
                 .version(HTTP_1_0)
                 .build();
@@ -160,7 +160,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void setsASingleOutboundCookie() {
-        FullHttpResponse<String> response = response()
+        FullHttpResponse response = response()
                 .addCookie(cookie("user", "QSplbl9HX1VL", domain(".hotels.com"), path("/"), maxAge(3600)))
                 .build();
 
@@ -169,7 +169,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void setsMultipleOutboundCookies() {
-        FullHttpResponse<String> response = response()
+        FullHttpResponse response = response()
                 .addCookie("a", "b")
                 .addCookie("c", "d")
                 .build();
@@ -183,7 +183,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void getASingleCookieValue() {
-        FullHttpResponse<String> response = response()
+        FullHttpResponse response = response()
                 .addCookie("a", "b")
                 .addCookie("c", "d")
                 .build();
@@ -194,11 +194,11 @@ public class FullHttpResponseTest {
     @Test
     public void canRemoveAHeader() {
         Object headerValue = "b";
-        FullHttpResponse<String> response = response()
+        FullHttpResponse response = response()
                 .header("a", headerValue)
                 .addHeader("c", headerValue)
                 .build();
-        FullHttpResponse<String> shouldRemoveHeader = response.newBuilder()
+        FullHttpResponse shouldRemoveHeader = response.newBuilder()
                 .removeHeader("c")
                 .build();
 
@@ -207,18 +207,18 @@ public class FullHttpResponseTest {
 
     @Test
     public void removesACookie() {
-        FullHttpResponse<String> response = new FullHttpResponse.Builder<>(seeOther("/home"))
+        FullHttpResponse response = new FullHttpResponse.Builder(seeOther("/home"))
                 .addCookie(cookie("a", "b"))
                 .addCookie(cookie("c", "d"))
                 .build();
-        FullHttpResponse<String> shouldClearCookie = response.newBuilder()
+        FullHttpResponse shouldClearCookie = response.newBuilder()
                 .removeCookie("a")
                 .build();
 
         assertThat(shouldClearCookie.cookies(), contains(cookie("c", "d")));
     }
 
-    private static FullHttpResponse<String> seeOther(String newLocation) {
+    private static FullHttpResponse seeOther(String newLocation) {
         return response(SEE_OTHER)
                 .header(LOCATION, newLocation)
                 .build();
@@ -226,11 +226,11 @@ public class FullHttpResponseTest {
 
     @Test
     public void canRemoveResponseBody() {
-        FullHttpResponse<String> response = response(NO_CONTENT)
+        FullHttpResponse response = response(NO_CONTENT)
                 .body("shouldn't be here")
                 .build();
 
-        FullHttpResponse<String> shouldClearBody = response.newBuilder()
+        FullHttpResponse shouldClearBody = response.newBuilder()
                 .body(null)
                 .build();
 
@@ -239,13 +239,13 @@ public class FullHttpResponseTest {
 
     @Test
     public void supportsCaseInsensitiveHeaderNames() {
-        FullHttpResponse<String> response = response(OK).header("Content-Type", "text/plain").build();
+        FullHttpResponse response = response(OK).header("Content-Type", "text/plain").build();
         assertThat(response.header("content-type"), isValue("text/plain"));
     }
 
     @Test
     public void headerValuesAreCaseSensitive() {
-        FullHttpResponse<String> response = response(OK).header("Content-Type", "TEXT/PLAIN").build();
+        FullHttpResponse response = response(OK).header("Content-Type", "TEXT/PLAIN").build();
         assertThat(response.header("content-type"), not(isValue("text/plain")));
     }
 
@@ -262,8 +262,8 @@ public class FullHttpResponseTest {
 
     @Test
     public void shouldRemoveContentLengthFromChunkedMessages() {
-        FullHttpResponse<String> response = response().header(CONTENT_LENGTH, 5).build();
-        FullHttpResponse<String> chunkedResponse = response.newBuilder().setChunked().build();
+        FullHttpResponse response = response().header(CONTENT_LENGTH, 5).build();
+        FullHttpResponse chunkedResponse = response.newBuilder().setChunked().build();
 
         assertThat(chunkedResponse.chunked(), is(true));
         assertThat(chunkedResponse.header(CONTENT_LENGTH).isPresent(), is(false));
@@ -271,8 +271,8 @@ public class FullHttpResponseTest {
 
     @Test
     public void shouldNotFailToRemoveNonExistentContentLength() {
-        FullHttpResponse<String> response = response().build();
-        FullHttpResponse<String> chunkedResponse = response.newBuilder().setChunked().build();
+        FullHttpResponse response = response().build();
+        FullHttpResponse chunkedResponse = response.newBuilder().setChunked().build();
 
         assertThat(chunkedResponse.chunked(), is(true));
         assertThat(chunkedResponse.header(CONTENT_LENGTH).isPresent(), is(false));
@@ -280,7 +280,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void overridesContent() {
-        FullHttpResponse<String> response = response()
+        FullHttpResponse response = response()
                 .body("Response content.")
                 .body(" ")
                 .body("Extra content")
@@ -291,7 +291,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void addsHeaderValue() {
-        FullHttpResponse<String> response = response()
+        FullHttpResponse response = response()
                 .header("name", "value1")
                 .addHeader("name", "value2")
                 .build();
@@ -363,13 +363,13 @@ public class FullHttpResponseTest {
 
     @Test
     public void allowsModificationOfHeadersBasedOnBody() {
-        FullHttpResponse<String> response = response()
+        FullHttpResponse response = response()
                 .body("foobar")
                 .build();
 
         assertThat(response.header("some-header"), isAbsent());
 
-        FullHttpResponse<String> newResponse = response.newBuilder()
+        FullHttpResponse newResponse = response.newBuilder()
                 .header("some-header", contentLength(response.body()))
                 .build();
 
@@ -379,22 +379,22 @@ public class FullHttpResponseTest {
 
     @Test
     public void allowsModificationOfBodyBasedOnExistingBody() {
-        FullHttpResponse<String> response = response()
+        FullHttpResponse response = response()
                 .body("foobar")
                 .build();
 
-        FullHttpResponse<String> newResponse = response.newBuilder()
+        FullHttpResponse newResponse = response.newBuilder()
                 .body(response.body() + "x")
                 .build();
 
         assertThat(newResponse.body(), is("foobarx"));
     }
 
-    private static FullHttpResponse.Builder<String> response() {
+    private static FullHttpResponse.Builder response() {
         return FullHttpResponse.response();
     }
 
-    private static FullHttpResponse.Builder<String> response(HttpResponseStatus status) {
+    private static FullHttpResponse.Builder response(HttpResponseStatus status) {
         return FullHttpResponse.response(status);
     }
 
@@ -402,7 +402,7 @@ public class FullHttpResponseTest {
         return content.getBytes(UTF_8).length;
     }
 
-    private static Optional<String> contentLength(FullHttpResponse.Builder<?> builder) {
+    private static Optional<String> contentLength(FullHttpResponse.Builder builder) {
         return builder.build().header(CONTENT_LENGTH);
     }
 }
