@@ -79,7 +79,9 @@ public class FullHttpRequestTest {
         assertThat(streaming.clientAddress().getPort(), is(8080));
         assertThat(streaming.isSecure(), is(true));
         assertThat(streaming.version(), is(HTTP_1_0));
-        assertThat(streaming.headers(), contains(header("HeaderName", "HeaderValue")));
+        assertThat(streaming.headers(), containsInAnyOrder(
+                header("Content-Length", "6"),
+                header("HeaderName", "HeaderValue")));
         assertThat(streaming.cookies(), contains(cookie("CookieName", "CookieValue")));
 
         String body = streaming.body()
