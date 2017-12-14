@@ -105,7 +105,7 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
   test("Emits onError when origin responds too slowly") {
     originOneServer.stub(urlStartingWith("/"), aResponse
       .withStatus(200)
-      .withFixedDelay(1000))
+      .withFixedDelay(3000))
 
     client.sendRequest(get("/foo/4").build()).subscribe(testSubscriber)
     val duration = time {
