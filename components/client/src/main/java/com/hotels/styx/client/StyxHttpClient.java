@@ -17,12 +17,10 @@ package com.hotels.styx.client;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.eventbus.EventBus;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
@@ -31,15 +29,8 @@ import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.applications.OriginStats;
-import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
-import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
-import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
-import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
-import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
-import com.hotels.styx.client.healthcheck.UrlRequestHealthCheck;
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy;
 import com.hotels.styx.client.netty.HttpRequestOperation;
-import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -54,7 +45,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getFirst;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
-import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
+import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
 import static io.netty.handler.codec.http.HttpMethod.HEAD;
 import static java.util.Collections.emptyList;
@@ -74,7 +65,6 @@ public final class StyxHttpClient implements HttpClient {
     private final RetryPolicy retryPolicy;
     private final boolean flowControlEnabled;
     private final Transport transport;
-    private final OriginHealthStatusMonitor originHealthStatusMonitor;
     private final OriginStatsFactory originStatsFactory;
     private final BackendService backendService;
     private final MetricRegistry metricsRegistry;
@@ -84,8 +74,6 @@ public final class StyxHttpClient implements HttpClient {
     private StyxHttpClient(Builder builder) {
         this.backendService = builder.backendService;
         this.id = backendService.id();
-
-        this.originHealthStatusMonitor = builder.healthStatusMonitor;
 
         this.flowControlEnabled = builder.flowControlEnabled;
 
@@ -104,11 +92,10 @@ public final class StyxHttpClient implements HttpClient {
                 ? builder.retryPolicy
                 : new RetryNTimes(3);
 
-        this.originsInventory = builder.inventory;
+        this.originsInventory = builder.originsInventory;
         this.rewriteRuleset = new RewriteRuleset(builder.rewriteRules);
         this.transport = new Transport(requestOperationFactory, id, builder.styxHeaderConfig);
 
-        this.originsInventory.addInventoryStateChangeListener(loadBalancingStrategy);
         this.metricsRegistry = builder.metricsRegistry;
         this.contentValidation = builder.contentValidation;
 
@@ -272,7 +259,6 @@ public final class StyxHttpClient implements HttpClient {
 
     @Override
     public void close() {
-        this.originHealthStatusMonitor.stopAsync();
         this.originsInventory.close();
     }
 
@@ -321,22 +307,14 @@ public final class StyxHttpClient implements HttpClient {
      */
     public static class Builder {
         private final BackendService backendService;
-        private EventBus eventBus = new EventBus();
         private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
-        private final HttpConfig.Builder httpConfigBuilder = newHttpConfigBuilder();
-        private int clientWorkerThreadsCount = 1;
-        private Connection.Factory connectionFactory;
         private boolean flowControlEnabled;
         private List<RewriteRule> rewriteRules = emptyList();
         private HttpRequestOperationFactory requestOperationFactory;
         private LoadBalancingStrategy loadBalancingStrategy = new RoundRobinStrategy();
-        private ConnectionPool.Factory connectionPoolFactory;
         private RetryPolicy retryPolicy;
-        private String version = "";
         private String originRestrictionCookie;
-        private OriginHealthStatusMonitor.Factory originHealthStatusMonitorFactory;
-        private OriginHealthStatusMonitor healthStatusMonitor;
-        private OriginsInventory inventory;
+        private OriginsInventory originsInventory;
         private boolean contentValidation;
         private boolean requestLoggingEnabled;
         private boolean longFormat;
@@ -356,29 +334,8 @@ public final class StyxHttpClient implements HttpClient {
             return this;
         }
 
-        public Builder clientWorkerThreadsCount(int clientWorkerThreadsCount) {
-            this.clientWorkerThreadsCount = clientWorkerThreadsCount;
-            return this;
-        }
-
-        public Builder connectionFactory(Connection.Factory connectionFactory) {
-            this.connectionFactory = checkNotNull(connectionFactory);
-            return this;
-        }
-
-        @VisibleForTesting
-        Builder connectionPoolFactory(ConnectionPool.Factory connectionPoolFactory) {
-            this.connectionPoolFactory = checkNotNull(connectionPoolFactory);
-            return this;
-        }
-
         public Builder retryPolicy(RetryPolicy retryPolicy) {
             this.retryPolicy = checkNotNull(retryPolicy);
-            return this;
-        }
-
-        public Builder eventBus(EventBus eventBus) {
-            this.eventBus = checkNotNull(eventBus);
             return this;
         }
 
@@ -404,16 +361,6 @@ public final class StyxHttpClient implements HttpClient {
             return this;
         }
 
-        public Builder originHealthStatusMonitorFactory(OriginHealthStatusMonitor.Factory originHealthStatusMonitorFactory) {
-            this.originHealthStatusMonitorFactory = checkNotNull(originHealthStatusMonitorFactory);
-            return this;
-        }
-
-        public Builder version(String version) {
-            this.version = version;
-            return this;
-        }
-
         public Builder requestLoggingEnabled(boolean requestLoggingEnabled) {
             this.requestLoggingEnabled = requestLoggingEnabled;
             return this;
@@ -429,59 +376,9 @@ public final class StyxHttpClient implements HttpClient {
             return this;
         }
 
-        private OriginsInventory originsInventory(OriginHealthStatusMonitor originHealthStatusMonitor, HttpConfig httpConfig, MetricRegistry metricsRegistry) {
-            originHealthStatusMonitor.startAsync().awaitRunning();
-
-            ConnectionPool.Factory hostConnectionPoolFactory = connectionPoolFactory(backendService.connectionPoolConfig(), httpConfig, metricsRegistry);
-            OriginsInventory originsInventory = new OriginsInventory(eventBus, backendService.id(), originHealthStatusMonitor, hostConnectionPoolFactory, metricsRegistry);
-            originsInventory.addOrigins(backendService.origins());
-
-            return originsInventory;
-        }
-
-        private ConnectionPool.Factory connectionPoolFactory(ConnectionPool.Settings connectionPoolSettings, HttpConfig httpConfig, MetricRegistry metricsRegistry) {
-            return connectionPoolFactory != null ? connectionPoolFactory : newConnectionPoolFactory(connectionPoolSettings, httpConfig, metricsRegistry);
-        }
-
-        private ConnectionPoolFactory newConnectionPoolFactory(ConnectionPool.Settings connectionPoolSettings, HttpConfig httpConfig, MetricRegistry metricsRegistry) {
-            Connection.Factory cf = connectionFactory != null
-                    ? connectionFactory
-                    : new NettyConnectionFactory.Builder()
-                    .clientWorkerThreadsCount(clientWorkerThreadsCount)
-                    .httpConfig(httpConfig)
-                    .tlsSettings(backendService.tlsSettings().orElse(null))
-                    .build();
-
-            return new ConnectionPoolFactory.Builder()
-                    .connectionFactory(cf)
-                    .connectionPoolSettings(connectionPoolSettings)
-                    .metricRegistry(metricsRegistry)
-                    .build();
-        }
-
-        private OriginHealthCheckFunction originHealthCheckFunction(MetricRegistry metricRegistry) {
-            NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
-                    .name("Health-Check-Monitor-" + backendService.id())
-                    .tlsSettings(backendService.tlsSettings().orElse(null))
-                    .build();
-
-            ConnectionSettings connectionSettings = new ConnectionSettings(
-                    backendService.connectionPoolConfig().connectTimeoutMillis(),
-                    backendService.healthCheckConfig().timeoutMillis());
-
-            HttpClient client = new SimpleNettyHttpClient.Builder()
-                    .userAgent("Styx/" + version)
-                    .connectionDestinationFactory(
-                            new CloseAfterUseConnectionDestination.Factory()
-                                    .connectionSettings(connectionSettings)
-                                    .connectionFactory(connectionFactory))
-                    .build();
-
-            String healthCheckUri = backendService.healthCheckConfig()
-                    .uri()
-                    .orElseThrow(() -> new IllegalArgumentException("Health check URI missing for " + backendService.id()));
-
-            return new UrlRequestHealthCheck(healthCheckUri, client, metricRegistry);
+        public Builder originsInventory(OriginsInventory originsInventory) {
+            this.originsInventory = originsInventory;
+            return this;
         }
 
         public Builder enableContentValidation() {
@@ -494,12 +391,9 @@ public final class StyxHttpClient implements HttpClient {
                 metricsRegistry = new CodaHaleMetricRegistry();
             }
 
-            healthStatusMonitor = Optional.ofNullable(originHealthStatusMonitorFactory)
-                    .orElseGet(OriginHealthStatusMonitorFactory::new)
-                    .create(backendService.id(), backendService.healthCheckConfig(), () -> originHealthCheckFunction(metricsRegistry));
-
-            inventory = originsInventory(healthStatusMonitor, httpConfigBuilder.build(), metricsRegistry);
-
+            if (originsInventory == null) {
+                originsInventory = newOriginsInventoryBuilder(backendService).build();
+            }
             return new StyxHttpClient(this);
         }
     }

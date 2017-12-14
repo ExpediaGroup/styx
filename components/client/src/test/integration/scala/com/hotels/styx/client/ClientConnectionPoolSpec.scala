@@ -22,6 +22,7 @@ import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.client.Origin
 import com.hotels.styx.api.metrics.MetricRegistry
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
+import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
 import io.netty.handler.codec.http.HttpResponseStatus.OK
@@ -42,8 +43,16 @@ class ClientConnectionPoolSpec extends FunSuite with BeforeAndAfterAll with Even
     stubFor(WireMock.get(urlEqualTo("/foo")).willReturn(aResponse.withStatus(200)))
 
     metricRegistry = new CodaHaleMetricRegistry()
-    client = newHttpClientBuilder(new BackendService.Builder().origins(originOne).build())
+
+    val backendService = new BackendService.Builder().origins(originOne).build()
+
+    val originsInventory = newOriginsInventoryBuilder(backendService)
       .metricsRegistry(metricRegistry)
+      .build()
+
+    client = newHttpClientBuilder(backendService)
+      .metricsRegistry(metricRegistry)
+      .originsInventory(originsInventory)
       .build
   }
 
@@ -55,14 +64,14 @@ class ClientConnectionPoolSpec extends FunSuite with BeforeAndAfterAll with Even
     waitForResponse(client.sendRequest(get("/foo"))).status() should be(OK)
 
     eventually {
-      busConnections should be(0)
+      busyConnections should be(0)
     }
 
     terminateConnections()
 
     eventually {
       availableConnections should be(0)
-      busConnections should be(0)
+      busyConnections should be(0)
     }
   }
 
@@ -70,7 +79,7 @@ class ClientConnectionPoolSpec extends FunSuite with BeforeAndAfterAll with Even
     originServer.stop()
   }
 
-  def busConnections: Any = {
+  def busyConnections: Any = {
     connectionsPoolGauge(metricRegistry, originOne, "busy-connections")
   }
 
