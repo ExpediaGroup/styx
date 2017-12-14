@@ -393,7 +393,10 @@ public class FullHttpRequest implements FullHttpMessage {
          * @return {@code this}
          */
         public Builder body(String content) {
-            this.body = content;
+            String sanitisedContent = content == null ? "" : content;
+
+            header(CONTENT_LENGTH, sanitisedContent.getBytes(UTF_8).length);
+            this.body = sanitisedContent;
             return this;
         }
 

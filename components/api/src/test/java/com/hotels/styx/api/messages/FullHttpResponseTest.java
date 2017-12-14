@@ -53,6 +53,7 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
@@ -73,7 +74,9 @@ public class FullHttpResponseTest {
 
         assertThat(streaming.status(), is(CREATED));
         assertThat(streaming.version(), is(HTTP_1_0));
-        assertThat(streaming.headers(), contains(header("HeaderName", "HeaderValue")));
+        assertThat(streaming.headers(), containsInAnyOrder(
+                header("Content-Length", "6"),
+                header("HeaderName", "HeaderValue")));
         assertThat(streaming.cookies(), contains(cookie("CookieName", "CookieValue")));
 
         String body = streaming.body()
@@ -234,7 +237,7 @@ public class FullHttpResponseTest {
                 .body(null)
                 .build();
 
-        assertThat(shouldClearBody.body(), is(nullValue()));
+        assertThat(shouldClearBody.body(), is(""));
     }
 
     @Test
