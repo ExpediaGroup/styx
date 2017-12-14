@@ -19,6 +19,7 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy;
@@ -58,23 +59,30 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
         boolean longFormat = environment.styxConfig().get("request-logging.outbound.longFormat", Boolean.class)
                 .orElse(false);
 
-        return new StyxHttpClient.Builder(backendService)
-                .styxHeaderNames(environment.styxConfig().styxHeaderConfig())
+        OriginsInventory inventory = new OriginsInventory.Builder(backendService)
                 .version(environment.buildInfo().releaseVersion())
                 .eventBus(environment.eventBus())
-                .loadBalancingStrategy(loadBalancingStrategy)
-                .originRestrictionCookie(environment.configuration().get("originRestrictionCookie").orElse(null))
                 .metricsRegistry(environment.metricRegistry())
                 .connectionFactory(new NettyConnectionFactory.Builder()
                         .name("Styx")
                         .clientWorkerThreadsCount(clientWorkerThreadsCount)
                         .tlsSettings(backendService.tlsSettings().orElse(null)).build())
+                .build();
+
+        inventory.addInventoryStateChangeListener(loadBalancingStrategy);
+
+        return new StyxHttpClient.Builder(backendService)
+                .styxHeaderNames(environment.styxConfig().styxHeaderConfig())
+                .loadBalancingStrategy(loadBalancingStrategy)
+                .originRestrictionCookie(environment.configuration().get("originRestrictionCookie").orElse(null))
+                .metricsRegistry(environment.metricRegistry())
                 .retryPolicy(retryPolicy)
                 .flowControlEnabled(true)
                 .enableContentValidation()
                 .rewriteRules(backendService.rewrites())
                 .requestLoggingEnabled(requestLoggingEnabled)
                 .longFormat(longFormat)
+                .originsInventory(inventory)
                 .build();
     }
 

@@ -74,6 +74,7 @@ import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
+import static com.hotels.styx.client.OriginsInventory.*;
 import static com.hotels.styx.client.Protocol.HTTP;
 import static com.hotels.styx.client.Protocol.HTTPS;
 import static com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder;
@@ -163,7 +164,13 @@ public class StyxHttpClientTest {
     }
 
     private static HttpClient httpClient(int originPort) {
-        return newHttpClientBuilder(backendWithOrigins(originPort))
+        BackendService backendService = backendWithOrigins(originPort);
+
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+                .build();
+
+        return newHttpClientBuilder(backendService)
+                .originsInventory(originsInventory)
                 .build();
     }
 
@@ -184,6 +191,10 @@ public class StyxHttpClientTest {
                 .trustAllCerts(true)
                 .build();
 
+        BackendService backendService = backendBuilderWithOrigins(originPort)
+                .https(tlsSettings)
+                .build();
+
         ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPool.Factory()
                 .connectionFactory(new NettyConnectionFactory.Builder()
                         .tlsSettings(tlsSettings)
@@ -191,11 +202,13 @@ public class StyxHttpClientTest {
                 .connectionPoolSettings(new ConnectionPoolSettings.Builder()
                         .build());
 
-        return newHttpClientBuilder(
-                backendBuilderWithOrigins(originPort)
-                        .https(tlsSettings)
-                        .build())
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
                 .connectionPoolFactory(connectionPoolFactory)
+                .build();
+
+        return newHttpClientBuilder(
+                backendService)
+                .originsInventory(originsInventory)
                 .build();
     }
 
@@ -249,9 +262,14 @@ public class StyxHttpClientTest {
         Connection connection = aConnection();
         ConnectionPool pool = mockPool(connection);
         PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
+        BackendService backendService = backendWithOrigins(connection.getOrigin().host().getPort());
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(connection.getOrigin().host().getPort()))
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
                 .connectionPoolFactory(origin -> pool)
+                .build();
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+                .originsInventory(originsInventory)
                 .requestOperationFactory(newRequestOperationFactory(responseSubject))
                 .build();
 
@@ -270,8 +288,14 @@ public class StyxHttpClientTest {
         ConnectionPool pool = mockPool(connection);
         PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(connection.getOrigin().host().getPort()))
+        BackendService backendService = backendWithOrigins(connection.getOrigin().host().getPort());
+
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
                 .connectionPoolFactory(origin -> pool)
+                .build();
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+                .originsInventory(originsInventory)
                 .requestOperationFactory(newRequestOperationFactory(responseSubject))
                 .build();
 
@@ -290,10 +314,17 @@ public class StyxHttpClientTest {
         PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
         MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
         Origin origin = originWithId("localhost:234", "App-X", "Origin-Y");
+
         ConnectionPool pool = connectionPool(origin);
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.host().getPort()))
+        BackendService backendService = backendWithOrigins(origin.host().getPort());
+
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
                 .connectionPoolFactory(o -> pool)
+                .build();
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+                .originsInventory(originsInventory)
                 .requestOperationFactory(newRequestOperationFactory(responseSubject))
                 .metricsRegistry(metricRegistry)
                 .build();
@@ -335,9 +366,16 @@ public class StyxHttpClientTest {
     public void releasesConnectionWhenOperationExecutionFails() {
         Connection connection = openConnection(SOME_ORIGIN);
         ConnectionPool pool = mockPool(connection);
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(SOME_ORIGIN.host().getPort()))
+
+        BackendService backendService = backendWithOrigins(SOME_ORIGIN.host().getPort());
+
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+                .connectionPoolFactory(o -> pool)
+                .build();
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .requestOperationFactory(newFailingRequestOperationFactory(new RuntimeException()))
-                .connectionPoolFactory(origin -> pool)
+                .originsInventory(originsInventory)
                 .retryPolicy(doNotRetry())
                 .build();
 
@@ -369,9 +407,15 @@ public class StyxHttpClientTest {
         Throwable timeoutException = new ResponseTimeoutException(SOME_ORIGIN);
         when(pool.borrowConnection()).thenReturn(Observable.error(timeoutException));
 
-        StyxHttpClient styxClient = new StyxHttpClient.Builder(backendWithOrigins(SOME_ORIGIN.host().getPort()))
+        BackendService backendService = backendWithOrigins(SOME_ORIGIN.host().getPort());
+
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+                .connectionPoolFactory(o -> pool)
+                .build();
+
+        StyxHttpClient styxClient = new StyxHttpClient.Builder(backendService)
                 .retryPolicy(doNotRetry())
-                .connectionPoolFactory(origin -> pool)
+                .originsInventory(originsInventory)
                 .build();
 
         TestSubscriber<HttpResponse> subscriber = new TestSubscriber<>();
@@ -384,9 +428,16 @@ public class StyxHttpClientTest {
     public void notifiesSubscribersOnOperationFailure() {
         ConnectionPool pool = mockPool(openConnection(SOME_ORIGIN));
         Throwable operationException = new RuntimeException("Error happened");
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(SOME_ORIGIN.host().getPort()))
+
+        BackendService backendService = backendWithOrigins(SOME_ORIGIN.host().getPort());
+
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+                .connectionPoolFactory(o -> pool)
+                .build();
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .requestOperationFactory(newFailingRequestOperationFactory(operationException))
-                .connectionPoolFactory(origin -> pool)
+                .originsInventory(originsInventory)
                 .build();
 
         TestSubscriber<HttpResponse> subscriber = new TestSubscriber<>();
@@ -413,11 +464,15 @@ public class StyxHttpClientTest {
                 .enabled(true)
                 .build();
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(
-                backendBuilderWithOrigins(SOME_ORIGIN.host().getPort())
-                        .stickySessionConfig(stickySessionConfig)
-                        .build())
+        BackendService backendService = backendBuilderWithOrigins(SOME_ORIGIN.host().getPort())
+                .stickySessionConfig(stickySessionConfig)
+                .build();
+
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService).build();
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .requestOperationFactory(requestOperationFactory)
+                .originsInventory(originsInventory)
                 .build();
 
         HttpRequest request = requestWithStickySessionCookie(GENERIC_APP, id("h1"));
@@ -430,8 +485,14 @@ public class StyxHttpClientTest {
         RecordingOriginHealthStatusMonitor monitor = new RecordingOriginHealthStatusMonitor();
         OriginHealthStatusMonitor.Factory factory = (id, healthCheckConfig, supplier) -> monitor;
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(SOME_ORIGIN.host().getPort()))
+        BackendService backendService = backendWithOrigins(SOME_ORIGIN.host().getPort());
+
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
                 .originHealthStatusMonitorFactory(factory)
+                .build();
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+                .originsInventory(originsInventory)
                 .build();
 
         styxHttpClient.close();
@@ -517,22 +578,34 @@ public class StyxHttpClientTest {
     }
 
     private StyxHttpClient newStyxHttpClient(ConnectionPool pool) {
-        return new StyxHttpClient.Builder(
-                backendBuilderWithOrigins(SOME_ORIGIN.host().getPort())
-                        .stickySessionConfig(stickySessionConfig)
-                        .build())
+        BackendService backendService = backendBuilderWithOrigins(SOME_ORIGIN.host().getPort())
+                .stickySessionConfig(stickySessionConfig)
+                .build();
+
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
                 .connectionPoolFactory(origin -> pool)
+                .build();
+
+        return new StyxHttpClient.Builder(
+                backendService)
+                .originsInventory(originsInventory)
                 .requestOperationFactory(requestOperationFactory)
                 .metricsRegistry(metricRegistry)
                 .build();
     }
 
     private StyxHttpClient.Builder newStyxHttpClientBuilder(ConnectionPool pool) {
-        return new StyxHttpClient.Builder(
-                backendBuilderWithOrigins(SOME_ORIGIN.host().getPort())
-                        .stickySessionConfig(stickySessionConfig)
-                        .build())
+        BackendService backendService = backendBuilderWithOrigins(SOME_ORIGIN.host().getPort())
+                .stickySessionConfig(stickySessionConfig)
+                .build();
+
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
                 .connectionPoolFactory(origin -> pool)
+                .build();
+
+        return new StyxHttpClient.Builder(
+                backendService)
+                .originsInventory(originsInventory)
                 .requestOperationFactory(requestOperationFactory)
                 .metricsRegistry(metricRegistry);
     }
@@ -556,8 +629,14 @@ public class StyxHttpClientTest {
     private StyxHttpClient styxClient(Connection connection, PublishSubject<HttpResponse> responseSubject, RetryPolicy retryPolicy) {
         StubConnectionPool pool = new StubConnectionPool(connection);
 
-        return new StyxHttpClient.Builder(backendWithOrigins(SOME_ORIGIN.host().getPort()))
+        BackendService backendService = backendWithOrigins(SOME_ORIGIN.host().getPort());
+
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
                 .connectionPoolFactory(origin -> pool)
+                .build();
+
+        return new StyxHttpClient.Builder(backendService)
+                .originsInventory(originsInventory)
                 .requestOperationFactory(newRequestOperationFactory(responseSubject))
                 .retryPolicy(retryPolicy)
                 .build();
