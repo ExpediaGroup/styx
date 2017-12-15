@@ -26,10 +26,11 @@ import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.client.{Origin, UrlConnectionHttpClient}
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
 import com.hotels.styx.api.{HttpClient, HttpResponse, Id}
+import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.client.healthcheck.HealthCheckConfig
-import com.hotels.styx.client.loadbalancing.strategies.AdaptiveStrategy
+import com.hotels.styx.client.loadbalancing.strategies.{AdaptiveStrategy, RoundRobinStrategy}
 import com.hotels.styx.support.server.FakeHttpServer
 import org.scalatest.{BeforeAndAfter, FunSuite, ShouldMatchers}
 import rx.Observer
@@ -57,13 +58,13 @@ class LeastResponseTimeSpec extends FunSuite with BeforeAndAfter with ShouldMatc
       appOriginOne -> server1,
       appOriginTwo -> server2)
 
-    httpClient = newHttpClientBuilder(
-      new BackendService.Builder()
-        .id(Id.id("webapp"))
-        .origins(appOriginOne, appOriginTwo)
-        .healthCheckConfig(twoSecondsInterval)
-        .build())
-      .loadBalancingStrategy(new AdaptiveStrategy())
+    val service = new BackendService.Builder()
+      .id(Id.id("webapp"))
+      .origins(appOriginOne, appOriginTwo)
+      .healthCheckConfig(twoSecondsInterval)
+      .build()
+    httpClient = newHttpClientBuilder(service)
+      .loadBalancingStrategy(new AdaptiveStrategy(new RoundRobinStrategy(newOriginsInventoryBuilder(service).build())))
       .build()
   }
 

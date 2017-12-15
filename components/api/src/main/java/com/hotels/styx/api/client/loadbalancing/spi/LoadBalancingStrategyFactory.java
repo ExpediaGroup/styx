@@ -26,6 +26,7 @@ import com.hotels.styx.api.configuration.Configuration;
  * @see Environment
  */
 public interface LoadBalancingStrategyFactory extends ServiceFactory<LoadBalancingStrategy> {
+
     /**
      * Creates a strategy.
      *
@@ -33,5 +34,16 @@ public interface LoadBalancingStrategyFactory extends ServiceFactory<LoadBalanci
      * @param strategyConfiguration configuration specific to load balancer
      * @return a new load balancing strategy.
      */
-    LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration);
+    default LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration) {
+        return create(environment, strategyConfiguration, new Object[0]);
+    }
+
+    /**
+     * Creates a strategy.
+     *
+     * @param environment           Styx application environment
+     * @param strategyConfiguration configuration specific to load balancer
+     * @return a new load balancing strategy.
+     */
+    LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, Object... originsInventory);
 }

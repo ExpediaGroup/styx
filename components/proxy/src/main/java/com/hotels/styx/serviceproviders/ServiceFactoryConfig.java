@@ -54,19 +54,21 @@ public class ServiceFactoryConfig {
         return enabled;
     }
 
+
     /**
      * Creates the service.
      *
      * @param environment       environment
      * @param serviceSuperclass class that the service must extend
+     * @param parameters        optional service type dependencies
      * @param <T>               service type
      * @return service
      */
-    public <T> T loadService(Environment environment, Class<T> serviceSuperclass) {
+    public <T> T loadService(Environment environment, Class<T> serviceSuperclass, Object... parameters) {
         checkEnabled();
 
         try {
-            return serviceSuperclass.cast(factory.create(environment, config));
+            return serviceSuperclass.cast(factory.create(environment, config, parameters));
         } catch (Exception e) {
             throw new ConfigurationException("Error creating service", e);
         }

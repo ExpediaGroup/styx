@@ -17,6 +17,7 @@ package com.hotels.styx.client.loadbalancing.strategies;
 
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
@@ -27,6 +28,8 @@ import rx.Observer;
 
 import static com.google.common.collect.Iterables.size;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
+import static com.hotels.styx.client.applications.BackendService.newBackendServiceBuilder;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
@@ -51,7 +54,8 @@ public class RoundRobinStrategyTest {
 
     @BeforeMethod
     public void setUp() {
-        strategy = new RoundRobinStrategy();
+        //TODO: this is not good for sure, fix it once loadbalancingstrategy interface is corrected
+        strategy = new RoundRobinStrategy(newOriginsInventoryBuilder(newBackendServiceBuilder().origins(Origin.newOriginBuilder("localhost", 1).build()).build()).build());
     }
 
     @Test

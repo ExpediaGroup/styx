@@ -21,6 +21,7 @@ import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategyFactory;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.client.OriginsInventory;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,13 +47,21 @@ import static java.util.stream.Stream.concat;
  * Please note that for the strategy to iterate like this, the origins must be provided in the same order on each call.
  */
 public class RoundRobinStrategy implements LoadBalancingStrategy {
+
+    private final OriginsInventory originsInventory;
+
+    public RoundRobinStrategy(OriginsInventory originsInventory) {
+        this.originsInventory = originsInventory;
+    }
+
     /**
      * Factory for creating {@link com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy}.
      */
     public static class Factory implements LoadBalancingStrategyFactory {
         @Override
-        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration) {
-            return new RoundRobinStrategy();
+        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, Object[] parameters) {
+            OriginsInventory originsInventory = getObject(0, parameters, OriginsInventory.class);
+            return new RoundRobinStrategy(originsInventory);
         }
     }
 

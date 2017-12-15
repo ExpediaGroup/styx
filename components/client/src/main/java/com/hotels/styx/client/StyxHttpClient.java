@@ -311,10 +311,10 @@ public final class StyxHttpClient implements HttpClient {
         private boolean flowControlEnabled;
         private List<RewriteRule> rewriteRules = emptyList();
         private HttpRequestOperationFactory requestOperationFactory;
-        private LoadBalancingStrategy loadBalancingStrategy = new RoundRobinStrategy();
         private RetryPolicy retryPolicy;
         private String originRestrictionCookie;
         private OriginsInventory originsInventory;
+        private LoadBalancingStrategy loadBalancingStrategy = new RoundRobinStrategy(originsInventory);
         private boolean contentValidation;
         private boolean requestLoggingEnabled;
         private boolean longFormat;

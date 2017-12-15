@@ -17,6 +17,8 @@ package com.hotels.styx.api.configuration;
 
 import com.hotels.styx.api.Environment;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * A generic factory that can be implemented in order to facilitate creating objects whose type is not known
  * until read from configuration.
@@ -32,4 +34,24 @@ public interface ServiceFactory<E> {
      * @return product instance
      */
     E create(Environment environment, Configuration serviceConfiguration);
+
+    /**
+     * Create an instance of the product.
+     *
+     * @param environment                 environment
+     * @param serviceConfiguration configuration specific to the factory product
+     * @param objects objects that service might depend on
+     * @return product instance
+     */
+    default E create(Environment environment, Configuration serviceConfiguration, Object... objects) {
+        return create(environment, serviceConfiguration);
+    }
+
+    default <T> T getObject(int index, Object[] parameters, Class<T> clazz) {
+       requireNonNull(parameters);
+       if (parameters.length < index) {
+          throw new ArrayIndexOutOfBoundsException("Requested parameter doesn't exist on passed parameters list.");
+       }
+       return clazz.cast(parameters[index]);
+    }
 }

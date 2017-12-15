@@ -90,6 +90,11 @@ public class LoadBalancingStrategyFactoryProviderTest {
         }
 
         @Override
+        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, Object... originsInventory) {
+            return null;
+        }
+
+        @Override
         public Iterable<ConnectionPool> vote(Iterable<ConnectionPool> origins, Context context) {
             return origins;
         }

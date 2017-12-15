@@ -43,7 +43,7 @@ public class BusyConnectionsStrategy implements LoadBalancingStrategy {
      */
     public static class Factory implements LoadBalancingStrategyFactory {
         @Override
-        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration) {
+        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, Object... originsInventory) {
             return new BusyConnectionsStrategy();
         }
     }

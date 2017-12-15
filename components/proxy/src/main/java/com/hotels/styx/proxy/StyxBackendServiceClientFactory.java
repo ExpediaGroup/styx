@@ -50,9 +50,6 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
         RetryPolicy retryPolicy = loadService(environment.configuration(), environment, "retrypolicy.policy.factory", RetryPolicy.class)
                 .orElseGet(() -> defaultRetryPolicy(environment));
 
-        LoadBalancingStrategy loadBalancingStrategy = loadService(environment.configuration(), environment, "loadBalancing.strategy.factory", LoadBalancingStrategy.class)
-                .orElseGet(RoundRobinStrategy::new);
-
         boolean requestLoggingEnabled = environment.styxConfig().get("request-logging.outbound.enabled", Boolean.class)
                 .orElse(false);
 
@@ -68,6 +65,9 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
                         .clientWorkerThreadsCount(clientWorkerThreadsCount)
                         .tlsSettings(backendService.tlsSettings().orElse(null)).build())
                 .build();
+
+        LoadBalancingStrategy loadBalancingStrategy = loadService(environment.configuration(), environment, "loadBalancing.strategy.factory", LoadBalancingStrategy.class, inventory)
+                .orElseGet(() -> new RoundRobinStrategy(inventory));
 
         inventory.addInventoryStateChangeListener(loadBalancingStrategy);
 

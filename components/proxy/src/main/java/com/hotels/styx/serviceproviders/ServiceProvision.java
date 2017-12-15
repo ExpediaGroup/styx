@@ -40,13 +40,15 @@ public final class ServiceProvision {
      * @param configuration  Styx configuration
      * @param key            Factory configuration attribute
      * @param serviceClass   Service class
+     * @param  parameters
      *
      * @return service, if such a configuration key exists
      * */
-    public static <E> Optional<E> loadService(Configuration configuration, Environment environment, String key, Class<? extends E> serviceClass) {
+    public static <E> Optional<E> loadService(Configuration configuration, Environment environment, String key,
+                                              Class<? extends E> serviceClass, Object... parameters) {
         return configuration
                 .get(key, ServiceFactoryConfig.class)
-                .map(factoryConfig -> factoryConfig.loadService(environment, serviceClass));
+                .map(factoryConfig -> factoryConfig.loadService(environment, serviceClass, parameters));
     }
 
     /**

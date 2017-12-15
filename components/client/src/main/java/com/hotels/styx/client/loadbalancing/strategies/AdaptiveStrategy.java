@@ -23,6 +23,7 @@ import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategyFactory;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.client.OriginsInventory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.size;
@@ -41,10 +42,11 @@ public class AdaptiveStrategy implements LoadBalancingStrategy {
      */
     public static class Factory implements LoadBalancingStrategyFactory {
         @Override
-        public AdaptiveStrategy create(Environment environment, Configuration strategyConfiguration) {
+        public AdaptiveStrategy create(Environment environment, Configuration strategyConfiguration, Object... parameters) {
+            OriginsInventory originsInventory = getObject(0, parameters, OriginsInventory.class);
             int requestCount = strategyConfiguration.get("requestCount", Integer.class)
                     .orElse(DEFAULT_REQUEST_COUNT);
-            return new AdaptiveStrategy(requestCount, new RoundRobinStrategy(), new BusyConnectionsStrategy());
+            return new AdaptiveStrategy(requestCount, new RoundRobinStrategy(originsInventory), new BusyConnectionsStrategy());
         }
     }
 
@@ -55,8 +57,8 @@ public class AdaptiveStrategy implements LoadBalancingStrategy {
     private final int requestCount;
     private volatile LoadBalancingStrategy currentStrategy;
 
-    public AdaptiveStrategy() {
-        this(DEFAULT_REQUEST_COUNT, new RoundRobinStrategy(), new BusyConnectionsStrategy());
+    public AdaptiveStrategy(RoundRobinStrategy loadBalancingStrategy) {
+        this(DEFAULT_REQUEST_COUNT, loadBalancingStrategy, new BusyConnectionsStrategy());
     }
 
     public AdaptiveStrategy(int requestCount, RoundRobinStrategy roundRobin, BusyConnectionsStrategy leastResponseTime) {
