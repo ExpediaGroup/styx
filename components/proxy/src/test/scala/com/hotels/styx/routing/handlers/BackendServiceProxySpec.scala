@@ -16,11 +16,15 @@
 
 package com.hotels.styx.routing.handlers
 
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletableFuture.completedFuture
+
 import com.hotels.styx.Environment
 import com.hotels.styx.api.service.spi.StyxService
 import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse}
 import com.hotels.styx.client.applications.BackendService
-import com.hotels.styx.infrastructure.Registry.Changes
+import com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded
+import com.hotels.styx.infrastructure.Registry.{Changes, ReloadResult}
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.infrastructure.{AbstractRegistry, Registry}
 import com.hotels.styx.metrics.reporting.jmx.JmxReporterService
@@ -133,11 +137,12 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
   }
 
   def registry(backends: BackendService*) = new AbstractRegistry[BackendService]("backend-registry") {
-    override def reload(listener: Registry.ReloadListener): Unit = {
+    override def reload(): CompletableFuture[ReloadResult] = {
       notifyListeners(
         new Changes.Builder[BackendService]()
           .added(backends:_*)
           .build())
+      completedFuture(reloaded("ok"))
     }
   }
 

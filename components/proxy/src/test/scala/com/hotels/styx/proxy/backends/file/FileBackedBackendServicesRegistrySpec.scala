@@ -116,7 +116,7 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
 
         generatedBackendServices = writeToFile(asList(genBackendOne, genBackendTwo), "backends/generated/single.yaml")
 
-        registry.reload()
+        StyxFutures.await(registry.reload())
 
         assertThat(registry.get(), contains(genBackendOne, genBackendTwo))
 
@@ -147,12 +147,12 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
 
         generatedBackedServices = writeToFile(asList(genBackendOne, genBackendTwo), "backends/generated/single.yaml")
 
-        registry.reload()
+        StyxFutures.await(registry.reload())
 
         assertThat(registry.get(), contains(genBackendOne, genBackendTwo))
 
         generatedBackedServices = writeToFile(asList(genBackendOne), "backends/generated/single.yaml")
-        registry.reload()
+        StyxFutures.await(registry.reload())
 
         assertThat(registry.get(), contains(genBackendOne))
 

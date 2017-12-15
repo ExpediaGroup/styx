@@ -28,18 +28,19 @@ public final class StyxFutures {
     }
 
     /**
-     *
      * Blocks on the CompletableFuture. Wraps the InterruptedException and/or ExecutionException
-     * into a RuntimeException.
+     * into a RuntimeException, and retains the interrupted() status of the thread.
      *
-     * @param future
-     * @param <T>
-     * @return
+     * @param future Future object.
+     * @param <T>    Return type of the future.
+     * @return       Returns the future value once it completes.
      */
     public static <T> T await(CompletableFuture<T> future) {
         try {
             return future.get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
             currentThread().interrupt();
             throw new RuntimeException(e);
         }

@@ -81,14 +81,14 @@ public final class StyxServer {
 
     private static AdminServerConfig adminServerConfig() {
         return new AdminServerConfig.Builder()
-                .setHttpConnector(new HttpConnectorConfig(freePort()))
+                .setHttpConnector(new HttpConnectorConfig(0))
                 .build();
     }
 
     private static ProxyServerConfig proxyServerConfig() {
         return new ProxyServerConfig.Builder()
-                .setHttpConnector(new HttpConnectorConfig(freePort()))
-                .setHttpsConnector(new HttpsConnectorConfig.Builder().port(freePort()).build())
+                .setHttpConnector(new HttpConnectorConfig(0))
+                .setHttpsConnector(new HttpsConnectorConfig.Builder().port(0).build())
                 .build();
     }
 

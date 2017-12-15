@@ -34,6 +34,7 @@ import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadFromPath;
+import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
@@ -42,7 +43,6 @@ import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
-import com.hotels.styx.common.StyxFutures;
 
 public class OriginsHandlerTest {
     static final ObjectMapper MAPPER = new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES);
@@ -54,12 +54,12 @@ public class OriginsHandlerTest {
 
     @BeforeClass
     public void startRegistry() {
-        StyxFutures.await(backendServicesRegistry.start());
+        await(backendServicesRegistry.start());
     }
 
     @AfterClass
     public void stopRegistry() {
-        StyxFutures.await(backendServicesRegistry.stop());
+        await(backendServicesRegistry.stop());
     }
 
     @Test

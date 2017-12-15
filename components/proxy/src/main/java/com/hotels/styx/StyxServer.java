@@ -224,12 +224,10 @@ public final class StyxServer extends AbstractService {
     }
 
     private Map<String, StyxService> mergeServices(Map<String, StyxService> configServices, Map<String, StyxService> additionalServices) {
-        ImmutableMap.Builder<String, StyxService> merged = new ImmutableMap.Builder<>();
-
-        merged.putAll(configServices);
-        merged.putAll(additionalServices);
-
-        return merged.build();
+        return new ImmutableMap.Builder<String, StyxService>()
+                .putAll(configServices)
+                .putAll(additionalServices)
+                .build();
     }
 
     private static void initialisePlugins(Supplier<Iterable<NamedPlugin>> pluginsSupplier) {
@@ -370,7 +368,6 @@ public final class StyxServer extends AbstractService {
         }
     }
 
-    // TODO: Move into a separate class and TDD:
     private static Service toGuavaService(StyxService styxService) {
         return new AbstractService() {
             @Override

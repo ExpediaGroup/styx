@@ -32,6 +32,8 @@ import java.util.concurrent.ExecutorService;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.infrastructure.Registry.Outcome.RELOADED;
+import static com.hotels.styx.infrastructure.Registry.Outcome.UNCHANGED;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -61,25 +63,22 @@ public class OriginsReloadCommandHandler implements HttpHandler {
     }
 
     private void reload(Subscriber<? super HttpResponse> subscriber) {
-        backendServicesRegistry.reload(new Registry.ReloadListener() {
-            @Override
-            public void onChangesApplied() {
-                subscriber.onNext(okResponse("Origins reloaded successfully.\n"));
-                subscriber.onCompleted();
-            }
-
-            @Override
-            public void onNoMeaningfulChanges(String details) {
-                subscriber.onNext(okResponse(format("Origins were not reloaded because %s.\n", details)));
-                subscriber.onCompleted();
-            }
-
-            @Override
-            public void onErrorDuringReload(Throwable throwable) {
-                subscriber.onNext(errorResponse(throwable));
-                subscriber.onCompleted();
-            }
-        });
+        backendServicesRegistry.reload()
+                .handle((result, exception) -> {
+                    if (exception == null) {
+                        if (result.outcome() == RELOADED) {
+                            subscriber.onNext(okResponse("Origins reloaded successfully.\n"));
+                            subscriber.onCompleted();
+                        } else if (result.outcome() == UNCHANGED) {
+                            subscriber.onNext(okResponse(format("Origins were not reloaded because %s.\n", result.message())));
+                            subscriber.onCompleted();
+                        }
+                    } else {
+                        subscriber.onNext(errorResponse(exception));
+                        subscriber.onCompleted();
+                    }
+                    return null;
+                });
     }
 
     private HttpResponse okResponse(String content) {
@@ -101,7 +100,17 @@ public class OriginsReloadCommandHandler implements HttpHandler {
     }
 
     private boolean deSerialisationError(Throwable cause) {
-        return cause.getCause() instanceof JsonMappingException;
+        Throwable subCause = cause.getCause();
+        if (subCause instanceof JsonMappingException) {
+            return true;
+        }
+
+        subCause = subCause != null ? subCause.getCause() : null;
+        if (subCause instanceof JsonMappingException) {
+            return true;
+        }
+
+        return false;
     }
 
     private HttpResponse errorResponse(HttpResponseStatus code, String content) {

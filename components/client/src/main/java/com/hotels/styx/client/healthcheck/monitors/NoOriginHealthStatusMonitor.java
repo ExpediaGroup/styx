@@ -21,6 +21,8 @@ import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
+
 /**
  * An {@link com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor} that does nothing. Using this monitor is
  * a way to disable monitoring.
@@ -28,12 +30,12 @@ import java.util.concurrent.CompletableFuture;
 public class NoOriginHealthStatusMonitor implements OriginHealthStatusMonitor {
     @Override
     public CompletableFuture<Void> start() {
-        return CompletableFuture.completedFuture(null);
+        return completedFuture(null);
     }
 
     @Override
     public CompletableFuture<Void> stop() {
-        return CompletableFuture.completedFuture(null);
+        return completedFuture(null);
     }
 
     @Override

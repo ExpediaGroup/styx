@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.routing.config
 
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletableFuture.completedFuture
 import java.util.concurrent.Executors.newSingleThreadExecutor
 import java.util.function.Supplier
 import java.{lang, util}
@@ -23,15 +25,14 @@ import _root_.io.netty.handler.codec.http.HttpResponseStatus.OK
 import com.codahale.metrics.health.HealthCheckRegistry
 import com.google.common.collect.ImmutableMap
 import com.google.common.eventbus.AsyncEventBus
-import com.google.common.util.concurrent.Service
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
 import com.hotels.styx.api.service.spi.StyxService
 import com.hotels.styx.api.{HttpHandler2, HttpResponse}
 import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.client.applications.BackendService.newBackendServiceBuilder
-import com.hotels.styx.infrastructure.Registry.Changes
-import com.hotels.styx.infrastructure.{AbstractRegistry, Registry}
+import com.hotels.styx.infrastructure.AbstractRegistry
+import com.hotels.styx.infrastructure.Registry.{Changes, ReloadResult}
 import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin
 import com.hotels.styx.routing.{HttpHandlerAdapter, PluginAdapter, UserConfiguredPipelineFactory}
@@ -242,11 +243,12 @@ class UserConfiguredPipelineFactorySpec extends FunSpec with ShouldMatchers with
 
   def backendRegistry(backends: BackendService*) = new AbstractRegistry[BackendService]("backend-registry") {
     snapshot.set(backends.asJava)
-    override def reload(listener: Registry.ReloadListener): Unit = {
+    override def reload(): CompletableFuture[ReloadResult] = {
       notifyListeners(
         new Changes.Builder[BackendService]()
           .added(backends:_*)
           .build())
+      completedFuture(ReloadResult.reloaded("ok"))
     }
   }
 

@@ -16,19 +16,22 @@
 package com.hotels.styx.infrastructure;
 
 import com.google.common.hash.HashCode;
-import com.google.common.hash.Hashing;
-import com.google.common.io.Files;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.Resource;
 import org.slf4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Throwables.propagate;
+import static com.google.common.hash.Hashing.md5;
 import static com.google.common.io.ByteStreams.toByteArray;
+import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
+import static com.hotels.styx.infrastructure.Registry.ReloadResult.unchanged;
+import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.CompletableFuture.supplyAsync;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -44,17 +47,9 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
 
     public FileBackedRegistry(Resource configurationFile, Reader<T> reader) {
         super("FileBackedRegistry");
-        this.configurationFile = checkNotNull(configurationFile);
+        this.configurationFile = requireNonNull(configurationFile);
         this.reader = checkNotNull(reader);
-        this.fileHash = md5(configurationFile);
-    }
-
-    private HashCode md5(Resource resource) {
-        try {
-            return Files.hash(new File(resource.absolutePath()), Hashing.md5());
-        } catch (IOException e) {
-            throw propagate(e);
-        }
+        this.fileHash = null;
     }
 
     @Override
@@ -62,7 +57,10 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
         return CompletableFuture.runAsync(() -> {
             LOG.info("starting {}", getClass().getSimpleName());
 
-            Iterable<T> resources = reader.read(readFile());
+            byte[] content = readFile();
+            fileHash = md5().hashBytes(content);
+            Iterable<T> resources = reader.read(content);
+
             snapshot.set(resources);
             Changes<T> changes = new Changes.Builder<T>()
                     .added(resources)
@@ -72,32 +70,37 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     }
 
     @Override
-    public synchronized void reload(ReloadListener listener) {
-        if (!hasFileContentChanged()) {
-            LOG.info("Not reloading {} as content did not change", configurationFile.absolutePath());
-            listener.onNoMeaningfulChanges("file content did not change");
-        } else {
-            try {
-                boolean changesPerformed = updateResources();
+    public CompletableFuture<ReloadResult> reload() {
+        return supplyAsync(() -> {
+            byte[] content = readFile();
+            HashCode hashCode = md5().hashBytes(content);
 
-                if (!changesPerformed) {
-                    LOG.info("Not firing change event for {} as content was not semantically different", configurationFile.absolutePath());
-                    listener.onNoMeaningfulChanges("file content was not semantically different");
-                } else {
-                    LOG.debug("Changes applied!");
-                    listener.onChangesApplied();
+            if (fileHash.equals(hashCode)) {
+                LOG.info("Not reloading {} as content did not change", configurationFile.absolutePath());
+                return unchanged("file content did not change");
+            } else {
+                try {
+                    boolean changesPerformed = updateResources(content, hashCode);
+
+                    if (!changesPerformed) {
+                        LOG.info("Not firing change event for {} as content was not semantically different", configurationFile.absolutePath());
+                        return unchanged("file content was not semantically different");
+                    } else {
+                        LOG.debug("Changes applied!");
+                        return reloaded("Changes applied!");
+                    }
+                } catch (Exception e) {
+                    LOG.error("Not reloading {} as there was an error reading content", configurationFile.absolutePath(), e);
+                    notifyListenersOnError(e);
+                    throw e;
                 }
-            } catch (Exception e) {
-                LOG.error("Not reloading {} as there was an error reading content", configurationFile.absolutePath(), e);
-                notifyListenersOnError(e);
-                listener.onErrorDuringReload(e);
             }
-        }
+        }, newSingleThreadExecutor());
     }
 
-    private boolean updateResources() {
-        Iterable<T> resources = reader.read(readFile());
-        fileHash = md5(configurationFile);
+    private boolean updateResources(byte[] content, HashCode hashCode) {
+
+        Iterable<T> resources = reader.read(content);
         Changes<T> changes = changes(resources, snapshot.get());
 
         if (!changes.isEmpty()) {
@@ -105,13 +108,8 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
             notifyListeners(changes);
         }
 
+        fileHash = hashCode;
         return !changes.isEmpty();
-    }
-
-    private boolean hasFileContentChanged() {
-        HashCode newFileHash = md5(configurationFile);
-
-        return !newFileHash.equals(fileHash);
     }
 
     private byte[] readFile() {

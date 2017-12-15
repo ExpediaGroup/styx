@@ -43,7 +43,6 @@ import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
 import com.hotels.styx.common.StateMachine;
-import com.hotels.styx.common.StyxFutures;
 import org.slf4j.Logger;
 
 import javax.annotation.concurrent.ThreadSafe;

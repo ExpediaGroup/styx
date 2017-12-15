@@ -32,13 +32,13 @@ import static org.hamcrest.Matchers.is;
 
 public class AbstractStyxServiceTest {
 
-    private final HttpRequest GET = HttpRequest.Builder.get("/").build();
+    private final HttpRequest get = HttpRequest.Builder.get("/").build();
 
     @Test
     public void exposesNameAndStatusViaAdminInterface() {
-        DerivedStyxService service = new DerivedStyxService("derived-service", new CompletableFuture());
+        DerivedStyxService service = new DerivedStyxService("derived-service", new CompletableFuture<>());
 
-        FullHttpResponse<String> response = service.adminInterfaceHandlers().get("status").handle(GET)
+        FullHttpResponse<String> response = service.adminInterfaceHandlers().get("status").handle(get)
                 .flatMap(r -> r.toFullHttpResponse(1024))
                 .toBlocking()
                 .first();
@@ -48,7 +48,7 @@ public class AbstractStyxServiceTest {
 
     @Test
     public void inStartingStateWhenStartIsCalled() {
-        DerivedStyxService service = new DerivedStyxService("derived-service", new CompletableFuture<Void>());
+        DerivedStyxService service = new DerivedStyxService("derived-service", new CompletableFuture<>());
 
         CompletableFuture<Void> started = service.start();
 
@@ -110,7 +110,7 @@ public class AbstractStyxServiceTest {
 
     @Test
     public void inStoppingStateAfterStopIsCalled() {
-        DerivedStyxService service = new DerivedStyxService("derived-service", completedFuture(null), new CompletableFuture());
+        DerivedStyxService service = new DerivedStyxService("derived-service", completedFuture(null), new CompletableFuture<>());
 
         CompletableFuture<Void> started = service.start();
         assertThat(service.status(), is(RUNNING));
@@ -159,7 +159,7 @@ public class AbstractStyxServiceTest {
 
     @Test(expectedExceptions = IllegalStateException.class,
             expectedExceptionsMessageRegExp = "Stop called in FAILED state")
-    public void throwsExceptionWhenStopIsCalledInFailedState() throws Exception {
+    public void throwsExceptionWhenStopIsCalledInFailedState() {
         CompletableFuture<Void> subclassStopped = new CompletableFuture<>();
         DerivedStyxService service = new DerivedStyxService("derived-service", completedFuture(null), subclassStopped);
 
@@ -191,10 +191,6 @@ public class AbstractStyxServiceTest {
             super(name);
             this.startFuture = startFuture;
             this.stopFuture = stopFuture;
-        }
-
-        public StyxServiceStatus status() {
-            return super.status();
         }
 
         @Override

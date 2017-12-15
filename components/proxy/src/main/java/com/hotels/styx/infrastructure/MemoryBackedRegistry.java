@@ -23,6 +23,10 @@ import com.hotels.styx.api.configuration.Configuration;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * Memory backed registry for {@code T}.
@@ -78,11 +82,10 @@ public class MemoryBackedRegistry<T extends Identifiable> extends AbstractRegist
     }
 
     @Override
-    public void reload(ReloadListener listener) {
+    public CompletableFuture<ReloadResult> reload() {
         Changes<T> changes = changes(resources.values(), snapshot.get());
         snapshot.set(ImmutableSet.copyOf(resources.values()));
         notifyListeners(changes);
-
-        listener.onChangesApplied();
+        return completedFuture(reloaded("changed"));
     }
 }

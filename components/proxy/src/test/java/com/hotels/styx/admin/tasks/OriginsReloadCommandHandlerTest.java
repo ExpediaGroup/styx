@@ -16,27 +16,28 @@
 package com.hotels.styx.admin.tasks;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.Registry;
-import com.hotels.styx.infrastructure.Registry.ReloadListener;
-import com.hotels.styx.server.HttpInterceptorContext;
+import com.hotels.styx.infrastructure.Registry.ReloadResult;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
-import static com.hotels.styx.support.api.matchers.HttpResponseStatusMatcher.hasStatus;
+import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
+import static com.hotels.styx.infrastructure.Registry.ReloadResult.unchanged;
+import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doAnswer;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class OriginsReloadCommandHandlerTest {
     Registry<BackendService> registry;
@@ -50,53 +51,51 @@ public class OriginsReloadCommandHandlerTest {
 
     @Test
     public void returnsWithConfirmationWhenChangesArePerformed() {
-        mockRegistryReload(ReloadListener::onChangesApplied);
+        mockRegistryReload(completedFuture(reloaded("ok")));
 
-        HttpResponse response = makeReloadRequest();
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
 
-        assertThat(response, hasStatus(OK));
-        assertThat(response, hasBody("Origins reloaded successfully.\n"));
+        assertThat(response.status(), is(OK));
+        assertThat(response.body(), is("Origins reloaded successfully.\n"));
     }
 
     @Test
     public void returnsWithInformationWhenChangesAreUnnecessary() {
-        mockRegistryReload(listener -> listener.onNoMeaningfulChanges("this test returns 'no meaningful changes'"));
+        mockRegistryReload(completedFuture(unchanged("this test returns 'no meaningful changes'")));
 
-        HttpResponse response = makeReloadRequest();
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
 
-        assertThat(response, hasStatus(OK));
-        assertThat(response, hasBody("Origins were not reloaded because this test returns 'no meaningful changes'.\n"));
+        assertThat(response.status(), is(OK));
+        assertThat(response.body(), is("Origins were not reloaded because this test returns 'no meaningful changes'.\n"));
     }
 
     @Test
     public void returnsWithInformationWhenJsonErrorOccursDuringReload() {
-        mockRegistryReload(listener -> listener.onErrorDuringReload(new RuntimeException(new JsonMappingException("simulated error"))));
+        mockRegistryReload(failedFuture(new RuntimeException(new JsonMappingException("simulated error"))));
 
-        HttpResponse response = makeReloadRequest();
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
 
-        assertThat(response, hasStatus(BAD_REQUEST));
-        assertThat(response, hasBody(matchesRegex("There was an error processing your request. It has been logged \\(ID [0-9a-f-]+\\)\\.\n")));
+        assertThat(response.status(), is(BAD_REQUEST));
+        assertThat(response.body(), is(matchesRegex("There was an error processing your request. It has been logged \\(ID [0-9a-f-]+\\)\\.\n")));
     }
 
     @Test
     public void returnsWithInformationWhenErrorDuringReload() {
-        mockRegistryReload(listener -> listener.onErrorDuringReload(new RuntimeException("simulated error")));
+        mockRegistryReload(failedFuture(new RuntimeException(new RuntimeException("simulated error"))));
 
-        HttpResponse response = makeReloadRequest();
+        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
 
-        assertThat(response, hasStatus(INTERNAL_SERVER_ERROR));
-        assertThat(response, hasBody(matchesRegex("There was an error processing your request. It has been logged \\(ID [0-9a-f-]+\\)\\.\n")));
+        assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
+        assertThat(response.body(), is(matchesRegex("There was an error processing your request. It has been logged \\(ID [0-9a-f-]+\\)\\.\n")));
     }
 
-    private HttpResponse makeReloadRequest() {
-        return handler.handle(get("/").build()).toBlocking().first();
+    private CompletableFuture<ReloadResult> failedFuture(RuntimeException simulated_error) {
+        CompletableFuture<ReloadResult> future = new CompletableFuture<>();
+        future.completeExceptionally(simulated_error);
+        return future;
     }
 
-    private void mockRegistryReload(Consumer<ReloadListener> onReload) {
-        doAnswer(invocation -> {
-            Object[] args = invocation.getArguments();
-            onReload.accept((ReloadListener) args[0]);
-            return null;
-        }).when(registry).reload(any(ReloadListener.class));
+    private void mockRegistryReload(CompletableFuture<ReloadResult> value) {
+        when(registry.reload()).thenReturn(value);
     }
 }

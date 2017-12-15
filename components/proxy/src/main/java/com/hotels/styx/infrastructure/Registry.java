@@ -23,10 +23,13 @@ import com.hotels.styx.api.configuration.ServiceFactory;
 
 import java.util.EventListener;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hotels.styx.infrastructure.Registry.Outcome.RELOADED;
+import static com.hotels.styx.infrastructure.Registry.Outcome.UNCHANGED;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
@@ -51,12 +54,7 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
      */
     Registry<T> removeListener(ChangeListener<T> changeListener);
 
-    default void reload() {
-        reload(new ReloadListener() {
-        });
-    }
-
-    void reload(ReloadListener listener);
+    CompletableFuture<ReloadResult> reload();
 
     /**
      * Factory for creating a registry.
@@ -200,20 +198,63 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
         }
     }
 
-    /**
-     * Called after reload.
-     */
-    interface ReloadListener {
-        default void onChangesApplied() {
-            // Do nothing
+    enum Outcome {
+        RELOADED,
+        UNCHANGED
+    }
+
+    class ReloadResult {
+
+        Outcome outcome;
+        String message;
+
+        private ReloadResult(Outcome outcome, String message) {
+            this.outcome = outcome;
+            this.message = message;
         }
 
-        default void onNoMeaningfulChanges(String details) {
-            // Do nothing
+        public static ReloadResult reloaded(String message) {
+            return new ReloadResult(RELOADED, message);
         }
 
-        default void onErrorDuringReload(Throwable throwable) {
-            // Do nothing
+        public static ReloadResult unchanged(String message) {
+            return new ReloadResult(UNCHANGED, message);
+        }
+
+        public Outcome outcome() {
+            return outcome;
+        }
+
+        public String message() {
+            return message;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            ReloadResult that = (ReloadResult) o;
+            return outcome == that.outcome && Objects.equals(message, that.message);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(outcome, message);
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("ReloadResult{");
+            sb.append("outcome=").append(outcome);
+            sb.append(", message='").append(message).append('\'');
+            sb.append('}');
+            return sb.toString();
         }
     }
 }
