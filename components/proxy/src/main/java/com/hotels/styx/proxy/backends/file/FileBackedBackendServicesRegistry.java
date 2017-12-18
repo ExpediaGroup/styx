@@ -18,8 +18,8 @@ package com.hotels.styx.proxy.backends.file;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.applications.BackendServices;
 import com.hotels.styx.infrastructure.FileBackedRegistry;
@@ -68,12 +68,12 @@ public class FileBackedBackendServicesRegistry extends FileBackedRegistry<Backen
     }
 
     public FileBackedBackendServicesRegistry(Resource resource) {
-        super(resource, new YAMLBackendServicesParser());
+        super(resource, new YAMLBackendServicesReader());
 
         this.originsFileName = resource.absolutePath();
     }
 
-    private static class YAMLBackendServicesParser implements Parser<BackendService> {
+    private static class YAMLBackendServicesReader implements Reader<BackendService> {
         private final YamlReader<List<BackendService>> delegate = new YamlReader<>();
 
         @Override

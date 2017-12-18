@@ -17,12 +17,14 @@ package com.hotels.styx.metrics.reporting.jmx;
 
 import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
-import com.google.common.util.concurrent.AbstractIdleService;
+import com.hotels.styx.api.service.spi.StyxService;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Builds JMX reporter from configuration and wraps it in service interface.
  */
-public class JmxReporterService extends AbstractIdleService {
+public class JmxReporterService implements StyxService {
 
     private final JmxReporter reporter;
 
@@ -33,12 +35,12 @@ public class JmxReporterService extends AbstractIdleService {
     }
 
     @Override
-    protected void startUp() {
-        reporter.start();
+    public CompletableFuture<Void> start() {
+        return CompletableFuture.runAsync(reporter::start);
     }
 
     @Override
-    protected void shutDown() {
-        reporter.stop();
+    public CompletableFuture<Void> stop() {
+        return CompletableFuture.runAsync(reporter::stop);
     }
 }

@@ -17,10 +17,10 @@ package com.hotels.styx.support.configuration
 
 import java.nio.file.Path
 
-import com.google.common.util.concurrent.Service
 import com.hotels.styx.StyxServerSupport._
+import com.hotels.styx.api.service.spi.StyxService
 import com.hotels.styx.api.support.HostAndPorts._
-import com.hotels.styx.infrastructure.Registry
+import com.hotels.styx.infrastructure.{AbstractRegistry, Registry}
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
@@ -42,12 +42,12 @@ case class Connectors(httpConnectorConfig: HttpConnectorConfig,
 
 sealed trait StyxBaseConfig {
   def logbackXmlLocation: Path
-  def additionalServices: Map[String, Service]
+  def additionalServices: Map[String, StyxService]
   def plugins: List[NamedPlugin]
 
-  def startServer(backendsRegistry: Registry[com.hotels.styx.client.applications.BackendService]): StyxServer
+  def startServer(backendsRegistry: AbstractRegistry[com.hotels.styx.client.applications.BackendService]): StyxServer
 
-  def services(backendsRegistry: Registry[_]): Map[String, Service] = if (additionalServices.nonEmpty) {
+  def services(backendsRegistry: AbstractRegistry[_]): Map[String, StyxService] = if (additionalServices.nonEmpty) {
     this.additionalServices
   } else {
     Map("backendServiceRegistry" -> backendsRegistry)
@@ -63,10 +63,10 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
                       logbackXmlLocation: Path = StyxBaseConfig.defaultLogbackXml,
                       yamlText: String = "originRestrictionCookie: \"originRestrictionCookie\"\n",
                       adminPort: Int = 0,
-                      additionalServices: Map[String, Service] = Map.empty
+                      additionalServices: Map[String, StyxService] = Map.empty
                      ) extends StyxBaseConfig {
 
-  override def startServer(backendsRegistry: Registry[com.hotels.styx.client.applications.BackendService]): StyxServer = {
+  override def startServer(backendsRegistry: AbstractRegistry[com.hotels.styx.client.applications.BackendService]): StyxServer = {
 
     val newAdminPort = if (adminPort == 0) freePort() else adminPort
     val proxyConfig = this.proxyConfig.copy(connectors = Connectors(httpConnectorWithPort(), httpsConnectorWithPort()))
@@ -123,11 +123,11 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
 
 case class StyxYamlConfig(yamlConfig: String,
                           logbackXmlLocation: Path = StyxBaseConfig.defaultLogbackXml,
-                          additionalServices: Map[String, Service] = Map.empty,
+                          additionalServices: Map[String, StyxService] = Map.empty,
                           plugins: List[NamedPlugin] = List()
                          ) extends StyxBaseConfig {
 
-  override def startServer(backendsRegistry: Registry[com.hotels.styx.client.applications.BackendService]): StyxServer = {
+  override def startServer(backendsRegistry: AbstractRegistry[com.hotels.styx.client.applications.BackendService]): StyxServer = {
     val config: YamlConfig = new YamlConfig(yamlConfig)
     val styxConfig = new com.hotels.styx.StyxConfig(yamlConfig)
 

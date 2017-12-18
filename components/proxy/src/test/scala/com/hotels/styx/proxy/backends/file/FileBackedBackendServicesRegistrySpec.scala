@@ -28,6 +28,7 @@ import com.hotels.styx.client.applications.BackendServices.newBackendServices
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings
 import com.hotels.styx.client.healthcheck.HealthCheckConfig.newHealthCheckConfigBuilder
 import com.hotels.styx.client.stickysession.StickySessionConfig
+import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.Registry
 import com.hotels.styx.infrastructure.Registry.Changes
 import org.hamcrest.MatcherAssert.assertThat
@@ -39,7 +40,6 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
-
 class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
   val LOG = LoggerFactory.getLogger("FileBackedRoutesSupplierSpec")
 
@@ -82,13 +82,13 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
       it("should read backend services configured in the yaml file") {
         val registry = new FileBackedBackendServicesRegistry(newResource("classpath:conf/origins/origins-for-jsontest.yml"))
 
-        registry.startAsync.awaitRunning
+        StyxFutures.await(registry.start())
         val backendServices = registry.get().asScala
 
         assert(backendServices.size == 2)
         assert(backendServices.head == backendServiceOne)
 
-        registry.stopAsync().awaitTerminated()
+        StyxFutures.await(registry.stop())
       }
     }
 
@@ -104,7 +104,7 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
         var generatedBackendServices = writeToFile(asList(genBackendOne), "backends/generated/single.yaml")
 
         val registry = new FileBackedBackendServicesRegistry(newResource(generatedBackendServices.toString))
-        registry.startAsync.awaitRunning
+        StyxFutures.await(registry.start())
 
         assertThat(registry.get(), contains(genBackendOne))
 
@@ -116,11 +116,11 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
 
         generatedBackendServices = writeToFile(asList(genBackendOne, genBackendTwo), "backends/generated/single.yaml")
 
-        registry.reload()
+        StyxFutures.await(registry.reload())
 
         assertThat(registry.get(), contains(genBackendOne, genBackendTwo))
 
-        registry.stopAsync().awaitTerminated()
+        StyxFutures.await(registry.stop())
       }
 
 
@@ -135,7 +135,7 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
         var generatedBackedServices = writeToFile(asList(genBackendOne), "backends/generated/single.yaml")
 
         val registry = new FileBackedBackendServicesRegistry(newResource(generatedBackedServices.toString))
-        registry.startAsync.awaitRunning
+        StyxFutures.await(registry.start())
 
         assertThat(registry.get(), contains(genBackendOne))
 
@@ -147,16 +147,16 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
 
         generatedBackedServices = writeToFile(asList(genBackendOne, genBackendTwo), "backends/generated/single.yaml")
 
-        registry.reload()
+        StyxFutures.await(registry.reload())
 
         assertThat(registry.get(), contains(genBackendOne, genBackendTwo))
 
         generatedBackedServices = writeToFile(asList(genBackendOne), "backends/generated/single.yaml")
-        registry.reload()
+        StyxFutures.await(registry.reload())
 
         assertThat(registry.get(), contains(genBackendOne))
 
-        registry.stopAsync().awaitTerminated()
+        StyxFutures.await(registry.stop())
       }
 
 
@@ -172,10 +172,10 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
         val listener = mock(classOf[Registry.ChangeListener[com.hotels.styx.client.applications.BackendService]])
 
         val registry = new FileBackedBackendServicesRegistry(newResource(generatedBackedServices.toString))
-          .addListener(listener)
 
+        registry.addListener(listener)
 
-        registry.startAsync.awaitRunning
+        StyxFutures.await(registry.start())
 
         val changes = new Changes.Builder[com.hotels.styx.client.applications.BackendService]()
           .added(newBackendServices(genBackendOne))
@@ -192,7 +192,7 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
         assertThat(registry.get(), contains(genBackendOne))
         verifyNoMoreInteractions(listener)
 
-        registry.stopAsync().awaitTerminated()
+        StyxFutures.await(registry.stop())
       }
     }
   }

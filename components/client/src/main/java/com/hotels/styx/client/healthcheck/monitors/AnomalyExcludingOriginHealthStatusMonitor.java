@@ -15,12 +15,12 @@
  */
 package com.hotels.styx.client.healthcheck.monitors;
 
-import com.google.common.util.concurrent.AbstractIdleService;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.client.healthcheck.AnomalyExcludingOriginHealthEventListener;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -29,7 +29,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * An {@link OriginHealthStatusMonitor} that wraps a {@link ScheduledOriginHealthStatusMonitor} but only propagates
  * events once a configurable number of same-events have been received (i.e. X number of healthy in a row, or X number of unhealthy in a row)
  */
-public class AnomalyExcludingOriginHealthStatusMonitor extends AbstractIdleService implements OriginHealthStatusMonitor {
+public class AnomalyExcludingOriginHealthStatusMonitor implements OriginHealthStatusMonitor {
     private final OriginHealthStatusMonitor healthStatusMonitor;
     private final int healthyThreshold;
     private final int unhealthyThreshold;
@@ -53,13 +53,13 @@ public class AnomalyExcludingOriginHealthStatusMonitor extends AbstractIdleServi
     }
 
     @Override
-    protected void startUp() throws Exception {
-        healthStatusMonitor.startAsync().awaitRunning();
+    public CompletableFuture<Void> start() {
+        return healthStatusMonitor.start();
     }
 
     @Override
-    protected void shutDown() throws Exception {
-        healthStatusMonitor.stopAsync().awaitTerminated();
+    public CompletableFuture<Void> stop() {
+        return healthStatusMonitor.stop();
     }
 
     @Override

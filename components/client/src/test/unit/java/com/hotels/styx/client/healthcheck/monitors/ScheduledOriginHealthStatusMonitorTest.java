@@ -24,8 +24,9 @@ import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
-import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;
+import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
+import static com.hotels.styx.common.StyxFutures.await;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.atLeast;
@@ -46,7 +47,7 @@ public class ScheduledOriginHealthStatusMonitorTest {
         ScheduledOriginHealthStatusMonitor monitor = makeScheduledOriginHealthMonitor(new StubOriginStateOriginHealthCheckFunction(LIVE_ORIGIN));
         monitor.monitor(DEAD_ORIGIN);
         monitor.addOriginStatusListener(this.listener);
-        monitor.startAsync().awaitRunning();
+        await(monitor.start());
 
         scheduler.runNextPendingCommand();
         verifyOriginIsDead(DEAD_ORIGIN);
@@ -58,7 +59,7 @@ public class ScheduledOriginHealthStatusMonitorTest {
         monitor.monitor(DEAD_ORIGIN, DEAD_ORIGIN_2);
         monitor.addOriginStatusListener(this.listener);
 
-        monitor.startAsync().awaitRunning();
+        await(monitor.start());
         scheduler.runNextPendingCommand();
         verify(this.listener, atLeast(2)).originUnhealthy(anyOrigin());
     }
@@ -70,7 +71,7 @@ public class ScheduledOriginHealthStatusMonitorTest {
         monitor.monitor(DEAD_ORIGIN);
         monitor.addOriginStatusListener(this.listener);
 
-        monitor.startAsync().awaitRunning();
+        await(monitor.start());
 
         verifyOriginIsDead(DEAD_ORIGIN);
 
@@ -97,7 +98,7 @@ public class ScheduledOriginHealthStatusMonitorTest {
         private final Origin liveOrigin;
         private volatile boolean treatAllOriginsAsLive = false;
 
-        public StubOriginStateOriginHealthCheckFunction(Origin liveOrigin) {
+        StubOriginStateOriginHealthCheckFunction(Origin liveOrigin) {
             this.liveOrigin = liveOrigin;
         }
 
@@ -106,7 +107,7 @@ public class ScheduledOriginHealthStatusMonitorTest {
             responseCallback.originStateResponse(this.treatAllOriginsAsLive || origin.equals(this.liveOrigin) ? HEALTHY : UNHEALTHY);
         }
 
-        public void raiseDeadOrigins() {
+        void raiseDeadOrigins() {
             this.treatAllOriginsAsLive = true;
         }
     }

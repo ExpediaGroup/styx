@@ -27,7 +27,7 @@ import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration
 import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.api.{HttpHandler, HttpRequest, HttpResponse}
 import com.hotels.styx.client.applications.BackendService
-import com.hotels.styx.infrastructure.Registry
+import com.hotels.styx.infrastructure.AbstractRegistry
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.metrics.StyxMetrics
 import com.hotels.styx.proxy.ProxyServerConfig
@@ -80,7 +80,7 @@ object StyxServerSupport {
       .set("admin", adminServerConfigBuilder.build()))
   }
 
-  def newStyxServerBuilder(styxConfig: StyxConfig, backendServicesRegistry: Registry[BackendService], plugins: List[NamedPlugin] = Nil) = {
+  def newStyxServerBuilder(styxConfig: StyxConfig, backendServicesRegistry: AbstractRegistry[BackendService], plugins: List[NamedPlugin] = Nil) = {
     val plugins1 = plugins.asInstanceOf[Iterable[NamedPlugin]].asJava
     val pluginSupplier = new java.util.function.Supplier[java.lang.Iterable[NamedPlugin]] {
       override def get() = plugins1

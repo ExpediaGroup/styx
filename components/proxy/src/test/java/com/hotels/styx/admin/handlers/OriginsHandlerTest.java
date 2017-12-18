@@ -34,6 +34,7 @@ import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadFromPath;
+import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
@@ -53,12 +54,12 @@ public class OriginsHandlerTest {
 
     @BeforeClass
     public void startRegistry() {
-        backendServicesRegistry.startAsync().awaitRunning();
+        await(backendServicesRegistry.start());
     }
 
     @AfterClass
     public void stopRegistry() {
-        backendServicesRegistry.stopAsync().awaitTerminated();
+        await(backendServicesRegistry.stop());
     }
 
     @Test

@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.routing.config
 
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletableFuture.completedFuture
 import java.util.concurrent.Executors.newSingleThreadExecutor
 import java.util.function.Supplier
 import java.{lang, util}
@@ -23,17 +25,17 @@ import _root_.io.netty.handler.codec.http.HttpResponseStatus.OK
 import com.codahale.metrics.health.HealthCheckRegistry
 import com.google.common.collect.ImmutableMap
 import com.google.common.eventbus.AsyncEventBus
-import com.google.common.util.concurrent.Service
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
+import com.hotels.styx.api.service.spi.StyxService
 import com.hotels.styx.api.{HttpHandler2, HttpResponse}
 import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.client.applications.BackendService.newBackendServiceBuilder
-import com.hotels.styx.infrastructure.Registry.Changes
-import com.hotels.styx.infrastructure.{AbstractRegistry, Registry}
+import com.hotels.styx.infrastructure.AbstractRegistry
+import com.hotels.styx.infrastructure.Registry.{Changes, ReloadResult}
 import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin
-import com.hotels.styx.routing.{UserConfiguredPipelineFactory, PluginAdapter, HttpHandlerAdapter}
+import com.hotels.styx.routing.{HttpHandlerAdapter, PluginAdapter, UserConfiguredPipelineFactory}
 import com.hotels.styx.{AggregatedConfiguration, Environment, StyxConfig, Version}
 import org.mockito.Matchers.any
 import org.mockito.Mockito.when
@@ -45,7 +47,7 @@ import scala.collection.JavaConverters._
 
 class UserConfiguredPipelineFactorySpec extends FunSpec with ShouldMatchers with MockitoSugar {
 
-  val registries: util.Map[String, Service] = ImmutableMap.of("registry1", backendRegistry(newBackendServiceBuilder.path("/foo").build))
+  val registries: util.Map[String, StyxService] = ImmutableMap.of("registry1", backendRegistry(newBackendServiceBuilder.path("/foo").build))
 
   it ("Configures plugins in a given order") {
     val configuration = new StyxConfig(
@@ -175,7 +177,7 @@ class UserConfiguredPipelineFactorySpec extends FunSpec with ShouldMatchers with
           |        backendProvider: backend_apps
         """.stripMargin)
 
-    val registries: util.Map[String, Service] = ImmutableMap.of("backend_apps", backendRegistry(newBackendServiceBuilder.path("/").build))
+    val registries: util.Map[String, StyxService] = ImmutableMap.of("backend_apps", backendRegistry(newBackendServiceBuilder.path("/").build))
 
     val handler: HttpHandler2 = new UserConfiguredPipelineFactory(buildEnvironment(configuration), configuration, pluginsSupplier(), registries).build
 
@@ -239,13 +241,14 @@ class UserConfiguredPipelineFactorySpec extends FunSpec with ShouldMatchers with
       .eventBus(new AsyncEventBus("styx", newSingleThreadExecutor)).build
   }
 
-  def backendRegistry(backends: BackendService*) = new AbstractRegistry[BackendService] {
+  def backendRegistry(backends: BackendService*) = new AbstractRegistry[BackendService]("backend-registry") {
     snapshot.set(backends.asJava)
-    override def reload(listener: Registry.ReloadListener): Unit = {
+    override def reload(): CompletableFuture[ReloadResult] = {
       notifyListeners(
         new Changes.Builder[BackendService]()
           .added(backends:_*)
           .build())
+      completedFuture(ReloadResult.reloaded("ok"))
     }
   }
 

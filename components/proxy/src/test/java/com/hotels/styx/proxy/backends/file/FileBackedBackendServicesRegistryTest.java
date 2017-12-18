@@ -18,9 +18,11 @@ package com.hotels.styx.proxy.backends.file;
 import com.google.common.collect.Iterables;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Resource;
+import com.hotels.styx.api.service.spi.ServiceFailureException;
 import com.hotels.styx.client.applications.BackendService;
+import com.hotels.styx.common.StyxFutures;
 import com.hotels.styx.infrastructure.Registry;
-import com.hotels.styx.infrastructure.Registry.ReloadListener;
+import com.hotels.styx.infrastructure.Registry.ReloadResult;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 import org.testng.annotations.BeforeMethod;
@@ -28,14 +30,21 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 
 import static com.google.common.io.Files.copy;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
+import static com.hotels.styx.infrastructure.Registry.Outcome.RELOADED;
+import static com.hotels.styx.infrastructure.Registry.Outcome.UNCHANGED;
 import static com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistryTest.ChangeType.ADD;
 import static com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistryTest.ChangeType.REMOVE;
 import static com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistryTest.ChangeType.UPDATE;
 import static java.lang.String.format;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.mock;
@@ -49,7 +58,6 @@ public class FileBackedBackendServicesRegistryTest {
 
     Registry.ChangeListener<BackendService> changeListener;
     FileBackedBackendServicesRegistry registry;
-    ReloadListener reloadListener;
 
     @BeforeMethod
     public void createTempDirectory() throws IOException {
@@ -59,11 +67,10 @@ public class FileBackedBackendServicesRegistryTest {
         tempDirectory.mkdirs();
 
         changeListener = mock(Registry.ChangeListener.class);
-        reloadListener = mock(ReloadListener.class);
 
         registry = new FileBackedBackendServicesRegistry(givenOrigins("/backends/origins.yml"));
         registry.addListener(changeListener);
-        registry.startAsync().awaitRunning();
+        StyxFutures.await(registry.start());
     }
 
     @Test
@@ -71,80 +78,87 @@ public class FileBackedBackendServicesRegistryTest {
         verify(changeListener).onChange(anyChanges());
     }
 
-    @Test(expectedExceptions = IllegalStateException.class,
-            expectedExceptionsMessageRegExp = "Expected the service to be RUNNING, but the service has FAILED")
-    public void discardsInvalidPaths() throws IOException {
+    @Test(expectedExceptions = ServiceFailureException.class,
+            expectedExceptionsMessageRegExp = "Service failed to start.")
+    public void discardsInvalidPaths() throws Throwable {
         registry = new FileBackedBackendServicesRegistry(givenOrigins("/backends/origins-with-invalid-path.yml"));
         registry.addListener(changeListener);
-        registry.startAsync().awaitRunning();
+        unwrapException(() -> registry.start().join());
     }
 
-    @Test(expectedExceptions = IllegalStateException.class,
-            expectedExceptionsMessageRegExp = "Expected the service to be RUNNING, but the service has FAILED")
-    public void discardsInvalidHealthCheckURIs() throws IOException {
+    @Test(expectedExceptions = ServiceFailureException.class,
+            expectedExceptionsMessageRegExp = "Service failed to start.")
+    public void discardsInvalidHealthCheckURIs() throws Throwable {
         registry = new FileBackedBackendServicesRegistry(givenOrigins("/backends/origins-with-invalid-healthcheck-uri.yml"));
         registry.addListener(changeListener);
-        registry.startAsync().awaitRunning();
+        unwrapException(() -> registry.start().join());
     }
 
     @Test
-    public void firesChangeEventWhenBackendIsUpdated() throws IOException {
+    public void discardsInvalidHealthCheckURIs2() throws Throwable {
+        registry = new FileBackedBackendServicesRegistry(givenOrigins("/backends/origins-with-invalid-healthcheck-uri.yml"));
+        registry.addListener(changeListener);
+        unwrapException(() -> registry.start());
+    }
+
+    @Test
+    public void firesChangeEventWhenBackendIsUpdated() throws IOException, ExecutionException, InterruptedException {
         givenOrigins("/backends/origins-webapp-origin-removed.yml");
-        reload();
-        verify(reloadListener).onChangesApplied();
+        ReloadResult result = reload().get();
+        assertThat(result.outcome(), is(RELOADED));
         verify(changeListener).onChange(updated("webapp"));
     }
 
     @Test
-    public void firesChangeEventWhenBackendOriginIdsAreUpdated() throws IOException {
+    public void firesChangeEventWhenBackendOriginIdsAreUpdated() throws IOException, ExecutionException, InterruptedException {
         givenOrigins("/backends/origins-id-changed.yml");
-        reload();
-        verify(reloadListener).onChangesApplied();
+        ReloadResult result = reload().get();
+        assertThat(result.outcome(), is(RELOADED));
         verify(changeListener).onChange(updated("webapp"));
     }
 
     @Test
-    public void firesChangeEventWhenBackendOriginHostsAreUpdated() throws IOException {
+    public void firesChangeEventWhenBackendOriginHostsAreUpdated() throws IOException, ExecutionException, InterruptedException {
         givenOrigins("/backends/origins-host-changed.yml");
-        reload();
-        verify(reloadListener).onChangesApplied();
+        ReloadResult result = reload().get();
+        assertThat(result.outcome(), is(RELOADED));
         verify(changeListener).onChange(updated("webapp"));
     }
 
     @Test
-    public void doesNotFireChangeEventWhenFileIsNotChanged() {
-        reload();
-        verify(reloadListener).onNoMeaningfulChanges(any(String.class));
+    public void doesNotFireChangeEventWhenFileIsNotChanged() throws ExecutionException, InterruptedException {
+        ReloadResult result = reload().get();
+        assertThat(result.outcome(), is(UNCHANGED));
         verifyNoMoreInteractions(changeListener);
     }
 
     @Test
-    public void doesNotFireChangeEventWhenFileChangesDoNotChangeConfiguration() throws IOException {
+    public void doesNotFireChangeEventWhenFileChangesDoNotChangeConfiguration() throws IOException, ExecutionException, InterruptedException {
         givenOrigins("/backends/origins-comments-changed.yml");
-        reload();
-        verify(reloadListener).onNoMeaningfulChanges(any(String.class));
+        ReloadResult result = reload().get();
+        assertThat(result.outcome(), is(UNCHANGED));
         verifyNoMoreInteractions(changeListener);
     }
 
     @Test
-    public void firesChangeEventWhenBackendIsRemoved() throws IOException {
+    public void firesChangeEventWhenBackendIsRemoved() throws IOException, ExecutionException, InterruptedException {
         givenOrigins("/backends/origins-landing-removed.yml");
-        reload();
-        verify(reloadListener).onChangesApplied();
+        ReloadResult result = reload().get();
+        assertThat(result.outcome(), is(RELOADED));
         verify(changeListener).onChange(removed("landing"));
     }
 
     @Test
-    public void firesChangeEventWhenBackendIsAdded() throws IOException {
+    public void firesChangeEventWhenBackendIsAdded() throws IOException, ExecutionException, InterruptedException {
         givenOrigins("/backends/origins-pd-app-added.yml");
-        reload();
-        verify(reloadListener).onChangesApplied();
+        ReloadResult result = reload().get();
+        assertThat(result.outcome(), is(RELOADED));
         verify(changeListener).onChange(added("product-details"));
     }
 
-    private void reload() {
+    private CompletableFuture<ReloadResult> reload() {
         reset(changeListener);
-        registry.reload(reloadListener);
+        return registry.reload();
     }
 
     private Registry.Changes<BackendService> anyChanges() {
@@ -211,7 +225,7 @@ public class FileBackedBackendServicesRegistryTest {
         ADD, REMOVE, UPDATE
     }
 
-    void deleteFile(File file) {
+    private static void deleteFile(File file) {
         if (file.isDirectory()) {
             for (File f : file.listFiles()) {
                 deleteFile(f);
@@ -220,4 +234,13 @@ public class FileBackedBackendServicesRegistryTest {
 
         file.delete();
     }
+
+    private static void unwrapException(Runnable x) throws Throwable {
+        try {
+            x.run();
+        } catch (CompletionException e) {
+            throw e.getCause();
+        }
+    }
+
 }

@@ -15,17 +15,23 @@
  */
 package com.hotels.styx.infrastructure;
 
+import com.google.common.hash.HashCode;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.Resource;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.util.function.Function;
+import java.util.concurrent.CompletableFuture;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Throwables.propagate;
+import static com.google.common.hash.Hashing.md5;
 import static com.google.common.io.ByteStreams.toByteArray;
-import static java.lang.String.format;
+import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
+import static com.hotels.styx.infrastructure.Registry.ReloadResult.unchanged;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.CompletableFuture.supplyAsync;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -35,95 +41,91 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry<T> {
     private static final Logger LOG = getLogger(FileBackedRegistry.class);
-    private final Parser<T> parser;
-    private final FileMonitor fileMonitor;
+    private final Resource configurationFile;
+    private final Reader<T> reader;
+    private HashCode fileHash;
 
-    public FileBackedRegistry(Resource configurationFile, Parser<T> parser) {
-        this(parser, configurationFile.absolutePath(), path -> {
-            try {
-                return toByteArray(configurationFile.inputStream());
-            } catch (IOException e) {
-                throw propagate(e);
-            }
+    public FileBackedRegistry(Resource configurationFile, Reader<T> reader) {
+        super("FileBackedRegistry");
+        this.configurationFile = requireNonNull(configurationFile);
+        this.reader = checkNotNull(reader);
+        this.fileHash = null;
+    }
+
+    @Override
+    protected CompletableFuture<Void> startService() {
+        return CompletableFuture.runAsync(() -> {
+            LOG.info("starting {}", getClass().getSimpleName());
+
+            byte[] content = readFile();
+            fileHash = md5().hashBytes(content);
+            Iterable<T> resources = reader.read(content);
+
+            snapshot.set(resources);
+            Changes<T> changes = new Changes.Builder<T>()
+                    .added(resources)
+                    .build();
+            notifyListeners(changes);
         });
     }
 
-    FileBackedRegistry(Parser<T> parser, String absolutePath, Function<String, byte[]> byteLoader) {
-        this.fileMonitor = new FileMonitor(byteLoader, absolutePath);
-        this.parser = requireNonNull(parser);
-    }
-
     @Override
-    protected void startUp() {
-        LOG.info("starting {}", getClass().getSimpleName());
+    public CompletableFuture<ReloadResult> reload() {
+        return supplyAsync(() -> {
+            byte[] content = readFile();
+            HashCode hashCode = md5().hashBytes(content);
 
-        fileMonitor.load();
+            if (fileHash.equals(hashCode)) {
+                LOG.info("Not reloading {} as content did not change", configurationFile.absolutePath());
+                return unchanged("file content did not change");
+            } else {
+                try {
+                    boolean changesPerformed = updateResources(content, hashCode);
 
-        Iterable<T> resources = parser.read(fileMonitor.bytes());
-        snapshot.set(resources);
-        Changes<T> changes = new Changes.Builder<T>()
-                .added(resources)
-                .build();
-        notifyListeners(changes);
-    }
-
-    @Override
-    public synchronized void reload(ReloadListener listener) {
-        if (!fileMonitor.load()) {
-            LOG.info("Not reloading {} as content did not change", fileMonitor.path());
-            listener.onNoMeaningfulChanges("file content did not change");
-        } else {
-            try {
-                boolean changesPerformed = updateResources();
-
-                if (!changesPerformed) {
-                    LOG.info("Not firing change event for {} as content was not semantically different", fileMonitor.path());
-                    listener.onNoMeaningfulChanges("file content was not semantically different");
-                } else {
-                    LOG.debug("Changes applied!");
-                    listener.onChangesApplied();
+                    if (!changesPerformed) {
+                        LOG.info("Not firing change event for {} as content was not semantically different", configurationFile.absolutePath());
+                        return unchanged("file content was not semantically different");
+                    } else {
+                        LOG.debug("Changes applied!");
+                        return reloaded("Changes applied!");
+                    }
+                } catch (Exception e) {
+                    LOG.error("Not reloading {} as there was an error reading content", configurationFile.absolutePath(), e);
+                    notifyListenersOnError(e);
+                    throw e;
                 }
-            } catch (Exception e) {
-                LOG.error("Not reloading {} as there was an error reading content", fileMonitor.path(), e);
-                notifyListenersOnError(e);
-                listener.onErrorDuringReload(e);
             }
-        }
+        }, newSingleThreadExecutor());
     }
 
-    private boolean updateResources() {
-        Iterable<T> resources = parser.read(fileMonitor.bytes());
+    private boolean updateResources(byte[] content, HashCode hashCode) {
+
+        Iterable<T> resources = reader.read(content);
         Changes<T> changes = changes(resources, snapshot.get());
 
         if (!changes.isEmpty()) {
             snapshot.set(resources);
-
-            try {
-                notifyListeners(changes);
-            } catch (Exception e) {
-                return throwReloadException(e);
-            }
+            notifyListeners(changes);
         }
 
+        fileHash = hashCode;
         return !changes.isEmpty();
     }
 
-    // return type can be anything because it never returns normally
-    private <X> X throwReloadException(Exception e) {
-        String message = format("Exception during reload: %s : previousFileContent=%s, newFileContent=%s",
-                e.getMessage(),
-                new String(fileMonitor.previousBytes()),
-                new String(fileMonitor.bytes()));
-
-        throw new ReloadException(message, e);
+    private byte[] readFile() {
+        try {
+            return toByteArray(configurationFile.inputStream());
+        } catch (IOException e) {
+            throw propagate(e);
+        }
     }
 
     /**
-     * Parses file contents into the element type.
+     * Reader.
      *
-     * @param <T> element type
+     * @param <T>
      */
-    public interface Parser<T> {
+    public interface Reader<T> {
         Iterable<T> read(byte[] content);
     }
 }

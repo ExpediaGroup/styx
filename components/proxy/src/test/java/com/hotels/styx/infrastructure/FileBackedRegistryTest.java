@@ -15,46 +15,49 @@
  */
 package com.hotels.styx.infrastructure;
 
-import com.hotels.styx.api.Id;
+import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.client.applications.BackendService;
-import com.hotels.styx.support.matchers.LoggingTestSupport;
-import org.testng.annotations.AfterMethod;
+import com.hotels.styx.infrastructure.Registry.ReloadResult;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.Objects;
-import java.util.Queue;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
-import static ch.qos.logback.classic.Level.ERROR;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.infrastructure.FileBackedRegistry.changes;
-import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
-import static java.util.Arrays.asList;
+import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
+import static com.hotels.styx.infrastructure.Registry.ReloadResult.unchanged;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doNothing;
+import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class FileBackedRegistryTest {
-    private LoggingTestSupport log;
 
-    @AfterMethod
-    public void stopRecordingLogs() {
-        if (log != null) {
-            log.stop();
-        }
+    private RegistryChangeListener listener;
+    private byte[] originalContent;
+    private byte[] newContent;
+    private BackendService backendService;
+    private FileBackedRegistry<BackendService> registry;
+
+    @BeforeMethod
+    public void setUp() throws Exception {
+        listener = new RegistryChangeListener();
+        originalContent = "... origins file ...".getBytes(UTF_8);
+        newContent = "... new file ...".getBytes(UTF_8);
+        backendService = new BackendService.Builder().build();
     }
 
     @Test
@@ -72,122 +75,161 @@ public class FileBackedRegistryTest {
     }
 
     @Test
-    public void loadsResources() throws TimeoutException {
-        FileBackedRegistry<FakeData> registry = new FileBackedRegistry<>(
-                content -> singletonList(new FakeData(content)),
-                "/foo/origins-test.yml",
-                resource -> "test_content".getBytes()
+    public void announcesInitialStateWhenStarts() throws IOException, ExecutionException, InterruptedException {
+        Resource configurationFile = mockResource("/styx/config", new ByteArrayInputStream(originalContent));
+
+        registry = new FileBackedRegistry<>(configurationFile, bytes -> ImmutableList.of(backendService));
+        registry.addListener(listener);
+
+        await(registry.startService());
+
+        assertThat(listener.changeLog().get(0).added(), contains(backendService));
+        assertThat(listener.changeLog().get(0).removed(), emptyIterable());
+        assertThat(listener.changeLog().get(0).updated(), emptyIterable());
+        assertThat(listener.errorLog().size(), is(0));
+    }
+
+
+    @Test
+    public void announcesNoMeaningfulChangesWhenFileDidNotChange() throws Exception {
+        Resource configurationFile = mockResource("/styx/config",
+                new ByteArrayInputStream(originalContent),
+                new ByteArrayInputStream(originalContent)
         );
 
-        registry.startAsync().awaitRunning(1, SECONDS);
+        registry = new FileBackedRegistry<>(configurationFile, bytes -> ImmutableList.of(backendService));
+        registry.addListener(listener);
+        await(registry.startService());
 
-        assertThat(registry.snapshot.get(), contains(new FakeData("test_content")));
+        ReloadResult result = registry.reload().get();
+        assertThat(result, is(unchanged("file content did not change")));
+
+        assertThat(listener.changeLog().get(0).added(), contains(backendService));
+        assertThat(listener.changeLog().get(0).removed(), emptyIterable());
+        assertThat(listener.changeLog().get(0).updated(), emptyIterable());
+        assertThat(listener.errorLog().size(), is(0));
     }
 
     @Test
-    public void reloadsResources() throws TimeoutException {
-        Queue<byte[]> fileContents = new ArrayDeque<>(asList(
-                "original_test_content".getBytes(),
-                "modified_test_content".getBytes()
-        ));
+    public void announcesNoMeaningfulChangesWhenNoSemanticChanges() throws Exception {
+        Resource configurationFile = mockResource("/styx/config", new ByteArrayInputStream(originalContent));
 
-        FileBackedRegistry<FakeData> registry = new FileBackedRegistry<>(
-                content -> singletonList(new FakeData(content)),
-                "/foo/origins-test.yml",
-                resource -> fileContents.poll()
-        );
+        registry = new FileBackedRegistry<>(configurationFile, bytes -> ImmutableList.of(backendService));
+        registry.addListener(listener);
 
-        registry.startAsync().awaitRunning(1, SECONDS);
+        await(registry.startService());
 
-        assertThat(registry.snapshot.get(), contains(new FakeData("original_test_content")));
+        when(configurationFile.inputStream()).thenReturn(new ByteArrayInputStream(newContent));
+        ReloadResult result = registry.reload().get();
+        assertThat(result, is(unchanged("file content was not semantically different")));
 
-        registry.reload();
-
-        assertThat(registry.snapshot.get(), contains(new FakeData("modified_test_content")));
+        assertThat(listener.changeLog().get(0).added(), contains(backendService));
+        assertThat(listener.changeLog().get(0).removed(), emptyIterable());
+        assertThat(listener.changeLog().get(0).updated(), emptyIterable());
+        assertThat(listener.errorLog().size(), is(0));
     }
 
     @Test
-    public void logsFileChangeWhenChangeListenerThrowsAnExceptionDuringReload() throws IOException, TimeoutException {
-        log = new LoggingTestSupport(FileBackedRegistry.class);
+    public void announcesChanges() throws Exception {
+        BackendService backendService1 = new BackendService.Builder().id("x").path("/x").build();
+        BackendService backendService2 = new BackendService.Builder().id("x").path("/y").build();
 
-        Queue<byte[]> fileContents = new ArrayDeque<>(asList(
-                "original_test_content".getBytes(),
-                "modified_test_content".getBytes()
-        ));
+        Resource configurationFile = mockResource("/styx/config",
+                new ByteArrayInputStream(originalContent),
+                new ByteArrayInputStream(newContent));
 
-        Resource configFile = mock(Resource.class);
-        when(configFile.absolutePath()).thenReturn("/foo/origins-test.yml");
-
-        FileBackedRegistry<FakeData> registry = new FileBackedRegistry<>(
-                content -> singletonList(new FakeData(content)),
-                configFile.absolutePath(),
-                resource -> fileContents.poll()
-        );
-
-        registry.startAsync().awaitRunning(1, SECONDS);
-
-        Registry.ChangeListener<FakeData> listener = mock(Registry.ChangeListener.class);
-
-        // First call is on "addListener" so do nothing. Next time is on "reload", so throw an exception
-        doNothing().doThrow(new RuntimeException("Testing")).when(listener).onChange(any(Registry.Changes.class));
+        registry = new FileBackedRegistry<>(
+                configurationFile,
+                bytes -> {
+                    if (new String(bytes).equals(new String(originalContent))) {
+                        return ImmutableList.of(backendService1);
+                    } else {
+                        return ImmutableList.of(backendService2);
+                    }
+                });
 
         registry.addListener(listener);
 
-        registry.reload();
+        await(registry.startService());
 
-        assertThat(log.lastMessage(), is(loggingEvent(
-                ERROR, "Not reloading /foo/origins-test.yml as there was an error reading content",
-                ReloadException.class, "Exception during reload: Testing : previousFileContent=original_test_content, newFileContent=modified_test_content"
-        )));
+        ReloadResult result = registry.reload().get();
+        assertThat(result, is(reloaded("Changes applied!")));
+
+        assertThat(listener.changeLog().get(1).added(), emptyIterable());
+        assertThat(listener.changeLog().get(1).removed(), emptyIterable());
+        assertThat(listener.changeLog().get(1).updated(), contains(backendService2));
+        assertThat(listener.errorLog().size(), is(0));
     }
 
-    private static class FakeData implements Identifiable {
-        private final String value;
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "java.util.concurrent.ExecutionException: java.lang.RuntimeException: Something went wrong...")
+    public void completesWithExceptionWhenErrorsDuringReload() throws Exception {
+        Resource configurationFile = mockResource("/styx/config",
+                new ByteArrayInputStream(originalContent),
+                new ByteArrayInputStream(newContent));
 
-        FakeData(byte[] value) {
-            this.value = new String(value);
-        }
+        registry = new FileBackedRegistry<>(
+                configurationFile,
+                bytes -> {
+                    if (new String(bytes).equals(new String(originalContent))) {
+                        return ImmutableList.of(backendService);
+                    } else {
+                        throw new RuntimeException("Something went wrong...");
+                    }
+                });
+        registry.addListener(listener);
+        await(registry.startService());
+        assertThat(listener.changeLog().get(0).added(), contains(backendService));
 
-        FakeData(String value) {
-            this.value = value;
+        await(registry.reload());
+    }
+
+    private Resource mockResource(String path, ByteArrayInputStream content) throws IOException {
+        Resource configuration = mock(Resource.class);
+        when(configuration.absolutePath()).thenReturn(path);
+        when(configuration.inputStream()).thenReturn(content);
+        return configuration;
+    }
+
+    private Resource mockResource(String path, ByteArrayInputStream content1, ByteArrayInputStream... contents) throws IOException {
+        Resource configuration = mock(Resource.class);
+        when(configuration.absolutePath()).thenReturn(path);
+        when(configuration.inputStream()).thenReturn(content1, contents);
+
+        return configuration;
+    }
+
+    static class RegistryChangeListener implements Registry.ChangeListener<BackendService> {
+        private List<Registry.Changes<BackendService>> changeLog = new ArrayList<>();
+        private List<Throwable> errorLog = new ArrayList<>();
+
+        @Override
+        public void onChange(Registry.Changes<BackendService> changes) {
+            System.out.println("onChange: " + changes);
+            changeLog.add(changes);
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            FakeData fakeData = (FakeData) o;
-            return Objects.equals(value, fakeData.value);
+        public void onError(Throwable ex) {
+            errorLog.add(ex);
         }
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(value);
+        List<Registry.Changes<BackendService>> changeLog() {
+            return changeLog;
         }
 
-        @Override
-        public Id id() {
-            return Id.id(value);
-        }
-
-        @Override
-        public String toString() {
-            return value;
+        List<Throwable> errorLog() {
+            return errorLog;
         }
     }
 
-    private static BackendService backendService(String id, int port) {
+    private BackendService backendService(String id, int port) {
         return new BackendService.Builder()
                 .id(id)
                 .origins(newOrigin(port))
                 .build();
     }
 
-    private static Origin newOrigin(int port) {
+    private Origin newOrigin(int port) {
         return newOriginBuilder("localhost", port).build();
     }
 }

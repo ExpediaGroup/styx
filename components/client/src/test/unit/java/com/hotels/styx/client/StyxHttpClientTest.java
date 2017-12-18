@@ -18,7 +18,6 @@ package com.hotels.styx.client;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.google.common.net.HostAndPort;
-import com.google.common.util.concurrent.AbstractIdleService;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
@@ -32,6 +31,7 @@ import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
+import com.hotels.styx.api.service.spi.AbstractStyxService;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
@@ -73,6 +73,7 @@ import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.service.spi.StyxServiceStatus.RUNNING;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
 import static com.hotels.styx.client.OriginsInventory.*;
 import static com.hotels.styx.client.Protocol.HTTP;
@@ -497,7 +498,7 @@ public class StyxHttpClientTest {
 
         styxHttpClient.close();
 
-        assertThat(monitor.isRunning(), is(false));
+        assertThat(monitor.status() == RUNNING, is(false));
     }
 
     @Test
@@ -702,13 +703,9 @@ public class StyxHttpClientTest {
                 };
     }
 
-    public static class RecordingOriginHealthStatusMonitor extends AbstractIdleService implements OriginHealthStatusMonitor {
-        @Override
-        protected void startUp() {
-        }
-
-        @Override
-        protected void shutDown() {
+    public static class RecordingOriginHealthStatusMonitor extends AbstractStyxService implements OriginHealthStatusMonitor {
+        RecordingOriginHealthStatusMonitor() {
+            super("Recording health status monitor");
         }
 
         @Override

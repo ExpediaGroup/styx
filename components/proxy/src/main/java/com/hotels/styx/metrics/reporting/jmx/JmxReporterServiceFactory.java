@@ -15,19 +15,19 @@
  */
 package com.hotels.styx.metrics.reporting.jmx;
 
-import com.google.common.util.concurrent.Service;
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.configuration.ServiceFactory;
+import com.hotels.styx.api.service.spi.StyxService;
 
 import static com.hotels.styx.metrics.reporting.MetricRegistryConstraints.codaHaleMetricRegistry;
 
 /**
  * A factory that produces JmxReporterService.
  */
-public class JmxReporterServiceFactory implements ServiceFactory<Service> {
+public class JmxReporterServiceFactory implements ServiceFactory<StyxService> {
     @Override
-    public Service create(Environment environment, Configuration serviceConfiguration) {
+    public StyxService create(Environment environment, Configuration serviceConfiguration) {
         String domain = serviceConfiguration.get("domain").orElse("com.hotels.styx");
 
         return new JmxReporterService(domain, codaHaleMetricRegistry(environment));

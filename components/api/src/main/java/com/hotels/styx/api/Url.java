@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.base.Splitter;
-
 import javax.annotation.concurrent.ThreadSafe;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -40,7 +38,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
-import static java.util.stream.Collectors.joining;
 
 /**
  * Alternate implementation for java.net.URL for easing its usage.

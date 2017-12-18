@@ -28,13 +28,17 @@ import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.client.applications.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.common.StyxFutures.await;
+import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
@@ -77,27 +81,29 @@ public class StaticPipelineBuilderTest {
 
     private Registry<BackendService> backendRegistry(BackendService... backendServices) {
         TestRegistry registry = new TestRegistry(backendServices);
-        registry.startAsync().awaitRunning();
+        await(registry.start());
         return registry;
     }
 
     class TestRegistry extends AbstractRegistry<BackendService> {
-        public TestRegistry(BackendService... backendServices) {
+        TestRegistry(BackendService... backendServices) {
+            super("TestRegistry");
             snapshot.set(asList(backendServices));
         }
 
         @Override
-        public void reload(ReloadListener listener) {
+        public CompletableFuture<ReloadResult> reload() {
             Changes<BackendService> build = new Changes.Builder<BackendService>().added().build();
             notifyListeners(build);
+            return completedFuture(reloaded("ok"));
         }
     }
 
-    private NamedPlugin interceptor(String name, Plugin plugin) {
+    private static NamedPlugin interceptor(String name, Plugin plugin) {
         return NamedPlugin.namedPlugin(name, plugin);
     }
 
-    private Plugin appendResponseHeader(String header, String value) {
+    private static Plugin appendResponseHeader(String header, String value) {
         return (request, chain) -> chain.proceed(request).map(response -> response.newBuilder().addHeader(header, value).build());
     }
 

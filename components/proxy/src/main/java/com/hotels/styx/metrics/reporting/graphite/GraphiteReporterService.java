@@ -19,11 +19,12 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteSender;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.AbstractIdleService;
+import com.hotels.styx.api.service.spi.StyxService;
 import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.codahale.metrics.MetricFilter.ALL;
@@ -35,7 +36,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Builds graphite reporter from configuration and wraps it in service interface.
  */
-public final class GraphiteReporterService extends AbstractIdleService {
+public final class GraphiteReporterService implements StyxService {
     private static final Logger LOGGER = getLogger(GraphiteReporterService.class);
 
     private final GraphiteReporter reporter;
@@ -61,15 +62,16 @@ public final class GraphiteReporterService extends AbstractIdleService {
     }
 
     @Override
-    protected void startUp() {
-        LOGGER.info("Graphite started on address=\"{}\"", address);
-
-        this.reporter.start(reportingIntervalMillis, MILLISECONDS);
+    public CompletableFuture<Void> start() {
+        return CompletableFuture.runAsync(() -> {
+            LOGGER.info("Graphite started on address=\"{}\"", address);
+            this.reporter.start(reportingIntervalMillis, MILLISECONDS);
+        });
     }
 
     @Override
-    protected void shutDown() {
-        this.reporter.stop();
+    public CompletableFuture<Void> stop() {
+        return CompletableFuture.runAsync(this.reporter::stop);
     }
 
     @VisibleForTesting

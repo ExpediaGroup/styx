@@ -15,9 +15,9 @@
  */
 package com.hotels.styx.client.healthcheck;
 
-import com.google.common.util.concurrent.Service;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.service.spi.StyxService;
 
 import java.util.EventListener;
 import java.util.Set;
@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 /**
  * Monitors the health of origins.
  */
-public interface OriginHealthStatusMonitor extends Service {
+public interface OriginHealthStatusMonitor extends StyxService {
     /**
      * Factory for creating a health monitor of an origin.
      */

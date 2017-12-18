@@ -21,6 +21,7 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.client.applications.BackendService;
+import com.hotels.styx.common.StyxFutures;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import org.testng.annotations.Test;
 
@@ -41,7 +42,7 @@ public class FileBackedBackendServicesRegistryFactoryTest {
 
         FileBackedBackendServicesRegistry registry = loadService(environment.configuration(), environment, "services.factories.backendServiceRegistry", FileBackedBackendServicesRegistry.class).get();
 
-        registry.startAsync().awaitRunning();
+        StyxFutures.await(registry.start());
 
         Iterable<BackendService> backendServices = registry.get();
 

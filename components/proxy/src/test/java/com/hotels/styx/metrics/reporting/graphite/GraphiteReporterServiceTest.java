@@ -18,6 +18,7 @@ package com.hotels.styx.metrics.reporting.graphite;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.graphite.GraphiteSender;
+import com.hotels.styx.common.StyxFutures;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -69,11 +70,10 @@ public class GraphiteReporterServiceTest {
     @Test
     public void logsWhenServiceStarts() {
         try {
-            service.startAsync().awaitRunning();
-
+            StyxFutures.await(service.start());
             assertThat(log.lastMessage(), is(loggingEvent(INFO, "Graphite started on address=\"localhost/127.0.0.1:1234\"")));
         } finally {
-            service.stopAsync();
+            StyxFutures.await(service.stop());
         }
     }
 
