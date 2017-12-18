@@ -47,17 +47,15 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * HTTP response with a fully aggregated/decoded body.
- *
- * @param <T> content type
  */
-public class FullHttpResponse<T> implements FullHttpMessage<T> {
+public class FullHttpResponse implements FullHttpMessage {
     private final HttpVersion version;
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
-    private final T body;
+    private final String body;
     private final List<HttpCookie> cookies;
 
-    FullHttpResponse(Builder<T> builder) {
+    FullHttpResponse(Builder builder) {
         this.version = builder.version;
         this.status = builder.status;
         this.headers = builder.headers.build();
@@ -68,34 +66,20 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
     /**
      * Creates an HTTP response builder with a status of 200 OK and empty body.
      *
-     * @param <T> response type
      * @return a new builder
      */
-    public static <T> Builder<T> response() {
-        return new Builder<>();
+    public static Builder response() {
+        return new Builder();
     }
 
     /**
      * Creates an HTTP response builder with a given status and empty body.
      *
      * @param status response status
-     * @param <T> response type
      * @return a new builder
      */
-    public static <T> Builder<T> response(HttpResponseStatus status) {
-        return new Builder<>(status);
-    }
-
-    /**
-     * Creates an HTTP response builder with a given status and body.
-     *
-     * @param status response status
-     * @param body response body
-     * @param <T> response type
-     * @return a new builder
-     */
-    public static <T> Builder<T> response(HttpResponseStatus status, T body) {
-        return new Builder<T>(status).body(body);
+    public static Builder response(HttpResponseStatus status) {
+        return new Builder(status);
     }
 
     @Override
@@ -119,7 +103,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
     }
 
     @Override
-    public T body() {
+    public String body() {
         return body;
     }
 
@@ -128,8 +112,8 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
         return version;
     }
 
-    public Builder<T> newBuilder() {
-        return new Builder<>(this);
+    public Builder newBuilder() {
+        return new Builder(this);
     }
 
     public HttpResponseStatus status() {
@@ -147,7 +131,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
      * @param encoder an encoding function
      * @return an encoded (streaming) response
      */
-    public HttpResponse toStreamingHttpResponse(Function<T, ByteBuf> encoder) {
+    public HttpResponse toStreamingHttpResponse(Function<String, ByteBuf> encoder) {
         return new HttpResponse.Builder(this, encodeBody(this.body, encoder))
                 .build();
     }
@@ -158,7 +142,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
      * @param response a response
      * @return an encoded (streaming) response
      */
-    public static HttpResponse toStreamingHttpResponse(FullHttpResponse<String> response) {
+    public static HttpResponse toStreamingHttpResponse(FullHttpResponse response) {
         return response.toStreamingHttpResponse(string -> Unpooled.copiedBuffer(string, UTF_8));
     }
 
@@ -194,15 +178,13 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
 
     /**
      * Builder.
-     *
-     * @param <T> body type
      */
-    public static final class Builder<T> {
+    public static final class Builder {
         private HttpResponseStatus status = OK;
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
         private boolean validate = true;
-        private T body;
+        private String body;
         private final List<HttpCookie> cookies;
 
         public Builder() {
@@ -216,7 +198,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
             this.status = status;
         }
 
-        public Builder(FullHttpResponse<T> response) {
+        public Builder(FullHttpResponse response) {
             this.status = response.status();
             this.version = response.version();
             this.headers = response.headers().newBuilder();
@@ -224,7 +206,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
             this.cookies = new ArrayList<>(response.cookies());
         }
 
-        public Builder(HttpResponse response, T decoded) {
+        public Builder(HttpResponse response, String decoded) {
             this.status = response.status();
             this.version = response.version();
             this.headers = response.headers().newBuilder();
@@ -238,7 +220,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
          * @param status response status
          * @return {@code this}
          */
-        public Builder<T> status(HttpResponseStatus status) {
+        public Builder status(HttpResponseStatus status) {
             this.status = requireNonNull(status);
             return this;
         }
@@ -249,8 +231,11 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
          * @param content response body
          * @return {@code this}
          */
-        public Builder<T> body(T content) {
-            this.body = content;
+        public Builder body(String content) {
+            String sanitisedContent = content == null ? "" : content;
+
+            header(CONTENT_LENGTH, sanitisedContent.getBytes(UTF_8).length);
+            this.body = sanitisedContent;
             return this;
         }
 
@@ -260,7 +245,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
          * @param version HTTP version
          * @return {@code this}
          */
-        public Builder<T> version(HttpVersion version) {
+        public Builder version(HttpVersion version) {
             this.version = requireNonNull(version);
             return this;
         }
@@ -271,7 +256,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
          *
          * @return {@code this}
          */
-        public Builder<T> contentType(MediaType contentType) {
+        public Builder contentType(MediaType contentType) {
             headers.set(CONTENT_TYPE, contentType.toString());
             return this;
         }
@@ -281,7 +266,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
          *
          * @return {@code this}
          */
-        public Builder<T> disableCaching() {
+        public Builder disableCaching() {
             header("Pragma", "no-cache");
             header("Expires", "Mon, 1 Jan 2007 08:00:00 GMT");
             header("Cache-Control", "no-cache,must-revalidate,no-store");
@@ -293,7 +278,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
          *
          * @return {@code this}
          */
-        public Builder<T> setChunked() {
+        public Builder setChunked() {
             headers.add(TRANSFER_ENCODING, CHUNKED);
             headers.remove(CONTENT_LENGTH);
             return this;
@@ -305,7 +290,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
          * @param cookie cookie to add
          * @return {@code this}
          */
-        public Builder<T> addCookie(HttpCookie cookie) {
+        public Builder addCookie(HttpCookie cookie) {
             cookies.add(checkNotNull(cookie));
             return this;
         }
@@ -317,7 +302,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
          * @param value cookie value
          * @return {@code this}
          */
-        public Builder<T> addCookie(String name, String value) {
+        public Builder addCookie(String name, String value) {
             return addCookie(HttpCookie.cookie(name, value));
         }
 
@@ -327,7 +312,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
          * @param name name of the cookie
          * @return {@code this}
          */
-        public Builder<T> removeCookie(String name) {
+        public Builder removeCookie(String name) {
             cookies.stream()
                     .filter(cookie -> cookie.name().equalsIgnoreCase(name))
                     .findFirst()
@@ -345,7 +330,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
          * @param value The value of the header
          * @return {@code this}
          */
-        public Builder<T> header(CharSequence name, Object value) {
+        public Builder header(CharSequence name, Object value) {
             this.headers.set(name, value);
             return this;
         }
@@ -359,7 +344,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
          * @param value The value of the header
          * @return {@code this}
          */
-        public Builder<T> addHeader(CharSequence name, Object value) {
+        public Builder addHeader(CharSequence name, Object value) {
             headers.add(name, value);
             return this;
         }
@@ -370,7 +355,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
          * @param name The name of the header to remove
          * @return {@code this}
          */
-        public Builder<T> removeHeader(CharSequence name) {
+        public Builder removeHeader(CharSequence name) {
             headers.remove(name);
             return this;
         }
@@ -381,7 +366,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
          * @param headers headers
          * @return {@code this}
          */
-        public Builder<T> headers(HttpHeaders headers) {
+        public Builder headers(HttpHeaders headers) {
             this.headers = headers.newBuilder();
             return this;
         }
@@ -391,7 +376,7 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
          *
          * @return {@code this}
          */
-        public Builder<T> disableValidation() {
+        public Builder disableValidation() {
             this.validate = false;
             return this;
         }
@@ -405,15 +390,15 @@ public class FullHttpResponse<T> implements FullHttpMessage<T> {
          *
          * @return a new full response
          */
-        public FullHttpResponse<T> build() {
+        public FullHttpResponse build() {
             if (validate) {
                 ensureContentLengthIsValid();
             }
 
-            return new FullHttpResponse<>(this);
+            return new FullHttpResponse(this);
         }
 
-        Builder<T> ensureContentLengthIsValid() {
+        Builder ensureContentLengthIsValid() {
             List<String> contentLengths = headers.build().getAll(CONTENT_LENGTH);
 
             checkArgument(contentLengths.size() <= 1, "Duplicate Content-Length found. %s", contentLengths);

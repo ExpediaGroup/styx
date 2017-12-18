@@ -399,7 +399,7 @@ public class HttpResponseTest {
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpResponse<String> full = request.toFullHttpResponse(byteBuf -> byteBuf.toString(StandardCharsets.UTF_8), 0x100000)
+        FullHttpResponse full = request.toFullHttpResponse(byteBuf -> byteBuf.toString(StandardCharsets.UTF_8), 0x100000)
                 .toBlocking()
                 .single();
 
@@ -418,7 +418,7 @@ public class HttpResponseTest {
                 .body(empty())
                 .build();
 
-        FullHttpResponse<String> full = request.toFullHttpResponse(byteBuf -> byteBuf.toString(StandardCharsets.UTF_8), 0x100000)
+        FullHttpResponse full = request.toFullHttpResponse(byteBuf -> byteBuf.toString(StandardCharsets.UTF_8), 0x100000)
                 .toBlocking()
                 .single();
 
@@ -432,7 +432,7 @@ public class HttpResponseTest {
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpResponse<String> full = request.toFullHttpResponse(0x100000)
+        FullHttpResponse full = request.toFullHttpResponse(0x100000)
                 .toBlocking()
                 .single();
 

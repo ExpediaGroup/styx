@@ -60,10 +60,8 @@ import static java.util.UUID.randomUUID;
 
 /**
  * HTTP request with a fully aggregated/decoded body.
- *
- * @param <T> content type
  */
-public class FullHttpRequest<T> implements FullHttpMessage<T> {
+public class FullHttpRequest implements FullHttpMessage {
     private final Object id;
     private final InetSocketAddress clientAddress;
     private final HttpVersion version;
@@ -71,10 +69,10 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
     private final Url url;
     private final HttpHeaders headers;
     private final boolean secure;
-    private final T body;
+    private final String body;
     private final List<HttpCookie> cookies;
 
-    FullHttpRequest(Builder<T> builder) {
+    FullHttpRequest(Builder builder) {
         this.id = builder.id == null ? randomUUID() : builder.id;
         this.clientAddress = builder.clientAddress;
         this.version = builder.version;
@@ -92,8 +90,8 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
      * @param uri URI
      * @return {@code this}
      */
-    public static <T> Builder<T> get(String uri) {
-        return new Builder<>(GET, uri);
+    public static <T> Builder get(String uri) {
+        return new Builder(GET, uri);
     }
 
     /**
@@ -102,8 +100,8 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
      * @param uri URI
      * @return {@code this}
      */
-    public static <T> Builder<T> head(String uri) {
-        return new Builder<>(HEAD, uri);
+    public static <T> Builder head(String uri) {
+        return new Builder(HEAD, uri);
     }
 
     /**
@@ -112,8 +110,8 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
      * @param uri URI
      * @return {@code this}
      */
-    public static <T> Builder<T> post(String uri) {
-        return new Builder<>(POST, uri);
+    public static <T> Builder post(String uri) {
+        return new Builder(POST, uri);
     }
 
     /**
@@ -122,8 +120,8 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
      * @param uri URI
      * @return {@code this}
      */
-    public static <T> Builder<T> delete(String uri) {
-        return new Builder<>(DELETE, uri);
+    public static <T> Builder delete(String uri) {
+        return new Builder(DELETE, uri);
     }
 
     /**
@@ -132,8 +130,8 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
      * @param uri URI
      * @return {@code this}
      */
-    public static <T> Builder<T> put(String uri) {
-        return new Builder<>(PUT, uri);
+    public static <T> Builder put(String uri) {
+        return new Builder(PUT, uri);
     }
 
     /**
@@ -142,44 +140,8 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
      * @param uri URI
      * @return {@code this}
      */
-    public static <T> Builder<T> patch(String uri) {
-        return new Builder<>(PATCH, uri);
-    }
-
-    /**
-     * Creates a request with the POST method.
-     *
-     * @param uri URI
-     * @param body body
-     * @param <T> body type
-     * @return {@code this}
-     */
-    public static <T> Builder<T> post(String uri, T body) {
-        return new Builder<T>(POST, uri).body(body);
-    }
-
-    /**
-     * Creates a request with the PUT method.
-     *
-     * @param uri URI
-     * @param body body
-     * @param <T> body type
-     * @return {@code this}
-     */
-    public static <T> Builder<T> put(String uri, T body) {
-        return new Builder<T>(PUT, uri).body(body);
-    }
-
-    /**
-     * Creates a request with the PATCH method.
-     *
-     * @param uri URI
-     * @param body body
-     * @param <T> body type
-     * @return {@code this}
-     */
-    public static <T> Builder<T> patch(String uri, T body) {
-        return new Builder<T>(PATCH, uri).body(body);
+    public static <T> Builder patch(String uri) {
+        return new Builder(PATCH, uri);
     }
 
     @Override
@@ -203,7 +165,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
     }
 
     @Override
-    public T body() {
+    public String body() {
         return body;
     }
 
@@ -319,8 +281,8 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
      *
      * @return new builder based on this request
      */
-    public Builder<T> newBuilder() {
-        return new Builder<>(this);
+    public Builder newBuilder() {
+        return new Builder(this);
     }
 
     /**
@@ -330,7 +292,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
      * @param encoder an encoding function
      * @return an encoded (streaming) request
      */
-    public HttpRequest toStreamingHttpRequest(Function<T, ByteBuf> encoder) {
+    public HttpRequest toStreamingHttpRequest(Function<String, ByteBuf> encoder) {
         return new HttpRequest.Builder(this, encodeBody(this.body, encoder))
                 .build();
     }
@@ -341,7 +303,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
      * @param request a request
      * @return an encoded (streaming) request
      */
-    public static HttpRequest toStreamingHttpRequest(FullHttpRequest<String> request) {
+    public static HttpRequest toStreamingHttpRequest(FullHttpRequest request) {
         return request.toStreamingHttpRequest(string -> Unpooled.copiedBuffer(string, UTF_8));
     }
 
@@ -361,10 +323,8 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
 
     /**
      * Builder.
-     *
-     * @param <T> body type
      */
-    public static final class Builder<T> {
+    public static final class Builder {
         private static final InetSocketAddress LOCAL_HOST = createUnresolved("127.0.0.1", 0);
 
         private Object id;
@@ -375,7 +335,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
         private boolean secure;
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
-        private T body;
+        private String body;
         private final List<HttpCookie> cookies;
 
         public Builder() {
@@ -392,7 +352,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
             this.secure = url.isSecure();
         }
 
-        public Builder(HttpRequest request, T body) {
+        public Builder(HttpRequest request, String body) {
             this.id = request.id();
             this.method = request.method();
             this.clientAddress = request.clientAddress();
@@ -404,7 +364,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
             this.cookies = new ArrayList<>(request.cookies());
         }
 
-        Builder(FullHttpRequest<T> request) {
+        Builder(FullHttpRequest request) {
             this.id = request.id();
             this.method = request.method();
             this.clientAddress = request.clientAddress();
@@ -422,7 +382,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          * @param uri URI
          * @return {@code this}
          */
-        public Builder<T> uri(String uri) {
+        public Builder uri(String uri) {
             return this.url(Url.Builder.url(uri).build());
         }
 
@@ -432,8 +392,11 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          * @param content request body
          * @return {@code this}
          */
-        public Builder<T> body(T content) {
-            this.body = content;
+        public Builder body(String content) {
+            String sanitisedContent = content == null ? "" : content;
+
+            header(CONTENT_LENGTH, sanitisedContent.getBytes(UTF_8).length);
+            this.body = sanitisedContent;
             return this;
         }
 
@@ -443,7 +406,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          * @param id request ID
          * @return {@code this}
          */
-        public Builder<T> id(Object id) {
+        public Builder id(Object id) {
             this.id = id;
             return this;
         }
@@ -457,7 +420,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          * @param value The value of the header
          * @return {@code this}
          */
-        public Builder<T> header(CharSequence name, Object value) {
+        public Builder header(CharSequence name, Object value) {
             checkNotCookie(name);
             this.headers.set(name, value);
             return this;
@@ -469,7 +432,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          * @param headers headers
          * @return {@code this}
          */
-        public Builder<T> headers(HttpHeaders headers) {
+        public Builder headers(HttpHeaders headers) {
             this.headers = headers.newBuilder();
             return this;
         }
@@ -483,7 +446,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          * @param value The value of the header
          * @return {@code this}
          */
-        public Builder<T> addHeader(CharSequence name, Object value) {
+        public Builder addHeader(CharSequence name, Object value) {
             checkNotCookie(name);
             this.headers.add(name, value);
             return this;
@@ -495,7 +458,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          * @param name The name of the header to remove
          * @return {@code this}
          */
-        public Builder<T> removeHeader(CharSequence name) {
+        public Builder removeHeader(CharSequence name) {
             headers.remove(name);
             return this;
         }
@@ -506,7 +469,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          * @param url fully qualified url
          * @return {@code this}
          */
-        public Builder<T> url(Url url) {
+        public Builder url(Url url) {
             this.url = url;
             this.secure = url.isSecure();
             return this;
@@ -518,7 +481,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          * @param version HTTP version
          * @return {@code this}
          */
-        public Builder<T> version(HttpVersion version) {
+        public Builder version(HttpVersion version) {
             this.version = requireNonNull(version);
             return this;
         }
@@ -529,7 +492,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          * @param method HTTP method
          * @return {@code this}
          */
-        public Builder<T> method(HttpMethod method) {
+        public Builder method(HttpMethod method) {
             this.method = requireNonNull(method);
             return this;
         }
@@ -540,7 +503,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          * @param cookie cookie to add
          * @return {@code this}
          */
-        public Builder<T> addCookie(HttpCookie cookie) {
+        public Builder addCookie(HttpCookie cookie) {
             cookies.add(checkNotNull(cookie));
             return this;
         }
@@ -552,7 +515,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          * @param value cookie value
          * @return {@code this}
          */
-        public Builder<T> addCookie(String name, String value) {
+        public Builder addCookie(String name, String value) {
             return addCookie(HttpCookie.cookie(name, value));
         }
 
@@ -562,7 +525,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          * @param name name of the cookie
          * @return {@code this}
          */
-        public Builder<T> removeCookie(String name) {
+        public Builder removeCookie(String name) {
             cookies.stream()
                     .filter(cookie -> cookie.name().equalsIgnoreCase(name))
                     .findFirst()
@@ -577,7 +540,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          * @param address IP address
          * @return {@code this}
          */
-        public Builder<T> clientAddress(InetSocketAddress address) {
+        public Builder clientAddress(InetSocketAddress address) {
             this.clientAddress = requireNonNull(address);
             return this;
         }
@@ -588,7 +551,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          * @param secure true if secure
          * @return {@code this}
          */
-        public Builder<T> secure(boolean secure) {
+        public Builder secure(boolean secure) {
             this.secure = secure;
             return this;
         }
@@ -598,7 +561,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          *
          * @return {@code this}
          */
-        public Builder<T> disableValidation() {
+        public Builder disableValidation() {
             this.validate = false;
             return this;
         }
@@ -608,7 +571,7 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          *
          * @return {@code this}
          */
-        public Builder<T> enableKeepAlive() {
+        public Builder enableKeepAlive() {
             return header(CONNECTION, KEEP_ALIVE);
         }
 
@@ -623,14 +586,14 @@ public class FullHttpRequest<T> implements FullHttpMessage<T> {
          *
          * @return a new full request
          */
-        public FullHttpRequest<T> build() {
+        public FullHttpRequest build() {
             if (validate) {
                 ensureContentLengthIsValid();
                 ensureMethodIsValid();
                 setHostHeader();
             }
 
-            return new FullHttpRequest<T>(this);
+            return new FullHttpRequest(this);
         }
 
         private void setHostHeader() {
