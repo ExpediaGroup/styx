@@ -25,6 +25,7 @@ import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import org.testng.annotations.Test;
 
+import java.util.Collections;
 import java.util.Map;
 
 import static com.google.common.collect.Iterables.transform;
@@ -40,7 +41,7 @@ public class BusyConnectionsStrategyTest {
     final Origin ORIGIN_THREE = newOriginBuilder(localHostAndFreePort()).id("three").build();
     final Origin ORIGIN_FOUR = newOriginBuilder(localHostAndFreePort()).id("four").build();
 
-    final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy();
+    final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy(Collections::emptyList);
     private LoadBalancingStrategy.Context context = new LoadBalancingStrategy.Context() {
         @Override
         public Id appId() {

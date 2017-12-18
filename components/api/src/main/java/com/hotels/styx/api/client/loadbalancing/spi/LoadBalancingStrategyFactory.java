@@ -16,6 +16,7 @@
 package com.hotels.styx.api.client.loadbalancing.spi;
 
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.configuration.Configuration;
 
@@ -45,5 +46,5 @@ public interface LoadBalancingStrategyFactory extends ServiceFactory<LoadBalanci
      * @param strategyConfiguration configuration specific to load balancer
      * @return a new load balancing strategy.
      */
-    LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, Object... originsInventory);
+    LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins);
 }

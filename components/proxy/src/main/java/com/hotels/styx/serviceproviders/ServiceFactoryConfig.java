@@ -18,6 +18,7 @@ package com.hotels.styx.serviceproviders;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
@@ -54,21 +55,38 @@ public class ServiceFactoryConfig {
         return enabled;
     }
 
+    /**
+     * Creates the service.
+     *
+     * @param environment       environment
+     * @param serviceSuperclass class that the service must extend
+     * @param activeOrigins  originsInventory instance
+     * @param <T>               service type
+     * @return service
+     */
+    public <T> T loadService(Environment environment, Class<T> serviceSuperclass, ActiveOrigins activeOrigins) {
+        checkEnabled();
+
+        try {
+            return serviceSuperclass.cast(factory.create(environment, config, activeOrigins));
+        } catch (Exception e) {
+            throw new ConfigurationException("Error creating service", e);
+        }
+    }
 
     /**
      * Creates the service.
      *
      * @param environment       environment
      * @param serviceSuperclass class that the service must extend
-     * @param parameters        optional service type dependencies
      * @param <T>               service type
      * @return service
      */
-    public <T> T loadService(Environment environment, Class<T> serviceSuperclass, Object... parameters) {
+    public <T> T loadService(Environment environment, Class<T> serviceSuperclass) {
         checkEnabled();
 
         try {
-            return serviceSuperclass.cast(factory.create(environment, config, parameters));
+            return serviceSuperclass.cast(factory.create(environment, config));
         } catch (Exception e) {
             throw new ConfigurationException("Error creating service", e);
         }

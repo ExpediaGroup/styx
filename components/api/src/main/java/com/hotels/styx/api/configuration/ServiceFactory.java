@@ -46,12 +46,4 @@ public interface ServiceFactory<E> {
     default E create(Environment environment, Configuration serviceConfiguration, Object... objects) {
         return create(environment, serviceConfiguration);
     }
-
-    default <T> T getObject(int index, Object[] parameters, Class<T> clazz) {
-       requireNonNull(parameters);
-       if (parameters.length < index) {
-          throw new ArrayIndexOutOfBoundsException("Requested parameter doesn't exist on passed parameters list.");
-       }
-       return clazz.cast(parameters[index]);
-    }
 }

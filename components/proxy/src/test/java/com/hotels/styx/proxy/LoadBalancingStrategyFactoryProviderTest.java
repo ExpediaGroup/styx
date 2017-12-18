@@ -16,6 +16,7 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
@@ -90,13 +91,18 @@ public class LoadBalancingStrategyFactoryProviderTest {
         }
 
         @Override
-        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, Object... originsInventory) {
+        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins) {
             return null;
         }
 
         @Override
         public Iterable<ConnectionPool> vote(Iterable<ConnectionPool> origins, Context context) {
             return origins;
+        }
+
+        @Override
+        public Iterable<ConnectionPool> snapshot() {
+            return null;
         }
 
         @Override

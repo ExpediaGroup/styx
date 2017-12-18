@@ -29,6 +29,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -62,7 +63,7 @@ public class BusyConnectionsStrategyStressTest {
         metrics = new CodaHaleMetricRegistry();
     }
 
-    final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy();
+    final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy(Collections::emptyList);
 
     @DataProvider(name = "origins")
     private Object[][] origins() {

@@ -18,12 +18,12 @@ package com.hotels.styx.client.loadbalancing.strategies;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.AtomicDouble;
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategyFactory;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.client.OriginsInventory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.size;
@@ -42,11 +42,11 @@ public class AdaptiveStrategy implements LoadBalancingStrategy {
      */
     public static class Factory implements LoadBalancingStrategyFactory {
         @Override
-        public AdaptiveStrategy create(Environment environment, Configuration strategyConfiguration, Object... parameters) {
-            OriginsInventory originsInventory = getObject(0, parameters, OriginsInventory.class);
+        public AdaptiveStrategy create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins) {
             int requestCount = strategyConfiguration.get("requestCount", Integer.class)
                     .orElse(DEFAULT_REQUEST_COUNT);
-            return new AdaptiveStrategy(requestCount, new RoundRobinStrategy(originsInventory), new BusyConnectionsStrategy());
+            return new AdaptiveStrategy(requestCount, new RoundRobinStrategy(activeOrigins),
+                    new BusyConnectionsStrategy(activeOrigins));
         }
     }
 
@@ -58,7 +58,7 @@ public class AdaptiveStrategy implements LoadBalancingStrategy {
     private volatile LoadBalancingStrategy currentStrategy;
 
     public AdaptiveStrategy(RoundRobinStrategy loadBalancingStrategy) {
-        this(DEFAULT_REQUEST_COUNT, loadBalancingStrategy, new BusyConnectionsStrategy());
+        this(DEFAULT_REQUEST_COUNT, loadBalancingStrategy, new BusyConnectionsStrategy(loadBalancingStrategy::snapshot));
     }
 
     public AdaptiveStrategy(int requestCount, RoundRobinStrategy roundRobin, BusyConnectionsStrategy leastResponseTime) {

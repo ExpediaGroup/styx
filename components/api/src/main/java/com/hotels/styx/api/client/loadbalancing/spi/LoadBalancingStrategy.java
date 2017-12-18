@@ -22,6 +22,8 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.OriginsInventoryStateChangeListener;
 
+import java.util.Collections;
+
 /**
  * Used to sort a cluster of origins so that a request can be tried against them, failing over through the sequence if necessary.
  * The LoadBalancingStrategy can also respond to changes in the origins inventory state if needed.
@@ -65,6 +67,16 @@ public interface LoadBalancingStrategy extends OriginsInventoryStateChangeListen
      * @return the origins sorted into a new order
      */
     Iterable<ConnectionPool> vote(Iterable<ConnectionPool> origins, Context context);
+
+    /**
+     * Returns a collection of {@link ConnectionPool}, without any guarantee of ordering.
+     * @return available, unordered origins
+     */
+    default Iterable<ConnectionPool> snapshot() {
+        return Collections.emptyList();
+    }
+
+
 
     default void originsInventoryStateChanged(OriginsInventorySnapshot snapshot) {
         // do nothing

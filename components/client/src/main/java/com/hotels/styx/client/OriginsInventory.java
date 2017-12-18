@@ -23,6 +23,7 @@ import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.Announcer;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;

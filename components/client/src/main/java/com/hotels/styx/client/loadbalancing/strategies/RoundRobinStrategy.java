@@ -16,12 +16,12 @@
 package com.hotels.styx.client.loadbalancing.strategies;
 
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategyFactory;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.client.OriginsInventory;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,10 +48,10 @@ import static java.util.stream.Stream.concat;
  */
 public class RoundRobinStrategy implements LoadBalancingStrategy {
 
-    private final OriginsInventory originsInventory;
+    private final ActiveOrigins activeOrigins;
 
-    public RoundRobinStrategy(OriginsInventory originsInventory) {
-        this.originsInventory = originsInventory;
+    public RoundRobinStrategy(ActiveOrigins activeOrigins) {
+        this.activeOrigins = activeOrigins;
     }
 
     /**
@@ -59,9 +59,8 @@ public class RoundRobinStrategy implements LoadBalancingStrategy {
      */
     public static class Factory implements LoadBalancingStrategyFactory {
         @Override
-        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, Object[] parameters) {
-            OriginsInventory originsInventory = getObject(0, parameters, OriginsInventory.class);
-            return new RoundRobinStrategy(originsInventory);
+        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins) {
+            return new RoundRobinStrategy(activeOrigins);
         }
     }
 
@@ -96,6 +95,11 @@ public class RoundRobinStrategy implements LoadBalancingStrategy {
         List<ConnectionPool> first = origins.subList(index, origins.size());
         List<ConnectionPool> second = origins.subList(0, index);
         return concat(first.stream(), second.stream());
+    }
+
+    @Override
+    public Iterable<ConnectionPool> snapshot() {
+        return activeOrigins.snapshot();
     }
 
     @Override
