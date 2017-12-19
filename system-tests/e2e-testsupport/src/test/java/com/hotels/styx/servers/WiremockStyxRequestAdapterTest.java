@@ -24,7 +24,6 @@ import org.testng.annotations.Test;
 
 import static com.github.tomakehurst.wiremock.http.RequestMethod.POST;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
-import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static io.netty.handler.codec.http.HttpHeaderNames.USER_AGENT;
@@ -40,10 +39,10 @@ import static org.testng.Assert.assertEquals;
 public class WiremockStyxRequestAdapterTest {
     private WiremockStyxRequestAdapter adapter;
     private String content;
-    private FullHttpRequest.Builder<String> styxRequestBuilder;
+    private FullHttpRequest.Builder styxRequestBuilder;
 
     @BeforeMethod
-    public void setUp() throws Exception {
+    public void setUp() {
         content = "{\n" +
                 "    \"request\" : {\n" +
                 "        \"urlPattern\" : \"/.*\",\n" +
@@ -58,19 +57,18 @@ public class WiremockStyxRequestAdapterTest {
                 "    }\n" +
                 "}";
 
-        styxRequestBuilder = FullHttpRequest.<String>post("/__admin/mappings/new?msg=6198.1")
-                .header(CONTENT_LENGTH, "208")
+        styxRequestBuilder = FullHttpRequest.post("/__admin/mappings/new?msg=6198.1")
                 .header(CONTENT_TYPE, "application/json; charset=UTF-8")
                 .header(HOST, "localhost")
                 .header(CONNECTION, "Keep-Alive")
                 .header(USER_AGENT, "Apache-HttpClient/4.3.5 (java 1.5)")
-                .body(content);
+                .body(content, UTF_8);
 
         adapter = new WiremockStyxRequestAdapter(styxRequestBuilder.build());
     }
 
     @Test
-    public void adaptsContainsHeader() throws Exception {
+    public void adaptsContainsHeader() {
         assertThat(adapter.containsHeader("Foo-Bar"), is(false));
         assertThat(adapter.containsHeader("Host"), is(true));
         assertThat(adapter.containsHeader("host"), is(true));
@@ -82,64 +80,64 @@ public class WiremockStyxRequestAdapterTest {
     // HTTP header names from AsciiString to String when toArray() is called on
     // CharSequenceDelegatingStringSet.
     @Test(enabled = false)
-    public void adaptsGetAllHeaderKeys() throws Exception {
+    public void adaptsGetAllHeaderKeys() {
         assertEquals(adapter.getAllHeaderKeys(), contains("Connection", "user-agent", "Content-Type", "Content-Length", "host"));
     }
 
     @Test
-    public void adaptsGetUrl() throws Exception {
+    public void adaptsGetUrl() {
         assertThat(adapter.getUrl(), is("/__admin/mappings/new"));
     }
 
     @Test
-    public void adaptsGetAbsoluteUrl() throws Exception {
+    public void adaptsGetAbsoluteUrl() {
         assertThat(adapter.getAbsoluteUrl(), is("http://localhost/__admin/mappings/new?msg=6198.1"));
     }
 
     @Test
-    public void adaptsGetMethod() throws Exception {
+    public void adaptsGetMethod() {
         assertThat(adapter.getMethod(), is(POST));
     }
 
     @Test
-    public void adaptsGetHeader() throws Exception {
-        assertThat(adapter.getHeader("Content-Length"), is("208"));
+    public void adaptsGetHeader() {
+        assertThat(adapter.getHeader("Content-Length"), is("246"));
         assertThat(adapter.getHeader("Foo-Bar"), is(nullValue()));
     }
 
     @Test
-    public void adaptsGetHeaders() throws Exception {
+    public void adaptsGetHeaders() {
         assertThat(adapter.getHeaders().keys(), containsInAnyOrder("Content-Type", "host", "Connection", "user-agent", "Content-Length"));
 
         assertThat(adapter.getHeader("Content-Type"), is("application/json; charset=UTF-8"));
         assertThat(adapter.getHeader("host"), is("localhost"));
         assertThat(adapter.getHeader("Connection"), is("Keep-Alive"));
         assertThat(adapter.getHeader("user-agent"), is("Apache-HttpClient/4.3.5 (java 1.5)"));
-        assertThat(adapter.getHeader("Content-Length"), is("208"));
+        assertThat(adapter.getHeader("Content-Length"), is("246"));
     }
 
     @Test
-    public void adaptsGetBodyWhenAbsent() throws Exception {
+    public void adaptsGetBodyWhenAbsent() {
         assertThat(adapter.getBody(), is(content.getBytes(UTF_8)));
     }
 
     @Test
-    public void adaptsGetBodyWhenPresent() throws Exception {
+    public void adaptsGetBodyWhenPresent() {
         assertThat(adapter.getBody(), is(content.getBytes(UTF_8)));
     }
 
     @Test
-    public void adaptsGetBodyAsStringWhenAbsent() throws Exception {
+    public void adaptsGetBodyAsStringWhenAbsent() {
         assertThat(adapter.getBodyAsString(), is(content));
     }
 
     @Test
-    public void adaptsGetBodyAsStringWhenPresent() throws Exception {
+    public void adaptsGetBodyAsStringWhenPresent() {
         assertThat(adapter.getBodyAsString(), is(content));
     }
 
     @Test
-    public void adaptsContentTypeHeaderWhenPresent() throws Exception {
+    public void adaptsContentTypeHeaderWhenPresent() {
         ContentTypeHeader contentType = adapter.contentTypeHeader();
 
         assertThat(contentType.encodingPart(), is(Optional.of("UTF-8")));
@@ -147,7 +145,7 @@ public class WiremockStyxRequestAdapterTest {
     }
 
     @Test
-    public void adaptsQueryParameter() throws Exception {
+    public void adaptsQueryParameter() {
         QueryParameter msg = adapter.queryParameter("msg");
 
         assertThat(msg.key(), is("msg"));
@@ -155,7 +153,7 @@ public class WiremockStyxRequestAdapterTest {
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
-    public void adaptsNonExistantQueryParameterToNull() throws Exception {
+    public void adaptsNonExistantQueryParameterToNull() {
         QueryParameter msg = adapter.queryParameter("foobar");
 
         assertThat(msg.key(), is("foobar"));
@@ -163,7 +161,7 @@ public class WiremockStyxRequestAdapterTest {
     }
 
     @Test
-    public void adaptsContentTypeHeaderWhenAbsent() throws Exception {
+    public void adaptsContentTypeHeaderWhenAbsent() {
         adapter = new WiremockStyxRequestAdapter(
                 styxRequestBuilder
                         .removeHeader(CONTENT_TYPE)
@@ -176,7 +174,7 @@ public class WiremockStyxRequestAdapterTest {
     }
 
     @Test
-    public void adaptsIsBrowserProxyRequest() throws Exception {
+    public void adaptsIsBrowserProxyRequest() {
         assertThat(adapter.isBrowserProxyRequest(), is(false));
     }
 

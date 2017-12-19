@@ -25,6 +25,7 @@ import rx.Observable;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
@@ -42,9 +43,9 @@ public class StyxConfigurationHandlerTest {
                 "  strategy: ROUND_ROBIN\n" +
                 "originsFile: " + ORIGINS_FILE + "\n";
 
-        FullHttpResponse<String> adminPageResponse = waitForResponse(browseForCurrentConfiguration(yaml, false));
+        FullHttpResponse adminPageResponse = waitForResponse(browseForCurrentConfiguration(yaml, false));
 
-        assertThat(adminPageResponse.body(), is("{\"proxy\":{\"connectors\":{\"http\":{\"port\":8080}}},\"loadBalancing\":{\"strategy\":\"ROUND_ROBIN\"},\"originsFile\":\"" + ORIGINS_FILE + "\"}\n"));
+        assertThat(adminPageResponse.bodyAs(UTF_8), is("{\"proxy\":{\"connectors\":{\"http\":{\"port\":8080}}},\"loadBalancing\":{\"strategy\":\"ROUND_ROBIN\"},\"originsFile\":\"" + ORIGINS_FILE + "\"}\n"));
     }
 
     @Test
@@ -58,9 +59,9 @@ public class StyxConfigurationHandlerTest {
                 "  strategy: ROUND_ROBIN\n" +
                 "originsFile: " + ORIGINS_FILE + "\n";
 
-        FullHttpResponse<String> adminPageResponse = waitForResponse(browseForCurrentConfiguration(yaml, true));
+        FullHttpResponse adminPageResponse = waitForResponse(browseForCurrentConfiguration(yaml, true));
 
-        assertThat(adminPageResponse.body(), is("{\n" +
+        assertThat(adminPageResponse.bodyAs(UTF_8), is("{\n" +
                         "  \"proxy\" : {\n" +
                         "    \"connectors\" : {\n" +
                         "      \"http\" : {\n" +

@@ -137,7 +137,7 @@ class ProtocolsSpec extends FunSpec
       val response = decodedRequest(httpRequest("/http/app.x.1"))
 
       assert(response.status().code() == 200)
-      assert(response.body == "Hello, World!")
+      assert(response.bodyAs(UTF_8) == "Hello, World!")
 
       httpServer.verify(
         getRequestedFor(urlEqualTo("/http/app.x.1"))
@@ -148,7 +148,7 @@ class ProtocolsSpec extends FunSpec
       val response = decodedRequest(httpRequest("/https/trustAllCerts/foo.2"))
 
       assert(response.status().code() == 200)
-      assert(response.body == "Hello, World!")
+      assert(response.bodyAs(UTF_8) == "Hello, World!")
 
       httpsOriginWithoutCert.verify(
         getRequestedFor(urlEqualTo("/https/trustAllCerts/foo.2"))
@@ -163,7 +163,7 @@ class ProtocolsSpec extends FunSpec
       )
 
       assert(response.status().code() == 200)
-      assert(response.body == "Hello, World!")
+      assert(response.bodyAs(UTF_8) == "Hello, World!")
 
       httpServer.verify(
         getRequestedFor(urlEqualTo("/http/app.x.3"))
@@ -177,7 +177,7 @@ class ProtocolsSpec extends FunSpec
       val response = decodedRequest(httpsRequest("/http/app.x.4"))
 
       assert(response.status().code() == 200)
-      assert(response.body == "Hello, World!")
+      assert(response.bodyAs(UTF_8) == "Hello, World!")
       httpServer.verify(
         getRequestedFor(urlEqualTo("/http/app.x.4"))
           .withHeader("X-Forwarded-Proto", valueMatchingStrategy("https"))
@@ -188,7 +188,7 @@ class ProtocolsSpec extends FunSpec
       val response = decodedRequest(httpsRequest("/https/trustAllCerts/foo.5"))
 
       assert(response.status().code() == 200)
-      assert(response.body == "Hello, World!")
+      assert(response.bodyAs(UTF_8) == "Hello, World!")
       httpsOriginWithoutCert.verify(
         getRequestedFor(urlEqualTo("/https/trustAllCerts/foo.5"))
           .withHeader("X-Forwarded-Proto", valueMatchingStrategy("https"))
@@ -203,7 +203,7 @@ class ProtocolsSpec extends FunSpec
       )
 
       assert(response.status().code() == 200)
-      assert(response.body == "Hello, World!")
+      assert(response.bodyAs(UTF_8) == "Hello, World!")
       httpsOriginWithoutCert.verify(
         getRequestedFor(urlEqualTo("/https/trustAllCerts/foo.6"))
           .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http"))
@@ -220,7 +220,7 @@ class ProtocolsSpec extends FunSpec
       val response = decodedRequest(request)
 
       assert(response.status().code() == 200)
-      assert(response.body == "Hello, World!")
+      assert(response.bodyAs(UTF_8) == "Hello, World!")
       httpsOriginWithCert.verify(getRequestedFor(urlEqualTo("/https/authenticate/secure/foo.7")))
     }
 
@@ -241,7 +241,7 @@ class ProtocolsSpec extends FunSpec
       val response = decodedRequest(request)
 
       assert(response.status().code() == 200)
-      assert(response.body == "Hello, World!")
+      assert(response.bodyAs(UTF_8) == "Hello, World!")
       httpsOriginWithoutCert.verify(getRequestedFor(urlEqualTo("/https/trustAllCerts/foo.9")))
     }
 

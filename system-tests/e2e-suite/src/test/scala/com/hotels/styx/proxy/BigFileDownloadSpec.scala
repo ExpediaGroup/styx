@@ -74,7 +74,7 @@ class BigFileDownloadSpec extends FunSpec
       val resp = decodedRequest(req, maxSize = 2*ONE_HUNDRED_MB.toInt, timeout = 60.seconds)
 
       assert(resp.status() == OK)
-      val actualContentSize = resp.body.getBytes.length
+      val actualContentSize = resp.body.length
 
       println("Actual content size was: " + actualContentSize)
       actualContentSize should be(ONE_HUNDRED_MB)

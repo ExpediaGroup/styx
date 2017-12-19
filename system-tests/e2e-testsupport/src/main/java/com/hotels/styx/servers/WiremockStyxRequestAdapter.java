@@ -26,20 +26,20 @@ import com.hotels.styx.api.messages.FullHttpRequest;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import static com.github.tomakehurst.wiremock.http.HttpHeader.httpHeader;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 
 public class WiremockStyxRequestAdapter implements Request {
-    private final FullHttpRequest<String> styxRequest;
+    private final FullHttpRequest styxRequest;
 
-    public WiremockStyxRequestAdapter(FullHttpRequest<String> styxRequest) {
+    public WiremockStyxRequestAdapter(FullHttpRequest styxRequest) {
         this.styxRequest = requireNonNull(styxRequest);
     }
 
@@ -107,12 +107,13 @@ public class WiremockStyxRequestAdapter implements Request {
 
     @Override
     public byte[] getBody() {
-        return styxRequest.body().getBytes();
+        return styxRequest.body();
     }
 
+    // TODO: Ensure getBodyAsString works with other character encodings too:
     @Override
     public String getBodyAsString() {
-        return styxRequest.body();
+        return styxRequest.bodyAs(UTF_8);
     }
 
     @Override

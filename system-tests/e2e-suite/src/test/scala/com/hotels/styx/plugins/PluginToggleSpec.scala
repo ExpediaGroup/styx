@@ -25,6 +25,7 @@ import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec
 import rx.Observable
 import rx.Observable.just
+import java.nio.charset.StandardCharsets.UTF_8
 
 class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplier {
   val normalBackend = FakeHttpServer.HttpStartupConfig().start()
@@ -41,11 +42,11 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
 
     val resp1 = decodedRequest(get(styxServer.adminURL("/admin/plugins")).build())
     resp1.status() should be (OK)
-    resp1.body should include("<h3>Enabled</h3><a href='/admin/plugins/pluginUnderTest'>pluginUnderTest</a><br /><h3>Disabled</h3>")
+    resp1.bodyAs(UTF_8) should include("<h3>Enabled</h3><a href='/admin/plugins/pluginUnderTest'>pluginUnderTest</a><br /><h3>Disabled</h3>")
 
     val resp2 = decodedRequest(get(styxServer.routerURL("/")).build())
     resp2.status() should be (OK)
-    resp2.body should include("response-from-plugin")
+    resp2.bodyAs(UTF_8) should include("response-from-plugin")
 
     checkPluginEnabled() should be("enabled\n")
   }
@@ -62,7 +63,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
       val resp = decodedRequest(get(styxServer.adminURL("/admin/plugins")).build())
 
       resp.status() should be (OK)
-      resp.body should include("<h3>Enabled</h3><h3>Disabled</h3><a href='/admin/plugins/pluginUnderTest'>pluginUnderTest</a><br />")
+      resp.bodyAs(UTF_8) should include("<h3>Enabled</h3><h3>Disabled</h3><a href='/admin/plugins/pluginUnderTest'>pluginUnderTest</a><br />")
     }
 
     it("Plugin should not be called when disabled") {
@@ -97,7 +98,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
         .build())
 
     resp.status() should be (OK)
-    resp.body
+    resp.bodyAs(UTF_8)
   }
 
   private def checkPluginEnabled(): String = {
@@ -106,7 +107,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
         .build())
 
     resp.status() should be(OK)
-    resp.body
+    resp.bodyAs(UTF_8)
   }
 
   private class PluginUnderTest extends PluginAdapter {

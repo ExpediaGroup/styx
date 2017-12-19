@@ -88,7 +88,7 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
     val response = waitForResponse(client.sendRequest(get("/foo/2").build()))
 
     assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
-    assert(response.body() == "Test message body.", s"\nReceived wrong/unexpected response body.")
+    assert(response.bodyAs(UTF_8) == "Test message body.", s"\nReceived wrong/unexpected response body.")
   }
 
 
@@ -99,7 +99,7 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
     assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
 
     assert(response.body().nonEmpty, s"\nResponse body is absent.")
-    assert(response.body() == "Test message body.", s"\nIncorrect response body.")
+    assert(response.bodyAs(UTF_8) == "Test message body.", s"\nIncorrect response body.")
   }
 
   test("Emits onError when origin responds too slowly") {

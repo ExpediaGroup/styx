@@ -43,6 +43,7 @@ import static java.util.stream.IntStream.range;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class OriginsInventoryHandlerTest {
     private static final Id APP_ID = id("foo");
@@ -58,10 +59,10 @@ public class OriginsInventoryHandlerTest {
 
         eventBus.post(new OriginsInventorySnapshot(APP_ID, pool(activeOrigins), pool(inactiveOrigins), pool(disabledOrigins)));
 
-        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
-        assertThat(response.body().split("\n").length, is(1));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
+        assertThat(response.bodyAs(UTF_8).split("\n").length, is(1));
 
-        Map<Id, OriginsInventorySnapshot> output = deserialiseJson(response.body());
+        Map<Id, OriginsInventorySnapshot> output = deserialiseJson(response.bodyAs(UTF_8));
 
         assertThat(output.keySet(), contains(APP_ID));
 
@@ -82,8 +83,8 @@ public class OriginsInventoryHandlerTest {
 
         eventBus.post(new OriginsInventorySnapshot(APP_ID, pool(emptySet()), pool(emptySet()), pool(disabledOrigins)));
 
-        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/?pretty=1").build()));
-        assertThat(response.body(), matchesRegex("\\{\n" +
+        FullHttpResponse response = waitForResponse(handler.handle(get("/?pretty=1").build()));
+        assertThat(response.bodyAs(UTF_8), matchesRegex("\\{\n" +
                 "  \"" + APP_ID + "\" : \\{\n" +
                 "    \"appId\" : \"" + APP_ID + "\",\n" +
                 "    \"activeOrigins\" : \\[ ],\n" +
@@ -103,9 +104,9 @@ public class OriginsInventoryHandlerTest {
     public void returnsEmptyObjectWhenNoOrigins() {
         OriginsInventoryHandler handler = new OriginsInventoryHandler(new EventBus());
 
-        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
 
-        assertThat(response.body(), is("{}"));
+        assertThat(response.bodyAs(UTF_8), is("{}"));
     }
 
     private static Map<Id, OriginsInventorySnapshot> deserialiseJson(String json) throws IOException {

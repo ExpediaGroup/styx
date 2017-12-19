@@ -43,6 +43,7 @@ import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class OriginsHandlerTest {
     static final ObjectMapper MAPPER = new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES);
@@ -64,12 +65,12 @@ public class OriginsHandlerTest {
 
     @Test
     public void respondsToRequestWithJsonResponse() throws IOException {
-        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
 
         assertThat(response.status(), is(OK));
         assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
 
-        assertThat(response.body(), unmarshalApplications(response.body()), containsInAnyOrder(expected()));
+        assertThat(response.bodyAs(UTF_8), unmarshalApplications(response.bodyAs(UTF_8)), containsInAnyOrder(expected()));
     }
 
     @Test
@@ -77,12 +78,12 @@ public class OriginsHandlerTest {
         Registry<BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
         OriginsHandler handler = new OriginsHandler(backendServicesRegistry);
 
-        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
 
         assertThat(response.status(), is(OK));
         assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
 
-        assertThat(response.body(), is("[]"));
+        assertThat(response.bodyAs(UTF_8), is("[]"));
     }
 
     private ApplicationConfigurationMatcher[] expected() {

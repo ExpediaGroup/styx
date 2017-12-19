@@ -22,6 +22,7 @@ import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,36 +33,36 @@ public class VersionTextHandlerTest {
     public void canProvideASingleVersionTextFile() {
         VersionTextHandler handler = new VersionTextHandler(resources("classpath:/versions/version1.txt"));
 
-        FullHttpResponse<String> response = waitForResponse(handler.handle( get("/version.txt").build()));
+        FullHttpResponse response = waitForResponse(handler.handle( get("/version.txt").build()));
 
-        assertThat(response.body(), is("foo\n"));
+        assertThat(response.bodyAs(UTF_8), is("foo\n"));
     }
 
     @Test
     public void canCombineVersionTextFiles() {
         VersionTextHandler handler = new VersionTextHandler(resources("classpath:/versions/version1.txt", "classpath:/versions/version2.txt"));
 
-        FullHttpResponse<String> response = waitForResponse(handler.handle( get("/version.txt").build()));
+        FullHttpResponse response = waitForResponse(handler.handle( get("/version.txt").build()));
 
-        assertThat(response.body(), is("foo\nbar\n"));
+        assertThat(response.bodyAs(UTF_8), is("foo\nbar\n"));
     }
 
     @Test
     public void nonExistentFilesAreIgnored() {
         VersionTextHandler handler = new VersionTextHandler(resources("classpath:/versions/version1.txt", "version-nonexistent.txt"));
 
-        FullHttpResponse<String> response = waitForResponse(handler.handle( get("/version.txt").build()));
+        FullHttpResponse response = waitForResponse(handler.handle( get("/version.txt").build()));
 
-        assertThat(response.body(), is("foo\n"));
+        assertThat(response.bodyAs(UTF_8), is("foo\n"));
     }
 
     @Test
     public void returnsUnknownVersionIfNoFilesAreFound() {
         VersionTextHandler handler = new VersionTextHandler(resources("version-nonexistent1.txt", "version-nonexistent2.txt"));
 
-        FullHttpResponse<String> response = waitForResponse(handler.handle( get("/version.txt").build()));
+        FullHttpResponse response = waitForResponse(handler.handle( get("/version.txt").build()));
 
-        assertThat(response.body(), is("Unknown version\n"));
+        assertThat(response.bodyAs(UTF_8), is("Unknown version\n"));
     }
 
     private static Iterable<Resource> resources(String... filenames) {

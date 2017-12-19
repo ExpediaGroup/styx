@@ -21,12 +21,13 @@ import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.HttpMessageSupport;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Url;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
+import rx.Observable;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +41,6 @@ import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
-import static com.hotels.styx.api.messages.HttpSupport.encodeBody;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
 import static io.netty.handler.codec.http.HttpMethod.CONNECT;
 import static io.netty.handler.codec.http.HttpMethod.DELETE;
@@ -54,7 +54,6 @@ import static io.netty.handler.codec.http.HttpMethod.TRACE;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static java.lang.Integer.parseInt;
 import static java.net.InetSocketAddress.createUnresolved;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 
@@ -63,24 +62,22 @@ import static java.util.UUID.randomUUID;
  */
 public class FullHttpRequest implements FullHttpMessage {
     private final Object id;
-    private final InetSocketAddress clientAddress;
     private final HttpVersion version;
     private final HttpMethod method;
     private final Url url;
     private final HttpHeaders headers;
     private final boolean secure;
-    private final String body;
+    private final byte[] body;
     private final List<HttpCookie> cookies;
 
     FullHttpRequest(Builder builder) {
         this.id = builder.id == null ? randomUUID() : builder.id;
-        this.clientAddress = builder.clientAddress;
         this.version = builder.version;
         this.method = builder.method;
         this.url = builder.url;
         this.secure = builder.secure;
         this.headers = builder.headers.build();
-        this.body = builder.body;
+        this.body = requireNonNull(builder.body);
         this.cookies = ImmutableList.copyOf(builder.cookies);
     }
 
@@ -164,9 +161,51 @@ public class FullHttpRequest implements FullHttpMessage {
         return headers.getAll(name);
     }
 
+    /**
+     * Returns message body as a byte array.
+     * <p>
+     * Returns the body of this message as a byte array, in its unencoded form.
+     * Because FullHttpRequest is an immutable object, the returned byte array
+     * reference cannot be used to modify the message content.
+     * <p>
+     * @return Message body content
+     */
     @Override
-    public String body() {
-        return body;
+    public byte[] body() {
+        return body.clone();
+    }
+
+    /**
+     * Returns the message body decoded to a business domain object.
+     *
+     * Decodes the message body with a provided decoder function and returns the
+     * result. The decoder is a function from ByteBuf to a specified output type T.
+     * The caller must ensure the provided decoder is compatible with message content
+     * type and encoding.
+     *
+     * @param  decoder    A function from ByteBuf to T.
+     * @return            Message object decoded into a business domain object.
+     */
+    @Override
+    public <T> T bodyAs(Function<byte[], T> decoder) {
+        return decoder.apply(body);
+    }
+
+    /**
+     * Returns the message body as a String decoded with provided character set.
+     *
+     * Decodes the message body into a Java String object with a provided charset.
+     * The caller must ensure the provided charset is compatible with message content
+     * type and encoding.
+     *
+     * @param charset     Charset used to decode message body.
+     * @return            Message body as a String.
+     */
+    @Override
+    public String bodyAs(Charset charset) {
+        // CHECKSTYLE:OFF
+        return new String(this.body, charset);
+        // CHECKSTYLE:ON
     }
 
     /**
@@ -228,15 +267,6 @@ public class FullHttpRequest implements FullHttpMessage {
     }
 
     /**
-     * Returns the remote client address that initiated the current request.
-     *
-     * @return the client address for this request
-     */
-    public InetSocketAddress clientAddress() {
-        return this.clientAddress;
-    }
-
-    /**
      * Get a query parameter by name if present.
      *
      * @param name parameter name
@@ -286,25 +316,19 @@ public class FullHttpRequest implements FullHttpMessage {
     }
 
     /**
-     * Encodes this request into a streaming form, using the provided encoder to transform the body from an arbitrary type
-     * to a buffer of bytes.
+     * Converts this request into a streaming form (HttpRequest).
      *
-     * @param encoder an encoding function
-     * @return an encoded (streaming) request
-     */
-    public HttpRequest toStreamingHttpRequest(Function<String, ByteBuf> encoder) {
-        return new HttpRequest.Builder(this, encodeBody(this.body, encoder))
-                .build();
-    }
-
-    /**
-     * Encodes a request with a body of type String into a streaming form, using a UTF-8 encoding.
+     * Converts this request into a HttpRequest object which represents the HTTP request as a
+     * stream of bytes.
      *
-     * @param request a request
-     * @return an encoded (streaming) request
+     * @return   A streaming HttpRequest object.
      */
-    public static HttpRequest toStreamingHttpRequest(FullHttpRequest request) {
-        return request.toStreamingHttpRequest(string -> Unpooled.copiedBuffer(string, UTF_8));
+    public HttpRequest toStreamingRequest() {
+        if (this.body.length == 0) {
+            return new HttpRequest.Builder(this, Observable.empty()).build();
+        } else {
+            return new HttpRequest.Builder(this, Observable.just(Unpooled.copiedBuffer(this.body))).build();
+        }
     }
 
     @Override
@@ -316,7 +340,6 @@ public class FullHttpRequest implements FullHttpMessage {
                 .add("headers", headers)
                 .add("cookies", cookies)
                 .add("id", id)
-                .add("clientAddress", clientAddress)
                 .add("secure", secure)
                 .toString();
     }
@@ -335,13 +358,13 @@ public class FullHttpRequest implements FullHttpMessage {
         private boolean secure;
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
-        private String body;
+        private byte[] body;
         private final List<HttpCookie> cookies;
 
         public Builder() {
             this.url = Url.Builder.url("/").build();
             this.headers = new HttpHeaders.Builder();
-            this.body = null;
+            this.body = new byte[0];
             this.cookies = new ArrayList<>();
         }
 
@@ -352,10 +375,9 @@ public class FullHttpRequest implements FullHttpMessage {
             this.secure = url.isSecure();
         }
 
-        public Builder(HttpRequest request, String body) {
+        public Builder(HttpRequest request, byte[] body) {
             this.id = request.id();
             this.method = request.method();
-            this.clientAddress = request.clientAddress();
             this.url = request.url();
             this.secure = request.isSecure();
             this.version = request.version();
@@ -367,7 +389,6 @@ public class FullHttpRequest implements FullHttpMessage {
         Builder(FullHttpRequest request) {
             this.id = request.id();
             this.method = request.method();
-            this.clientAddress = request.clientAddress();
             this.url = request.url();
             this.secure = request.isSecure();
             this.version = request.version();
@@ -389,14 +410,53 @@ public class FullHttpRequest implements FullHttpMessage {
         /**
          * Sets the request body.
          *
+         * This method encodes a String content to a byte array using the specified
+         * charset, and sets the Content-Length header accordingly.
+         *
          * @param content request body
+         * @param charset Charset for string encoding.
          * @return {@code this}
          */
-        public Builder body(String content) {
-            String sanitisedContent = content == null ? "" : content;
+        public Builder body(String content, Charset charset) {
+            return body(content, charset, true);
+        }
 
-            header(CONTENT_LENGTH, sanitisedContent.getBytes(UTF_8).length);
-            this.body = sanitisedContent;
+        /**
+         * Sets the request body.
+         *
+         * This method encodes the content to a byte array using the specified
+         * charset, and sets the Content-Length header *if* the setContentLength
+         * argument is true.
+         *
+         * @param content request body
+         * @param charset Charset used for encoding request body.
+         * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
+         * @return {@code this}
+         */
+        public Builder body(String content, Charset charset, boolean setContentLength) {
+            requireNonNull(charset, "Charset is not provided.");
+            String sanitised = content == null ? "" : content;
+            return body(sanitised.getBytes(charset), setContentLength);
+        }
+
+        /**
+         * Sets the request body.
+         *
+         * This method encodes the content to a byte array provided, and
+         * sets the Content-Length header *if* the setContentLength
+         * argument is true.
+         *
+         * @param content request body
+         * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
+         * @return {@code this}
+         */
+        public Builder body(byte[] content, boolean setContentLength) {
+            this.body = content != null ? content.clone() : new byte[0];
+
+            if (setContentLength) {
+                header(CONTENT_LENGTH, this.body.length);
+            }
+
             return this;
         }
 
@@ -535,17 +595,6 @@ public class FullHttpRequest implements FullHttpMessage {
         }
 
         /**
-         * Sets the client IP address.
-         *
-         * @param address IP address
-         * @return {@code this}
-         */
-        public Builder clientAddress(InetSocketAddress address) {
-            this.clientAddress = requireNonNull(address);
-            return this;
-        }
-
-        /**
          * Sets whether the request is be secure.
          *
          * @param secure true if secure
@@ -557,6 +606,15 @@ public class FullHttpRequest implements FullHttpMessage {
         }
 
         /**
+         * Enables Keep-Alive.
+         *
+         * @return {@code this}
+         */
+        public Builder enableKeepAlive() {
+            return header(CONNECTION, KEEP_ALIVE);
+        }
+
+        /**
          * Enable validation of uri and some headers.
          *
          * @return {@code this}
@@ -564,15 +622,6 @@ public class FullHttpRequest implements FullHttpMessage {
         public Builder disableValidation() {
             this.validate = false;
             return this;
-        }
-
-        /**
-         * Enables Keep-Alive.
-         *
-         * @return {@code this}
-         */
-        public Builder enableKeepAlive() {
-            return header(CONNECTION, KEEP_ALIVE);
         }
 
         /**

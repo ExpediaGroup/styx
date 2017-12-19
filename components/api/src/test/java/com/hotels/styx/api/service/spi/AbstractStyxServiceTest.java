@@ -26,6 +26,7 @@ import static com.hotels.styx.api.service.spi.StyxServiceStatus.RUNNING;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.STARTING;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.STOPPED;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.STOPPING;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -38,12 +39,12 @@ public class AbstractStyxServiceTest {
     public void exposesNameAndStatusViaAdminInterface() {
         DerivedStyxService service = new DerivedStyxService("derived-service", new CompletableFuture<>());
 
-        FullHttpResponse<String> response = service.adminInterfaceHandlers().get("status").handle(get)
-                .flatMap(r -> r.toFullHttpResponse(1024))
+        FullHttpResponse response = service.adminInterfaceHandlers().get("status").handle(get)
+                .flatMap(r -> r.toFullResponse(1024))
                 .toBlocking()
                 .first();
 
-        assertThat(response.body(), is("{ name: \"derived-service\" status: \"CREATED\" }"));
+        assertThat(response.bodyAs(UTF_8), is("{ name: \"derived-service\" status: \"CREATED\" }"));
     }
 
     @Test

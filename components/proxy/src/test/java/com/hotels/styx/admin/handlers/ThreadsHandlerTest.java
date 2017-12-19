@@ -29,17 +29,18 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.StringContains.containsString;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ThreadsHandlerTest {
     final ThreadsHandler handler = new ThreadsHandler();
 
     @Test
     public void dumpsCurrentThreadsState() {
-        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/threads").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/threads").build()));
         assertThat(response.status(), is(OK));
         assertThat(response.headers(), isNotCacheable());
         assertThat(response.contentType().get(), is("text/plain; charset=utf-8"));
-        assertThat(response.body(), containsString("Finalizer"));
+        assertThat(response.bodyAs(UTF_8), containsString("Finalizer"));
     }
 
     private HttpResponse handle(HttpRequest request) {

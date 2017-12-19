@@ -119,8 +119,8 @@ public class StyxHttpClientTest {
     @Test
     public void sendsHttp() throws IOException {
         withOrigin(HTTP, port -> {
-            FullHttpResponse<String> response = httpClient(port).sendRequest(httpRequest(8080))
-                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
+            FullHttpResponse response = httpClient(port).sendRequest(httpRequest(8080))
+                    .flatMap(r -> r.toFullResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
@@ -131,8 +131,8 @@ public class StyxHttpClientTest {
     @Test
     public void sendsHttps() throws IOException {
         withOrigin(HTTPS, port -> {
-            FullHttpResponse<String> response = httpsClient(port).sendRequest(httpsRequest(8080))
-                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
+            FullHttpResponse response = httpsClient(port).sendRequest(httpsRequest(8080))
+                    .flatMap(r -> r.toFullResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
@@ -143,8 +143,8 @@ public class StyxHttpClientTest {
     @Test(expectedExceptions = Exception.class)
     public void cannotSendHttpsWhenConfiguredForHttp() throws IOException {
         withOrigin(HTTPS, port -> {
-            FullHttpResponse<String> response = httpClient(port).sendRequest(httpsRequest(8080))
-                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
+            FullHttpResponse response = httpClient(port).sendRequest(httpsRequest(8080))
+                    .flatMap(r -> r.toFullResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
@@ -155,8 +155,8 @@ public class StyxHttpClientTest {
     @Test(expectedExceptions = Exception.class)
     public void cannotSendHttpWhenConfiguredForHttps() throws IOException {
         withOrigin(HTTP, port -> {
-            FullHttpResponse<String> response = httpsClient(port).sendRequest(httpRequest(8080))
-                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
+            FullHttpResponse response = httpsClient(port).sendRequest(httpRequest(8080))
+                    .flatMap(r -> r.toFullResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 

@@ -24,6 +24,7 @@ import com.hotels.styx.support.configuration._
 import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import org.scalatest.{FunSpec, SequentialNestedSuiteExecution}
+import java.nio.charset.StandardCharsets.UTF_8
 
 class TlsVersionSpec extends FunSpec
   with StyxProxySpec
@@ -124,7 +125,7 @@ class TlsVersionSpec extends FunSpec
     it("Proxies to TLSv1.1 origin when TLSv1.1 support enabled.") {
       val response1 = decodedRequest(httpRequest("/tls11/a"))
       assert(response1.status().code() == 200)
-      assert(response1.body() == "Hello, World!")
+      assert(response1.bodyAs(UTF_8) == "Hello, World!")
 
       appOriginTlsv11.verify(
         getRequestedFor(
@@ -133,7 +134,7 @@ class TlsVersionSpec extends FunSpec
 
       val response2 = decodedRequest(httpRequest("/tlsDefault/a2"))
       assert(response2.status().code() == 200)
-      assert(response2.body() == "Hello, World!")
+      assert(response2.bodyAs(UTF_8) == "Hello, World!")
 
       appOriginTlsDefault.verify(
         getRequestedFor(
@@ -144,7 +145,7 @@ class TlsVersionSpec extends FunSpec
     it("Proxies to TLSv1.2 origin when TLSv1.2 support is enabled.") {
       val response1 = decodedRequest(httpRequest("/tlsDefault/b1"))
       assert(response1.status().code() == 200)
-      assert(response1.body() == "Hello, World!")
+      assert(response1.bodyAs(UTF_8) == "Hello, World!")
 
       appOriginTlsDefault.verify(
         getRequestedFor(urlEqualTo("/tlsDefault/b1"))
@@ -153,7 +154,7 @@ class TlsVersionSpec extends FunSpec
 
       val response = decodedRequest(httpRequest("/tls12/b2"))
       assert(response.status().code() == 200)
-      assert(response.body() == "Hello, World!")
+      assert(response.bodyAs(UTF_8) == "Hello, World!")
 
       appOriginTlsv12.verify(
         getRequestedFor(urlEqualTo("/tls12/b2"))
@@ -164,7 +165,7 @@ class TlsVersionSpec extends FunSpec
       val response = decodedRequest(httpRequest("/tls11-to-tls12/c"))
 
       assert(response.status().code() == 502)
-      assert(response.body == "Site temporarily unavailable.")
+      assert(response.bodyAs(UTF_8) == "Site temporarily unavailable.")
 
       appOriginTlsv12B.verify(0, getRequestedFor(urlEqualTo("/tls11-to-tls12/c")))
     }

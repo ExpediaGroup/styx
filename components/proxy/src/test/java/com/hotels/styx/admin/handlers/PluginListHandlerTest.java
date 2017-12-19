@@ -27,6 +27,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class PluginListHandlerTest {
     @Test
@@ -43,10 +44,10 @@ public class PluginListHandlerTest {
 
         PluginListHandler handler = new PluginListHandler(plugins);
 
-        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.body(), is("" +
+        assertThat(response.bodyAs(UTF_8), is("" +
                 "<h3>Enabled</h3>" +
                 "<a href='/admin/plugins/one'>one</a><br />" +
                 "<a href='/admin/plugins/four'>four</a><br />" +

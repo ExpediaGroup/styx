@@ -18,6 +18,7 @@ package com.hotels.styx.api;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.messages.FullHttpRequest;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
@@ -51,7 +52,6 @@ import static io.netty.handler.codec.http.HttpMethod.POST;
 import static io.netty.handler.codec.http.HttpMethod.PUT;
 import static io.netty.handler.codec.http.HttpMethod.TRACE;
 import static java.net.InetSocketAddress.createUnresolved;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.UUID.randomUUID;
 
 /**
@@ -240,40 +240,14 @@ public final class HttpRequest implements HttpMessage {
      */
     @Deprecated
     public <T> Observable<DecodedRequest<T>> decode(Function<ByteBuf, T> decoder, int maxContentBytes) {
-        return body.decode(decoder, maxContentBytes)
+        return body.aggregate(maxContentBytes)
+                .map(bytes -> decoder.apply(Unpooled.copiedBuffer(bytes)))
                 .map(DecodedRequest::new);
-    }
-
-    /**
-     * Decodes this request into a full/aggregated form, using UTF-8 decoding to transform the body from a buffer of bytes
-     * to a String. If the number of content bytes exceeds the provided maximum, an exception will be thrown.
-     *
-     * @param maxContentBytes maximum content bytes before an exception is thrown
-     * @return a decoded (aggregated/full) request
-     */
-    public Observable<FullHttpRequest> toFullHttpRequest(int maxContentBytes) {
-        return toFullHttpRequest(byteBuf -> byteBuf.toString(UTF_8), maxContentBytes);
-    }
-
-    /**
-     * Decodes this request into a full/aggregated form, using the provided decoder to transform the body from a buffer of bytes
-     * to an arbitrary type. If the number of content bytes exceeds the provided maximum, an exception will be thrown.
-     *
-     * @param decoder a decoding function
-     * @param maxContentBytes maximum content bytes before an exception is thrown
-     * @param <T> full body type
-     * @return a decoded (aggregated/full) request
-     */
-    public <T> Observable<FullHttpRequest> toFullHttpRequest(Function<ByteBuf, String> decoder, int maxContentBytes) {
-        return body.decode(decoder, maxContentBytes)
-                .map(decoded -> new FullHttpRequest.Builder(this, decoded))
-                .map(FullHttpRequest.Builder::build);
     }
 
     /**
      * Decodes HTTP content of a form-urlencoded data and returns a helper class to consume POST params.
      * <p>
-     * The method leverages the {@link HttpMessageBody#decode(Function, int)} function.
      * It aggregates HTTP request content into a composed byte buffer and applies a decoder function
      * to create {@link FormData} within a {@link com.hotels.styx.api.HttpRequest.DecodedRequest} instance.
      * </p>
@@ -282,8 +256,32 @@ public final class HttpRequest implements HttpMessage {
      *                        this amount, a {@link ContentOverflowException} is raised.
      * @return an observable that provides an object representing the HTTP POST parameters.
      */
+    @Deprecated
     public Observable<DecodedRequest<FormData>> decodePostParams(int maxContentBytes) {
-        return body.decode(this::toFormData, maxContentBytes).map(DecodedRequest::new);
+        return this.decode(this::toFormData, maxContentBytes);
+    }
+
+    /**
+     * Aggregates and converts this streaming request FullHttpRequest.
+     * <p>
+     * Aggregates up to maxContentLength bytes of HTTP request content stream. Once content is
+     * aggregated, this streaming HttpRequest instance is converted to a FullHttpRequest object
+     * with the aggregated content set as a message body.
+     * <p>
+     * This method aggregates the content stream asynchronously. Once the FullHttpRequest is
+     * available, it will be emitted as an Observable onNext event. If the number of content bytes
+     * exceeds maxContentLength an exception is emitted as Observable onError event.
+     * <p>
+     * Performance considerations: An instantiation of FullHttpRequest takes a copy of the aggregated
+     * HTTP message content.
+     * <p>
+     * @param maxContentLength Maximum content bytes accepted from the HTTP content stream.
+     * @return An {Observable} that emits the FullHttpRequest once it is available.
+     */
+    public <T> Observable<FullHttpRequest> toFullRequest(int maxContentLength) {
+        return body.aggregate(maxContentLength)
+                .map(decoded -> new FullHttpRequest.Builder(this, decoded.copy().array()))
+                .map(FullHttpRequest.Builder::build);
     }
 
     private FormData toFormData(ByteBuf byteBuf) {
@@ -329,10 +327,6 @@ public final class HttpRequest implements HttpMessage {
      */
     public Iterable<String> queryParamNames() {
         return url.queryParamNames();
-    }
-
-    private boolean methodHasBody() {
-        return method.equals(POST) || method.equals(PUT) || method.equals(PATCH);
     }
 
     /**
@@ -484,7 +478,7 @@ public final class HttpRequest implements HttpMessage {
             this.secure = request.isSecure();
             this.url = request.url();
             this.method = request.method();
-            this.clientAddress = request.clientAddress();
+            this.clientAddress = null;
             this.cookies = new ArrayList<>(request.cookies());
             headers(request.headers().newBuilder());
             version(request.version());

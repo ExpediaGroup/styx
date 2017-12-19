@@ -20,8 +20,10 @@ import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.HttpMessageSupport;
 import io.netty.handler.codec.http.HttpVersion;
 
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
@@ -56,7 +58,32 @@ public interface FullHttpMessage {
      *
      * @return the body
      */
-    String body();
+    byte[] body();
+
+    /**
+     * Returns the message body decoded to a business domain object.
+     *
+     * Decodes the message body with a provided decoder function and returns the
+     * result. The decoder is a function from ByteBuf to a specified output type T.
+     * The caller must ensure the provided decoder is compatible with message content
+     * type and encoding.
+     *
+     * @param  decoder    A function from ByteBuf to T.
+     * @return            Message object decoded into a business domain object.
+     */
+    <T> T bodyAs(Function<byte[], T> decoder);
+
+    /**
+     * Returns the message body as a String decoded with provided character set.
+     *
+     * Decodes the message body into a Java String object with a provided charset.
+     * The caller must ensure the provided charset is compatible with message content
+     * type and encoding.
+     *
+     * @param charset     Charset used to decode message body.
+     * @return            Message body as a String.
+     */
+    String bodyAs(Charset charset);
 
     /**
      * Returns the value of the header with the specified {@code name}.

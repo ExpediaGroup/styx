@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.proxy
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
@@ -60,9 +62,9 @@ class OriginsReloadRepetitionSpec extends FunSpec
       eventually(timeout(1 seconds)) {
         val response = get(styxServer.adminURL("/admin/origins/status"))
 
-        response.body should include("localhost:" + backend1.port())
-        response.body should not include ("localhost:" + backend2.port())
-        response.body should include("localhost:" + backend3.port())
+        response.bodyAs(UTF_8) should include("localhost:" + backend1.port())
+        response.bodyAs(UTF_8) should not include ("localhost:" + backend2.port())
+        response.bodyAs(UTF_8) should include("localhost:" + backend3.port())
       }
 
       styxServer.setBackends(
@@ -72,9 +74,9 @@ class OriginsReloadRepetitionSpec extends FunSpec
       eventually(timeout(1 seconds)) {
         val response = get(styxServer.adminURL("/admin/origins/status"))
 
-        response.body should not include ("localhost:" + backend1.port())
-        response.body should not include ("localhost:" + backend2.port())
-        response.body should include("localhost:" + backend3.port())
+        response.bodyAs(UTF_8) should not include ("localhost:" + backend1.port())
+        response.bodyAs(UTF_8) should not include ("localhost:" + backend2.port())
+        response.bodyAs(UTF_8) should include("localhost:" + backend3.port())
       }
 
       styxServer.setBackends(
@@ -84,9 +86,9 @@ class OriginsReloadRepetitionSpec extends FunSpec
       eventually(timeout(1 seconds)) {
         val response = get(styxServer.adminURL("/admin/origins/status"))
 
-        response.body should include("localhost:" + backend1.port())
-        response.body should include("localhost:" + backend2.port())
-        response.body should include("localhost:" + backend3.port())
+        response.bodyAs(UTF_8) should include("localhost:" + backend1.port())
+        response.bodyAs(UTF_8) should include("localhost:" + backend2.port())
+        response.bodyAs(UTF_8) should include("localhost:" + backend3.port())
       }
     }
   }

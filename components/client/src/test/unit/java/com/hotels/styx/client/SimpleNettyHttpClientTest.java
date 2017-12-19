@@ -19,7 +19,6 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionDestination;
 import com.hotels.styx.api.messages.FullHttpResponse;
@@ -32,7 +31,6 @@ import com.hotels.styx.client.ssl.TlsSettings;
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import rx.Subscription;
 import rx.observers.TestSubscriber;
 import rx.subjects.ReplaySubject;
 
@@ -71,8 +69,8 @@ public class SimpleNettyHttpClientTest {
     @Test
     public void sendsHttp() throws IOException {
         withOrigin(HTTP, port -> {
-            FullHttpResponse<String> response = httpClient().sendRequest(httpRequest(port))
-                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
+            FullHttpResponse response = httpClient().sendRequest(httpRequest(port))
+                    .flatMap(r -> r.toFullResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
@@ -83,8 +81,8 @@ public class SimpleNettyHttpClientTest {
     @Test
     public void sendsHttps() throws IOException {
         withOrigin(HTTPS, port -> {
-            FullHttpResponse<String> response = httpsClient().sendRequest(httpsRequest(port))
-                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
+            FullHttpResponse response = httpsClient().sendRequest(httpsRequest(port))
+                    .flatMap(r -> r.toFullResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
@@ -95,8 +93,8 @@ public class SimpleNettyHttpClientTest {
     @Test(expectedExceptions = Exception.class)
     public void cannotSendHttpsWhenConfiguredForHttp() throws IOException {
         withOrigin(HTTPS, port -> {
-            FullHttpResponse<String> response = httpClient().sendRequest(httpsRequest(port))
-                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
+            FullHttpResponse response = httpClient().sendRequest(httpsRequest(port))
+                    .flatMap(r -> r.toFullResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
@@ -107,8 +105,8 @@ public class SimpleNettyHttpClientTest {
     @Test(expectedExceptions = Exception.class)
     public void cannotSendHttpWhenConfiguredForHttps() throws IOException {
         withOrigin(HTTP, port -> {
-            FullHttpResponse<String> response = httpsClient().sendRequest(httpRequest(port))
-                    .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
+            FullHttpResponse response = httpsClient().sendRequest(httpRequest(port))
+                    .flatMap(r -> r.toFullResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
@@ -225,7 +223,7 @@ public class SimpleNettyHttpClientTest {
                 .build();
 
         client.sendRequest(request)
-                .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
+                .flatMap(r -> r.toFullResponse(MAX_LENGTH))
                 .toBlocking()
                 .single();
     }

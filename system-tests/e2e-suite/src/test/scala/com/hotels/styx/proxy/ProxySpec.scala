@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.proxy
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 import com.github.tomakehurst.wiremock.client.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.MockServer.responseSupplier
@@ -83,7 +85,7 @@ class ProxySpec extends FunSpec
       recordingBackend.verify(getRequestedFor(urlPathEqualTo("/")))
       assert(resp.status() == OK)
       assertThat(resp.header("headerName"), isValue("headerValue"))
-      assert(resp.body == "bodyContent")
+      assert(resp.bodyAs(UTF_8) == "bodyContent")
       assertThat(resp.header(STYX_INFO_DEFAULT), matches(matchesRegex("noJvmRouteSet;[0-9a-f-]+")))
     }
   }
@@ -183,7 +185,7 @@ class ProxySpec extends FunSpec
         val resp = decodedRequest(req)
 
         println("resp: " + resp)
-        println("body: " + resp.body)
+        println("body: " + resp.bodyAs(UTF_8))
 
         assert(resp.status() == BAD_GATEWAY)
       }
@@ -224,11 +226,11 @@ class ProxySpec extends FunSpec
     }
 
 
-    def assertThatResponseIsBodiless(response: FullHttpResponse[String]) {
+    def assertThatResponseIsBodiless(response: FullHttpResponse) {
       val headers = response.headers()
       assert(response.contentLength().orElse(0) == 0, s"\nexpected headers with no Content-Length header but found $headers")
       assert(!response.chunked(), s"\nexpected headers with no Transfer-Encoding header but found $headers")
-      assert(response.body.isEmpty, s"\nexpected response with no body but found $response.body()")
+      assert(response.bodyAs(UTF_8).isEmpty, s"\nexpected response with no body but found ${response.bodyAs(UTF_8)}")
     }
   }
 

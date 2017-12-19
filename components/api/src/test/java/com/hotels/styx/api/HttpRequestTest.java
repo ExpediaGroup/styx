@@ -529,19 +529,17 @@ public class HttpRequestTest {
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpRequest full = request.toFullHttpRequest(byteBuf -> byteBuf.toString(UTF_8), 0x100000)
+        FullHttpRequest full = request.toFullRequest(0x100000)
                 .toBlocking()
                 .single();
 
         assertThat(full.method(), is(POST));
-        assertThat(full.clientAddress().getHostName(), is("example.org"));
-        assertThat(full.clientAddress().getPort(), is(8080));
         assertThat(full.isSecure(), is(true));
         assertThat(full.version(), is(HTTP_1_0));
         assertThat(full.headers(), contains(header("HeaderName", "HeaderValue")));
         assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
         assertThat(full.url().toString(), is("/foo/bar"));
-        assertThat(full.body(), is("foobarbaz"));
+        assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
     }
 
     @Test
@@ -550,12 +548,12 @@ public class HttpRequestTest {
                 .body(empty())
                 .build();
 
-        FullHttpRequest full = request.toFullHttpRequest(byteBuf -> byteBuf.toString(UTF_8), 0x100000)
+        FullHttpRequest full = request.toFullRequest(0x100000)
                 .toBlocking()
                 .single();
 
         assertThat(full.url().toString(), is("/foo/bar"));
-        assertThat(full.body(), is(""));
+        assertThat(full.bodyAs(UTF_8), is(""));
     }
 
     @Test
@@ -564,12 +562,12 @@ public class HttpRequestTest {
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpRequest full = request.toFullHttpRequest(0x100000)
+        FullHttpRequest full = request.toFullRequest(0x100000)
                 .toBlocking()
                 .single();
 
         assertThat(full.url().toString(), is("/foo/bar"));
-        assertThat(full.body(), is("foobarbaz"));
+        assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
     }
 
     private static Observable<ByteBuf> stream(String... strings) {

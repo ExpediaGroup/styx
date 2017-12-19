@@ -29,6 +29,7 @@ import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class LoggingConfigurationHandlerTest {
     @Test
@@ -38,10 +39,10 @@ public class LoggingConfigurationHandlerTest {
                 .build();
         LoggingConfigurationHandler handler = new LoggingConfigurationHandler(startupConfig.logConfigLocation());
 
-        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.body(), is("Could not load resource='/foo/bar'"));
+        assertThat(response.bodyAs(UTF_8), is("Could not load resource='/foo/bar'"));
     }
 
     @Test
@@ -51,11 +52,11 @@ public class LoggingConfigurationHandlerTest {
                 .build();
         LoggingConfigurationHandler handler = new LoggingConfigurationHandler(startupConfig.logConfigLocation());
 
-        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
 
         String expected = Resources.load(new ClasspathResource("conf/environment/styx-config-test.yml", LoggingConfigurationHandlerTest.class));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.body(), is(expected));
+        assertThat(response.bodyAs(UTF_8), is(expected));
     }
 }

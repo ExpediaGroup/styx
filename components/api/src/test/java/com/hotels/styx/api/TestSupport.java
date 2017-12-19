@@ -17,11 +17,12 @@ package com.hotels.styx.api;
 
 import rx.Observable;
 
-import java.nio.charset.StandardCharsets;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class TestSupport {
     static String bodyAsString(HttpMessageBody body) {
-        return body.decode(byteBuf -> byteBuf.toString(StandardCharsets.UTF_8), 0x100000)
+        return body.aggregate(0x100000)
+                .map(bytes -> bytes.toString(UTF_8))
                 .toBlocking()
                 .single();
     }

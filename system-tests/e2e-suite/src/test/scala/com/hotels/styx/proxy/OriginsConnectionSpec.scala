@@ -15,14 +15,15 @@
  */
 package com.hotels.styx.proxy
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post => wmpost}
-import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.api.HttpRequest.Builder.post
-import com.hotels.styx.api.HttpResponse
-import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.client.StyxHttpClient
+import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
+import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec
@@ -64,7 +65,7 @@ class OriginsConnectionSpec extends FunSpec
         val response = waitForResponse(client.sendRequest(request))
 
         response.status().code() should be(200)
-        response.body() should be("")
+        response.bodyAs(UTF_8) should be("")
       }
 
       Thread.sleep(6000)
@@ -86,7 +87,7 @@ class OriginsConnectionSpec extends FunSpec
         val response = waitForResponse(client.sendRequest(request))
 
         response.status().code() should be(204)
-        response.body() should be("")
+        response.bodyAs(UTF_8) should be("")
       }
 
       Thread.sleep(6000)

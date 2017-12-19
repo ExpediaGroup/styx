@@ -17,13 +17,15 @@ package com.hotels.styx.api.service.spi;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpResponse;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
+import static com.hotels.styx.api.messages.FullHttpResponse.response;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.CREATED;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.FAILED;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.RUNNING;
@@ -32,6 +34,7 @@ import static com.hotels.styx.api.service.spi.StyxServiceStatus.STOPPED;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.STOPPING;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static rx.Observable.just;
 
@@ -96,10 +99,12 @@ public abstract class AbstractStyxService implements StyxService {
 
     @Override
     public Map<String, HttpHandler> adminInterfaceHandlers() {
-        return ImmutableMap.of("status", request -> just(HttpResponse.Builder
-                .response(OK)
-                .body(format("{ name: \"%s\" status: \"%s\" }", name, status))
-                .build()));
+        return ImmutableMap.of("status", request -> just(
+                response(OK)
+                        .addHeader(CONTENT_TYPE, APPLICATION_JSON)
+                        .body(format("{ name: \"%s\" status: \"%s\" }", name, status), UTF_8)
+                        .build()
+                        .toStreamingResponse()));
     }
 
 }

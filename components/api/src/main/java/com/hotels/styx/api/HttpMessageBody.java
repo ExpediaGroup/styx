@@ -28,6 +28,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.FlowControlDisableOperator.disableFlowControl;
 import static io.netty.buffer.Unpooled.compositeBuffer;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static rx.Observable.empty;
 
 /**
@@ -103,6 +104,41 @@ public final class HttpMessageBody {
     }
 
     /**
+     * Aggregates HTTP message body content.
+     *
+     * Aggregates streaming HTTP content to a single continuous byte buffer.
+     *
+     * Aggregated content is is a reference counted ByteBuf object. It must be released after use.
+     *
+     * @param maxContentBytes maximum content size that should be allowed. Exceeding this will cause an exception to be
+     *                        thrown
+     *
+     * @return an aggregate of the content
+     */
+
+    public Observable<ByteBuf> aggregate(int maxContentBytes) {
+        CompositeByteBuf byteBufs = compositeBuffer();
+
+        return content
+                .lift(disableFlowControl())
+                .doOnError(e -> byteBufs.release())
+                .collect(() -> byteBufs, (composite, part) -> {
+                    long newSize = composite.readableBytes() + part.readableBytes();
+
+                    if (newSize > maxContentBytes) {
+                        ReferenceCountUtil.release(composite);
+                        ReferenceCountUtil.release(part);
+
+                        throw new ContentOverflowException(format("Maximum content size exceeded. Maximum size allowed is %d bytes.", maxContentBytes));
+                    }
+
+                    composite.addComponent(part);
+                    composite.writerIndex(composite.writerIndex() + part.readableBytes());
+                })
+                .map(composite -> composite);
+    }
+
+    /**
      * Releases the buffers containing the body content. This is a non-blocking method.
      *
      * @return future to indicate when this is finished, or to allow synchronisation for testing
@@ -128,5 +164,11 @@ public final class HttpMessageBody {
         });
 
         return future;
+    }
+
+    public static Function<ByteBuf, String> utf8String() {
+        // CHECKSTYLE:OFF
+        return bytes -> bytes.toString(UTF_8);
+        // CHECKSTYLE:ON
     }
 }

@@ -22,6 +22,7 @@ import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -30,11 +31,11 @@ public class PingHandlerTest {
 
     @Test
     public void respondsPongToPingRequest() {
-        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/ping").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/ping").build()));
         assertThat(response.status(), is(OK));
         assertThat(response.headers(), isNotCacheable());
         assertThat(response.contentType().get(), is("text/plain; charset=utf-8"));
-        assertThat(response.body(), is("pong"));
+        assertThat(response.bodyAs(UTF_8), is("pong"));
     }
 
 }
