@@ -73,4 +73,9 @@ public class StickySessionLoadBalancingStrategy implements LoadBalancingStrategy
     public void originsInventoryStateChanged(OriginsInventorySnapshot snapshot) {
         delegate.originsInventoryStateChanged(snapshot);
     }
+
+    @Override
+    public Iterable<ConnectionPool> snapshot() {
+        return activeOrigins.snapshot();
+    }
 }

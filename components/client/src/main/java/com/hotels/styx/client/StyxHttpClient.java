@@ -136,10 +136,6 @@ public final class StyxHttpClient implements HttpClient {
         return retryPolicy;
     }
 
-    OriginsInventory originsInventory() {
-        return originsInventory;
-    }
-
     Transport transport() {
         return transport;
     }

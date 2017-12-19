@@ -61,7 +61,7 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
         if (txn.isCancelled()) {
             return Observable.error(throwable);
         }
-        RetryPolicyContext context = new RetryPolicyContext(client.id(), attemptCount, throwable, request, previouslyUsedOrigins, client.originsInventory().snapshot());
+        RetryPolicyContext context = new RetryPolicyContext(client.id(), attemptCount, throwable, request, previouslyUsedOrigins, client.loadBalancingStrategy().snapshot());
         RetryPolicy.Outcome outcome = client.retryPolicy().evaluate(context, client.loadBalancingStrategy());
         if (!outcome.shouldRetry() || !outcome.nextOrigin().isPresent()) {
             return Observable.error(throwable);
