@@ -69,7 +69,7 @@ class ChunkedDownloadSpec extends FunSpec
       response.status() should be(OK)
       response.contentLength().isPresent should be(false)
 
-      assert(response.body() == "a" * 10 + "b" * 20 + "c" * 30, s"\nReceived incorrect content: ${response.body()}")
+      assert(response.bodyAs(UTF_8) == "a" * 10 + "b" * 20 + "c" * 30, s"\nReceived incorrect content: ${response.bodyAs(UTF_8)}")
     }
 
     it("Proxies long lasting HTTP Chunked downloads without triggering gateway read timeout.") {
@@ -81,7 +81,7 @@ class ChunkedDownloadSpec extends FunSpec
 
       response.status() should be(OK)
 
-      assert(response.body().hashCode() == messageBody.hashCode, s"\nReceived incorrect content: ${response.body()}, \nexpected: $messageBody")
+      assert(response.bodyAs(UTF_8).hashCode() == messageBody.hashCode, s"\nReceived incorrect content: ${response.bodyAs(UTF_8)}, \nexpected: $messageBody")
     }
 
     it("Cancels the HTTP download request when browser closes the connection.") {

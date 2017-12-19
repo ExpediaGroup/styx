@@ -184,7 +184,8 @@ public class HttpResponseTest {
 
         String reply = shouldClearBody
                 .body()
-                .decode(byteBuf -> byteBuf.toString(StandardCharsets.UTF_8), 18)
+                .aggregate(18)
+                .map(bytebuf -> bytebuf.toString(UTF_8))
                 .toBlocking()
                 .first();
 
@@ -399,7 +400,7 @@ public class HttpResponseTest {
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpResponse full = request.toFullHttpResponse(byteBuf -> byteBuf.toString(StandardCharsets.UTF_8), 0x100000)
+        FullHttpResponse full = request.toFullResponse(0x100000)
                 .toBlocking()
                 .single();
 
@@ -409,7 +410,7 @@ public class HttpResponseTest {
         assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
 
         assertThat(full.status(), is(CREATED));
-        assertThat(full.body(), is("foobarbaz"));
+        assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
     }
 
     @Test
@@ -418,12 +419,12 @@ public class HttpResponseTest {
                 .body(empty())
                 .build();
 
-        FullHttpResponse full = request.toFullHttpResponse(byteBuf -> byteBuf.toString(StandardCharsets.UTF_8), 0x100000)
+        FullHttpResponse full = request.toFullResponse(0x100000)
                 .toBlocking()
                 .single();
 
         assertThat(full.status(), is(CREATED));
-        assertThat(full.body(), is(""));
+        assertThat(full.bodyAs(UTF_8), is(""));
     }
 
     @Test
@@ -432,12 +433,12 @@ public class HttpResponseTest {
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpResponse full = request.toFullHttpResponse(0x100000)
+        FullHttpResponse full = request.toFullResponse(0x100000)
                 .toBlocking()
                 .single();
 
         assertThat(full.status(), is(CREATED));
-        assertThat(full.body(), is("foobarbaz"));
+        assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
     }
 
     private static Observable<ByteBuf> stream(String... strings) {

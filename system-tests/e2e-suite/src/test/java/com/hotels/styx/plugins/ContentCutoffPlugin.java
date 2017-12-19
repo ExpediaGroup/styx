@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 
-import java.nio.charset.StandardCharsets;
+import static com.hotels.styx.api.HttpMessageBody.utf8String;
 
 public class ContentCutoffPlugin implements Plugin {
     private static Logger LOGGER = LoggerFactory.getLogger(ContentCutoffPlugin.class);
@@ -31,7 +31,8 @@ public class ContentCutoffPlugin implements Plugin {
     public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request)
                 .flatMap(response -> {
-                    Observable<String> body = response.body().decode(buf -> buf.toString(StandardCharsets.UTF_8), 1024);
+                    Observable<String> body = response.body()
+                            .decode(utf8String(), 1024);
                     return body
                             .doOnNext(content -> LOGGER.info("Throw away response body={}", content))
                             .flatMap(content -> Observable.just(response));

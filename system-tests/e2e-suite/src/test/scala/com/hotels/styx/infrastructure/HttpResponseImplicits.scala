@@ -20,7 +20,7 @@ import com.hotels.styx.api.messages.FullHttpResponse
 
 trait HttpResponseImplicits {
 
-  class RichHttpResponse(val response: FullHttpResponse[_]) {
+  class RichHttpResponse(val response: FullHttpResponse) {
 
     def isNotCacheAble(): Boolean = {
       response.header("Pragma").get().equals("no-cache") &&
@@ -30,7 +30,7 @@ trait HttpResponseImplicits {
 
   }
 
-  implicit def toRichHttpResponse(response: FullHttpResponse[_]): RichHttpResponse = {
+  implicit def toRichHttpResponse(response: FullHttpResponse): RichHttpResponse = {
     new RichHttpResponse(response)
   }
 }

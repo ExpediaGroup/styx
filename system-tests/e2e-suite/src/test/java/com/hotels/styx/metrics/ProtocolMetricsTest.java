@@ -99,7 +99,7 @@ public class ProtocolMetricsTest {
                 .addRoute("/", nonSslOrigin.port())
                 .start();
 
-        FullHttpResponse<String> response = doGet("/");
+        FullHttpResponse response = doGet("/");
 
         assertThat(response.status(), is(OK));
 
@@ -116,7 +116,7 @@ public class ProtocolMetricsTest {
                 .addRoute("/", nonSslOrigin.port())
                 .start();
 
-        FullHttpResponse<String> response = doHttpsGet("/");
+        FullHttpResponse response = doHttpsGet("/");
 
         assertThat(response.status(), is(OK));
 
@@ -127,16 +127,16 @@ public class ProtocolMetricsTest {
         assertThat(styxServer.metrics().meter("styx.server.https.responses.200").getCount(), is(1L));
     }
 
-    private FullHttpResponse<String> doGet(String path) {
+    private FullHttpResponse doGet(String path) {
         return doRequest(client, "http", styxServer.proxyHttpPort(), startWithSlash(path));
     }
 
-    private FullHttpResponse<String> doHttpsGet(String path) {
+    private FullHttpResponse doHttpsGet(String path) {
         UrlConnectionHttpClient client1 = new UrlConnectionHttpClient(2000, 5000);
         return doRequest(client1, "https", styxServer.proxyHttpsPort(), path);
     }
 
-    private static FullHttpResponse<String> doRequest(HttpClient client, String protocol, int port, String path) {
+    private static FullHttpResponse doRequest(HttpClient client, String protocol, int port, String path) {
         String url = format("%s://localhost:%s%s", protocol, port, startWithSlash(path));
 
         HttpRequest request = get(url)

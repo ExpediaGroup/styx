@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.plugins
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 import com.hotels.styx.StyxProxySpec
 import com.hotels.styx.api.HttpRequest.Builder._
 import com.hotels.styx.support.configuration.StyxConfig
@@ -41,7 +43,7 @@ class FormUrlEncodedDataSpec extends FunSpec with StyxProxySpec with Eventually 
         .build()
       val resp = decodedRequest(request)
       assert(resp.status().code() == 200)
-      assert(resp.body == "version: 54.0")
+      assert(resp.bodyAs(UTF_8) == "version: 54.0")
     }
 
     it("decodes correctly multiple post parameter") {
@@ -51,7 +53,7 @@ class FormUrlEncodedDataSpec extends FunSpec with StyxProxySpec with Eventually 
         .build()
       val resp = decodedRequest(request)
       assert(resp.status().code() == 200)
-      assert(resp.body == "app: bar\nversion: 54.0")
+      assert(resp.bodyAs(UTF_8) == "app: bar\nversion: 54.0")
     }
   }
 

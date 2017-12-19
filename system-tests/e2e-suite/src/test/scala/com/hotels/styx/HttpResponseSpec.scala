@@ -15,7 +15,7 @@
  */
 package com.hotels.styx
 
-import com.google.common.base.Charsets._
+import java.nio.charset.StandardCharsets.UTF_8
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.client.StyxHttpClient._
@@ -69,7 +69,7 @@ class HttpResponseSpec extends FunSuite
     val response = waitForResponse(client.sendRequest(get("/foo/3").build()))
 
     assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
-    assert(response.body() == "Test message body.", s"\nIncorrect response body.")
+    assert(response.bodyAs(UTF_8) == "Test message body.", s"\nIncorrect response body.")
   }
 
   def response200OkFollowedFollowedByServerConnectionClose(content: String): (ChannelHandlerContext, Any) => Any = {

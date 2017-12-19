@@ -38,6 +38,7 @@ import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.net.ssl.HttpsURLConnection.getDefaultHostnameVerifier;
 import static javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -73,14 +74,14 @@ public class MockOriginServerTest {
                         .withHeader("a", "b")
                         .withBody("Hello, World!"));
 
-        FullHttpResponse<String> response = send(client,
+        FullHttpResponse response = send(client,
                 get(format("http://localhost:%d/mock", server.port()))
                         .header("X-Forwarded-Proto", "http")
                         .build());
 
         assertThat(response.status(), is(OK));
         assertThat(response.header("a"), is(Optional.of("b")));
-        assertThat(response.body(), is("Hello, World!"));
+        assertThat(response.bodyAs(UTF_8), is("Hello, World!"));
 
         server.verify(getRequestedFor(urlEqualTo("/mock"))
                 .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")));
@@ -101,7 +102,7 @@ public class MockOriginServerTest {
                         .withHeader("a", "b")
                         .withBody("Hello, World!"));
 
-        FullHttpResponse<String> response = send(client,
+        FullHttpResponse response = send(client,
                 get(format("https://localhost:%d/mock", server.port()))
                         .header("X-Forwarded-Proto", "http")
                         .build());
@@ -114,9 +115,9 @@ public class MockOriginServerTest {
     }
 
 
-    private FullHttpResponse<String> send(HttpClient client, HttpRequest request) {
+    private FullHttpResponse send(HttpClient client, HttpRequest request) {
         return client.sendRequest(request)
-                .flatMap(req -> req.toFullHttpResponse(10*1024))
+                .flatMap(req -> req.toFullResponse(10*1024))
                 .toBlocking()
                 .first();
 

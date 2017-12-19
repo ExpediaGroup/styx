@@ -20,17 +20,19 @@ import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.messages.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 final class WiremockResponseConverter {
 
     private WiremockResponseConverter() {
     }
 
-    static FullHttpResponse<String> toStyxResponse(Response response) {
+    static FullHttpResponse toStyxResponse(Response response) {
         HttpResponseStatus status = HttpResponseStatus.valueOf(response.getStatus());
         HttpHeaders headers = toStyxHeaders(response.getHeaders());
         String content = response.getBodyAsString();
 
-        return FullHttpResponse.<String>response(status).headers(headers).body(content).build();
+        return FullHttpResponse.response(status).headers(headers).body(content, UTF_8, false).build();
     }
 
     private static HttpHeaders toStyxHeaders(com.github.tomakehurst.wiremock.http.HttpHeaders headers) {

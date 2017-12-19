@@ -21,9 +21,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import rx.Observable;
 import rx.observers.TestSubscriber;
 
-import java.net.InetSocketAddress;
+import java.util.Optional;
 
 import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.api.HttpHeader.header;
@@ -34,18 +35,16 @@ import static com.hotels.styx.api.HttpRequest.Builder.put;
 import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.api.messages.FullHttpRequest.get;
 import static com.hotels.styx.api.messages.FullHttpRequest.patch;
-import static com.hotels.styx.api.messages.FullHttpRequest.post;
-import static com.hotels.styx.api.messages.FullHttpRequest.toStreamingHttpRequest;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
-import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpMethod.DELETE;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpMethod.POST;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static java.lang.String.valueOf;
+import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -56,36 +55,33 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
 import static rx.Observable.just;
 
 
 public class FullHttpRequestTest {
     @Test
-    public void encodesToStreamingHttpRequest() {
-        FullHttpRequest fullRequest = new FullHttpRequest.Builder(POST, "/foo/bar").body("foobar")
-                .clientAddress(InetSocketAddress.createUnresolved("example.org", 8080))
+    public void convertsToStreamingHttpRequest() {
+        FullHttpRequest fullRequest = new FullHttpRequest.Builder(POST, "/foo/bar").body("foobar", UTF_8)
                 .secure(true)
-                .version(HTTP_1_0)
+                .version(HTTP_1_1)
                 .header("HeaderName", "HeaderValue")
                 .addCookie("CookieName", "CookieValue")
                 .build();
 
-        HttpRequest streaming = fullRequest.toStreamingHttpRequest(string -> copiedBuffer(string, UTF_8));
+        HttpRequest streaming = fullRequest.toStreamingRequest();
 
         assertThat(streaming.method(), is(POST));
         assertThat(streaming.url(), is(url("/foo/bar").build()));
-        assertThat(streaming.clientAddress().getHostName(), is("example.org"));
-        assertThat(streaming.clientAddress().getPort(), is(8080));
         assertThat(streaming.isSecure(), is(true));
-        assertThat(streaming.version(), is(HTTP_1_0));
+        assertThat(streaming.version(), is(HTTP_1_1));
         assertThat(streaming.headers(), containsInAnyOrder(
                 header("Content-Length", "6"),
                 header("HeaderName", "HeaderValue")));
         assertThat(streaming.cookies(), contains(cookie("CookieName", "CookieValue")));
 
         String body = streaming.body()
-                .decode(byteBuf -> byteBuf.toString(UTF_8), 0x100000)
+                .aggregate(0x100000)
+                .map(byteBuf -> byteBuf.toString(UTF_8))
                 .toBlocking()
                 .single();
 
@@ -93,8 +89,8 @@ public class FullHttpRequestTest {
     }
 
     @Test(dataProvider = "emptyBodyRequests")
-    public void encodesToStreamingHttpRequestWithEmptyBody(FullHttpRequest fullRequest) throws Exception {
-        HttpRequest streaming = fullRequest.toStreamingHttpRequest(string -> copiedBuffer(string, UTF_8));
+    public void convertsToStreamingHttpRequestWithEmptyBody(FullHttpRequest fullRequest) throws Exception {
+        HttpRequest streaming = fullRequest.toStreamingRequest();
 
         TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
         subscriber.requestMore(1);
@@ -110,25 +106,13 @@ public class FullHttpRequestTest {
     private Object[][] emptyBodyRequests() {
         return new Object[][]{
                 {get("/foo/bar").build()},
-                {new FullHttpRequest.Builder(POST, "/foo/bar").body(null).build()},
-                {new FullHttpRequest.Builder(POST, "/foo/bar").body("").build()},
+                {new FullHttpRequest.Builder(POST, "/foo/bar").body(null, UTF_8).build()},
+                {new FullHttpRequest.Builder(POST, "/foo/bar").body("", UTF_8).build()},
+                {new FullHttpRequest.Builder(POST, "/foo/bar").body(null, UTF_8, true).build()},
+                {new FullHttpRequest.Builder(POST, "/foo/bar").body("", UTF_8, true).build()},
+                {new FullHttpRequest.Builder(POST, "/foo/bar").body(null, true).build()},
+                {new FullHttpRequest.Builder(POST, "/foo/bar").body(new byte[0], true).build()},
         };
-    }
-
-    @Test
-    public void encodingToStreamingHttpRequestDefaultsToUTF8() throws Exception {
-        FullHttpRequest fullRequest = new FullHttpRequest.Builder(POST, "/foo/bar").body("foobar").build();
-
-        HttpRequest streaming = toStreamingHttpRequest(fullRequest);
-
-        TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
-        subscriber.requestMore(1);
-
-        streaming.body().content().subscribe(subscriber);
-
-        assertThat(subscriber.getOnNextEvents().size(), is(1));
-        ByteBuf buf = subscriber.getOnNextEvents().get(0);
-        assertThat(buf.toString(UTF_8), is("foobar"));
     }
 
     @Test
@@ -137,14 +121,13 @@ public class FullHttpRequestTest {
         assertThat(request.version(), is(HTTP_1_1));
         assertThat(request.url().toString(), is("/index"));
         assertThat(request.path(), is("/index"));
-        assertThat(request.clientAddress().getHostName(), is("127.0.0.1"));
         assertThat(request.id(), is(notNullValue()));
         assertThat(request.isSecure(), is(false));
         assertThat(request.cookies(), is(emptyIterable()));
         assertThat(request.headers(), is(emptyIterable()));
         assertThat(request.headers("any"), is(emptyIterable()));
 
-        assertThat(request.body(), is(nullValue()));
+        assertThat(request.body().length, is(0));
         assertThat(request.cookie("any"), isAbsent());
         assertThat(request.header("any"), isAbsent());
         assertThat(request.keepAlive(), is(true));
@@ -156,20 +139,20 @@ public class FullHttpRequestTest {
     @Test
     public void canUseBuilderToSetRequestProperties() {
         FullHttpRequest request = patch("https://hotels.com")
-                .version(HTTP_1_0)
+                .version(HTTP_1_1)
                 .id("id")
                 .header("headerName", "a")
                 .addCookie("cfoo", "bar")
                 .build();
 
-        assertThat(request.toString(), is("FullHttpRequest{version=HTTP/1.0, method=PATCH, uri=https://hotels.com, " +
-                "headers=[headerName=a, Host=hotels.com], cookies=[cfoo=bar], id=id, clientAddress=127.0.0.1:0, secure=true}"));
+        assertThat(request.toString(), is("FullHttpRequest{version=HTTP/1.1, method=PATCH, uri=https://hotels.com, " +
+                "headers=[headerName=a, Host=hotels.com], cookies=[cfoo=bar], id=id, secure=true}"));
 
         assertThat(request.headers("headerName"), is(singletonList("a")));
     }
 
     @Test
-    public void canModifyPreviouslyCreatedRequest() {
+    public void transformsRequest() {
         FullHttpRequest request = get("/foo")
                 .header("remove", "remove")
                 .build();
@@ -178,13 +161,143 @@ public class FullHttpRequestTest {
                 .method(DELETE)
                 .uri("/home")
                 .header("remove", "notanymore")
-                .clientAddress(new InetSocketAddress("localhost", 80))
                 .build();
 
         assertThat(newRequest.method(), is(DELETE));
         assertThat(newRequest.url().path(), is("/home"));
         assertThat(newRequest.headers(), hasItem(header("remove", "notanymore")));
-        assertThat(newRequest.clientAddress(), is(new InetSocketAddress("localhost", 80)));
+    }
+
+    @Test
+    public void contentFromStringOnlySetsContentLength() {
+        FullHttpRequest request = FullHttpRequest.get("/")
+                .body("Response content.", UTF_16)
+                .build();
+
+        assertThat(request.body(), is("Response content.".getBytes(UTF_16)));
+        assertThat(request.header("Content-Length"), is(Optional.of("36")));
+    }
+
+    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Charset is not provided.")
+    public void contentFromStringOnlyThrowsNPEWhenCharsetIsNull() {
+        FullHttpRequest.get("/")
+                .body("Response content.", null)
+                .build();
+    }
+
+    @Test
+    public void contentFromStringSetsContentLengthIfRequired() {
+        FullHttpRequest request1 = FullHttpRequest.get("/")
+                .body("Response content.", UTF_8, true)
+                .build();
+
+        assertThat(request1.header("Content-Length"), is(Optional.of("17")));
+
+        FullHttpRequest request2 = FullHttpRequest.get("/")
+                .body("Response content.", UTF_8, false)
+                .build();
+
+        assertThat(request2.header("Content-Length"), is(Optional.empty()));
+    }
+
+    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Charset is not provided.")
+    public void contentFromStringThrowsNPEWhenCharsetIsNull() {
+        FullHttpRequest.get("/")
+                .body("Response content.", null, false)
+                .build();
+    }
+
+    @Test
+    public void contentFromByteArraySetsContentLengthIfRequired() {
+        FullHttpRequest response1 = FullHttpRequest.get("/")
+                .body("Response content.".getBytes(UTF_16), true)
+                .build();
+        assertThat(response1.body(), is("Response content.".getBytes(UTF_16)));
+        assertThat(response1.header("Content-Length"), is(Optional.of("36")));
+
+        FullHttpRequest response2 = FullHttpRequest.get("/")
+                .body("Response content.".getBytes(UTF_8), false)
+                .build();
+
+        assertThat(response2.body(), is("Response content.".getBytes(UTF_8)));
+        assertThat(response2.header("Content-Length"), is(Optional.empty()));
+    }
+
+
+    @Test
+    public void requestBodyIsImmutable() throws Exception {
+        FullHttpRequest request = get("/foo")
+                .body("Original body", UTF_8)
+                .build();
+
+        request.body()[0] = 'A';
+
+        assertThat(request.bodyAs(UTF_8), is("Original body"));
+    }
+
+    @Test
+    public void requestBodyCannotBeChangedViaStreamingRequest() throws Exception {
+        FullHttpRequest original = FullHttpRequest.get("/foo")
+                .body("original", UTF_8)
+                .build();
+
+        ByteBuf byteBuf = original.toStreamingRequest()
+                .body()
+                .content()
+                .toBlocking()
+                .first();
+
+        byteBuf.array()[0] = 'A';
+
+        assertThat(original.bodyAs(UTF_8), is("original"));
+    }
+
+    @Test
+    public void requestBodyCannotBeChangedViaStreamingRequest2() throws Exception {
+        ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
+
+        HttpRequest original = HttpRequest.Builder.get("/foo")
+                .body(content)
+                .build();
+
+        FullHttpRequest fullRequest = original.toFullRequest(100)
+                .toBlocking()
+                .first();
+
+        content.array()[0] = 'A';
+
+        assertThat(fullRequest.bodyAs(UTF_8), is("original"));
+    }
+
+    @Test
+    public void requestBodyCannotBeChangedViaStreamingRequest3() throws Exception {
+        ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
+
+        HttpRequest original = HttpRequest.Builder.get("/foo")
+                .body(Observable.just(content))
+                .build();
+
+        FullHttpRequest fullRequest = original.toFullRequest(100)
+                .toBlocking()
+                .first();
+
+        content.array()[0] = 'A';
+
+        assertThat(fullRequest.bodyAs(UTF_8), is("original"));
+    }
+
+    @Test
+    public void transformedBodyIsNewCopy() {
+        FullHttpRequest request = get("/foo")
+                .body("Original body", UTF_8)
+                .build();
+
+        FullHttpRequest newRequest = request.newBuilder()
+                .body("New body", UTF_8)
+                .build();
+
+        assertThat(request.bodyAs(UTF_8), is("Original body"));
+        assertThat(newRequest.bodyAs(UTF_8), is("New body"));
     }
 
     @Test
@@ -195,8 +308,7 @@ public class FullHttpRequestTest {
 
     @Test
     public void decodesQueryParams() {
-        FullHttpRequest request = get("http://example.com/?foo=bar")
-                .build();
+        FullHttpRequest request = get("http://example.com/?foo=bar").build();
         assertThat(request.queryParam("foo"), isValue("bar"));
     }
 
@@ -379,13 +491,6 @@ public class FullHttpRequestTest {
         return content.getBytes(UTF_8);
     }
 
-    @Test
-    public void builderSetsRequestContent() {
-        FullHttpRequest request = new FullHttpRequest.Builder(POST, "/foo/bar").body("Foo bar").build();
-
-        assertThat(request.body(), is("Foo bar"));
-    }
-
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookie() {
         get("/").addCookie(null).build();
@@ -446,13 +551,4 @@ public class FullHttpRequestTest {
         assertThat(newRequest.version(), is(HTTP_1_0));
     }
 
-    @Test
-    public void builderCopiesClientIpAddress() throws Exception {
-        InetSocketAddress address = InetSocketAddress.createUnresolved("styx.io", 8080);
-        FullHttpRequest request = post("/foo").clientAddress(address).build();
-
-        FullHttpRequest newRequest = request.newBuilder().build();
-
-        assertThat(newRequest.clientAddress(), is(address));
-    }
 }

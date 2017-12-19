@@ -60,7 +60,7 @@ class AggregatingPluginSpec extends FunSpec
       assert(resp.status().code() == 200)
       assert(resp.header("test_plugin").get() == "yes")
       assert(resp.header("bytes_aggregated").get() == "0")
-      assert(resp.body == "")
+      assert(resp.bodyAs(UTF_8) == "")
     }
 
     it("Gets response from aggregating plugin (with body)") {
@@ -74,7 +74,7 @@ class AggregatingPluginSpec extends FunSpec
       assert(resp.status().code() == 200)
       assert(resp.header("test_plugin").get() == "yes")
       assert(resp.header("bytes_aggregated").get() == "2500")
-      assert(resp.body == chunkString("a") + chunkString("b") + chunkString("c") + chunkString("d") + chunkString("e"))
+      assert(resp.bodyAs(UTF_8) == chunkString("a") + chunkString("b") + chunkString("c") + chunkString("d") + chunkString("e"))
     }
   }
 

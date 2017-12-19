@@ -36,7 +36,7 @@ public final class HttpMessageBodies {
     }
 
     static String bodyAsString(HttpMessageBody body) {
-        return body.decode(byteBuf -> byteBuf.toString(UTF_8), 0x100000)
+        return body.decode(bytes -> bytes.toString(UTF_8), 0x100000)
                 .toBlocking()
                 .single();
     }

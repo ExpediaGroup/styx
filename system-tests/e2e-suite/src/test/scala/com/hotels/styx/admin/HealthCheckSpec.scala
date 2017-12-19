@@ -28,6 +28,7 @@ import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 import rx.Observable
+import java.nio.charset.StandardCharsets.UTF_8
 
 import scala.concurrent.duration._
 
@@ -75,7 +76,7 @@ class HealthCheckSpec extends FunSpec
 
         assert(healthCheckResponse.status == INTERNAL_SERVER_ERROR)
         assert(healthCheckResponse.isNotCacheAble())
-        healthCheckResponse.body should include regex "\\{\"errors.rate.500\":\\{\"healthy\":false,\"message\":\"error count=[0-9]+ m1_rate=[0-9.]+ is greater than 1.0\"}"
+        healthCheckResponse.bodyAs(UTF_8) should include regex "\\{\"errors.rate.500\":\\{\"healthy\":false,\"message\":\"error count=[0-9]+ m1_rate=[0-9.]+ is greater than 1.0\"}"
       }
     }
   }

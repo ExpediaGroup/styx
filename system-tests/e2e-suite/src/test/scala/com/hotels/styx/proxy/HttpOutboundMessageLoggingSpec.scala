@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.proxy
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 import ch.qos.logback.classic.Level._
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
 import com.hotels.styx.api.HttpRequest.Builder.get
@@ -79,7 +81,7 @@ class HttpOutboundMessageLoggingSpec extends FunSpec
     val request = get(s"http://localhost:${mockServer.port()}/foobar").build()
     val resp = decodedRequest(request)
     resp.status().code() should be (200)
-    resp.body should be ("I should be here!")
+    resp.bodyAs(UTF_8) should be ("I should be here!")
   }
 
   override protected def afterAll(): Unit = {

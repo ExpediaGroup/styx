@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.admin
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
@@ -34,21 +36,21 @@ class AdminSpec extends FunSpec
       val response = decodedRequest(get(styxServer.adminURL("/admin/status")).build())
       assert(response.status == OK)
       assert(response.isNotCacheAble())
-      assert(response.body == "OK")
+      assert(response.bodyAs(UTF_8) == "OK")
     }
 
     it("should return 200 and string 'OK' on /admin/healthcheck") {
       val response = decodedRequest(get(styxServer.adminURL("/admin/healthcheck")).build())
       assert(response.status == OK)
       assert(response.isNotCacheAble())
-      response.body should include("\"healthy\":true")
+      response.bodyAs(UTF_8) should include("\"healthy\":true")
     }
 
     it("should return 200 and string 'PONG' on /admin/ping") {
       val response = decodedRequest(get(styxServer.adminURL("/admin/ping")).build())
       assert(response.status == OK)
       assert(response.isNotCacheAble())
-      response.body should include("pong")
+      response.bodyAs(UTF_8) should include("pong")
     }
   }
 }

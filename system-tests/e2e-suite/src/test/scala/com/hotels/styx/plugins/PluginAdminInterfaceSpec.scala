@@ -27,6 +27,7 @@ import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec
 import rx.Observable
+import java.nio.charset.StandardCharsets.UTF_8
 
 import scala.collection.JavaConverters._
 
@@ -57,45 +58,45 @@ class PluginAdminInterfaceSpec extends FunSpec with StyxProxySpec with StyxClien
       val respY1 = get(styxServer.adminURL("/admin/plugins/plugy/path/one"))
       val respY2 = get(styxServer.adminURL("/admin/plugins/plugy/path/two"))
 
-      respX1.body() should be("X: Response from first admin interface")
-      respX2.body() should be("X: Response from second admin interface")
-      respY1.body() should be("Y: Response from first admin interface")
-      respY2.body() should be("Y: Response from second admin interface")
+      respX1.bodyAs(UTF_8) should be("X: Response from first admin interface")
+      respX2.bodyAs(UTF_8) should be("X: Response from second admin interface")
+      respY1.bodyAs(UTF_8) should be("Y: Response from first admin interface")
+      respY2.bodyAs(UTF_8) should be("Y: Response from second admin interface")
     }
 
     it("Joins plugin admin path with a path separator character, if one is missing") {
       val respZ1 = get(styxServer.adminURL("/admin/plugins/plugz/path/one"))
       val respZ2 = get(styxServer.adminURL("/admin/plugins/plugz/path/two"))
-      respZ1.body() should be("Z: Response from first admin interface")
-      respZ2.body() should be("Z: Response from second admin interface")
+      respZ1.bodyAs(UTF_8) should be("Z: Response from first admin interface")
+      respZ2.bodyAs(UTF_8) should be("Z: Response from second admin interface")
     }
 
     it("Represents link to plugins index on admin server index page") {
       val response = get(styxServer.adminURL("/admin"))
 
-      response.body() should include("<a href='/admin/plugins'>Plugins</a>")
+      response.bodyAs(UTF_8) should include("<a href='/admin/plugins'>Plugins</a>")
     }
 
     it("Represents links to plugin indexes on plugins index page") {
       val response = get(styxServer.adminURL("/admin/plugins"))
 
-      response.body() should include("<a href='/admin/plugins/plugx'>plugx</a>")
-      response.body() should include("<a href='/admin/plugins/plugy'>plugy</a>")
-      response.body() should include("<a href='/admin/plugins/plugz'>plugz</a>")
-      response.body() should include("<a href='/admin/plugins/plugw'>plugw</a>")
+      response.bodyAs(UTF_8) should include("<a href='/admin/plugins/plugx'>plugx</a>")
+      response.bodyAs(UTF_8) should include("<a href='/admin/plugins/plugy'>plugy</a>")
+      response.bodyAs(UTF_8) should include("<a href='/admin/plugins/plugz'>plugz</a>")
+      response.bodyAs(UTF_8) should include("<a href='/admin/plugins/plugw'>plugw</a>")
     }
 
     it("Represents links to plugin endpoints on admin server plugin index pages") {
       val response = get(styxServer.adminURL("/admin/plugins/plugx"))
 
-      response.body() should include("<a href='/admin/plugins/plugx/path/one'>plugx: path/one</a>")
-      response.body() should include("<a href='/admin/plugins/plugx/path/two'>plugx: path/two</a>")
+      response.bodyAs(UTF_8) should include("<a href='/admin/plugins/plugx/path/one'>plugx: path/one</a>")
+      response.bodyAs(UTF_8) should include("<a href='/admin/plugins/plugx/path/two'>plugx: path/two</a>")
     }
 
     it("Plugins without any admin features should display message instead of index") {
       val response = get(styxServer.adminURL("/admin/plugins/plugw"))
 
-      response.body() should include("This plugin (plugw) does not expose any admin interfaces")
+      response.bodyAs(UTF_8) should include("This plugin (plugw) does not expose any admin interfaces")
     }
   }
 

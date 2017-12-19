@@ -28,6 +28,7 @@ import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static io.netty.handler.codec.http.HttpResponseStatus.FORBIDDEN;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -37,17 +38,17 @@ public class ClassPathResourceHandlerTest {
     @Test
     public void readsClassPathResources() throws IOException {
         HttpRequest request = get("/admin/dashboard/expected.txt").build();
-        FullHttpResponse<String> response = waitForResponse(handler.handle(request));
+        FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(OK));
         assertThat(response.contentLength(), isValue("Foo\nBar\n".length()));
-        assertThat(response.body(), is("Foo\nBar\n"));
+        assertThat(response.bodyAs(UTF_8), is("Foo\nBar\n"));
     }
 
     @Test
     public void returns404IfResourceDoesNotExist() throws IOException {
         HttpRequest request = get("/admin/dashboard/unexpected.txt").build();
-        FullHttpResponse<String> response = waitForResponse(handler.handle(request));
+        FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(NOT_FOUND));
     }
@@ -65,7 +66,7 @@ public class ClassPathResourceHandlerTest {
     @Test(dataProvider = "forbiddenPaths")
     public void returns403IfTryingToAccessResourcesOutsidePermittedRoot(String path) throws IOException {
         HttpRequest request = get(path).build();
-        FullHttpResponse<String> response = waitForResponse(handler.handle(request));
+        FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(FORBIDDEN));
     }

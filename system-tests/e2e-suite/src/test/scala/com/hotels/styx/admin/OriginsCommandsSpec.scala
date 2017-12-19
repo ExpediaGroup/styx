@@ -31,6 +31,7 @@ import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
+import java.nio.charset.StandardCharsets.UTF_8
 
 import scala.concurrent.duration._
 
@@ -76,7 +77,7 @@ class OriginsCommandsSpec extends FeatureSpec
 
   override protected def afterAll() = {
     val response = get(styxServer.adminURL("/admin/origins/status"))
-    println("after test: " + response.body)
+    println("after test: " + response.bodyAs(UTF_8))
     println("Styx metrics: " + getStyxMetricsSnapshot)
 
     origin1.stop()
@@ -95,7 +96,7 @@ class OriginsCommandsSpec extends FeatureSpec
       enableOrigin("appOne", "appOne-01")
       eventually(timeout(5 seconds)) {
         val response = get(styxServer.routerURL("/appOne/"))
-        response.body should include(s"Response From appOne-01")
+        response.bodyAs(UTF_8) should include(s"Response From appOne-01")
       }
 
       When("a disable command is issued")
@@ -130,7 +131,7 @@ class OriginsCommandsSpec extends FeatureSpec
       Then("traffic should be routed to the newly enabled origin")
       eventually(timeout(5 seconds)) {
         val response = get(styxServer.routerURL("/appOne/"))
-        response.body should include(s"Response From appOne-01")
+        response.bodyAs(UTF_8) should include(s"Response From appOne-01")
       }
 
       And("origins status page shows the origin as active")
@@ -147,7 +148,7 @@ class OriginsCommandsSpec extends FeatureSpec
 
       Then("A Method not allowed error should be shown")
       response.status() should be(METHOD_NOT_ALLOWED)
-      response.body should include("Method Not Allowed. Only [POST] is allowed for this request.")
+      response.bodyAs(UTF_8) should include("Method Not Allowed. Only [POST] is allowed for this request.")
     }
 
     def disableOrigin(appId: String, originId: String) = {
@@ -164,14 +165,12 @@ class OriginsCommandsSpec extends FeatureSpec
   }
 
 
-  def getCurrentOriginsStatusSnapshot: String = get(styxServer.adminURL("/admin/origins/status")).body()
+  def getCurrentOriginsStatusSnapshot: String = get(styxServer.adminURL("/admin/origins/status")).bodyAs(UTF_8)
 
 
-  def getStyxMetricsSnapshot: String = {
-    get(styxServer.adminURL("/admin/metrics")).body()
-  }
+  def getStyxMetricsSnapshot: String = get(styxServer.adminURL("/admin/metrics")).bodyAs(UTF_8)
 
-  private def get(url: String): FullHttpResponse[String] = {
+  private def get(url: String): FullHttpResponse = {
     decodedRequest(HttpRequest.Builder.get(url).build())
   }
 

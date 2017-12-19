@@ -79,7 +79,7 @@ class OriginClosesConnectionSpec extends FunSuite
 
       assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
       assert(response.body.nonEmpty, s"\nResponse body is absent.")
-      assert(response.body == "Test message body." * 1024, s"\nIncorrect response body.")
+      assert(response.bodyAs(UTF_8) == "Test message body." * 1024, s"\nIncorrect response body.")
     }
 
     eventually {

@@ -25,6 +25,7 @@ import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class StartupConfigHandlerTest {
     @Test
@@ -37,10 +38,10 @@ public class StartupConfigHandlerTest {
 
         StartupConfigHandler handler = new StartupConfigHandler(startupConfig);
 
-        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.body(), is("<html><body>" +
+        assertThat(response.bodyAs(UTF_8), is("<html><body>" +
                 "Styx Home='/foo'" +
                 "<br />Config File Location='/bar/configure-me.yml'" +
                 "<br />Log Config Location='/baz/logback-conf.xml'" +

@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.plugins
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
@@ -22,8 +24,8 @@ import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
+import com.hotels.styx.support.server.UrlMatchingStrategies._
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import org.scalatest.FunSpec
@@ -65,7 +67,7 @@ class AsyncRequestSpec extends FunSpec
       val response = waitForResponse(client.sendRequest(request))
 
       mockServer.verify(1, getRequestedFor(urlStartingWith("/foobar")))
-      response.body() should be("I should be here!")
+      response.bodyAs(UTF_8) should be("I should be here!")
     }
   }
 }

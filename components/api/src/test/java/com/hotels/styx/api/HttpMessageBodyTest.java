@@ -31,6 +31,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.hotels.styx.api.TestSupport.bodyAsString;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -48,7 +49,7 @@ public class HttpMessageBodyTest {
     }
 
     private Function<ByteBuf, String> toStringDecoder(Charset charset) {
-        return byteBuf -> byteBuf.toString(charset);
+        return bytes -> bytes.toString(UTF_8);
     }
 
     private Function<ByteBuf, String> utf8Decoder = toStringDecoder(Charsets.UTF_8);
@@ -85,7 +86,7 @@ public class HttpMessageBodyTest {
         assertThat(additional2.refCnt(), is(1));
 
         try {
-            body.decode(buf -> buf.toString(UTF_8), 6).toBlocking().single();
+            body.decode(bytes -> bytes.toString(UTF_8), 6).toBlocking().single();
         } catch (RuntimeException e) {
             cause = e;
         }
@@ -125,7 +126,7 @@ public class HttpMessageBodyTest {
         assertThat(buf1.refCnt(), is(1));
         assertThat(buf2.refCnt(), is(1));
 
-        String result = body.decode((buf) -> buf.toString(Charsets.US_ASCII), 100).toBlocking().single();
+        String result = body.decode(bytes -> bytes.toString(US_ASCII), 100).toBlocking().single();
         assertThat(result, is("foobar"));
 
         assertThat(buf1.refCnt(), is(0));
@@ -167,7 +168,7 @@ public class HttpMessageBodyTest {
         content.onError(new RuntimeException("something went wrong"));
         HttpMessageBody body = new HttpMessageBody(content);
 
-        Observable<String> aggregated = body.decode(byteBuf -> byteBuf.toString(Charsets.UTF_8), 1000);
+        Observable<String> aggregated = body.decode(bytes -> bytes.toString(UTF_8), 1000);
 
         TestSubscriber<String> subscriber = new TestSubscriber<>();
         aggregated.subscribe(subscriber);

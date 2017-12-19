@@ -25,9 +25,9 @@ public final class BlockingObservables {
         return observable.toBlocking().single();
     }
 
-    public static FullHttpResponse<String> waitForResponse(Observable<HttpResponse> responseObs) {
+    public static FullHttpResponse waitForResponse(Observable<HttpResponse> responseObs) {
         return responseObs
-                .flatMap(response -> response.toFullHttpResponse(120*1024))
+                .flatMap(response -> response.toFullResponse(120*1024))
                 .toBlocking()
                 .first();
     }

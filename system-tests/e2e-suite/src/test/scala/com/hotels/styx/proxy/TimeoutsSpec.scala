@@ -124,8 +124,8 @@ class TimeoutsSpec extends FunSpec
     }
   }
 
-  def responseAndResponseTime(transaction: Observable[HttpResponse]): (FullHttpResponse[String], Long) = {
-    var response: FullHttpResponse[String] = FullHttpResponse.response().build()
+  def responseAndResponseTime(transaction: Observable[HttpResponse]): (FullHttpResponse, Long) = {
+    var response = FullHttpResponse.response().build()
 
     val duration = time {
       response = waitForResponse(transaction)

@@ -25,6 +25,7 @@ import com.hotels.styx.support.configuration._
 import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.{BackendServicesRegistrySupplier, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.{FunSpec, SequentialNestedSuiteExecution}
+import java.nio.charset.StandardCharsets.UTF_8
 
 import scala.concurrent.duration._
 
@@ -131,7 +132,7 @@ class ConditionRoutingSpec extends FunSpec
       val response = decodedRequest(httpRequest("/app.1"))
 
       assert(response.status().code() == 200)
-      assert(response.body == "Hello, World!")
+      assert(response.bodyAs(UTF_8) == "Hello, World!")
 
       httpServer.verify(
         getRequestedFor(urlEqualTo("/app.1"))
@@ -142,7 +143,7 @@ class ConditionRoutingSpec extends FunSpec
       val response = decodedRequest(httpsRequest("/app.2"))
 
       assert(response.status().code() == 200)
-      assert(response.body == "Hello, World!")
+      assert(response.bodyAs(UTF_8) == "Hello, World!")
 
       httpsServer.verify(
         getRequestedFor(urlEqualTo("/app.2"))

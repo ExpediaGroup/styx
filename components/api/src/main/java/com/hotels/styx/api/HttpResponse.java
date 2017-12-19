@@ -37,13 +37,13 @@ import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpMessageBody.NO_BODY;
+import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpResponseStatus.FOUND;
 import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
 import static io.netty.handler.codec.http.HttpResponseStatus.MULTIPLE_CHOICES;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
 import static io.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Represents an HTTP response.
@@ -275,42 +275,39 @@ public final class HttpResponse implements HttpMessage {
      * <p>
      * @param maxContentBytes maximum allowed size for the aggregated content. If the content exceeds
      *  this amount, an exception is raised
-     * @deprecated please use {@link #toFullHttpResponse(Function, int)}
+     * @deprecated please use {@link #toFullResponse(int)}
      *
      * @return an observable that provides an object representing an aggregated response
      */
     @Deprecated
     public <T> Observable<DecodedResponse<T>> decode(Function<ByteBuf, T> decoder, int maxContentBytes) {
-        return body.decode(decoder, maxContentBytes)
+        return body.aggregate(maxContentBytes)
+                .map(bytes -> decoder.apply(copiedBuffer(bytes)))
                 .map(content -> new DecodedResponse<>(this, content));
     }
 
     /**
-     * Decodes this response into a full/aggregated form, using UTF-8 decoding to transform the body from a buffer of bytes
-     * to a String. If the number of content bytes exceeds the provided maximum, an exception will be thrown.
+     * Aggregates and converts this streaming request FullHttpResponse.
+     * <p>
+     * Aggregates up to maxContentLength bytes of HTTP response content stream. Once content is
+     * aggregated, this streaming HttpResponse instance is converted to a FullHttpResponse object
+     * with the aggregated content set as a message body.
+     * <p>
+     * This method aggregates the content stream asynchronously. Once the FullHttpResponse is
+     * available, it will be emitted as an Observable onNext event. If the number of content bytes
+     * exceeds maxContentLength an exception is emitted as Observable onError event.
+     * <p>
+     * Performance considerations: An instantiation of FullHttpResponse takes a copy of the aggregated
+     * HTTP message content.
      *
-     * @param maxContentBytes maximum content bytes before an exception is thrown
-     * @return a decoded (aggregated/full) response
+     * @param maxContentLength Maximum content bytes accepted from the HTTP content stream.
+     * @return An {Observable} that emits the FullHttpResponse once it is available.
      */
-    public Observable<FullHttpResponse> toFullHttpResponse(int maxContentBytes) {
-        return toFullHttpResponse(byteBuf -> byteBuf.toString(UTF_8), maxContentBytes);
-    }
-
-    /**
-     * Decodes this response into a full/aggregated form, using the provided decoder to transform the body from a buffer of bytes
-     * to an arbitrary type. If the number of content bytes exceeds the provided maximum, an exception will be thrown.
-     *
-     * @param decoder a decoding function
-     * @param maxContentBytes maximum content bytes before an exception is thrown
-     * @param <T> full body type
-     * @return a decoded (aggregated/full) response
-     */
-    public <T> Observable<FullHttpResponse> toFullHttpResponse(Function<ByteBuf, String> decoder, int maxContentBytes) {
-        return body.decode(decoder, maxContentBytes)
-                .map(decoded -> new FullHttpResponse.Builder(this, decoded))
+    public Observable<FullHttpResponse> toFullResponse(int maxContentLength) {
+        return body.aggregate(maxContentLength)
+                .map(decoded -> new FullHttpResponse.Builder(this, decoded.copy().array()))
                 .map(FullHttpResponse.Builder::build);
     }
-
 
     @Override
     public String toString() {

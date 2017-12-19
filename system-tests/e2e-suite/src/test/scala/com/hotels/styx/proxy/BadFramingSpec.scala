@@ -137,7 +137,7 @@ class BadFramingSpec extends FunSpec
       response.status() should be(OK)
       response.header(CONTENT_LENGTH).isPresent should be(false)
 
-      assert(response.body == "a" * 10 + "b" * 20 + "c" * 30, s"\nReceived incorrect body: ${response.body()}")
+      assert(response.bodyAs(UTF_8) == "a" * 10 + "b" * 20 + "c" * 30, s"\nReceived incorrect body: ${response.bodyAs(UTF_8)}")
     }
 
 

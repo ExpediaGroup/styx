@@ -25,6 +25,7 @@ import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -34,7 +35,7 @@ public class MetricsHandlerTest {
 
     @Test
     public void respondsToRequestWithJsonResponse() {
-        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/metrics").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/metrics").build()));
         assertThat(response.status(), is(OK));
         assertThat(response.contentType().get(), is(JSON_UTF_8.toString()));
     }
@@ -42,7 +43,7 @@ public class MetricsHandlerTest {
     @Test
     public void exposesRegisteredMetrics() {
         metricRegistry.counter("foo").inc();
-        FullHttpResponse<String> response = waitForResponse(handler.handle(get("/metrics").build()));
-        assertThat(response.body(), is("{\"version\":\"3.0.0\",\"gauges\":{},\"counters\":{\"foo\":{\"count\":1}},\"histograms\":{},\"meters\":{},\"timers\":{}}"));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/metrics").build()));
+        assertThat(response.bodyAs(UTF_8), is("{\"version\":\"3.0.0\",\"gauges\":{},\"counters\":{\"foo\":{\"count\":1}},\"histograms\":{},\"meters\":{},\"timers\":{}}"));
     }
 }
