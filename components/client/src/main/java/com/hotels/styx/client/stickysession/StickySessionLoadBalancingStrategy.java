@@ -17,6 +17,7 @@ package com.hotels.styx.client.stickysession;
 
 import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
@@ -33,16 +34,18 @@ import static java.util.stream.StreamSupport.stream;
  */
 public class StickySessionLoadBalancingStrategy implements LoadBalancingStrategy {
     private final LoadBalancingStrategy delegate;
+    private final ActiveOrigins activeOrigins;
 
-    public StickySessionLoadBalancingStrategy(LoadBalancingStrategy delegate) {
+    public StickySessionLoadBalancingStrategy(ActiveOrigins activeOrigins, LoadBalancingStrategy delegate) {
         this.delegate = delegate;
+        this.activeOrigins = activeOrigins;
     }
 
     @Override
-    public Iterable<ConnectionPool> vote(Iterable<ConnectionPool> origins, Context context) {
+    public Iterable<ConnectionPool> vote(Context context) {
         return stickySessionOriginId(context)
-                .flatMap(preferredOriginId -> originsById(origins, preferredOriginId))
-                .orElseGet(() -> delegate.vote(origins, context));
+                .flatMap(preferredOriginId -> originsById(activeOrigins.snapshot(), preferredOriginId))
+                .orElseGet(() -> delegate.vote(context));
     }
 
     private Optional<Iterable<ConnectionPool>> originsById(Iterable<ConnectionPool> origins, Id id) {

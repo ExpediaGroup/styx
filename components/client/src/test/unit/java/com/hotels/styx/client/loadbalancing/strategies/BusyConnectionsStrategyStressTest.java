@@ -63,8 +63,6 @@ public class BusyConnectionsStrategyStressTest {
         metrics = new CodaHaleMetricRegistry();
     }
 
-    final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy(Collections::emptyList);
-
     @DataProvider(name = "origins")
     private Object[][] origins() {
         return new Object[][]{
@@ -164,7 +162,9 @@ public class BusyConnectionsStrategyStressTest {
                                 .withAvailableConnections(so.availableConnections()))
                         .collect(toList());
 
-                Iterable<ConnectionPool> result = strategy.vote(pools, contextFromSimulatedOrigins(origins));
+                final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy(() -> pools);
+
+                Iterable<ConnectionPool> result = strategy.vote(contextFromSimulatedOrigins(origins));
 
                 ConnectionPool winner = Iterables.get(result, 0);
                 if (winner.stats().availableConnectionCount() > 0) {

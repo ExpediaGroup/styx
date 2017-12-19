@@ -62,11 +62,10 @@ public interface LoadBalancingStrategy extends OriginsInventoryStateChangeListen
     /**
      * Sorts the specified origins according to the order that they should be tried.
      *
-     * @param origins the origins to be sorted
      * @param context load balancing context
      * @return the origins sorted into a new order
      */
-    Iterable<ConnectionPool> vote(Iterable<ConnectionPool> origins, Context context);
+    Iterable<ConnectionPool> vote(Context context);
 
     /**
      * Returns a collection of {@link ConnectionPool}, without any guarantee of ordering.

@@ -85,7 +85,7 @@ public final class StyxHttpClient implements HttpClient {
                 backendService.responseTimeoutMillis(), builder.requestLoggingEnabled, builder.longFormat);
 
         this.loadBalancingStrategy = backendService.stickySessionConfig().stickySessionEnabled()
-                ? new StickySessionLoadBalancingStrategy(builder.loadBalancingStrategy)
+                ? new StickySessionLoadBalancingStrategy(builder.originsInventory, builder.loadBalancingStrategy)
                 : nonStickyLoadBalancingStrategy(builder);
 
         this.retryPolicy = builder.retryPolicy != null
@@ -111,7 +111,7 @@ public final class StyxHttpClient implements HttpClient {
 
         LOGGER.info("originRestrictionCookie specified as {} - origin restriction will apply when this cookie is sent", builder.originRestrictionCookie);
 
-        return new OriginRestrictionLoadBalancingStrategy(builder.loadBalancingStrategy, builder.originRestrictionCookie);
+        return new OriginRestrictionLoadBalancingStrategy(builder.originsInventory, builder.loadBalancingStrategy, builder.originRestrictionCookie);
     }
 
     public boolean isHttps() {
@@ -269,7 +269,7 @@ public final class StyxHttpClient implements HttpClient {
 
     private Optional<ConnectionPool> selectOrigin(HttpRequest rewrittenRequest) {
         LoadBalancingStrategy.Context lbContext = new LBContext(rewrittenRequest, id, originStatsFactory);
-        Iterable<ConnectionPool> votedOrigins = loadBalancingStrategy.vote(originsInventory.snapshot(), lbContext);
+        Iterable<ConnectionPool> votedOrigins = loadBalancingStrategy.vote(lbContext);
         return Optional.ofNullable(getFirst(votedOrigins, null));
     }
 
@@ -314,7 +314,7 @@ public final class StyxHttpClient implements HttpClient {
         private RetryPolicy retryPolicy;
         private String originRestrictionCookie;
         private OriginsInventory originsInventory;
-        private LoadBalancingStrategy loadBalancingStrategy = new RoundRobinStrategy(originsInventory);
+        private LoadBalancingStrategy loadBalancingStrategy;
         private boolean contentValidation;
         private boolean requestLoggingEnabled;
         private boolean longFormat;
@@ -393,6 +393,10 @@ public final class StyxHttpClient implements HttpClient {
 
             if (originsInventory == null) {
                 originsInventory = newOriginsInventoryBuilder(backendService).build();
+            }
+
+            if (loadBalancingStrategy == null) {
+                loadBalancingStrategy = new RoundRobinStrategy(originsInventory);
             }
             return new StyxHttpClient(this);
         }

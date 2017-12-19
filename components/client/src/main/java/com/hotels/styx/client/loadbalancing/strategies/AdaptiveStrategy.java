@@ -45,24 +45,29 @@ public class AdaptiveStrategy implements LoadBalancingStrategy {
         public AdaptiveStrategy create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins) {
             int requestCount = strategyConfiguration.get("requestCount", Integer.class)
                     .orElse(DEFAULT_REQUEST_COUNT);
-            return new AdaptiveStrategy(requestCount, new RoundRobinStrategy(activeOrigins),
+            return new AdaptiveStrategy(requestCount, activeOrigins, new RoundRobinStrategy(activeOrigins),
                     new BusyConnectionsStrategy(activeOrigins));
         }
     }
 
     private final AtomicDouble borrowCount = new AtomicDouble(0);
 
+    private ActiveOrigins activeOrigins;
     private final RoundRobinStrategy roundRobin;
     private final BusyConnectionsStrategy leastResponseTime;
     private final int requestCount;
     private volatile LoadBalancingStrategy currentStrategy;
 
-    public AdaptiveStrategy(RoundRobinStrategy loadBalancingStrategy) {
-        this(DEFAULT_REQUEST_COUNT, loadBalancingStrategy, new BusyConnectionsStrategy(loadBalancingStrategy::snapshot));
+    public AdaptiveStrategy(ActiveOrigins activeOrigins) {
+        this(DEFAULT_REQUEST_COUNT, activeOrigins,
+                new RoundRobinStrategy(activeOrigins),
+                new BusyConnectionsStrategy(activeOrigins));
     }
 
-    public AdaptiveStrategy(int requestCount, RoundRobinStrategy roundRobin, BusyConnectionsStrategy leastResponseTime) {
+    public AdaptiveStrategy(int requestCount, ActiveOrigins activeOrigins, RoundRobinStrategy roundRobin,
+                            BusyConnectionsStrategy leastResponseTime) {
         this.requestCount = checkArgument(requestCount, requestCount > 0);
+        this.activeOrigins = activeOrigins;
         this.roundRobin = checkNotNull(roundRobin);
         this.leastResponseTime = checkNotNull(leastResponseTime);
 
@@ -80,10 +85,10 @@ public class AdaptiveStrategy implements LoadBalancingStrategy {
     }
 
     @Override
-    public Iterable<ConnectionPool> vote(Iterable<ConnectionPool> origins, Context context) {
-        int nOrigins = size(origins);
+    public Iterable<ConnectionPool> vote(Context context) {
+        int nOrigins = size(activeOrigins.snapshot());
         if (nOrigins < 2) {
-            return origins;
+            return activeOrigins.snapshot();
         }
 
         if (this.currentStrategy == this.roundRobin) {
@@ -93,7 +98,7 @@ public class AdaptiveStrategy implements LoadBalancingStrategy {
             }
         }
 
-        return this.currentStrategy.vote(origins, context);
+        return this.currentStrategy.vote(context);
     }
 
     @Override

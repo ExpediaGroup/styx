@@ -96,8 +96,8 @@ public class LoadBalancingStrategyFactoryProviderTest {
         }
 
         @Override
-        public Iterable<ConnectionPool> vote(Iterable<ConnectionPool> origins, Context context) {
-            return origins;
+        public Iterable<ConnectionPool> vote(Context context) {
+            return null;
         }
 
         @Override

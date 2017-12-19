@@ -56,8 +56,8 @@ public class BusyConnectionsStrategy implements LoadBalancingStrategy {
     }
 
     @Override
-    public Iterable<ConnectionPool> vote(Iterable<ConnectionPool> origins, Context context) {
-        List<ConnectionPoolStatus> poolsList = stream(origins.spliterator(), false)
+    public Iterable<ConnectionPool> vote(Context context) {
+        List<ConnectionPoolStatus> poolsList = stream(activeOrigins.snapshot().spliterator(), false)
                 .map(origin -> new ConnectionPoolStatus(origin, context))
                 .collect(toList());
 

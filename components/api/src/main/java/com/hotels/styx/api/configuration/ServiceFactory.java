@@ -17,8 +17,6 @@ package com.hotels.styx.api.configuration;
 
 import com.hotels.styx.api.Environment;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * A generic factory that can be implemented in order to facilitate creating objects whose type is not known
  * until read from configuration.

@@ -67,8 +67,9 @@ public class RoundRobinStrategy implements LoadBalancingStrategy {
     private final AtomicInteger index = new AtomicInteger(0);
 
     @Override
-    public Iterable<ConnectionPool> vote(Iterable<ConnectionPool> origins, Context context) {
-        return isEmpty(origins) ? origins : cycledNonExhaustedOrigins(origins);
+    public Iterable<ConnectionPool> vote(Context context) {
+        Iterable<ConnectionPool> snapshot = activeOrigins.snapshot();
+        return isEmpty(snapshot) ? snapshot : cycledNonExhaustedOrigins(snapshot);
     }
 
     private List<ConnectionPool> cycledNonExhaustedOrigins(Iterable<ConnectionPool> origins) {
