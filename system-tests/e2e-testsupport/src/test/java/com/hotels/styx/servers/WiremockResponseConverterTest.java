@@ -25,12 +25,13 @@ import com.hotels.styx.api.messages.FullHttpResponse;
 import org.testng.annotations.Test;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.Spliterator;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.github.tomakehurst.wiremock.http.HttpHeader.httpHeader;
+import static com.hotels.styx.servers.WiremockResponseConverter.toStyxResponse;
 import static io.netty.handler.codec.http.HttpResponseStatus.CREATED;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.net.HttpURLConnection.HTTP_OK;
@@ -45,28 +46,30 @@ public class WiremockResponseConverterTest {
         ResponseDefinition created = ResponseDefinition.created();
         Response render = new BasicResponseRenderer().render(created);
 
-        FullHttpResponse styxResponse = WiremockResponseConverter.toStyxResponse(render);
+        FullHttpResponse styxResponse = toStyxResponse(render);
 
         assertThat(styxResponse.status(), is(CREATED));
-        assertThat(styxResponse.header("Content-Length"), is(Optional.empty()));
         assertThat(styxResponse.bodyAs(UTF_8), is(""));
+        assertThat(headerCount(styxResponse.headers()), is(0));
     }
 
     @Test
     public void convertsResponseWithBody() {
         ResponseDefinition response = new ResponseDefinition(HTTP_OK, "{ \"count\" : 0, \"requestJournalDisabled\" : false}");
         response.setHeaders(new HttpHeaders(
-                httpHeader("Content-Length", "48"),
+                httpHeader("Transfer-Encoding", "chunked"),
                 httpHeader("Content-Type", "application/json")));
 
-        FullHttpResponse styxResponse = WiremockResponseConverter.toStyxResponse(new BasicResponseRenderer().render(response));
+        FullHttpResponse styxResponse = toStyxResponse(new BasicResponseRenderer().render(response));
 
         assertThat(styxResponse.status(), is(OK));
         Map<String, String> actual = headersAsMap(styxResponse);
-        Map<String, String> of = ImmutableMap.of("Content-Length", "48", "Content-Type", "application/json");
 
-        assertThat(actual, is(of));
+        assertThat(actual, is(ImmutableMap.of(
+                "Transfer-Encoding", "chunked",
+                "Content-Type", "application/json")));
         assertThat(styxResponse.bodyAs(UTF_8), is("{ \"count\" : 0, \"requestJournalDisabled\" : false}"));
+        assertThat(headerCount(styxResponse.headers()), is(2));
     }
 
     private Map<String, String> headersAsMap(FullHttpResponse response) {
@@ -76,5 +79,10 @@ public class WiremockResponseConverterTest {
                 .collect(Collectors.toMap(HttpHeader::name, HttpHeader::value));
     }
 
+    private int headerCount(com.hotels.styx.api.HttpHeaders headers) {
+        AtomicInteger count = new AtomicInteger();
+        headers.forEach(header -> count.incrementAndGet());
+        return count.get();
+    }
 
 }

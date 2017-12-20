@@ -110,7 +110,6 @@ public class WiremockStyxRequestAdapter implements Request {
         return styxRequest.body();
     }
 
-    // TODO: Ensure getBodyAsString works with other character encodings too:
     @Override
     public String getBodyAsString() {
         return styxRequest.bodyAs(UTF_8);
