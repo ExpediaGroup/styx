@@ -61,7 +61,6 @@ public final class StyxHttpClient implements HttpClient {
     private final Id id;
     private final RewriteRuleset rewriteRuleset;
     private final LoadBalancingStrategy loadBalancingStrategy;
-    private final OriginsInventory originsInventory;
     private final RetryPolicy retryPolicy;
     private final boolean flowControlEnabled;
     private final Transport transport;
@@ -92,7 +91,6 @@ public final class StyxHttpClient implements HttpClient {
                 ? builder.retryPolicy
                 : new RetryNTimes(3);
 
-        this.originsInventory = builder.originsInventory;
         this.rewriteRuleset = new RewriteRuleset(builder.rewriteRules);
         this.transport = new Transport(requestOperationFactory, id, builder.styxHeaderConfig);
 
@@ -251,16 +249,6 @@ public final class StyxHttpClient implements HttpClient {
         if (isError(response.status())) {
             metricsRegistry.counter("origins.response.status." + response.status().code()).inc();
         }
-    }
-
-    @Override
-    public void close() {
-        this.originsInventory.close();
-    }
-
-    @Override
-    public void registerStatusGauges() {
-        originsInventory.registerStatusGauges();
     }
 
     private Optional<ConnectionPool> selectOrigin(HttpRequest rewrittenRequest) {

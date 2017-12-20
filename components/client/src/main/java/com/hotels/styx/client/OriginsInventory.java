@@ -124,6 +124,10 @@ public final class OriginsInventory
         }
     }
 
+    public boolean closed() {
+        return closed.get();
+    }
+
     @VisibleForTesting
     public void addOrigins(Origin... origins) {
         addOrigins(ImmutableSet.copyOf(origins));

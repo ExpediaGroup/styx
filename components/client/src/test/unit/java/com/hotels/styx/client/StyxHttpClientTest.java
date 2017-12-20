@@ -496,7 +496,7 @@ public class StyxHttpClientTest {
                 .originsInventory(originsInventory)
                 .build();
 
-        styxHttpClient.close();
+        originsInventory.close();
 
         assertThat(monitor.status() == RUNNING, is(false));
     }

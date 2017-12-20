@@ -15,8 +15,10 @@
  */
 package com.hotels.styx.routing.handlers
 
+import com.hotels.styx.Environment
 import com.hotels.styx.api.Id.id
 import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse, Id}
+import com.hotels.styx.client.OriginsInventory
 import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.BackendServiceClientFactory
@@ -28,6 +30,8 @@ import rx.Observable
 import scala.collection.JavaConverters._
 
 class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
+
+  val environment = new Environment.Builder().build()
 
   private val config = configBlock(
     """
@@ -47,7 +51,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
       |""".stripMargin)
 
   it("builds ProxyToBackend handler") {
-    val handler = new ProxyToBackend.ConfigFactory(clientFactory()).build(List().asJava, null, config)
+    val handler = new ProxyToBackend.ConfigFactory(environment, clientFactory()).build(List().asJava, null, config)
 
     val response = handler.handle(HttpRequest.Builder.get("/foo")
       .build(), null).toBlocking.first()
@@ -65,7 +69,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
         |""".stripMargin)
 
     val e = intercept[IllegalArgumentException] {
-      val handler = new ProxyToBackend.ConfigFactory(clientFactory())
+      val handler = new ProxyToBackend.ConfigFactory(environment, clientFactory())
         .build(List("config", "config").asJava, null, config)
     }
 
@@ -88,7 +92,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
         |""".stripMargin)
 
     val e = intercept[IllegalArgumentException] {
-      val handler = new ProxyToBackend.ConfigFactory(clientFactory())
+      val handler = new ProxyToBackend.ConfigFactory(environment, clientFactory())
         .build(List("config", "config").asJava, null, config)
     }
 
@@ -98,7 +102,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
   private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RoutingConfigDefinition]).get()
 
   private def clientFactory() = new BackendServiceClientFactory() {
-    override def createClient(backendService: BackendService): HttpClient = new HttpClient {
+    override def createClient(backendService: BackendService, originsInventory: OriginsInventory): HttpClient = new HttpClient {
       override def sendRequest(request: HttpRequest): Observable[HttpResponse] = {
         backendService.id() should be (id("ba"))
         backendService.connectionPoolConfig().maxConnectionsPerHost() should be (45)
