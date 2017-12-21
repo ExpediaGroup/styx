@@ -21,7 +21,6 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.service.spi.StyxService;
-import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.config.BuiltinHandlersFactory;
@@ -56,8 +55,7 @@ public class UserConfiguredPipelineFactory implements HttpPipelineFactory {
     }
 
     private static StyxBackendServiceClientFactory serviceClientFactory(Environment environment) {
-        ProxyServerConfig proxyConfig = environment.styxConfig().proxyServerConfig();
-        return new StyxBackendServiceClientFactory(environment, proxyConfig.clientWorkerThreadsCount());
+        return new StyxBackendServiceClientFactory(environment);
     }
 
     @Override
@@ -72,7 +70,7 @@ public class UserConfiguredPipelineFactory implements HttpPipelineFactory {
                         "ConditionRouter", new ConditionRouter.ConfigFactory(),
                         "BackendServiceProxy", new BackendServiceProxy.ConfigFactory(environment, registries),
                         "InterceptorPipeline", new HttpInterceptorPipeline.ConfigFactory(pluginsSupplier, builtinInterceptorsFactory),
-                        "ProxyToBackend", new ProxyToBackend.ConfigFactory(serviceClientFactory(environment))
+                        "ProxyToBackend", new ProxyToBackend.ConfigFactory(environment, serviceClientFactory(environment))
                 ));
 
         RoutingConfigDefinition pipelineConfig = configuration.get("httpPipeline", RoutingConfigDefinition.class).get();

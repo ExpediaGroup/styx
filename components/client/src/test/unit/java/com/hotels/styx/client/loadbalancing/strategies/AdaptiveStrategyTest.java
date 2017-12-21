@@ -16,6 +16,7 @@
 package com.hotels.styx.client.loadbalancing.strategies;
 
 import com.google.common.collect.Iterables;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
@@ -30,16 +31,16 @@ import static com.google.common.collect.Sets.newLinkedHashSet;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static java.util.Arrays.asList;
-import static java.util.Collections.EMPTY_LIST;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.core.Is.is;
-import static org.mockito.Matchers.anyCollection;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class AdaptiveStrategyTest {
     public static final Origin SOME_ORIGIN = newOriginBuilder("localhost", 1).build();
@@ -52,12 +53,14 @@ public class AdaptiveStrategyTest {
     AdaptiveStrategy adaptiveStrategy;
     ConnectionPool origin1;
     ConnectionPool origin2;
+    ActiveOrigins activeOrigins;
 
     @BeforeMethod
     public void setUp() {
         roundRobinStrategy = mock(RoundRobinStrategy.class);
         busyConnectionsStrategy = mock(BusyConnectionsStrategy.class);
-        adaptiveStrategy = new AdaptiveStrategy(WARMUP_COUNT, roundRobinStrategy, busyConnectionsStrategy);
+        activeOrigins = mock(ActiveOrigins.class);
+        adaptiveStrategy = new AdaptiveStrategy(WARMUP_COUNT, activeOrigins, roundRobinStrategy, busyConnectionsStrategy);
 
         origin1 = aConnectionPool(SOME_ORIGIN);
         origin2 = aConnectionPool(ANOTHER_ORIGIN);
@@ -69,45 +72,50 @@ public class AdaptiveStrategyTest {
     }
 
     @Test
-    public void willHandleEmptyOrSingleOrigin() {
-        Iterable<ConnectionPool> vote = adaptiveStrategy.vote(EMPTY_LIST, null);
+    public void willHandleEmptyOrigin() {
+        when(activeOrigins.snapshot()).thenReturn(emptyList());
+        Iterable<ConnectionPool> vote = adaptiveStrategy.vote(null);
         assertThat(vote, is(emptyIterable()));
-
-        Iterable<ConnectionPool> single = adaptiveStrategy.vote(singletonList(origin1), null);
-        assertThat(Iterables.size(single), is(1));
     }
 
     @Test
-    public void switchesToBusyConnectionsStrategyAfterConfiguredNumberOfRequestsForEachOrigin() {
-        adaptiveStrategy = new AdaptiveStrategy(10, roundRobinStrategy, busyConnectionsStrategy);
+    public void willHandleSingleOrigin() {
+        when(activeOrigins.snapshot()).thenReturn(singletonList(origin1));
 
+        Iterable<ConnectionPool> single = adaptiveStrategy.vote( null);
+        assertThat(Iterables.size(single), is(1));
+    }
+    @Test
+    public void switchesToBusyConnectionsStrategyAfterConfiguredNumberOfRequestsForEachOrigin() {
+        adaptiveStrategy = new AdaptiveStrategy(10, activeOrigins, roundRobinStrategy, busyConnectionsStrategy);
         exerciseStrategy(adaptiveStrategy, origin1, origin2);
 
-        verify(roundRobinStrategy, times(1)).vote(anyCollection(), anyContext());
-        verify(busyConnectionsStrategy, times(0)).vote(anyCollection(), anyContext());
+        verify(roundRobinStrategy, times(1)).vote(anyContext());
+        verify(busyConnectionsStrategy, times(0)).vote(anyContext());
 
         for (int i = 0; i < 19; i++) {
             exerciseStrategy(adaptiveStrategy, origin1, origin2);
         }
 
-        verify(roundRobinStrategy, times(20)).vote(anyCollection(), anyContext());
-        verify(busyConnectionsStrategy, times(0)).vote(anyCollection(), anyContext());
+        verify(roundRobinStrategy, times(20)).vote(anyContext());
+        verify(busyConnectionsStrategy, times(0)).vote(anyContext());
 
         exerciseStrategy(adaptiveStrategy, origin1, origin2);
 
         assertThat(adaptiveStrategy.currentStrategy(), is(busyConnectionsStrategy));
-        verify(roundRobinStrategy, times(20)).vote(anyCollection(), anyContext());
-        verify(busyConnectionsStrategy, times(1)).vote(anyCollection(), anyContext());
+        verify(roundRobinStrategy, times(20)).vote(anyContext());
+        verify(busyConnectionsStrategy, times(1)).vote(anyContext());
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void throwsExceptionIfInitialisedWithWarmUpLessThanOne() {
-        new AdaptiveStrategy(0, roundRobinStrategy, busyConnectionsStrategy);
+        new AdaptiveStrategy(0, activeOrigins, roundRobinStrategy, busyConnectionsStrategy);
     }
 
     @Test
     public void switchesBackToRoundRobinOnInventoryStateChanges() {
-        AdaptiveStrategy strategy = exerciseStrategy(new AdaptiveStrategy(1, roundRobinStrategy, busyConnectionsStrategy), origin1, origin2);
+        AdaptiveStrategy strategy = exerciseStrategy(new AdaptiveStrategy(1, activeOrigins,
+                roundRobinStrategy, busyConnectionsStrategy), origin1, origin2);
         exerciseStrategy(strategy, origin1, origin2);
         exerciseStrategy(strategy, origin1, origin2);
         assertThat(strategy.currentStrategy(), is(busyConnectionsStrategy));
@@ -121,12 +129,13 @@ public class AdaptiveStrategyTest {
     }
 
     private AdaptiveStrategy exerciseStrategy(AdaptiveStrategy strategy, ConnectionPool... pools) {
-        strategy.vote(setOf(pools), UNUSED_CONTEXT);
+        when(activeOrigins.snapshot()).thenReturn(setOf(pools));
+        strategy.vote(UNUSED_CONTEXT);
         return strategy;
     }
 
     private OriginsInventorySnapshot newOriginsInventorySnapshot() {
-        return new OriginsInventorySnapshot(GENERIC_APP, EMPTY_LIST, EMPTY_LIST, EMPTY_LIST);
+        return new OriginsInventorySnapshot(GENERIC_APP, emptyList(), emptyList(), emptyList());
     }
 
     private static StubConnectionPool aConnectionPool(Origin origin) {

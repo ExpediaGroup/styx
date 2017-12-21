@@ -16,12 +16,15 @@
 package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.applications.BackendService;
+import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.routing.config.BuiltinHandlersFactory;
@@ -54,9 +57,11 @@ public class ProxyToBackend implements HttpHandler2 {
      * ProxyToBackend factory that instantiates an object from the Yaml configuration.
      */
     public static class ConfigFactory implements HttpHandlerFactory {
+        private Environment environment;
         private final BackendServiceClientFactory clientFactory;
 
-        public ConfigFactory(BackendServiceClientFactory clientFactory) {
+        public ConfigFactory(Environment environment, BackendServiceClientFactory clientFactory) {
+            this.environment = environment;
             this.clientFactory = clientFactory;
         }
 
@@ -72,7 +77,18 @@ public class ProxyToBackend implements HttpHandler2 {
                     .get("backend.origins", JsonNode.class)
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", append(parents, "backend")), "origins"));
 
-            return new ProxyToBackend(clientFactory.createClient(backendService));
+            int clientWorkerThreadsCount = environment.styxConfig().proxyServerConfig().clientWorkerThreadsCount();
+
+            OriginsInventory inventory = new OriginsInventory.Builder(backendService)
+                    .version(environment.buildInfo().releaseVersion())
+                    .eventBus(environment.eventBus())
+                    .metricsRegistry(environment.metricRegistry())
+                    .connectionFactory(new NettyConnectionFactory.Builder()
+                            .name("Styx")
+                            .clientWorkerThreadsCount(clientWorkerThreadsCount)
+                            .tlsSettings(backendService.tlsSettings().orElse(null)).build())
+                    .build();
+            return new ProxyToBackend(clientFactory.createClient(backendService, inventory));
         }
     }
 }

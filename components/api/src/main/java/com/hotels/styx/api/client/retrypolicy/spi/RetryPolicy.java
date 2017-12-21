@@ -59,13 +59,6 @@ public interface RetryPolicy {
         Optional<Throwable> lastException();
 
         /**
-         * The list of currently active origins.
-         *
-         * @return connection pools for the active origins
-         */
-        Iterable<ConnectionPool> origins();
-
-        /**
          * Previously tried origins.
          *
          * @return connection pools for the previously tried origins
@@ -108,6 +101,6 @@ public interface RetryPolicy {
      * @return A {@link com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy.Outcome}
      * whether the request should be retried and specifies the delay before the next retry
      */
-    Outcome evaluate(Context context, LoadBalancingStrategy loadBalancingStrategy);
+    Outcome evaluate(Context context, LoadBalancingStrategy loadBalancingStrategy, LoadBalancingStrategy.Context lbContext);
 }
 
