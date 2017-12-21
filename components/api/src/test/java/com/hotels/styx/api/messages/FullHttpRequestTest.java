@@ -146,7 +146,7 @@ public class FullHttpRequestTest {
                 .build();
 
         assertThat(request.toString(), is("FullHttpRequest{version=HTTP/1.1, method=PATCH, uri=https://hotels.com, " +
-                "headers=[headerName=a, Host=hotels.com], cookies=[cfoo=bar], id=id, secure=true}"));
+                "headers=[headerName=a, Host=hotels.com], cookies=[cfoo=bar], id=id, clientAddress=127.0.0.1:0, secure=true}"));
 
         assertThat(request.headers("headerName"), is(singletonList("a")));
     }

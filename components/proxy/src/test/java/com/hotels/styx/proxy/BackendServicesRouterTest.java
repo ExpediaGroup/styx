@@ -56,9 +56,9 @@ public class BackendServicesRouterTest {
     @Test
     public void registersAllRoutes() {
         Registry.Changes<BackendService> changes = added(
-                appA().newCopy().path("/headers").build(),
-                appB().newCopy().path("/badheaders").build(),
-                appB().newCopy().path("/cookies").build());
+                appA().newCopy().id("a01").path("/headers").build(),
+                appB().newCopy().id("b01").path("/badheaders").build(),
+                appB().newCopy().id("b02").path("/cookies").build());
 
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory);
         router.onChange(changes);
