@@ -17,6 +17,7 @@ package com.hotels.styx.client.loadbalancing.strategies;
 
 
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategyFactory;
@@ -38,19 +39,25 @@ import static java.util.stream.StreamSupport.stream;
  * Whether they having existing connections available.
  */
 public class BusyConnectionsStrategy implements LoadBalancingStrategy {
+    private ActiveOrigins activeOrigins;
+
+    public BusyConnectionsStrategy(ActiveOrigins activeOrigins) {
+        this.activeOrigins = activeOrigins;
+    }
+
     /**
      * A load balancing strategy that favours the origin with the least response time.
      */
     public static class Factory implements LoadBalancingStrategyFactory {
         @Override
-        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration) {
-            return new BusyConnectionsStrategy();
+        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins) {
+            return new BusyConnectionsStrategy(activeOrigins);
         }
     }
 
     @Override
-    public Iterable<ConnectionPool> vote(Iterable<ConnectionPool> origins, Context context) {
-        List<ConnectionPoolStatus> poolsList = stream(origins.spliterator(), false)
+    public Iterable<ConnectionPool> vote(Context context) {
+        List<ConnectionPoolStatus> poolsList = stream(activeOrigins.snapshot().spliterator(), false)
                 .map(origin -> new ConnectionPoolStatus(origin, context))
                 .collect(toList());
 

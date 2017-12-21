@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.client;
+package com.hotels.styx.api.client;
 
-
-import com.hotels.styx.api.client.ConnectionPool;
 
 /**
  * Holds the origins that are considered ready to accept traffic.

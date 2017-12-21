@@ -23,7 +23,6 @@ import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy;
-import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.retry.RetryNTimes;
 import org.slf4j.Logger;
 
@@ -37,21 +36,16 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
     private static final Logger LOG = getLogger(BackendServiceClientFactory.class);
 
     private final Environment environment;
-    private final int clientWorkerThreadsCount;
 
     // Todo: This can be package private if/when backend service router is created in a separate builder in styx.proxy package.
-    public StyxBackendServiceClientFactory(Environment environment, int clientWorkerThreadsCount) {
+    public StyxBackendServiceClientFactory(Environment environment) {
         this.environment = environment;
-        this.clientWorkerThreadsCount = clientWorkerThreadsCount;
     }
 
     @Override
-    public HttpClient createClient(BackendService backendService) {
+    public HttpClient createClient(BackendService backendService, OriginsInventory originsInventory) {
         RetryPolicy retryPolicy = loadService(environment.configuration(), environment, "retrypolicy.policy.factory", RetryPolicy.class)
                 .orElseGet(() -> defaultRetryPolicy(environment));
-
-        LoadBalancingStrategy loadBalancingStrategy = loadService(environment.configuration(), environment, "loadBalancing.strategy.factory", LoadBalancingStrategy.class)
-                .orElseGet(RoundRobinStrategy::new);
 
         boolean requestLoggingEnabled = environment.styxConfig().get("request-logging.outbound.enabled", Boolean.class)
                 .orElse(false);
@@ -59,17 +53,11 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
         boolean longFormat = environment.styxConfig().get("request-logging.outbound.longFormat", Boolean.class)
                 .orElse(false);
 
-        OriginsInventory inventory = new OriginsInventory.Builder(backendService)
-                .version(environment.buildInfo().releaseVersion())
-                .eventBus(environment.eventBus())
-                .metricsRegistry(environment.metricRegistry())
-                .connectionFactory(new NettyConnectionFactory.Builder()
-                        .name("Styx")
-                        .clientWorkerThreadsCount(clientWorkerThreadsCount)
-                        .tlsSettings(backendService.tlsSettings().orElse(null)).build())
-                .build();
+        LoadBalancingStrategy loadBalancingStrategy = loadService(environment.configuration(),
+                environment, "loadBalancing.strategy.factory", LoadBalancingStrategy.class, originsInventory)
+                .orElseGet(() -> new RoundRobinStrategy(originsInventory));
 
-        inventory.addInventoryStateChangeListener(loadBalancingStrategy);
+        originsInventory.addInventoryStateChangeListener(loadBalancingStrategy);
 
         return new StyxHttpClient.Builder(backendService)
                 .styxHeaderNames(environment.styxConfig().styxHeaderConfig())
@@ -82,7 +70,7 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
                 .rewriteRules(backendService.rewrites())
                 .requestLoggingEnabled(requestLoggingEnabled)
                 .longFormat(longFormat)
-                .originsInventory(inventory)
+                .originsInventory(originsInventory)
                 .build();
     }
 

@@ -22,8 +22,11 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.Registry;
+import org.mockito.ArgumentCaptor;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 
@@ -40,7 +43,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,8 +55,16 @@ public class BackendServicesRouterTest {
     private static final String APP_A = "appA";
     private static final String APP_B = "appB";
 
-    private final BackendServiceClientFactory serviceClientFactory = backendService -> request -> responseWithOriginIdHeader(backendService);
+    private final BackendServiceClientFactory serviceClientFactory =
+            (backendService, originsInventory) -> request -> responseWithOriginIdHeader(backendService);
     private HttpInterceptor.Context context;
+
+    private Environment environment;
+
+    @BeforeMethod
+    public void before() {
+        environment = new Environment.Builder().build();
+    }
 
     @Test
     public void registersAllRoutes() {
@@ -60,7 +73,7 @@ public class BackendServicesRouterTest {
                 appB().newCopy().id("b01").path("/badheaders").build(),
                 appB().newCopy().id("b02").path("/cookies").build());
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(changes);
 
         assertThat(router.routes().keySet(), contains("/badheaders", "/cookies", "/headers"));
@@ -72,7 +85,7 @@ public class BackendServicesRouterTest {
                 appA().newCopy().path("/").build(),
                 appB().newCopy().path("/appB/hotel/details.html").build());
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(changes);
 
         HttpRequest request = get("/appB/hotel/details.html").build();
@@ -87,7 +100,7 @@ public class BackendServicesRouterTest {
                 appB().newCopy().path("/appB/hotel/details.html").build(),
                 appA().newCopy().path("/").build());
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(changes);
 
         HttpRequest request = get("/appB/hotel/details.html").build();
@@ -103,7 +116,7 @@ public class BackendServicesRouterTest {
                 appA().newCopy().path("/").build(),
                 appB().newCopy().path("/appB/hotel/details.html").build());
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(changes);
 
         HttpRequest request = get("/").build();
@@ -118,7 +131,7 @@ public class BackendServicesRouterTest {
                 appB().newCopy().path("/appB/hotel/details.html").build(),
                 appA().newCopy().path("/").build());
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(changes);
 
         HttpRequest request = get("/").build();
@@ -133,7 +146,7 @@ public class BackendServicesRouterTest {
                 appA().newCopy().path("/").build(),
                 appB().newCopy().path("/appB/").build());
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(changes);
 
         HttpRequest request = get("/appB/").build();
@@ -144,7 +157,7 @@ public class BackendServicesRouterTest {
 
     @Test
     public void doesNotMatchRequestIfFinalSlashIsMissing() {
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(added(appB().newCopy().path("/appB/hotel/details.html").build()));
 
         HttpRequest request = get("/ba/").build();
@@ -156,7 +169,7 @@ public class BackendServicesRouterTest {
 
     @Test
     public void throwsExceptionWhenNoApplicationMatches() {
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(added(appB().newCopy().path("/appB/hotel/details.html").build()));
 
         HttpRequest request = get("/qwertyuiop").build();
@@ -165,7 +178,7 @@ public class BackendServicesRouterTest {
 
     @Test
     public void updatesRoutesOnBackendServicesChange() {
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory);
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
 
         HttpRequest request = get("/appB/").build();
 
@@ -191,23 +204,25 @@ public class BackendServicesRouterTest {
         HttpClient secondClient = mock(HttpClient.class);
 
         BackendServiceClientFactory clientFactory = mock(BackendServiceClientFactory.class);
-        when(clientFactory.createClient(any(BackendService.class)))
+        when(clientFactory.createClient(any(BackendService.class), any(OriginsInventory.class)))
                 .thenReturn(firstClient)
                 .thenReturn(secondClient);
 
-        BackendServicesRouter router = new BackendServicesRouter(clientFactory);
+        BackendServicesRouter router = new BackendServicesRouter(clientFactory, environment);
 
         BackendService bookingApp = appB();
         router.onChange(added(bookingApp));
 
-        verify(clientFactory).createClient(bookingApp);
+        ArgumentCaptor<OriginsInventory> originsInventory = forClass(OriginsInventory.class);
+
+        verify(clientFactory).createClient(eq(bookingApp), originsInventory.capture());
 
         BackendService bookingAppMinusOneOrigin = bookingAppMinusOneOrigin();
 
         router.onChange(updated(bookingAppMinusOneOrigin));
 
-        verify(firstClient).close();
-        verify(clientFactory).createClient(bookingAppMinusOneOrigin);
+        assertThat(originsInventory.getValue().closed(), is(true));
+        verify(clientFactory).createClient(eq(bookingAppMinusOneOrigin), any(OriginsInventory.class));
     }
 
     @Test
@@ -215,21 +230,22 @@ public class BackendServicesRouterTest {
         HttpClient firstClient = mock(HttpClient.class);
         HttpClient secondClient = mock(HttpClient.class);
 
+        ArgumentCaptor<OriginsInventory> originsInventory = forClass(OriginsInventory.class);
         BackendServiceClientFactory clientFactory = mock(BackendServiceClientFactory.class);
-        when(clientFactory.createClient(any(BackendService.class)))
+        when(clientFactory.createClient(any(BackendService.class), any(OriginsInventory.class)))
                 .thenReturn(firstClient)
                 .thenReturn(secondClient);
 
-        BackendServicesRouter router = new BackendServicesRouter(clientFactory);
+        BackendServicesRouter router = new BackendServicesRouter(clientFactory, environment);
 
         BackendService bookingApp = appB();
         router.onChange(added(bookingApp));
 
-        verify(clientFactory).createClient(bookingApp);
+        verify(clientFactory).createClient(eq(bookingApp), originsInventory.capture());
 
         router.onChange(removed(bookingApp));
 
-        verify(firstClient).close();
+        assertThat(originsInventory.getValue().closed(), is(true));
     }
 
     // This test exists due to a real bug we had when reloading in prod
@@ -237,11 +253,11 @@ public class BackendServicesRouterTest {
     public void deregistersAndReregistersMetricsAppropriately() {
         CodaHaleMetricRegistry metrics = new CodaHaleMetricRegistry();
 
+        Environment environment = new Environment.Builder()
+                .metricsRegistry(metrics)
+                .build();
         BackendServicesRouter router = new BackendServicesRouter(
-                new StyxBackendServiceClientFactory(
-                        new Environment.Builder()
-                                .metricsRegistry(metrics)
-                                .build(), 1));
+                new StyxBackendServiceClientFactory(environment), environment);
 
         router.onChange(added(backendService(APP_B, "/appB/", 9094, "appB-01", 9095, "appB-02")));
 

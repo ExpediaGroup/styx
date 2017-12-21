@@ -22,7 +22,7 @@ import java.io.Closeable;
 /**
  * HTTP Client that returns an observable of response.
  */
-public interface HttpClient extends Closeable {
+public interface HttpClient {
     /**
      * Processes a new request.
      *
@@ -34,10 +34,4 @@ public interface HttpClient extends Closeable {
      *
      */
     Observable<HttpResponse> sendRequest(HttpRequest request);
-
-    default void close() {
-    }
-
-    default void registerStatusGauges() {
-    }
 }
