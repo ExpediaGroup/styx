@@ -21,7 +21,9 @@ import java.util.concurrent.CompletableFuture.completedFuture
 
 import com.hotels.styx.Environment
 import com.hotels.styx.api.service.spi.StyxService
+import com.hotels.styx.api.client.Origin.newOriginBuilder
 import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse}
+import com.hotels.styx.client.OriginsInventory
 import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded
 import com.hotels.styx.infrastructure.Registry.{Changes, ReloadResult}
@@ -55,13 +57,13 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
       """.stripMargin)
 
     val backendRegistry = registry(
-      new BackendService.Builder().id("hwa").path("/").build(),
-      new BackendService.Builder().id("la").path("/lp/x").build(),
-      new BackendService.Builder().id("ba").path("/ba/x").build())
+      new BackendService.Builder().id("hwa").origins(newOriginBuilder("localhost", 0).build()).path("/").build(),
+      new BackendService.Builder().id("la").origins(newOriginBuilder("localhost", 1).build()).path("/lp/x").build(),
+      new BackendService.Builder().id("ba").origins(newOriginBuilder("localhost", 2).build()).path("/ba/x").build())
 
     val services: Map[String, StyxService] = Map("backendServicesRegistry" -> backendRegistry)
 
-    val handler = new BackendServiceProxy.ConfigFactory(clientFactory(), services.asJava).build(List().asJava, null, config)
+    val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), services.asJava).build(List().asJava, null, config)
     backendRegistry.reload()
 
     val hwaResponse = handler.handle(hwaRequest, null).toBlocking.first()
@@ -86,7 +88,7 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
     val services: Map[String, StyxService] = Map.empty
 
     val e = intercept[IllegalArgumentException] {
-      val handler = new BackendServiceProxy.ConfigFactory(clientFactory(), services.asJava).build(List("config", "config").asJava, null, config)
+      val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), services.asJava).build(List("config", "config").asJava, null, config)
     }
     e.getMessage should be ("Routing object definition of type 'BackendServiceProxy', attribute='config.config', is missing a mandatory 'backendProvider' attribute.")
   }
@@ -102,7 +104,7 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
 
     val e = intercept[IllegalArgumentException] {
       val services: Map[String, StyxService] = Map.empty
-      val handler = new BackendServiceProxy.ConfigFactory(clientFactory(), services.asJava).build(List("config", "config").asJava, null, config)
+      val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), services.asJava).build(List("config", "config").asJava, null, config)
     }
     e.getMessage should be ("No such backend service provider exists, attribute='config.config.backendProvider', name='bar'")
   }
@@ -118,7 +120,7 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
 
     val e = intercept[IllegalArgumentException] {
       val services: Map[String, StyxService] = Map("jmxReporter" -> mock[JmxReporterService])
-      val handler = new BackendServiceProxy.ConfigFactory(clientFactory(), services.asJava).build(List("config", "config").asJava, null, config)
+      val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), services.asJava).build(List("config", "config").asJava, null, config)
     }
     e.getMessage should be ("Attribute 'config.config.backendProvider' of BackendServiceProxy must refer to a BackendServiceRegistry service, name='jmxReporter'.")
   }
@@ -126,7 +128,7 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
   private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RoutingConfigDefinition]).get()
 
   private def clientFactory() = new BackendServiceClientFactory() {
-    override def createClient(backendService: BackendService): HttpClient = new HttpClient {
+    override def createClient(backendService: BackendService, originsInventory: OriginsInventory): HttpClient = new HttpClient {
       override def sendRequest(request: HttpRequest): Observable[HttpResponse] = Observable
         .just(HttpResponse.Builder
           .response(HttpResponseStatus.OK)

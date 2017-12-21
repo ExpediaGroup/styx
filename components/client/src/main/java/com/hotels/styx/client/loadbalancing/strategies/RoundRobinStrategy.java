@@ -16,6 +16,7 @@
 package com.hotels.styx.client.loadbalancing.strategies;
 
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
@@ -46,21 +47,29 @@ import static java.util.stream.Stream.concat;
  * Please note that for the strategy to iterate like this, the origins must be provided in the same order on each call.
  */
 public class RoundRobinStrategy implements LoadBalancingStrategy {
+
+    private final ActiveOrigins activeOrigins;
+
+    public RoundRobinStrategy(ActiveOrigins activeOrigins) {
+        this.activeOrigins = activeOrigins;
+    }
+
     /**
      * Factory for creating {@link com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy}.
      */
     public static class Factory implements LoadBalancingStrategyFactory {
         @Override
-        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration) {
-            return new RoundRobinStrategy();
+        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins) {
+            return new RoundRobinStrategy(activeOrigins);
         }
     }
 
     private final AtomicInteger index = new AtomicInteger(0);
 
     @Override
-    public Iterable<ConnectionPool> vote(Iterable<ConnectionPool> origins, Context context) {
-        return isEmpty(origins) ? origins : cycledNonExhaustedOrigins(origins);
+    public Iterable<ConnectionPool> vote(Context context) {
+        Iterable<ConnectionPool> snapshot = activeOrigins.snapshot();
+        return isEmpty(snapshot) ? snapshot : cycledNonExhaustedOrigins(snapshot);
     }
 
     private List<ConnectionPool> cycledNonExhaustedOrigins(Iterable<ConnectionPool> origins) {
@@ -87,6 +96,11 @@ public class RoundRobinStrategy implements LoadBalancingStrategy {
         List<ConnectionPool> first = origins.subList(index, origins.size());
         List<ConnectionPool> second = origins.subList(0, index);
         return concat(first.stream(), second.stream());
+    }
+
+    @Override
+    public Iterable<ConnectionPool> snapshot() {
+        return activeOrigins.snapshot();
     }
 
     @Override

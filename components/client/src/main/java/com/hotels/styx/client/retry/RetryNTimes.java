@@ -35,7 +35,8 @@ public class RetryNTimes extends AbstractRetryPolicy {
     }
 
     @Override
-    public RetryPolicy.Outcome evaluate(Context context, LoadBalancingStrategy loadBalancingStrategy) {
+    public RetryPolicy.Outcome evaluate(Context context, LoadBalancingStrategy loadBalancingStrategy,
+                                        LoadBalancingStrategy.Context lbContext) {
         return new RetryPolicy.Outcome() {
             @Override
             public long retryIntervalMillis() {
@@ -44,7 +45,7 @@ public class RetryNTimes extends AbstractRetryPolicy {
 
             @Override
             public Optional<ConnectionPool> nextOrigin() {
-                return stream(context.origins().spliterator(), false)
+                return stream(loadBalancingStrategy.vote(lbContext).spliterator(), false)
                         .filter(origin -> !contains(context.previousOrigins(), origin))
                         .findFirst();
             }

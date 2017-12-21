@@ -29,6 +29,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -61,8 +62,6 @@ public class BusyConnectionsStrategyStressTest {
     public void setUp() {
         metrics = new CodaHaleMetricRegistry();
     }
-
-    final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy();
 
     @DataProvider(name = "origins")
     private Object[][] origins() {
@@ -163,7 +162,9 @@ public class BusyConnectionsStrategyStressTest {
                                 .withAvailableConnections(so.availableConnections()))
                         .collect(toList());
 
-                Iterable<ConnectionPool> result = strategy.vote(pools, contextFromSimulatedOrigins(origins));
+                final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy(() -> pools);
+
+                Iterable<ConnectionPool> result = strategy.vote(contextFromSimulatedOrigins(origins));
 
                 ConnectionPool winner = Iterables.get(result, 0);
                 if (winner.stats().availableConnectionCount() > 0) {

@@ -41,11 +41,12 @@ public class OriginRestrictionLoadBalancingStrategyTest {
             .map(this::origin)
             .collect(toList());
 
-    OriginRestrictionLoadBalancingStrategy strategy = new OriginRestrictionLoadBalancingStrategy((origins, context) -> origins, "originRestrictionCookie");
+    OriginRestrictionLoadBalancingStrategy strategy = new OriginRestrictionLoadBalancingStrategy(
+            () -> origins, (context) -> origins, "originRestrictionCookie");
 
     @Test
     public void shouldDisregardRestrictionCookieValueIfNotValid() {
-        Iterable<ConnectionPool> partition = strategy.vote(origins, contextWith(request ->
+        Iterable<ConnectionPool> partition = strategy.vote(contextWith(request ->
                 request.addCookie("originRestrictionCookie", "*-01")));
 
         assertThat(partition, contains(origins.toArray()));
@@ -53,7 +54,7 @@ public class OriginRestrictionLoadBalancingStrategyTest {
 
     @Test
     public void usesSingleOriginMatchingRegularExpression() {
-        Iterable<ConnectionPool> partition = strategy.vote(origins, contextWith(request ->
+        Iterable<ConnectionPool> partition = strategy.vote(contextWith(request ->
                 request.addCookie("originRestrictionCookie", "origin1")));
 
         assertThat(partition, contains(origins.get(1)));
@@ -61,7 +62,7 @@ public class OriginRestrictionLoadBalancingStrategyTest {
 
     @Test
     public void usesMultipleOriginsMatchingRegularExpression() {
-        Iterable<ConnectionPool> partition = strategy.vote(origins, contextWith(request ->
+        Iterable<ConnectionPool> partition = strategy.vote(contextWith(request ->
                 request.addCookie("originRestrictionCookie", "origin[2-4]")));
 
         assertThat(partition, contains(origins.get(2), origins.get(3), origins.get(4)));
@@ -69,7 +70,7 @@ public class OriginRestrictionLoadBalancingStrategyTest {
 
     @Test
     public void usesNoOriginsWhenRegularExpressionMatchesNone() {
-        Iterable<ConnectionPool> partition = strategy.vote(origins, contextWith(request ->
+        Iterable<ConnectionPool> partition = strategy.vote(contextWith(request ->
                 request.addCookie("originRestrictionCookie", "foo")));
 
         assertThat(partition, is(emptyIterable()));
@@ -77,14 +78,14 @@ public class OriginRestrictionLoadBalancingStrategyTest {
 
     @Test
     public void usesAllOriginsWhenCookieIsAbsent() {
-        Iterable<ConnectionPool> partition = strategy.vote(origins, context());
+        Iterable<ConnectionPool> partition = strategy.vote(context());
 
         assertThat(partition, contains(origins.toArray()));
     }
 
     @Test
     public void usesAllOriginsWhenRegularExpressionMatchesAll() {
-        Iterable<ConnectionPool> partition = strategy.vote(origins, contextWith(request ->
+        Iterable<ConnectionPool> partition = strategy.vote(contextWith(request ->
                 request.addCookie("originRestrictionCookie", ".*")));
 
         assertThat(partition, contains(origins.toArray()));
@@ -92,7 +93,7 @@ public class OriginRestrictionLoadBalancingStrategyTest {
 
     @Test
     public void usesOriginsMatchingAnyOfAListOfRegularExpressions() {
-        Iterable<ConnectionPool> partition = strategy.vote(origins, contextWith(request ->
+        Iterable<ConnectionPool> partition = strategy.vote(contextWith(request ->
                 request.addCookie("originRestrictionCookie", "origin[1-3], origin(5|6)")));
 
         assertThat(partition, contains(origins.get(1), origins.get(2), origins.get(3), origins.get(5), origins.get(6)));
