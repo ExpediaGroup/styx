@@ -142,7 +142,7 @@ public final class StyxHttpClient implements HttpClient {
         return loadBalancingStrategy;
     }
 
-    private static class LBContext implements LoadBalancingStrategy.Context {
+    static class LBContext implements LoadBalancingStrategy.Context {
         private final HttpRequest request;
         private final Id id;
         private final OriginStatsFactory originStatsFactory;
@@ -208,6 +208,7 @@ public final class StyxHttpClient implements HttpClient {
                 .request(rewrittenRequest)
                 .previouslyUsedOrigin(pool.orElse(null))
                 .transaction(txn)
+                .originStatsFactory(originStatsFactory)
                 .build();
 
         return txn.response()
