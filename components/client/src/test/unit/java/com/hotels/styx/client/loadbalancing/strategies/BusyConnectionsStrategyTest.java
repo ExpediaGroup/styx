@@ -18,6 +18,7 @@ package com.hotels.styx.client.loadbalancing.strategies;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
@@ -33,6 +34,8 @@ import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BusyConnectionsStrategyTest {
     final Origin ORIGIN_ONE = newOriginBuilder(localHostAndFreePort()).id("one").build();
@@ -40,7 +43,9 @@ public class BusyConnectionsStrategyTest {
     final Origin ORIGIN_THREE = newOriginBuilder(localHostAndFreePort()).id("three").build();
     final Origin ORIGIN_FOUR = newOriginBuilder(localHostAndFreePort()).id("four").build();
 
-    final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy();
+    ActiveOrigins activeOrigins = mock(ActiveOrigins.class);
+    final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy(activeOrigins);
+
     private LoadBalancingStrategy.Context context = new LoadBalancingStrategy.Context() {
         @Override
         public Id appId() {
@@ -66,7 +71,9 @@ public class BusyConnectionsStrategyTest {
         ConnectionPool poolTwo = new StubConnectionPool(ORIGIN_TWO, settings).withBusyConnections(3);
         ConnectionPool poolThree = new StubConnectionPool(ORIGIN_THREE, settings).withBusyConnections(6);
 
-        Iterable<ConnectionPool> sortedPool = strategy.vote(asList(poolOne, poolTwo, poolThree), context);
+        when(activeOrigins.snapshot()).thenReturn(asList(poolOne, poolTwo, poolThree));
+
+        Iterable<ConnectionPool> sortedPool = strategy.vote(context);
         assertThat(origins(sortedPool), contains(ORIGIN_TWO, ORIGIN_ONE, ORIGIN_THREE));
     }
 
@@ -86,7 +93,8 @@ public class BusyConnectionsStrategyTest {
                 .withBusyConnections(2)
                 .withPendingConnections(1);
 
-        Iterable<ConnectionPool> sortedPool = strategy.vote(asList(poolOne, poolTwo, poolThree), context);
+        when(activeOrigins.snapshot()).thenReturn(asList(poolOne, poolTwo, poolThree));
+        Iterable<ConnectionPool> sortedPool = strategy.vote(context);
         assertThat(origins(sortedPool), contains(ORIGIN_THREE, ORIGIN_TWO, ORIGIN_ONE));
     }
 
@@ -97,7 +105,8 @@ public class BusyConnectionsStrategyTest {
         ConnectionPool poolTwo = new StubConnectionPool(ORIGIN_TWO).withBusyConnections(1);
         ConnectionPool poolThree = new StubConnectionPool(ORIGIN_THREE).withBusyConnections(3);
 
-        Iterable<ConnectionPool> sortedPool = strategy.vote(asList(poolOne, poolTwo, poolThree), lbContextWith5xxRates(ImmutableMap.of(
+        when(activeOrigins.snapshot()).thenReturn(asList(poolOne, poolTwo, poolThree));
+        Iterable<ConnectionPool> sortedPool = strategy.vote(lbContextWith5xxRates(ImmutableMap.of(
                 ORIGIN_ONE, 2.0,
                 ORIGIN_TWO, 3.0,
                 ORIGIN_THREE, 1.0)));
@@ -116,7 +125,8 @@ public class BusyConnectionsStrategyTest {
         ConnectionPool poolTwo = new StubConnectionPool(ORIGIN_TWO, settings).withBusyConnections(2).withAvailableConnections(1);
         ConnectionPool poolThree = new StubConnectionPool(ORIGIN_THREE, settings).withBusyConnections(3).withAvailableConnections(1);
 
-        Iterable<ConnectionPool> sortedPool = strategy.vote(asList(poolTwo, poolOne, poolThree), context);
+        when(activeOrigins.snapshot()).thenReturn(asList(poolTwo, poolOne, poolThree));
+        Iterable<ConnectionPool> sortedPool = strategy.vote(context);
 
         assertThat(origins(sortedPool), contains(ORIGIN_ONE, ORIGIN_TWO, ORIGIN_THREE));
     }
@@ -128,7 +138,8 @@ public class BusyConnectionsStrategyTest {
         ConnectionPool poolThree = new StubConnectionPool(ORIGIN_THREE).withBusyConnections(1).withAvailableConnections(1);
         ConnectionPool poolFour = new StubConnectionPool(ORIGIN_FOUR).withBusyConnections(2).withAvailableConnections(1);
 
-        Iterable<ConnectionPool> sortedPool = strategy.vote(asList(poolTwo, poolOne, poolThree, poolFour), lbContextWith5xxRates(ImmutableMap.of(
+        when(activeOrigins.snapshot()).thenReturn(asList(poolTwo, poolOne, poolThree, poolFour));
+        Iterable<ConnectionPool> sortedPool = strategy.vote(lbContextWith5xxRates(ImmutableMap.of(
                 ORIGIN_ONE, 1.0,
                 ORIGIN_TWO, 3.0,
                 ORIGIN_THREE, 1.0,
@@ -145,7 +156,8 @@ public class BusyConnectionsStrategyTest {
 
         Iterable<ConnectionPool> sortedPool = null;
         for (int i = 0; i < 10; i++) {
-            sortedPool = strategy.vote(asList(poolOne, poolTwo), context);
+            when(activeOrigins.snapshot()).thenReturn(asList(poolOne, poolTwo));
+            sortedPool = strategy.vote(context);
         }
 
         assertThat(origins(sortedPool), contains(ORIGIN_TWO, ORIGIN_ONE));

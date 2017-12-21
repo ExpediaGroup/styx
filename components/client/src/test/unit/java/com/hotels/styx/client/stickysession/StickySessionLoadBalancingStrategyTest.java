@@ -19,10 +19,12 @@ import com.google.common.collect.Iterables;
 import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
+import org.mockito.Mockito;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
@@ -34,6 +36,7 @@ import static java.util.Collections.EMPTY_LIST;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
 import static org.hamcrest.core.Is.is;
+import static org.mockito.Mockito.when;
 
 
 public class StickySessionLoadBalancingStrategyTest {
@@ -41,9 +44,11 @@ public class StickySessionLoadBalancingStrategyTest {
     static final ConnectionPool ORIGIN_1 = new StubConnectionPool(newOriginBuilder("localhost", 1).id("o1").build());
     static final ConnectionPool ORIGIN_2 = new StubConnectionPool(newOriginBuilder("localhost", 2).id("o2").build());
 
-    static final LoadBalancingStrategy FALL_BACK_STRATEGY = (origins, context) -> origins;
+    final ActiveOrigins activeOrigins = Mockito.mock(ActiveOrigins.class);
 
-    final LoadBalancingStrategy strategy = new StickySessionLoadBalancingStrategy(FALL_BACK_STRATEGY);
+    final LoadBalancingStrategy FALL_BACK_STRATEGY = (context) -> activeOrigins.snapshot();
+
+    final LoadBalancingStrategy strategy = new StickySessionLoadBalancingStrategy(activeOrigins, FALL_BACK_STRATEGY);
 
 
     @Test
@@ -51,7 +56,9 @@ public class StickySessionLoadBalancingStrategyTest {
         HttpRequest request = requestWithPreferredOriginSet(ORIGIN_1);
         LoadBalancingStrategy.Context context = new LBContext(GENERIC_APP, request);
 
-        Iterable<ConnectionPool> votedOrigins = strategy.vote(asList(ORIGIN_0, ORIGIN_1, ORIGIN_2), context);
+        when(activeOrigins.snapshot()).thenReturn(asList(ORIGIN_0, ORIGIN_1, ORIGIN_2));
+
+        Iterable<ConnectionPool> votedOrigins = strategy.vote(context);
         assertThat(first(votedOrigins), is(ORIGIN_1));
     }
 
@@ -60,7 +67,9 @@ public class StickySessionLoadBalancingStrategyTest {
         HttpRequest request = requestWithPreferredOriginSet(ORIGIN_1);
         LoadBalancingStrategy.Context context = new LBContext(GENERIC_APP, request);
 
-        Iterable<ConnectionPool> votedOrigins = strategy.vote(asList(ORIGIN_0, ORIGIN_2), context);
+        when(activeOrigins.snapshot()).thenReturn(asList(ORIGIN_0, ORIGIN_2));
+
+        Iterable<ConnectionPool> votedOrigins = strategy.vote(context);
         assertThat(first(votedOrigins), is(ORIGIN_0));
     }
 
@@ -69,7 +78,9 @@ public class StickySessionLoadBalancingStrategyTest {
         HttpRequest request = requestWithPreferredOriginSet(ORIGIN_1);
         LoadBalancingStrategy.Context context = new LBContext(GENERIC_APP, request);
 
-        Iterable<ConnectionPool> votedOrigins = strategy.vote(EMPTY_LIST, context);
+        when(activeOrigins.snapshot()).thenReturn(EMPTY_LIST);
+
+        Iterable<ConnectionPool> votedOrigins = strategy.vote(context);
         assertThat(votedOrigins, is(emptyIterable()));
     }
 
@@ -78,7 +89,9 @@ public class StickySessionLoadBalancingStrategyTest {
         HttpRequest requestWithNoPreferenceOnOrigin = get("/noprefrence").build();
         LoadBalancingStrategy.Context context = new LBContext(GENERIC_APP, requestWithNoPreferenceOnOrigin);
 
-        Iterable<ConnectionPool> votedOrigins = strategy.vote(asList(ORIGIN_2, ORIGIN_1), context);
+        when(activeOrigins.snapshot()).thenReturn(asList(ORIGIN_2, ORIGIN_1));
+
+        Iterable<ConnectionPool> votedOrigins = strategy.vote(context);
         assertThat(first(votedOrigins), is(ORIGIN_2));
     }
 

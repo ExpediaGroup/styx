@@ -26,6 +26,8 @@ import com.hotels.styx.infrastructure.AbstractRegistry;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -33,6 +35,7 @@ import java.util.function.Supplier;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.client.applications.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
@@ -47,13 +50,17 @@ import static rx.Observable.just;
 
 public class StaticPipelineBuilderTest {
 
-    private final Environment environment = new Environment.Builder().build();
-    private final BackendServiceClientFactory clientFactory;
-    private final Registry<BackendService> registry;
+    private Environment environment;
+    private BackendServiceClientFactory clientFactory;
+    private Registry<BackendService> registry;
 
-    public StaticPipelineBuilderTest() {
-        clientFactory = backendService -> request -> just(response(OK).build());
-        registry = backendRegistry(newBackendServiceBuilder().path("/foo").build());
+
+    @BeforeMethod
+    public void staticPipelineBuilderTest() {
+        environment = new Environment.Builder().build();
+        clientFactory = (backendService, originsInventory) -> request -> just(response(OK).build());
+        registry = backendRegistry(newBackendServiceBuilder().origins(newOriginBuilder("localhost", 0).build())
+                .path("/foo").build());
     }
 
     @Test

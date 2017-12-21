@@ -23,7 +23,6 @@ import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.BackendServicesRouter;
 import com.hotels.styx.proxy.InterceptorPipelineBuilder;
-import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
@@ -53,14 +52,12 @@ public class StaticPipelineFactory implements HttpPipelineFactory {
     }
 
     private static BackendServiceClientFactory createClientFactory(Environment environment) {
-        ProxyServerConfig proxyConfig = environment.styxConfig().proxyServerConfig();
-        int clientWorkerThreadsCount = proxyConfig.clientWorkerThreadsCount();
-        return new StyxBackendServiceClientFactory(environment, clientWorkerThreadsCount);
+        return new StyxBackendServiceClientFactory(environment);
     }
 
     @Override
     public HttpHandler2 build() {
-        BackendServicesRouter backendServicesRouter = new BackendServicesRouter(clientFactory);
+        BackendServicesRouter backendServicesRouter = new BackendServicesRouter(clientFactory, environment);
         registry.addListener(backendServicesRouter);
         RouteHandlerAdapter router = new RouteHandlerAdapter(backendServicesRouter);
 

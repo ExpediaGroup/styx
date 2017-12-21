@@ -17,6 +17,7 @@ package com.hotels.styx.serviceproviders;
 
 
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.configuration.Configuration;
 
 import java.util.Map;
@@ -32,6 +33,26 @@ public final class ServiceProvision {
     }
 
     /**
+     * Create a {@link com.hotels.styx.client.StyxHttpClient} related factory configured with a particular key,
+     * then uses the factory's create method to create its product.
+     *
+     * @param <E>            service type
+     *
+     * @param configuration  Styx configuration
+     * @param key            Factory configuration attribute
+     * @param serviceClass   Service class
+     * @param activeOrigins  source of active connections for purpose of load balancing
+     *
+     * @return service, if such a configuration key exists
+     * */
+    public static <E> Optional<E> loadService(Configuration configuration, Environment environment, String key,
+                                              Class<? extends E> serviceClass, ActiveOrigins activeOrigins) {
+        return configuration
+                .get(key, ServiceFactoryConfig.class)
+                .map(factoryConfig -> factoryConfig.loadService(environment, serviceClass, activeOrigins));
+    }
+
+    /**
      * Create factory configured with a particular key, then uses the factory's create method
      * to create its product.
      *
@@ -43,7 +64,8 @@ public final class ServiceProvision {
      *
      * @return service, if such a configuration key exists
      * */
-    public static <E> Optional<E> loadService(Configuration configuration, Environment environment, String key, Class<? extends E> serviceClass) {
+    public static <E> Optional<E> loadService(Configuration configuration, Environment environment, String key,
+                                              Class<? extends E> serviceClass) {
         return configuration
                 .get(key, ServiceFactoryConfig.class)
                 .map(factoryConfig -> factoryConfig.loadService(environment, serviceClass));

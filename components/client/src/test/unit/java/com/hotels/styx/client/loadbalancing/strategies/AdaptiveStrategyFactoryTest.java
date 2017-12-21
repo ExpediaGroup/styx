@@ -16,7 +16,10 @@
 package com.hotels.styx.client.loadbalancing.strategies;
 
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.client.OriginsInventory;
+import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.support.api.SimpleEnvironment;
 import org.testng.annotations.Test;
 
@@ -31,14 +34,18 @@ public class AdaptiveStrategyFactoryTest {
     public void createsAdaptiveStrategyFromConfiguration() {
         Configuration configuration = new Configuration.MapBackedConfiguration().set("requestCount", 57);
 
-        AdaptiveStrategy strategy = new AdaptiveStrategy.Factory().create(environment, configuration);
+        AdaptiveStrategy strategy = new AdaptiveStrategy.Factory().create(environment, configuration,
+                OriginsInventory.newOriginsInventoryBuilder(BackendService.newBackendServiceBuilder().
+                        origins(Origin.newOriginBuilder("",0).build()).build()).build());
 
         assertThat(strategy.requestCount(), is(57));
     }
 
     @Test
     public void usesDefaultRequestCountIfNoneSpecified() {
-        AdaptiveStrategy strategy = new AdaptiveStrategy.Factory().create(environment, EMPTY_CONFIGURATION);
+        AdaptiveStrategy strategy = new AdaptiveStrategy.Factory().create(environment, EMPTY_CONFIGURATION,
+                OriginsInventory.newOriginsInventoryBuilder(BackendService.newBackendServiceBuilder().
+                        origins(Origin.newOriginBuilder("",0).build()).build()).build());
 
         assertThat(strategy.requestCount(), is(AdaptiveStrategy.DEFAULT_REQUEST_COUNT));
     }

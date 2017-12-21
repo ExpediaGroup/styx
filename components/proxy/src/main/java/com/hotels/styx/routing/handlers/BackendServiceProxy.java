@@ -27,7 +27,6 @@ import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.BackendServicesRouter;
-import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
 import com.hotels.styx.routing.config.BuiltinHandlersFactory;
@@ -50,8 +49,8 @@ public class BackendServiceProxy implements HttpHandler2 {
 
     private final RouteHandlerAdapter handler;
 
-    private BackendServiceProxy(BackendServiceClientFactory serviceClientFactory, Registry<BackendService> registry) {
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory);
+    private BackendServiceProxy(BackendServiceClientFactory serviceClientFactory, Registry<BackendService> registry, Environment environment) {
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         registry.addListener(router);
         handler = new RouteHandlerAdapter(router);
     }
@@ -67,21 +66,23 @@ public class BackendServiceProxy implements HttpHandler2 {
     public static class ConfigFactory implements HttpHandlerFactory {
         private final BackendServiceClientFactory serviceClientFactory;
         private final Map<String, StyxService> services;
+        private final Environment environment;
 
         private static StyxBackendServiceClientFactory serviceClientFactory(Environment environment) {
-            ProxyServerConfig proxyConfig = environment.styxConfig().proxyServerConfig();
-            return new StyxBackendServiceClientFactory(environment, proxyConfig.clientWorkerThreadsCount());
+            return new StyxBackendServiceClientFactory(environment);
         }
 
         @VisibleForTesting
-        ConfigFactory(BackendServiceClientFactory serviceClientFactory, Map<String, StyxService> services) {
+        ConfigFactory(Environment environment, BackendServiceClientFactory serviceClientFactory, Map<String, StyxService> services) {
             this.serviceClientFactory = serviceClientFactory;
             this.services = services;
+            this.environment = environment;
         }
 
         public ConfigFactory(Environment environment, Map<String, StyxService> services) {
             this.services = services;
             this.serviceClientFactory = serviceClientFactory(environment);
+            this.environment = environment;
         }
 
         @Override
@@ -103,7 +104,7 @@ public class BackendServiceProxy implements HttpHandler2 {
             }
             Registry<BackendService> registry = (Registry<BackendService>) service;
 
-            return new BackendServiceProxy(serviceClientFactory, registry);
+            return new BackendServiceProxy(serviceClientFactory, registry, environment);
         }
     }
 

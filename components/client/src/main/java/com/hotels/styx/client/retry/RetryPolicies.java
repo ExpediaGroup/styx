@@ -27,8 +27,8 @@ public final class RetryPolicies {
     private static final RetryPolicy.Outcome NEGATIVE_OUTCOME = new RetryPolicyOutcome(0, Optional.empty(), false);
     private static final RetryPolicy.Outcome POSITIVE_OUTCOME = new RetryPolicyOutcome(0, Optional.empty(), true);
 
-    private static final RetryPolicy DO_NOT_RETRY = (context, loadBalancingStrategy) -> NEGATIVE_OUTCOME;
-    private static final RetryPolicy RETRY_ALWAYS = (context, loadBalancingStrategy) -> POSITIVE_OUTCOME;
+    private static final RetryPolicy DO_NOT_RETRY = (context, loadBalancingStrategy, lbContext) -> NEGATIVE_OUTCOME;
+    private static final RetryPolicy RETRY_ALWAYS = (context, loadBalancingStrategy, lbContext) -> POSITIVE_OUTCOME;
 
     /**
      * Returns a retry policy that performs no retries.
