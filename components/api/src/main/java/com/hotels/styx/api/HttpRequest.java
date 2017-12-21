@@ -473,17 +473,14 @@ public final class HttpRequest implements HttpMessage {
             version(request.version);
         }
 
-        public Builder(com.hotels.styx.api.messages.FullHttpRequest request, Observable<ByteBuf> body) {
+        public Builder(com.hotels.styx.api.messages.FullHttpRequest request) {
             this.id = request.id();
             this.secure = request.isSecure();
             this.url = request.url();
             this.method = request.method();
-            this.clientAddress = null;
             this.cookies = new ArrayList<>(request.cookies());
             headers(request.headers().newBuilder());
             version(request.version());
-
-            body(body);
         }
 
         /**

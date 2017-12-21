@@ -570,6 +570,24 @@ public class HttpRequestTest {
         assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
     }
 
+    @Test
+    public void retainsClientAddressAfterConversionToFullHttpMessage() {
+        InetSocketAddress address = InetSocketAddress.createUnresolved("styx.io", 8080);
+        HttpRequest original = HttpRequest.Builder.get("/")
+                .clientAddress(address)
+                .build();
+
+        FullHttpRequest fullRequest = original
+                .toFullRequest(100)
+                .toBlocking()
+                .first();
+
+        HttpRequest streaming = fullRequest.toStreamingRequest();
+
+        assertThat(streaming.clientAddress().getHostName(), is("styx.io"));
+        assertThat(streaming.clientAddress().getPort(), is(8080));
+    }
+
     private static Observable<ByteBuf> stream(String... strings) {
         return Observable.from(Stream.of(strings)
                 .map(string -> Unpooled.copiedBuffer(string, UTF_8))

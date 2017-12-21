@@ -62,6 +62,7 @@ import static java.util.UUID.randomUUID;
  */
 public class FullHttpRequest implements FullHttpMessage {
     private final Object id;
+    private final InetSocketAddress clientAddress;
     private final HttpVersion version;
     private final HttpMethod method;
     private final Url url;
@@ -72,6 +73,7 @@ public class FullHttpRequest implements FullHttpMessage {
 
     FullHttpRequest(Builder builder) {
         this.id = builder.id == null ? randomUUID() : builder.id;
+        this.clientAddress = builder.clientAddress;
         this.version = builder.version;
         this.method = builder.method;
         this.url = builder.url;
@@ -267,6 +269,15 @@ public class FullHttpRequest implements FullHttpMessage {
     }
 
     /**
+     * Returns the remote client address that initiated the current request.
+     *
+     * @return the client address for this request
+     */
+    protected InetSocketAddress clientAddress() {
+        return this.clientAddress;
+    }
+
+    /**
      * Get a query parameter by name if present.
      *
      * @param name parameter name
@@ -324,10 +335,13 @@ public class FullHttpRequest implements FullHttpMessage {
      * @return   A streaming HttpRequest object.
      */
     public HttpRequest toStreamingRequest() {
+        HttpRequest.Builder streamingBuilder = new HttpRequest.Builder(this)
+                .clientAddress(clientAddress);
+
         if (this.body.length == 0) {
-            return new HttpRequest.Builder(this, Observable.empty()).build();
+            return streamingBuilder.body(Observable.empty()).build();
         } else {
-            return new HttpRequest.Builder(this, Observable.just(Unpooled.copiedBuffer(this.body))).build();
+            return streamingBuilder.body(Observable.just(Unpooled.copiedBuffer(body))).build();
         }
     }
 
@@ -340,6 +354,7 @@ public class FullHttpRequest implements FullHttpMessage {
                 .add("headers", headers)
                 .add("cookies", cookies)
                 .add("id", id)
+                .add("clientAddress", clientAddress)
                 .add("secure", secure)
                 .toString();
     }
@@ -378,6 +393,7 @@ public class FullHttpRequest implements FullHttpMessage {
         public Builder(HttpRequest request, byte[] body) {
             this.id = request.id();
             this.method = request.method();
+            this.clientAddress = request.clientAddress();
             this.url = request.url();
             this.secure = request.isSecure();
             this.version = request.version();
@@ -389,6 +405,7 @@ public class FullHttpRequest implements FullHttpMessage {
         Builder(FullHttpRequest request) {
             this.id = request.id();
             this.method = request.method();
+            this.clientAddress = request.clientAddress();
             this.url = request.url();
             this.secure = request.isSecure();
             this.version = request.version();
