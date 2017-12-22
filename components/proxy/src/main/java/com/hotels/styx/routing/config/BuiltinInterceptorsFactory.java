@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,9 +37,9 @@ public class BuiltinInterceptorsFactory {
         this.builders = requireNonNull(builders);
     }
 
-    public HttpInterceptor build(RoutingConfigNode configBlock) {
-        if (configBlock instanceof RoutingConfigDefinition) {
-            RoutingConfigDefinition block = (RoutingConfigDefinition) configBlock;
+    public HttpInterceptor build(RouteHandlerConfig configBlock) {
+        if (configBlock instanceof RouteHandlerDefinition) {
+            RouteHandlerDefinition block = (RouteHandlerDefinition) configBlock;
             String type = block.type();
 
             HttpInterceptorFactory constructor = builders.get(type);

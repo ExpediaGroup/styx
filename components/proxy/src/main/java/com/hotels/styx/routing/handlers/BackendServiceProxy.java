@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,9 @@ import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.BackendServicesRouter;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
-import com.hotels.styx.routing.config.BuiltinHandlersFactory;
+import com.hotels.styx.routing.config.RouteHandlerFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
-import com.hotels.styx.routing.config.RoutingConfigDefinition;
+import com.hotels.styx.routing.config.RouteHandlerDefinition;
 import rx.Observable;
 
 import java.util.List;
@@ -86,7 +86,7 @@ public class BackendServiceProxy implements HttpHandler2 {
         }
 
         @Override
-        public HttpHandler2 build(List<String> parents, BuiltinHandlersFactory x, RoutingConfigDefinition configBlock) {
+        public HttpHandler2 build(List<String> parents, RouteHandlerFactory x, RouteHandlerDefinition configBlock) {
             JsonNodeConfig config = new JsonNodeConfig(configBlock.config());
             String provider = config.get("backendProvider")
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "backendProvider"));

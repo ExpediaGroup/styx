@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
-import com.hotels.styx.routing.config.BuiltinHandlersFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
-import com.hotels.styx.routing.config.RoutingConfigDefinition;
+import com.hotels.styx.routing.config.RouteHandlerDefinition;
+import com.hotels.styx.routing.config.RouteHandlerFactory;
 import rx.Observable;
 
 import java.util.List;
@@ -66,7 +66,7 @@ public class ProxyToBackend implements HttpHandler2 {
         }
 
         @Override
-        public HttpHandler2 build(List<String> parents, BuiltinHandlersFactory builder, RoutingConfigDefinition configBlock) {
+        public HttpHandler2 build(List<String> parents, RouteHandlerFactory builder, RouteHandlerDefinition configBlock) {
             JsonNodeConfig jsConfig = new JsonNodeConfig(configBlock.config());
 
             BackendService backendService = jsConfig

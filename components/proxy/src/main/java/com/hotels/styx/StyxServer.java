@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.metrics.reporting.sets.NettyAllocatorMetricSet;
 import com.hotels.styx.proxy.ProxyServerBuilder;
+import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
 import com.hotels.styx.proxy.interceptors.ConfigurationContextResolverInterceptor;
 import com.hotels.styx.proxy.interceptors.HopByHopHeadersRemovingInterceptor;
 import com.hotels.styx.proxy.interceptors.HttpMessageLoggingInterceptor;
@@ -47,8 +48,17 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.HttpPipelineFactory;
 import com.hotels.styx.routing.StaticPipelineFactory;
 import com.hotels.styx.routing.UserConfiguredPipelineFactory;
+import com.hotels.styx.routing.config.RouteHandlerFactory;
+import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.ConfigVersionResolver;
+import com.hotels.styx.routing.config.HttpHandlerFactory;
+import com.hotels.styx.routing.config.HttpInterceptorFactory;
+import com.hotels.styx.routing.handlers.BackendServiceProxy;
+import com.hotels.styx.routing.handlers.ConditionRouter;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
+import com.hotels.styx.routing.handlers.ProxyToBackend;
+import com.hotels.styx.routing.handlers.StaticResponseHandler;
+import com.hotels.styx.routing.interceptors.RewriteInterceptor;
 import com.hotels.styx.server.HttpServer;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -64,6 +74,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
@@ -155,9 +166,28 @@ public final class StyxServer extends AbstractService {
 
         Supplier<Iterable<NamedPlugin>> pluginsSupplier = builder.getPluginsSupplier();
 
+
+        ImmutableMap<String, HttpInterceptorFactory> interceptorFactories = ImmutableMap.of(
+                "Rewrite", new RewriteInterceptor.ConfigFactory()
+        );
+
+        BuiltinInterceptorsFactory builtinInterceptorsFactory = new BuiltinInterceptorsFactory(interceptorFactories);
+
+        ConcurrentHashMap<String, HttpHandler2> handlers = new ConcurrentHashMap<>();
+
+        ImmutableMap<String, HttpHandlerFactory> objectFactories = ImmutableMap.of(
+                "StaticResponseHandler", new StaticResponseHandler.ConfigFactory(),
+                "ConditionRouter", new ConditionRouter.ConfigFactory(),
+                "BackendServiceProxy", new BackendServiceProxy.ConfigFactory(environment, servicesFromConfig),
+                "InterceptorPipeline", new HttpInterceptorPipeline.ConfigFactory(pluginsSupplier, builtinInterceptorsFactory),
+                "ProxyToBackend", new ProxyToBackend.ConfigFactory(environment, new StyxBackendServiceClientFactory(environment))
+        );
+
+        RouteHandlerFactory routeHandlerFactory = new RouteHandlerFactory(objectFactories, handlers);
+
         HttpHandler2 pipeline = styxHttpPipeline(
                 environment.styxConfig(),
-                userConfiguredHttpPipeline(environment, servicesFromConfig, pluginsSupplier));
+                userConfiguredHttpPipeline(environment, servicesFromConfig, pluginsSupplier, routeHandlerFactory));
 
         this.proxyServer = new ProxyServerBuilder(environment)
                 .httpHandler(pipeline)
@@ -209,7 +239,11 @@ public final class StyxServer extends AbstractService {
         return new HttpInterceptorPipeline(builder.build(), interceptorsPipeline);
     }
 
-    private HttpHandler2 userConfiguredHttpPipeline(Environment environment, Map<String, StyxService> servicesFromConfig, Supplier<Iterable<NamedPlugin>> pluginsSupplier) {
+    private HttpHandler2 userConfiguredHttpPipeline(
+            Environment environment,
+            Map<String, StyxService> servicesFromConfig,
+            Supplier<Iterable<NamedPlugin>> pluginsSupplier,
+            RouteHandlerFactory routeHandlerFactory) {
         HttpPipelineFactory pipelineBuilder;
         ConfigVersionResolver configVersionResolver = new ConfigVersionResolver(environment.styxConfig());
 
@@ -217,7 +251,7 @@ public final class StyxServer extends AbstractService {
             Registry<BackendService> backendServicesRegistry = (Registry<BackendService>) servicesFromConfig.get(BACKEND_SERVICE_REGISTRY_ID);
             pipelineBuilder = new StaticPipelineFactory(environment, backendServicesRegistry, pluginsSupplier);
         } else {
-            pipelineBuilder = new UserConfiguredPipelineFactory(environment, environment.configuration(), pluginsSupplier, servicesFromConfig);
+            pipelineBuilder = new UserConfiguredPipelineFactory(environment, environment.configuration(), pluginsSupplier, servicesFromConfig, routeHandlerFactory);
         }
 
         return pipelineBuilder.build();

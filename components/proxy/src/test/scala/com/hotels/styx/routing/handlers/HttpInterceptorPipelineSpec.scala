@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,15 +27,14 @@ import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin
 import com.hotels.styx.routing.config._
 import com.hotels.styx.routing.interceptors.RewriteInterceptor
-import com.hotels.styx.routing.{PluginAdapter, HttpHandlerAdapter}
-import org.mockito.Matchers.any
-import org.mockito.Mockito.when
+import com.hotels.styx.routing.{HttpHandlerAdapter, PluginAdapter}
+import org.mockito.Matchers.{any, eq => meq}
+import org.mockito.Mockito.{verify, when}
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, ShouldMatchers}
 import rx.lang.scala.Observable
-import org.mockito.Mockito.verify
-import org.mockito.Matchers.{eq => meq}
 
+import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 
 class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with MockitoSugar {
@@ -59,12 +58,12 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
 
     val e = intercept[IllegalArgumentException] {
       new HttpInterceptorPipeline.ConfigFactory(
-        interceptors(
-          namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
-          namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build())))
-        ),
-        new BuiltinInterceptorsFactory(Map.empty[String, HttpInterceptorFactory].asJava)
-      ).build(list("config"), null, config)
+              interceptors(
+                namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
+                namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build())))
+              ),
+              new BuiltinInterceptorsFactory(Map.empty[String, HttpInterceptorFactory].asJava)
+            ).build(list("config"), null, config)
     }
 
     e.getMessage should be("No such plugin or interceptor exists, attribute='config.pipeline', name='non-existing'")
@@ -83,12 +82,12 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
 
     val e = intercept[IllegalArgumentException] {
       new HttpInterceptorPipeline.ConfigFactory(
-        interceptors(
-          namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
-          namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build())))
-        ),
-        new BuiltinInterceptorsFactory(Map.empty[String, HttpInterceptorFactory].asJava)
-      ).build(list("config"), null, config)
+              interceptors(
+                namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
+                namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build())))
+              ),
+              new BuiltinInterceptorsFactory(Map.empty[String, HttpInterceptorFactory].asJava)
+            ).build(list("config"), null, config)
     }
 
     e.getMessage should be("Routing object definition of type 'InterceptorPipeline', attribute='config', is missing a mandatory 'handler' attribute.")
@@ -112,12 +111,12 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
       """.stripMargin)
 
     val handler = new HttpInterceptorPipeline.ConfigFactory(
-      interceptors(
-        namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
-        namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "B").build())))
-      ),
-      new BuiltinInterceptorsFactory(Map.empty[String, HttpInterceptorFactory].asJava)
-    ).build(list("config"), routingObjectFactory(), config)
+          interceptors(
+            namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
+            namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "B").build())))
+          ),
+          new BuiltinInterceptorsFactory(Map.empty[String, HttpInterceptorFactory].asJava)
+        ).build(list("config"), routingObjectFactory(), config)
 
     val response = handler.handle(hwaRequest, null).toBlocking.first()
     response.headers("X-Test-Header").asScala should be(Seq("B", "A"))
@@ -165,14 +164,14 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
       """.stripMargin)
 
     val handler = new HttpInterceptorPipeline.ConfigFactory(
-      interceptors(
-        namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
-        namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "B").build())))
-      ),
-      new BuiltinInterceptorsFactory(
-        Map[String, HttpInterceptorFactory]("Rewrite" -> new RewriteInterceptor.ConfigFactory()).asJava
-      )
-    ).build(list("config"), routingObjectFactory(), config)
+          interceptors(
+            namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
+            namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "B").build())))
+          ),
+          new BuiltinInterceptorsFactory(
+            Map[String, HttpInterceptorFactory]("Rewrite" -> new RewriteInterceptor.ConfigFactory()).asJava
+          )
+        ).build(list("config"), routingObjectFactory(), config)
 
     val response = handler.handle(hwaRequest, null).toBlocking.first()
     response.headers("X-Test-Header").asScala should be(Seq("B", "A"))
@@ -192,18 +191,18 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
         |        backendProvider: backendProvider
       """.stripMargin)
 
-    val builtinsFactory = mock[BuiltinHandlersFactory]
-    when(builtinsFactory.build(any[java.util.List[String]], any[RoutingConfigNode]))
+    val builtinsFactory = mock[RouteHandlerFactory]
+    when(builtinsFactory.build(any[java.util.List[String]], any[RouteHandlerConfig]))
       .thenReturn(new HttpHandlerAdapter(_ => Observable.just(HttpResponse.Builder.response(OK).build())))
 
     val handler = new HttpInterceptorPipeline.ConfigFactory(interceptors(), null)
-      .build(list("config", "config"), builtinsFactory, config)
+          .build(list("config", "config"), builtinsFactory, config)
 
-    verify(builtinsFactory).build(meq(List("config", "config", "handler").asJava), any[RoutingConfigNode])
+    verify(builtinsFactory).build(meq(List("config", "config", "handler").asJava), any[RouteHandlerConfig])
   }
 
 
-  private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RoutingConfigDefinition]).get()
+  private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RouteHandlerDefinition]).get()
 
   def interceptors(plugins: NamedPlugin*): Supplier[java.lang.Iterable[NamedPlugin]] = new Supplier[lang.Iterable[NamedPlugin]] {
     override def get(): lang.Iterable[NamedPlugin] = plugins.toList.asJava
@@ -211,12 +210,12 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
 
   def mockHandlerFactory(): HttpHandlerFactory = {
     val handlerFactory = mock[HttpHandlerFactory]
-    when(handlerFactory.build(any[java.util.List[String]], any[BuiltinHandlersFactory], any[RoutingConfigDefinition]))
+    when(handlerFactory.build(any[java.util.List[String]], any[RouteHandlerFactory], any[RouteHandlerDefinition]))
       .thenReturn(new HttpHandlerAdapter(_ => Observable.just(HttpResponse.Builder.response(OK).build())))
     handlerFactory
   }
 
-  def routingObjectFactory(): BuiltinHandlersFactory = {
-    new BuiltinHandlersFactory(Map("BackendServiceProxy" -> mockHandlerFactory()).asJava)
+  def routingObjectFactory(): RouteHandlerFactory = {
+    new RouteHandlerFactory(Map("BackendServiceProxy" -> mockHandlerFactory()).asJava, Map[String, HttpHandler2]())
   }
 }
