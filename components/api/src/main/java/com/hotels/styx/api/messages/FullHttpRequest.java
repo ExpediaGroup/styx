@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -175,22 +174,6 @@ public class FullHttpRequest implements FullHttpMessage {
     @Override
     public byte[] body() {
         return body.clone();
-    }
-
-    /**
-     * Returns the message body decoded to a business domain object.
-     *
-     * Decodes the message body with a provided decoder function and returns the
-     * result. The decoder is a function from ByteBuf to a specified output type T.
-     * The caller must ensure the provided decoder is compatible with message content
-     * type and encoding.
-     *
-     * @param  decoder    A function from ByteBuf to T.
-     * @return            Message object decoded into a business domain object.
-     */
-    @Override
-    public <T> T bodyAs(Function<byte[], T> decoder) {
-        return decoder.apply(body);
     }
 
     /**

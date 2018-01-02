@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import io.netty.handler.codec.http.HttpVersion;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
@@ -59,19 +58,6 @@ public interface FullHttpMessage {
      * @return the body
      */
     byte[] body();
-
-    /**
-     * Returns the message body decoded to a business domain object.
-     *
-     * Decodes the message body with a provided decoder function and returns the
-     * result. The decoder is a function from ByteBuf to a specified output type T.
-     * The caller must ensure the provided decoder is compatible with message content
-     * type and encoding.
-     *
-     * @param  decoder    A function from ByteBuf to T.
-     * @return            Message object decoded into a business domain object.
-     */
-    <T> T bodyAs(Function<byte[], T> decoder);
 
     /**
      * Returns the message body as a String decoded with provided character set.
