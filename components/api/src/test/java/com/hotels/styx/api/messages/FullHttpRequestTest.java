@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -146,7 +146,7 @@ public class FullHttpRequestTest {
                 .build();
 
         assertThat(request.toString(), is("FullHttpRequest{version=HTTP/1.1, method=PATCH, uri=https://hotels.com, " +
-                "headers=[headerName=a, Host=hotels.com], cookies=[cfoo=bar], id=id, clientAddress=127.0.0.1:0, secure=true}"));
+                "headers=[headerName=a, Host=hotels.com], cookies=[cfoo=bar], id=id, secure=true}"));
 
         assertThat(request.headers("headerName"), is(singletonList("a")));
     }

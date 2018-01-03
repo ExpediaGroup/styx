@@ -16,6 +16,7 @@
 package com.hotels.styx.api.messages;
 
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.api.HttpRequest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
@@ -60,9 +61,8 @@ import static rx.Observable.just;
 
 public class StreamingHttpRequestTest {
     @Test
-    public void encodesToStreamingHttpRequest() {
+    public void decodesToFullHttpRequest() {
         StreamingHttpRequest streamingRequest = post("/foo/bar", body("foo", "bar"))
-                .clientAddress(InetSocketAddress.createUnresolved("example.org", 8080))
                 .secure(true)
                 .version(HTTP_1_0)
                 .header("HeaderName", "HeaderValue")
@@ -75,8 +75,6 @@ public class StreamingHttpRequestTest {
 
         assertThat(full.method(), is(POST));
         assertThat(full.url(), is(url("/foo/bar").build()));
-        assertThat(full.clientAddress().getHostName(), is("example.org"));
-        assertThat(full.clientAddress().getPort(), is(8080));
         assertThat(full.isSecure(), is(true));
         assertThat(full.version(), is(HTTP_1_0));
         assertThat(full.headers(), contains(header("HeaderName", "HeaderValue")));
@@ -134,7 +132,7 @@ public class StreamingHttpRequestTest {
                 .build();
 
         assertThat(request.toString(), is("StreamingHttpRequest{version=HTTP/1.0, method=PATCH, uri=https://hotels.com, " +
-                "headers=[headerName=a, Host=hotels.com], cookies=[cfoo=bar], id=id, clientAddress=127.0.0.1:0, secure=true}"));
+                "headers=[headerName=a, Host=hotels.com], cookies=[cfoo=bar], id=id, secure=true}"));
 
         assertThat(request.headers("headerName"), is(singletonList("a")));
     }
@@ -149,13 +147,11 @@ public class StreamingHttpRequestTest {
                 .method(DELETE)
                 .uri("/home")
                 .header("remove", "notanymore")
-                .clientAddress(new InetSocketAddress("localhost", 80))
                 .build();
 
         assertThat(newRequest.method(), is(DELETE));
         assertThat(newRequest.url().path(), is("/home"));
         assertThat(newRequest.headers(), hasItem(header("remove", "notanymore")));
-        assertThat(newRequest.clientAddress(), is(new InetSocketAddress("localhost", 80)));
     }
 
     @Test
@@ -413,14 +409,19 @@ public class StreamingHttpRequestTest {
         assertThat(newRequest.version(), is(HTTP_1_0));
     }
 
+    // Make tests to ensure conversion from HttpRequest and back again preserves clientAddress - do it for Fullhttprequest too
     @Test
-    public void builderCopiesClientIpAddress() throws Exception {
+    public void conversionPreservesClientAddress() throws Exception {
         InetSocketAddress address = InetSocketAddress.createUnresolved("styx.io", 8080);
-        StreamingHttpRequest request = post("/foo").clientAddress(address).build();
+        HttpRequest original = HttpRequest.Builder.post("/foo").clientAddress(address).build();
 
-        StreamingHttpRequest newRequest = request.newBuilder().build();
+        StreamingHttpRequest streaming = new StreamingHttpRequest.Builder(original).build();
 
-        assertThat(newRequest.clientAddress(), is(address));
+        Observable<FullHttpRequest> full = streaming.toFullHttpRequest(0x100);
+
+        HttpRequest shouldMatchOriginal = full.toBlocking().single().toStreamingRequest();
+
+        assertThat(shouldMatchOriginal.clientAddress(), is(address));
     }
 
     private static Observable<ByteBuf> body(String... contents) {

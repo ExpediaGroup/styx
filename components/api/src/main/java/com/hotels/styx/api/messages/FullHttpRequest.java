@@ -61,6 +61,7 @@ import static java.util.UUID.randomUUID;
  */
 public class FullHttpRequest implements FullHttpMessage {
     private final Object id;
+    // Relic of old API, kept for conversions
     private final InetSocketAddress clientAddress;
     private final HttpVersion version;
     private final HttpMethod method;
@@ -251,12 +252,8 @@ public class FullHttpRequest implements FullHttpMessage {
         return secure;
     }
 
-    /**
-     * Returns the remote client address that initiated the current request.
-     *
-     * @return the client address for this request
-     */
-    protected InetSocketAddress clientAddress() {
+    // Relic of old API, kept only for conversions
+    InetSocketAddress clientAddress() {
         return this.clientAddress;
     }
 
@@ -337,7 +334,6 @@ public class FullHttpRequest implements FullHttpMessage {
                 .add("headers", headers)
                 .add("cookies", cookies)
                 .add("id", id)
-                .add("clientAddress", clientAddress)
                 .add("secure", secure)
                 .toString();
     }
@@ -400,7 +396,7 @@ public class FullHttpRequest implements FullHttpMessage {
         Builder(FullHttpRequest request) {
             this.id = request.id();
             this.method = request.method();
-            this.clientAddress = request.clientAddress();
+            this.clientAddress = request.clientAddress;
             this.url = request.url();
             this.secure = request.isSecure();
             this.version = request.version();

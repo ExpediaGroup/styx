@@ -67,6 +67,7 @@ import static java.util.UUID.randomUUID;
  */
 public class StreamingHttpRequest implements StreamingHttpMessage {
     private final Object id;
+    // Relic of old API, kept for conversions
     private final InetSocketAddress clientAddress;
     private final HttpVersion version;
     private final HttpMethod method;
@@ -267,12 +268,8 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
         return secure;
     }
 
-    /**
-     * Returns the remote client address that initiated the current request.
-     *
-     * @return the client address for this request
-     */
-    public InetSocketAddress clientAddress() {
+    // Relic of old API, kept only for conversions
+    InetSocketAddress clientAddress() {
         return this.clientAddress;
     }
 
@@ -364,7 +361,6 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
                 .add("headers", headers)
                 .add("cookies", cookies)
                 .add("id", id)
-                .add("clientAddress", clientAddress)
                 .add("secure", secure)
                 .toString();
     }
@@ -409,6 +405,18 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
             this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = body;
+            this.cookies = new ArrayList<>(request.cookies());
+        }
+
+        Builder(HttpRequest request) {
+            this.id = request.id();
+            this.method = request.method();
+            this.clientAddress = request.clientAddress();
+            this.url = request.url();
+            this.secure = request.isSecure();
+            this.version = request.version();
+            this.headers = request.headers().newBuilder();
+            this.body = request.body().content();
             this.cookies = new ArrayList<>(request.cookies());
         }
 
@@ -576,17 +584,6 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
                     .findFirst()
                     .ifPresent(cookies::remove);
 
-            return this;
-        }
-
-        /**
-         * Sets the client IP address.
-         *
-         * @param address IP address
-         * @return {@code this}
-         */
-        public Builder clientAddress(InetSocketAddress address) {
-            this.clientAddress = requireNonNull(address);
             return this;
         }
 
