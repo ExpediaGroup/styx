@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,6 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
 import static rx.Observable.just;
 
 public class StreamingHttpRequestTest {
@@ -70,7 +69,7 @@ public class StreamingHttpRequestTest {
                 .addCookie("CookieName", "CookieValue")
                 .build();
 
-        FullHttpRequest<String> full = streamingRequest.toFullHttpRequest(byteBuf -> byteBuf.toString(UTF_8), 0x1000)
+        FullHttpRequest full = streamingRequest.toFullHttpRequest(0x1000)
                 .toBlocking()
                 .single();
 
@@ -82,16 +81,16 @@ public class StreamingHttpRequestTest {
         assertThat(full.version(), is(HTTP_1_0));
         assertThat(full.headers(), contains(header("HeaderName", "HeaderValue")));
         assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
-        assertThat(full.body(), is("foobar"));
+        assertThat(full.body(), is(bytes("foobar")));
     }
 
     @Test(dataProvider = "emptyBodyRequests")
-    public void encodesToStreamingHttpRequestWithEmptyBody(StreamingHttpRequest streamingRequest) throws Exception {
-        FullHttpRequest<String> full = streamingRequest.toFullHttpRequest(byteBuf -> byteBuf.toString(UTF_8), 0x1000)
+    public void encodesToStreamingHttpRequestWithEmptyBody(StreamingHttpRequest streamingRequest) {
+        FullHttpRequest full = streamingRequest.toFullHttpRequest(0x1000)
                 .toBlocking()
                 .single();
 
-        assertThat(full.body(), is(""));
+        assertThat(full.body(), is(new byte[0]));
     }
 
     // We want to ensure that these are all considered equivalent
@@ -101,17 +100,6 @@ public class StreamingHttpRequestTest {
                 {get("/foo/bar").build()},
                 {post("/foo/bar", Observable.empty()).build()},
         };
-    }
-
-    @Test
-    public void encodingToStreamingHttpRequestDefaultsToUTF8() throws Exception {
-        StreamingHttpRequest streamingRequest = post("/foo/bar", body("foo", "bar")).build();
-
-        FullHttpRequest<String> full = streamingRequest.toFullHttpRequest(0x1000)
-                .toBlocking()
-                .single();
-
-        assertThat(full.body(), is("foobar"));
     }
 
     @Test
@@ -358,10 +346,6 @@ public class StreamingHttpRequestTest {
         assertThat(get("/index").version(HTTP_1_0).build().keepAlive(), is(false));
     }
 
-    private static byte[] bytes(String content) {
-        return content.getBytes(UTF_8);
-    }
-
     @Test
     public void builderSetsRequestContent() {
         StreamingHttpRequest request = post("/foo/bar", body("Foo bar")).build();
@@ -452,5 +436,9 @@ public class StreamingHttpRequestTest {
                 .stream()
                 .map(byteBuf -> byteBuf.toString(UTF_8))
                 .collect(joining());
+    }
+
+    private static byte[] bytes(String content) {
+        return content.getBytes(UTF_8);
     }
 }

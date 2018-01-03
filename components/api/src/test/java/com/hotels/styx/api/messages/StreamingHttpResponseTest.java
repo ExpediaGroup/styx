@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import rx.Observable;
 
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.google.common.net.MediaType.ANY_AUDIO_TYPE;
@@ -70,7 +69,7 @@ public class StreamingHttpResponseTest {
                 .body(body("foo", "bar"))
                 .build();
 
-        FullHttpResponse<String> full = response.toFullHttpResponse(byteBuf -> byteBuf.toString(UTF_8), 0x1000)
+        FullHttpResponse full = response.toFullHttpResponse(0x1000)
                 .toBlocking()
                 .single();
 
@@ -79,16 +78,16 @@ public class StreamingHttpResponseTest {
         assertThat(full.headers(), contains(header("HeaderName", "HeaderValue")));
         assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
 
-        assertThat(full.body(), is("foobar"));
+        assertThat(full.body(), is(bytes("foobar")));
     }
 
     @Test(dataProvider = "emptyBodyResponses")
     public void encodesToFullHttpResponseWithEmptyBody(StreamingHttpResponse response) {
-        FullHttpResponse<String> full = response.toFullHttpResponse(byteBuf -> byteBuf.toString(UTF_8), 0x1000)
+        FullHttpResponse full = response.toFullHttpResponse(0x1000)
                 .toBlocking()
                 .single();
 
-        assertThat(full.body(), is(""));
+        assertThat(full.body(), is(new byte[0]));
     }
 
     // We want to ensure that these are all considered equivalent
@@ -98,19 +97,6 @@ public class StreamingHttpResponseTest {
                 {response().build()},
                 {response().body(Observable.empty()).build()},
         };
-    }
-
-    @Test
-    public void encodingToFullHttpResponseDefaultsToUTF8() {
-        StreamingHttpResponse response = response()
-                .body(body("foo", "bar"))
-                .build();
-
-        FullHttpResponse<String> full = response.toFullHttpResponse(0x1000)
-                .toBlocking()
-                .single();
-
-        assertThat(full.body(), is("foobar"));
     }
 
     @Test
@@ -326,7 +312,7 @@ public class StreamingHttpResponseTest {
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void rejectsInvalidContentLength() throws Exception {
+    public void rejectsInvalidContentLength() {
         response()
                 .addHeader(CONTENT_LENGTH, "foo")
                 .ensureContentLengthIsValid()
@@ -354,5 +340,9 @@ public class StreamingHttpResponseTest {
                 .stream()
                 .map(byteBuf -> byteBuf.toString(UTF_8))
                 .collect(joining());
+    }
+
+    private static byte[] bytes(String s) {
+        return s.getBytes(UTF_8);
     }
 }

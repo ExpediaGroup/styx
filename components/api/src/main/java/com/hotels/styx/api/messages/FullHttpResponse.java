@@ -228,7 +228,7 @@ public class FullHttpResponse implements FullHttpMessage {
             this.cookies = new ArrayList<>(response.cookies());
         }
 
-        public Builder(StreamingHttpResponse response, T decoded) {
+        public Builder(StreamingHttpResponse response, byte[] decoded) {
             this.status = response.status();
             this.version = response.version();
             this.headers = response.headers().newBuilder();

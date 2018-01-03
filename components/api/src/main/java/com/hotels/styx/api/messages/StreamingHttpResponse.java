@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import rx.Observable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -41,13 +40,13 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
+import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.compositeBuffer;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.util.ReferenceCountUtil.release;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -140,7 +139,7 @@ public class StreamingHttpResponse implements StreamingHttpMessage {
         return status().code() >= 300 && status().code() < 400;
     }
 
-    public <T> Observable<FullHttpResponse<T>> toFullHttpResponse(Function<ByteBuf, T> decoder, int maxContentBytes) {
+    public <T> Observable<FullHttpResponse> toFullHttpResponse(int maxContentBytes) {
         CompositeByteBuf byteBufs = compositeBuffer();
 
         return body
@@ -158,22 +157,16 @@ public class StreamingHttpResponse implements StreamingHttpMessage {
                     composite.addComponent(part);
                     composite.writerIndex(composite.writerIndex() + part.readableBytes());
                 })
-                .map((CompositeByteBuf aggregate) -> decodeAndRelease(decoder, aggregate))
-                .map(decoded -> new FullHttpResponse.Builder<>(this, decoded).build());
+                .map(StreamingHttpResponse::decodeAndRelease)
+                .map(decoded -> new FullHttpResponse.Builder(this, decoded).build());
     }
 
-    public Observable<FullHttpResponse<String>> toFullHttpResponse(int maxContentBytes) {
-        return toFullHttpResponse(byteBuf -> byteBuf.toString(UTF_8), maxContentBytes);
-    }
-
-    private static <T> T decodeAndRelease(Function<ByteBuf, T> decoder, CompositeByteBuf aggregate) {
-        T temp;
+    private static byte[] decodeAndRelease(CompositeByteBuf aggregate) {
         try {
-            temp = decoder.apply(aggregate);
+            return getBytes(aggregate);
         } finally {
             aggregate.release();
         }
-        return temp;
     }
 
     @Override

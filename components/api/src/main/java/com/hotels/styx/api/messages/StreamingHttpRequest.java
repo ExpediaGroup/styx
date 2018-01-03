@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -44,6 +43,7 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
+import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.compositeBuffer;
 import static io.netty.handler.codec.http.HttpMethod.CONNECT;
 import static io.netty.handler.codec.http.HttpMethod.DELETE;
@@ -59,7 +59,6 @@ import static io.netty.util.ReferenceCountUtil.release;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.net.InetSocketAddress.createUnresolved;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 
@@ -326,7 +325,7 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
         return new Builder(this);
     }
 
-    public <T> Observable<FullHttpRequest<T>> toFullHttpRequest(Function<ByteBuf, T> decoder, int maxContentBytes) {
+    public <T> Observable<FullHttpRequest> toFullHttpRequest(int maxContentBytes) {
         CompositeByteBuf byteBufs = compositeBuffer();
 
         return body
@@ -344,17 +343,13 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
                     composite.addComponent(part);
                     composite.writerIndex(composite.writerIndex() + part.readableBytes());
                 })
-                .map((CompositeByteBuf aggregate) -> decodeAndRelease(decoder, aggregate))
-                .map(decoded -> new FullHttpRequest.Builder<>(this, decoded).build());
+                .map(StreamingHttpRequest::decodeAndRelease)
+                .map(decoded -> new FullHttpRequest.Builder(this, decoded).build());
     }
 
-    public Observable<FullHttpRequest<String>> toFullHttpRequest(int maxContentBytes) {
-        return toFullHttpRequest(byteBuf -> byteBuf.toString(UTF_8), maxContentBytes);
-    }
-
-    private static <T> T decodeAndRelease(Function<ByteBuf, T> decoder, CompositeByteBuf aggregate) {
+    private static byte[] decodeAndRelease(CompositeByteBuf aggregate) {
         try {
-            return decoder.apply(aggregate);
+            return getBytes(aggregate);
         } finally {
             aggregate.release();
         }
