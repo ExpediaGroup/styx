@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpRequest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.HttpMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import rx.Observable;
@@ -38,9 +39,9 @@ import static com.hotels.styx.api.messages.FullHttpRequest.patch;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
-import static io.netty.handler.codec.http.HttpMethod.DELETE;
-import static io.netty.handler.codec.http.HttpMethod.GET;
-import static io.netty.handler.codec.http.HttpMethod.POST;
+import static com.hotels.styx.api.messages.HttpMethods.DELETE;
+import static com.hotels.styx.api.messages.HttpMethods.GET;
+import static com.hotels.styx.api.messages.HttpMethods.POST;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static java.lang.String.valueOf;
@@ -70,7 +71,7 @@ public class FullHttpRequestTest {
 
         HttpRequest streaming = fullRequest.toStreamingRequest();
 
-        assertThat(streaming.method(), is(POST));
+        assertThat(streaming.method(), is(HttpMethod.POST));
         assertThat(streaming.url(), is(url("/foo/bar").build()));
         assertThat(streaming.isSecure(), is(true));
         assertThat(streaming.version(), is(HTTP_1_1));

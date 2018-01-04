@@ -22,7 +22,6 @@ import com.hotels.styx.api.HttpMessageSupport;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Url;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
 import rx.Observable;
 
@@ -40,16 +39,14 @@ import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
+import static com.hotels.styx.api.messages.HttpMethods.DELETE;
+import static com.hotels.styx.api.messages.HttpMethods.GET;
+import static com.hotels.styx.api.messages.HttpMethods.HEAD;
+import static com.hotels.styx.api.messages.HttpMethods.METHODS;
+import static com.hotels.styx.api.messages.HttpMethods.PATCH;
+import static com.hotels.styx.api.messages.HttpMethods.POST;
+import static com.hotels.styx.api.messages.HttpMethods.PUT;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
-import static io.netty.handler.codec.http.HttpMethod.CONNECT;
-import static io.netty.handler.codec.http.HttpMethod.DELETE;
-import static io.netty.handler.codec.http.HttpMethod.GET;
-import static io.netty.handler.codec.http.HttpMethod.HEAD;
-import static io.netty.handler.codec.http.HttpMethod.OPTIONS;
-import static io.netty.handler.codec.http.HttpMethod.PATCH;
-import static io.netty.handler.codec.http.HttpMethod.POST;
-import static io.netty.handler.codec.http.HttpMethod.PUT;
-import static io.netty.handler.codec.http.HttpMethod.TRACE;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static java.lang.Integer.parseInt;
 import static java.net.InetSocketAddress.createUnresolved;
@@ -64,7 +61,7 @@ public class FullHttpRequest implements FullHttpMessage {
     // Relic of old API, kept for conversions
     private final InetSocketAddress clientAddress;
     private final HttpVersion version;
-    private final HttpMethod method;
+    private final String method;
     private final Url url;
     private final HttpHeaders headers;
     private final boolean secure;
@@ -204,11 +201,11 @@ public class FullHttpRequest implements FullHttpMessage {
     }
 
     /**
-     * Returns the {@link HttpMethod} of this.
+     * Returns the HTTP method of this request.
      *
      * @return the HTTP method
      */
-    public HttpMethod method() {
+    public String method() {
         return method;
     }
 
@@ -345,7 +342,7 @@ public class FullHttpRequest implements FullHttpMessage {
         private static final InetSocketAddress LOCAL_HOST = createUnresolved("127.0.0.1", 0);
 
         private Object id;
-        private HttpMethod method = GET;
+        private String method = HttpMethods.GET;
         private InetSocketAddress clientAddress = LOCAL_HOST;
         private boolean validate = true;
         private Url url;
@@ -362,7 +359,7 @@ public class FullHttpRequest implements FullHttpMessage {
             this.cookies = new ArrayList<>();
         }
 
-        public Builder(HttpMethod method, String uri) {
+        public Builder(String method, String uri) {
             this();
             this.method = requireNonNull(method);
             this.url = Url.Builder.url(uri).build();
@@ -371,7 +368,7 @@ public class FullHttpRequest implements FullHttpMessage {
 
         public Builder(HttpRequest request, byte[] body) {
             this.id = request.id();
-            this.method = request.method();
+            this.method = request.method().toString();
             this.clientAddress = request.clientAddress();
             this.url = request.url();
             this.secure = request.isSecure();
@@ -560,7 +557,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * @param method HTTP method
          * @return {@code this}
          */
-        public Builder method(HttpMethod method) {
+        public Builder method(String method) {
             this.method = requireNonNull(method);
             return this;
         }
@@ -667,15 +664,7 @@ public class FullHttpRequest implements FullHttpMessage {
         }
 
         private boolean isMethodValid() {
-            return this.method == CONNECT
-                    || this.method == DELETE
-                    || this.method == GET
-                    || this.method == HEAD
-                    || this.method == OPTIONS
-                    || this.method == PATCH
-                    || this.method == POST
-                    || this.method == PUT
-                    || this.method == TRACE;
+            return METHODS.contains(this.method);
         }
 
         private void ensureContentLengthIsValid() {

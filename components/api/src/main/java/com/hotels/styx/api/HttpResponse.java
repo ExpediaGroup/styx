@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -275,11 +275,9 @@ public final class HttpResponse implements HttpMessage {
      * <p>
      * @param maxContentBytes maximum allowed size for the aggregated content. If the content exceeds
      *  this amount, an exception is raised
-     * @deprecated please use {@link #toFullResponse(int)}
      *
      * @return an observable that provides an object representing an aggregated response
      */
-    @Deprecated
     public <T> Observable<DecodedResponse<T>> decode(Function<ByteBuf, T> decoder, int maxContentBytes) {
         return body.aggregate(maxContentBytes)
                 .map(bytes -> decoder.apply(copiedBuffer(bytes)))

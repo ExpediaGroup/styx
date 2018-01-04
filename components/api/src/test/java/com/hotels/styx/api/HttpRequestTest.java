@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -533,7 +533,7 @@ public class HttpRequestTest {
                 .toBlocking()
                 .single();
 
-        assertThat(full.method(), is(POST));
+        assertThat(full.method(), is("POST"));
         assertThat(full.isSecure(), is(true));
         assertThat(full.version(), is(HTTP_1_0));
         assertThat(full.headers(), contains(header("HeaderName", "HeaderValue")));
