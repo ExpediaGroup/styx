@@ -15,6 +15,9 @@
  */
 package com.hotels.styx.common;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,12 +29,20 @@ import static java.util.Objects.requireNonNull;
  *
  */
 public class QueueDrainingEventProcessor implements EventProcessor {
+    private static final Logger LOGGER = LoggerFactory.getLogger(QueueDrainingEventProcessor.class);
+
     private final Queue<Object> events = new ConcurrentLinkedDeque<>();
     private final AtomicInteger eventCount = new AtomicInteger(0);
-    private EventProcessor eventProcessor;
+    private final EventProcessor eventProcessor;
+    private boolean logErrors;
 
     public QueueDrainingEventProcessor(EventProcessor eventProcessor) {
+        this(eventProcessor, false);
+    }
+
+    public QueueDrainingEventProcessor(EventProcessor eventProcessor, boolean logErrors) {
         this.eventProcessor = requireNonNull(eventProcessor);
+        this.logErrors = logErrors;
     }
 
     @Override
@@ -43,7 +54,9 @@ public class QueueDrainingEventProcessor implements EventProcessor {
                 try {
                     eventProcessor.submit(e);
                 } catch (RuntimeException cause) {
-
+                    if (logErrors) {
+                        LOGGER.warn("Event {} threw an exception {}.", event, cause);
+                    }
                 }
             } while (eventCount.decrementAndGet() > 0);
         }

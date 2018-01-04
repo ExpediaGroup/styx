@@ -47,73 +47,90 @@ public class QueueDrainingEventProcessorTest {
 
     @Test
     public void processesQueuedEvents() {
-        CyclicBarrier barrier = new CyclicBarrier(2);
+        for (int i = 0; i < 1000; i++) {
+            CyclicBarrier barrier1 = new CyclicBarrier(2);
+            CyclicBarrier barrier2 = new CyclicBarrier(2);
 
-        QueueDrainingEventProcessor eventProcessor = new QueueDrainingEventProcessor((event) -> ((Consumer<Void>) event).accept(null));
+            QueueDrainingEventProcessor eventProcessor = new QueueDrainingEventProcessor((event) -> ((Consumer<Void>) event).accept(null));
 
-        Consumer<Void> event1 = mock(Consumer.class);
-        Consumer<Void> event2 = mock(Consumer.class);
-        Consumer<Void> event3 = mock(Consumer.class);
+            Consumer<Void> event1 = mock(Consumer.class);
+            Consumer<Void> event2 = mock(Consumer.class);
+            Consumer<Void> event3 = mock(Consumer.class);
 
-        startThread(() -> {
-            try {
-                barrier.await();
-            } catch (InterruptedException e) {
-                currentThread().interrupt();
-                e.printStackTrace();
-            } catch (BrokenBarrierException e) {
-                e.printStackTrace();
-            }
-            eventProcessor.submit(event2);
-            eventProcessor.submit(event3);
-        });
+            startThread(() -> {
+                await(barrier1);
+                eventProcessor.submit(event2);
+                eventProcessor.submit(event3);
+                await(barrier2);
+            });
 
-        eventProcessor.submit(latchedEvent(barrier, event1));
+            eventProcessor.submit(consumerEvent((x) -> {
+                await(barrier1);
+                event1.accept(null);
+                await(barrier2);
+            }));
 
-        InOrder inOrder = Mockito.inOrder(event1, event2, event3);
-        inOrder.verify(event1).accept(null);
-        inOrder.verify(event2).accept(null);
-        inOrder.verify(event3).accept(null);
+            InOrder inOrder = Mockito.inOrder(event1, event2, event3);
+            inOrder.verify(event1).accept(null);
+            inOrder.verify(event2).accept(null);
+            inOrder.verify(event3).accept(null);
+        }
     }
 
     @Test
     public void handlesEventProcessorExceptions() throws Exception {
-        CyclicBarrier barrier = new CyclicBarrier(2);
+        for (int i = 0; i < 1000; i++) {
+            CyclicBarrier barrier1 = new CyclicBarrier(2);
+            CyclicBarrier barrier2 = new CyclicBarrier(2);
+            CyclicBarrier barrier3 = new CyclicBarrier(2);
 
-        QueueDrainingEventProcessor eventProcessor = new QueueDrainingEventProcessor((event) -> ((Consumer<Void>) event).accept(null));
+            QueueDrainingEventProcessor eventProcessor = new QueueDrainingEventProcessor((event) -> ((Consumer<Void>) event).accept(null), false);
 
-        startThread(
-                () -> {
-                    Consumer<Void> lockEvent = latchedEvent(barrier, (x) -> {
-                        throw new RuntimeException("Something went wrong");
+            startThread(
+                    () -> {
+                        Consumer<Void> lockEvent = consumerEvent((x) -> {
+                            await(barrier1);
+                            try {
+                                throw new RuntimeException("Something went wrong");
+                            } finally {
+                                await(barrier2);
+                            }
+                        });
+                        eventProcessor.submit(lockEvent);
                     });
-                    eventProcessor.submit(lockEvent);
-                });
 
+            barrier1.await();
 
-        barrier.await();
+            Consumer<Void> event2 = mock(Consumer.class);
+            eventProcessor.submit(consumerEvent(x -> {
+                event2.accept(null);
+                await(barrier3);
+            }));
 
-        Consumer<Void> event2 = mock(Consumer.class);
-        eventProcessor.submit(event2);
+            await(barrier2);
+            await(barrier3);
 
-        verify(event2).accept(eq(null));
+            verify(event2).accept(eq(null));
+        }
+    }
+
+    private void await(CyclicBarrier barrier) {
+        try {
+            barrier.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            currentThread().interrupt();
+            ;
+            throw new RuntimeException(e);
+        } catch (BrokenBarrierException e) {
+            throw new RuntimeException(e);
+        }
 
     }
 
-    private <T> Consumer<T> latchedEvent(CyclicBarrier barrier, Consumer<T> action) {
-        return (actionArg) -> {
-            try {
-                barrier.await();
-                action.accept(actionArg);
-            } catch (InterruptedException e) {
-                currentThread().interrupt();
-                throw new RuntimeException(e);
-            } catch (BrokenBarrierException e) {
-                e.printStackTrace();
-            }
-        };
+    private <T> Consumer<T> consumerEvent(Consumer<T> action) {
+        return action;
     }
-
 
     private static void startThread(Runnable runnable) {
         new Thread(runnable, "test-thread").start();
