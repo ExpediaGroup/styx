@@ -113,11 +113,6 @@ public class FullHttpResponseTest {
     }
 
     @Test
-    public void setsTheContentType() {
-        assertThat(response().contentType(ANY_AUDIO_TYPE).build().contentType(), isValue(ANY_AUDIO_TYPE.toString()));
-    }
-
-    @Test
     public void setsASingleOutboundCookie() {
         FullHttpResponse response = response()
                 .addCookie(cookie("user", "QSplbl9HX1VL", domain(".hotels.com"), path("/"), maxAge(3600)))

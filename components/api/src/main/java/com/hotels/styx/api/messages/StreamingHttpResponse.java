@@ -17,7 +17,6 @@ package com.hotels.styx.api.messages;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
-import com.google.common.net.MediaType;
 import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpHeaders;
@@ -37,7 +36,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.FlowControlDisableOperator.disableFlowControl;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
 import static io.netty.buffer.ByteBufUtil.getBytes;
@@ -267,17 +265,6 @@ public class StreamingHttpResponse implements StreamingHttpMessage {
          */
         public Builder version(HttpVersion version) {
             this.version = requireNonNull(version);
-            return this;
-        }
-
-        /**
-         * Sets the value of the {@code Content-Type} header.
-         * @param contentType content type
-         *
-         * @return {@code this}
-         */
-        public Builder contentType(MediaType contentType) {
-            headers.set(CONTENT_TYPE, contentType.toString());
             return this;
         }
 
