@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,35 +18,33 @@ package com.hotels.styx.common;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * An event processor that is implemented using Queue Drain approach.
  *
- * @param <S> state type
  */
-public class QueueDrainingEventProcessor<S> extends AbstractEventProcessor<S> {
+public class QueueDrainingEventProcessor implements EventProcessor {
     private final Queue<Object> events = new ConcurrentLinkedDeque<>();
     private final AtomicInteger eventCount = new AtomicInteger(0);
+    private EventProcessor eventProcessor;
 
-    /**
-     * Constructs a new instance.
-     *
-     * @param stateMachine  state machine
-     * @param errorHandler  handler to use if an exception/error is thrown by the state machine (e.g. during a transition side-effect)
-     * @param loggingPrefix a prefix to prepend to the beginning of log lines
-     */
-    public QueueDrainingEventProcessor(StateMachine<S> stateMachine, BiConsumer<Throwable, S> errorHandler, String loggingPrefix) {
-        super(stateMachine, errorHandler, loggingPrefix);
+    public QueueDrainingEventProcessor(EventProcessor eventProcessor) {
+        this.eventProcessor = requireNonNull(eventProcessor);
     }
 
     @Override
-    void eventSubmitted(Object event) {
+    public void submit(Object event) {
         events.add(event);
         if (eventCount.getAndIncrement() == 0) {
             do {
                 Object e = events.poll();
-                processEvent(e);
+                try {
+                    eventProcessor.submit(e);
+                } catch (RuntimeException cause) {
+
+                }
             } while (eventCount.decrementAndGet() > 0);
         }
     }
