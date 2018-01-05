@@ -33,15 +33,15 @@ import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpRequest.Builder.put;
 import static com.hotels.styx.api.Url.Builder.url;
+import static com.hotels.styx.api.messages.HttpMethod.DELETE;
+import static com.hotels.styx.api.messages.HttpMethod.GET;
+import static com.hotels.styx.api.messages.HttpMethod.POST;
 import static com.hotels.styx.api.messages.StreamingHttpRequest.get;
 import static com.hotels.styx.api.messages.StreamingHttpRequest.patch;
 import static com.hotels.styx.api.messages.StreamingHttpRequest.post;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
-import static com.hotels.styx.api.messages.HttpMethods.DELETE;
-import static com.hotels.styx.api.messages.HttpMethods.GET;
-import static com.hotels.styx.api.messages.HttpMethods.POST;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static java.lang.String.valueOf;
@@ -308,7 +308,7 @@ public class StreamingHttpRequestTest {
     }
 
     @Test
-    public void removesCookies() throws Exception {
+    public void removesCookies() {
         StreamingHttpRequest request = get("/")
                 .addCookie("lang", "en_US|en-us_hotels_com")
                 .addCookie("styx_origin_hpt", "hpt1")
@@ -318,7 +318,7 @@ public class StreamingHttpRequestTest {
     }
 
     @Test
-    public void removesACookieSetInCookie() throws Exception {
+    public void removesACookieSetInCookie() {
         StreamingHttpRequest request = get("/")
                 .addCookie("lang", "en_US|en-us_hotels_com")
                 .addCookie("styx_origin_hpt", "hpt1")
@@ -328,7 +328,7 @@ public class StreamingHttpRequestTest {
     }
 
     @Test
-    public void shouldSetsContentLengthForNonStreamingBodyMessage() throws Exception {
+    public void shouldSetsContentLengthForNonStreamingBodyMessage() {
         assertThat(put("/home").body("").build().header(CONTENT_LENGTH), isValue("0"));
         assertThat(put("/home").body("Hello").build().header(CONTENT_LENGTH), isValue(valueOf(bytes("Hello").length)));
         assertThat(put("/home").body(bytes("Hello")).build().header(CONTENT_LENGTH), isValue(valueOf(bytes("Hello").length)));
@@ -365,14 +365,14 @@ public class StreamingHttpRequestTest {
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void rejectsMultipleContentLengthInSingleHeader() throws Exception {
+    public void rejectsMultipleContentLengthInSingleHeader() {
         get("/foo")
                 .addHeader(CONTENT_LENGTH, "15, 16")
                 .build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void rejectsMultipleContentLengthHeaders() throws Exception {
+    public void rejectsMultipleContentLengthHeaders() {
         get("/foo")
                 .addHeader(CONTENT_LENGTH, "15")
                 .addHeader(CONTENT_LENGTH, "16")
@@ -380,21 +380,21 @@ public class StreamingHttpRequestTest {
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void rejectsInvalidContentLength() throws Exception {
+    public void rejectsInvalidContentLength() {
         get("/foo")
                 .addHeader(CONTENT_LENGTH, "foo")
                 .build();
     }
 
     @Test
-    public void createARequestWithStreamingUrl() throws Exception {
+    public void createARequestWithStreamingUrl() {
         StreamingHttpRequest request = get("http://www.hotels.com").build();
 
         assertThat(request.url(), is(url("http://www.hotels.com").build()));
     }
 
     @Test
-    public void setsHostHeaderFromAuthorityIfSet() throws Exception {
+    public void setsHostHeaderFromAuthorityIfSet() {
         StreamingHttpRequest request = get("http://www.hotels.com").build();
 
         assertThat(request.header(HOST), isValue("www.hotels.com"));
@@ -411,7 +411,7 @@ public class StreamingHttpRequestTest {
 
     // Make tests to ensure conversion from HttpRequest and back again preserves clientAddress - do it for Fullhttprequest too
     @Test
-    public void conversionPreservesClientAddress() throws Exception {
+    public void conversionPreservesClientAddress() {
         InetSocketAddress address = InetSocketAddress.createUnresolved("styx.io", 8080);
         HttpRequest original = HttpRequest.Builder.post("/foo").clientAddress(address).build();
 

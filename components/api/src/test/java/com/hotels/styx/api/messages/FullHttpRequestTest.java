@@ -36,12 +36,12 @@ import static com.hotels.styx.api.HttpRequest.Builder.put;
 import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.api.messages.FullHttpRequest.get;
 import static com.hotels.styx.api.messages.FullHttpRequest.patch;
+import static com.hotels.styx.api.messages.HttpMethod.DELETE;
+import static com.hotels.styx.api.messages.HttpMethod.GET;
+import static com.hotels.styx.api.messages.HttpMethod.POST;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
-import static com.hotels.styx.api.messages.HttpMethods.DELETE;
-import static com.hotels.styx.api.messages.HttpMethods.GET;
-import static com.hotels.styx.api.messages.HttpMethods.POST;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static java.lang.String.valueOf;
@@ -90,7 +90,7 @@ public class FullHttpRequestTest {
     }
 
     @Test(dataProvider = "emptyBodyRequests")
-    public void convertsToStreamingHttpRequestWithEmptyBody(FullHttpRequest fullRequest) throws Exception {
+    public void convertsToStreamingHttpRequestWithEmptyBody(FullHttpRequest fullRequest) {
         HttpRequest streaming = fullRequest.toStreamingRequest();
 
         TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
@@ -226,7 +226,7 @@ public class FullHttpRequestTest {
 
 
     @Test
-    public void requestBodyIsImmutable() throws Exception {
+    public void requestBodyIsImmutable() {
         FullHttpRequest request = get("/foo")
                 .body("Original body", UTF_8)
                 .build();
@@ -237,7 +237,7 @@ public class FullHttpRequestTest {
     }
 
     @Test
-    public void requestBodyCannotBeChangedViaStreamingRequest() throws Exception {
+    public void requestBodyCannotBeChangedViaStreamingRequest() {
         FullHttpRequest original = FullHttpRequest.get("/foo")
                 .body("original", UTF_8)
                 .build();
@@ -254,7 +254,7 @@ public class FullHttpRequestTest {
     }
 
     @Test
-    public void requestBodyCannotBeChangedViaStreamingRequest2() throws Exception {
+    public void requestBodyCannotBeChangedViaStreamingRequest2() {
         ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
 
         HttpRequest original = HttpRequest.Builder.get("/foo")
@@ -271,7 +271,7 @@ public class FullHttpRequestTest {
     }
 
     @Test
-    public void requestBodyCannotBeChangedViaStreamingRequest3() throws Exception {
+    public void requestBodyCannotBeChangedViaStreamingRequest3() {
         ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
 
         HttpRequest original = HttpRequest.Builder.get("/foo")
@@ -454,7 +454,7 @@ public class FullHttpRequestTest {
     }
 
     @Test
-    public void removesCookies() throws Exception {
+    public void removesCookies() {
         FullHttpRequest request = get("/")
                 .addCookie("lang", "en_US|en-us_hotels_com")
                 .addCookie("styx_origin_hpt", "hpt1")
@@ -464,7 +464,7 @@ public class FullHttpRequestTest {
     }
 
     @Test
-    public void removesACookieSetInCookie() throws Exception {
+    public void removesACookieSetInCookie() {
         FullHttpRequest request = get("/")
                 .addCookie("lang", "en_US|en-us_hotels_com")
                 .addCookie("styx_origin_hpt", "hpt1")
@@ -474,7 +474,7 @@ public class FullHttpRequestTest {
     }
 
     @Test
-    public void shouldSetsContentLengthForNonStreamingBodyMessage() throws Exception {
+    public void shouldSetsContentLengthForNonStreamingBodyMessage() {
         assertThat(put("/home").body("").build().header(CONTENT_LENGTH), isValue("0"));
         assertThat(put("/home").body("Hello").build().header(CONTENT_LENGTH), isValue(valueOf(bytes("Hello").length)));
         assertThat(put("/home").body(bytes("Hello")).build().header(CONTENT_LENGTH), isValue(valueOf(bytes("Hello").length)));
@@ -508,14 +508,14 @@ public class FullHttpRequestTest {
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void rejectsMultipleContentLengthInSingleHeader() throws Exception {
+    public void rejectsMultipleContentLengthInSingleHeader() {
         get("/foo")
                 .addHeader(CONTENT_LENGTH, "15, 16")
                 .build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void rejectsMultipleContentLengthHeaders() throws Exception {
+    public void rejectsMultipleContentLengthHeaders() {
         get("/foo")
                 .addHeader(CONTENT_LENGTH, "15")
                 .addHeader(CONTENT_LENGTH, "16")
@@ -523,21 +523,21 @@ public class FullHttpRequestTest {
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void rejectsInvalidContentLength() throws Exception {
+    public void rejectsInvalidContentLength() {
         get("/foo")
                 .addHeader(CONTENT_LENGTH, "foo")
                 .build();
     }
 
     @Test
-    public void createARequestWithFullUrl() throws Exception {
+    public void createARequestWithFullUrl() {
         FullHttpRequest request = get("http://www.hotels.com").build();
 
         assertThat(request.url(), is(url("http://www.hotels.com").build()));
     }
 
     @Test
-    public void setsHostHeaderFromAuthorityIfSet() throws Exception {
+    public void setsHostHeaderFromAuthorityIfSet() {
         FullHttpRequest request = get("http://www.hotels.com").build();
 
         assertThat(request.header(HOST), isValue("www.hotels.com"));

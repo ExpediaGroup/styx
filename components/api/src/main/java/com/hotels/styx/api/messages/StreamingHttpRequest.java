@@ -41,13 +41,14 @@ import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
-import static com.hotels.styx.api.messages.HttpMethods.DELETE;
-import static com.hotels.styx.api.messages.HttpMethods.GET;
-import static com.hotels.styx.api.messages.HttpMethods.HEAD;
-import static com.hotels.styx.api.messages.HttpMethods.METHODS;
-import static com.hotels.styx.api.messages.HttpMethods.PATCH;
-import static com.hotels.styx.api.messages.HttpMethods.POST;
-import static com.hotels.styx.api.messages.HttpMethods.PUT;
+import static com.hotels.styx.api.messages.HttpMethod.DELETE;
+import static com.hotels.styx.api.messages.HttpMethod.GET;
+import static com.hotels.styx.api.messages.HttpMethod.HEAD;
+import static com.hotels.styx.api.messages.HttpMethod.METHODS;
+import static com.hotels.styx.api.messages.HttpMethod.PATCH;
+import static com.hotels.styx.api.messages.HttpMethod.POST;
+import static com.hotels.styx.api.messages.HttpMethod.PUT;
+import static com.hotels.styx.api.messages.HttpMethod.httpMethod;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.compositeBuffer;
@@ -67,7 +68,7 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
     // Relic of old API, kept for conversions
     private final InetSocketAddress clientAddress;
     private final HttpVersion version;
-    private final String method;
+    private final HttpMethod method;
     private final Url url;
     private final HttpHeaders headers;
     private final boolean secure;
@@ -221,7 +222,7 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
      *
      * @return the HTTP method
      */
-    public String method() {
+    public HttpMethod method() {
         return method;
     }
 
@@ -369,7 +370,7 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
         private static final InetSocketAddress LOCAL_HOST = createUnresolved("127.0.0.1", 0);
 
         private Object id;
-        private String method = HttpMethods.GET;
+        private HttpMethod method = HttpMethod.GET;
         private InetSocketAddress clientAddress = LOCAL_HOST;
         private boolean validate = true;
         private Url url;
@@ -386,7 +387,7 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
             this.cookies = new ArrayList<>();
         }
 
-        public Builder(String method, String uri) {
+        public Builder(HttpMethod method, String uri) {
             this();
             this.method = requireNonNull(method);
             this.url = Url.Builder.url(uri).build();
@@ -395,7 +396,7 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
 
         public Builder(HttpRequest request, Observable<ByteBuf> body) {
             this.id = request.id();
-            this.method = request.method().toString();
+            this.method = httpMethod(request.method().name());
             this.clientAddress = request.clientAddress();
             this.url = request.url();
             this.secure = request.isSecure();
@@ -407,7 +408,7 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
 
         Builder(HttpRequest request) {
             this.id = request.id();
-            this.method = request.method().toString();
+            this.method = httpMethod(request.method().name());
             this.clientAddress = request.clientAddress();
             this.url = request.url();
             this.secure = request.isSecure();
@@ -542,7 +543,7 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
          * @param method HTTP method
          * @return {@code this}
          */
-        public Builder method(String method) {
+        public Builder method(HttpMethod method) {
             this.method = requireNonNull(method);
             return this;
         }

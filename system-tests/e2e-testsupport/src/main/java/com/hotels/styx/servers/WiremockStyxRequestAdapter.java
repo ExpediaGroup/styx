@@ -58,7 +58,7 @@ public class WiremockStyxRequestAdapter implements Request {
 
     @Override
     public RequestMethod getMethod() {
-        return RequestMethod.fromString(styxRequest.method());
+        return RequestMethod.fromString(styxRequest.method().name());
     }
 
     @Override

@@ -18,6 +18,7 @@ package com.hotels.styx.api;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.messages.FullHttpRequest;
+import com.hotels.styx.api.messages.HttpMethod;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
@@ -39,11 +40,11 @@ import static com.hotels.styx.api.HttpRequest.Builder.post;
 import static com.hotels.styx.api.HttpRequest.Builder.put;
 import static com.hotels.styx.api.TestSupport.bodyAsString;
 import static com.hotels.styx.api.Url.Builder.url;
+import static com.hotels.styx.api.messages.HttpMethod.POST;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
 import static io.netty.handler.codec.http.HttpMethod.DELETE;
 import static io.netty.handler.codec.http.HttpMethod.GET;
-import static io.netty.handler.codec.http.HttpMethod.POST;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.multipart.HttpPostRequestDecoder.ErrorDataDecoderException;
@@ -173,7 +174,7 @@ public class HttpRequestTest {
     }
 
     @Test
-    public void decodesApplicationJsonData() throws Exception {
+    public void decodesApplicationJsonData() {
         String jsonObject = "{ \"foo\": \"bar\" }";
         HttpRequest request = post("http://example.com/")
                 .body(jsonObject)
@@ -533,7 +534,7 @@ public class HttpRequestTest {
                 .toBlocking()
                 .single();
 
-        assertThat(full.method(), is("POST"));
+        assertThat(full.method(), is(HttpMethod.POST));
         assertThat(full.isSecure(), is(true));
         assertThat(full.version(), is(HTTP_1_0));
         assertThat(full.headers(), contains(header("HeaderName", "HeaderValue")));

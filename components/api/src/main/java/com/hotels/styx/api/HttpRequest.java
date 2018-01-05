@@ -474,7 +474,7 @@ public final class HttpRequest implements HttpMessage {
             this.id = request.id();
             this.secure = request.isSecure();
             this.url = request.url();
-            this.method = HttpMethod.valueOf(request.method());
+            this.method = HttpMethod.valueOf(request.method().name());
             this.cookies = new ArrayList<>(request.cookies());
             headers(request.headers().newBuilder());
             version(request.version());
