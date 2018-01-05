@@ -24,7 +24,6 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Url;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
-import io.netty.handler.codec.http.HttpVersion;
 import rx.Observable;
 
 import java.net.InetSocketAddress;
@@ -49,10 +48,11 @@ import static com.hotels.styx.api.messages.HttpMethod.PATCH;
 import static com.hotels.styx.api.messages.HttpMethod.POST;
 import static com.hotels.styx.api.messages.HttpMethod.PUT;
 import static com.hotels.styx.api.messages.HttpMethod.httpMethod;
+import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.compositeBuffer;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.util.ReferenceCountUtil.release;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -400,7 +400,7 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
             this.clientAddress = request.clientAddress();
             this.url = request.url();
             this.secure = request.isSecure();
-            this.version = request.version();
+            this.version = httpVersion(request.version().toString());
             this.headers = request.headers().newBuilder();
             this.body = body;
             this.cookies = new ArrayList<>(request.cookies());
@@ -412,7 +412,7 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
             this.clientAddress = request.clientAddress();
             this.url = request.url();
             this.secure = request.isSecure();
-            this.version = request.version();
+            this.version = httpVersion(request.version().toString());
             this.headers = request.headers().newBuilder();
             this.body = request.body().content();
             this.cookies = new ArrayList<>(request.cookies());

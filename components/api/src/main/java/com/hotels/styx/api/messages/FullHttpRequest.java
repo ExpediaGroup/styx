@@ -22,7 +22,6 @@ import com.hotels.styx.api.HttpMessageSupport;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Url;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.HttpVersion;
 import rx.Observable;
 
 import java.net.InetSocketAddress;
@@ -47,8 +46,9 @@ import static com.hotels.styx.api.messages.HttpMethod.PATCH;
 import static com.hotels.styx.api.messages.HttpMethod.POST;
 import static com.hotels.styx.api.messages.HttpMethod.PUT;
 import static com.hotels.styx.api.messages.HttpMethod.httpMethod;
+import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static java.lang.Integer.parseInt;
 import static java.net.InetSocketAddress.createUnresolved;
 import static java.util.Objects.requireNonNull;
@@ -373,7 +373,7 @@ public class FullHttpRequest implements FullHttpMessage {
             this.clientAddress = request.clientAddress();
             this.url = request.url();
             this.secure = request.isSecure();
-            this.version = request.version();
+            this.version = httpVersion(request.version().toString());
             this.headers = request.headers().newBuilder();
             this.body = body;
             this.cookies = new ArrayList<>(request.cookies());

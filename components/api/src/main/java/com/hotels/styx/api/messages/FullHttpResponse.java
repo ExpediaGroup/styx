@@ -22,7 +22,6 @@ import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.HttpResponse;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
 import rx.Observable;
 
 import java.nio.charset.Charset;
@@ -35,8 +34,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
+import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
 import static rx.Observable.just;
@@ -220,7 +220,7 @@ public class FullHttpResponse implements FullHttpMessage {
 
         public Builder(HttpResponse response, byte[] encodedBody) {
             this.status = response.status();
-            this.version = response.version();
+            this.version = httpVersion(response.version().toString());
             this.headers = response.headers().newBuilder();
             this.body = encodedBody;
             this.cookies = new ArrayList<>(response.cookies());

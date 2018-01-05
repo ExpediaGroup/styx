@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
@@ -49,7 +50,8 @@ public final class HttpMethod {
             CONNECT
     );
 
-    private static final Map<String, HttpMethod> METHODS_BY_NAME = METHODS.stream().collect(toMap(HttpMethod::name, identity()));
+    private static final Map<String, HttpMethod> METHODS_BY_NAME =
+            METHODS.stream().collect(toMap(HttpMethod::name, identity()));
 
     private final String name;
 
@@ -58,6 +60,8 @@ public final class HttpMethod {
     }
 
     public static HttpMethod httpMethod(String name) {
+        checkArgument(METHODS_BY_NAME.containsKey(name), "No such HTTP method %s", name);
+
         return METHODS_BY_NAME.get(name);
     }
 

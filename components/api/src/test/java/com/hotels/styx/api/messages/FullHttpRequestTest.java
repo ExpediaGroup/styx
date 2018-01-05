@@ -39,11 +39,11 @@ import static com.hotels.styx.api.messages.FullHttpRequest.patch;
 import static com.hotels.styx.api.messages.HttpMethod.DELETE;
 import static com.hotels.styx.api.messages.HttpMethod.GET;
 import static com.hotels.styx.api.messages.HttpMethod.POST;
+import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_0;
+import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static java.lang.String.valueOf;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -74,7 +74,7 @@ public class FullHttpRequestTest {
         assertThat(streaming.method(), is(HttpMethod.POST));
         assertThat(streaming.url(), is(url("/foo/bar").build()));
         assertThat(streaming.isSecure(), is(true));
-        assertThat(streaming.version(), is(HTTP_1_1));
+        assertThat(streaming.version(), is(io.netty.handler.codec.http.HttpVersion.HTTP_1_1));
         assertThat(streaming.headers(), containsInAnyOrder(
                 header("Content-Length", "6"),
                 header("HeaderName", "HeaderValue")));

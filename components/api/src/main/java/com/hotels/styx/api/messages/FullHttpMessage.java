@@ -18,7 +18,6 @@ package com.hotels.styx.api.messages;
 import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.HttpMessageSupport;
-import io.netty.handler.codec.http.HttpVersion;
 
 import java.nio.charset.Charset;
 import java.util.List;

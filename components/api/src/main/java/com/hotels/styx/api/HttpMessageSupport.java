@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,20 @@ public final class HttpMessageSupport {
     }
 
     public static boolean keepAlive(HttpHeaders headers, HttpVersion version) {
+        Optional<String> connection = headers.get(CONNECTION);
+
+        if (connection.isPresent()) {
+            if (CLOSE.toString().equalsIgnoreCase(connection.get())) {
+                return false;
+            }
+            if (KEEP_ALIVE.toString().equalsIgnoreCase(connection.get())) {
+                return true;
+            }
+        }
+        return version.isKeepAliveDefault();
+    }
+
+    public static boolean keepAlive(HttpHeaders headers, com.hotels.styx.api.messages.HttpVersion version) {
         Optional<String> connection = headers.get(CONNECTION);
 
         if (connection.isPresent()) {

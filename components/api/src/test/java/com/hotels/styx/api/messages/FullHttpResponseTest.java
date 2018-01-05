@@ -28,7 +28,6 @@ import rx.observers.TestSubscriber;
 
 import java.util.Optional;
 
-import static com.google.common.net.MediaType.ANY_AUDIO_TYPE;
 import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.api.HttpCookieAttribute.domain;
 import static com.hotels.styx.api.HttpCookieAttribute.maxAge;
@@ -39,6 +38,7 @@ import static com.hotels.styx.api.HttpHeaderNames.LOCATION;
 import static com.hotels.styx.api.HttpMessageBody.utf8String;
 import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.api.messages.FullHttpRequest.get;
+import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
@@ -51,7 +51,6 @@ import static io.netty.handler.codec.http.HttpResponseStatus.NO_CONTENT;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
 import static io.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -75,7 +74,7 @@ public class FullHttpResponseTest {
         HttpResponse streaming = response.toStreamingResponse();
 
         assertThat(streaming.status(), is(CREATED));
-        assertThat(streaming.version(), is(HTTP_1_1));
+        assertThat(streaming.version(), is(io.netty.handler.codec.http.HttpVersion.HTTP_1_1));
         assertThat(streaming.headers(), containsInAnyOrder(
                 header("Content-Length", "15"),
                 header("HeaderName", "HeaderValue")));

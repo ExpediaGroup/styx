@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.HttpMessageSupport;
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.HttpVersion;
 import rx.Observable;
 
 import java.util.List;

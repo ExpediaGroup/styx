@@ -19,6 +19,7 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.messages.FullHttpRequest;
 import com.hotels.styx.api.messages.HttpMethod;
+import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
@@ -40,7 +41,6 @@ import static com.hotels.styx.api.HttpRequest.Builder.post;
 import static com.hotels.styx.api.HttpRequest.Builder.put;
 import static com.hotels.styx.api.TestSupport.bodyAsString;
 import static com.hotels.styx.api.Url.Builder.url;
-import static com.hotels.styx.api.messages.HttpMethod.POST;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
 import static io.netty.handler.codec.http.HttpMethod.DELETE;
@@ -536,7 +536,7 @@ public class HttpRequestTest {
 
         assertThat(full.method(), is(HttpMethod.POST));
         assertThat(full.isSecure(), is(true));
-        assertThat(full.version(), is(HTTP_1_0));
+        assertThat(full.version(), is(HttpVersion.HTTP_1_0));
         assertThat(full.headers(), contains(header("HeaderName", "HeaderValue")));
         assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
         assertThat(full.url().toString(), is("/foo/bar"));

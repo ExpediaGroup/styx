@@ -416,7 +416,7 @@ public final class HttpResponse implements HttpMessage {
             this.status = response.status();
             headers(response.headers().newBuilder());
             this.cookies = new ArrayList<>(response.cookies());
-            version(response.version());
+            version(HttpVersion.valueOf(response.version().toString()));
             body(body);
         }
 

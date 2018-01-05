@@ -24,7 +24,6 @@ import com.hotels.styx.api.HttpResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
 import rx.Observable;
 
 import java.util.ArrayList;
@@ -38,10 +37,11 @@ import static com.hotels.styx.api.FlowControlDisableOperator.disableFlowControl;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
+import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.compositeBuffer;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static io.netty.util.ReferenceCountUtil.release;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -229,7 +229,7 @@ public class StreamingHttpResponse implements StreamingHttpMessage {
 
         public Builder(HttpResponse response, Observable<ByteBuf> decoded) {
             this.status = response.status();
-            this.version = response.version();
+            this.version = httpVersion(response.version().toString());
             this.headers = response.headers().newBuilder();
             this.body = decoded;
             this.cookies = new ArrayList<>(response.cookies());
