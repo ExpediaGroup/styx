@@ -26,7 +26,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * A state machine for driving Finite State Machines.
  *
- * @param <S>
+ * @param <S> State type.
  */
 public class FsmEventProcessor<S> implements EventProcessor {
 
