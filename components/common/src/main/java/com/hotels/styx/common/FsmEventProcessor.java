@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,27 +21,31 @@ import org.slf4j.LoggerFactory;
 import java.util.function.BiConsumer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
- * An event processor base class for implementing custom event processors.
+ * A state machine for driving Finite State Machines.
  *
- * @param <S>
+ * @param <S> State type.
  */
-public abstract class AbstractEventProcessor<S> implements EventProcessor {
+public class FsmEventProcessor<S> implements EventProcessor {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractEventProcessor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FsmEventProcessor.class);
 
     private final BiConsumer<Throwable, S> errorHandler;
     private final StateMachine<S> stateMachine;
     private final String loggingPrefix;
 
-    public AbstractEventProcessor(StateMachine<S> stateMachine, BiConsumer<Throwable, S> errorHandler, String loggingPrefix) {
-        this.errorHandler = errorHandler;
-        this.stateMachine = stateMachine;
-        this.loggingPrefix = loggingPrefix;
+    public FsmEventProcessor(StateMachine<S> stateMachine, BiConsumer<Throwable, S> errorHandler, String loggingPrefix) {
+        this.errorHandler = requireNonNull(errorHandler);
+        this.stateMachine = requireNonNull(stateMachine);
+        this.loggingPrefix = requireNonNull(loggingPrefix);
     }
 
-    void processEvent(Object event) {
+    @Override
+    public void submit(Object event) {
+        checkNotNull(event);
+
         try {
             stateMachine.handle(event, loggingPrefix);
         } catch (Throwable cause) {
@@ -52,11 +56,4 @@ public abstract class AbstractEventProcessor<S> implements EventProcessor {
             errorHandler.accept(cause, stateMachine.currentState());
         }
     }
-
-    @Override
-    public void submit(Object event) {
-        eventSubmitted(checkNotNull(event));
-    }
-
-    abstract void eventSubmitted(Object event);
 }
