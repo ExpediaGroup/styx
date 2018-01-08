@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,7 +99,6 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             routes.put(backendService.path(), pipeline);
             LOG.info("added path={} current routes={}", backendService.path(), routes.keySet());
 
-            pipeline.registerStatusGauges();
         });
 
         changes.removed().forEach(backendService ->
@@ -133,10 +132,6 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
         public void close() {
             originsInventory.close();
-        }
-
-        public void registerStatusGauges() {
-            originsInventory.registerStatusGauges();
         }
 
         private static void handleError(HttpRequest request, Throwable throwable) {
