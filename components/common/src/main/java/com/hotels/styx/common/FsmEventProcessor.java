@@ -24,7 +24,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Objects.requireNonNull;
 
 /**
- * An event processor base class for implementing custom event processors.
+ * A state machine for driving Finite State Machines.
  *
  * @param <S>
  */
