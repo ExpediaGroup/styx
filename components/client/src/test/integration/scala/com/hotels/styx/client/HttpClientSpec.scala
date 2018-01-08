@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import io.netty.buffer.Unpooled._
 import io.netty.channel.ChannelFutureListener.CLOSE
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
-import io.netty.handler.codec.http.HttpResponseStatus._
+import com.hotels.styx.api.messages.HttpResponseStatusCodes.OK
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
@@ -104,7 +104,7 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
 
   test("Emits onError when origin responds too slowly") {
     originOneServer.stub(urlStartingWith("/"), aResponse
-      .withStatus(200)
+      .withStatus(OK)
       .withFixedDelay(3000))
 
     client.sendRequest(get("/foo/4").build()).subscribe(testSubscriber)
@@ -125,7 +125,7 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
 
   private def response200OkWithContentLengthHeader(content: String): ResponseDefinitionBuilder = {
     return aResponse
-      .withStatus(200)
+      .withStatus(OK)
       .withHeader(CONTENT_LENGTH, content.length.toString)
       .withBody(content)
   }
@@ -133,7 +133,7 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
   def response200OkFollowedFollowedByServerConnectionClose(content: String): (ChannelHandlerContext, Any) => Any = {
     (ctx: ChannelHandlerContext, msg: scala.Any) => {
       if (msg.isInstanceOf[LastHttpContent]) {
-        val response = new DefaultFullHttpResponse(HTTP_1_1, OK, copiedBuffer(content, UTF_8))
+        val response = new DefaultFullHttpResponse(HTTP_1_1, HttpResponseStatus.OK, copiedBuffer(content, UTF_8))
         ctx.writeAndFlush(response).addListener(CLOSE)
       }
     }

@@ -18,6 +18,7 @@ package com.hotels.styx.api;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
 import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.messages.HttpResponseStatusCodes;
 import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -405,17 +406,15 @@ public class HttpResponseTest {
                 .toBlocking()
                 .single();
 
-        assertThat(full.status(), is(CREATED));
         assertThat(full.version(), is(HttpVersion.HTTP_1_0));
+        assertThat(full.status(), is(HttpResponseStatusCodes.CREATED));
         assertThat(full.headers(), hasItem(header("HeaderName", "HeaderValue")));
         assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
-
-        assertThat(full.status(), is(CREATED));
         assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
     }
 
     @Test
-    public void decodesToFullHttpResponseWithEmptyBody() throws Exception {
+    public void decodesToFullHttpResponseWithEmptyBody() {
         HttpResponse request = response(CREATED)
                 .body(empty())
                 .build();
@@ -424,12 +423,12 @@ public class HttpResponseTest {
                 .toBlocking()
                 .single();
 
-        assertThat(full.status(), is(CREATED));
+        assertThat(full.status(), is(HttpResponseStatusCodes.CREATED));
         assertThat(full.bodyAs(UTF_8), is(""));
     }
 
     @Test
-    public void decodingToFullHttpResponseDefaultsToUTF8() throws Exception {
+    public void decodingToFullHttpResponseDefaultsToUTF8() {
         HttpResponse request = response(CREATED)
                 .body(stream("foo", "bar", "baz"))
                 .build();
@@ -438,7 +437,7 @@ public class HttpResponseTest {
                 .toBlocking()
                 .single();
 
-        assertThat(full.status(), is(CREATED));
+        assertThat(full.status(), is(HttpResponseStatusCodes.CREATED));
         assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
     }
 

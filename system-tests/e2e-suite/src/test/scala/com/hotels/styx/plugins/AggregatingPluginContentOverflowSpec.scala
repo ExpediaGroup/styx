@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpRequest.Builder._
 import com.hotels.styx.api.HttpResponse.Builder._
+import com.hotels.styx.api.messages.HttpResponseStatusCodes.BAD_GATEWAY
 import com.hotels.styx.api.support.HostAndPorts._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{MockServer, StyxProxySpec}
@@ -81,7 +82,7 @@ class AggregatingPluginContentOverflowSpec extends FunSpec
         .build()
       val resp = decodedRequest(request)
 
-      assert(resp.status().code() == 502)
+      assert(resp.status() == BAD_GATEWAY)
 
       eventually(timeout(3 seconds)) {
         val metrics = styxServer.metricsSnapshot

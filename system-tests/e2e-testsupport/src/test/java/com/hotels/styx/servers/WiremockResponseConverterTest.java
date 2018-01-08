@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,9 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.github.tomakehurst.wiremock.http.HttpHeader.httpHeader;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.CREATED;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
 import static com.hotels.styx.servers.WiremockResponseConverter.toStyxResponse;
-import static io.netty.handler.codec.http.HttpResponseStatus.CREATED;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;

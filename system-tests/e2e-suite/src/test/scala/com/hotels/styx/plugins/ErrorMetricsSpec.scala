@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,7 @@ class ErrorMetricsSpec extends FunSpec
 
         val response = decodedRequest(request)
 
-        assert(response.status().code() == 200)
+        assert(response.status() == 200)
       }
 
       Thread.sleep(1000)
@@ -119,7 +119,7 @@ class ErrorMetricsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status().code() == 500)
+      assert(response.status() == 500)
 
       eventually(timeout(1.second)) {
         assert(pluginInternalServerErrorMetric("generateErrorStatusPlugin") == 1)
@@ -142,7 +142,7 @@ class ErrorMetricsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status().code() == 500)
+      assert(response.status() == 500)
 
       eventually(timeout(1.second)) {
         assert(pluginInternalServerErrorMetric("mapToErrorStatusPlugin") == 1)
@@ -164,7 +164,7 @@ class ErrorMetricsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status().code() == 500)
+      assert(response.status() == 500)
 
       eventually(timeout(1.second)) {
         assert(originErrorMetric == 1)
@@ -189,7 +189,7 @@ class ErrorMetricsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status().code() == 502)
+      assert(response.status() == 502)
 
       sleep(1000)
 
@@ -206,7 +206,7 @@ class ErrorMetricsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status().code() == 502)
+      assert(response.status() == 502)
 
       sleep(1000)
 
@@ -223,7 +223,7 @@ class ErrorMetricsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status().code() == 500)
+      assert(response.status() == 500)
 
       eventually(timeout(1.second)) {
         assert(pluginExceptionMetric("throwExceptionPlugin") == 1)
@@ -248,7 +248,7 @@ class ErrorMetricsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status().code() == 500)
+      assert(response.status() == 500)
 
       eventually(timeout(1.second)) {
         assert(pluginExceptionMetric("mapToExceptionPlugin") == 1)

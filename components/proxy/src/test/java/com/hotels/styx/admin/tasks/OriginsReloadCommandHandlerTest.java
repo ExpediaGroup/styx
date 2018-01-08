@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,13 @@ import org.testng.annotations.Test;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.BAD_REQUEST;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
 import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
 import static com.hotels.styx.infrastructure.Registry.ReloadResult.unchanged;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;

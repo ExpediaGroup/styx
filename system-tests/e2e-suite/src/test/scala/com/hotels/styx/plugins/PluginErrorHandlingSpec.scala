@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Optional
 import com.hotels.styx._
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api._
+import com.hotels.styx.api.messages.HttpResponseStatusCodes.INTERNAL_SERVER_ERROR
 import com.hotels.styx.support.ImplicitScalaRxConversions.toJavaObservable
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -64,7 +65,7 @@ class PluginErrorHandlingSpec extends FunSpec
         .header("Fail_before_handle", "true")
         .build()
       val resp = decodedRequest(request)
-      assert(resp.status().code() == 500)
+      assert(resp.status() == INTERNAL_SERVER_ERROR)
     }
 
     it("Catches exceptions from plugins handling responses, and maps them to INTERNAL_SERVER_ERRORs") {
@@ -74,7 +75,7 @@ class PluginErrorHandlingSpec extends FunSpec
           .body("foo")
           .build()
         val resp = decodedRequest(request)
-        assert(resp.status().code() == 500)
+        assert(resp.status() == INTERNAL_SERVER_ERROR)
       }
     }
 
@@ -84,7 +85,7 @@ class PluginErrorHandlingSpec extends FunSpec
           .header("Fail_after_content", "true")
           .build()
         val resp = decodedRequest(request)
-        assert(resp.status().code() == 500)
+        assert(resp.status() == INTERNAL_SERVER_ERROR)
       }
     }
 
@@ -94,7 +95,7 @@ class PluginErrorHandlingSpec extends FunSpec
           .header("Fail_during_decoder", "true")
           .build()
         val resp = decodedRequest(request)
-        assert(resp.status().code() == 500)
+        assert(resp.status() == INTERNAL_SERVER_ERROR)
       }
     }
 

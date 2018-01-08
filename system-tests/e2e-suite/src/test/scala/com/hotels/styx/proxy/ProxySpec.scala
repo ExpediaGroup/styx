@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.HttpResponse.Builder.response
+import com.hotels.styx.api.messages.HttpResponseStatusCodes._
 import com.hotels.styx.api.messages.FullHttpResponse
 import com.hotels.styx.api.support.HostAndPorts._
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
@@ -34,7 +35,6 @@ import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpMethod._
-import io.netty.handler.codec.http.HttpResponseStatus._
 import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import org.hamcrest.MatcherAssert.assertThat
 import org.scalatest.{BeforeAndAfter, FunSpec}
@@ -97,7 +97,7 @@ class ProxySpec extends FunSpec
         "/http10" -> HttpBackend("http10", Origins(mockServer))
       )
 
-      mockServer.stub("/http10", responseSupplier(() => response(OK).build()))
+      mockServer.stub("/http10", responseSupplier(() => response().build()))
 
 
       val req = new HttpRequest.Builder(GET, "/http10")

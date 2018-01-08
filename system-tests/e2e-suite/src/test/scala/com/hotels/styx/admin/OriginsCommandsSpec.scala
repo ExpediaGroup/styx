@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 package com.hotels.styx.admin
 
 import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets.UTF_8
 
-import _root_.io.netty.handler.codec.http.HttpResponseStatus.{BAD_GATEWAY, METHOD_NOT_ALLOWED}
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.google.common.net.HttpHeaders.CONTENT_LENGTH
 import com.hotels.styx.api._
 import com.hotels.styx.api.messages.FullHttpResponse
+import com.hotels.styx.api.messages.HttpResponseStatusCodes.{BAD_GATEWAY, METHOD_NOT_ALLOWED}
 import com.hotels.styx.support.backends.FakeHttpServer.HttpStartupConfig
 import com.hotels.styx.support.configuration.{HealthCheckConfig, HttpBackend, Origins}
 import com.hotels.styx.support.server.FakeHttpServer
@@ -31,7 +32,6 @@ import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
-import java.nio.charset.StandardCharsets.UTF_8
 
 import scala.concurrent.duration._
 

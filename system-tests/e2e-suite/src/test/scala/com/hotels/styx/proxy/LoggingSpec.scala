@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
-import io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR
+import com.hotels.styx.api.messages.HttpResponseStatusCodes.INTERNAL_SERVER_ERROR
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
 import org.scalatest.FunSpec
@@ -71,7 +71,7 @@ class LoggingSpec extends FunSpec
 
     val request = get(s"http://localhost:${mockServer.port()}/foobar").build()
     val resp = decodedRequest(request)
-    resp.status().code() should be (200)
+    resp.status() should be (200)
     resp.bodyAs(UTF_8) should be ("I should be here!")
   }
 

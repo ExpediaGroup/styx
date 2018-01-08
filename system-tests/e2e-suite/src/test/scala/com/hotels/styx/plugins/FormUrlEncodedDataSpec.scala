@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.StyxProxySpec
 import com.hotels.styx.api.HttpRequest.Builder._
+import com.hotels.styx.api.messages.HttpResponseStatusCodes.OK
 import com.hotels.styx.support.configuration.StyxConfig
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
@@ -42,7 +43,7 @@ class FormUrlEncodedDataSpec extends FunSpec with StyxProxySpec with Eventually 
         .addHeader("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
         .build()
       val resp = decodedRequest(request)
-      assert(resp.status().code() == 200)
+      assert(resp.status() == OK)
       assert(resp.bodyAs(UTF_8) == "version: 54.0")
     }
 
@@ -52,7 +53,7 @@ class FormUrlEncodedDataSpec extends FunSpec with StyxProxySpec with Eventually 
         .addHeader("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
         .build()
       val resp = decodedRequest(request)
-      assert(resp.status().code() == 200)
+      assert(resp.status() == OK)
       assert(resp.bodyAs(UTF_8) == "app: bar\nversion: 54.0")
     }
   }

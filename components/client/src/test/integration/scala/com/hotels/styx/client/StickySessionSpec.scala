@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hotels.styx.api.{HttpRequest}
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.client.stickysession.StickySessionConfig
-import io.netty.handler.codec.http.HttpResponseStatus._
+import com.hotels.styx.api.messages.HttpResponseStatusCodes.OK
 import org.scalatest.{BeforeAndAfter, FunSuite, ShouldMatchers}
 
 import scala.collection.JavaConverters._

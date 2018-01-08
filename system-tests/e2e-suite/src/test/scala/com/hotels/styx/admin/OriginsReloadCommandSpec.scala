@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,11 @@ import java.nio.file.{Files, Paths}
 
 import com.google.common.io.Files.createTempDir
 import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.messages.HttpResponseStatusCodes.BAD_REQUEST
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry
 import com.hotels.styx.support.ResourcePaths.fixturesHome
-import com.hotels.styx.support.configuration.{BackendService, ConnectionPoolSettings, HealthCheckConfig, Origin, Origins, StyxConfig}
+import com.hotels.styx.support.configuration._
 import com.hotels.styx.{StyxClientSupplier, StyxServer, StyxServerSupport}
-import io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, FunSpec, ShouldMatchers}
 

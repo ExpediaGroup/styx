@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,17 @@
  */
 package com.hotels.styx.proxy
 
+import _root_.com.hotels.styx.api.messages.HttpResponseStatusCodes._
 import _root_.io.netty.handler.codec.http.HttpHeaders.Names.{UPGRADE, _}
 import _root_.io.netty.handler.codec.http.HttpHeaders.Values._
 import _root_.io.netty.handler.codec.http.HttpMethod._
-import _root_.io.netty.handler.codec.http.HttpResponseStatus._
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import com.hotels.styx.api.HttpCookieAttribute.{domain, httpOnly, path}
 import com.hotels.styx.api._
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
+import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import org.scalatest.FunSpec
 
 import scala.collection.JavaConversions._
@@ -229,7 +229,7 @@ class HeadersSpec extends FunSpec
 
       it("should removes hop by hop headers from response.") {
         recordingBackend.stub(urlPathEqualTo("/headers"), aResponse
-          .withStatus(OK.code())
+          .withStatus(OK)
           .withHeader("Keep-Alive", "foo")
           .withHeader(PROXY_AUTHENTICATE, "foo")
           .withHeader(PROXY_AUTHORIZATION, "foo")
@@ -283,7 +283,7 @@ class HeadersSpec extends FunSpec
 
       it("should remove all fields from response indicated by Connection header value") {
         recordingBackend.stub(urlPathEqualTo("/headers"), aResponse()
-          .withStatus(OK.code())
+          .withStatus(OK)
           .withHeader("Keep-Alive", "foo")
           .withHeader(PROXY_AUTHENTICATE, "foo")
           .withHeader(PROXY_AUTHORIZATION, "foo")

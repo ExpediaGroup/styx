@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,12 +40,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.testapi.Origins.origin;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -56,7 +57,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static rx.Observable.just;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class StyxServerTest {
     private final HttpClient client = new SimpleNettyHttpClient.Builder()
@@ -88,18 +88,18 @@ public class StyxServerTest {
         configureFor(originServer1.port());
         stubFor(WireMock.get(urlPathEqualTo("/")).willReturn(aResponse()
                 .withHeader("origin", "first")
-                .withStatus(OK.code())));
+                .withStatus(OK)));
 
         configureFor(originServer2.port());
         stubFor(WireMock.get(urlPathEqualTo("/")).willReturn(aResponse()
                 .withHeader("origin", "second")
-                .withStatus(OK.code())));
+                .withStatus(OK)));
 
         // HTTP port is still used to identify the WireMockServer, even when we are using it for HTTPS
         configureFor(secureOriginServer.port());
         stubFor(WireMock.get(urlPathEqualTo("/")).willReturn(aResponse()
                 .withHeader("origin", "secure")
-                .withStatus(OK.code())));
+                .withStatus(OK)));
     }
 
     @AfterMethod
@@ -249,8 +249,8 @@ public class StyxServerTest {
     @Test
     public void addsEndpointLinksToPluginPage() {
         setUpStyxAndPluginWithAdminPages(ImmutableMap.of(
-                "adminPage1", request -> just(response(OK).header("AdminPage1", "yes").build()),
-                "adminPage2", request -> just(response(OK).header("AdminPage2", "yes").build())
+                "adminPage1", request -> just(response().build()),
+                "adminPage2", request -> just(response().build())
         ));
 
         FullHttpResponse response = doAdminRequest("/admin/plugins/plugin-with-admin-pages");
@@ -263,8 +263,8 @@ public class StyxServerTest {
     @Test
     public void exposesAdminEndpoints() {
         setUpStyxAndPluginWithAdminPages(ImmutableMap.of(
-                "adminPage1", request -> just(response(OK).header("AdminPage1", "yes").build()),
-                "adminPage2", request -> just(response(OK).header("AdminPage2", "yes").build())
+                "adminPage1", request -> just(response().header("AdminPage1", "yes").build()),
+                "adminPage2", request -> just(response().header("AdminPage2", "yes").build())
         ));
 
         FullHttpResponse response = doAdminRequest("/admin/plugins/plugin-with-admin-pages/adminPage1");

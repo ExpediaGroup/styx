@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import io.netty.handler.codec.http.HttpHeaders.Names.HOST
 import io.netty.handler.codec.http.HttpMethod.GET
 import org.hamcrest.MatcherAssert.assertThat
 import org.scalatest.{BeforeAndAfter, FunSpec}
-import io.netty.handler.codec.http.HttpResponseStatus._
+import com.hotels.styx.api.messages.HttpResponseStatusCodes._
 import org.hamcrest.Matchers.is
 
 /**

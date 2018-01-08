@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hotels.styx.proxy.https
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_PROTO
 import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.messages.HttpResponseStatusCodes.OK
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -25,7 +26,6 @@ import com.hotels.styx.support.configuration._
 import com.hotels.styx.{SSLSetup, StyxClientSupplier, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpMethod._
-import io.netty.handler.codec.http.HttpResponseStatus.OK
 import org.scalatest.{FunSpec, ShouldMatchers}
 
 class HttpsSpec extends FunSpec

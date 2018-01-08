@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,19 @@ package com.hotels.styx.proxy
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.api.HttpHeaderNames._
 import com.hotels.styx.api.messages.FullHttpResponse
+import com.hotels.styx.api.messages.HttpResponseStatusCodes._
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.TestClientSupport
+import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig, StyxConfig}
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled.copiedBuffer
 import io.netty.handler.codec.http.HttpMethod._
-import io.netty.handler.codec.http.HttpResponseStatus._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 import rx.Observable

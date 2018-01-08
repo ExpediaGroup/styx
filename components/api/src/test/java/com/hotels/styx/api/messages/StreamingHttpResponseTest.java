@@ -19,7 +19,6 @@ import com.google.common.collect.Iterables;
 import com.hotels.styx.api.HttpCookie;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import rx.Observable;
@@ -34,19 +33,19 @@ import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.LOCATION;
 import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.BAD_GATEWAY;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.BAD_REQUEST;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.CREATED;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.GATEWAY_TIMEOUT;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.MOVED_PERMANENTLY;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.MULTIPLE_CHOICES;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.NO_CONTENT;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.SEE_OTHER;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.TEMPORARY_REDIRECT;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static io.netty.handler.codec.http.HttpResponseStatus.CREATED;
-import static io.netty.handler.codec.http.HttpResponseStatus.GATEWAY_TIMEOUT;
-import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
-import static io.netty.handler.codec.http.HttpResponseStatus.MULTIPLE_CHOICES;
-import static io.netty.handler.codec.http.HttpResponseStatus.NO_CONTENT;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
-import static io.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -253,7 +252,7 @@ public class StreamingHttpResponseTest {
     }
 
     @Test(dataProvider = "responses")
-    public void shouldCheckIfCurrentResponseIsARedirectToOtherResource(HttpResponseStatus status, boolean isRedirect) {
+    public void shouldCheckIfCurrentResponseIsARedirectToOtherResource(int status, boolean isRedirect) {
         assertThat(response(status).build().isRedirect(), is(isRedirect));
     }
 
@@ -289,7 +288,7 @@ public class StreamingHttpResponseTest {
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void rejectsMultipleContentLengthInSingleHeader() throws Exception {
+    public void rejectsMultipleContentLengthInSingleHeader() {
         response()
                 .addHeader(CONTENT_LENGTH, "15, 16")
                 .ensureContentLengthIsValid()
@@ -297,7 +296,7 @@ public class StreamingHttpResponseTest {
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void rejectsMultipleContentLength() throws Exception {
+    public void rejectsMultipleContentLength() {
         response()
                 .addHeader(CONTENT_LENGTH, "15")
                 .addHeader(CONTENT_LENGTH, "16")
@@ -317,7 +316,7 @@ public class StreamingHttpResponseTest {
         return StreamingHttpResponse.response();
     }
 
-    private static StreamingHttpResponse.Builder response(HttpResponseStatus status) {
+    private static StreamingHttpResponse.Builder response(int status) {
         return StreamingHttpResponse.response(status);
     }
 

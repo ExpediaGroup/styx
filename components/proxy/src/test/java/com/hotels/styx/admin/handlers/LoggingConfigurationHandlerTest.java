@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@ import java.io.IOException;
 
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class LoggingConfigurationHandlerTest {
     @Test

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hotels.styx.client
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
 import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.messages.HttpResponseStatusCodes._
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
@@ -124,7 +125,7 @@ class TlsVersionSpec extends FunSpec
 
     it("Proxies to TLSv1.1 origin when TLSv1.1 support enabled.") {
       val response1 = decodedRequest(httpRequest("/tls11/a"))
-      assert(response1.status().code() == 200)
+      assert(response1.status() == OK)
       assert(response1.bodyAs(UTF_8) == "Hello, World!")
 
       appOriginTlsv11.verify(
@@ -133,7 +134,7 @@ class TlsVersionSpec extends FunSpec
           .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")))
 
       val response2 = decodedRequest(httpRequest("/tlsDefault/a2"))
-      assert(response2.status().code() == 200)
+      assert(response2.status() == OK)
       assert(response2.bodyAs(UTF_8) == "Hello, World!")
 
       appOriginTlsDefault.verify(
@@ -144,7 +145,7 @@ class TlsVersionSpec extends FunSpec
 
     it("Proxies to TLSv1.2 origin when TLSv1.2 support is enabled.") {
       val response1 = decodedRequest(httpRequest("/tlsDefault/b1"))
-      assert(response1.status().code() == 200)
+      assert(response1.status() == OK)
       assert(response1.bodyAs(UTF_8) == "Hello, World!")
 
       appOriginTlsDefault.verify(
@@ -153,7 +154,7 @@ class TlsVersionSpec extends FunSpec
 
 
       val response = decodedRequest(httpRequest("/tls12/b2"))
-      assert(response.status().code() == 200)
+      assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")
 
       appOriginTlsv12.verify(
@@ -164,7 +165,7 @@ class TlsVersionSpec extends FunSpec
     it("Refuses to connect to TLSv1.1 origin when TLSv1.1 is disabled") {
       val response = decodedRequest(httpRequest("/tls11-to-tls12/c"))
 
-      assert(response.status().code() == 502)
+      assert(response.status() == BAD_GATEWAY)
       assert(response.bodyAs(UTF_8) == "Site temporarily unavailable.")
 
       appOriginTlsv12B.verify(0, getRequestedFor(urlEqualTo("/tls11-to-tls12/c")))
@@ -172,7 +173,7 @@ class TlsVersionSpec extends FunSpec
   }
 
   def originResponse(appId: String) = aResponse
-    .withStatus(200)
+    .withStatus(OK)
     .withHeader(STUB_ORIGIN_INFO.toString, appId)
     .withBody("Hello, World!")
 

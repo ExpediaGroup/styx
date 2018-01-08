@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ class AggregatingPluginSpec extends FunSpec
       val request = get(styxServer.routerURL("/")).build()
       val resp = decodedRequest(request)
 
-      assert(resp.status().code() == 200)
+      assert(resp.status() == 200)
       assert(resp.header("test_plugin").get() == "yes")
       assert(resp.header("bytes_aggregated").get() == "0")
       assert(resp.bodyAs(UTF_8) == "")
@@ -71,7 +71,7 @@ class AggregatingPluginSpec extends FunSpec
       val request = get(styxServer.routerURL("/body")).build()
       val resp = decodedRequest(request)
 
-      assert(resp.status().code() == 200)
+      assert(resp.status() == 200)
       assert(resp.header("test_plugin").get() == "yes")
       assert(resp.header("bytes_aggregated").get() == "2500")
       assert(resp.bodyAs(UTF_8) == chunkString("a") + chunkString("b") + chunkString("c") + chunkString("d") + chunkString("e"))

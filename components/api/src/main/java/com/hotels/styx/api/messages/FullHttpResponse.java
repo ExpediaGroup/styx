@@ -21,7 +21,6 @@ import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.HttpResponse;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import rx.Observable;
 
 import java.nio.charset.Charset;
@@ -34,9 +33,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
-import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
 import static rx.Observable.just;
@@ -46,7 +45,7 @@ import static rx.Observable.just;
  */
 public class FullHttpResponse implements FullHttpMessage {
     private final HttpVersion version;
-    private final HttpResponseStatus status;
+    private final int status;
     private final HttpHeaders headers;
     private final byte[] body;
     private final List<HttpCookie> cookies;
@@ -74,7 +73,7 @@ public class FullHttpResponse implements FullHttpMessage {
      * @param status response status
      * @return a new builder
      */
-    public static Builder response(HttpResponseStatus status) {
+    public static Builder response(int status) {
         return new Builder(status);
     }
 
@@ -134,12 +133,12 @@ public class FullHttpResponse implements FullHttpMessage {
         return new Builder(this);
     }
 
-    public HttpResponseStatus status() {
+    public int status() {
         return status;
     }
 
     public boolean isRedirect() {
-        return status().code() >= 300 && status().code() < 400;
+        return status() >= 300 && status() < 400;
     }
 
     /**
@@ -192,7 +191,7 @@ public class FullHttpResponse implements FullHttpMessage {
      * Builder.
      */
     public static final class Builder {
-        private HttpResponseStatus status = OK;
+        private int status = OK;
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
         private boolean validate = true;
@@ -205,7 +204,7 @@ public class FullHttpResponse implements FullHttpMessage {
             this.cookies = new ArrayList<>();
         }
 
-        public Builder(HttpResponseStatus status) {
+        public Builder(int status) {
             this();
             this.status = status;
         }
@@ -219,7 +218,7 @@ public class FullHttpResponse implements FullHttpMessage {
         }
 
         public Builder(HttpResponse response, byte[] encodedBody) {
-            this.status = response.status();
+            this.status = response.status().code();
             this.version = httpVersion(response.version().toString());
             this.headers = response.headers().newBuilder();
             this.body = encodedBody;
@@ -240,8 +239,8 @@ public class FullHttpResponse implements FullHttpMessage {
          * @param status response status
          * @return {@code this}
          */
-        public Builder status(HttpResponseStatus status) {
-            this.status = requireNonNull(status);
+        public Builder status(int status) {
+            this.status = status;
             return this;
         }
 

@@ -23,7 +23,6 @@ import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.HttpResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import rx.Observable;
 
 import java.util.ArrayList;
@@ -37,11 +36,11 @@ import static com.hotels.styx.api.FlowControlDisableOperator.disableFlowControl;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
+import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.compositeBuffer;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static io.netty.util.ReferenceCountUtil.release;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -52,7 +51,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class StreamingHttpResponse implements StreamingHttpMessage {
     private final HttpVersion version;
-    private final HttpResponseStatus status;
+    private final int status;
     private final HttpHeaders headers;
     private final Observable<ByteBuf> body;
     private final List<HttpCookie> cookies;
@@ -80,7 +79,7 @@ public class StreamingHttpResponse implements StreamingHttpMessage {
      * @param status response status
      * @return a new builder
      */
-    public static Builder response(HttpResponseStatus status) {
+    public static Builder response(int status) {
         return new Builder(status);
     }
 
@@ -91,7 +90,7 @@ public class StreamingHttpResponse implements StreamingHttpMessage {
      * @param body response body
      * @return a new builder
      */
-    public static Builder response(HttpResponseStatus status, Observable<ByteBuf> body) {
+    public static Builder response(int status, Observable<ByteBuf> body) {
         return new Builder(status).body(body);
     }
 
@@ -129,15 +128,15 @@ public class StreamingHttpResponse implements StreamingHttpMessage {
         return new Builder(this);
     }
 
-    public HttpResponseStatus status() {
+    public int status() {
         return status;
     }
 
     public boolean isRedirect() {
-        return status().code() >= 300 && status().code() < 400;
+        return status >= 300 && status < 400;
     }
 
-    public <T> Observable<FullHttpResponse> toFullHttpResponse(int maxContentBytes) {
+    public Observable<FullHttpResponse> toFullHttpResponse(int maxContentBytes) {
         CompositeByteBuf byteBufs = compositeBuffer();
 
         return body
@@ -201,7 +200,7 @@ public class StreamingHttpResponse implements StreamingHttpMessage {
      * Builder.
      */
     public static final class Builder {
-        private HttpResponseStatus status = OK;
+        private int status = OK;
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
         private boolean validate = true;
@@ -214,7 +213,7 @@ public class StreamingHttpResponse implements StreamingHttpMessage {
             this.cookies = new ArrayList<>();
         }
 
-        public Builder(HttpResponseStatus status) {
+        public Builder(int status) {
             this();
             this.status = status;
         }
@@ -228,7 +227,7 @@ public class StreamingHttpResponse implements StreamingHttpMessage {
         }
 
         public Builder(HttpResponse response, Observable<ByteBuf> decoded) {
-            this.status = response.status();
+            this.status = response.status().code();
             this.version = httpVersion(response.version().toString());
             this.headers = response.headers().newBuilder();
             this.body = decoded;
@@ -241,8 +240,8 @@ public class StreamingHttpResponse implements StreamingHttpMessage {
          * @param status response status
          * @return {@code this}
          */
-        public Builder status(HttpResponseStatus status) {
-            this.status = requireNonNull(status);
+        public Builder status(int status) {
+            this.status = status;
             return this;
         }
 

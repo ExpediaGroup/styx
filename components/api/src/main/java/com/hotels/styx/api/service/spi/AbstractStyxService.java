@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,13 @@ import java.util.function.Function;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
 import static com.hotels.styx.api.messages.FullHttpResponse.response;
+import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.CREATED;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.FAILED;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.RUNNING;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.STARTING;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.STOPPED;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.STOPPING;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
