@@ -66,7 +66,7 @@ class RouteHandlerFactorySpec extends FunSpec with ShouldMatchers with MockitoSu
     handler should be (aHandlerInstance)
   }
 
-  it ("Throws exception when ") {
+  it ("Throws exception when it refers a non-existent object") {
     val routeFactory = new RouteHandlerFactory(Map.empty[String, HttpHandlerFactory].asJava, handlers)
 
     val e = intercept[IllegalArgumentException] {

@@ -1,23 +1,22 @@
 /**
-  * Copyright (C) 2013-2018 Expedia Inc.
-  *
-  * Licensed under the Apache License, Version 2.0 (the "License");
-  * you may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at
-  *
-  * http://www.apache.org/licenses/LICENSE-2.0
-  *
-  * Unless required by applicable law or agreed to in writing, software
-  * distributed under the License is distributed on an "AS IS" BASIS,
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  */
+ * Copyright (C) 2013-2018 Expedia Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.hotels.styx.routing.handlers
 
-import com.hotels.styx.api.{HttpHandler2, HttpRequest}
-import com.hotels.styx.api.HttpResponse.Builder
 import com.hotels.styx.api.HttpResponse.Builder.response
+import com.hotels.styx.api.{HttpHandler2, HttpRequest}
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.HttpHandlerAdapter
 import com.hotels.styx.routing.config.{HttpHandlerFactory, RouteHandlerConfig, RouteHandlerDefinition, RouteHandlerFactory}
@@ -26,7 +25,7 @@ import org.mockito.Matchers.{any, eq => meq}
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, ShouldMatchers}
-import rx.lang.scala.Observable
+import rx.lang.scala.Observable.just
 
 import scala.collection.JavaConversions._
 
@@ -93,25 +92,25 @@ class ConditionRouterConfigSpec extends FunSpec with ShouldMatchers with Mockito
     val routeHandlerFactory = new RouteHandlerFactory(
       Map[String, HttpHandlerFactory](),
       Map(
-      "secureHandler" -> new HttpHandlerAdapter(_ => Observable.just(Builder.response(OK).header("source", "secure").build())),
-      "fallbackHandler" -> new HttpHandlerAdapter(_ => Observable.just(Builder.response(OK).header("source", "fallback").build()))
+      "secureHandler" -> new HttpHandlerAdapter(_ => just(response(OK).header("source", "secure").build())),
+      "fallbackHandler" -> new HttpHandlerAdapter(_ => just(response(OK).header("source", "fallback").build()))
     ))
 
     val router = new ConditionRouter.ConfigFactory().build(List(), routeHandlerFactory, configWithReferences)
 
-    val response = router.handle(httpRequest, null)
+    val resp = router.handle(httpRequest, null)
       .toBlocking
       .first()
 
-    response.header("source").get() should be("fallback")
+    resp.header("source").get() should be("fallback")
   }
 
   it("Route destination can be specified as a handler reference") {
     val routeHandlerFactory = new RouteHandlerFactory(
       Map[String, HttpHandlerFactory](),
       Map(
-        "secureHandler" -> new HttpHandlerAdapter(_ => Observable.just(Builder.response(OK).header("source", "secure").build())),
-        "fallbackHandler" -> new HttpHandlerAdapter(_ => Observable.just(Builder.response(OK).header("source", "fallback").build()))
+        "secureHandler" -> new HttpHandlerAdapter(_ => just(response(OK).header("source", "secure").build())),
+        "fallbackHandler" -> new HttpHandlerAdapter(_ => just(response(OK).header("source", "fallback").build()))
       ))
 
     val router = new ConditionRouter.ConfigFactory().build(
@@ -120,11 +119,11 @@ class ConditionRouterConfigSpec extends FunSpec with ShouldMatchers with Mockito
       configWithReferences
       )
 
-    val response = router.handle(httpsRequest, null)
+    val resp = router.handle(httpsRequest, null)
       .toBlocking
       .first()
 
-    response.header("source").get() should be("secure")
+    resp.header("source").get() should be("secure")
   }
 
 
@@ -167,11 +166,11 @@ class ConditionRouterConfigSpec extends FunSpec with ShouldMatchers with Mockito
         |""".stripMargin)
 
     val router = new ConditionRouter.ConfigFactory().build(List(), routeHandlerFactory, config)
-    val response = router.handle(httpRequest, null)
+    val resp = router.handle(httpRequest, null)
       .toBlocking
       .first()
 
-    response.status() should be(BAD_GATEWAY)
+    resp.status() should be(BAD_GATEWAY)
   }
 
   it("Indicates the condition when fails to compile an DSL expression due to Syntax Error") {
@@ -252,7 +251,7 @@ class ConditionRouterConfigSpec extends FunSpec with ShouldMatchers with Mockito
 
     val builtinsFactory = mock[RouteHandlerFactory]
     when(builtinsFactory.build(any[java.util.List[String]], any[RouteHandlerConfig]))
-      .thenReturn(new HttpHandlerAdapter(_ => Observable.just(response(OK).build())))
+      .thenReturn(new HttpHandlerAdapter(_ => just(response(OK).build())))
 
     val router = new ConditionRouter.ConfigFactory().build(List("config", "config"), builtinsFactory, config)
 
