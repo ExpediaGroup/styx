@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,12 +47,6 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
         RetryPolicy retryPolicy = loadService(environment.configuration(), environment, "retrypolicy.policy.factory", RetryPolicy.class)
                 .orElseGet(() -> defaultRetryPolicy(environment));
 
-        boolean requestLoggingEnabled = environment.styxConfig().get("request-logging.outbound.enabled", Boolean.class)
-                .orElse(false);
-
-        boolean longFormat = environment.styxConfig().get("request-logging.outbound.longFormat", Boolean.class)
-                .orElse(false);
-
         LoadBalancingStrategy loadBalancingStrategy = loadService(environment.configuration(),
                 environment, "loadBalancing.strategy.factory", LoadBalancingStrategy.class, originsInventory)
                 .orElseGet(() -> new RoundRobinStrategy(originsInventory));
@@ -65,11 +59,8 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
                 .originRestrictionCookie(environment.configuration().get("originRestrictionCookie").orElse(null))
                 .metricsRegistry(environment.metricRegistry())
                 .retryPolicy(retryPolicy)
-                .flowControlEnabled(true)
                 .enableContentValidation()
                 .rewriteRules(backendService.rewrites())
-                .requestLoggingEnabled(requestLoggingEnabled)
-                .longFormat(longFormat)
                 .originsInventory(originsInventory)
                 .build();
     }

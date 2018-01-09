@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,14 +79,28 @@ public class ProxyToBackend implements HttpHandler2 {
 
             int clientWorkerThreadsCount = environment.styxConfig().proxyServerConfig().clientWorkerThreadsCount();
 
+            boolean requestLoggingEnabled = environment.styxConfig().get("request-logging.outbound.enabled", Boolean.class)
+                    .orElse(false);
+
+            boolean longFormat = environment.styxConfig().get("request-logging.outbound.longFormat", Boolean.class)
+                    .orElse(false);
+
+            NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
+                    .name("Styx")
+                    .clientWorkerThreadsCount(clientWorkerThreadsCount)
+                    .tlsSettings(backendService.tlsSettings().orElse(null))
+                    .flowControlEnabled(true)
+                    .metricRegistry(environment.metricRegistry())
+                    .responseTimeoutMillis(backendService.responseTimeoutMillis())
+                    .requestLoggingEnabled(requestLoggingEnabled)
+                    .longFormat(longFormat)
+                    .build();
+
             OriginsInventory inventory = new OriginsInventory.Builder(backendService)
                     .version(environment.buildInfo().releaseVersion())
                     .eventBus(environment.eventBus())
                     .metricsRegistry(environment.metricRegistry())
-                    .connectionFactory(new NettyConnectionFactory.Builder()
-                            .name("Styx")
-                            .clientWorkerThreadsCount(clientWorkerThreadsCount)
-                            .tlsSettings(backendService.tlsSettings().orElse(null)).build())
+                    .connectionFactory(connectionFactory)
                     .build();
             return new ProxyToBackend(clientFactory.createClient(backendService, inventory));
         }

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     private static final Logger LOG = getLogger(BackendServicesRouter.class);
 
     private final BackendServiceClientFactory clientFactory;
-    private Environment environment;
+    private final Environment environment;
     private final ConcurrentMap<String, ProxyToClientPipeline> routes;
     private final int clientWorkerThreadsCount;
 
@@ -83,15 +83,29 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                 pipeline.close();
             }
 
+            boolean requestLoggingEnabled = environment.styxConfig().get("request-logging.outbound.enabled", Boolean.class)
+                    .orElse(false);
+
+            boolean longFormat = environment.styxConfig().get("request-logging.outbound.longFormat", Boolean.class)
+                    .orElse(false);
+
+            NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
+                    .name("Styx")
+                    .clientWorkerThreadsCount(clientWorkerThreadsCount)
+                    .tlsSettings(backendService.tlsSettings().orElse(null))
+                    .flowControlEnabled(true)
+                    .metricRegistry(environment.metricRegistry())
+                    .responseTimeoutMillis(backendService.responseTimeoutMillis())
+                    .requestLoggingEnabled(requestLoggingEnabled)
+                    .longFormat(longFormat)
+                    .build();
+
             //TODO: origins inventory builder assumes that appId/originId tuple is unique and it will fail on metrics registration.
             OriginsInventory inventory = new OriginsInventory.Builder(backendService)
                     .version(environment.buildInfo().releaseVersion())
                     .eventBus(environment.eventBus())
                     .metricsRegistry(environment.metricRegistry())
-                    .connectionFactory(new NettyConnectionFactory.Builder()
-                            .name("Styx")
-                            .clientWorkerThreadsCount(clientWorkerThreadsCount)
-                            .tlsSettings(backendService.tlsSettings().orElse(null)).build())
+                    .connectionFactory(connectionFactory)
                     .build();
 
             pipeline = new ProxyToClientPipeline(newClientHandler(backendService, inventory), inventory);
@@ -118,7 +132,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
     private static class ProxyToClientPipeline implements HttpHandler2 {
         private final HttpClient client;
-        private OriginsInventory originsInventory;
+        private final OriginsInventory originsInventory;
 
         ProxyToClientPipeline(HttpClient httpClient, OriginsInventory originsInventory) {
             this.client = checkNotNull(httpClient);

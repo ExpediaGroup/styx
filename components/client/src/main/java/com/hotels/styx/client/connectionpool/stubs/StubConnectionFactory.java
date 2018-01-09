@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package com.hotels.styx.client.connectionpool.stubs;
 
 import com.eaio.uuid.UUID;
 import com.hotels.styx.api.Announcer;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
 import rx.Observable;
@@ -54,6 +56,11 @@ public class StubConnectionFactory implements Connection.Factory {
         @Override
         public <R> Observable<R> execute(Supplier<Observable<R>> operation) {
             return operation.get();
+        }
+
+        @Override
+        public Observable<HttpResponse> write(HttpRequest request) {
+            throw new IllegalStateException("Not implemented");
         }
 
         @Override

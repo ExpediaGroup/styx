@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,19 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Announcer;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.netty.exceptions.TransportException;
+import com.hotels.styx.client.HttpRequestOperationFactory;
+import com.hotels.styx.client.netty.HttpRequestOperation;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
 import rx.Observable;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Objects.toStringHelper;
@@ -37,11 +42,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * A connection using a netty channel.
  */
 public class NettyConnection implements Connection, TimeToFirstByteListener {
-    public static final AttributeKey<Object> CLOSED_BY_STYX = AttributeKey.newInstance("CLOSED_BY_STYX");
+    private static final AttributeKey<Object> CLOSED_BY_STYX = AttributeKey.newInstance("CLOSED_BY_STYX");
 
     private final Origin origin;
     private final Object id;
     private final Channel channel;
+    private final Function<HttpRequest, HttpRequestOperation> requestOpFactory;
 
     private volatile TransportException lastException;
     private volatile long timeToFirstByteMs;
@@ -52,23 +58,14 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
      *
      * @param origin  the origin connected to
      * @param channel the netty channel used
+     * @param factory used to create operation objects that send http requests via this connection
      */
     @VisibleForTesting
-    public NettyConnection(Origin origin, Channel channel) {
-        this(new UUID(), origin, channel);
-    }
-
-    /**
-     * Constructs an instance.
-     *
-     * @param id      an object to use as an ID
-     * @param origin  the origin connected to
-     * @param channel the netty channel used
-     */
-    public NettyConnection(Object id, Origin origin, Channel channel) {
-        this.id = id;
+    public NettyConnection(Origin origin, Channel channel, HttpRequestOperationFactory factory) {
+        this.id = new UUID();
         this.origin = checkNotNull(origin);
         this.channel = checkNotNull(channel);
+        this.requestOpFactory = factory::newHttpRequestOperation;
         this.channel.pipeline().addLast(new TimeToFirstByteHandler(this));
         this.channel.closeFuture().addListener(future ->
                 listeners.announce().connectionClosed(NettyConnection.this));
@@ -83,6 +80,12 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
                     }
                 });
     }
+
+    @Override
+    public Observable<HttpResponse> write(HttpRequest request) {
+        return this.requestOpFactory.apply(request).execute(this);
+    }
+
 
     /**
      * The netty channel associated with this connection.

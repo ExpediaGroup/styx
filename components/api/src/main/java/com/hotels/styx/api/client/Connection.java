@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.api.client;
 
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import rx.Observable;
 
 import java.io.Closeable;
@@ -67,6 +69,14 @@ public interface Connection extends Closeable {
      * @return an observable that provides the operation result
      */
     <R> Observable<R> execute(Supplier<Observable<R>> operation);
+
+    /**
+     * Writes HTTP request to a remote peer in the context of this connection.
+     *
+     * @param request
+     * @return an observable that provides the response
+     */
+    Observable<HttpResponse> write(HttpRequest request);
 
     /**
      * Returns if the underlying connection is still active.

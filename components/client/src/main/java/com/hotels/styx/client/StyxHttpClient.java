@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
@@ -30,7 +29,6 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.applications.OriginStats;
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy;
-import com.hotels.styx.client.netty.HttpRequestOperation;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -62,7 +60,6 @@ public final class StyxHttpClient implements HttpClient {
     private final RewriteRuleset rewriteRuleset;
     private final LoadBalancingStrategy loadBalancingStrategy;
     private final RetryPolicy retryPolicy;
-    private final boolean flowControlEnabled;
     private final Transport transport;
     private final OriginStatsFactory originStatsFactory;
     private final BackendService backendService;
@@ -74,14 +71,7 @@ public final class StyxHttpClient implements HttpClient {
         this.backendService = builder.backendService;
         this.id = backendService.id();
 
-        this.flowControlEnabled = builder.flowControlEnabled;
-
         this.originStatsFactory = new OriginStatsFactory(builder.metricsRegistry);
-
-        HttpRequestOperationFactory requestOperationFactory = builder.requestOperationFactory != null
-                ? builder.requestOperationFactory
-                : request -> new HttpRequestOperation(request, originStatsFactory, flowControlEnabled,
-                backendService.responseTimeoutMillis(), builder.requestLoggingEnabled, builder.longFormat);
 
         this.loadBalancingStrategy = backendService.stickySessionConfig().stickySessionEnabled()
                 ? new StickySessionLoadBalancingStrategy(builder.originsInventory, builder.loadBalancingStrategy)
@@ -92,7 +82,7 @@ public final class StyxHttpClient implements HttpClient {
                 : new RetryNTimes(3);
 
         this.rewriteRuleset = new RewriteRuleset(builder.rewriteRules);
-        this.transport = new Transport(requestOperationFactory, id, builder.styxHeaderConfig);
+        this.transport = new Transport(id, builder.styxHeaderConfig);
 
         this.metricsRegistry = builder.metricsRegistry;
         this.contentValidation = builder.contentValidation;
@@ -283,7 +273,6 @@ public final class StyxHttpClient implements HttpClient {
                 .add("retryPolicy", retryPolicy)
                 .add("rewriteRuleset", rewriteRuleset)
                 .add("loadBalancingStrategy", loadBalancingStrategy)
-                .add("flowControlEnabled", flowControlEnabled)
                 .toString();
     }
 
@@ -293,16 +282,12 @@ public final class StyxHttpClient implements HttpClient {
     public static class Builder {
         private final BackendService backendService;
         private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
-        private boolean flowControlEnabled;
         private List<RewriteRule> rewriteRules = emptyList();
-        private HttpRequestOperationFactory requestOperationFactory;
         private RetryPolicy retryPolicy;
         private String originRestrictionCookie;
         private OriginsInventory originsInventory;
         private LoadBalancingStrategy loadBalancingStrategy;
         private boolean contentValidation;
-        private boolean requestLoggingEnabled;
-        private boolean longFormat;
         private StyxHeaderConfig styxHeaderConfig = new StyxHeaderConfig();
 
         public Builder(BackendService backendService) {
@@ -324,11 +309,6 @@ public final class StyxHttpClient implements HttpClient {
             return this;
         }
 
-        public Builder flowControlEnabled(boolean enabled) {
-            this.flowControlEnabled = enabled;
-            return this;
-        }
-
         public Builder rewriteRules(List<? extends RewriteRule> rewriteRules) {
             this.rewriteRules = ImmutableList.copyOf(rewriteRules);
             return this;
@@ -337,22 +317,6 @@ public final class StyxHttpClient implements HttpClient {
 
         public Builder loadBalancingStrategy(LoadBalancingStrategy loadBalancingStrategy) {
             this.loadBalancingStrategy = loadBalancingStrategy;
-            return this;
-        }
-
-        @VisibleForTesting
-        Builder requestOperationFactory(HttpRequestOperationFactory requestOperationFactory) {
-            this.requestOperationFactory = requestOperationFactory;
-            return this;
-        }
-
-        public Builder requestLoggingEnabled(boolean requestLoggingEnabled) {
-            this.requestLoggingEnabled = requestLoggingEnabled;
-            return this;
-        }
-
-        public Builder longFormat(boolean longFormat) {
-            this.longFormat = longFormat;
             return this;
         }
 
