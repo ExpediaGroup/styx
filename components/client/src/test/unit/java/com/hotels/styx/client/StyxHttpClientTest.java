@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
@@ -75,7 +76,7 @@ import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.RUNNING;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
-import static com.hotels.styx.client.OriginsInventory.*;
+import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
 import static com.hotels.styx.client.Protocol.HTTP;
 import static com.hotels.styx.client.Protocol.HTTPS;
 import static com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder;
@@ -117,50 +118,46 @@ public class StyxHttpClientTest {
     }
 
     @Test
-    public void sendsHttp() throws IOException {
+    public void sendsHttp() {
         withOrigin(HTTP, port -> {
             FullHttpResponse response = httpClient(port).sendRequest(httpRequest(8080))
                     .flatMap(r -> r.toFullResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
-            assertThat(response.status(), is(OK));
+            assertThat(response.status(), is(HttpResponseStatus.OK));
         });
     }
 
     @Test
-    public void sendsHttps() throws IOException {
+    public void sendsHttps() {
         withOrigin(HTTPS, port -> {
             FullHttpResponse response = httpsClient(port).sendRequest(httpsRequest(8080))
                     .flatMap(r -> r.toFullResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
 
-            assertThat(response.status(), is(OK));
+            assertThat(response.status(), is(HttpResponseStatus.OK));
         });
     }
 
     @Test(expectedExceptions = Exception.class)
-    public void cannotSendHttpsWhenConfiguredForHttp() throws IOException {
+    public void cannotSendHttpsWhenConfiguredForHttp() {
         withOrigin(HTTPS, port -> {
-            FullHttpResponse response = httpClient(port).sendRequest(httpsRequest(8080))
+            httpClient(port).sendRequest(httpsRequest(8080))
                     .flatMap(r -> r.toFullResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
-
-            assertThat(response.status(), is(OK));
         });
     }
 
     @Test(expectedExceptions = Exception.class)
-    public void cannotSendHttpWhenConfiguredForHttps() throws IOException {
+    public void cannotSendHttpWhenConfiguredForHttps()  {
         withOrigin(HTTP, port -> {
-            FullHttpResponse response = httpsClient(port).sendRequest(httpRequest(8080))
+            httpsClient(port).sendRequest(httpRequest(8080))
                     .flatMap(r -> r.toFullResponse(MAX_LENGTH))
                     .toBlocking()
                     .single();
-
-            assertThat(response.status(), is(OK));
         });
     }
 

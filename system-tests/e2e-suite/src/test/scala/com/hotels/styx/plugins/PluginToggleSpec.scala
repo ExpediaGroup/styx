@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,18 @@
  */
 package com.hotels.styx.plugins
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 import com.hotels.styx.api.HttpRequest.Builder.{get, put}
 import com.hotels.styx.api.HttpResponse.Builder.response
-import io.netty.handler.codec.http.HttpResponseStatus.OK
 import com.hotels.styx.api._
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec
 import rx.Observable
 import rx.Observable.just
-import java.nio.charset.StandardCharsets.UTF_8
 
 class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplier {
   val normalBackend = FakeHttpServer.HttpStartupConfig().start()

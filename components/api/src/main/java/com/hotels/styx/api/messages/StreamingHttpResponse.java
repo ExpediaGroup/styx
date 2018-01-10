@@ -17,19 +17,22 @@ package com.hotels.styx.api.messages;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
+import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.HttpResponse;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
 import rx.Observable;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hotels.styx.api.FlowControlDisableOperator.disableFlowControl;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
@@ -37,25 +40,28 @@ import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.messages.HttpResponseStatus.statusWithCode;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
+import static io.netty.buffer.ByteBufUtil.getBytes;
+import static io.netty.buffer.Unpooled.compositeBuffer;
+import static io.netty.util.ReferenceCountUtil.release;
 import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
-import static rx.Observable.just;
 
 /**
  * HTTP response with a fully aggregated/decoded body.
  */
-public class FullHttpResponse implements FullHttpMessage {
+public class StreamingHttpResponse implements StreamingHttpMessage {
     private final HttpVersion version;
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
-    private final byte[] body;
+    private final Observable<ByteBuf> body;
     private final List<HttpCookie> cookies;
 
-    FullHttpResponse(Builder builder) {
+    StreamingHttpResponse(Builder builder) {
         this.version = builder.version;
         this.status = builder.status;
         this.headers = builder.headers.build();
-        this.body = requireNonNull(builder.body);
+        this.body = builder.body;
         this.cookies = ImmutableList.copyOf(builder.cookies);
     }
 
@@ -78,6 +84,17 @@ public class FullHttpResponse implements FullHttpMessage {
         return new Builder(status);
     }
 
+    /**
+     * Creates an HTTP response builder with a given status and body.
+     *
+     * @param status response status
+     * @param body response body
+     * @return a new builder
+     */
+    public static Builder response(HttpResponseStatus status, Observable<ByteBuf> body) {
+        return new Builder(status).body(body);
+    }
+
     @Override
     public Optional<String> header(CharSequence name) {
         return headers.get(name);
@@ -98,31 +115,9 @@ public class FullHttpResponse implements FullHttpMessage {
         return cookies;
     }
 
-    /**
-     * Returns the body of this message in its unencoded form.
-     *
-     * @return the body
-     */
     @Override
-    public byte[] body() {
-        return body.clone();
-    }
-
-    /**
-     * Returns the message body as a String decoded with provided character set.
-     *
-     * Decodes the message body into a Java String object with a provided charset.
-     * The caller must ensure the provided charset is compatible with message content
-     * type and encoding.
-     *
-     * @param charset     Charset used to decode message body.
-     * @return            Message body as a String.
-     */
-    @Override
-    public String bodyAs(Charset charset) {
-        // CHECKSTYLE:OFF
-        return new String(body, charset);
-        // CHECKSTYLE:ON
+    public Observable<ByteBuf> body() {
+        return body;
     }
 
     @Override
@@ -142,19 +137,33 @@ public class FullHttpResponse implements FullHttpMessage {
         return status.code() >= 300 && status.code() < 400;
     }
 
-    /**
-     * Converts this response to a streaming form (HttpResponse).
-     *
-     * Converts this response to a HttpResponse object which represents the HTTP response as a
-     * stream of bytes.
-     *
-     * @return   A streaming HttpResponse object.
-     */
-    public HttpResponse toStreamingResponse() {
-        if (this.body.length == 0) {
-            return new HttpResponse.Builder(this, Observable.empty()).build();
-        } else {
-            return new HttpResponse.Builder(this, just(Unpooled.copiedBuffer(this.body))).build();
+    public Observable<FullHttpResponse> toFullHttpResponse(int maxContentBytes) {
+        CompositeByteBuf byteBufs = compositeBuffer();
+
+        return body
+                .lift(disableFlowControl())
+                .doOnError(e -> byteBufs.release())
+                .collect(() -> byteBufs, (composite, part) -> {
+                    long newSize = composite.readableBytes() + part.readableBytes();
+
+                    if (newSize > maxContentBytes) {
+                        release(composite);
+                        release(part);
+
+                        throw new ContentOverflowException(format("Maximum content size exceeded. Maximum size allowed is %d bytes.", maxContentBytes));
+                    }
+                    composite.addComponent(part);
+                    composite.writerIndex(composite.writerIndex() + part.readableBytes());
+                })
+                .map(StreamingHttpResponse::decodeAndRelease)
+                .map(decoded -> new FullHttpResponse.Builder(this, decoded).build());
+    }
+
+    private static byte[] decodeAndRelease(CompositeByteBuf aggregate) {
+        try {
+            return getBytes(aggregate);
+        } finally {
+            aggregate.release();
         }
     }
 
@@ -181,7 +190,7 @@ public class FullHttpResponse implements FullHttpMessage {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        FullHttpResponse other = (FullHttpResponse) obj;
+        StreamingHttpResponse other = (StreamingHttpResponse) obj;
         return Objects.equal(this.version, other.version)
                 && Objects.equal(this.status, other.status)
                 && Objects.equal(this.headers, other.headers)
@@ -196,12 +205,12 @@ public class FullHttpResponse implements FullHttpMessage {
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
         private boolean validate = true;
-        private byte[] body;
+        private Observable<ByteBuf> body;
         private final List<HttpCookie> cookies;
 
         public Builder() {
             this.headers = new HttpHeaders.Builder();
-            this.body = new byte[0];
+            this.body = Observable.empty();
             this.cookies = new ArrayList<>();
         }
 
@@ -210,7 +219,7 @@ public class FullHttpResponse implements FullHttpMessage {
             this.status = status;
         }
 
-        public Builder(FullHttpResponse response) {
+        public Builder(StreamingHttpResponse response) {
             this.status = response.status();
             this.version = response.version();
             this.headers = response.headers().newBuilder();
@@ -218,17 +227,9 @@ public class FullHttpResponse implements FullHttpMessage {
             this.cookies = new ArrayList<>(response.cookies());
         }
 
-        public Builder(HttpResponse response, byte[] encodedBody) {
+        public Builder(HttpResponse response, Observable<ByteBuf> decoded) {
             this.status = statusWithCode(response.status().code());
             this.version = httpVersion(response.version().toString());
-            this.headers = response.headers().newBuilder();
-            this.body = encodedBody;
-            this.cookies = new ArrayList<>(response.cookies());
-        }
-
-        public Builder(StreamingHttpResponse response, byte[] decoded) {
-            this.status = response.status();
-            this.version = response.version();
             this.headers = response.headers().newBuilder();
             this.body = decoded;
             this.cookies = new ArrayList<>(response.cookies());
@@ -246,55 +247,13 @@ public class FullHttpResponse implements FullHttpMessage {
         }
 
         /**
-         * Sets the request body.
-         *
-         * This method encodes a String content to a byte array using the specified
-         * charset, and sets the Content-Length header accordingly.
-         *
-         * @param content request body
-         * @param charset Charset for string encoding.
-         * @return {@code this}
-         */
-        public Builder body(String content, Charset charset) {
-            return body(content, charset, true);
-        }
-
-        /**
          * Sets the response body.
          *
-         * This method encodes the content to a byte array using the specified
-         * charset, and sets the Content-Length header *if* the setContentLength
-         * argument is true.
-         *
          * @param content response body
-         * @param charset Charset used for encoding response body.
-         * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
          * @return {@code this}
          */
-        public Builder body(String content, Charset charset, boolean setContentLength) {
-            requireNonNull(charset, "Charset is not provided.");
-            String sanitised = content == null ? "" : content;
-            return body(sanitised.getBytes(charset), setContentLength);
-        }
-
-        /**
-         * Sets the response body.
-         *
-         * This method encodes the content to a byte array provided, and
-         * sets the Content-Length header *if* the setContentLength
-         * argument is true.
-         *
-         * @param content response body
-         * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
-         * @return {@code this}
-         */
-        public Builder body(byte[] content, boolean setContentLength) {
-            this.body = content == null ? new byte[0] : content.clone();
-
-            if (setContentLength) {
-                header(CONTENT_LENGTH, this.body.length);
-            }
-
+        public Builder body(Observable<ByteBuf> content) {
+            this.body = content;
             return this;
         }
 
@@ -339,7 +298,7 @@ public class FullHttpResponse implements FullHttpMessage {
          * @return {@code this}
          */
         public Builder addCookie(HttpCookie cookie) {
-            cookies.add(requireNonNull(cookie));
+            cookies.add(checkNotNull(cookie));
             return this;
         }
 
@@ -438,12 +397,12 @@ public class FullHttpResponse implements FullHttpMessage {
          *
          * @return a new full response
          */
-        public FullHttpResponse build() {
+        public StreamingHttpResponse build() {
             if (validate) {
                 ensureContentLengthIsValid();
             }
 
-            return new FullHttpResponse(this);
+            return new StreamingHttpResponse(this);
         }
 
         Builder ensureContentLengthIsValid() {

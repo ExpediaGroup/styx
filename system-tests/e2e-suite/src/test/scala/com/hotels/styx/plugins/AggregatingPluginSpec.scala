@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,15 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpRequest.Builder._
 import com.hotels.styx.api.HttpResponse.Builder._
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.support.HostAndPorts._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{MockServer, StyxProxySpec}
 import io.netty.buffer.{ByteBuf, Unpooled}
-import io.netty.handler.codec.http.HttpResponseStatus._
+import io.netty.handler.codec.http.HttpResponseStatus
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-import rx.Observable
+import rx.Observable.just
 
 import scala.concurrent.duration._
 
@@ -52,12 +53,12 @@ class AggregatingPluginSpec extends FunSpec
   describe("Styx as a plugin container") {
 
     it("Gets response from aggregating plugin (no body)") {
-      mockServer.stub("/", responseSupplier(() => response(OK).build()))
+      mockServer.stub("/", responseSupplier(() => response(HttpResponseStatus.OK).build()))
 
       val request = get(styxServer.routerURL("/")).build()
       val resp = decodedRequest(request)
 
-      assert(resp.status().code() == 200)
+      assert(resp.status() == OK)
       assert(resp.header("test_plugin").get() == "yes")
       assert(resp.header("bytes_aggregated").get() == "0")
       assert(resp.bodyAs(UTF_8) == "")
@@ -65,13 +66,13 @@ class AggregatingPluginSpec extends FunSpec
 
     it("Gets response from aggregating plugin (with body)") {
       mockServer.stub("/body", responseSupplier(
-        () => response(OK).body(Observable.just(chunk("a"), chunk("b"), chunk("c"), chunk("d"), chunk("e"))).build()
+        () => response(HttpResponseStatus.OK).body(just(chunk("a"), chunk("b"), chunk("c"), chunk("d"), chunk("e"))).build()
       ))
 
       val request = get(styxServer.routerURL("/body")).build()
       val resp = decodedRequest(request)
 
-      assert(resp.status().code() == 200)
+      assert(resp.status() == OK)
       assert(resp.header("test_plugin").get() == "yes")
       assert(resp.header("bytes_aggregated").get() == "2500")
       assert(resp.bodyAs(UTF_8) == chunkString("a") + chunkString("b") + chunkString("c") + chunkString("d") + chunkString("e"))

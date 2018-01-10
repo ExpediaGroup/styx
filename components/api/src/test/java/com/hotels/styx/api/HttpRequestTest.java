@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hotels.styx.api;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.messages.FullHttpRequest;
+import com.hotels.styx.api.messages.HttpMethod;
+import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
@@ -43,7 +45,6 @@ import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
 import static io.netty.handler.codec.http.HttpMethod.DELETE;
 import static io.netty.handler.codec.http.HttpMethod.GET;
-import static io.netty.handler.codec.http.HttpMethod.POST;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.multipart.HttpPostRequestDecoder.ErrorDataDecoderException;
@@ -173,7 +174,7 @@ public class HttpRequestTest {
     }
 
     @Test
-    public void decodesApplicationJsonData() throws Exception {
+    public void decodesApplicationJsonData() {
         String jsonObject = "{ \"foo\": \"bar\" }";
         HttpRequest request = post("http://example.com/")
                 .body(jsonObject)
@@ -533,9 +534,9 @@ public class HttpRequestTest {
                 .toBlocking()
                 .single();
 
-        assertThat(full.method(), is(POST));
+        assertThat(full.method(), is(HttpMethod.POST));
         assertThat(full.isSecure(), is(true));
-        assertThat(full.version(), is(HTTP_1_0));
+        assertThat(full.version(), is(HttpVersion.HTTP_1_0));
         assertThat(full.headers(), contains(header("HeaderName", "HeaderValue")));
         assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
         assertThat(full.url().toString(), is("/foo/bar"));

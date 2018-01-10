@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,17 +21,17 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets.UTF_8
 import com.google.common.net.HostAndPort._
 import com.hotels.styx._
-import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
+import com.hotels.styx.api.messages.HttpResponseStatus.{BAD_REQUEST, OK}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
 import com.hotels.styx.utils.HttpTestClient
+import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import io.netty.buffer.Unpooled.copiedBuffer
 import io.netty.channel._
 import io.netty.handler.codec.http.HttpHeaders.Names.{CONTENT_LENGTH, HOST, TRANSFER_ENCODING}
 import io.netty.handler.codec.http.HttpHeaders.Values.CHUNKED
 import io.netty.handler.codec.http.HttpMethod._
-import io.netty.handler.codec.http.HttpResponseStatus.{BAD_REQUEST, OK}
 import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import io.netty.handler.codec.http._
 import org.scalatest.FunSpec
@@ -78,7 +78,7 @@ class BadFramingSpec extends FunSpec
       withTestClient(client) {
         client.write(request)
         val response = client.waitForResponse().asInstanceOf[FullHttpResponse]
-        assert(response.getStatus == BAD_REQUEST, clueMessage("Must receive 400 Bad Request, but received: ", response))
+        assert(response.status == HttpResponseStatus.BAD_REQUEST, clueMessage("Must receive 400 Bad Request, but received: ", response))
       }
     }
 
@@ -122,7 +122,7 @@ class BadFramingSpec extends FunSpec
     it("Assumes chunked encoding when response from origins contains both Content-Length and chunked encoding") {
       originRespondingWith((ctx: ChannelHandlerContext, msg: scala.Any) => {
         if (msg.isInstanceOf[LastHttpContent]) {
-          val response = new DefaultHttpResponse(HTTP_1_1, OK)
+          val response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK)
           response.headers().set(CONTENT_LENGTH, "60")
           response.headers().set(TRANSFER_ENCODING, CHUNKED)
           ctx.writeAndFlush(response)
@@ -155,7 +155,7 @@ class BadFramingSpec extends FunSpec
         client.write(new DefaultLastHttpContent(copiedBuffer("c" * 40, UTF_8)))
 
         val response = client.waitForResponse(3, SECONDS).asInstanceOf[HttpResponse]
-        response.getStatus should be(OK)
+        response.status should be(HttpResponseStatus.OK)
       }
 
       originTwoServer.verify(
