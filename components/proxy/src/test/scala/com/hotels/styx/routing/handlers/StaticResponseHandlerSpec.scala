@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@ package com.hotels.styx.routing.handlers
 
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
-import com.hotels.styx.routing.config.{RoutingConfigDefinition}
+import com.hotels.styx.routing.config.RouteHandlerDefinition
 import io.netty.handler.codec.http.HttpResponseStatus.CREATED
 import org.scalatest.{FunSpec, ShouldMatchers}
+
 import scala.collection.JavaConversions._
 
 class StaticResponseHandlerSpec extends FunSpec with ShouldMatchers {
@@ -42,6 +43,6 @@ class StaticResponseHandlerSpec extends FunSpec with ShouldMatchers {
     response.status should be (CREATED)
   }
 
-  private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RoutingConfigDefinition]).get()
+  private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RouteHandlerDefinition]).get()
 
 }

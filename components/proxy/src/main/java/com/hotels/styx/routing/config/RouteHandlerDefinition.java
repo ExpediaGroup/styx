@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,13 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 /**
  * An yaml configuration block used in routing configuration to configure an HTTP handler.
  */
-@JsonDeserialize(builder = RoutingConfigDefinition.Builder.class)
-public class RoutingConfigDefinition implements RoutingConfigNode {
+@JsonDeserialize(builder = RouteHandlerDefinition.Builder.class)
+public class RouteHandlerDefinition implements RouteHandlerConfig {
     private final String name;
     private final String type;
     private final JsonNode config;
 
-    public RoutingConfigDefinition(String name, String type, JsonNode config) {
+    public RouteHandlerDefinition(String name, String type, JsonNode config) {
         this.name = name;
         this.type = type;
         this.config = config;
@@ -74,8 +74,8 @@ public class RoutingConfigDefinition implements RoutingConfigNode {
             return this;
         }
 
-        public RoutingConfigDefinition build() {
-            return new RoutingConfigDefinition(name, type, config);
+        public RouteHandlerDefinition build() {
+            return new RouteHandlerDefinition(name, type, config);
         }
     }
 }

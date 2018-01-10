@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,10 @@ import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
-import com.hotels.styx.routing.config.BuiltinHandlersFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
-import com.hotels.styx.routing.config.RoutingConfigDefinition;
-import com.hotels.styx.routing.config.RoutingConfigNode;
+import com.hotels.styx.routing.config.RouteHandlerConfig;
+import com.hotels.styx.routing.config.RouteHandlerDefinition;
+import com.hotels.styx.routing.config.RouteHandlerFactory;
 import com.hotels.styx.server.HttpRouter;
 import com.hotels.styx.server.routing.AntlrMatcher;
 import com.hotels.styx.server.routing.antlr.DslFunctionResolutionError;
@@ -88,7 +88,7 @@ public class ConditionRouter implements HttpRouter {
     public static class ConfigFactory implements HttpHandlerFactory {
         private static class ConditionRouterConfig {
             private final List<ConditionRouterRouteConfig> routes;
-            private final RoutingConfigNode fallback;
+            private final RouteHandlerConfig fallback;
 
             private ConditionRouterConfig(@JsonProperty("routes") List<ConditionRouterRouteConfig> routes,
                                           @JsonProperty("fallback") JsonNode fallback) {
@@ -100,7 +100,7 @@ public class ConditionRouter implements HttpRouter {
 
         private static class ConditionRouterRouteConfig {
             private final String condition;
-            private final RoutingConfigNode destination;
+            private final RouteHandlerConfig destination;
 
             public ConditionRouterRouteConfig(@JsonProperty("condition") String condition,
                                               @JsonProperty("destination") JsonNode destination) {
@@ -109,7 +109,10 @@ public class ConditionRouter implements HttpRouter {
             }
         }
 
-        public HttpHandler2 build(List<String> parents, BuiltinHandlersFactory builtinHandlersFactory, RoutingConfigDefinition configBlock) {
+        public HttpHandler2 build(List<String> parents,
+                                  RouteHandlerFactory routeHandlerFactory,
+                                  RouteHandlerDefinition configBlock
+        ) {
             ConditionRouterConfig config = new JsonNodeConfig(configBlock.config()).as(ConditionRouterConfig.class);
             if (config.routes == null) {
                 throw missingAttributeError(configBlock, join(".", parents), "routes");
@@ -117,24 +120,24 @@ public class ConditionRouter implements HttpRouter {
 
             AtomicInteger index = new AtomicInteger(0);
             List<Route> routes = config.routes.stream()
-                    .map(routeConfig -> buildRoute(append(parents, "routes"), builtinHandlersFactory, index.getAndIncrement(), routeConfig.condition, routeConfig.destination))
+                    .map(routeConfig -> buildRoute(append(parents, "routes"), routeHandlerFactory, index.getAndIncrement(), routeConfig.condition, routeConfig.destination))
                     .collect(Collectors.toList());
 
-            return new RouteHandlerAdapter(new ConditionRouter(routes, buildFallbackHandler(parents, builtinHandlersFactory, config)));
+            return new RouteHandlerAdapter(new ConditionRouter(routes, buildFallbackHandler(parents, routeHandlerFactory, config)));
         }
 
-        private static HttpHandler2 buildFallbackHandler(List<String> parents, BuiltinHandlersFactory builtinHandlersFactory, ConditionRouterConfig config) {
+        private static HttpHandler2 buildFallbackHandler(List<String> parents, RouteHandlerFactory routeHandlerFactory, ConditionRouterConfig config) {
             if (config.fallback == null) {
                 return (request, dontcare) -> Observable.just(response(BAD_GATEWAY).build());
             } else {
-                return builtinHandlersFactory.build(append(parents, "fallback"), config.fallback);
+                return routeHandlerFactory.build(append(parents, "fallback"), config.fallback);
             }
         }
 
-        private static Route buildRoute(List<String> parents, BuiltinHandlersFactory builtinHandlersFactory, int index, String condition, RoutingConfigNode destination) {
+        private static Route buildRoute(List<String> parents, RouteHandlerFactory routeHandlerFactory, int index, String condition, RouteHandlerConfig destination) {
             try {
                 String attribute = format("destination[%d]", index);
-                HttpHandler2 handler = builtinHandlersFactory.build(append(parents, attribute), destination);
+                HttpHandler2 handler = routeHandlerFactory.build(append(parents, attribute), destination);
                 return new Route(condition, handler);
             } catch (DslSyntaxError | DslFunctionResolutionError e) {
                 String attribute = format("condition[%d]", index);

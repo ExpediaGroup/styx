@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package com.hotels.styx.routing.config;
 
 /**
  * A common interface for different types of Yaml routing configuration items.
- * Can be a reference type or a complex RoutingConfigDefinition.
+ * Can be a reference type or a complex RouteHandlerDefinition.
  */
-public interface RoutingConfigNode {
+public interface RouteHandlerConfig {
 }

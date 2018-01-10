@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import java.util.Objects;
 /**
  * A routing config object that is a named reference to an object specified elsewhere.
  */
-public class RoutingConfigReference implements RoutingConfigNode {
+public class RouteHandlerReference implements RouteHandlerConfig {
     private final String name;
 
-    public RoutingConfigReference(String name) {
+    public RouteHandlerReference(String name) {
         this.name = name;
     }
 
@@ -39,7 +39,7 @@ public class RoutingConfigReference implements RoutingConfigNode {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        RoutingConfigReference that = (RoutingConfigReference) o;
+        RouteHandlerReference that = (RouteHandlerReference) o;
         return Objects.equals(name, that.name);
     }
 
@@ -50,7 +50,7 @@ public class RoutingConfigReference implements RoutingConfigNode {
 
     @Override
     public String toString() {
-        return "RoutingConfigReference{"
+        return "RouteHandlerReference{"
                 + "name='" + name + '\''
                 + '}';
     }

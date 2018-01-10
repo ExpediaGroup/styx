@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hotels.styx.routing.interceptors
 import com.hotels.styx.api.HttpResponse.Builder.response
 import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse}
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
-import com.hotels.styx.routing.config.RoutingConfigDefinition
+import com.hotels.styx.routing.config.RouteHandlerDefinition
 import io.netty.handler.codec.http.HttpResponseStatus.OK
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, ShouldMatchers}
@@ -66,7 +66,7 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
 
 
 
-  private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RoutingConfigDefinition]).get()
+  private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RouteHandlerDefinition]).get()
 
   class CapturingChain extends HttpInterceptor.Chain {
     var storedRequest: HttpRequest = _
