@@ -21,7 +21,8 @@ import java.util.stream.Stream;
 import static java.lang.reflect.Modifier.isStatic;
 
 /**
- * Contains all HTTP response status codes as HttpResponseStatusCodesCodeseger constants as well as a method to go from a code to its name.
+ * Contains all HTTP response status codes as HttpResponseStatus constants,
+ * as well as a method to go from a code to its name.
  */
 public final class HttpResponseStatus {
     public static final HttpResponseStatus CONTINUE = new HttpResponseStatus(100, "Continue");
@@ -82,11 +83,13 @@ public final class HttpResponseStatus {
     public static final HttpResponseStatus NETWORK_AUTHENTICATION_REQUIRED = new HttpResponseStatus(511, "Network Authentication Required");
 
     private final int code;
-    private final String name;
+    private final String description;
 
     private static final HttpResponseStatus[] STATUSES = generateStatusArray();
 
     private static HttpResponseStatus[] generateStatusArray() {
+        // Using the array prevents us from needlessly instantiating objects at runtime.
+        // The large number of empty elements is not significant, as only one instance of this array exists.
         HttpResponseStatus[] array = new HttpResponseStatus[600];
 
         Stream.of(HttpResponseStatus.class.getDeclaredFields())
@@ -107,29 +110,27 @@ public final class HttpResponseStatus {
     }
 
     public static HttpResponseStatus statusWithCode(int code) {
-        // Using the array prevents us from needlessly instantiating Optionals at runtime.
-
         if(code < 0 || code >= STATUSES.length || STATUSES[code] == null)
             return new HttpResponseStatus(code, "Unknown status");
 
         return STATUSES[code];
     }
 
-    private HttpResponseStatus(int code, String name) {
+    private HttpResponseStatus(int code, String description) {
         this.code = code;
-        this.name = name;
+        this.description = description;
     }
 
     public int code() {
         return code;
     }
 
-    public String name() {
-        return name;
+    public String description() {
+        return description;
     }
 
     @Override
     public String toString() {
-        return code + " " + name;
+        return code + " " + description;
     }
 }
