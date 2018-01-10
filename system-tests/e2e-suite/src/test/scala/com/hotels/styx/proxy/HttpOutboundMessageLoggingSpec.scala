@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
-import io.netty.handler.codec.http.HttpResponseStatus.OK
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
 import org.scalatest.FunSpec
@@ -64,7 +64,7 @@ class HttpOutboundMessageLoggingSpec extends FunSpec
   val mockServer = FakeHttpServer.HttpStartupConfig()
     .start()
     .stub(urlStartingWith("/foobar"), aResponse
-      .withStatus(200)
+      .withStatus(OK.code())
       .withHeader(TRANSFER_ENCODING, CHUNKED)
       .withBody("I should be here!")
     )
@@ -80,7 +80,7 @@ class HttpOutboundMessageLoggingSpec extends FunSpec
 
     val request = get(s"http://localhost:${mockServer.port()}/foobar").build()
     val resp = decodedRequest(request)
-    resp.status().code() should be (200)
+    resp.status() should be (OK)
     resp.bodyAs(UTF_8) should be ("I should be here!")
   }
 

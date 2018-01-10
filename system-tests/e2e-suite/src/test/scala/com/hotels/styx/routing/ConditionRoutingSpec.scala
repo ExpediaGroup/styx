@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hotels.styx.routing
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
 import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.messages.HttpResponseStatus._
 import com.hotels.styx.infrastructure.MemoryBackedRegistry
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -131,7 +132,7 @@ class ConditionRoutingSpec extends FunSpec
     it("Routes HTTP protocol to HTTP origins") {
       val response = decodedRequest(httpRequest("/app.1"))
 
-      assert(response.status().code() == 200)
+      assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")
 
       httpServer.verify(
@@ -142,7 +143,7 @@ class ConditionRoutingSpec extends FunSpec
     it("Routes HTTPS protocol to HTTPS origins") {
       val response = decodedRequest(httpsRequest("/app.2"))
 
-      assert(response.status().code() == 200)
+      assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")
 
       httpsServer.verify(
@@ -152,7 +153,7 @@ class ConditionRoutingSpec extends FunSpec
   }
 
   def originResponse(appId: String) = aResponse
-    .withStatus(200)
+    .withStatus(OK.code())
     .withHeader(STUB_ORIGIN_INFO.toString, appId)
     .withBody("Hello, World!")
 

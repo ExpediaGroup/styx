@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post => wmpost}
 import com.hotels.styx.api.HttpRequest.Builder.post
+import com.hotels.styx.api.messages.HttpResponseStatus._
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -52,7 +53,7 @@ class OriginsConnectionSpec extends FunSpec
   describe("Origins closing connections after responses") {
     it("Styx doesn't propagate TransportLostException") {
       mockServer.stub(wmpost(urlStartingWith("/foobar")), aResponse
-        .withStatus(200)
+        .withStatus(OK.code())
       )
 
       val loggingTestSupport: LoggingTestSupport = new LoggingTestSupport(classOf[StyxHttpClient])
@@ -64,7 +65,7 @@ class OriginsConnectionSpec extends FunSpec
 
         val response = waitForResponse(client.sendRequest(request))
 
-        response.status().code() should be(200)
+        response.status() should be(OK)
         response.bodyAs(UTF_8) should be("")
       }
 
@@ -86,7 +87,7 @@ class OriginsConnectionSpec extends FunSpec
 
         val response = waitForResponse(client.sendRequest(request))
 
-        response.status().code() should be(204)
+        response.status() should be(NO_CONTENT)
         response.bodyAs(UTF_8) should be("")
       }
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.client.connectionpool.ResourceExhaustedException;
 import com.hotels.styx.client.netty.ConsumerDisconnectedException;
+import com.hotels.styx.common.FsmEventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
 import com.hotels.styx.common.StateMachine;
 import com.hotels.styx.server.BadRequestException;
@@ -114,7 +115,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
     private volatile HttpRequest prematureRequest;
 
     private volatile CompletableFuture<Void> future;
-    private volatile QueueDrainingEventProcessor<State> eventProcessor;
+    private volatile QueueDrainingEventProcessor eventProcessor;
 
     private HttpPipelineHandler(Builder builder) {
         this.responseEnhancer = requireNonNull(builder.responseEnhancer);
@@ -181,8 +182,8 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         String loggingPrefix = format("%s -> %s", ctx.channel().remoteAddress(), ctx.channel().localAddress());
-        this.eventProcessor = new QueueDrainingEventProcessor<>(stateMachine, (throwable, state) -> {
-        }, loggingPrefix);
+        this.eventProcessor = new QueueDrainingEventProcessor(new FsmEventProcessor<>(stateMachine, (throwable, state) -> {
+        }, loggingPrefix));
         super.channelActive(ctx);
     }
 

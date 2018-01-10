@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package com.hotels.styx.api;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
 import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.messages.HttpResponseStatus;
+import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import rx.Observable;
@@ -293,7 +294,7 @@ public class HttpResponseTest {
     }
 
     @Test(dataProvider = "responses")
-    public void shouldCheckIfCurrentResponseIsARedirectToOtherResource(HttpResponseStatus status, boolean isRedirect) {
+    public void shouldCheckIfCurrentResponseIsARedirectToOtherResource(io.netty.handler.codec.http.HttpResponseStatus status, boolean isRedirect) {
         assertThat(response(status).build().isRedirect(), is(isRedirect));
     }
 
@@ -404,17 +405,15 @@ public class HttpResponseTest {
                 .toBlocking()
                 .single();
 
-        assertThat(full.status(), is(CREATED));
-        assertThat(full.version(), is(HTTP_1_0));
+        assertThat(full.version(), is(HttpVersion.HTTP_1_0));
+        assertThat(full.status(), is(HttpResponseStatus.CREATED));
         assertThat(full.headers(), hasItem(header("HeaderName", "HeaderValue")));
         assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
-
-        assertThat(full.status(), is(CREATED));
         assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
     }
 
     @Test
-    public void decodesToFullHttpResponseWithEmptyBody() throws Exception {
+    public void decodesToFullHttpResponseWithEmptyBody() {
         HttpResponse request = response(CREATED)
                 .body(empty())
                 .build();
@@ -423,12 +422,12 @@ public class HttpResponseTest {
                 .toBlocking()
                 .single();
 
-        assertThat(full.status(), is(CREATED));
+        assertThat(full.status(), is(HttpResponseStatus.CREATED));
         assertThat(full.bodyAs(UTF_8), is(""));
     }
 
     @Test
-    public void decodingToFullHttpResponseDefaultsToUTF8() throws Exception {
+    public void decodingToFullHttpResponseDefaultsToUTF8() {
         HttpResponse request = response(CREATED)
                 .body(stream("foo", "bar", "baz"))
                 .build();
@@ -437,7 +436,7 @@ public class HttpResponseTest {
                 .toBlocking()
                 .single();
 
-        assertThat(full.status(), is(CREATED));
+        assertThat(full.status(), is(HttpResponseStatus.CREATED));
         assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
     }
 
