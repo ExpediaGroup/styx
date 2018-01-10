@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.routing.config.BuiltinHandlersFactory;
+import com.hotels.styx.routing.config.RouteHandlerFactory;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
-import com.hotels.styx.routing.config.RoutingConfigDefinition;
-import com.hotels.styx.routing.config.RoutingConfigNode;
-import com.hotels.styx.routing.config.RoutingConfigReference;
+import com.hotels.styx.routing.config.RouteHandlerDefinition;
+import com.hotels.styx.routing.config.RouteHandlerReference;
+import com.hotels.styx.routing.config.RouteHandlerConfig;
 import rx.Observable;
 
 import java.util.List;
@@ -72,33 +72,33 @@ public class HttpInterceptorPipeline implements HttpHandler2 {
             this.interceptorFactory = interceptorFactory;
         }
 
-        private static List<RoutingConfigNode> styxHttpPipeline(JsonNode pipeline) {
+        private static List<RouteHandlerConfig> styxHttpPipeline(JsonNode pipeline) {
             return stream(pipeline.spliterator(), false)
                     .map(ConfigFactory::toRoutingConfigNode)
                     .collect(Collectors.toList());
         }
 
-        private static RoutingConfigNode toRoutingConfigNode(JsonNode jsonNode) {
+        private static RouteHandlerConfig toRoutingConfigNode(JsonNode jsonNode) {
             if (jsonNode.getNodeType() == JsonNodeType.STRING) {
-                return new RoutingConfigReference(jsonNode.asText());
+                return new RouteHandlerReference(jsonNode.asText());
             } else if (jsonNode.getNodeType() == JsonNodeType.OBJECT) {
                 String name = ofNullable(jsonNode.get("name"))
                         .map(JsonNode::asText)
                         .orElse("");
                 String type = checkNotNull(jsonNode.get("type").asText());
                 JsonNode conf = jsonNode.get("config");
-                return new RoutingConfigDefinition(name, type, conf);
+                return new RouteHandlerDefinition(name, type, conf);
             }
             throw new IllegalArgumentException("Invalid configuration. Expected a reference (string) or a configuration block.");
         }
 
         @Override
-        public HttpHandler2 build(List<String> parents, BuiltinHandlersFactory builtinsFactory, RoutingConfigDefinition configBlock) {
+        public HttpHandler2 build(List<String> parents, RouteHandlerFactory builtinsFactory, RouteHandlerDefinition configBlock) {
             JsonNode pipeline = configBlock.config().get("pipeline");
             List<HttpInterceptor> interceptors = getHttpInterceptors(append(parents, "pipeline"), pipeline);
 
-            RoutingConfigDefinition handlerConfig = new JsonNodeConfig(configBlock.config())
-                    .get("handler", RoutingConfigDefinition.class)
+            RouteHandlerDefinition handlerConfig = new JsonNodeConfig(configBlock.config())
+                    .get("handler", RouteHandlerDefinition.class)
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "handler"));
 
             return new HttpInterceptorPipeline(interceptors, builtinsFactory.build(append(parents, "handler"), handlerConfig));
@@ -108,25 +108,25 @@ public class HttpInterceptorPipeline implements HttpHandler2 {
             if (pipeline == null || pipeline.isNull()) {
                 return ImmutableList.of();
             }
-            List<RoutingConfigNode> interceptorConfigs = styxHttpPipeline(pipeline);
+            List<RouteHandlerConfig> interceptorConfigs = styxHttpPipeline(pipeline);
             ensureValidPluginReferences(parents, interceptorConfigs);
             return interceptorConfigs.stream()
                     .map(node -> {
-                        if (node instanceof RoutingConfigReference) {
-                            String name = ((RoutingConfigReference) node).name();
+                        if (node instanceof RouteHandlerReference) {
+                            String name = ((RouteHandlerReference) node).name();
                             return this.interceptors.get(name);
                         } else {
-                            RoutingConfigDefinition block = (RoutingConfigDefinition) node;
+                            RouteHandlerDefinition block = (RouteHandlerDefinition) node;
                             return interceptorFactory.build(block);
                         }
                     })
                     .collect(Collectors.toList());
         }
 
-        private void ensureValidPluginReferences(List<String> parents, List<RoutingConfigNode> interceptors) {
+        private void ensureValidPluginReferences(List<String> parents, List<RouteHandlerConfig> interceptors) {
             interceptors.forEach(node -> {
-                if (node instanceof RoutingConfigReference) {
-                    String name = ((RoutingConfigReference) node).name();
+                if (node instanceof RouteHandlerReference) {
+                    String name = ((RouteHandlerReference) node).name();
                     if (!this.interceptors.containsKey(name)) {
                         throw new IllegalArgumentException(String.format("No such plugin or interceptor exists, attribute='%s', name='%s'",
                                 join(".", parents), name));
