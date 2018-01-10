@@ -23,9 +23,9 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.messages.HttpResponseStatusCodes.FORBIDDEN;
-import static com.hotels.styx.api.messages.HttpResponseStatusCodes.NOT_FOUND;
-import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.FORBIDDEN;
+import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;

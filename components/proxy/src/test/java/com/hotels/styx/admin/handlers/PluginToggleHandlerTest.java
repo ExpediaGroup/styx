@@ -25,9 +25,9 @@ import org.testng.annotations.Test;
 import java.util.List;
 
 import static com.hotels.styx.api.HttpRequest.Builder.put;
-import static com.hotels.styx.api.messages.HttpResponseStatusCodes.BAD_REQUEST;
-import static com.hotels.styx.api.messages.HttpResponseStatusCodes.NOT_FOUND;
-import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static java.nio.charset.StandardCharsets.UTF_8;

@@ -22,7 +22,7 @@ import com.hotels.styx.api.messages.FullHttpResponse;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.api.matchers.HttpHeadersMatcher.isNotCacheable;

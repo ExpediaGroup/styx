@@ -21,7 +21,7 @@ import org.testng.annotations.Test;
 
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;

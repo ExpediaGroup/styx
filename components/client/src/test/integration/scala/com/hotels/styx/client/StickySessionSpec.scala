@@ -22,7 +22,7 @@ import com.hotels.styx.api.{HttpRequest}
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.client.stickysession.StickySessionConfig
-import com.hotels.styx.api.messages.HttpResponseStatusCodes.OK
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import org.scalatest.{BeforeAndAfter, FunSuite, ShouldMatchers}
 
 import scala.collection.JavaConverters._

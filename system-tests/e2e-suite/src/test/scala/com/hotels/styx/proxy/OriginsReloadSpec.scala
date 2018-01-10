@@ -18,7 +18,7 @@ package com.hotels.styx.proxy
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.messages.HttpResponseStatusCodes.{METHOD_NOT_ALLOWED, OK}
+import com.hotels.styx.api.messages.HttpResponseStatus.{METHOD_NOT_ALLOWED, OK}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}

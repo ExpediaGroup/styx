@@ -23,9 +23,11 @@ import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.HttpResponse.Builder.response
-import io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY
-import io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR
+import io.netty.handler.codec.http.HttpResponseStatus
 import com.hotels.styx.api._
+import com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY
+import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.infrastructure.MemoryBackedRegistry
 import com.hotels.styx.support.ImplicitStyxConversions
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -103,7 +105,7 @@ class ErrorMetricsSpec extends FunSpec
 
         val response = decodedRequest(request)
 
-        assert(response.status() == 200)
+        assert(response.status() == OK)
       }
 
       Thread.sleep(1000)
@@ -119,7 +121,7 @@ class ErrorMetricsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status() == 500)
+      assert(response.status() == INTERNAL_SERVER_ERROR)
 
       eventually(timeout(1.second)) {
         assert(pluginInternalServerErrorMetric("generateErrorStatusPlugin") == 1)
@@ -142,7 +144,7 @@ class ErrorMetricsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status() == 500)
+      assert(response.status() == INTERNAL_SERVER_ERROR)
 
       eventually(timeout(1.second)) {
         assert(pluginInternalServerErrorMetric("mapToErrorStatusPlugin") == 1)
@@ -164,7 +166,7 @@ class ErrorMetricsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status() == 500)
+      assert(response.status() == INTERNAL_SERVER_ERROR)
 
       eventually(timeout(1.second)) {
         assert(originErrorMetric == 1)
@@ -189,7 +191,7 @@ class ErrorMetricsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status() == 502)
+      assert(response.status() == BAD_GATEWAY)
 
       sleep(1000)
 
@@ -206,7 +208,7 @@ class ErrorMetricsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status() == 502)
+      assert(response.status() == BAD_GATEWAY)
 
       sleep(1000)
 
@@ -223,7 +225,7 @@ class ErrorMetricsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status() == 500)
+      assert(response.status() == INTERNAL_SERVER_ERROR)
 
       eventually(timeout(1.second)) {
         assert(pluginExceptionMetric("throwExceptionPlugin") == 1)
@@ -248,7 +250,7 @@ class ErrorMetricsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status() == 500)
+      assert(response.status() == INTERNAL_SERVER_ERROR)
 
       eventually(timeout(1.second)) {
         assert(pluginExceptionMetric("mapToExceptionPlugin") == 1)
@@ -299,7 +301,7 @@ class ErrorMetricsSpec extends FunSpec
   private class Return500Interceptor extends PluginAdapter {
     override def intercept(request: HttpRequest, chain: Chain): Observable[HttpResponse] = {
       if (request.header("Generate_error_status").asScala.contains("true"))
-        just(response(INTERNAL_SERVER_ERROR).build())
+        just(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
       else
         chain.proceed(request)
     }
@@ -309,7 +311,7 @@ class ErrorMetricsSpec extends FunSpec
     override def intercept(request: HttpRequest, chain: Chain): Observable[HttpResponse] = {
       if (request.header("Map_to_error_status").asScala.contains("true"))
         chain.proceed(request).flatMap(new Func1[HttpResponse, Observable[HttpResponse]]() {
-          override def call(t: HttpResponse) = just(response(INTERNAL_SERVER_ERROR).build())
+          override def call(t: HttpResponse) = just(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
         })
       else
         chain.proceed(request)
@@ -319,7 +321,7 @@ class ErrorMetricsSpec extends FunSpec
   private class Return502Interceptor extends PluginAdapter {
     override def intercept(request: HttpRequest, chain: Chain): Observable[HttpResponse] = {
       if (request.header("Generate_bad_gateway_status").asScala.contains("true"))
-        just(response(BAD_GATEWAY).build())
+        just(response(HttpResponseStatus.BAD_GATEWAY).build())
       else
         chain.proceed(request)
     }
@@ -329,7 +331,7 @@ class ErrorMetricsSpec extends FunSpec
     override def intercept(request: HttpRequest, chain: Chain): Observable[HttpResponse] = {
       if (request.header("Map_to_bad_gateway_status").asScala.contains("true"))
         chain.proceed(request).flatMap(new Func1[HttpResponse, Observable[HttpResponse]]() {
-          override def call(t: HttpResponse) = just(response(BAD_GATEWAY).build())
+          override def call(t: HttpResponse) = just(response(HttpResponseStatus.BAD_GATEWAY).build())
         })
       else
         chain.proceed(request)

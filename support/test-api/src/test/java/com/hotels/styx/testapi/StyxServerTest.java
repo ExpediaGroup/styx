@@ -40,7 +40,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
@@ -88,18 +88,18 @@ public class StyxServerTest {
         configureFor(originServer1.port());
         stubFor(WireMock.get(urlPathEqualTo("/")).willReturn(aResponse()
                 .withHeader("origin", "first")
-                .withStatus(OK)));
+                .withStatus(OK.code())));
 
         configureFor(originServer2.port());
         stubFor(WireMock.get(urlPathEqualTo("/")).willReturn(aResponse()
                 .withHeader("origin", "second")
-                .withStatus(OK)));
+                .withStatus(OK.code())));
 
         // HTTP port is still used to identify the WireMockServer, even when we are using it for HTTPS
         configureFor(secureOriginServer.port());
         stubFor(WireMock.get(urlPathEqualTo("/")).willReturn(aResponse()
                 .withHeader("origin", "secure")
-                .withStatus(OK)));
+                .withStatus(OK.code())));
     }
 
     @AfterMethod

@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy
 
 import com.google.common.base.Charsets.UTF_8
-import com.hotels.styx.api.messages.HttpResponseStatusCodes.BAD_GATEWAY
+import com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.matchers.IsOptional.matches

@@ -413,7 +413,7 @@ public final class HttpResponse implements HttpMessage {
         }
 
         public Builder(FullHttpResponse response, Observable<ByteBuf> body) {
-            this.status = HttpResponseStatus.valueOf(response.status());
+            this.status = HttpResponseStatus.valueOf(response.status().code());
             headers(response.headers().newBuilder());
             this.cookies = new ArrayList<>(response.cookies());
             version(HttpVersion.valueOf(response.version().toString()));

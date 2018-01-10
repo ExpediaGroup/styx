@@ -29,7 +29,7 @@ import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
-import com.hotels.styx.api.messages.HttpResponseStatusCodes.OK
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
 import org.scalatest.FunSpec
@@ -64,7 +64,7 @@ class HttpOutboundMessageLoggingSpec extends FunSpec
   val mockServer = FakeHttpServer.HttpStartupConfig()
     .start()
     .stub(urlStartingWith("/foobar"), aResponse
-      .withStatus(OK)
+      .withStatus(OK.code())
       .withHeader(TRANSFER_ENCODING, CHUNKED)
       .withBody("I should be here!")
     )

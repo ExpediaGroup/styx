@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.hotels.styx.api.HttpRequest.Builder.{get, put}
 import com.hotels.styx.api.HttpResponse.Builder.response
 import com.hotels.styx.api._
-import com.hotels.styx.api.messages.HttpResponseStatusCodes.OK
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}

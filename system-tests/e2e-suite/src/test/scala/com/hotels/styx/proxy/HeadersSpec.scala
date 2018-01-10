@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.proxy
 
-import _root_.com.hotels.styx.api.messages.HttpResponseStatusCodes._
+import com.hotels.styx.api.messages.HttpResponseStatus._
 import _root_.io.netty.handler.codec.http.HttpHeaders.Names.{UPGRADE, _}
 import _root_.io.netty.handler.codec.http.HttpHeaders.Values._
 import _root_.io.netty.handler.codec.http.HttpMethod._
@@ -229,7 +229,7 @@ class HeadersSpec extends FunSpec
 
       it("should removes hop by hop headers from response.") {
         recordingBackend.stub(urlPathEqualTo("/headers"), aResponse
-          .withStatus(OK)
+          .withStatus(OK.code())
           .withHeader("Keep-Alive", "foo")
           .withHeader(PROXY_AUTHENTICATE, "foo")
           .withHeader(PROXY_AUTHORIZATION, "foo")
@@ -283,7 +283,7 @@ class HeadersSpec extends FunSpec
 
       it("should remove all fields from response indicated by Connection header value") {
         recordingBackend.stub(urlPathEqualTo("/headers"), aResponse()
-          .withStatus(OK)
+          .withStatus(OK.code())
           .withHeader("Keep-Alive", "foo")
           .withHeader(PROXY_AUTHENTICATE, "foo")
           .withHeader(PROXY_AUTHORIZATION, "foo")

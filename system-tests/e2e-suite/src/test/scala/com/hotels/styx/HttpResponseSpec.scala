@@ -18,7 +18,7 @@ package com.hotels.styx
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.messages.HttpResponseStatusCodes._
+import com.hotels.styx.api.messages.HttpResponseStatus._
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.client.StyxHttpClient._
 import com.hotels.styx.support.NettyOrigins

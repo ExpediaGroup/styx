@@ -33,7 +33,7 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
-import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadFromPath;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;

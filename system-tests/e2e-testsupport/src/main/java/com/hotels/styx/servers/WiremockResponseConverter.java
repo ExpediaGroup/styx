@@ -18,7 +18,8 @@ package com.hotels.styx.servers;
 import com.github.tomakehurst.wiremock.http.Response;
 import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.messages.FullHttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
+
+import static com.hotels.styx.api.messages.HttpResponseStatus.statusWithCode;
 
 final class WiremockResponseConverter {
 
@@ -29,7 +30,7 @@ final class WiremockResponseConverter {
         HttpHeaders headers = toStyxHeaders(response.getHeaders());
         byte[] body = response.getBody();
 
-        return FullHttpResponse.response(response.getStatus())
+        return FullHttpResponse.response(statusWithCode(response.getStatus()))
                 .headers(headers)
                 .body(body, false)
                 .build();

@@ -22,7 +22,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.google.common.net.HttpHeaders.CONTENT_LENGTH
 import com.hotels.styx.api._
 import com.hotels.styx.api.messages.FullHttpResponse
-import com.hotels.styx.api.messages.HttpResponseStatusCodes.{BAD_GATEWAY, METHOD_NOT_ALLOWED}
+import com.hotels.styx.api.messages.HttpResponseStatus.{BAD_GATEWAY, METHOD_NOT_ALLOWED}
 import com.hotels.styx.support.backends.FakeHttpServer.HttpStartupConfig
 import com.hotels.styx.support.configuration.{HealthCheckConfig, HttpBackend, Origins}
 import com.hotels.styx.support.server.FakeHttpServer

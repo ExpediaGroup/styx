@@ -18,7 +18,7 @@ package com.hotels.styx.client
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
 import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.messages.HttpResponseStatusCodes._
+import com.hotels.styx.api.messages.HttpResponseStatus._
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
@@ -173,7 +173,7 @@ class TlsVersionSpec extends FunSpec
   }
 
   def originResponse(appId: String) = aResponse
-    .withStatus(OK)
+    .withStatus(OK.code())
     .withHeader(STUB_ORIGIN_INFO.toString, appId)
     .withBody("Hello, World!")
 

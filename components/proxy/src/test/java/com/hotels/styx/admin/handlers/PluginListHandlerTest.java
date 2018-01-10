@@ -20,7 +20,7 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.plugins.spi.Plugin.PASS_THROUGH;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;

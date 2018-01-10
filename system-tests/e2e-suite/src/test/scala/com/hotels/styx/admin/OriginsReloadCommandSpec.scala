@@ -20,7 +20,7 @@ import java.nio.file.{Files, Paths}
 
 import com.google.common.io.Files.createTempDir
 import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.messages.HttpResponseStatusCodes.BAD_REQUEST
+import com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.configuration._

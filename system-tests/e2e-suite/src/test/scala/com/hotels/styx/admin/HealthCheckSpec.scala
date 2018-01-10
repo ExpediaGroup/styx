@@ -21,7 +21,7 @@ import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api._
-import com.hotels.styx.api.messages.HttpResponseStatusCodes.INTERNAL_SERVER_ERROR
+import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer

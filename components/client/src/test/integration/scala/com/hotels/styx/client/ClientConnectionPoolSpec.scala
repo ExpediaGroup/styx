@@ -25,7 +25,7 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
-import com.hotels.styx.api.messages.HttpResponseStatusCodes.OK
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 

@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post => wmpost}
 import com.hotels.styx.api.HttpRequest.Builder.post
-import com.hotels.styx.api.messages.HttpResponseStatusCodes._
+import com.hotels.styx.api.messages.HttpResponseStatus._
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -53,7 +53,7 @@ class OriginsConnectionSpec extends FunSpec
   describe("Origins closing connections after responses") {
     it("Styx doesn't propagate TransportLostException") {
       mockServer.stub(wmpost(urlStartingWith("/foobar")), aResponse
-        .withStatus(OK)
+        .withStatus(OK.code())
       )
 
       val loggingTestSupport: LoggingTestSupport = new LoggingTestSupport(classOf[StyxHttpClient])

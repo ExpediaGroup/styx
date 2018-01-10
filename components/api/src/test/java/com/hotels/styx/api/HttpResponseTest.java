@@ -18,11 +18,10 @@ package com.hotels.styx.api;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
 import com.hotels.styx.api.messages.FullHttpResponse;
-import com.hotels.styx.api.messages.HttpResponseStatusCodes;
+import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import rx.Observable;
@@ -295,7 +294,7 @@ public class HttpResponseTest {
     }
 
     @Test(dataProvider = "responses")
-    public void shouldCheckIfCurrentResponseIsARedirectToOtherResource(HttpResponseStatus status, boolean isRedirect) {
+    public void shouldCheckIfCurrentResponseIsARedirectToOtherResource(io.netty.handler.codec.http.HttpResponseStatus status, boolean isRedirect) {
         assertThat(response(status).build().isRedirect(), is(isRedirect));
     }
 
@@ -407,7 +406,7 @@ public class HttpResponseTest {
                 .single();
 
         assertThat(full.version(), is(HttpVersion.HTTP_1_0));
-        assertThat(full.status(), is(HttpResponseStatusCodes.CREATED));
+        assertThat(full.status(), is(HttpResponseStatus.CREATED));
         assertThat(full.headers(), hasItem(header("HeaderName", "HeaderValue")));
         assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
         assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
@@ -423,7 +422,7 @@ public class HttpResponseTest {
                 .toBlocking()
                 .single();
 
-        assertThat(full.status(), is(HttpResponseStatusCodes.CREATED));
+        assertThat(full.status(), is(HttpResponseStatus.CREATED));
         assertThat(full.bodyAs(UTF_8), is(""));
     }
 
@@ -437,7 +436,7 @@ public class HttpResponseTest {
                 .toBlocking()
                 .single();
 
-        assertThat(full.status(), is(HttpResponseStatusCodes.CREATED));
+        assertThat(full.status(), is(HttpResponseStatus.CREATED));
         assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
     }
 

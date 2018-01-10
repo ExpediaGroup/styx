@@ -27,7 +27,7 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import io.netty.handler.codec.http.HttpMethod.GET
-import com.hotels.styx.api.messages.HttpResponseStatusCodes._
+import com.hotels.styx.api.messages.HttpResponseStatus._
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT
 import io.netty.handler.codec.http._

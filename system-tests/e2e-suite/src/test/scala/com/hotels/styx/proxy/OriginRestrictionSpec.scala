@@ -18,7 +18,7 @@ package com.hotels.styx.proxy
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames._
 import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.messages.HttpResponseStatusCodes._
+import com.hotels.styx.api.messages.HttpResponseStatus._
 import com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}

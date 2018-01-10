@@ -27,7 +27,7 @@ import io.netty.handler.codec.http.HttpHeaders.Names.HOST
 import io.netty.handler.codec.http.HttpMethod.GET
 import org.hamcrest.MatcherAssert.assertThat
 import org.scalatest.{BeforeAndAfter, FunSpec}
-import com.hotels.styx.api.messages.HttpResponseStatusCodes._
+import com.hotels.styx.api.messages.HttpResponseStatus._
 import org.hamcrest.Matchers.is
 
 /**

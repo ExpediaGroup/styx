@@ -23,7 +23,7 @@ import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.HttpResponse.Builder.response
-import com.hotels.styx.api.messages.HttpResponseStatusCodes._
+import com.hotels.styx.api.messages.HttpResponseStatus._
 import com.hotels.styx.api.messages.FullHttpResponse
 import com.hotels.styx.api.support.HostAndPorts._
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT

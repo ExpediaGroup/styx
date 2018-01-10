@@ -26,9 +26,9 @@ import org.testng.annotations.Test;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.messages.HttpResponseStatusCodes.BAD_REQUEST;
-import static com.hotels.styx.api.messages.HttpResponseStatusCodes.INTERNAL_SERVER_ERROR;
-import static com.hotels.styx.api.messages.HttpResponseStatusCodes.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
 import static com.hotels.styx.infrastructure.Registry.ReloadResult.unchanged;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;

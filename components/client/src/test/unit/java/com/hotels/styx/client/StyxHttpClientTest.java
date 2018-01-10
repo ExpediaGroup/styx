@@ -27,7 +27,7 @@ import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.messages.FullHttpResponse;
-import com.hotels.styx.api.messages.HttpResponseStatusCodes;
+import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
@@ -125,7 +125,7 @@ public class StyxHttpClientTest {
                     .toBlocking()
                     .single();
 
-            assertThat(response.status(), is(HttpResponseStatusCodes.OK));
+            assertThat(response.status(), is(HttpResponseStatus.OK));
         });
     }
 
@@ -137,7 +137,7 @@ public class StyxHttpClientTest {
                     .toBlocking()
                     .single();
 
-            assertThat(response.status(), is(HttpResponseStatusCodes.OK));
+            assertThat(response.status(), is(HttpResponseStatus.OK));
         });
     }
 

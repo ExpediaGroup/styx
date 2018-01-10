@@ -19,7 +19,7 @@ import ch.qos.logback.classic.Level
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.HttpResponse
-import com.hotels.styx.api.messages.HttpResponseStatusCodes.OK
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler
 import com.hotels.styx.support.NettyOrigins

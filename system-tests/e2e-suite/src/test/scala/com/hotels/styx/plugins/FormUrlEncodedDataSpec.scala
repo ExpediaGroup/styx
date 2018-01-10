@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.StyxProxySpec
 import com.hotels.styx.api.HttpRequest.Builder._
-import com.hotels.styx.api.messages.HttpResponseStatusCodes.OK
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.support.configuration.StyxConfig
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually

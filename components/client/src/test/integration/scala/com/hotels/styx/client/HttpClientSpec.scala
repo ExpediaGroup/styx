@@ -31,7 +31,7 @@ import io.netty.buffer.Unpooled._
 import io.netty.channel.ChannelFutureListener.CLOSE
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
-import com.hotels.styx.api.messages.HttpResponseStatusCodes.OK
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
@@ -104,7 +104,7 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
 
   test("Emits onError when origin responds too slowly") {
     originOneServer.stub(urlStartingWith("/"), aResponse
-      .withStatus(OK)
+      .withStatus(OK.code())
       .withFixedDelay(3000))
 
     client.sendRequest(get("/foo/4").build()).subscribe(testSubscriber)
@@ -125,7 +125,7 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
 
   private def response200OkWithContentLengthHeader(content: String): ResponseDefinitionBuilder = {
     return aResponse
-      .withStatus(OK)
+      .withStatus(OK.code())
       .withHeader(CONTENT_LENGTH, content.length.toString)
       .withBody(content)
   }

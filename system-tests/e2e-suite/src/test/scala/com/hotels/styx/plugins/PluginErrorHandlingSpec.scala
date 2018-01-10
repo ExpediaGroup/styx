@@ -20,7 +20,7 @@ import java.util.Optional
 import com.hotels.styx._
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api._
-import com.hotels.styx.api.messages.HttpResponseStatusCodes.INTERNAL_SERVER_ERROR
+import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.support.ImplicitScalaRxConversions.toJavaObservable
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.backends.FakeHttpServer
