@@ -21,7 +21,6 @@ import rx.Observable;
 
 import java.io.Closeable;
 import java.util.EventListener;
-import java.util.function.Supplier;
 
 /**
  * A connection to an origin.
@@ -60,15 +59,6 @@ public interface Connection extends Closeable {
          */
         Observable<Connection> createConnection(Origin origin, Settings connectionSettings);
     }
-
-    /**
-     * Executes an operation in the context of this connection, allowing it to collect metrics, handle errors, etc.
-     *
-     * @param operation an operation
-     * @param <R>       result type
-     * @return an observable that provides the operation result
-     */
-    <R> Observable<R> execute(Supplier<Observable<R>> operation);
 
     /**
      * Writes HTTP request to a remote peer in the context of this connection.

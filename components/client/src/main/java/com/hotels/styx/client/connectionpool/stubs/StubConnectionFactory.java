@@ -24,7 +24,6 @@ import com.hotels.styx.api.client.Origin;
 import rx.Observable;
 
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import static com.google.common.base.Objects.toStringHelper;
 
@@ -54,13 +53,8 @@ public class StubConnectionFactory implements Connection.Factory {
         }
 
         @Override
-        public <R> Observable<R> execute(Supplier<Observable<R>> operation) {
-            return operation.get();
-        }
-
-        @Override
         public Observable<HttpResponse> write(HttpRequest request) {
-            throw new IllegalStateException("Not implemented");
+            throw new UnsupportedOperationException("Not implemented");
         }
 
         @Override

@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.routing.handlers;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpHandler2;
@@ -34,7 +33,6 @@ import rx.Observable;
 
 import java.util.List;
 
-import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
 
@@ -72,10 +70,6 @@ public class ProxyToBackend implements HttpHandler2 {
             BackendService backendService = jsConfig
                     .get("backend", BackendService.class)
                     .orElseThrow(() ->  missingAttributeError(configBlock, join(".", parents), "backend"));
-
-            JsonNode origins = jsConfig
-                    .get("backend.origins", JsonNode.class)
-                    .orElseThrow(() -> missingAttributeError(configBlock, join(".", append(parents, "backend")), "origins"));
 
             int clientWorkerThreadsCount = environment.styxConfig().proxyServerConfig().clientWorkerThreadsCount();
 

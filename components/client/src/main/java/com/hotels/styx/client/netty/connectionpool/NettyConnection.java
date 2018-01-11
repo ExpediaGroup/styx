@@ -24,16 +24,12 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.netty.exceptions.TransportException;
 import com.hotels.styx.client.HttpRequestOperationFactory;
-import com.hotels.styx.client.netty.HttpRequestOperation;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
 import rx.Observable;
 
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -47,9 +43,8 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
     private final Origin origin;
     private final Object id;
     private final Channel channel;
-    private final Function<HttpRequest, HttpRequestOperation> requestOpFactory;
+    private final HttpRequestOperationFactory requestOperationFactory;
 
-    private volatile TransportException lastException;
     private volatile long timeToFirstByteMs;
     private final Announcer<Listener> listeners = Announcer.to(Listener.class);
 
@@ -58,32 +53,22 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
      *
      * @param origin  the origin connected to
      * @param channel the netty channel used
-     * @param factory used to create operation objects that send http requests via this connection
+     * @param requestOperationFactory used to create operation objects that send http requests via this connection
      */
     @VisibleForTesting
-    public NettyConnection(Origin origin, Channel channel, HttpRequestOperationFactory factory) {
+    public NettyConnection(Origin origin, Channel channel, HttpRequestOperationFactory requestOperationFactory) {
         this.id = new UUID();
         this.origin = checkNotNull(origin);
         this.channel = checkNotNull(channel);
-        this.requestOpFactory = factory::newHttpRequestOperation;
+        this.requestOperationFactory = requestOperationFactory;
         this.channel.pipeline().addLast(new TimeToFirstByteHandler(this));
         this.channel.closeFuture().addListener(future ->
                 listeners.announce().connectionClosed(NettyConnection.this));
     }
 
     @Override
-    public <R> Observable<R> execute(Supplier<Observable<R>> operation) {
-        return operation.get()
-                .doOnError(throwable -> {
-                    if (throwable instanceof TransportException) {
-                        lastException = (TransportException) throwable;
-                    }
-                });
-    }
-
-    @Override
     public Observable<HttpResponse> write(HttpRequest request) {
-        return this.requestOpFactory.apply(request).execute(this);
+        return this.requestOperationFactory.newHttpRequestOperation(request).execute(this);
     }
 
 
