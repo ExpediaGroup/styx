@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,16 +66,6 @@ public interface LoadBalancingStrategy extends OriginsInventoryStateChangeListen
      * @return the origins sorted into a new order
      */
     Iterable<ConnectionPool> vote(Context context);
-
-    /**
-     * Returns a collection of {@link ConnectionPool}, without any guarantee of ordering.
-     * @return available, unordered origins
-     */
-    default Iterable<ConnectionPool> snapshot() {
-        return Collections.emptyList();
-    }
-
-
 
     default void originsInventoryStateChanged(OriginsInventorySnapshot snapshot) {
         // do nothing
