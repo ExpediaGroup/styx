@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2018 Expedia Inc.
+ * Copyright (C) 2013-2017 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,29 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
     }
 
     e.getMessage should be("Routing object definition of type 'ProxyToBackend', attribute='config.config', is missing a mandatory 'backend' attribute.")
+  }
+
+  it("throws for a missing mandatory backend.origins attribute") {
+    val config = configBlock(
+      """
+        |config:
+        |    name: ProxyToBackend
+        |    type: ProxyToBackend
+        |    config:
+        |      backend:
+        |        id: "ba"
+        |        connectionPool:
+        |          maxConnectionsPerHost: 45
+        |          maxPendingConnectionsPerHost: 15
+        |        responseTimeoutMillis: 60000
+        |""".stripMargin)
+
+    val e = intercept[IllegalArgumentException] {
+      val handler = new ProxyToBackend.ConfigFactory(environment, clientFactory())
+        .build(List("config", "config").asJava, null, config)
+    }
+
+    e.getMessage should be("Routing object definition of type 'ProxyToBackend', attribute='config.config.backend', is missing a mandatory 'origins' attribute.")
   }
 
   private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RoutingConfigDefinition]).get()
