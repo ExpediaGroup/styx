@@ -36,7 +36,7 @@ import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
-import com.hotels.styx.client.netty.HttpRequestOperation;
+import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnection;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;

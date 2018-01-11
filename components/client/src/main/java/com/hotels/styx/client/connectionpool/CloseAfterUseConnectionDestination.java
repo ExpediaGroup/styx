@@ -21,7 +21,7 @@ import com.hotels.styx.api.client.ConnectionDestination;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.HttpRequestOperationFactory;
-import com.hotels.styx.client.netty.HttpRequestOperation;
+import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.ssl.TlsSettings;
 import rx.Observable;

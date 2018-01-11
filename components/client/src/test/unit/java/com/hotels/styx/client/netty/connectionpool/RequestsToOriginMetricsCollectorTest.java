@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.client.netty;
+package com.hotels.styx.client.netty.connectionpool;
 
 import com.codahale.metrics.Timer;
 import java.util.Optional;
@@ -23,6 +23,8 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.client.applications.metrics.ApplicationMetrics;
 import com.hotels.styx.client.applications.metrics.OriginMetrics;
+import com.hotels.styx.client.netty.connectionpool.NettyToStyxResponsePropagator;
+import com.hotels.styx.client.netty.connectionpool.RequestsToOriginMetricsCollector;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;

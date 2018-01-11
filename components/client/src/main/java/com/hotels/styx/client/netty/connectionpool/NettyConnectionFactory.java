@@ -27,7 +27,6 @@ import com.hotels.styx.client.ChannelOptionSetting;
 import com.hotels.styx.client.HttpConfig;
 import com.hotels.styx.client.HttpRequestOperationFactory;
 import com.hotels.styx.client.OriginStatsFactory;
-import com.hotels.styx.client.netty.HttpRequestOperation;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
 import com.hotels.styx.client.ssl.TlsSettings;
