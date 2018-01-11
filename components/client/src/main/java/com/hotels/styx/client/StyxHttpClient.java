@@ -172,15 +172,15 @@ public final class StyxHttpClient implements HttpClient {
     @Override
     public Observable<HttpResponse> sendRequest(HttpRequest request) {
         HttpRequest rewrittenRequest = rewriteUrl(request);
-        Optional<RemoteHost> pool = selectOrigin(rewrittenRequest);
+        Optional<RemoteHost> maybeHost = selectOrigin(rewrittenRequest);
 
-        HttpTransaction txn = transport.send(rewrittenRequest, pool);
+        HttpTransaction txn = transport.send(rewrittenRequest, maybeHost.map(RemoteHost::connectionPool), originId(maybeHost));
 
         RetryOnErrorHandler retryHandler = new RetryOnErrorHandler.Builder()
                 .client(this)
                 .attemptCount(0)
                 .request(rewrittenRequest)
-                .previouslyUsedOrigin(pool.orElse(null))
+                .previouslyUsedOrigin(maybeHost.orElse(null))
                 .transaction(txn)
                 .originStatsFactory(originStatsFactory)
                 .build();
@@ -190,12 +190,16 @@ public final class StyxHttpClient implements HttpClient {
                 .map(this::addStickySessionIdentifier)
                 .doOnError(throwable -> logError(rewrittenRequest, throwable))
                 .doOnUnsubscribe(() -> {
-                    pool.ifPresent(connectionPool -> originStatsFactory.originStats(connectionPool.connectionPool().getOrigin()).requestCancelled());
+                    maybeHost.ifPresent(connectionPool -> originStatsFactory.originStats(connectionPool.connectionPool().getOrigin()).requestCancelled());
                     retryHandler.cancel();
                 })
                 .doOnNext(this::recordErrorStatusMetrics)
                 .map(response -> removeUnexpectedResponseBody(request, response))
                 .map(this::removeRedundantContentLengthHeader);
+    }
+
+    private Id originId(Optional<RemoteHost> maybeRemoteHost) {
+        return maybeRemoteHost.map(host -> host.connectionPool().getOrigin().id()).orElse(Id.id(""));
     }
 
     private static void logError(HttpRequest rewrittenRequest, Throwable throwable) {
@@ -324,7 +328,7 @@ public final class StyxHttpClient implements HttpClient {
                 originStatsFactory = new OriginStatsFactory(metricsRegistry);
             }
             if (transport == null) {
-                transport = new Transport(backendService.id(), styxHeaderConfig);
+                transport = new Transport(backendService.id(), styxHeaderConfig.originIdHeaderName());
             }
             return new StyxHttpClient(this);
         }

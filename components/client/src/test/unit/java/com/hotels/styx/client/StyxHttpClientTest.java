@@ -220,7 +220,7 @@ public class StyxHttpClientTest {
     }
 
     @Test
-    public void closesConnectionWhenTransactionIsUnsubscribed() throws IOException {
+    public void closesConnectionWhenTransactionIsUnsubscribed() {
         PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
         Connection connection = mockConnection(SOME_ORIGIN, responseSubject);
         ConnectionPool pool = mockPool(SOME_ORIGIN, connection);

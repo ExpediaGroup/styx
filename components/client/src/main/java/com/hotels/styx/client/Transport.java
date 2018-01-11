@@ -20,7 +20,6 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.netty.exceptions.NoAvailableHostsException;
 import rx.Observable;
 
@@ -33,21 +32,21 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 class Transport {
     private final Id appId;
-    private final StyxHeaderConfig styxHeaderConfig;
+    private CharSequence originIdHeaderName;
 
-    public Transport(Id appId, StyxHeaderConfig styxHeaderConfig) {
+    public Transport(Id appId, CharSequence originIdHeaderName) {
         this.appId = appId;
-        this.styxHeaderConfig = styxHeaderConfig;
+        this.originIdHeaderName = originIdHeaderName;
     }
 
-    public HttpTransaction send(HttpRequest request, Optional<RemoteHost> origin) {
+    public HttpTransaction send(HttpRequest request, Optional<ConnectionPool> origin, Id originId) {
         Observable<Connection> connection = connection(request, origin);
 
         AtomicReference<Connection> connectionRef = new AtomicReference<>(null);
         Observable<HttpResponse> observableResponse = connection.flatMap(tConnection -> {
             connectionRef.set(tConnection);
             return tConnection.write(request)
-                    .map(response -> addOriginId(tConnection, response));
+                    .map(response -> addOriginId(originId, response));
         });
 
         return new HttpTransaction() {
@@ -85,27 +84,26 @@ class Transport {
                 return cancelled.get();
             }
 
-            private synchronized void closeIfConnected(Optional<RemoteHost> connectionPool, AtomicReference<Connection> connectionRef) {
+            private synchronized void closeIfConnected(Optional<ConnectionPool> connectionPool, AtomicReference<Connection> connectionRef) {
                 Connection connection = connectionRef.get();
                 if (connection != null && connectionPool.isPresent()) {
-                    connectionPool.get().connectionPool().closeConnection(connection);
+                    connectionPool.get().closeConnection(connection);
                     connectionRef.set(null);
                 }
             }
 
-            private synchronized void returnIfConnected(Optional<RemoteHost> connectionPool, AtomicReference<Connection> connectionRef) {
+            private synchronized void returnIfConnected(Optional<ConnectionPool> connectionPool, AtomicReference<Connection> connectionRef) {
                 Connection connection = connectionRef.get();
                 if (connection != null && connectionPool.isPresent()) {
-                    connectionPool.get().connectionPool().returnConnection(connection);
+                    connectionPool.get().returnConnection(connection);
                     connectionRef.set(null);
                 }
             }
         };
     }
 
-    private Observable<Connection> connection(HttpRequest request, Optional<RemoteHost> origin) {
+    private Observable<Connection> connection(HttpRequest request, Optional<ConnectionPool> origin) {
         return origin
-                .map(RemoteHost::connectionPool)
                 .map(ConnectionPool::borrowConnection)
                 .orElseGet(() -> {
                     request.body().releaseContentBuffers();
@@ -113,9 +111,9 @@ class Transport {
                 });
     }
 
-    private HttpResponse addOriginId(Connection tConnection, HttpResponse response) {
+    private HttpResponse addOriginId(Id originId, HttpResponse response) {
         return response.newBuilder()
-                .header(styxHeaderConfig.originIdHeaderName(), tConnection.getOrigin().id())
+                .header(originIdHeaderName, originId)
                 .build();
     }
 }

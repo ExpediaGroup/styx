@@ -18,6 +18,7 @@ package com.hotels.styx.client;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
@@ -29,6 +30,7 @@ import java.util.Optional;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.collect.Iterables.concat;
+import static com.hotels.styx.api.Id.id;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
@@ -73,12 +75,19 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
         }
 
         synchronized (this) {
-            txn = client.transport().send(request, outcome.nextOrigin());
+            Optional<ConnectionPool> origin = outcome
+                    .nextOrigin()
+                    .map(RemoteHost::connectionPool);
+            txn = client.transport().send(request, origin, originId(origin));
         }
         LOGGER.info("Retrying with new context {}", context);
         return txn.response()
                 .delaySubscription(outcome.retryIntervalMillis(), MILLISECONDS)
                 .onErrorResumeNext(nextAttemptHandler(outcome));
+    }
+
+    private Id originId(Optional<ConnectionPool> maybeHost) {
+        return maybeHost.map(host -> host.getOrigin().id()).orElse(id(""));
     }
 
     private RetryOnErrorHandler nextAttemptHandler(RetryPolicy.Outcome outcome) {
