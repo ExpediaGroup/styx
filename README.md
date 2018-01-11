@@ -3,6 +3,7 @@
 
 [![Build Status](https://travis-ci.org/HotelsDotCom/styx.svg?branch=master)](https://travis-ci.org/HotelsDotCom/styx)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+![Version](https://img.shields.io/maven-central/v/com.hotels.styx/styx-server.svg)
 
 Styx is a programmable reverse proxy for JVM (Java Virtual Machine). It can be used
 as a stand-alone application, or as a platform to build custom networking applications. 
