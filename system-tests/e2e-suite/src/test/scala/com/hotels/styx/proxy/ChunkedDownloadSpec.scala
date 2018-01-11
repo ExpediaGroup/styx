@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import io.netty.handler.codec.http.HttpMethod.GET
-import io.netty.handler.codec.http.HttpResponseStatus._
+import com.hotels.styx.api.messages.HttpResponseStatus._
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT
 import io.netty.handler.codec.http._
@@ -131,7 +131,7 @@ class ChunkedDownloadSpec extends FunSpec
   def response200OkWithSlowChunkedMessageBody(messageBody: String): (ChannelHandlerContext, Any) => Unit = {
     (ctx: ChannelHandlerContext, msg: scala.Any) => {
       if (msg.isInstanceOf[LastHttpContent]) {
-        val response = new DefaultHttpResponse(HTTP_1_1, OK)
+        val response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK)
         response.headers().set(TRANSFER_ENCODING, CHUNKED)
         ctx.writeAndFlush(response)
         sendContentInChunks(ctx, messageBody, 100 millis)
@@ -142,7 +142,7 @@ class ChunkedDownloadSpec extends FunSpec
   def response200OkWithThreeChunks(chunk1: String, chunk2: String, chunk3: String): (ChannelHandlerContext, Any) => Any = {
     (ctx: ChannelHandlerContext, msg: scala.Any) => {
       if (msg.isInstanceOf[LastHttpContent]) {
-        val response = new DefaultHttpResponse(HTTP_1_1, OK)
+        val response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.OK)
         response.headers().set(TRANSFER_ENCODING, CHUNKED)
         ctx.writeAndFlush(response)
         ctx.writeAndFlush(new DefaultHttpContent(copiedBuffer(chunk1, UTF_8)))

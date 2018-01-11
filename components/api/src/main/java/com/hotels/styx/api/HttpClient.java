@@ -17,8 +17,6 @@ package com.hotels.styx.api;
 
 import rx.Observable;
 
-import java.io.Closeable;
-
 /**
  * HTTP Client that returns an observable of response.
  */

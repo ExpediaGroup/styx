@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpClient
 import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.client.UrlConnectionHttpClient
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.{SSLSetup, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
-import io.netty.handler.codec.http.HttpResponseStatus.OK
 import org.scalatest.{FunSpec, ShouldMatchers}
 
 class EmptyTlsProtocolsListSpec extends FunSpec
@@ -67,7 +67,7 @@ class EmptyTlsProtocolsListSpec extends FunSpec
   }
 
   describe("Empty TLS protocols list") {
-    recordingBackend.stub(urlPathEqualTo("/secure"), aResponse.withStatus(200))
+    recordingBackend.stub(urlPathEqualTo("/secure"), aResponse.withStatus(OK.code()))
 
     it("Empty TLS protocols list activates all supported protocols") {
       val req = Builder.get(styxServer.secureRouterURL("/secure"))

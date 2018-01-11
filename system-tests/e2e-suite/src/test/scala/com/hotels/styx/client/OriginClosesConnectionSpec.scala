@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,12 @@ import ch.qos.logback.classic.Level
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.HttpResponse
-import com.hotels.styx.support.matchers.LoggingTestSupport
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.configuration.{BackendService, HttpBackend, Origins}
+import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.support.observables.ImplicitRxConversions
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
 import io.netty.buffer.ByteBuf
@@ -31,7 +32,6 @@ import io.netty.buffer.Unpooled._
 import io.netty.channel.ChannelFutureListener.CLOSE
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
-import io.netty.handler.codec.http.HttpResponseStatus._
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
@@ -126,7 +126,7 @@ class OriginClosesConnectionSpec extends FunSuite
   def response200OkFollowedFollowedByServerConnectionClose(content: String): (ChannelHandlerContext, Any) => Any = {
     (ctx: ChannelHandlerContext, msg: scala.Any) => {
       if (msg.isInstanceOf[LastHttpContent]) {
-        val response = new DefaultFullHttpResponse(HTTP_1_1, OK, copiedBuffer(content, UTF_8))
+        val response = new DefaultFullHttpResponse(HTTP_1_1, HttpResponseStatus.OK, copiedBuffer(content, UTF_8))
         ctx.writeAndFlush(response).addListener(CLOSE)
       }
     }

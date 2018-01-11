@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ package com.hotels.styx.servers;
 import com.github.tomakehurst.wiremock.http.Response;
 import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.messages.FullHttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
+
+import static com.hotels.styx.api.messages.HttpResponseStatus.statusWithCode;
 
 final class WiremockResponseConverter {
 
@@ -26,11 +27,13 @@ final class WiremockResponseConverter {
     }
 
     static FullHttpResponse toStyxResponse(Response response) {
-        HttpResponseStatus status = HttpResponseStatus.valueOf(response.getStatus());
         HttpHeaders headers = toStyxHeaders(response.getHeaders());
         byte[] body = response.getBody();
 
-        return FullHttpResponse.response(status).headers(headers).body(body, false).build();
+        return FullHttpResponse.response(statusWithCode(response.getStatus()))
+                .headers(headers)
+                .body(body, false)
+                .build();
     }
 
     private static HttpHeaders toStyxHeaders(com.github.tomakehurst.wiremock.http.HttpHeaders headers) {

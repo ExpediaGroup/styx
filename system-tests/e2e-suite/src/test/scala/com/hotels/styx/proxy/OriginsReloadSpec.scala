@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package com.hotels.styx.proxy
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.messages.HttpResponseStatus.{METHOD_NOT_ALLOWED, OK}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
-import io.netty.handler.codec.http.HttpResponseStatus.{METHOD_NOT_ALLOWED, OK}
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 

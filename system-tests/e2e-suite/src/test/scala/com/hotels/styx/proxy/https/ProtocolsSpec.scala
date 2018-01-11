@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
 import com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_PROTO
 import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.messages.HttpResponseStatus._
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
@@ -136,7 +137,7 @@ class ProtocolsSpec extends FunSpec
     it("Proxies HTTP protocol to HTTP origins") {
       val response = decodedRequest(httpRequest("/http/app.x.1"))
 
-      assert(response.status().code() == 200)
+      assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")
 
       httpServer.verify(
@@ -147,7 +148,7 @@ class ProtocolsSpec extends FunSpec
     it("Proxies HTTP protocol to HTTPS origins") {
       val response = decodedRequest(httpRequest("/https/trustAllCerts/foo.2"))
 
-      assert(response.status().code() == 200)
+      assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")
 
       httpsOriginWithoutCert.verify(
@@ -162,7 +163,7 @@ class ProtocolsSpec extends FunSpec
           .build
       )
 
-      assert(response.status().code() == 200)
+      assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")
 
       httpServer.verify(
@@ -176,7 +177,7 @@ class ProtocolsSpec extends FunSpec
     it("Proxies HTTPS requests to HTTP backend") {
       val response = decodedRequest(httpsRequest("/http/app.x.4"))
 
-      assert(response.status().code() == 200)
+      assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")
       httpServer.verify(
         getRequestedFor(urlEqualTo("/http/app.x.4"))
@@ -187,7 +188,7 @@ class ProtocolsSpec extends FunSpec
     it("Proxies HTTPS requests to HTTPS backend") {
       val response = decodedRequest(httpsRequest("/https/trustAllCerts/foo.5"))
 
-      assert(response.status().code() == 200)
+      assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")
       httpsOriginWithoutCert.verify(
         getRequestedFor(urlEqualTo("/https/trustAllCerts/foo.5"))
@@ -202,7 +203,7 @@ class ProtocolsSpec extends FunSpec
           .build
       )
 
-      assert(response.status().code() == 200)
+      assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")
       httpsOriginWithoutCert.verify(
         getRequestedFor(urlEqualTo("/https/trustAllCerts/foo.6"))
@@ -219,7 +220,7 @@ class ProtocolsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status().code() == 200)
+      assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")
       httpsOriginWithCert.verify(getRequestedFor(urlEqualTo("/https/authenticate/secure/foo.7")))
     }
@@ -229,7 +230,7 @@ class ProtocolsSpec extends FunSpec
         .build()
 
       val response = decodedRequest(request)
-      assert(response.status().code() == 502)
+      assert(response.status() == BAD_GATEWAY)
 
       httpsOriginWithCert.verify(0, getRequestedFor(urlEqualTo("/https/authenticate/insecure/foo.8")))
     }
@@ -240,7 +241,7 @@ class ProtocolsSpec extends FunSpec
 
       val response = decodedRequest(request)
 
-      assert(response.status().code() == 200)
+      assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")
       httpsOriginWithoutCert.verify(getRequestedFor(urlEqualTo("/https/trustAllCerts/foo.9")))
     }
@@ -249,7 +250,7 @@ class ProtocolsSpec extends FunSpec
   }
 
   def originResponse(appId: String) = aResponse
-    .withStatus(200)
+    .withStatus(OK.code())
     .withHeader(STUB_ORIGIN_INFO.toString, appId)
     .withBody("Hello, World!")
 
