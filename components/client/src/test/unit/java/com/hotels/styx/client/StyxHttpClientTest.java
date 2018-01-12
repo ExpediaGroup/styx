@@ -37,7 +37,7 @@ import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
-import com.hotels.styx.client.netty.HttpRequestOperation;
+import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnection;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
@@ -257,9 +257,11 @@ public class StyxHttpClientTest {
 
     @Test
     public void closesConnectionWhenTransactionIsUnsubscribed() throws IOException {
+        PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
+        requestOperationFactory = newRequestOperationFactory(responseSubject);
+
         Connection connection = aConnection();
         ConnectionPool pool = mockPool(connection);
-        PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
         BackendService backendService = backendWithOrigins(connection.getOrigin().host().getPort());
 
         OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
@@ -268,7 +270,6 @@ public class StyxHttpClientTest {
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .originsInventory(originsInventory)
-                .requestOperationFactory(newRequestOperationFactory(responseSubject))
                 .build();
 
         Subscription txnSubscription = styxHttpClient.sendRequest(SOME_REQ).subscribe();
@@ -282,9 +283,11 @@ public class StyxHttpClientTest {
 
     @Test
     public void closesConnectionWhenTransactionIsCancelled() throws IOException {
+        PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
+        requestOperationFactory = newRequestOperationFactory(responseSubject);
+
         Connection connection = aConnection();
         ConnectionPool pool = mockPool(connection);
-        PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
 
         BackendService backendService = backendWithOrigins(connection.getOrigin().host().getPort());
 
@@ -294,7 +297,6 @@ public class StyxHttpClientTest {
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .originsInventory(originsInventory)
-                .requestOperationFactory(newRequestOperationFactory(responseSubject))
                 .build();
 
         Observable<HttpResponse> transaction = styxHttpClient.sendRequest(SOME_REQ);
@@ -323,7 +325,6 @@ public class StyxHttpClientTest {
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .originsInventory(originsInventory)
-                .requestOperationFactory(newRequestOperationFactory(responseSubject))
                 .metricsRegistry(metricRegistry)
                 .build();
 
@@ -362,6 +363,8 @@ public class StyxHttpClientTest {
 
     @Test
     public void releasesConnectionWhenOperationExecutionFails() {
+        requestOperationFactory = newFailingRequestOperationFactory(new RuntimeException());
+
         Connection connection = openConnection(SOME_ORIGIN);
         ConnectionPool pool = mockPool(connection);
 
@@ -372,7 +375,6 @@ public class StyxHttpClientTest {
                 .build();
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
-                .requestOperationFactory(newFailingRequestOperationFactory(new RuntimeException()))
                 .originsInventory(originsInventory)
                 .retryPolicy(doNotRetry())
                 .build();
@@ -424,8 +426,10 @@ public class StyxHttpClientTest {
 
     @Test
     public void notifiesSubscribersOnOperationFailure() {
-        ConnectionPool pool = mockPool(openConnection(SOME_ORIGIN));
         Throwable operationException = new RuntimeException("Error happened");
+        requestOperationFactory = newFailingRequestOperationFactory(operationException);
+
+        ConnectionPool pool = mockPool(openConnection(SOME_ORIGIN));
 
         BackendService backendService = backendWithOrigins(SOME_ORIGIN.host().getPort());
 
@@ -434,7 +438,6 @@ public class StyxHttpClientTest {
                 .build();
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
-                .requestOperationFactory(newFailingRequestOperationFactory(operationException))
                 .originsInventory(originsInventory)
                 .build();
 
@@ -469,7 +472,6 @@ public class StyxHttpClientTest {
         OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService).build();
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
-                .requestOperationFactory(requestOperationFactory)
                 .originsInventory(originsInventory)
                 .build();
 
@@ -587,7 +589,6 @@ public class StyxHttpClientTest {
         return new StyxHttpClient.Builder(
                 backendService)
                 .originsInventory(originsInventory)
-                .requestOperationFactory(requestOperationFactory)
                 .metricsRegistry(metricRegistry)
                 .build();
     }
@@ -604,7 +605,6 @@ public class StyxHttpClientTest {
         return new StyxHttpClient.Builder(
                 backendService)
                 .originsInventory(originsInventory)
-                .requestOperationFactory(requestOperationFactory)
                 .metricsRegistry(metricRegistry);
     }
 
@@ -635,16 +635,15 @@ public class StyxHttpClientTest {
 
         return new StyxHttpClient.Builder(backendService)
                 .originsInventory(originsInventory)
-                .requestOperationFactory(newRequestOperationFactory(responseSubject))
                 .retryPolicy(retryPolicy)
                 .build();
     }
 
-    private static Connection nettyConnection(Channel channel) {
+    private Connection nettyConnection(Channel channel) {
         when(channel.pipeline()).thenReturn(mock(ChannelPipeline.class));
         when(channel.closeFuture()).thenReturn(mock(ChannelFuture.class));
         when(channel.isOpen()).thenReturn(true);
-        return new NettyConnection(SOME_ORIGIN, channel);
+        return new NettyConnection(SOME_ORIGIN, channel, requestOperationFactory);
     }
 
     private static HttpRequest requestWithStickySessionCookie(Id applicationId, Id originId) {
@@ -660,20 +659,20 @@ public class StyxHttpClientTest {
                 .build();
     }
 
-    private static ConnectionPool connectionPool(Origin origin) {
+    private ConnectionPool connectionPool(Origin origin) {
         Connection connection = aConnection(origin);
         return mockPool(connection);
     }
 
-    private static Connection openConnection(Origin origin) {
-        return new NettyConnection(origin, new LocalChannel());
+    private Connection openConnection(Origin origin) {
+        return new NettyConnection(origin, new LocalChannel(), requestOperationFactory);
     }
 
-    private static Connection aConnection() {
+    private Connection aConnection() {
         return aConnection(SOME_ORIGIN);
     }
 
-    private static Connection aConnection(Origin origin) {
+    private Connection aConnection(Origin origin) {
         return openConnection(origin);
     }
 

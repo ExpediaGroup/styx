@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -431,6 +431,8 @@ public final class OriginsInventory
                     .clientWorkerThreadsCount(clientWorkerThreadsCount)
                     .httpConfig(httpConfig)
                     .tlsSettings(backendService.tlsSettings().orElse(null))
+                    .metricRegistry(metricsRegistry)
+                    .responseTimeoutMillis(backendService.responseTimeoutMillis())
                     .build();
 
             return new ConnectionPoolFactory.Builder()

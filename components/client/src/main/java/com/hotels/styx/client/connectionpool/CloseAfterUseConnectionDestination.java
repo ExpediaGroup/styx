@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionDestination;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.client.ConnectionSettings;
+import com.hotels.styx.client.HttpRequestOperationFactory;
+import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.ssl.TlsSettings;
 import rx.Observable;
@@ -126,6 +128,13 @@ public class CloseAfterUseConnectionDestination implements ConnectionDestination
         private Connection.Settings connectionSettings = new ConnectionSettings(1000, 1000);
         private Connection.Factory connectionFactory;
         private TlsSettings tlsSettings;
+        private HttpRequestOperationFactory requestOperationFactory = request -> new HttpRequestOperation(
+                request,
+                null,
+                false,
+                60000,
+                false,
+                false);
 
         public Factory connectionSettings(Connection.Settings connectionSettings) {
             this.connectionSettings = connectionSettings;
@@ -149,6 +158,7 @@ public class CloseAfterUseConnectionDestination implements ConnectionDestination
                     : new NettyConnectionFactory.Builder()
                     .name("styx-client")
                     .tlsSettings(tlsSettings)
+                    .httpRequestOperationFactory(requestOperationFactory)
                     .build();
 
             return new CloseAfterUseConnectionDestination(origin, connectionSettings, connectionFactory);

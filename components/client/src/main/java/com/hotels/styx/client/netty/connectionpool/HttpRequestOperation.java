@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.client.netty;
+package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.HttpCookie;
@@ -23,7 +23,6 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.netty.exceptions.TransportLostException;
 import com.hotels.styx.client.Operation;
 import com.hotels.styx.client.OriginStatsFactory;
-import com.hotels.styx.client.netty.connectionpool.NettyConnection;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
