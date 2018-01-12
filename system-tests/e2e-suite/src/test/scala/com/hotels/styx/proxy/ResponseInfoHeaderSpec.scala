@@ -18,7 +18,6 @@ package com.hotels.styx.proxy
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
-import com.hotels.styx.api.support.HostAndPorts._
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -34,7 +33,7 @@ class VersionPresentInResponseHeaderSpec extends FunSpec
   with StyxProxySpec
   with StyxConfiguration
   with BeforeAndAfter {
-  val mockServer = new MockServer(freePort())
+  val mockServer = new MockServer(0)
   val backend = FakeHttpServer.HttpStartupConfig().start()
   override val styxConfig = StyxConfig(yamlText=
     """
@@ -69,7 +68,7 @@ class VersionAbsentFromResponseHeaderSpec extends FunSpec
   with StyxProxySpec
   with StyxConfiguration
   with BeforeAndAfter {
-  val mockServer = new MockServer(freePort())
+  val mockServer = new MockServer(0)
   val backend = FakeHttpServer.HttpStartupConfig().start()
   override val styxConfig = StyxConfig()
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,6 @@ import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 
 object FakeHttpServer {
 
-  private def portNumber(port: Int) = if (port == 0) freePort() else port
-
   case class HttpsStartupConfig(httpsPort: Int = 0,
                                 adminPort: Int = 0,
                                 appId: String = "generic-app",
@@ -43,12 +41,12 @@ object FakeHttpServer {
     def start(): MockOriginServer = {
 
       var builder = new HttpsConnectorConfig.Builder()
-        .port(portNumber(httpsPort))
-        .protocols(protocols:_*)
+        .port(httpsPort)
+        .protocols(protocols: _*)
       builder = if (certificateFile != null) builder.certificateFile(certificateFile) else builder
       builder = if (certificateKeyFile != null) builder.certificateFile(certificateKeyFile) else builder
 
-      MockOriginServer.create(appId, originId, portNumber(adminPort), builder.build()).start()
+      MockOriginServer.create(appId, originId, adminPort, builder.build()).start()
     }
   }
 
@@ -57,9 +55,13 @@ object FakeHttpServer {
                                originId: String = "generic-app-01"
                               ) {
     private def asJava: WireMockConfiguration = {
-      new WireMockConfiguration()
-        .port(if (port == 0) freePort() else port)
-        .httpsPort(-1)
+      val wmConfig = if (port == 0) {
+        new WireMockConfiguration().dynamicPort()
+      } else {
+        new WireMockConfiguration().port(port)
+      }
+
+      wmConfig.httpsPort(-1)
     }
 
     def start(): JavaFakeHttpServer = {

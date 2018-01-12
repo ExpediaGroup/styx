@@ -37,7 +37,7 @@ class HeaderNamesSpec  extends FunSpec
   with StyxProxySpec
   with StyxConfiguration
   with BeforeAndAfter {
-  val mockServer = new MockServer(freePort())
+  val mockServer = new MockServer(0)
   val backend = FakeHttpServer.HttpStartupConfig().start()
   override val styxConfig = StyxConfig(yamlText=
     """

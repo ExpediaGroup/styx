@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,6 @@ public final class FakeHttpServer {
              */
     private final HttpsSettings httpsSettings;
     private final int serverPort;
-    private final int adminPort;
     private final WireMockServer server;
 
     static {
@@ -60,16 +59,22 @@ public final class FakeHttpServer {
         server = new WireMockServer(wireMockConfiguration);
 
         if (httpsSettings.enabled()) {
-            this.adminPort = wireMockConfiguration.portNumber();
             this.serverPort = httpsSettings.port();
         } else {
-            this.adminPort = wireMockConfiguration.portNumber();
             this.serverPort = wireMockConfiguration.portNumber();
         }
     }
 
     public FakeHttpServer(int port) {
-        this("generic-app", "generic-app-" + port, wireMockConfig().port(port));
+        this("generic-app", "generic-app-" + port, wireMockPort(port));
+    }
+
+    private static WireMockConfiguration wireMockPort(int port) {
+        if (port == 0) {
+            return wireMockConfig().dynamicHttpsPort();
+        } else {
+            return wireMockConfig().port(port);
+        }
     }
 
     public static FakeHttpServer newHttpServer(int port) {
@@ -82,7 +87,6 @@ public final class FakeHttpServer {
 
 
     public FakeHttpServer start() {
-        configureFor("localhost", adminPort);
         if (!server.isRunning()) {
             server.start();
         }
@@ -112,7 +116,6 @@ public final class FakeHttpServer {
     }
 
     public FakeHttpServer stop() {
-        configureFor("localhost", adminPort());
         if (server.isRunning()) {
             server.stop();
         }
@@ -134,15 +137,14 @@ public final class FakeHttpServer {
     }
 
     public int port() {
-        return serverPort;
+        return server.port();
     }
 
     public int adminPort() {
-        return adminPort;
+        return server.port();
     }
 
     public boolean ssl() {
-
         return httpsSettings.enabled();
     }
 

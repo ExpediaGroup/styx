@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 import rx.observers.TestSubscriber;
@@ -38,7 +39,6 @@ import java.util.List;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.support.HostAndPorts.freePort;
 import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
 import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultSettableConnectionPoolSettings;
@@ -56,11 +56,11 @@ import static org.hamcrest.core.Is.is;
 
 public class NettyConnectionFactoryTest {
     private final Connection.Settings connectionSettings = defaultSettableConnectionPoolSettings();
-    private final FakeHttpServer server = new FakeHttpServer(freePort());
+    private final FakeHttpServer server = new FakeHttpServer(0);
     private final NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder().build();
 
-    private final Origin healthyOrigin = newOriginBuilder(localhost(server.port())).build();
-    private final Origin deadOrigin = newOriginBuilder(localHostAndFreePort()).build();
+    private Origin healthyOrigin;
+    private Origin deadOrigin;
 
     @BeforeClass
     public void startServer() {
@@ -70,6 +70,12 @@ public class NettyConnectionFactoryTest {
     @AfterClass
     public void stopServer() {
         server.stop();
+    }
+
+    @BeforeMethod
+    public void setUp() {
+        healthyOrigin = newOriginBuilder(localhost(server.port())).build();
+        deadOrigin = newOriginBuilder(localHostAndFreePort()).build();
     }
 
     @Test

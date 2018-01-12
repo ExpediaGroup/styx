@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,6 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
     def addRoute(path: String, httpHandler: HttpHandler) = routes.put(path, httpHandler)
 
   }
-  val origin = newOriginBuilder("localhost", port).id(id).build()
   val requestQueue: BlockingQueue[HttpRequest] = new LinkedBlockingQueue
   val server = NettyServerBuilder.newBuilder()
       .name("MockServer")
@@ -102,5 +101,9 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
   private def connectorOnFreePort: ServerConnector = {
     new WebServerConnectorFactory().create(new HttpConnectorConfig(freePort))
   }
+
+  def httpPort() = Option(server.httpAddress()).map(_.getPort).getOrElse(0)
+
+  def origin = newOriginBuilder("localhost", httpPort()).id(id).build()
 
 }

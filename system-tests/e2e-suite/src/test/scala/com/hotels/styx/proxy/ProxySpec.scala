@@ -43,7 +43,7 @@ class ProxySpec extends FunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration
   with BeforeAndAfter {
-  val mockServer = new MockServer(freePort())
+  val mockServer = new MockServer(0)
 
   val recordingBackend = FakeHttpServer.HttpStartupConfig().start()
 

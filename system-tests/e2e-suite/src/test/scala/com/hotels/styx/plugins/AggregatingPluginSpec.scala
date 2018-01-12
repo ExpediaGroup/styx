@@ -21,7 +21,6 @@ import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpRequest.Builder._
 import com.hotels.styx.api.HttpResponse.Builder._
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
-import com.hotels.styx.api.support.HostAndPorts._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{MockServer, StyxProxySpec}
 import io.netty.buffer.{ByteBuf, Unpooled}
@@ -35,7 +34,7 @@ import scala.concurrent.duration._
 class AggregatingPluginSpec extends FunSpec
   with StyxProxySpec
   with Eventually {
-  val mockServer = new MockServer("origin-1", freePort())
+  val mockServer = new MockServer("origin-1", 0)
   override val styxConfig = StyxConfig(plugins = List("aggregator" -> new AggregationTesterPlugin(2750)))
 
   override protected def beforeAll(): Unit = {

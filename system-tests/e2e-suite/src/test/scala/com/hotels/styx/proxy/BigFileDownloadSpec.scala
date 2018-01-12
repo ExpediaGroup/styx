@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.google.common.io.Files._
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponse.Builder._
-import com.hotels.styx.api.support.HostAndPorts._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names.HOST
@@ -36,7 +35,7 @@ import scala.concurrent.duration._
 class BigFileDownloadSpec extends FunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration {
-  val fileServer = new MockServer(freePort())
+  val fileServer = new MockServer(0)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

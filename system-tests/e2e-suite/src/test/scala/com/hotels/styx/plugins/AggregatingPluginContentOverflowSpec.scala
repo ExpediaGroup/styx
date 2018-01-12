@@ -36,7 +36,7 @@ import scala.concurrent.duration._
 class AggregatingPluginContentOverflowSpec extends FunSpec
   with StyxProxySpec
   with Eventually {
-  val mockServer = new MockServer("origin-1", freePort())
+  val mockServer = new MockServer("origin-1", 0)
   override val styxConfig = StyxConfig(plugins = List("aggregator" -> new AggregationTesterPlugin(2750)))
 
   override protected def beforeAll(): Unit = {

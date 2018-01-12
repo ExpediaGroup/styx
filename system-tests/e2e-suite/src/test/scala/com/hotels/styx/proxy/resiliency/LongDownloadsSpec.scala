@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.google.common.io.Files
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx._
 import com.hotels.styx.api.HttpResponse.Builder._
-import com.hotels.styx.api.support.HostAndPorts.freePort
 import com.hotels.styx.infrastructure.MemoryBackedRegistry
 import com.hotels.styx.proxy.resiliency.DirectBufferMetrics.directBufferMetrics
 import com.hotels.styx.server.HttpServer
@@ -176,7 +175,7 @@ object SharedOrigins extends NettyOrigins {
   }
 
   private val fileServerStartOp = Future[HttpServer] {
-    val fileServer = new MockServer(freePort())
+    val fileServer = new MockServer(0)
     fileServer.startAsync().awaitRunning()
 
     fileServer.stub("/download",

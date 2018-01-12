@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,6 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
 
   override def startServer(backendsRegistry: AbstractRegistry[com.hotels.styx.client.applications.BackendService]): StyxServer = {
 
-    val newAdminPort = if (adminPort == 0) freePort() else adminPort
     val proxyConfig = this.proxyConfig.copy(connectors = Connectors(httpConnectorWithPort(), httpsConnectorWithPort()))
 
     val proxyConfigBuilder = new ProxyServerConfig.Builder()
@@ -90,7 +89,7 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
 
     val styxConfig = newStyxConfig(this.yamlText,
       proxyConfigBuilder,
-      newAdminServerConfigBuilder(newHttpConnConfig(newAdminPort))
+      newAdminServerConfigBuilder(newHttpConnConfig(adminPort))
     )
 
     val styxServerBuilder = newStyxServerBuilder(styxConfig, backendsRegistry, this.plugins)
@@ -102,23 +101,9 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
     styxServer
   }
 
-  private def httpConnectorWithPort() = {
-    val config = this.proxyConfig.connectors.httpConnectorConfig
-    if (config != null && config.port == 0) {
-      config.copy(port = freePort())
-    } else {
-      config
-    }
-  }
+  private def httpConnectorWithPort() = this.proxyConfig.connectors.httpConnectorConfig
 
-  private def httpsConnectorWithPort() = {
-    val config =  this.proxyConfig.connectors.httpsConnectorConfig
-    if (config != null && config.port == 0) {
-      config.copy(port = freePort())
-    } else {
-      config
-    }
-  }
+  private def httpsConnectorWithPort() = this.proxyConfig.connectors.httpsConnectorConfig
 }
 
 case class StyxYamlConfig(yamlConfig: String,
