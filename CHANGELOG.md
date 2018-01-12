@@ -9,15 +9,6 @@
 
 **Merged pull requests:**
 
-- Merge latest changes from master [\#60](https://github.com/HotelsDotCom/styx/pull/60) ([mikkokar](https://github.com/mikkokar))
-- Decouple StateMachine mechanics from the QueueDrainingEventProcessor. [\#54](https://github.com/HotelsDotCom/styx/pull/54) ([mikkokar](https://github.com/mikkokar))
-- Refactor styx routing objects [\#53](https://github.com/HotelsDotCom/styx/pull/53) ([mikkokar](https://github.com/mikkokar))
-- Remove bodyAs\(Function\) method from FullHttpMessage API. [\#52](https://github.com/HotelsDotCom/styx/pull/52) ([kvosper](https://github.com/kvosper))
-- Store Full HTTP message content as byte array. [\#50](https://github.com/HotelsDotCom/styx/pull/50) ([mikkokar](https://github.com/mikkokar))
-- Passing a dependency array into service factories [\#49](https://github.com/HotelsDotCom/styx/pull/49) ([alobodzki](https://github.com/alobodzki))
-- Extracting OriginsInventory creation outside of StyxHttpClient [\#47](https://github.com/HotelsDotCom/styx/pull/47) ([alobodzki](https://github.com/alobodzki))
-- Remove Guava Service from Registry API. [\#45](https://github.com/HotelsDotCom/styx/pull/45) ([mikkokar](https://github.com/mikkokar))
-- Add streaming classes [\#44](https://github.com/HotelsDotCom/styx/pull/44) ([kvosper](https://github.com/kvosper))
 - Tidy up tests: Use new FullHttpRequest/Response message API [\#42](https://github.com/HotelsDotCom/styx/pull/42) ([mikkokar](https://github.com/mikkokar))
 - Add initial changelog file and make rule for changelog generation [\#41](https://github.com/HotelsDotCom/styx/pull/41) ([alobodzki](https://github.com/alobodzki))
 - Add FullHttpRequest and FullHttpResponse classes to Styx API [\#40](https://github.com/HotelsDotCom/styx/pull/40) ([kvosper](https://github.com/kvosper))
