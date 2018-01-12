@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.hotels.styx.plugins
 
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpResponse.Builder._
-import com.hotels.styx.api.support.HostAndPorts._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig, StyxConfig}
 import com.hotels.styx.support.{ResourcePaths, TestClientSupport}
 import com.hotels.styx.{MockServer, StyxProxySpec}
@@ -35,7 +34,7 @@ class DoubleSubscribingPluginSpec extends FunSpec
   with Eventually
   with TestClientSupport {
 
-  val mockServer = new MockServer("origin-1", freePort())
+  val mockServer = new MockServer("origin-1", 0)
 
   override val styxConfig = StyxConfig(
     proxyConfig = ProxyConfig(requestTimeoutMillis = 2 * 1000),

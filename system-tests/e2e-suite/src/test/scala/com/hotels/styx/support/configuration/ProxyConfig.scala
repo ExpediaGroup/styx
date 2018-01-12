@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import com.hotels.styx.StyxServerSupport._
 import com.hotels.styx.support.configuration.ProxyConfig.proxyServerDefaults
 
 
-case class ProxyConfig(connectors: Connectors = Connectors(HttpConnectorConfig(port = 0), null),
+case class ProxyConfig(connectors: Connectors = Connectors(HttpConnectorConfig(), null),
                        bossThreadCount: Int = proxyServerDefaults.bossThreadsCount(),
                        workerThreadsCount: Int = proxyServerDefaults.workerThreadsCount(),
                        nioAcceptorBacklog: Int = proxyServerDefaults.nioAcceptorBacklog(),

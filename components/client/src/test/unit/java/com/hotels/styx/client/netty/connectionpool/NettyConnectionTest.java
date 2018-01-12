@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,23 +26,24 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultSettableConnectionPoolSettings;
+import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
-import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
-import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultSettableConnectionPoolSettings;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 public class NettyConnectionTest {
+    private final FakeHttpServer originServer = new FakeHttpServer(0);
     private final NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder().build();
-    private final Origin origin = newOriginBuilder(localHostAndFreePort()).build();
-    private final FakeHttpServer originServer = new FakeHttpServer(origin.host().getPort());
+
+    private Origin origin;
 
     @BeforeMethod
     public void startOriginServer() {
         originServer.start();
+        origin = newOriginBuilder("localhost", originServer.port()).build();
     }
 
     @AfterMethod
