@@ -90,7 +90,7 @@ public class OriginsInventoryTest {
      * Setting the origins
      */
     @Test
-    public void setNewOrigins() {
+    public void startsMonitoringNewOrigins() {
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
 
         assertThat(inventory, hasActiveOrigins(2));
@@ -146,7 +146,7 @@ public class OriginsInventoryTest {
     }
 
     @Test
-    public void stopsMonitoringModifiedOrigins() {
+    public void stopsAndRestartsMonitoringModifiedOrigins() {
         Origin originV1 = newOriginBuilder("acme01.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
         Origin originV2 = newOriginBuilder("acme02.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
 

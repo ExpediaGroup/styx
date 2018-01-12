@@ -57,7 +57,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
@@ -65,6 +64,7 @@ import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
 import static com.hotels.styx.client.OriginsInventory.OriginState.INACTIVE;
 import static com.hotels.styx.common.StyxFutures.await;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -72,6 +72,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Stream.concat;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -100,7 +101,7 @@ public final class OriginsInventory
     private final QueueDrainingEventProcessor eventQueue;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    private Map<Id, MonitoredOrigin> origins = ImmutableMap.of();
+    private Map<Id, MonitoredOrigin> origins = emptyMap();
 
 
     /**
@@ -183,104 +184,101 @@ public final class OriginsInventory
         inventoryListeners.addListener(listener);
     }
 
+    public boolean closed() {
+        return closed.get();
+    }
+
     @Override
     public void submit(Object event) {
         if (event instanceof SetOriginsEvent) {
-            addOriginsEventHandler((SetOriginsEvent) event);
+            handleSetOriginsEvent((SetOriginsEvent) event);
         } else if (event instanceof OriginHealthEvent) {
-            originHealthEventHandler((OriginHealthEvent) event);
+            handleOriginHealthEvent((OriginHealthEvent) event);
         } else if (event instanceof EnableOriginCommand) {
-            enableOriginHandler((EnableOriginCommand) event);
+            handleEnableOriginCommand((EnableOriginCommand) event);
         } else if (event instanceof DisableOriginCommand) {
-            disableOriginHandler((DisableOriginCommand) event);
+            handleDisableOriginCommand((DisableOriginCommand) event);
         } else if (event instanceof CloseEvent) {
-            closeHandler();
+            handleCloseEvent();
         }
     }
 
-    private class SetOriginsEvent {
+    private static class SetOriginsEvent {
         final Set<Origin> newOrigins;
 
-        public SetOriginsEvent(Set<Origin> newOrigins) {
+        SetOriginsEvent(Set<Origin> newOrigins) {
             this.newOrigins = newOrigins;
         }
     }
 
-    private class OriginHealthEvent {
+    private static class OriginHealthEvent {
         final Object healthEvent;
         final Origin origin;
 
-        public OriginHealthEvent(Origin origin, Object healthy) {
+        OriginHealthEvent(Origin origin, Object healthy) {
             this.origin = origin;
             this.healthEvent = healthy;
         }
     }
 
-    private class EnableOriginCommand {
+    private static class EnableOriginCommand {
         final EnableOrigin enableOrigin;
 
-        public EnableOriginCommand(EnableOrigin enableOrigin) {
+        EnableOriginCommand(EnableOrigin enableOrigin) {
             this.enableOrigin = enableOrigin;
         }
     }
 
-    private class DisableOriginCommand {
+    private static class DisableOriginCommand {
         final DisableOrigin disableOrigin;
 
-        public DisableOriginCommand(DisableOrigin disableOrigin) {
+        DisableOriginCommand(DisableOrigin disableOrigin) {
             this.disableOrigin = disableOrigin;
         }
     }
 
-    private class CloseEvent {
+    private static class CloseEvent {
 
     }
 
-    public boolean closed() {
-        return closed.get();
-    }
-
-    public void addOriginsEventHandler(SetOriginsEvent event) {
-        Set<Origin> newOrigins = event.newOrigins;
-        Map<Id, Origin> newOriginsMap = newOrigins.stream()
+    private void handleSetOriginsEvent(SetOriginsEvent event) {
+        Map<Id, Origin> newOriginsMap = event.newOrigins.stream()
                 .collect(toMap(Origin::id, o -> o));
 
-        Set<Id> allOriginIds = Stream.concat(this.origins.keySet().stream(), newOriginsMap.keySet().stream())
-                .collect(toSet());
+        OriginChanges originChanges = new OriginChanges();
 
-        ImmutableMap.Builder<Id, MonitoredOrigin> monitoredOrigins = ImmutableMap.builder();
-        AtomicBoolean changed = new AtomicBoolean(false);
-
-        allOriginIds.forEach(
-                originId -> {
+        concat(this.origins.keySet().stream(), newOriginsMap.keySet().stream())
+                .collect(toSet())
+                .forEach(originId -> {
                     Origin origin = newOriginsMap.get(originId);
 
                     if (isNewOrigin(originId, origin)) {
                         MonitoredOrigin monitoredOrigin = addMonitoredEndpoint(origin);
-                        monitoredOrigins.put(originId, monitoredOrigin);
-                        changed.set(true);
+                        originChanges.addOrReplaceOrigin(originId, monitoredOrigin);
+
                     } else if (isUpdatedOrigin(originId, origin)) {
                         MonitoredOrigin monitoredOrigin = changeMonitoredEndpoint(origin);
-                        monitoredOrigins.put(originId, monitoredOrigin);
-                        changed.set(true);
+                        originChanges.addOrReplaceOrigin(originId, monitoredOrigin);
+
                     } else if (isUnchangedOrigin(originId, origin)) {
                         LOG.info("Existing origin has been left unchanged. Origin={}:{}", appId, origin);
-                        monitoredOrigins.put(originId, this.origins.get(originId));
+                        originChanges.keepExistingOrigin(originId, this.origins.get(originId));
+
                     } else if (isRemovedOrigin(originId, origin)) {
                         removeMonitoredEndpoint(originId);
-                        changed.set(true);
+                        originChanges.noteRemovedOrigin();
                     }
                 }
         );
 
-        this.origins = monitoredOrigins.build();
+        this.origins = originChanges.updatedOrigins();
 
-        if (changed.get()) {
+        if (originChanges.changed()) {
             notifyStateChange();
         }
     }
 
-    private void closeHandler() {
+    private void handleCloseEvent() {
         if (closed.compareAndSet(false, true)) {
             origins.values().forEach(host -> removeMonitoredEndpoint(host.origin.id()));
             this.origins = ImmutableMap.of();
@@ -289,19 +287,19 @@ public final class OriginsInventory
         }
     }
 
-    private void disableOriginHandler(DisableOriginCommand event) {
+    private void handleDisableOriginCommand(DisableOriginCommand event) {
         if (event.disableOrigin.forApp(appId)) {
             onEvent(event.disableOrigin.originId(), event.disableOrigin);
         }
     }
 
-    private void enableOriginHandler(EnableOriginCommand event) {
+    private void handleEnableOriginCommand(EnableOriginCommand event) {
         if (event.enableOrigin.forApp(appId)) {
             onEvent(event.enableOrigin.originId(), event.enableOrigin);
         }
     }
 
-    private void originHealthEventHandler(OriginHealthEvent event) {
+    private void handleOriginHealthEvent(OriginHealthEvent event) {
         if (event.healthEvent == HEALTHY) {
             if (!(originHealthStatusMonitor instanceof NoOriginHealthStatusMonitor)) {
                 onEvent(event.origin, HEALTHY);
@@ -617,6 +615,32 @@ public final class OriginsInventory
 
         OriginState(int gaugeValue) {
             this.gaugeValue = gaugeValue;
+        }
+    }
+
+    private class OriginChanges {
+        ImmutableMap.Builder<Id, MonitoredOrigin> monitoredOrigins = ImmutableMap.builder();
+        AtomicBoolean changed = new AtomicBoolean(false);
+
+        void addOrReplaceOrigin(Id originId, MonitoredOrigin origin) {
+            monitoredOrigins.put(originId, origin);
+            changed.set(true);
+        }
+
+        void keepExistingOrigin(Id originId, MonitoredOrigin origin) {
+            monitoredOrigins.put(originId, origin);
+        }
+
+        void noteRemovedOrigin() {
+            changed.set(true);
+        }
+
+        boolean changed() {
+            return changed.get();
+        }
+
+        Map<Id, MonitoredOrigin> updatedOrigins() {
+            return monitoredOrigins.build();
         }
     }
 }

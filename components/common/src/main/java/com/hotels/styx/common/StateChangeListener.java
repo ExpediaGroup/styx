@@ -18,7 +18,7 @@ package com.hotels.styx.common;
 /**
  * Informed about state changes.
  *
- * @param <S> State type.
+ * @param <S> state type
  */
 public interface StateChangeListener<S> {
     void onStateChange(S oldState, S newState, Object event);

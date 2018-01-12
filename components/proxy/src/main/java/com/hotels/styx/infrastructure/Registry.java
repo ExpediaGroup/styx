@@ -207,7 +207,7 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
     }
 
     /**
-     * Result or registry reload.
+     * Result of registry reload.
      */
     class ReloadResult {
 
