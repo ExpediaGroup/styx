@@ -25,7 +25,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Logs client side requests and responses when enabled. Disabled by default.
  */
-
 public class HttpRequestMessageLogger {
     private final Logger logger;
     private final boolean longFormatEnabled;
@@ -36,11 +35,23 @@ public class HttpRequestMessageLogger {
     }
 
     public void logRequest(HttpRequest request, Origin origin) {
-        logger.info("requestId={}, request={}", request.id(), information(request, origin, longFormatEnabled));
+        if (request == null) {
+            logger.warn("requestId=N/A, request=null, origin={}", origin);
+        } else {
+            logger.info("requestId={}, request={}", request.id(), information(request, origin, longFormatEnabled));
+        }
     }
 
     public void logResponse(HttpRequest request, HttpResponse response) {
-            logger.info("requestId={}, response={}", request.id(), information(response, longFormatEnabled));
+        if (response == null) {
+            logger.warn("requestId={}, response=null", id(request));
+        } else {
+            logger.info("requestId={}, response={}", id(request), information(response, longFormatEnabled));
+        }
+    }
+
+    private static Object id(HttpRequest request) {
+        return request != null ? request.id() : null;
     }
 
     private static Info information(HttpResponse response, boolean longFormatEnabled) {
@@ -54,7 +65,8 @@ public class HttpRequestMessageLogger {
     }
 
     private static Info information(HttpRequest request, Origin origin, boolean longFormatEnabled) {
-        Info info = new Info().add("method", request.method())
+        Info info = new Info()
+                .add("method", request.method())
                 .add("secure", request.isSecure())
                 .add("uri", request.url())
                 .add("origin", origin != null ? origin.hostAsString() : "N/A");
