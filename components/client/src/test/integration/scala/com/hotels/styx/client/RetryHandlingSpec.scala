@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,25 +15,27 @@
  */
 package com.hotels.styx.client
 
+import java.nio.charset.Charset
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit.{MILLISECONDS, SECONDS}
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.support.api.BlockingObservables.waitForResponse
+import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpRequest.Builder.get
-import StyxHeaderConfig.ORIGIN_ID_DEFAULT
 import com.hotels.styx.api.client.Origin
 import com.hotels.styx.api.client.Origin._
 import com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
+import com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings
 import com.hotels.styx.client.retry.RetryNTimes
 import com.hotels.styx.client.stickysession.StickySessionConfig
+import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import io.netty.channel.ChannelHandlerContext
@@ -49,31 +51,61 @@ import scala.util.Try
 
 class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers with OriginSupport {
 
-  val (healthyOriginOne, server1) = originAndServer("app", "HEALTHY_ORIGIN_ONE")
-  val (healthyOriginTwo, server2) = originAndServer("app", "HEALTHY_ORIGIN_TWO")
+  val response = "Response From localhost"
 
-  val originOne = newOriginBuilder(localHostAndFreePort).id("ORIGIN_ONE").build
-  val originTwo = newOriginBuilder(localHostAndFreePort).id("ORIGIN_TWO").build
-  val originThree = newOriginBuilder(localHostAndFreePort).id("ORIGIN_THREE").build
-  val originFour = newOriginBuilder(localHostAndFreePort).id("ORIGIN_FOUR").build
+  val server1 = new FakeHttpServer(0, "app", "HEALTHY_ORIGIN_ONE")
+  val server2 = new FakeHttpServer(0, "app", "HEALTHY_ORIGIN_TWO")
 
-  val originServer1 = new FakeHttpServer(originOne.host().getPort)
-  val originServer2 = new FakeHttpServer(originTwo.host().getPort)
-  val originServer3 = new FakeHttpServer(originThree.host().getPort)
-  val originServer4 = new FakeHttpServer(originFour.host().getPort)
+  var healthyOriginOne: Origin = _
+  var healthyOriginTwo : Origin = _
 
+  val originServer1 = new FakeHttpServer(0, "app", "ORIGIN_ONE")
+  val originServer2 = new FakeHttpServer(0, "app", "ORIGIN_TWO")
+  val originServer3 = new FakeHttpServer(0, "app", "ORIGIN_THREE")
+  val originServer4 = new FakeHttpServer(0, "app", "ORIGIN_FOUR")
 
-  val unhealthyOriginOne: Origin = newOriginBuilder(localHostAndFreePort).id("UNHEALTHY_ORIGIN_ONE").build
-  val unhealthyOriginTwo: Origin = newOriginBuilder(localHostAndFreePort).id("UNHEALTHY_ORIGIN_TWO").build
-  val unhealthyOriginThree: Origin = newOriginBuilder(localHostAndFreePort).id("UNHEALTHY_ORIGIN_THREE").build
+  var originOne : Origin = _
+  var originTwo : Origin = _
+  var originThree : Origin = _
+  var originFour : Origin = _
+
+  val unhealthyOriginOne: Origin = newOriginBuilder(localHostAndFreePort()).id("UNHEALTHY_ORIGIN_ONE").build
+  val unhealthyOriginTwo: Origin = newOriginBuilder(localHostAndFreePort()).id("UNHEALTHY_ORIGIN_TWO").build
+  val unhealthyOriginThree: Origin = newOriginBuilder(localHostAndFreePort()).id("UNHEALTHY_ORIGIN_THREE").build
 
   var servers: List[FakeHttpServer] = _
 
   override def beforeAll() = {
     server1.start()
+    healthyOriginOne = originFrom(server1)
+    server1.stub(urlStartingWith("/"), aResponse
+      .withStatus(200)
+      .withHeader(CONTENT_LENGTH.toString, response.getBytes(Charset.defaultCharset()).size.toString)
+      .withHeader("Stub-Origin-Info", healthyOriginOne.applicationInfo())
+      .withBody(response)
+    )
+
     server2.start()
+    healthyOriginTwo = originFrom(server2)
+    server2.stub(urlStartingWith("/"), aResponse
+      .withStatus(200)
+      .withHeader(CONTENT_LENGTH.toString, response.getBytes(Charset.defaultCharset()).size.toString)
+      .withHeader("Stub-Origin-Info", healthyOriginOne.applicationInfo())
+      .withBody(response)
+    )
 
     originServer1.start()
+    originOne = originFrom(originServer1)
+
+    originServer2.start()
+    originTwo = originFrom(originServer2)
+
+    originServer3.start()
+    originThree = originFrom(originServer3)
+
+    originServer4.start()
+    originFour = originFrom(originServer4)
+
     originServer2.start()
     originServer3.start()
     originServer4.start()
