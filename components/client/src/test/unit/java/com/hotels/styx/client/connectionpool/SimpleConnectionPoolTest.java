@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import rx.observers.TestSubscriber;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
@@ -40,6 +41,7 @@ import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static com.hotels.styx.client.connectionpool.ConnectionPoolStatsCounter.NULL_CONNECTION_POOL_STATS;
 import static com.hotels.styx.support.OriginHosts.LOCAL_9090;
+import static java.util.concurrent.TimeUnit.*;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
@@ -51,7 +53,9 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
+import static org.testng.AssertJUnit.fail;
 import static rx.Observable.error;
 import static rx.Observable.just;
 
@@ -543,10 +547,54 @@ public class SimpleConnectionPoolTest {
         assertThat("busy connections ", this.connectionPool.stats().busyConnectionCount(), is(0));
     }
 
+    @Test
+    public void verifiesMaxUsageTerminationIsOffWithNegativeSetting() {
+        this.connectionPool = connectionPool(
+                connectionPoolConfig()
+                        .maxConnectionsPerHost(1)
+                        .connectionExpirationSeconds(-1, SECONDS));
+        Connection.Listener listener = mock(Connection.Listener.class);
+        Connection listenedConnection = borrowConnectionSynchronously();
+        listenedConnection.addConnectionListener(listener);
+        connectionPool.returnConnection(listenedConnection);
+
+        for (int i = 0; i < 1000000; i++ ) {
+            Connection connection = borrowConnectionSynchronously();
+            assertThat(connection, is(listenedConnection));
+            connectionPool.returnConnection(connection);
+        }
+
+        verifyZeroInteractions(listener);
+    }
+
+    @Test
+    public void verifiesMaxUsageTerminationIsOn() {
+        this.connectionPool = connectionPool(connectionPoolConfig().connectionExpirationSeconds(1, SECONDS));
+
+        Connection.Listener listener = mock(Connection.Listener.class);
+
+        Connection connectionExpired = borrowConnectionSynchronously();
+        connectionExpired.addConnectionListener(listener);
+        connectionPool.returnConnection(connectionExpired);
+
+        try {
+            Thread.sleep(SECONDS.toMillis(1));
+        } catch (InterruptedException e) {
+            fail();
+        }
+
+        Connection connectionNew = borrowConnectionSynchronously();
+
+        assertThat(connectionExpired, is(not(connectionNew)));
+        verify(listener).connectionClosed(any(Connection.class));
+
+        assertThat(connectionPool.stats().closedConnections(), is(1));
+        assertThat(connectionPool.stats().terminatedConnections(), is(1));
+    }
 
     private SimpleConnectionPool sizeOnePool(Connection.Factory factory) {
         return new SimpleConnectionPool.Factory()
-                .connectionPoolSettings(new ConnectionPoolSettings(1, 1, 1000, 1000, 1000))
+                .connectionPoolSettings(new ConnectionPoolSettings(1, 1, 1000, 1000, 1000, 1))
                 .connectionFactory(factory)
                 .create(origin());
     }

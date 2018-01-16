@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,12 @@ public interface ConnectionPool extends Closeable, ConnectionDestination {
          * @return timeout in milliseconds
          */
         int pendingConnectionTimeoutMillis();
+
+        /**
+         * Returns the the time in seconds that the connection is viable.
+         * @return time in seconds
+         */
+        long connectionExpirationSeconds();
     }
 
     /**
