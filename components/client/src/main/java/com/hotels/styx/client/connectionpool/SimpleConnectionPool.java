@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.SlidingWindowReservoir;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
+import com.google.common.base.Ticker;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
@@ -64,6 +65,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
     private final AtomicInteger connectionFailures = new AtomicInteger(0);
     private final AtomicInteger closedConnections = new AtomicInteger(0);
     private final AtomicInteger terminatedConnections = new AtomicInteger(0);
+    private final ConnectionUsageTracker connectionUsageTracker;
 
     /**
      * Constructs an instance that will record stats.
@@ -92,6 +94,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
         this.borrowedConnections = newSetFromMap(new ConcurrentHashMap<>());
         this.waitingSubscribers = new ConcurrentLinkedDeque<>();
         this.stats = recordStats ? new ConnectionPoolStats() : NULL_CONNECTION_POOL_STATS;
+        this.connectionUsageTracker = create(connectionPoolSettings.connectionExpirationSeconds());
     }
 
     private static <T> void removeEachAndProcess(Queue<T> queue, Consumer<T> consumer) {
@@ -162,6 +165,11 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
         return true;
     }
 
+    private void closeOnExpiration(Connection connection) {
+        connection.close();
+        closedConnections.incrementAndGet();
+    }
+
     private void connectionClosedInternal(Connection connection) {
         boolean removed = borrowedConnections.remove(connection);
         if (removed) {
@@ -199,6 +207,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
                     connectionFailures.incrementAndGet();
                 })
                 .map(connection -> {
+                    connection = connectionUsageTracker.decorate(connection);
                     connection.addConnectionListener(SimpleConnectionPool.this);
                     borrowedConnections.add(connection);
                     return connection;
@@ -211,7 +220,12 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
 
     private Connection getNextActiveConnectionCloseOnDeadConnection() {
         Connection connection = availableConnections.poll();
-        while (connection != null && !connection.isConnected()) {
+        while (connection != null) {
+            if (connectionUsageTracker.shouldTerminate(connection)) {
+                closeOnExpiration(connection);
+            } else if (connection.isConnected()) {
+                break;
+            }
             connection = this.availableConnections.poll();
         }
         return connection;
@@ -395,6 +409,24 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
 
         public SimpleConnectionPool create(Origin origin) {
             return new SimpleConnectionPool(origin, connectionPoolSettings, connectionFactory, recordStats);
+        }
+    }
+
+    private static ConnectionUsageTracker create(long expiration) {
+        if (expiration > 0) {
+            return new ConnectionExpirationTracker(expiration, Ticker::systemTicker);
+        } else {
+            return new ConnectionUsageTracker() {
+                @Override
+                public Connection decorate(Connection connection) {
+                    return connection;
+                }
+
+                @Override
+                public boolean shouldTerminate(Connection connection) {
+                    return false;
+                }
+            };
         }
     }
 }
