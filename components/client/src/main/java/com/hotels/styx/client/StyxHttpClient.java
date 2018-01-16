@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
@@ -30,7 +29,6 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.applications.OriginStats;
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy;
-import com.hotels.styx.client.netty.HttpRequestOperation;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -61,9 +59,7 @@ public final class StyxHttpClient implements HttpClient {
     private final Id id;
     private final RewriteRuleset rewriteRuleset;
     private final LoadBalancingStrategy loadBalancingStrategy;
-    private final OriginsInventory originsInventory;
     private final RetryPolicy retryPolicy;
-    private final boolean flowControlEnabled;
     private final Transport transport;
     private final OriginStatsFactory originStatsFactory;
     private final BackendService backendService;
@@ -75,26 +71,18 @@ public final class StyxHttpClient implements HttpClient {
         this.backendService = builder.backendService;
         this.id = backendService.id();
 
-        this.flowControlEnabled = builder.flowControlEnabled;
-
         this.originStatsFactory = new OriginStatsFactory(builder.metricsRegistry);
 
-        HttpRequestOperationFactory requestOperationFactory = builder.requestOperationFactory != null
-                ? builder.requestOperationFactory
-                : request -> new HttpRequestOperation(request, originStatsFactory, flowControlEnabled,
-                backendService.responseTimeoutMillis(), builder.requestLoggingEnabled, builder.longFormat);
-
         this.loadBalancingStrategy = backendService.stickySessionConfig().stickySessionEnabled()
-                ? new StickySessionLoadBalancingStrategy(builder.loadBalancingStrategy)
+                ? new StickySessionLoadBalancingStrategy(builder.originsInventory, builder.loadBalancingStrategy)
                 : nonStickyLoadBalancingStrategy(builder);
 
         this.retryPolicy = builder.retryPolicy != null
                 ? builder.retryPolicy
                 : new RetryNTimes(3);
 
-        this.originsInventory = builder.originsInventory;
         this.rewriteRuleset = new RewriteRuleset(builder.rewriteRules);
-        this.transport = new Transport(requestOperationFactory, id, builder.styxHeaderConfig);
+        this.transport = new Transport(id, builder.styxHeaderConfig);
 
         this.metricsRegistry = builder.metricsRegistry;
         this.contentValidation = builder.contentValidation;
@@ -111,7 +99,7 @@ public final class StyxHttpClient implements HttpClient {
 
         LOGGER.info("originRestrictionCookie specified as {} - origin restriction will apply when this cookie is sent", builder.originRestrictionCookie);
 
-        return new OriginRestrictionLoadBalancingStrategy(builder.loadBalancingStrategy, builder.originRestrictionCookie);
+        return new OriginRestrictionLoadBalancingStrategy(builder.originsInventory, builder.loadBalancingStrategy, builder.originRestrictionCookie);
     }
 
     public boolean isHttps() {
@@ -136,10 +124,6 @@ public final class StyxHttpClient implements HttpClient {
         return retryPolicy;
     }
 
-    OriginsInventory originsInventory() {
-        return originsInventory;
-    }
-
     Transport transport() {
         return transport;
     }
@@ -148,7 +132,7 @@ public final class StyxHttpClient implements HttpClient {
         return loadBalancingStrategy;
     }
 
-    private static class LBContext implements LoadBalancingStrategy.Context {
+    static class LBContext implements LoadBalancingStrategy.Context {
         private final HttpRequest request;
         private final Id id;
         private final OriginStatsFactory originStatsFactory;
@@ -214,6 +198,7 @@ public final class StyxHttpClient implements HttpClient {
                 .request(rewrittenRequest)
                 .previouslyUsedOrigin(pool.orElse(null))
                 .transaction(txn)
+                .originStatsFactory(originStatsFactory)
                 .build();
 
         return txn.response()
@@ -257,19 +242,9 @@ public final class StyxHttpClient implements HttpClient {
         }
     }
 
-    @Override
-    public void close() {
-        this.originsInventory.close();
-    }
-
-    @Override
-    public void registerStatusGauges() {
-        originsInventory.registerStatusGauges();
-    }
-
     private Optional<ConnectionPool> selectOrigin(HttpRequest rewrittenRequest) {
         LoadBalancingStrategy.Context lbContext = new LBContext(rewrittenRequest, id, originStatsFactory);
-        Iterable<ConnectionPool> votedOrigins = loadBalancingStrategy.vote(originsInventory.snapshot(), lbContext);
+        Iterable<ConnectionPool> votedOrigins = loadBalancingStrategy.vote(lbContext);
         return Optional.ofNullable(getFirst(votedOrigins, null));
     }
 
@@ -298,7 +273,6 @@ public final class StyxHttpClient implements HttpClient {
                 .add("retryPolicy", retryPolicy)
                 .add("rewriteRuleset", rewriteRuleset)
                 .add("loadBalancingStrategy", loadBalancingStrategy)
-                .add("flowControlEnabled", flowControlEnabled)
                 .toString();
     }
 
@@ -308,16 +282,12 @@ public final class StyxHttpClient implements HttpClient {
     public static class Builder {
         private final BackendService backendService;
         private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
-        private boolean flowControlEnabled;
         private List<RewriteRule> rewriteRules = emptyList();
-        private HttpRequestOperationFactory requestOperationFactory;
-        private LoadBalancingStrategy loadBalancingStrategy = new RoundRobinStrategy();
         private RetryPolicy retryPolicy;
         private String originRestrictionCookie;
         private OriginsInventory originsInventory;
+        private LoadBalancingStrategy loadBalancingStrategy;
         private boolean contentValidation;
-        private boolean requestLoggingEnabled;
-        private boolean longFormat;
         private StyxHeaderConfig styxHeaderConfig = new StyxHeaderConfig();
 
         public Builder(BackendService backendService) {
@@ -339,11 +309,6 @@ public final class StyxHttpClient implements HttpClient {
             return this;
         }
 
-        public Builder flowControlEnabled(boolean enabled) {
-            this.flowControlEnabled = enabled;
-            return this;
-        }
-
         public Builder rewriteRules(List<? extends RewriteRule> rewriteRules) {
             this.rewriteRules = ImmutableList.copyOf(rewriteRules);
             return this;
@@ -352,22 +317,6 @@ public final class StyxHttpClient implements HttpClient {
 
         public Builder loadBalancingStrategy(LoadBalancingStrategy loadBalancingStrategy) {
             this.loadBalancingStrategy = loadBalancingStrategy;
-            return this;
-        }
-
-        @VisibleForTesting
-        Builder requestOperationFactory(HttpRequestOperationFactory requestOperationFactory) {
-            this.requestOperationFactory = requestOperationFactory;
-            return this;
-        }
-
-        public Builder requestLoggingEnabled(boolean requestLoggingEnabled) {
-            this.requestLoggingEnabled = requestLoggingEnabled;
-            return this;
-        }
-
-        public Builder longFormat(boolean longFormat) {
-            this.longFormat = longFormat;
             return this;
         }
 
@@ -393,6 +342,10 @@ public final class StyxHttpClient implements HttpClient {
 
             if (originsInventory == null) {
                 originsInventory = newOriginsInventoryBuilder(backendService).build();
+            }
+
+            if (loadBalancingStrategy == null) {
+                loadBalancingStrategy = new RoundRobinStrategy(originsInventory);
             }
             return new StyxHttpClient(this);
         }

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 package com.hotels.styx.client;
 
 import com.codahale.metrics.Gauge;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.OriginsInventoryStateChangeListener;
-import com.hotels.styx.support.matchers.LoggingTestSupport;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
@@ -29,46 +29,47 @@ import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
+import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.hamcrest.Matcher;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.support.matchers.ContainsExactlyOneMatcher.containsExactlyOne;
-import static com.hotels.styx.support.matchers.IsOptional.isValue;
-import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
 import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultSettableConnectionPoolSettings;
 import static com.hotels.styx.common.testing.matcher.TransformingMatcher.hasDerivedValue;
+import static com.hotels.styx.support.matchers.ContainsExactlyOneMatcher.containsExactlyOne;
+import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
+import static com.hotels.styx.support.matchers.IsOptional.isValue;
+import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.util.Collections.singleton;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class OriginsInventoryTest {
-    private static final Origin ORIGIN = newOriginBuilder(localHostAndFreePort()).applicationId(GENERIC_APP).id("one").build();
+    private static final Origin ORIGIN_1 = newOriginBuilder(localHostAndFreePort()).applicationId(GENERIC_APP).id("app-01").build();
+    private static final Origin ORIGIN_2 = newOriginBuilder(localHostAndFreePort()).applicationId(GENERIC_APP).id("app-02").build();
 
     private final ConnectionPool.Factory connectionFactory = connectionPoolFactory();
 
     private MetricRegistry metricRegistry;
     private LoggingTestSupport logger;
     private OriginHealthStatusMonitor monitor;
-    private InstrumentedEventBus eventBus;
+    private EventBus eventBus;
     private OriginsInventory inventory;
 
     @BeforeMethod
@@ -76,7 +77,7 @@ public class OriginsInventoryTest {
         metricRegistry = new CodaHaleMetricRegistry();
         logger = new LoggingTestSupport(OriginsInventory.class);
         monitor = mock(OriginHealthStatusMonitor.class);
-        eventBus = new InstrumentedEventBus();
+        eventBus = mock(EventBus.class);
         inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, metricRegistry);
     }
 
@@ -85,129 +86,297 @@ public class OriginsInventoryTest {
         logger.stop();
     }
 
+    /*
+     * Setting the origins
+     */
     @Test
-    public void addingANewOriginWillAddToActiveSetAndInitiateTheMonitoring() {
-        inventory.addOrigins(ORIGIN);
+    public void startsMonitoringNewOrigins() {
+        inventory.setOrigins(ORIGIN_1, ORIGIN_2);
 
-        assertThat(inventory, hasActiveOrigins(1));
-        verify(monitor).monitor(singleton(ORIGIN));
+        assertThat(inventory, hasActiveOrigins(2));
+        verify(monitor).monitor(singleton(ORIGIN_1));
+        verify(monitor).monitor(singleton(ORIGIN_2));
 
-        inventory.registerStatusGauges();
-        assertThat(gaugeValue("origins.generic-app.one.status"), isValue(1));
+        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(1));
+        assertThat(gaugeValue("origins.generic-app.app-02.status"), isValue(1));
+
+        verify(eventBus).post(any(OriginsInventorySnapshot.class));
     }
 
     @Test
-    public void willNotDisableOriginsNotBelongingToTheApp() {
-        inventory.addOrigins(ORIGIN);
+    public void updatesOriginPortNumber() throws Exception {
+        Origin originV1 = newOriginBuilder("acme.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
+        Origin originV2 = newOriginBuilder("acme.com", 443).applicationId(GENERIC_APP).id("acme-01").build();
 
-        inventory.onCommand(new DisableOrigin(id("some-other-app"), ORIGIN.id()));
+        inventory.setOrigins(originV1);
 
         assertThat(inventory, hasActiveOrigins(1));
+        verify(monitor).monitor(singleton(originV1));
+        assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
+        verify(eventBus).post(any(OriginsInventorySnapshot.class));
+
+        inventory.setOrigins(originV2);
+
+        assertThat(inventory, hasActiveOrigins(1));
+        verify(monitor).stopMonitoring(singleton(originV1));
+        verify(monitor).monitor(singleton(originV2));
+        assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
+        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
+    }
+
+    @Test
+    public void updatesOriginHostName() throws Exception {
+        Origin originV1 = newOriginBuilder("acme01.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
+        Origin originV2 = newOriginBuilder("acme02.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
+
+        inventory.setOrigins(originV1);
+
+        assertThat(inventory, hasActiveOrigins(1));
+        verify(monitor).monitor(singleton(originV1));
+        assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
+        verify(eventBus).post(any(OriginsInventorySnapshot.class));
+
+        inventory.setOrigins(originV2);
+
+        assertThat(inventory, hasActiveOrigins(1));
+        verify(monitor).stopMonitoring(singleton(originV1));
+        verify(monitor).monitor(singleton(originV2));
+        assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
+        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
+    }
+
+    @Test
+    public void stopsAndRestartsMonitoringModifiedOrigins() {
+        Origin originV1 = newOriginBuilder("acme01.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
+        Origin originV2 = newOriginBuilder("acme02.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
+
+        inventory.setOrigins(originV1);
+        verify(monitor).monitor(singleton(originV1));
+
+        inventory.setOrigins(originV2);
+
+        verify(monitor).stopMonitoring(singleton(originV1));
+        verify(monitor).monitor(singleton(originV2));
+    }
+
+    @Test
+    public void shutsConnectionPoolForModifiedOrigin() {
+        Origin originV1 = newOriginBuilder("acme01.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
+        Origin originV2 = newOriginBuilder("acme02.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
+        ConnectionPool.Factory connectionFactory = mock(ConnectionPool.Factory.class);
+
+        ConnectionPool pool1 = mock(ConnectionPool.class);
+        ConnectionPool pool2 = mock(ConnectionPool.class);
+
+        when(connectionFactory.create(eq(originV1))).thenReturn(pool1);
+        when(connectionFactory.create(eq(originV2))).thenReturn(pool2);
+
+        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, metricRegistry);
+
+        inventory.setOrigins(originV1);
+        verify(connectionFactory).create(eq(originV1));
+
+        inventory.setOrigins(originV2);
+        verify(connectionFactory).create(eq(originV2));
+
+        verify(pool1).close();
+    }
+
+
+    @Test
+    public void ignoresUnchangedOrigins() throws Exception {
+        inventory.setOrigins(ORIGIN_1, ORIGIN_2);
+
+        assertThat(inventory, hasActiveOrigins(2));
+        verify(monitor).monitor(singleton(ORIGIN_1));
+        verify(monitor).monitor(singleton(ORIGIN_2));
+        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(1));
+        assertThat(gaugeValue("origins.generic-app.app-02.status"), isValue(1));
+        verify(eventBus).post(any(OriginsInventorySnapshot.class));
+
+        inventory.setOrigins(ORIGIN_1, ORIGIN_2);
+
+        assertThat(inventory, hasActiveOrigins(2));
+        verify(monitor, times(1)).monitor(singleton(ORIGIN_1));
+        verify(monitor, times(1)).monitor(singleton(ORIGIN_2));
+        verify(eventBus).post(any(OriginsInventorySnapshot.class));
+    }
+
+    @Test
+    public void removesOrigin() throws Exception {
+        inventory.setOrigins(ORIGIN_1, ORIGIN_2);
+
+        assertThat(inventory, hasActiveOrigins(2));
+        verify(monitor).monitor(singleton(ORIGIN_1));
+        verify(monitor).monitor(singleton(ORIGIN_2));
+        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(1));
+        assertThat(gaugeValue("origins.generic-app.app-02.status"), isValue(1));
+        verify(eventBus).post(any(OriginsInventorySnapshot.class));
+
+        inventory.setOrigins(ORIGIN_2);
+
+        assertThat(inventory, hasActiveOrigins(1));
+        verify(monitor).stopMonitoring(singleton(ORIGIN_1));
+        assertThat(gaugeValue("origins.generic-app.app-01.status"), isAbsent());
+        assertThat(gaugeValue("origins.generic-app.app-02.status"), isValue(1));
+        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
+    }
+
+
+    @Test
+    public void stopsMonitoringRemovedOrigins() {
+        Origin originV1 = newOriginBuilder("acme01.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
+        Origin originV2 = newOriginBuilder("acme02.com", 80).applicationId(GENERIC_APP).id("acme-02").build();
+
+        inventory.setOrigins(originV1, originV2);
+        verify(monitor).monitor(singleton(originV1));
+        verify(monitor).monitor(singleton(originV2));
+
+        inventory.setOrigins(originV1);
+
+        verify(monitor).stopMonitoring(singleton(originV2));
+    }
+
+    @Test
+    public void shutsConnectionPoolForRemovedOrigin() {
+        Origin originV1 = newOriginBuilder("acme01.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
+        Origin originV2 = newOriginBuilder("acme02.com", 80).applicationId(GENERIC_APP).id("acme-02").build();
+        ConnectionPool.Factory connectionFactory = mock(ConnectionPool.Factory.class);
+
+        ConnectionPool pool1 = mock(ConnectionPool.class);
+        when(pool1.getOrigin()).thenReturn(originV1);
+
+        ConnectionPool pool2 = mock(ConnectionPool.class);
+        when(pool2.getOrigin()).thenReturn(originV2);
+
+        when(connectionFactory.create(eq(originV1))).thenReturn(pool1);
+        when(connectionFactory.create(eq(originV2))).thenReturn(pool2);
+
+        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, metricRegistry);
+
+        inventory.setOrigins(originV1, originV2);
+
+        inventory.setOrigins(originV2);
+
+        verify(pool1).close();
+    }
+
+
+
+    // TODO: Mikko: ignore any origin updates with wrong application-ID.
+
+    @Test
+    public void willNotDisableOriginsNotBelongingToTheApp() {
+        inventory.setOrigins(ORIGIN_1);
+        verify(eventBus).post(any(OriginsInventorySnapshot.class));
+
+        inventory.onCommand(new DisableOrigin(id("some-other-app"), ORIGIN_1.id()));
+
+        assertThat(inventory, hasActiveOrigins(1));
+        verify(eventBus).post(any(OriginsInventorySnapshot.class));
     }
 
     @Test
     public void willNotEnableOriginsNotBelongingToTheApp() {
-        inventory.addOrigins(ORIGIN);
+        inventory.setOrigins(ORIGIN_1);
 
-        inventory.onCommand(new DisableOrigin(ORIGIN.applicationId(), ORIGIN.id()));
-        inventory.onCommand(new EnableOrigin(id("some-other-app"), ORIGIN.id()));
+        inventory.onCommand(new DisableOrigin(ORIGIN_1.applicationId(), ORIGIN_1.id()));
+        inventory.onCommand(new EnableOrigin(id("some-other-app"), ORIGIN_1.id()));
 
         assertThat(inventory, hasNoActiveOrigins());
+        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
     }
 
     @Test
     public void disablingAnOriginRemovesItFromActiveSetAndStopsHealthCheckMonitoring() {
-        inventory.addOrigins(ORIGIN);
+        inventory.setOrigins(ORIGIN_1);
 
-        inventory.onCommand(new DisableOrigin(ORIGIN.applicationId(), ORIGIN.id()));
+        inventory.onCommand(new DisableOrigin(ORIGIN_1.applicationId(), ORIGIN_1.id()));
 
         assertThat(inventory, hasNoActiveOrigins());
         assertThat(inventory, hasDisabledOrigins(1));
 
-        verify(monitor).stopMonitoring(singleton(ORIGIN));
-
-        inventory.registerStatusGauges();
-        assertThat(gaugeValue("origins.generic-app.one.status"), isValue(-1));
+        verify(monitor).stopMonitoring(singleton(ORIGIN_1));
+        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(-1));
+        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
     }
 
     @Test
     public void disablingAnOriginRemovesItFromInactiveSetAndStopsHealthCheckMonitoring() {
-        inventory.addOrigins(ORIGIN);
+        inventory.setOrigins(ORIGIN_1);
 
-        inventory.originUnhealthy(ORIGIN);
-        inventory.onCommand(new DisableOrigin(ORIGIN.applicationId(), ORIGIN.id()));
+        inventory.originUnhealthy(ORIGIN_1);
+        inventory.onCommand(new DisableOrigin(ORIGIN_1.applicationId(), ORIGIN_1.id()));
 
         assertThat(inventory, hasNoActiveOrigins());
         assertThat(inventory, hasDisabledOrigins(1));
 
-        verify(monitor).stopMonitoring(singleton(ORIGIN));
-
-        inventory.registerStatusGauges();
-        assertThat(gaugeValue("origins.generic-app.one.status"), isValue(-1));
+        verify(monitor).stopMonitoring(singleton(ORIGIN_1));
+        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(-1));
+        verify(eventBus, times(3)).post(any(OriginsInventorySnapshot.class));
     }
 
     @Test
     public void enablingAnOriginWillReInitiateHealthCheckMonitoring() {
-        inventory.addOrigins(ORIGIN);
+        inventory.setOrigins(ORIGIN_1);
 
-        inventory.onCommand(new DisableOrigin(ORIGIN.applicationId(), ORIGIN.id()));
-        inventory.onCommand(new EnableOrigin(ORIGIN.applicationId(), ORIGIN.id()));
+        inventory.onCommand(new DisableOrigin(ORIGIN_1.applicationId(), ORIGIN_1.id()));
+        inventory.onCommand(new EnableOrigin(ORIGIN_1.applicationId(), ORIGIN_1.id()));
 
-        verify(monitor, times(2)).monitor(singleton(ORIGIN));
-
-        inventory.registerStatusGauges();
-        assertThat(gaugeValue("origins.generic-app.one.status"), isValue(0));
+        verify(monitor, times(2)).monitor(singleton(ORIGIN_1));
+        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(0));
+        verify(eventBus, times(3)).post(any(OriginsInventorySnapshot.class));
     }
 
     @Test
     public void removesUnhealthyOriginsFromActiveSet() {
-        inventory.addOrigins(ORIGIN);
+        inventory.setOrigins(ORIGIN_1);
         assertThat(inventory, hasActiveOrigins(1));
 
-        inventory.originUnhealthy(ORIGIN);
+        inventory.originUnhealthy(ORIGIN_1);
 
         assertThat(inventory, hasNoActiveOrigins());
-
-        inventory.registerStatusGauges();
-        assertThat(gaugeValue("origins.generic-app.one.status"), isValue(0));
+        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(0));
+        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
     }
 
     @Test
     public void putsHealthyOriginsBackIntoActiveSet() {
-        inventory.addOrigins(ORIGIN);
+        inventory.setOrigins(ORIGIN_1);
         assertThat(inventory, hasActiveOrigins(1));
 
-        inventory.originUnhealthy(ORIGIN);
-        inventory.originHealthy(ORIGIN);
+        inventory.originUnhealthy(ORIGIN_1);
+        inventory.originHealthy(ORIGIN_1);
 
         assertThat(inventory, hasActiveOrigins(1));
-
-        inventory.registerStatusGauges();
-        assertThat(gaugeValue("origins.generic-app.one.status"), isValue(1));
+        assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(1));
+        verify(eventBus, times(3)).post(any(OriginsInventorySnapshot.class));
     }
 
     @Test
     public void reportingUpRepeatedlyDoesNotAffectCurrentActiveOrigins() {
-        inventory.addOrigins(ORIGIN);
+        inventory.setOrigins(ORIGIN_1);
         assertThat(inventory, hasActiveOrigins(1));
 
-        inventory.originHealthy(ORIGIN);
-        inventory.originHealthy(ORIGIN);
-        inventory.originHealthy(ORIGIN);
+        inventory.originHealthy(ORIGIN_1);
+        inventory.originHealthy(ORIGIN_1);
+        inventory.originHealthy(ORIGIN_1);
 
         assertThat(inventory, hasActiveOrigins(1));
+        verify(eventBus, times(1)).post(any(OriginsInventorySnapshot.class));
     }
 
     @Test
     public void reportingDownRepeatedlyDoesNotAffectCurrentActiveOrigins() {
-        inventory.addOrigins(ORIGIN);
+        inventory.setOrigins(ORIGIN_1);
         assertThat(inventory, hasActiveOrigins(1));
 
-        inventory.originUnhealthy(ORIGIN);
-        inventory.originUnhealthy(ORIGIN);
-        inventory.originUnhealthy(ORIGIN);
+        inventory.originUnhealthy(ORIGIN_1);
+        inventory.originUnhealthy(ORIGIN_1);
+        inventory.originUnhealthy(ORIGIN_1);
 
         assertThat(inventory, hasActiveOrigins(0));
+        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
     }
 
     @Test
@@ -215,77 +384,99 @@ public class OriginsInventoryTest {
         OriginsInventoryStateChangeListener listener = mock(OriginsInventoryStateChangeListener.class);
         inventory.addInventoryStateChangeListener(listener);
 
-        inventory.addOrigins(ORIGIN);
-        inventory.originUnhealthy(ORIGIN);
+        inventory.setOrigins(ORIGIN_1);
+        inventory.originUnhealthy(ORIGIN_1);
 
         verify(listener, times(2)).originsInventoryStateChanged(any(OriginsInventorySnapshot.class));
     }
 
     @Test
     public void logsMessageWhenNewOriginIsAdded() {
-        inventory.addOrigins(ORIGIN);
+        inventory.setOrigins(ORIGIN_1);
 
-        assertThat(logger.lastMessage(), is(loggingEvent(INFO, "New origin added and activated. Origin=generic-app:one")));
+        assertThat(logger.lastMessage(), is(loggingEvent(INFO, "New origin added and activated. Origin=generic-app:app-01")));
     }
 
     @Test
     public void logsMessageWhenUnsuccessfulHealthCheckDeactivatesOrigin() {
-        inventory.addOrigins(ORIGIN);
+        inventory.setOrigins(ORIGIN_1);
 
-        inventory.originUnhealthy(ORIGIN);
-        assertThat(logger.lastMessage(), is(loggingEvent(INFO, "Origin state change: origin=\"generic-app=one\", change=\"ACTIVE->INACTIVE\"")));
+        inventory.originUnhealthy(ORIGIN_1);
+        assertThat(logger.lastMessage(), is(loggingEvent(INFO, "Origin state change: origin=\"generic-app=app-01\", change=\"ACTIVE->INACTIVE\"")));
     }
 
     @Test
     public void logsMessageWhenSuccessfulHealthCheckEventActivatesOrigin() {
-        inventory.addOrigins(ORIGIN);
-        inventory.originUnhealthy(ORIGIN);
+        inventory.setOrigins(ORIGIN_1);
+        inventory.originUnhealthy(ORIGIN_1);
 
-        inventory.originHealthy(ORIGIN);
-        assertThat(logger.lastMessage(), is(loggingEvent(INFO, "Origin state change: origin=\"generic-app=one\", change=\"INACTIVE->ACTIVE\"")));
+        inventory.originHealthy(ORIGIN_1);
+        assertThat(logger.lastMessage(), is(loggingEvent(INFO, "Origin state change: origin=\"generic-app=app-01\", change=\"INACTIVE->ACTIVE\"")));
     }
 
     @Test
     public void logsMessageOnlyOnceForOriginHealthyEvent() {
-        inventory.addOrigins(ORIGIN);
-        inventory.originUnhealthy(ORIGIN);
+        inventory.setOrigins(ORIGIN_1);
+        inventory.originUnhealthy(ORIGIN_1);
 
-        inventory.originHealthy(ORIGIN);
-        inventory.originHealthy(ORIGIN);
-        inventory.originHealthy(ORIGIN);
-        inventory.originHealthy(ORIGIN);
+        inventory.originHealthy(ORIGIN_1);
+        inventory.originHealthy(ORIGIN_1);
+        inventory.originHealthy(ORIGIN_1);
+        inventory.originHealthy(ORIGIN_1);
 
-        assertThat(logger.log(), containsExactlyOne(loggingEvent(INFO, "Origin state change: origin=\"generic-app=one\", change=\"INACTIVE->ACTIVE\"")));
+        assertThat(logger.log(), containsExactlyOne(loggingEvent(INFO, "Origin state change: origin=\"generic-app=app-01\", change=\"INACTIVE->ACTIVE\"")));
     }
 
     @Test
     public void logsMessageWhenOriginIsDisabled() {
-        inventory.addOrigins(ORIGIN);
-        inventory.onCommand(new DisableOrigin(ORIGIN.applicationId(), ORIGIN.id()));
+        inventory.setOrigins(ORIGIN_1);
+        inventory.onCommand(new DisableOrigin(ORIGIN_1.applicationId(), ORIGIN_1.id()));
 
-        assertThat(logger.lastMessage(), is(loggingEvent(INFO, "Origin state change: origin=\"generic-app=one\", change=\"ACTIVE->DISABLED\"")));
+        assertThat(logger.lastMessage(), is(loggingEvent(INFO, "Origin state change: origin=\"generic-app=app-01\", change=\"ACTIVE->DISABLED\"")));
     }
 
     @Test
     public void logsMessageWhenDisabledOriginWithHealthChecksIsEnabled() {
-        inventory.addOrigins(ORIGIN);
-        inventory.onCommand(new DisableOrigin(ORIGIN.applicationId(), ORIGIN.id()));
-        inventory.onCommand(new EnableOrigin(ORIGIN.applicationId(), ORIGIN.id()));
+        inventory.setOrigins(ORIGIN_1);
+        inventory.onCommand(new DisableOrigin(ORIGIN_1.applicationId(), ORIGIN_1.id()));
+        inventory.onCommand(new EnableOrigin(ORIGIN_1.applicationId(), ORIGIN_1.id()));
 
         assertThat(logger.lastMessage(), is(loggingEvent(INFO,
-                "Origin state change: origin=\"generic-app=one\", change=\"DISABLED->INACTIVE\"")));
+                "Origin state change: origin=\"generic-app=app-01\", change=\"DISABLED->INACTIVE\"")));
     }
 
     @Test
     public void registersToEventBusWhenCreated() {
-        assertThat(eventBus.registered, hasItem(inventory));
+        verify(eventBus).register(eq(inventory));
     }
 
     @Test
-    public void unregistersFromEventBusWhenClosed() {
+    public void stopsMonitoringAndUnregistersWhenClosed() {
+        ConnectionPool.Factory connectionFactory = mock(ConnectionPool.Factory.class);
+
+        ConnectionPool pool1 = mock(ConnectionPool.class);
+        when(pool1.getOrigin()).thenReturn(ORIGIN_1);
+
+        ConnectionPool pool2 = mock(ConnectionPool.class);
+        when(pool2.getOrigin()).thenReturn(ORIGIN_2);
+
+        when(connectionFactory.create(eq(ORIGIN_1))).thenReturn(pool1);
+        when(connectionFactory.create(eq(ORIGIN_2))).thenReturn(pool2);
+
+        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, metricRegistry);
+        inventory.setOrigins(ORIGIN_1, ORIGIN_2);
         inventory.close();
 
-        assertThat(eventBus.registered, not(hasItem(inventory)));
+        verify(monitor).stopMonitoring(eq(ImmutableSet.of(ORIGIN_1)));
+        verify(monitor).stopMonitoring(eq(ImmutableSet.of(ORIGIN_2)));
+        assertThat(gaugeValue("origins.generic-app.app-01.status"), isAbsent());
+        assertThat(gaugeValue("origins.generic-app.app-02.status"), isAbsent());
+
+        verify(pool1).close();
+        verify(pool2).close();
+
+        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus).unregister(eq(inventory));
     }
 
     private static Matcher<OriginsInventory> hasNoActiveOrigins() {
@@ -324,19 +515,4 @@ public class OriginsInventoryTest {
                 .build();
     }
 
-    private static class InstrumentedEventBus extends EventBus {
-        private final List<Object> registered = new ArrayList<>();
-
-        @Override
-        public void register(Object object) {
-            super.register(object);
-            registered.add(object);
-        }
-
-        @Override
-        public void unregister(Object object) {
-            super.unregister(object);
-            registered.remove(object);
-        }
-    }
 }

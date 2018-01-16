@@ -39,7 +39,8 @@ abstract class AbstractRetryPolicy implements RetryPolicy {
     }
 
     @Override
-    public abstract Outcome evaluate(Context context, LoadBalancingStrategy loadBalancingStrategy);
+    public abstract Outcome evaluate(Context context, LoadBalancingStrategy loadBalancingStrategy,
+                                     LoadBalancingStrategy.Context lbContext);
 
     public int deltaBackoffMillis() {
         return deltaBackoffMillis;

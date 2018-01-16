@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,18 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.eaio.uuid.UUID;
 import com.google.common.net.HostAndPort;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.netty.ClientEventLoopFactory;
 import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
 import com.hotels.styx.client.ChannelOptionSetting;
 import com.hotels.styx.client.HttpConfig;
+import com.hotels.styx.client.HttpRequestOperationFactory;
+import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
 import com.hotels.styx.client.ssl.TlsSettings;
@@ -51,12 +55,25 @@ public class NettyConnectionFactory implements Connection.Factory {
     private final ClientEventLoopFactory eventLoopFactory;
     private final HttpConfig httpConfig;
     private final SslContext sslContext;
+    private final MetricRegistry metricRegistry;
+    private final HttpRequestOperationFactory httpRequestOperationFactory;
     private Bootstrap bootstrap;
 
     private NettyConnectionFactory(Builder builder) {
         this.eventLoopFactory = builder.eventLoopFactory();
         this.httpConfig = requireNonNull(builder.httpConfig);
         this.sslContext = builder.tlsSettings == null ? null : SslContextFactory.get(builder.tlsSettings);
+        this.metricRegistry = builder.metricRegistry;
+
+        this.httpRequestOperationFactory = builder.httpRequestOperationFactory != null
+                ? builder.httpRequestOperationFactory
+                : (HttpRequest request) -> new HttpRequestOperation(
+                            request,
+                            new OriginStatsFactory(metricRegistry),
+                            builder.flowControlEnabled,
+                            builder.responseTimeoutMillis,
+                            builder.requestLoggingEnabled,
+                            builder.longFormat);
     }
 
     @Override
@@ -66,7 +83,7 @@ public class NettyConnectionFactory implements Connection.Factory {
 
             channelFuture.addListener(future -> {
                 if (future.isSuccess()) {
-                    subscriber.onNext(new NettyConnection(new UUID(), origin, channelFuture.channel()));
+                    subscriber.onNext(new NettyConnection(origin, channelFuture.channel(), httpRequestOperationFactory));
                     subscriber.onCompleted();
                 } else {
                     subscriber.onError(new OriginUnreachableException(origin, future.cause()));
@@ -121,6 +138,12 @@ public class NettyConnectionFactory implements Connection.Factory {
         private int clientWorkerThreadsCount = 1;
         private HttpConfig httpConfig = defaultHttpConfig();
         private TlsSettings tlsSettings;
+        private MetricRegistry metricRegistry;
+        private int responseTimeoutMillis = 60000;
+        private boolean flowControlEnabled;
+        private boolean requestLoggingEnabled;
+        private boolean longFormat;
+        private HttpRequestOperationFactory httpRequestOperationFactory;
 
         ClientEventLoopFactory eventLoopFactory() {
             return new PlatformAwareClientEventLoopGroupFactory(name, clientWorkerThreadsCount);
@@ -170,7 +193,40 @@ public class NettyConnectionFactory implements Connection.Factory {
             return this;
         }
 
+        public Builder metricRegistry(MetricRegistry metricRegistry) {
+            this.metricRegistry = metricRegistry;
+            return this;
+        }
+
+        public Builder responseTimeoutMillis(int responseTimeoutMillis) {
+            this.responseTimeoutMillis = responseTimeoutMillis;
+            return this;
+        }
+
+        public Builder flowControlEnabled(boolean flowControlEnabled) {
+            this.flowControlEnabled = flowControlEnabled;
+            return this;
+        }
+
+        public Builder requestLoggingEnabled(boolean requestLoggingEnabled) {
+            this.requestLoggingEnabled = requestLoggingEnabled;
+            return this;
+        }
+
+        public Builder longFormat(boolean longFormat) {
+            this.longFormat = longFormat;
+            return this;
+        }
+
+        public Builder httpRequestOperationFactory(HttpRequestOperationFactory httpRequestOperationFactory) {
+            this.httpRequestOperationFactory = httpRequestOperationFactory;
+            return this;
+        }
+
         public NettyConnectionFactory build() {
+            if (metricRegistry == null) {
+                metricRegistry = new CodaHaleMetricRegistry();
+            }
             return new NettyConnectionFactory(this);
         }
     }

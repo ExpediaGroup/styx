@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,23 @@
  */
 package com.hotels.styx.routing.handlers
 
+import _root_.io.netty.handler.codec.http.HttpResponseStatus.OK
+import com.hotels.styx.Environment
 import com.hotels.styx.api.Id.id
-import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse, Id}
+import com.hotels.styx.api._
+import com.hotels.styx.client.OriginsInventory
 import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.BackendServiceClientFactory
-import com.hotels.styx.routing.config.RoutingConfigDefinition
-import io.netty.handler.codec.http.HttpResponseStatus.OK
+import com.hotels.styx.routing.config.RouteHandlerDefinition
 import org.scalatest.{FunSpec, ShouldMatchers}
 import rx.Observable
 
-import scala.collection.JavaConverters._
+import scala.collection.JavaConversions._
 
 class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
+
+  val environment = new Environment.Builder().build()
 
   private val config = configBlock(
     """
@@ -47,7 +51,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
       |""".stripMargin)
 
   it("builds ProxyToBackend handler") {
-    val handler = new ProxyToBackend.ConfigFactory(clientFactory()).build(List().asJava, null, config)
+    val handler = new ProxyToBackend.ConfigFactory(environment, clientFactory()).build(List(), null, config)
 
     val response = handler.handle(HttpRequest.Builder.get("/foo")
       .build(), null).toBlocking.first()
@@ -65,8 +69,8 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
         |""".stripMargin)
 
     val e = intercept[IllegalArgumentException] {
-      val handler = new ProxyToBackend.ConfigFactory(clientFactory())
-        .build(List("config", "config").asJava, null, config)
+      val handler = new ProxyToBackend.ConfigFactory(environment, clientFactory())
+              .build(List("config", "config"), null, config)
     }
 
     e.getMessage should be("Routing object definition of type 'ProxyToBackend', attribute='config.config', is missing a mandatory 'backend' attribute.")
@@ -88,24 +92,24 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
         |""".stripMargin)
 
     val e = intercept[IllegalArgumentException] {
-      val handler = new ProxyToBackend.ConfigFactory(clientFactory())
-        .build(List("config", "config").asJava, null, config)
+      val handler = new ProxyToBackend.ConfigFactory(environment, clientFactory())
+              .build(List("config", "config"), null, config)
     }
 
     e.getMessage should be("Routing object definition of type 'ProxyToBackend', attribute='config.config.backend', is missing a mandatory 'origins' attribute.")
   }
 
-  private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RoutingConfigDefinition]).get()
+  private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RouteHandlerDefinition]).get()
 
   private def clientFactory() = new BackendServiceClientFactory() {
-    override def createClient(backendService: BackendService): HttpClient = new HttpClient {
+    override def createClient(backendService: BackendService, originsInventory: OriginsInventory): HttpClient = new HttpClient {
       override def sendRequest(request: HttpRequest): Observable[HttpResponse] = {
         backendService.id() should be (id("ba"))
         backendService.connectionPoolConfig().maxConnectionsPerHost() should be (45)
         backendService.connectionPoolConfig().maxPendingConnectionsPerHost() should be (15)
         backendService.responseTimeoutMillis() should be (60000)
-        backendService.origins().asScala.head.id() should be(id("ba1"))
-        backendService.origins().asScala.head.host().getPort should be(9094)
+        backendService.origins().head.id() should be(id("ba1"))
+        backendService.origins().head.host().getPort should be(9094)
         Observable
           .just(HttpResponse.Builder
             .response(OK)

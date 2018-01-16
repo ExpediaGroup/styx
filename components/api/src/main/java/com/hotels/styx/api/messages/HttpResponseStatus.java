@@ -110,8 +110,9 @@ public final class HttpResponseStatus {
     }
 
     public static HttpResponseStatus statusWithCode(int code) {
-        if(code < 0 || code >= STATUSES.length || STATUSES[code] == null)
+        if (code < 0 || code >= STATUSES.length || STATUSES[code] == null) {
             return new HttpResponseStatus(code, "Unknown status");
+        }
 
         return STATUSES[code];
     }

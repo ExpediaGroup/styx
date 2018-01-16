@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,15 @@
  */
 package com.hotels.styx.proxy;
 
+import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.applications.BackendService;
+import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.server.HttpRouter;
 import org.slf4j.Logger;
@@ -44,13 +47,17 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     private static final Logger LOG = getLogger(BackendServicesRouter.class);
 
     private final BackendServiceClientFactory clientFactory;
+    private final Environment environment;
     private final ConcurrentMap<String, ProxyToClientPipeline> routes;
+    private final int clientWorkerThreadsCount;
 
-    public BackendServicesRouter(BackendServiceClientFactory clientFactory) {
+    public BackendServicesRouter(BackendServiceClientFactory clientFactory, Environment environment) {
         this.clientFactory = checkNotNull(clientFactory);
+        this.environment = environment;
         this.routes = new ConcurrentSkipListMap<>(
                 comparingInt(String::length).reversed()
                         .thenComparing(naturalOrder()));
+        this.clientWorkerThreadsCount = environment.styxConfig().proxyServerConfig().clientWorkerThreadsCount();
     }
 
     ConcurrentMap<String, ProxyToClientPipeline> routes() {
@@ -70,15 +77,42 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     @Override
     public void onChange(Registry.Changes<BackendService> changes) {
         concat(changes.added(), changes.updated()).forEach(backendService -> {
-            ProxyToClientPipeline pipeline = new ProxyToClientPipeline(newClientHandler(backendService));
 
-            ProxyToClientPipeline updated = routes.put(backendService.path(), pipeline);
-            LOG.info("added path={} current routes={}", backendService.path(), routes.keySet());
-            if (updated != null) {
-                updated.close();
+            ProxyToClientPipeline pipeline = routes.get(backendService.path());
+            if (pipeline != null) {
+                pipeline.close();
             }
 
-            pipeline.registerStatusGauges();
+            boolean requestLoggingEnabled = environment.styxConfig().get("request-logging.outbound.enabled", Boolean.class)
+                    .orElse(false);
+
+            boolean longFormat = environment.styxConfig().get("request-logging.outbound.longFormat", Boolean.class)
+                    .orElse(false);
+
+            NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
+                    .name("Styx")
+                    .clientWorkerThreadsCount(clientWorkerThreadsCount)
+                    .tlsSettings(backendService.tlsSettings().orElse(null))
+                    .flowControlEnabled(true)
+                    .metricRegistry(environment.metricRegistry())
+                    .responseTimeoutMillis(backendService.responseTimeoutMillis())
+                    .requestLoggingEnabled(requestLoggingEnabled)
+                    .longFormat(longFormat)
+                    .build();
+
+            //TODO: origins inventory builder assumes that appId/originId tuple is unique and it will fail on metrics registration.
+            OriginsInventory inventory = new OriginsInventory.Builder(backendService)
+                    .version(environment.buildInfo().releaseVersion())
+                    .eventBus(environment.eventBus())
+                    .metricsRegistry(environment.metricRegistry())
+                    .connectionFactory(connectionFactory)
+                    .build();
+
+            pipeline = new ProxyToClientPipeline(newClientHandler(backendService, inventory), inventory);
+
+            routes.put(backendService.path(), pipeline);
+            LOG.info("added path={} current routes={}", backendService.path(), routes.keySet());
+
         });
 
         changes.removed().forEach(backendService ->
@@ -86,8 +120,8 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                         .close());
     }
 
-    private HttpClient newClientHandler(BackendService backendService) {
-        return clientFactory.createClient(backendService);
+    private HttpClient newClientHandler(BackendService backendService, OriginsInventory originsInventory) {
+        return clientFactory.createClient(backendService, originsInventory);
     }
 
     @Override
@@ -97,9 +131,11 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
     private static class ProxyToClientPipeline implements HttpHandler2 {
         private final HttpClient client;
+        private final OriginsInventory originsInventory;
 
-        ProxyToClientPipeline(HttpClient httpClient) {
+        ProxyToClientPipeline(HttpClient httpClient, OriginsInventory originsInventory) {
             this.client = checkNotNull(httpClient);
+            this.originsInventory = originsInventory;
         }
 
         @Override
@@ -109,11 +145,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         }
 
         public void close() {
-            client.close();
-        }
-
-        public void registerStatusGauges() {
-            client.registerStatusGauges();
+            originsInventory.close();
         }
 
         private static void handleError(HttpRequest request, Throwable throwable) {

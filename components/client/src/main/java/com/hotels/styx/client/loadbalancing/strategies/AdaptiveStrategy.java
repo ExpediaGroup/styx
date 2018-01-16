@@ -18,6 +18,7 @@ package com.hotels.styx.client.loadbalancing.strategies;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.AtomicDouble;
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
@@ -41,26 +42,32 @@ public class AdaptiveStrategy implements LoadBalancingStrategy {
      */
     public static class Factory implements LoadBalancingStrategyFactory {
         @Override
-        public AdaptiveStrategy create(Environment environment, Configuration strategyConfiguration) {
+        public AdaptiveStrategy create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins) {
             int requestCount = strategyConfiguration.get("requestCount", Integer.class)
                     .orElse(DEFAULT_REQUEST_COUNT);
-            return new AdaptiveStrategy(requestCount, new RoundRobinStrategy(), new BusyConnectionsStrategy());
+            return new AdaptiveStrategy(requestCount, activeOrigins, new RoundRobinStrategy(activeOrigins),
+                    new BusyConnectionsStrategy(activeOrigins));
         }
     }
 
     private final AtomicDouble borrowCount = new AtomicDouble(0);
 
+    private ActiveOrigins activeOrigins;
     private final RoundRobinStrategy roundRobin;
     private final BusyConnectionsStrategy leastResponseTime;
     private final int requestCount;
     private volatile LoadBalancingStrategy currentStrategy;
 
-    public AdaptiveStrategy() {
-        this(DEFAULT_REQUEST_COUNT, new RoundRobinStrategy(), new BusyConnectionsStrategy());
+    public AdaptiveStrategy(ActiveOrigins activeOrigins) {
+        this(DEFAULT_REQUEST_COUNT, activeOrigins,
+                new RoundRobinStrategy(activeOrigins),
+                new BusyConnectionsStrategy(activeOrigins));
     }
 
-    public AdaptiveStrategy(int requestCount, RoundRobinStrategy roundRobin, BusyConnectionsStrategy leastResponseTime) {
+    public AdaptiveStrategy(int requestCount, ActiveOrigins activeOrigins, RoundRobinStrategy roundRobin,
+                            BusyConnectionsStrategy leastResponseTime) {
         this.requestCount = checkArgument(requestCount, requestCount > 0);
+        this.activeOrigins = activeOrigins;
         this.roundRobin = checkNotNull(roundRobin);
         this.leastResponseTime = checkNotNull(leastResponseTime);
 
@@ -78,10 +85,10 @@ public class AdaptiveStrategy implements LoadBalancingStrategy {
     }
 
     @Override
-    public Iterable<ConnectionPool> vote(Iterable<ConnectionPool> origins, Context context) {
-        int nOrigins = size(origins);
+    public Iterable<ConnectionPool> vote(Context context) {
+        int nOrigins = size(activeOrigins.snapshot());
         if (nOrigins < 2) {
-            return origins;
+            return activeOrigins.snapshot();
         }
 
         if (this.currentStrategy == this.roundRobin) {
@@ -91,7 +98,7 @@ public class AdaptiveStrategy implements LoadBalancingStrategy {
             }
         }
 
-        return this.currentStrategy.vote(origins, context);
+        return this.currentStrategy.vote(context);
     }
 
     @Override

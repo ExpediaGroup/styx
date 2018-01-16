@@ -17,17 +17,21 @@ package com.hotels.styx.client;
 
 import com.google.common.base.Splitter;
 import com.hotels.styx.api.HttpCookie;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import org.slf4j.Logger;
 
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -40,31 +44,39 @@ class OriginRestrictionLoadBalancingStrategy implements LoadBalancingStrategy {
     private static final Logger LOG = getLogger(OriginRestrictionLoadBalancingStrategy.class);
     private static final Pattern MATCH_ALL = Pattern.compile(".*");
 
+    private ActiveOrigins activeOrigins;
     private final LoadBalancingStrategy delegate;
     private final String cookieName;
 
-    OriginRestrictionLoadBalancingStrategy(LoadBalancingStrategy delegate, String cookieName) {
+    OriginRestrictionLoadBalancingStrategy(ActiveOrigins activeOrigins, LoadBalancingStrategy delegate, String cookieName) {
+        this.activeOrigins = activeOrigins;
         this.delegate = checkNotNull(delegate);
         this.cookieName = checkNotNull(cookieName);
     }
 
     @Override
-    public Iterable<ConnectionPool> vote(Iterable<ConnectionPool> origins, Context context) {
-        Iterable<ConnectionPool> originPartition = originPartition(origins, context);
+    public Iterable<ConnectionPool> vote(Context context) {
+        Iterable<ConnectionPool> connectionPools = delegate.vote(context);
+        Optional<Set<ConnectionPool>> matchingOrigins = originPartition(activeOrigins.snapshot(), context);
 
-        return delegate.vote(originPartition, context);
+        if (matchingOrigins.isPresent()) {
+            Set<ConnectionPool> origins = matchingOrigins.get();
+            return stream(connectionPools.spliterator(), false)
+                    .filter(origins::contains)
+                    .collect(toList());
+        }
+        return connectionPools;
     }
 
-    private Iterable<ConnectionPool> originPartition(Iterable<ConnectionPool> origins, Context context) {
+    private Optional<Set<ConnectionPool>> originPartition(Iterable<ConnectionPool> origins, Context context) {
         return context.currentRequest().cookie(cookieName)
-                .map(cookie -> restrictedOrigins(origins, cookie))
-                .orElse(origins);
+                .map(cookie -> restrictedOrigins(origins, cookie));
     }
 
-    private Iterable<ConnectionPool> restrictedOrigins(Iterable<ConnectionPool> origins, HttpCookie cookie) {
+    private Set<ConnectionPool> restrictedOrigins(Iterable<ConnectionPool> origins, HttpCookie cookie) {
         return stream(origins.spliterator(), false)
                 .filter(originIsPermittedByCookie(cookie.value()))
-                .collect(toList());
+                .collect(toSet());
     }
 
     private Predicate<ConnectionPool> originIsPermittedByCookie(String cookieValue) {

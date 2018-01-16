@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
  */
 package com.hotels.styx.api.client;
 
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import rx.Observable;
 
 import java.io.Closeable;
 import java.util.EventListener;
-import java.util.function.Supplier;
 
 /**
  * A connection to an origin.
@@ -60,13 +61,12 @@ public interface Connection extends Closeable {
     }
 
     /**
-     * Executes an operation in the context of this connection, allowing it to collect metrics, handle errors, etc.
+     * Writes HTTP request to a remote peer in the context of this connection.
      *
-     * @param operation an operation
-     * @param <R>       result type
-     * @return an observable that provides the operation result
+     * @param request
+     * @return an observable that provides the response
      */
-    <R> Observable<R> execute(Supplier<Observable<R>> operation);
+    Observable<HttpResponse> write(HttpRequest request);
 
     /**
      * Returns if the underlying connection is still active.

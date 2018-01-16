@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
-import com.hotels.styx.routing.config.RoutingConfigDefinition;
-import com.hotels.styx.routing.config.BuiltinHandlersFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
+import com.hotels.styx.routing.config.RouteHandlerDefinition;
+import com.hotels.styx.routing.config.RouteHandlerFactory;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import rx.Observable;
 
@@ -64,7 +64,7 @@ public class StaticResponseHandler implements HttpHandler2 {
      * Builds a static response handler from Yaml configuration.
      */
     public static class ConfigFactory implements HttpHandlerFactory {
-        public HttpHandler2 build(List<String> parents, BuiltinHandlersFactory builders, RoutingConfigDefinition configBlock) {
+        public HttpHandler2 build(List<String> parents, RouteHandlerFactory builders, RouteHandlerDefinition configBlock) {
             checkNotNull(configBlock.config());
 
             StaticResponseConfig config = new JsonNodeConfig(configBlock.config())

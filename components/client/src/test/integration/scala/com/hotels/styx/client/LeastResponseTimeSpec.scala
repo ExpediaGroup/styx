@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.codahale.metrics.json.MetricsModule
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Objects
 import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.client.{Origin, UrlConnectionHttpClient}
+import com.hotels.styx.api.client.{ActiveOrigins, Origin, UrlConnectionHttpClient}
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
 import com.hotels.styx.api.{HttpClient, HttpResponse, Id}
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
@@ -31,6 +31,7 @@ import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.client.healthcheck.HealthCheckConfig
 import com.hotels.styx.client.loadbalancing.strategies.AdaptiveStrategy
 import com.hotels.styx.support.server.FakeHttpServer
+import org.mockito.Mockito
 import org.scalatest.{BeforeAndAfter, FunSuite, ShouldMatchers}
 import rx.Observer
 
@@ -57,13 +58,16 @@ class LeastResponseTimeSpec extends FunSuite with BeforeAndAfter with ShouldMatc
       appOriginOne -> server1,
       appOriginTwo -> server2)
 
-    httpClient = newHttpClientBuilder(
-      new BackendService.Builder()
-        .id(Id.id("webapp"))
-        .origins(appOriginOne, appOriginTwo)
-        .healthCheckConfig(twoSecondsInterval)
-        .build())
-      .loadBalancingStrategy(new AdaptiveStrategy())
+    val service = new BackendService.Builder()
+      .id(Id.id("webapp"))
+      .origins(appOriginOne, appOriginTwo)
+      .healthCheckConfig(twoSecondsInterval)
+      .build()
+
+    val activeOrigins = Mockito.mock(classOf[ActiveOrigins])
+
+    val httpClient = newHttpClientBuilder(service)
+      .loadBalancingStrategy(new AdaptiveStrategy(activeOrigins))
       .build()
   }
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.netty.exceptions.NoAvailableHostsException;
-import com.hotels.styx.client.netty.connectionpool.NettyConnection;
 import rx.Observable;
 
 import java.util.Optional;
@@ -31,13 +30,11 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Encapsulates a single connection to remote server which we can use to send the messages.
  */
-public class Transport {
-    private final HttpRequestOperationFactory requestOperationFactory;
+class Transport {
     private final Id appId;
     private final StyxHeaderConfig styxHeaderConfig;
 
-    public Transport(HttpRequestOperationFactory requestOperationFactory, Id appId, StyxHeaderConfig styxHeaderConfig) {
-        this.requestOperationFactory = requestOperationFactory;
+    public Transport(Id appId, StyxHeaderConfig styxHeaderConfig) {
         this.appId = appId;
         this.styxHeaderConfig = styxHeaderConfig;
     }
@@ -48,8 +45,7 @@ public class Transport {
         AtomicReference<Connection> connectionRef = new AtomicReference<>(null);
         Observable<HttpResponse> observableResponse = connection.flatMap(tConnection -> {
             connectionRef.set(tConnection);
-            Operation<NettyConnection, HttpResponse> operation = requestOperationFactory.newHttpRequestOperation(request);
-            return operation.execute((NettyConnection) tConnection)
+            return tConnection.write(request)
                     .map(response -> addOriginId(tConnection, response));
         });
 
