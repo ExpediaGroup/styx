@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.Announcer;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
@@ -121,6 +122,10 @@ public final class OriginsInventory
                     .forEach(ConnectionPool::close);
             originHealthStatusMonitor.stop();
         }
+    }
+
+    public boolean closed() {
+        return closed.get();
     }
 
     @VisibleForTesting
@@ -426,6 +431,8 @@ public final class OriginsInventory
                     .clientWorkerThreadsCount(clientWorkerThreadsCount)
                     .httpConfig(httpConfig)
                     .tlsSettings(backendService.tlsSettings().orElse(null))
+                    .metricRegistry(metricsRegistry)
+                    .responseTimeoutMillis(backendService.responseTimeoutMillis())
                     .build();
 
             return new ConnectionPoolFactory.Builder()

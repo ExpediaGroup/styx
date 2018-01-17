@@ -19,12 +19,14 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.client.applications.BackendService;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
 import static com.hotels.styx.client.applications.BackendService.newBackendServiceBuilder;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -53,9 +55,11 @@ public class StyxBackendServiceClientFactoryTest {
 
     @Test
     public void createsClients() {
-        StyxBackendServiceClientFactory factory = new StyxBackendServiceClientFactory(environment, 0);
+        StyxBackendServiceClientFactory factory = new StyxBackendServiceClientFactory(environment);
 
-        HttpClient client = factory.createClient(backendService);
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService).build();
+
+        HttpClient client = factory.createClient(backendService, originsInventory);
 
         assertThat(client, is(instanceOf(StyxHttpClient.class)));
 

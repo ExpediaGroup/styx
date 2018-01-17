@@ -16,11 +16,12 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.applications.BackendService;
 
 /**
  * Creates HTTP clients for connecting to backend services.
  */
 public interface BackendServiceClientFactory {
-    HttpClient createClient(BackendService backendService);
+    HttpClient createClient(BackendService backendService, OriginsInventory originsInventory);
 }

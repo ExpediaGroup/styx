@@ -25,8 +25,6 @@ import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
-import com.hotels.styx.client.netty.HttpRequestOperation;
-import com.hotels.styx.client.netty.connectionpool.NettyConnection;
 import com.hotels.styx.client.ssl.TlsSettings;
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
@@ -50,10 +48,8 @@ import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class SimpleNettyHttpClientTest {
     private HttpRequest anyRequest;
@@ -159,44 +155,38 @@ public class SimpleNettyHttpClientTest {
 
     @Test
     public void willNotSetAnyUserAgentIfNotSpecified() {
-        HttpRequestOperationFactory mockOperationFactory = mockRequestOperationFactory();
-
+        Connection mockConnection = mock(Connection.class);
         HttpClient client = new SimpleNettyHttpClient.Builder()
-                .requestOperationFactory(mockOperationFactory)
-                .connectionDestinationFactory(connectInstantlyConnectionDestinationFactory())
+                .connectionDestinationFactory(connectInstantlyConnectionDestinationFactory(mockConnection))
                 .build();
 
         client.sendRequest(anyRequest).subscribe(new TestSubscriber<>());
 
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(mockOperationFactory).newHttpRequestOperation(captor.capture());
+        verify(mockConnection).write(captor.capture());
         assertThat(captor.getValue().header(USER_AGENT), isAbsent());
     }
 
     @Test
     public void setsTheSpecifiedUserAgentWhenSpecified() {
-        HttpRequestOperationFactory mockOperationFactory = mockRequestOperationFactory();
-
+        Connection mockConnection = mock(Connection.class);
         HttpClient client = new SimpleNettyHttpClient.Builder()
-                .requestOperationFactory(mockOperationFactory)
-                .connectionDestinationFactory(connectInstantlyConnectionDestinationFactory())
+                .connectionDestinationFactory(connectInstantlyConnectionDestinationFactory(mockConnection))
                 .userAgent("Styx/5.6")
                 .build();
 
         client.sendRequest(anyRequest).subscribe(new TestSubscriber<Object>());
 
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(mockOperationFactory).newHttpRequestOperation(captor.capture());
+        verify(mockConnection).write(captor.capture());
         assertThat(captor.getValue().header(USER_AGENT), isValue("Styx/5.6"));
     }
 
     @Test
     public void retainsTheUserAgentStringFromTheRequest() {
-        HttpRequestOperationFactory mockOperationFactory = mockRequestOperationFactory();
-
+        Connection mockConnection = mock(Connection.class);
         HttpClient client = new SimpleNettyHttpClient.Builder()
-                .requestOperationFactory(mockOperationFactory)
-                .connectionDestinationFactory(connectInstantlyConnectionDestinationFactory())
+                .connectionDestinationFactory(connectInstantlyConnectionDestinationFactory(mockConnection))
                 .userAgent("Styx/5.6")
                 .build();
 
@@ -207,7 +197,7 @@ public class SimpleNettyHttpClientTest {
                 .subscribe(new TestSubscriber<Object>());
 
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(mockOperationFactory).newHttpRequestOperation(captor.capture());
+        verify(mockConnection).write(captor.capture());
         assertThat(captor.getValue().header(USER_AGENT), isValue("Foo/Bar"));
     }
 
@@ -215,11 +205,8 @@ public class SimpleNettyHttpClientTest {
     public void requestWithNoHostOrUrlAuthorityCausesException() {
         HttpRequest request = get("/foo.txt").build();
 
-        HttpRequestOperationFactory mockOperationFactory = mockRequestOperationFactory();
-
         HttpClient client = new SimpleNettyHttpClient.Builder()
-                .requestOperationFactory(mockOperationFactory)
-                .connectionDestinationFactory(connectInstantlyConnectionDestinationFactory())
+                .connectionDestinationFactory(connectInstantlyConnectionDestinationFactory(mock(Connection.class)))
                 .build();
 
         client.sendRequest(request)
@@ -228,28 +215,18 @@ public class SimpleNettyHttpClientTest {
                 .single();
     }
 
-    private static HttpRequestOperationFactory mockRequestOperationFactory() {
-        HttpRequestOperation mockOperation = mock(HttpRequestOperation.class);
-        HttpRequestOperationFactory mockOperationFactory = mock(HttpRequestOperationFactory.class);
-        when(mockOperationFactory.newHttpRequestOperation(any(HttpRequest.class))).thenReturn(mockOperation);
-        return mockOperationFactory;
-    }
-
-    private static Connection.Factory connectInstantlyConnectionFactory() {
-        NettyConnection connection = mock(NettyConnection.class);
-        when(connection.isConnected()).thenReturn(true);
-
+    private static Connection.Factory connectInstantlyConnectionFactory(Connection mockConnection) {
         return (origin, connectionSettings) -> {
             ReplaySubject<Connection> connectionSubject = ReplaySubject.create();
-            connectionSubject.onNext(connection);
+            connectionSubject.onNext(mockConnection);
             connectionSubject.onCompleted();
             return connectionSubject;
         };
     }
 
-    private static ConnectionDestination.Factory connectInstantlyConnectionDestinationFactory() {
+    private static ConnectionDestination.Factory connectInstantlyConnectionDestinationFactory(Connection mockConnection) {
         return new SimpleConnectionPool.Factory()
-                .connectionFactory(connectInstantlyConnectionFactory())
+                .connectionFactory(connectInstantlyConnectionFactory(mockConnection))
                 .connectionPoolSettings(new ConnectionPoolSettings.Builder().build());
     }
 }

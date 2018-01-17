@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,8 +47,8 @@ class RoutingConfigParserSpec extends FunSpec with ShouldMatchers {
 
     val routingObjectRef = RoutingConfigParser.toRoutingConfigNode(jsonNode)
 
-    routingObjectRef shouldBe a[RoutingConfigReference]
-    routingObjectRef.asInstanceOf[RoutingConfigReference].name() should be("aString")
+    routingObjectRef shouldBe a[RouteHandlerReference]
+    routingObjectRef.asInstanceOf[RouteHandlerReference].name() should be("aString")
   }
 
   it("Parses routing object definitions") {
@@ -83,10 +83,10 @@ class RoutingConfigParserSpec extends FunSpec with ShouldMatchers {
 
     val routingObjectDef = RoutingConfigParser.toRoutingConfigNode(jsonNode)
 
-    routingObjectDef shouldBe a[RoutingConfigDefinition]
-    routingObjectDef.asInstanceOf[RoutingConfigDefinition].name() should be("main-router")
-    routingObjectDef.asInstanceOf[RoutingConfigDefinition].`type`() should be("ConditionRouter")
-    routingObjectDef.asInstanceOf[RoutingConfigDefinition].config() shouldBe a[JsonNode]
+    routingObjectDef shouldBe a[RouteHandlerDefinition]
+    routingObjectDef.asInstanceOf[RouteHandlerDefinition].name() should be("main-router")
+    routingObjectDef.asInstanceOf[RouteHandlerDefinition].`type`() should be("ConditionRouter")
+    routingObjectDef.asInstanceOf[RouteHandlerDefinition].config() shouldBe a[JsonNode]
   }
 
   it("Routing object name is optional") {
@@ -101,10 +101,10 @@ class RoutingConfigParserSpec extends FunSpec with ShouldMatchers {
 
     val routingObjectDef = RoutingConfigParser.toRoutingConfigNode(jsonNode)
 
-    routingObjectDef shouldBe a[RoutingConfigDefinition]
-    routingObjectDef.asInstanceOf[RoutingConfigDefinition].name() should be("")
-    routingObjectDef.asInstanceOf[RoutingConfigDefinition].`type`() should be("ConditionRouter")
-    routingObjectDef.asInstanceOf[RoutingConfigDefinition].config() shouldBe a[JsonNode]
+    routingObjectDef shouldBe a[RouteHandlerDefinition]
+    routingObjectDef.asInstanceOf[RouteHandlerDefinition].name() should be("")
+    routingObjectDef.asInstanceOf[RouteHandlerDefinition].`type`() should be("ConditionRouter")
+    routingObjectDef.asInstanceOf[RouteHandlerDefinition].config() shouldBe a[JsonNode]
   }
 
   it("Routing object type is mandatory") {

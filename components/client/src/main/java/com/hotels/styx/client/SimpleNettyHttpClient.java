@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,6 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.client.ConnectionDestination;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.client.netty.HttpRequestOperation;
-import com.hotels.styx.client.netty.connectionpool.NettyConnection;
 import rx.Observable;
 
 import java.util.Optional;
@@ -44,14 +42,12 @@ import static java.util.Objects.requireNonNull;
  * A client that uses netty as transport.
  */
 public final class SimpleNettyHttpClient implements HttpClient {
-    private final HttpRequestOperationFactory requestOperationFactory;
     private final LoadingCache<Origin, ConnectionDestination> connectionDestinationByOrigin;
     private final Optional<String> userAgent;
 
     private SimpleNettyHttpClient(Builder builder) {
         ConnectionDestination.Factory connectionDestinationFactory = requireNonNull(builder.connectionDestinationFactory);
 
-        this.requestOperationFactory = builder.requestOperationFactory;
         this.userAgent = Optional.ofNullable(builder.userAgent);
         this.connectionDestinationByOrigin = CacheBuilder.newBuilder().build(cacheLoader(connectionDestinationFactory::create));
     }
@@ -61,11 +57,7 @@ public final class SimpleNettyHttpClient implements HttpClient {
         HttpRequest networkRequest = addUserAgent(request);
         Origin origin = originFromRequest(networkRequest);
         ConnectionDestination connectionDestination = connectionDestination(origin);
-        Observable<HttpResponse> response = connectionDestination.withConnection(connection -> {
-            HttpRequestOperation operation = requestOperationFactory.newHttpRequestOperation(networkRequest);
-            return operation.execute((NettyConnection) connection);
-        });
-
+        Observable<HttpResponse> response = connectionDestination.withConnection(connection -> connection.write(networkRequest));
         return new HttpTransaction.NonCancellableHttpTransaction(response).response();
     }
 
@@ -116,7 +108,6 @@ public final class SimpleNettyHttpClient implements HttpClient {
      * Builder for {@link SimpleNettyHttpClient}.
      */
     public static class Builder {
-        private HttpRequestOperationFactory requestOperationFactory = request -> new HttpRequestOperation(request, null, false, 60000, false, false);
         private String userAgent;
         private ConnectionDestination.Factory connectionDestinationFactory;
 
@@ -128,17 +119,6 @@ public final class SimpleNettyHttpClient implements HttpClient {
          */
         public Builder connectionDestinationFactory(ConnectionDestination.Factory connectionDestinationFactory) {
             this.connectionDestinationFactory = connectionDestinationFactory;
-            return this;
-        }
-
-        /**
-         * Sets the HTTP request operation factory.
-         *
-         * @param requestOperationFactory HTTP request operation factory
-         * @return this builder
-         */
-        public Builder requestOperationFactory(HttpRequestOperationFactory requestOperationFactory) {
-            this.requestOperationFactory = requestOperationFactory;
             return this;
         }
 

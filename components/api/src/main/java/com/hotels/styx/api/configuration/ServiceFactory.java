@@ -16,6 +16,7 @@
 package com.hotels.styx.api.configuration;
 
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.client.ActiveOrigins;
 
 /**
  * A generic factory that can be implemented in order to facilitate creating objects whose type is not known
@@ -32,4 +33,16 @@ public interface ServiceFactory<E> {
      * @return product instance
      */
     E create(Environment environment, Configuration serviceConfiguration);
+
+    /**
+     * Create an instance of the product.
+     *
+     * @param environment                 environment
+     * @param serviceConfiguration configuration specific to the factory product
+     * @param objects objects that service might depend on
+     * @return product instance
+     */
+    default E create(Environment environment, Configuration serviceConfiguration, ActiveOrigins objects) {
+        return create(environment, serviceConfiguration);
+    }
 }

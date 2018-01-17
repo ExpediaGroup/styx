@@ -28,6 +28,7 @@ import com.hotels.styx.api.client.Origin
 import com.hotels.styx.api.client.Origin._
 import com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
+import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings
@@ -146,10 +147,15 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .enabled(true)
       .build()
 
-    val client: StyxHttpClient = newHttpClientBuilder(new BackendService.Builder()
+    val backendService = new BackendService.Builder()
       .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree, healthyOriginTwo)
       .stickySessionConfig(StickySessionEnabled)
-      .build())
+      .build()
+
+    val originsInventory = newOriginsInventoryBuilder(backendService).build()
+
+    val client: StyxHttpClient = newHttpClientBuilder(backendService)
+      .originsInventory(originsInventory)
       .retryPolicy(new RetryNTimes(3))
       .build
 

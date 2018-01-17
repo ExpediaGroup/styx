@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,10 @@ package com.hotels.styx.api;
 
 import rx.Observable;
 
-import java.io.Closeable;
-
 /**
  * HTTP Client that returns an observable of response.
  */
-public interface HttpClient extends Closeable {
+public interface HttpClient {
     /**
      * Processes a new request.
      *
@@ -34,10 +32,4 @@ public interface HttpClient extends Closeable {
      *
      */
     Observable<HttpResponse> sendRequest(HttpRequest request);
-
-    default void close() {
-    }
-
-    default void registerStatusGauges() {
-    }
 }
