@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,13 @@
  */
 package com.hotels.styx.client
 
-import java.nio.charset.Charset
-
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
-import com.google.common.net.HostAndPort._
-import com.hotels.styx.api.HttpHeaderNames
 import com.hotels.styx.api.client.Origin
-import Origin._
-import com.hotels.styx.api.support.HostAndPorts
+import com.hotels.styx.api.client.Origin._
 import com.hotels.styx.api.support.HostAndPorts._
-import HttpHeaderNames._
 import com.hotels.styx.support.server.FakeHttpServer
-import com.hotels.styx.support.server.UrlMatchingStrategies._
 
 trait OriginSupport {
   def configureAndStart(origin: Origin): FakeHttpServer = {
@@ -47,18 +40,6 @@ trait OriginSupport {
     origin -> server
   }
 
-  def originAndServer(appId: String, originId: String) = {
-    val server = new FakeHttpServer(HostAndPorts.freePort()).start()
-    val origin = newOriginBuilder(fromParts("localhost", server.port())).applicationId(appId).id(originId).build()
-
-    val response = "Response From localhost"
-    server.stub(urlStartingWith("/"), aResponse
-      .withStatus(200)
-      .withHeader(CONTENT_LENGTH.toString, response.getBytes(Charset.defaultCharset()).size.toString)
-      .withHeader("Stub-Origin-Info", origin.applicationInfo())
-      .withBody(response))
-
-    origin -> server
-  }
+  def originFrom(server : FakeHttpServer) = newOriginBuilder("localhost", server.port()).applicationId(server.appId()).id(server.originId()).build()
 
 }

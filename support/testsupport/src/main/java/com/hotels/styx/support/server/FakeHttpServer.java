@@ -45,7 +45,6 @@ public final class FakeHttpServer {
              *
              */
     private final HttpsSettings httpsSettings;
-    private final int serverPort;
     private final WireMockServer server;
 
     static {
@@ -57,21 +56,19 @@ public final class FakeHttpServer {
         this.originId = originId;
         httpsSettings = wireMockConfiguration.httpsSettings();
         server = new WireMockServer(wireMockConfiguration);
-
-        if (httpsSettings.enabled()) {
-            this.serverPort = httpsSettings.port();
-        } else {
-            this.serverPort = wireMockConfiguration.portNumber();
-        }
     }
 
     public FakeHttpServer(int port) {
         this("generic-app", "generic-app-" + port, wireMockPort(port));
     }
 
+    public FakeHttpServer(int port, String appId, String originId) {
+        this(appId, originId, wireMockPort(port));
+    }
+
     private static WireMockConfiguration wireMockPort(int port) {
         if (port == 0) {
-            return wireMockConfig().dynamicHttpsPort();
+            return wireMockConfig().dynamicPort();
         } else {
             return wireMockConfig().port(port);
         }
@@ -84,7 +81,6 @@ public final class FakeHttpServer {
     public static FakeHttpServer newHttpServer(String appId, String originId, WireMockConfiguration wireMockConfiguration) {
         return new FakeHttpServer(appId, originId, wireMockConfiguration);
     }
-
 
     public FakeHttpServer start() {
         if (!server.isRunning()) {

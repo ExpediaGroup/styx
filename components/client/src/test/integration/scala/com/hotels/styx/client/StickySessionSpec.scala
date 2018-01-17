@@ -15,22 +15,32 @@
  */
 package com.hotels.styx.client
 
+import java.nio.charset.Charset
+
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.support.api.BlockingObservables._
 import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.Id.id
-import com.hotels.styx.api.{HttpRequest}
+import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.client.Origin
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.client.stickysession.StickySessionConfig
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.support.server.FakeHttpServer
+import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import org.scalatest.{BeforeAndAfter, FunSuite, ShouldMatchers}
 
 import scala.collection.JavaConverters._
 
 class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers with OriginSupport {
 
-  val (appOriginOne, server1) = originAndServer("app", "app-01")
-  val (appOriginTwo, server2) = originAndServer("app", "app-02")
+  val server1 = new FakeHttpServer(0, "app", "app-01")
+  val server2 = new FakeHttpServer(0, "app", "app-02")
+
+  var appOriginOne: Origin = _
+  var appOriginTwo: Origin = _
 
   val StickySessionEnabled = new StickySessionConfig.Builder()
     .enabled(true)
@@ -44,6 +54,24 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
   before {
     server1.start
     server2.start
+
+    appOriginOne = originFrom(server1)
+    appOriginTwo = originFrom(server2)
+
+    val response = "Response From localhost"
+
+    server1.stub(urlStartingWith("/"), aResponse
+      .withStatus(200)
+      .withHeader(CONTENT_LENGTH.toString, response.getBytes(Charset.defaultCharset()).size.toString)
+      .withHeader("Stub-Origin-Info", appOriginOne.applicationInfo())
+      .withBody(response)
+    )
+
+    server2.stub(urlStartingWith("/"), aResponse
+      .withStatus(200)
+      .withHeader(CONTENT_LENGTH.toString, response.getBytes(Charset.defaultCharset()).size.toString)
+      .withHeader("Stub-Origin-Info", appOriginTwo.applicationInfo())
+      .withBody(response))
   }
 
   after {
@@ -156,9 +184,6 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
 
   test("Routes to new origin when the origin indicated by sticky session cookie is no longer available.") {
     server1.stop()
-    server2.stop()
-
-    server2.start()
 
     val client: StyxHttpClient = newHttpClientBuilder(
       new BackendService.Builder()
