@@ -96,7 +96,7 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
     val java: util.Map[String, StyxService] = services(backendsRegistry).asJava
 
     val styxServerBuilder = newStyxServerBuilder(styxConfig, backendsRegistry, this.plugins)
-      .backendRegistryService(java)
+      .additionalServices(java)
       .logConfigLocation(this.logbackXmlLocation.toString)
 
     val styxServer = styxServerBuilder.build()
@@ -120,7 +120,7 @@ case class StyxYamlConfig(yamlConfig: String,
     val styxConfig = new com.hotels.styx.StyxConfig(yamlConfig)
 
     val styxServer = new StyxServerBuilder(styxConfig)
-      .backendRegistryService(services(backendsRegistry).asJava)
+      .additionalServices(services(backendsRegistry).asJava)
       .logConfigLocation(logbackXmlLocation.toString).build()
 
     styxServer.startAsync().awaitRunning()

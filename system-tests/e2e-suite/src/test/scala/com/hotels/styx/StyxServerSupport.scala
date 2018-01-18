@@ -85,7 +85,7 @@ object StyxServerSupport {
     }
 
     val builder = new StyxServerBuilder(styxConfig)
-      .backendRegistryService("backendServiceRegistry", styxService)
+      .additionalServices("backendServiceRegistry", styxService)
 
     if (plugins.nonEmpty) {
       builder.pluginsSupplier(pluginSupplier)

@@ -61,7 +61,7 @@ public final class StyxServer {
 
         this.server = new StyxServerBuilder(styxConfig())
                 .pluginsSupplier(() -> builder.plugins)
-                .backendRegistryService("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry))
+                .additionalServices("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry))
                 .build();
 
         builder.routes.forEach((path, backendService) ->

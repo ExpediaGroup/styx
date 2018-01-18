@@ -51,17 +51,17 @@ public final class StyxServerBuilder {
         return environment;
     }
 
-    public StyxServerBuilder backendRegistryService(String name, StyxService backendRegistry) {
-        this.additionalServices.put(name, checkNotNull(backendRegistry));
+    public StyxServerBuilder additionalServices(String name, StyxService service) {
+        this.additionalServices.put(name, checkNotNull(service));
         return this;
     }
 
-    public StyxServerBuilder backendRegistryService(Map<String, StyxService> namedServices) {
+    public StyxServerBuilder additionalServices(Map<String, StyxService> namedServices) {
         namedServices.forEach(this.additionalServices::put);
         return this;
     }
 
-    public Map<String, StyxService> backendRegistryServices() {
+    public Map<String, StyxService> additionalServices() {
         return this.additionalServices;
     }
 
