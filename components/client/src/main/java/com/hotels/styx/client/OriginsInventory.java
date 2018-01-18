@@ -327,6 +327,7 @@ public final class OriginsInventory
         private Connection.Factory connectionFactory;
         private EventBus eventBus = new EventBus();
         private int clientWorkerThreadsCount = 1;
+        private OriginStatsFactory originStatsFactory;
 
 
         public Builder healthStatusMonitor(OriginHealthStatusMonitor healthStatusMonitor) {
@@ -373,22 +374,29 @@ public final class OriginsInventory
             this.backendService = backendService;
         }
 
+        public Builder originStatsFactory(OriginStatsFactory originStatsFactory) {
+            this.originStatsFactory = originStatsFactory;
+            return this;
+        }
+
         public OriginsInventory build() {
             if (metricsRegistry == null) {
                 metricsRegistry = new CodaHaleMetricRegistry();
             }
 
+
             healthStatusMonitor = Optional.ofNullable(originHealthStatusMonitorFactory)
                     .orElseGet(OriginHealthStatusMonitorFactory::new)
                     .create(backendService.id(), backendService.healthCheckConfig(), () -> originHealthCheckFunction(metricsRegistry));
 
-            return originsInventory(healthStatusMonitor, httpConfigBuilder.build(), metricsRegistry);
+            return originsInventory(healthStatusMonitor, httpConfigBuilder.build(), metricsRegistry, originStatsFactory);
         }
 
-        private OriginsInventory originsInventory(OriginHealthStatusMonitor originHealthStatusMonitor, HttpConfig httpConfig, MetricRegistry metricsRegistry) {
+        private OriginsInventory originsInventory(OriginHealthStatusMonitor originHealthStatusMonitor, HttpConfig httpConfig,
+                                                  MetricRegistry metricsRegistry, OriginStatsFactory originStatsFactory) {
             await(originHealthStatusMonitor.start());
 
-            ConnectionPool.Factory hostConnectionPoolFactory = connectionPoolFactory(backendService.connectionPoolConfig(), httpConfig, metricsRegistry);
+            ConnectionPool.Factory hostConnectionPoolFactory = connectionPoolFactory(backendService.connectionPoolConfig(), httpConfig, metricsRegistry, originStatsFactory);
             OriginsInventory originsInventory = new OriginsInventory(eventBus, backendService.id(), originHealthStatusMonitor, hostConnectionPoolFactory, metricsRegistry);
             originsInventory.addOrigins(backendService.origins());
 
@@ -420,19 +428,21 @@ public final class OriginsInventory
             return new UrlRequestHealthCheck(healthCheckUri, client, metricRegistry);
         }
 
-        private ConnectionPool.Factory connectionPoolFactory(ConnectionPool.Settings connectionPoolSettings, HttpConfig httpConfig, MetricRegistry metricsRegistry) {
-            return connectionPoolFactory != null ? connectionPoolFactory : newConnectionPoolFactory(connectionPoolSettings, httpConfig, metricsRegistry);
+        private ConnectionPool.Factory connectionPoolFactory(ConnectionPool.Settings connectionPoolSettings, HttpConfig httpConfig,
+                                                             MetricRegistry metricsRegistry, OriginStatsFactory originStatsFactory) {
+            return connectionPoolFactory != null ? connectionPoolFactory : newConnectionPoolFactory(connectionPoolSettings, httpConfig, metricsRegistry, originStatsFactory);
         }
 
-        private ConnectionPoolFactory newConnectionPoolFactory(ConnectionPool.Settings connectionPoolSettings, HttpConfig httpConfig, MetricRegistry metricsRegistry) {
+        private ConnectionPoolFactory newConnectionPoolFactory(ConnectionPool.Settings connectionPoolSettings,
+                                                               HttpConfig httpConfig, MetricRegistry metricsRegistry, OriginStatsFactory originStatsFactory) {
             Connection.Factory cf = connectionFactory != null
                     ? connectionFactory
                     : new NettyConnectionFactory.Builder()
                     .clientWorkerThreadsCount(clientWorkerThreadsCount)
                     .httpConfig(httpConfig)
                     .tlsSettings(backendService.tlsSettings().orElse(null))
-                    .metricRegistry(metricsRegistry)
                     .responseTimeoutMillis(backendService.responseTimeoutMillis())
+                    .originStatsFactory(originStatsFactory)
                     .build();
 
             return new ConnectionPoolFactory.Builder()
@@ -441,6 +451,7 @@ public final class OriginsInventory
                     .metricRegistry(metricsRegistry)
                     .build();
         }
+
     }
 
     enum OriginState {

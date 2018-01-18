@@ -21,6 +21,7 @@ import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
@@ -89,12 +90,14 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             boolean longFormat = environment.styxConfig().get("request-logging.outbound.longFormat", Boolean.class)
                     .orElse(false);
 
+            OriginStatsFactory originStatsFactory = new OriginStatsFactory(environment.metricRegistry());
+
             NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
                     .name("Styx")
                     .clientWorkerThreadsCount(clientWorkerThreadsCount)
                     .tlsSettings(backendService.tlsSettings().orElse(null))
                     .flowControlEnabled(true)
-                    .metricRegistry(environment.metricRegistry())
+                    .originStatsFactory(originStatsFactory)
                     .responseTimeoutMillis(backendService.responseTimeoutMillis())
                     .requestLoggingEnabled(requestLoggingEnabled)
                     .longFormat(longFormat)
@@ -105,6 +108,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .version(environment.buildInfo().releaseVersion())
                     .eventBus(environment.eventBus())
                     .metricsRegistry(environment.metricRegistry())
+                    .originStatsFactory(originStatsFactory)
                     .connectionFactory(connectionFactory)
                     .build();
 
