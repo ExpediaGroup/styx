@@ -99,7 +99,7 @@ public class StyxServerTest {
     @Test
     public void disablesResourceLeakDetectionByDefault() {
         new StyxServerBuilder(new StyxConfig())
-                .backendRegistryService("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry <>()))
+                .additionalServices("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry <>()))
                 .build();
 
         assertThat(ResourceLeakDetector.getLevel(), is(DISABLED));
@@ -229,7 +229,7 @@ public class StyxServerTest {
     private static StyxServer styxServerWithPlugins(List<NamedPlugin> pluginsList) {
         return new StyxServerBuilder(styxConfig(EMPTY_CONFIGURATION))
                 .pluginsSupplier(() -> pluginsList)
-                .backendRegistryService("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>()))
+                .additionalServices("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>()))
                 .build();
     }
 

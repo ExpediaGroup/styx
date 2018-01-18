@@ -160,7 +160,7 @@ public final class StyxServer extends AbstractService {
                         environment,
                         "services",
                         StyxService.class),
-                builder.backendRegistryServices());
+                builder.additionalServices());
 
         Supplier<Iterable<NamedPlugin>> pluginsSupplier = builder.getPluginsSupplier();
 
