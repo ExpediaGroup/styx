@@ -45,8 +45,9 @@ class OriginsReloadCommandSpec extends FunSpec
   var styxServer: StyxServer = _
 
   it("Responds with BAD_REQUEST when the origins cannot be read") {
-    val fileBasedBackendsRegistry = new FileBackedBackendServicesRegistry(styxOriginsFile.toString)
+    val fileBasedBackendsRegistry = FileBackedBackendServicesRegistry.create(styxOriginsFile.toString)
     styxServer = StyxConfig().startServer(fileBasedBackendsRegistry)
+
     styxServer.isRunning should be(true)
 
     Files.copy(originsNok, styxOriginsFile, REPLACE_EXISTING)

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,17 +51,17 @@ public final class StyxServerBuilder {
         return environment;
     }
 
-    public StyxServerBuilder additionalServices(String name, StyxService service) {
-        this.additionalServices.put(name, checkNotNull(service));
+    public StyxServerBuilder backendRegistryService(String name, StyxService backendRegistry) {
+        this.additionalServices.put(name, checkNotNull(backendRegistry));
         return this;
     }
 
-    public StyxServerBuilder additionalServices(Map<String, StyxService> namedServices) {
+    public StyxServerBuilder backendRegistryService(Map<String, StyxService> namedServices) {
         namedServices.forEach(this.additionalServices::put);
         return this;
     }
 
-    public Map<String, StyxService> additionalServices() {
+    public Map<String, StyxService> backendRegistryServices() {
         return this.additionalServices;
     }
 

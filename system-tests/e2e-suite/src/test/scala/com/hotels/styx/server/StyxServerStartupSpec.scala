@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ class StyxServerStartupSpec extends FunSpec
   with Eventually {
 
   val origins = fixturesHome(classOf[StyxServerStartupSpec], "/conf/origins/origins-incorrect.yml")
-  val fileBasedBackendsRegistry = new FileBackedBackendServicesRegistry(origins.toString)
+  val fileBasedBackendsRegistry = FileBackedBackendServicesRegistry.create(origins.toString)
 
   it ("should not start up when incorrect origins file is encountered") {
     an [IllegalStateException] should be thrownBy StyxConfig().startServer(fileBasedBackendsRegistry)

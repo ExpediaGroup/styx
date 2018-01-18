@@ -25,15 +25,18 @@ import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.HttpResponse.Builder.response
 import io.netty.handler.codec.http.HttpResponseStatus
 import com.hotels.styx.api._
-import com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY
-import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
-import com.hotels.styx.infrastructure.MemoryBackedRegistry
+import com.hotels.styx.api.messages.HttpResponseStatus.{BAD_GATEWAY, INTERNAL_SERVER_ERROR, OK}
+import com.hotels.styx.infrastructure.{MemoryBackedBackendRegistryService, MemoryBackedRegistry}
 import com.hotels.styx.support.ImplicitStyxConversions
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, ImplicitOriginConversions, Origins, ProxyConfig, StyxConfig}
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSpec, ShouldMatchers}
+import com.hotels.styx.support.configuration.ProxyConfig
+import com.hotels.styx.support.configuration.HttpBackend
+import com.hotels.styx.support.configuration.Origins
+import com.hotels.styx.support.configuration.ConnectionPoolSettings
+import com.hotels.styx.support.configuration.StyxConfig
+import com.hotels.styx.support.configuration.ImplicitOriginConversions
 import org.scalatest.concurrent.Eventually
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSpec, ShouldMatchers}
 import rx.Observable
 import rx.Observable.{error, just}
 import rx.functions.Func1
@@ -74,7 +77,7 @@ class ErrorMetricsSpec extends FunSpec
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     backendsRegistry = new MemoryBackedRegistry[com.hotels.styx.client.applications.BackendService]
-    styxServer = styxConfig.startServer(backendsRegistry)
+    styxServer = styxConfig.startServer(new MemoryBackedBackendRegistryService(backendsRegistry))
         setBackends(
           backendsRegistry,
           "/" -> HttpBackend(

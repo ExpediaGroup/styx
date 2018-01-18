@@ -15,18 +15,19 @@
  */
 package com.hotels.styx.routing
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.messages.HttpResponseStatus._
-import com.hotels.styx.infrastructure.MemoryBackedRegistry
+import com.hotels.styx.infrastructure.{MemoryBackedBackendRegistryService, MemoryBackedRegistry}
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
 import com.hotels.styx.{BackendServicesRegistrySupplier, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.{FunSpec, SequentialNestedSuiteExecution}
-import java.nio.charset.StandardCharsets.UTF_8
 
 import scala.concurrent.duration._
 
@@ -65,8 +66,8 @@ class ConditionRoutingSpec extends FunSpec
     ),
     logbackXmlLocation = logback,
     additionalServices = Map(
-      "http-backends" -> httpBackendRegistry,
-      "https-backends" -> httpsBackendRegistry
+      "http-backends" -> new MemoryBackedBackendRegistryService(httpBackendRegistry),
+      "https-backends" -> new MemoryBackedBackendRegistryService(httpsBackendRegistry)
     ),
     yamlText =
       """

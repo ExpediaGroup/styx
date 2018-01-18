@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,6 @@ public class MemoryBackedRegistry<T extends Identifiable> extends AbstractRegist
     }
 
     private MemoryBackedRegistry(boolean autoReload) {
-        super("MemoryBackedRegistry");
         this.autoReload = autoReload;
     }
 
@@ -83,9 +82,7 @@ public class MemoryBackedRegistry<T extends Identifiable> extends AbstractRegist
 
     @Override
     public CompletableFuture<ReloadResult> reload() {
-        Changes<T> changes = changes(resources.values(), snapshot.get());
-        snapshot.set(ImmutableSet.copyOf(resources.values()));
-        notifyListeners(changes);
+        set(ImmutableSet.copyOf(resources.values()));
         return completedFuture(reloaded("changed"));
     }
 }

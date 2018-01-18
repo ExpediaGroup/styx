@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.infrastructure.MemoryBackedBackendRegistryService;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.proxy.ProxyServerBuilder;
@@ -98,7 +99,7 @@ public class StyxServerTest {
     @Test
     public void disablesResourceLeakDetectionByDefault() {
         new StyxServerBuilder(new StyxConfig())
-                .additionalServices("backendServiceRegistry", new MemoryBackedRegistry<>())
+                .backendRegistryService("backendServiceRegistry", new MemoryBackedBackendRegistryService(new MemoryBackedRegistry <>()))
                 .build();
 
         assertThat(ResourceLeakDetector.getLevel(), is(DISABLED));
@@ -108,7 +109,7 @@ public class StyxServerTest {
     public void stopsTheServerWhenPluginFailsToStart() throws InterruptedException {
         StyxServer styxServer = null;
         try {
-            NamedPlugin plugin1 = stubPluginWhichFailsToStart("foo");
+            NamedPlugin plugin1 = failingPlugin("foo");
             NamedPlugin plugin2 = namedPlugin("mockplugin3", mock(Plugin.class));
 
             styxServer = styxServerWithPlugins(plugin1, plugin2);
@@ -132,12 +133,12 @@ public class StyxServerTest {
             Plugin pluginMock2 = mock(Plugin.class);
             Plugin pluginMock4 = mock(Plugin.class);
 
-            NamedPlugin plugin1 = stubPluginWhichFailsToStart("plug1");
-            NamedPlugin plugin2 = namedPlugin("plug2", pluginMock2);
-            NamedPlugin plugin3 = stubPluginWhichFailsToStart("plug3");
-            NamedPlugin plugin4 = namedPlugin("plug4", pluginMock4);
-
-            styxServer = styxServerWithPlugins(plugin1, plugin2, plugin3, plugin4);
+            styxServer = styxServerWithPlugins(
+                    failingPlugin("plug1"),
+                    namedPlugin("plug2", pluginMock2),
+                    failingPlugin("plug3"),
+                    namedPlugin("plug4", pluginMock4)
+            );
 
             Service service = styxServer.startAsync();
             eventually(() -> assertThat(service.state(), is(FAILED)));
@@ -228,7 +229,7 @@ public class StyxServerTest {
     private static StyxServer styxServerWithPlugins(List<NamedPlugin> pluginsList) {
         return new StyxServerBuilder(styxConfig(EMPTY_CONFIGURATION))
                 .pluginsSupplier(() -> pluginsList)
-                .additionalServices("backendServiceRegistry", new MemoryBackedRegistry<>())
+                .backendRegistryService("backendServiceRegistry", new MemoryBackedBackendRegistryService(new MemoryBackedRegistry<>()))
                 .build();
     }
 
@@ -259,7 +260,7 @@ public class StyxServerTest {
         }
     }
 
-    private static NamedPlugin stubPluginWhichFailsToStart(String id) {
+    private static NamedPlugin failingPlugin(String id) {
         return namedPlugin(id, new NonStarterPlugin(id));
     }
 

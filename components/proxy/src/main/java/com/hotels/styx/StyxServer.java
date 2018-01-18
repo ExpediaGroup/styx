@@ -74,6 +74,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static com.hotels.styx.api.configuration.ConfigurationContextResolver.EMPTY_CONFIGURATION_CONTEXT_RESOLVER;
@@ -159,7 +160,7 @@ public final class StyxServer extends AbstractService {
                         environment,
                         "services",
                         StyxService.class),
-                builder.additionalServices());
+                builder.backendRegistryServices());
 
         Supplier<Iterable<NamedPlugin>> pluginsSupplier = builder.getPluginsSupplier();
 
@@ -213,10 +214,17 @@ public final class StyxServer extends AbstractService {
         return ImmutableMap.of(
                 "StaticResponseHandler", new StaticResponseHandler.ConfigFactory(),
                 "ConditionRouter", new ConditionRouter.ConfigFactory(),
-                "BackendServiceProxy", new BackendServiceProxy.ConfigFactory(environment, servicesFromConfig),
+                "BackendServiceProxy", new BackendServiceProxy.ConfigFactory(environment, backendRegistries(servicesFromConfig)),
                 "InterceptorPipeline", new HttpInterceptorPipeline.ConfigFactory(pluginsSupplier, builtinInterceptorsFactory),
                 "ProxyToBackend", new ProxyToBackend.ConfigFactory(environment, new StyxBackendServiceClientFactory(environment))
         );
+    }
+
+    private Map<String, Registry<BackendService>> backendRegistries(Map<String, StyxService> servicesFromConfig) {
+        return servicesFromConfig.entrySet()
+                .stream()
+                .filter(entry -> entry.getValue() instanceof Registry)
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> (Registry<BackendService>) entry.getValue()));
     }
 
     private HttpHandler2 styxHttpPipeline(StyxConfig config, HttpHandler2 interceptorsPipeline) {
