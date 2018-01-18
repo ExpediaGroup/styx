@@ -22,11 +22,10 @@ import java.util.concurrent.CompletableFuture;
 
 import static java.util.Objects.requireNonNull;
 
-// TODO: MIKKO: Rename to Registry as a Service wrapper
-public class MemoryBackedBackendRegistryService extends AbstractStyxService implements Registry<BackendService> {
+public class RegistryServiceAdapter extends AbstractStyxService implements Registry<BackendService> {
     private Registry<BackendService> delegate;
 
-    public MemoryBackedBackendRegistryService(Registry<BackendService> delegate) {
+    public RegistryServiceAdapter(Registry<BackendService> delegate) {
         super("Memory backed backend service registry");
         this.delegate = requireNonNull(delegate);
     }

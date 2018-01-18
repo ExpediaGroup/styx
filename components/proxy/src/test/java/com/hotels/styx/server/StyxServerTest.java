@@ -28,7 +28,7 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.infrastructure.MemoryBackedBackendRegistryService;
+import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.proxy.ProxyServerBuilder;
@@ -99,7 +99,7 @@ public class StyxServerTest {
     @Test
     public void disablesResourceLeakDetectionByDefault() {
         new StyxServerBuilder(new StyxConfig())
-                .backendRegistryService("backendServiceRegistry", new MemoryBackedBackendRegistryService(new MemoryBackedRegistry <>()))
+                .backendRegistryService("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry <>()))
                 .build();
 
         assertThat(ResourceLeakDetector.getLevel(), is(DISABLED));
@@ -229,7 +229,7 @@ public class StyxServerTest {
     private static StyxServer styxServerWithPlugins(List<NamedPlugin> pluginsList) {
         return new StyxServerBuilder(styxConfig(EMPTY_CONFIGURATION))
                 .pluginsSupplier(() -> pluginsList)
-                .backendRegistryService("backendServiceRegistry", new MemoryBackedBackendRegistryService(new MemoryBackedRegistry<>()))
+                .backendRegistryService("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>()))
                 .build();
     }
 

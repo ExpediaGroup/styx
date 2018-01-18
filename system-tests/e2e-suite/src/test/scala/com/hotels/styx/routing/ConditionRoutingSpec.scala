@@ -21,7 +21,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.messages.HttpResponseStatus._
-import com.hotels.styx.infrastructure.{MemoryBackedBackendRegistryService, MemoryBackedRegistry}
+import com.hotels.styx.infrastructure.{RegistryServiceAdapter, MemoryBackedRegistry}
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
@@ -66,8 +66,8 @@ class ConditionRoutingSpec extends FunSpec
     ),
     logbackXmlLocation = logback,
     additionalServices = Map(
-      "http-backends" -> new MemoryBackedBackendRegistryService(httpBackendRegistry),
-      "https-backends" -> new MemoryBackedBackendRegistryService(httpsBackendRegistry)
+      "http-backends" -> new RegistryServiceAdapter(httpBackendRegistry),
+      "https-backends" -> new RegistryServiceAdapter(httpsBackendRegistry)
     ),
     yamlText =
       """

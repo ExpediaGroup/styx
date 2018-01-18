@@ -26,7 +26,7 @@ import com.google.common.io.Files
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx._
 import com.hotels.styx.api.HttpResponse.Builder._
-import com.hotels.styx.infrastructure.{MemoryBackedBackendRegistryService, MemoryBackedRegistry}
+import com.hotels.styx.infrastructure.{RegistryServiceAdapter, MemoryBackedRegistry}
 import com.hotels.styx.proxy.resiliency.DirectBufferMetrics.directBufferMetrics
 import com.hotels.styx.server.HttpServer
 import com.hotels.styx.support.DownloadClient._
@@ -195,7 +195,7 @@ object SharedStyx extends BackendServicesRegistrySupplier with ImplicitOriginCon
 
   private val styxStartOp = Future {
     val backendsRegistry = new MemoryBackedRegistry[com.hotels.styx.client.applications.BackendService]
-    val styxServer = StyxConfig().startServer(new MemoryBackedBackendRegistryService(backendsRegistry))
+    val styxServer = StyxConfig().startServer(new RegistryServiceAdapter(backendsRegistry))
 
     setBackends(backendsRegistry, "/download" -> HttpBackend("myapp", Origins(SharedOrigins.fileServer), responseTimeout = 25.seconds))
 

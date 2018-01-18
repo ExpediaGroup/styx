@@ -26,7 +26,7 @@ import com.hotels.styx.api.HttpResponse.Builder.response
 import io.netty.handler.codec.http.HttpResponseStatus
 import com.hotels.styx.api._
 import com.hotels.styx.api.messages.HttpResponseStatus.{BAD_GATEWAY, INTERNAL_SERVER_ERROR, OK}
-import com.hotels.styx.infrastructure.{MemoryBackedBackendRegistryService, MemoryBackedRegistry}
+import com.hotels.styx.infrastructure.{RegistryServiceAdapter, MemoryBackedRegistry}
 import com.hotels.styx.support.ImplicitStyxConversions
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.ProxyConfig
@@ -77,7 +77,7 @@ class ErrorMetricsSpec extends FunSpec
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     backendsRegistry = new MemoryBackedRegistry[com.hotels.styx.client.applications.BackendService]
-    styxServer = styxConfig.startServer(new MemoryBackedBackendRegistryService(backendsRegistry))
+    styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
         setBackends(
           backendsRegistry,
           "/" -> HttpBackend(

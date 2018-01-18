@@ -15,7 +15,7 @@
  */
 package com.hotels.styx
 
-import com.hotels.styx.infrastructure.{MemoryBackedBackendRegistryService, MemoryBackedRegistry}
+import com.hotels.styx.infrastructure.{RegistryServiceAdapter, MemoryBackedRegistry}
 import com.hotels.styx.plugins.PluginPipelineSpec
 import com.hotels.styx.support.{ImplicitStyxConversions, configuration}
 import com.hotels.styx.support.configuration.{ImplicitOriginConversions, StyxBackend, StyxBaseConfig}
@@ -46,7 +46,7 @@ trait StyxProxySpec extends StyxClientSupplier
   }
 
   override protected def beforeAll() = {
-    styxServer = styxConfig.startServer(new MemoryBackedBackendRegistryService(backendsRegistry))
+    styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
     println("Styx http port is: [%d]".format(styxServer.httpPort))
     println("Styx https port is: [%d]".format(styxServer.secureHttpPort))
   }
