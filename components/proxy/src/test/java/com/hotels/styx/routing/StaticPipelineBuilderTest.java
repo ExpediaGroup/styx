@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.hotels.styx.infrastructure.AbstractRegistry;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -37,7 +36,6 @@ import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.client.applications.BackendService.newBackendServiceBuilder;
-import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.Arrays.asList;
@@ -87,15 +85,12 @@ public class StaticPipelineBuilderTest {
     }
 
     private Registry<BackendService> backendRegistry(BackendService... backendServices) {
-        TestRegistry registry = new TestRegistry(backendServices);
-        await(registry.start());
-        return registry;
+        return new TestRegistry(backendServices);
     }
 
     class TestRegistry extends AbstractRegistry<BackendService> {
         TestRegistry(BackendService... backendServices) {
-            super("TestRegistry");
-            snapshot.set(asList(backendServices));
+            set(asList(backendServices));
         }
 
         @Override

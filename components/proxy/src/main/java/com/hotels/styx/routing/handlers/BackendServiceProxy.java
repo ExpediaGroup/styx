@@ -21,7 +21,6 @@ import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
@@ -29,9 +28,9 @@ import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.BackendServicesRouter;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
-import com.hotels.styx.routing.config.RouteHandlerFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RouteHandlerDefinition;
+import com.hotels.styx.routing.config.RouteHandlerFactory;
 import rx.Observable;
 
 import java.util.List;
@@ -65,7 +64,7 @@ public class BackendServiceProxy implements HttpHandler2 {
      */
     public static class ConfigFactory implements HttpHandlerFactory {
         private final BackendServiceClientFactory serviceClientFactory;
-        private final Map<String, StyxService> services;
+        private final Map<String, Registry<BackendService>> backendRegistries;
         private final Environment environment;
 
         private static StyxBackendServiceClientFactory serviceClientFactory(Environment environment) {
@@ -73,14 +72,14 @@ public class BackendServiceProxy implements HttpHandler2 {
         }
 
         @VisibleForTesting
-        ConfigFactory(Environment environment, BackendServiceClientFactory serviceClientFactory, Map<String, StyxService> services) {
+        ConfigFactory(Environment environment, BackendServiceClientFactory serviceClientFactory, Map<String, Registry<BackendService>> backendRegistries) {
             this.serviceClientFactory = serviceClientFactory;
-            this.services = services;
+            this.backendRegistries = backendRegistries;
             this.environment = environment;
         }
 
-        public ConfigFactory(Environment environment, Map<String, StyxService> services) {
-            this.services = services;
+        public ConfigFactory(Environment environment, Map<String, Registry<BackendService>> backendRegistries) {
+            this.backendRegistries = backendRegistries;
             this.serviceClientFactory = serviceClientFactory(environment);
             this.environment = environment;
         }
@@ -91,18 +90,12 @@ public class BackendServiceProxy implements HttpHandler2 {
             String provider = config.get("backendProvider")
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "backendProvider"));
 
-            StyxService service = services.get(provider);
-            if (service == null) {
+            Registry<BackendService> registry = backendRegistries.get(provider);
+            if (registry == null) {
                 throw new IllegalArgumentException(
                         format("No such backend service provider exists, attribute='%s', name='%s'",
                                 join(".", append(parents, "backendProvider")), provider));
             }
-            if (!(service instanceof Registry)) {
-                throw new IllegalArgumentException(
-                        format("Attribute '%s' of BackendServiceProxy must refer to a BackendServiceRegistry service, name='%s'.",
-                                join(".", append(parents, "backendProvider")), provider));
-            }
-            Registry<BackendService> registry = (Registry<BackendService>) service;
 
             return new BackendServiceProxy(serviceClientFactory, registry, environment);
         }

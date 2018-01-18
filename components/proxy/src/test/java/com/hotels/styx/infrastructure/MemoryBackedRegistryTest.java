@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -48,7 +49,7 @@ public class MemoryBackedRegistryTest {
         registry.add(shopping);
 
         assertThat(registry.get(), containsInAnyOrder(landing, shopping));
-        verify(listener).onChange(added(shopping));
+        verify(listener).onChange(eq(added(shopping)));
     }
 
     @Test
@@ -65,7 +66,7 @@ public class MemoryBackedRegistryTest {
         registry.add(shopping);
 
         assertThat(registry.get(), containsInAnyOrder(landing, shopping));
-        verify(listener).onChange(updated(shopping));
+        verify(listener).onChange(eq(updated(shopping)));
     }
 
     @Test
@@ -83,7 +84,7 @@ public class MemoryBackedRegistryTest {
         registry.removeById(id("shopping"));
 
         assertThat(registry.get(), contains(landing));
-        verify(listener).onChange(removed(shopping));
+        verify(listener).onChange(eq(removed(shopping)));
     }
 
     private static BackendService backendService(String id, int port) {

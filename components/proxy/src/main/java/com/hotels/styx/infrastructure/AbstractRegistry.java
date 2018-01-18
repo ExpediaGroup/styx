@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
  */
 package com.hotels.styx.infrastructure;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapDifference;
 import com.hotels.styx.api.Announcer;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
-import com.hotels.styx.api.service.spi.AbstractStyxService;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.collect.Maps.difference;
 import static com.google.common.collect.Maps.filterKeys;
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.RUNNING;
 import static java.util.Collections.emptyList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
@@ -39,15 +38,11 @@ import static org.slf4j.LoggerFactory.getLogger;
  *
  * @param <T> the type of resource to store
  */
-public abstract class AbstractRegistry<T extends Identifiable> extends AbstractStyxService implements Registry<T> {
+public abstract class AbstractRegistry<T extends Identifiable> implements Registry<T> {
     private static final Logger LOG = getLogger(AbstractRegistry.class);
 
     private final Announcer<Registry.ChangeListener> announcer = Announcer.to(ChangeListener.class);
-    protected final AtomicReference<Iterable<T>> snapshot = new AtomicReference<>(emptyList());
-
-    public AbstractRegistry(String name) {
-        super(name);
-    }
+    private final AtomicReference<Iterable<T>> snapshot = new AtomicReference<>(emptyList());
 
     @Override
     public Iterable<T> get() {
@@ -55,21 +50,29 @@ public abstract class AbstractRegistry<T extends Identifiable> extends AbstractS
     }
 
     protected void notifyListeners(Changes<T> changes) {
-        LOG.info("notifying about services={} to listeners={}", announcer.listeners());
-        announcer.announce().onChange(changes);
+        if (!changes.isEmpty()) {
+            LOG.info("notifying about services={} to listeners={}", changes, announcer.listeners());
+            announcer.announce().onChange(changes);
+        }
     }
 
-    protected void notifyListenersOnError(Throwable ex) {
-        announcer.announce().onError(ex);
+    protected void notifyListenersOnError(Throwable cause) {
+        LOG.info("notifying about error={} to listeners={}", cause, announcer.listeners());
+        announcer.announce().onError(cause);
     }
 
     @Override
     public Registry<T> addListener(ChangeListener<T> changeListener) {
         announcer.addListener(changeListener);
-        if (super.status() == RUNNING) {
-            changeListener.onChange(added(snapshot.get()));
-        }
+        changeListener.onChange(added(snapshot.get()));
         return this;
+    }
+
+    public void set(Iterable<T> newObjects) {
+        ImmutableList<T> newSnapshot = ImmutableList.copyOf(newObjects);
+        Iterable<T> oldSnapshot = snapshot.get();
+        snapshot.set(newSnapshot);
+        notifyListeners(changes(newSnapshot, oldSnapshot));
     }
 
     private Changes<T> added(Iterable<T> ch) {

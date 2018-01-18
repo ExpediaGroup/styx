@@ -15,14 +15,13 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.client.applications.BackendService;
-import com.hotels.styx.client.applications.BackendServices;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry;
-import com.hotels.styx.support.ApplicationConfigurationMatcher;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -32,25 +31,24 @@ import java.io.IOException;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadFromPath;
+import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 
 public class OriginsHandlerTest {
     static final ObjectMapper MAPPER = new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES);
     static final String ORIGINS_FILE = fixturesHome() + "conf/origins/origins-for-jsontest.yml";
 
-    final BackendServices backendServices = loadFromPath(ORIGINS_FILE).get();
-    final FileBackedBackendServicesRegistry backendServicesRegistry = new FileBackedBackendServicesRegistry(newResource(ORIGINS_FILE));
+    final Iterable<BackendService> backendServices = loadFromPath(ORIGINS_FILE).get();
+
+    final FileBackedBackendServicesRegistry backendServicesRegistry = FileBackedBackendServicesRegistry.create(ORIGINS_FILE);
     final OriginsHandler handler = new OriginsHandler(backendServicesRegistry);
 
     @BeforeClass
@@ -70,7 +68,9 @@ public class OriginsHandlerTest {
         assertThat(response.status(), is(OK));
         assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
 
-        assertThat(response.bodyAs(UTF_8), unmarshalApplications(response.bodyAs(UTF_8)), containsInAnyOrder(expected()));
+        Iterable<BackendService> result = newBackendServices(unmarshalApplications(response.bodyAs(UTF_8)));
+
+        assertThat(result, is(backendServices));
     }
 
     @Test
@@ -86,17 +86,7 @@ public class OriginsHandlerTest {
         assertThat(response.bodyAs(UTF_8), is("[]"));
     }
 
-    private ApplicationConfigurationMatcher[] expected() {
-        return matchersFor(backendServices);
-    }
-
-    private static ApplicationConfigurationMatcher[] matchersFor(BackendServices backendServices) {
-        return stream(backendServices.spliterator(), false)
-                .map(ApplicationConfigurationMatcher::matcherFor)
-                .toArray(ApplicationConfigurationMatcher[]::new);
-    }
-
-    private static BackendServices unmarshalApplications(String content) throws IOException {
-        return MAPPER.readValue(content, BackendServices.class);
+    private static Iterable<BackendService> unmarshalApplications(String content) throws IOException {
+        return MAPPER.readValue(content, new TypeReference<Iterable<BackendService>>(){});
     }
 }

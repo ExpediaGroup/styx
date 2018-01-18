@@ -20,15 +20,13 @@ import java.util.concurrent.CompletableFuture.completedFuture
 
 import com.hotels.styx.Environment
 import com.hotels.styx.api.client.Origin.newOriginBuilder
-import com.hotels.styx.api.service.spi.StyxService
 import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse}
 import com.hotels.styx.client.OriginsInventory
 import com.hotels.styx.client.applications.BackendService
-import com.hotels.styx.infrastructure.AbstractRegistry
 import com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded
 import com.hotels.styx.infrastructure.Registry.{Changes, ReloadResult}
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
-import com.hotels.styx.metrics.reporting.jmx.JmxReporterService
+import com.hotels.styx.infrastructure.{AbstractRegistry, Registry}
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.config.RouteHandlerDefinition
 import io.netty.handler.codec.http.HttpResponseStatus
@@ -60,7 +58,7 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
       new BackendService.Builder().id("la").origins(newOriginBuilder("localhost", 1).build()).path("/lp/x").build(),
       new BackendService.Builder().id("ba").origins(newOriginBuilder("localhost", 2).build()).path("/ba/x").build())
 
-    val services: Map[String, StyxService] = Map("backendServicesRegistry" -> backendRegistry)
+    val services: Map[String, Registry[BackendService]] = Map("backendServicesRegistry" -> backendRegistry)
 
     val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), services).build(List(), null, config)
     backendRegistry.reload()
@@ -84,10 +82,10 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
         |    foo: bar
       """.stripMargin)
 
-    val services: Map[String, StyxService] = Map.empty
+    val registries: Map[String, Registry[BackendService]] = Map.empty
 
     val e = intercept[IllegalArgumentException] {
-      val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), services).build(List("config", "config"), null, config)
+      val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), registries).build(List("config", "config"), null, config)
     }
     e.getMessage should be ("Routing object definition of type 'BackendServiceProxy', attribute='config.config', is missing a mandatory 'backendProvider' attribute.")
   }
@@ -102,26 +100,10 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
       """.stripMargin)
 
     val e = intercept[IllegalArgumentException] {
-      val services: Map[String, StyxService] = Map.empty
-      val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), services).build(List("config", "config"), null, config)
+      val registries: Map[String, Registry[BackendService]] = Map.empty
+      val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), registries).build(List("config", "config"), null, config)
     }
     e.getMessage should be ("No such backend service provider exists, attribute='config.config.backendProvider', name='bar'")
-  }
-
-  it ("errors when backendProvider refers to wrong provider type") {
-    val config = configBlock(
-      """
-        |config:
-        |  type: BackendServiceProxy
-        |  config:
-        |    backendProvider: jmxReporter
-      """.stripMargin)
-
-    val e = intercept[IllegalArgumentException] {
-      val services: Map[String, StyxService] = Map("jmxReporter" -> mock[JmxReporterService])
-      val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), services).build(List("config", "config"), null, config)
-    }
-    e.getMessage should be ("Attribute 'config.config.backendProvider' of BackendServiceProxy must refer to a BackendServiceRegistry service, name='jmxReporter'.")
   }
 
   private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RouteHandlerDefinition]).get()
@@ -137,7 +119,7 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
     }
   }
 
-  def registry(backends: BackendService*) = new AbstractRegistry[BackendService]("backend-registry") {
+  def registry(backends: BackendService*) = new AbstractRegistry[BackendService]() {
     override def reload(): CompletableFuture[ReloadResult] = {
       notifyListeners(
         new Changes.Builder[BackendService]()

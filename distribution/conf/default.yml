@@ -55,9 +55,13 @@ admin:
 
 services:
   factories:
-    backendServiceRegistry:
+    fallbackProvider:
       class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry$Factory"
       config: {originsFile: "${originsFile:}"}
+    consulAppProvider:
+      class: "com.hotels.styx.proxy.backends.file.ConsulBackendServicesRegistry$Factory"
+      config: {consulAttributes: "consul.acme.com:8080"}
+
 #    graphite:
 #      enabled: false
 #      class: "com.hotels.styx.metrics.reporting.graphite.GraphiteReporterServiceFactory"
@@ -70,6 +74,19 @@ services:
       class: "com.hotels.styx.metrics.reporting.jmx.JmxReporterServiceFactory"
       config:
         domain: "com.hotels.styx"
+
+handlers:
+  fallbackProxy:
+    ProxyPipeline:
+      interceptors:
+        - x
+        - y
+        - z
+      handler:
+        type: ServiceProvider
+        config:
+          provider: fallbackProvider
+          handler:  proxy-shopping
 
 retrypolicy:
   policy:
