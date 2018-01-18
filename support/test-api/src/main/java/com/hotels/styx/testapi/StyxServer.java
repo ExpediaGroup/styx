@@ -23,7 +23,7 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.infrastructure.MemoryBackedBackendRegistryService;
+import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
@@ -61,7 +61,7 @@ public final class StyxServer {
 
         this.server = new StyxServerBuilder(styxConfig())
                 .pluginsSupplier(() -> builder.plugins)
-                .backendRegistryService("backendServiceRegistry", new MemoryBackedBackendRegistryService(backendServicesRegistry))
+                .backendRegistryService("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry))
                 .build();
 
         builder.routes.forEach((path, backendService) ->
