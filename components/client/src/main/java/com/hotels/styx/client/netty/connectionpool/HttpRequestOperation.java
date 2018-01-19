@@ -170,9 +170,10 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
         Origin origin = nettyConnection.getOrigin();
         Channel channel = nettyConnection.channel();
         channel.pipeline().addLast(IDLE_HANDLER_NAME, new IdleStateHandler(0, 0, responseTimeoutMillis, MILLISECONDS));
-        if (originStatsFactory.isPresent()) {
-            channel.pipeline().addLast(RequestsToOriginMetricsCollector.NAME, new RequestsToOriginMetricsCollector(originStatsFactory.get().originStats(origin)));
-        }
+        originStatsFactory.ifPresent(
+                originStatsFactory -> channel.pipeline()
+                        .addLast(RequestsToOriginMetricsCollector.NAME,
+                                new RequestsToOriginMetricsCollector(originStatsFactory.originStats(origin))));
         channel.pipeline().addLast(
                 NettyToStyxResponsePropagator.NAME,
                 new NettyToStyxResponsePropagator(observer, origin, flowControlEnabled, responseTimeoutMillis, MILLISECONDS, request));

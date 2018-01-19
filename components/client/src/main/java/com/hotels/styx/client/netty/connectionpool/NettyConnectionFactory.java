@@ -19,8 +19,6 @@ import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.metrics.MetricRegistry;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.netty.ClientEventLoopFactory;
 import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
 import com.hotels.styx.client.ChannelOptionSetting;
@@ -55,7 +53,6 @@ public class NettyConnectionFactory implements Connection.Factory {
     private final ClientEventLoopFactory eventLoopFactory;
     private final HttpConfig httpConfig;
     private final SslContext sslContext;
-    private final MetricRegistry metricRegistry;
     private final HttpRequestOperationFactory httpRequestOperationFactory;
     private Bootstrap bootstrap;
 
@@ -63,13 +60,12 @@ public class NettyConnectionFactory implements Connection.Factory {
         this.eventLoopFactory = builder.eventLoopFactory();
         this.httpConfig = requireNonNull(builder.httpConfig);
         this.sslContext = builder.tlsSettings == null ? null : SslContextFactory.get(builder.tlsSettings);
-        this.metricRegistry = builder.metricRegistry;
 
         this.httpRequestOperationFactory = builder.httpRequestOperationFactory != null
                 ? builder.httpRequestOperationFactory
                 : (HttpRequest request) -> new HttpRequestOperation(
                             request,
-                            new OriginStatsFactory(metricRegistry),
+                            builder.originStatsFactory,
                             builder.flowControlEnabled,
                             builder.responseTimeoutMillis,
                             builder.requestLoggingEnabled,
@@ -138,12 +134,12 @@ public class NettyConnectionFactory implements Connection.Factory {
         private int clientWorkerThreadsCount = 1;
         private HttpConfig httpConfig = defaultHttpConfig();
         private TlsSettings tlsSettings;
-        private MetricRegistry metricRegistry;
         private int responseTimeoutMillis = 60000;
         private boolean flowControlEnabled;
         private boolean requestLoggingEnabled;
         private boolean longFormat;
         private HttpRequestOperationFactory httpRequestOperationFactory;
+        private OriginStatsFactory originStatsFactory;
 
         ClientEventLoopFactory eventLoopFactory() {
             return new PlatformAwareClientEventLoopGroupFactory(name, clientWorkerThreadsCount);
@@ -193,11 +189,6 @@ public class NettyConnectionFactory implements Connection.Factory {
             return this;
         }
 
-        public Builder metricRegistry(MetricRegistry metricRegistry) {
-            this.metricRegistry = metricRegistry;
-            return this;
-        }
-
         public Builder responseTimeoutMillis(int responseTimeoutMillis) {
             this.responseTimeoutMillis = responseTimeoutMillis;
             return this;
@@ -223,10 +214,12 @@ public class NettyConnectionFactory implements Connection.Factory {
             return this;
         }
 
+        public Builder originStatsFactory(OriginStatsFactory originStatsFactory) {
+            this.originStatsFactory = originStatsFactory;
+            return this;
+        }
+
         public NettyConnectionFactory build() {
-            if (metricRegistry == null) {
-                metricRegistry = new CodaHaleMetricRegistry();
-            }
             return new NettyConnectionFactory(this);
         }
     }

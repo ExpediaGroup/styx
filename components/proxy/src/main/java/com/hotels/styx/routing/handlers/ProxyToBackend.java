@@ -22,6 +22,7 @@ import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
@@ -85,12 +86,14 @@ public class ProxyToBackend implements HttpHandler2 {
                     .get("backend.origins", JsonNode.class)
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", append(parents, "backend")), "origins"));
 
+            OriginStatsFactory originStatsFactory = new OriginStatsFactory(environment.metricRegistry());
+
             NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
                     .name("Styx")
                     .clientWorkerThreadsCount(clientWorkerThreadsCount)
                     .tlsSettings(backendService.tlsSettings().orElse(null))
                     .flowControlEnabled(true)
-                    .metricRegistry(environment.metricRegistry())
+                    .originStatsFactory(originStatsFactory)
                     .responseTimeoutMillis(backendService.responseTimeoutMillis())
                     .requestLoggingEnabled(requestLoggingEnabled)
                     .longFormat(longFormat)
@@ -101,6 +104,7 @@ public class ProxyToBackend implements HttpHandler2 {
                     .eventBus(environment.eventBus())
                     .metricsRegistry(environment.metricRegistry())
                     .connectionFactory(connectionFactory)
+                    .originStatsFactory(originStatsFactory)
                     .build();
             return new ProxyToBackend(clientFactory.createClient(backendService, inventory));
         }
