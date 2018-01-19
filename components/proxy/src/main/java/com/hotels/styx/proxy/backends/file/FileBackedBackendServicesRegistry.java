@@ -50,7 +50,6 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         this.fileBackedRegistry = Objects.requireNonNull(fileBackedRegistry);
     }
 
-
     public static FileBackedBackendServicesRegistry create(String originsFile) {
         FileBackedRegistry<BackendService> fileBackedRegistry = new FileBackedRegistry<>(
                 newResource(originsFile),
@@ -82,7 +81,7 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
     protected CompletableFuture<Void> startService() {
         return this.fileBackedRegistry.reload()
                 .thenAccept(result -> {
-                    // Swallow result
+                    // Swallow the result
                 });
     }
 
@@ -118,7 +117,8 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         }
     }
 
-    private static class YAMLBackendServicesReader implements FileBackedRegistry.Reader<BackendService> {
+    @VisibleForTesting
+    static class YAMLBackendServicesReader implements FileBackedRegistry.Reader<BackendService> {
         private final YamlReader<List<BackendService>> delegate = new YamlReader<>();
 
         @Override
