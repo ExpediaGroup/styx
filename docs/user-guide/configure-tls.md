@@ -129,3 +129,52 @@ be specified as separate backends.
     Use this attribute to enforce a more secure version like `TLSv1.2`.
     When absent, enables all default protocols depending on the `sslProvider`.
     Possible protocol names are: `TLS`, `TLSv1`, `TLSv1.1`, and `TLSv1.2`.
+
+
+## Troubleshooting TLS Configuration
+
+### Failing SSL Handshake attempts on Styx server
+
+Unsuccessful SSL handshake attempts from remote clients to Styx server are logged by *HttpErrorStatusCauseLogger*
+on *ERROR* level. The message contains a stack trace with keyword *SSLHandshakeException*. Content of the message
+will vary depending on the configured SSL provider and the exact cause. To get an idea of failed handshake attempts
+look for *SSLHandshakeException* in the logs.
+
+In addition to log, `styx.exception.io_netty_handler_codec_DecoderException` counter is also incremented.
+
+An example stack trace might look like:
+
+```
+ERROR 2018-01-22 08:59:49 [c.h.s.a.m.HttpErrorStatusCauseLogger] [Proxy-Worker-0-Thread] - Failure status="500 Internal Server Error"
+[exceptionClass=io.netty.handler.codec.ByteToMessageDecoder, exceptionMethod=callDecode, exceptionID=4c1cc82c]
+io.netty.handler.codec.DecoderException: javax.net.ssl.SSLHandshakeException: error:1407609C:SSL routines:SSL23_GET_CLIENT_HELLO:http request
+	at io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:459) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:265) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:362) [netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:348) [netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:340) [netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1359) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:362) [netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:348) [netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:935) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:134) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:645) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:580) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:497) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:459) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.util.concurrent.SingleThreadEventExecutor$5.run(SingleThreadEventExecutor.java:858) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at java.lang.Thread.run(Thread.java:748) ~[na:1.8.0_131]
+Caused by: javax.net.ssl.SSLHandshakeException: error:1407609C:SSL routines:SSL23_GET_CLIENT_HELLO:http request
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.shutdownWithError(ReferenceCountedOpenSslEngine.java:869) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.sslReadErrorResult(ReferenceCountedOpenSslEngine.java:1108) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.unwrap(ReferenceCountedOpenSslEngine.java:1064) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.unwrap(ReferenceCountedOpenSslEngine.java:1127) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.handler.ssl.ReferenceCountedOpenSslEngine.unwrap(ReferenceCountedOpenSslEngine.java:1170) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.handler.ssl.SslHandler$SslEngineType$1.unwrap(SslHandler.java:215) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.handler.ssl.SslHandler.unwrap(SslHandler.java:1215) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.handler.ssl.SslHandler.decodeNonJdkCompatible(SslHandler.java:1139) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.handler.ssl.SslHandler.decode(SslHandler.java:1164) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.handler.codec.ByteToMessageDecoder.decodeRemovalReentryProtection(ByteToMessageDecoder.java:489) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	at io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:428) ~[netty-all-4.1.15.Final.jar:4.1.15.Final]
+	... 15 common frames omitted
+```
