@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,37 +33,42 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
     public static final int DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST = 25;
     public static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 2000;
     public static final int DEFAULT_SOCKET_TIMEOUT_MILLIS = 11000;
+    public static final long DEFAULT_CONNECTION_EXPIRATION_SECONDS = -1L;
 
     private final int maxConnectionsPerHost;
     private final int maxPendingConnectionsPerHost;
     private final int connectTimeoutMillis;
     private final int socketTimeoutMillis;
     private final int pendingConnectionTimeoutMillis;
+    private final long connectionExpirationSeconds;
 
     @JsonCreator
     ConnectionPoolSettings(@JsonProperty("maxConnectionsPerHost") Integer maxConnectionsPerHost,
                            @JsonProperty("maxPendingConnectionsPerHost") Integer maxPendingConnectionsPerHost,
                            @JsonProperty("connectTimeoutMillis") Integer connectTimeoutMillis,
                            @JsonProperty("socketTimeoutMillis") Integer socketTimeoutMillis,
-                           @JsonProperty("pendingConnectionTimeoutMillis") Integer pendingConnectionTimeoutMillis
-                           ) {
+                           @JsonProperty("pendingConnectionTimeoutMillis") Integer pendingConnectionTimeoutMillis,
+                           @JsonProperty("connectionExpirationSeconds") Long connectionExpirationSeconds) {
         this.maxConnectionsPerHost = firstNonNull(maxConnectionsPerHost, DEFAULT_MAX_CONNECTIONS_PER_HOST);
         this.maxPendingConnectionsPerHost = firstNonNull(maxPendingConnectionsPerHost, DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST);
         this.connectTimeoutMillis = firstNonNull(connectTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
         this.socketTimeoutMillis = firstNonNull(socketTimeoutMillis, DEFAULT_SOCKET_TIMEOUT_MILLIS);
         this.pendingConnectionTimeoutMillis = firstNonNull(pendingConnectionTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
+        this.connectionExpirationSeconds = firstNonNull(connectionExpirationSeconds, DEFAULT_CONNECTION_EXPIRATION_SECONDS);
     }
 
     ConnectionPoolSettings(int maxConnectionsPerHost,
                            int maxPendingConnectionsPerHost,
                            int connectTimeoutMillis,
                            int socketTimeoutMillis,
-                           int pendingConnectionTimeoutMillis) {
+                           int pendingConnectionTimeoutMillis,
+                           long connectionExpirationSeconds) {
         this.maxConnectionsPerHost = firstNonNull(maxConnectionsPerHost, DEFAULT_MAX_CONNECTIONS_PER_HOST);
         this.maxPendingConnectionsPerHost = firstNonNull(maxPendingConnectionsPerHost, DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST);
         this.connectTimeoutMillis = firstNonNull(connectTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
         this.socketTimeoutMillis = firstNonNull(socketTimeoutMillis, DEFAULT_SOCKET_TIMEOUT_MILLIS);
         this.pendingConnectionTimeoutMillis = firstNonNull(pendingConnectionTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
+        this.connectionExpirationSeconds = firstNonNull(connectionExpirationSeconds, DEFAULT_CONNECTION_EXPIRATION_SECONDS);
     }
 
     private ConnectionPoolSettings(Builder builder) {
@@ -72,7 +77,8 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
                 builder.maxPendingConnectionsPerHost,
                 builder.connectTimeoutMillis,
                 builder.socketTimeoutMillis,
-                builder.pendingConnectionTimeoutMillis
+                builder.pendingConnectionTimeoutMillis,
+                builder.connectionExpirationSeconds
                 );
     }
 
@@ -113,6 +119,12 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
     @JsonProperty("pendingConnectionTimeoutMillis")
     public int pendingConnectionTimeoutMillis() {
         return pendingConnectionTimeoutMillis;
+    }
+
+    @Override
+    @JsonProperty("connectionExpirationSeconds")
+    public long connectionExpirationSeconds() {
+        return connectionExpirationSeconds;
     }
 
     @Override
@@ -157,6 +169,7 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
         private int connectTimeoutMillis = DEFAULT_CONNECT_TIMEOUT_MILLIS;
         private int socketTimeoutMillis = DEFAULT_SOCKET_TIMEOUT_MILLIS;
         private int pendingConnectionTimeoutMillis = DEFAULT_CONNECT_TIMEOUT_MILLIS;
+        private long connectionExpirationSeconds = DEFAULT_CONNECTION_EXPIRATION_SECONDS;
 
         /**
          * Constructs an instance with default settings.
@@ -175,6 +188,7 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
             this.connectTimeoutMillis = settings.connectTimeoutMillis();
             this.socketTimeoutMillis = settings.socketTimeoutMillis();
             this.pendingConnectionTimeoutMillis = settings.pendingConnectionTimeoutMillis();
+            this.connectionExpirationSeconds = settings.connectionExpirationSeconds();
         }
 
         /**
@@ -232,6 +246,17 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
          */
         public Builder pendingConnectionTimeout(int waitTimeout, TimeUnit timeUnit) {
             this.pendingConnectionTimeoutMillis = (int) timeUnit.toMillis(waitTimeout);
+            return this;
+        }
+
+        /**
+         * Sets the expiration time on a connection, after which the connection should be terminated.
+         *
+         * @param connectionExpirationSeconds connection viability
+         * @return this builder
+         */
+        public Builder connectionExpirationSeconds(long connectionExpirationSeconds, TimeUnit timeUnit) {
+            this.connectionExpirationSeconds = timeUnit.toSeconds(connectionExpirationSeconds);
             return this;
         }
 
