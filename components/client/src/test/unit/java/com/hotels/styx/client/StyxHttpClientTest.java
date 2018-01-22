@@ -481,26 +481,6 @@ public class StyxHttpClientTest {
     }
 
     @Test
-    public void shouldStopMonitoringOriginsOnClientClose() {
-        RecordingOriginHealthStatusMonitor monitor = new RecordingOriginHealthStatusMonitor();
-        OriginHealthStatusMonitor.Factory factory = (id, healthCheckConfig, supplier) -> monitor;
-
-        BackendService backendService = backendWithOrigins(SOME_ORIGIN.host().getPort());
-
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
-                .originHealthStatusMonitorFactory(factory)
-                .build();
-
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
-                .originsInventory(originsInventory)
-                .build();
-
-        originsInventory.close();
-
-        assertThat(monitor.status() == RUNNING, is(false));
-    }
-
-    @Test
     public void incrementsResponseStatusMetricsForBadResponse() throws Exception {
         requestOperationFactory = requestOpFactory(request -> just(response(BAD_REQUEST).build()));
         StyxHttpClient styxHttpClient = newStyxHttpClient(mockPool(openConnection(SOME_ORIGIN)));
