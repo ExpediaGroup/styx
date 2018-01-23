@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,16 @@ public final class SslContextFactory {
                 .sslProvider(SslProvider.valueOf(tlsSettings.sslProvider()))
                 .trustManager(trustManagerFactory(tlsSettings))
                 .protocols(toNettyProtocols(tlsSettings.protocols()))
+                .ciphers(toNettyCiphers(tlsSettings.cipherSuites()))
                 .build();
+    }
+
+    private static List<String> toNettyCiphers(List<String> strings) {
+        if (strings == null || strings.isEmpty()) {
+            return null;
+        } else {
+            return strings;
+        }
     }
 
     private static String[] toNettyProtocols(List<String> protocols) {

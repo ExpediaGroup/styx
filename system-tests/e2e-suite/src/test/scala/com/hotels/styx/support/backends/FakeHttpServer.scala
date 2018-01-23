@@ -20,12 +20,13 @@ import java.nio.charset.Charset
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
-import com.hotels.styx.api.support.HostAndPorts.freePort
 import com.hotels.styx.server.HttpsConnectorConfig
 import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import com.hotels.styx.support.server.{FakeHttpServer => JavaFakeHttpServer}
 import com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO
+
+import scala.collection.JavaConverters._
 
 object FakeHttpServer {
 
@@ -35,14 +36,18 @@ object FakeHttpServer {
                                 originId: String = "generic-app",
                                 certificateFile: String = null,
                                 certificateKeyFile: String = null,
-                                protocols: Seq[String] = Seq("TLSv1.1", "TLSv1.2")
+                                protocols: Seq[String] = Seq("TLSv1.1", "TLSv1.2"),
+                                cipherSuites: Seq[String] = Seq(),
+                                sslProvider: String = "JDK"
                                ) {
 
     def start(): MockOriginServer = {
 
       var builder = new HttpsConnectorConfig.Builder()
+      .sslProvider(sslProvider)
         .port(httpsPort)
-        .protocols(protocols: _*)
+        .protocols(protocols:_*)
+        .cipherSuites(cipherSuites.toList.asJava)
       builder = if (certificateFile != null) builder.certificateFile(certificateFile) else builder
       builder = if (certificateKeyFile != null) builder.certificateFile(certificateKeyFile) else builder
 
