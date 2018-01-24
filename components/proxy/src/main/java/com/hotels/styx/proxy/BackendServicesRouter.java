@@ -112,7 +112,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .connectionFactory(connectionFactory)
                     .build();
 
-            pipeline = new ProxyToClientPipeline(newClientHandler(backendService, inventory), inventory);
+            pipeline = new ProxyToClientPipeline(newClientHandler(backendService, inventory, originStatsFactory), inventory);
 
             routes.put(backendService.path(), pipeline);
             LOG.info("added path={} current routes={}", backendService.path(), routes.keySet());
@@ -124,8 +124,8 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                         .close());
     }
 
-    private HttpClient newClientHandler(BackendService backendService, OriginsInventory originsInventory) {
-        return clientFactory.createClient(backendService, originsInventory);
+    private HttpClient newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
+        return clientFactory.createClient(backendService, originsInventory, originStatsFactory);
     }
 
     @Override

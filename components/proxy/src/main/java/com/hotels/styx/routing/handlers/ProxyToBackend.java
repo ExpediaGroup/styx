@@ -106,7 +106,7 @@ public class ProxyToBackend implements HttpHandler2 {
                     .connectionFactory(connectionFactory)
                     .originStatsFactory(originStatsFactory)
                     .build();
-            return new ProxyToBackend(clientFactory.createClient(backendService, inventory));
+            return new ProxyToBackend(clientFactory.createClient(backendService, inventory, originStatsFactory));
         }
     }
 }

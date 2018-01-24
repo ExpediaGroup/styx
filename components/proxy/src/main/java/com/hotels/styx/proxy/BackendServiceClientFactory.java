@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.applications.BackendService;
 
@@ -23,5 +24,5 @@ import com.hotels.styx.client.applications.BackendService;
  * Creates HTTP clients for connecting to backend services.
  */
 public interface BackendServiceClientFactory {
-    HttpClient createClient(BackendService backendService, OriginsInventory originsInventory);
+    HttpClient createClient(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory);
 }

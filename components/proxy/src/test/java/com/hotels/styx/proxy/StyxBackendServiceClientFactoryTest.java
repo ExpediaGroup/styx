@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.client.applications.BackendService;
@@ -58,8 +59,9 @@ public class StyxBackendServiceClientFactoryTest {
         StyxBackendServiceClientFactory factory = new StyxBackendServiceClientFactory(environment);
 
         OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService).build();
+        OriginStatsFactory originStatsFactory = mock(OriginStatsFactory.class);
 
-        HttpClient client = factory.createClient(backendService, originsInventory);
+        HttpClient client = factory.createClient(backendService, originsInventory, originStatsFactory);
 
         assertThat(client, is(instanceOf(StyxHttpClient.class)));
 

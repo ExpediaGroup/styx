@@ -22,7 +22,7 @@ import com.hotels.styx.Environment
 import com.hotels.styx.api.client.Origin.newOriginBuilder
 import com.hotels.styx.api.service.spi.StyxService
 import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse}
-import com.hotels.styx.client.OriginsInventory
+import com.hotels.styx.client.{OriginStatsFactory, OriginsInventory}
 import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.infrastructure.AbstractRegistry
 import com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded
@@ -127,7 +127,7 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
   private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RouteHandlerDefinition]).get()
 
   private def clientFactory() = new BackendServiceClientFactory() {
-    override def createClient(backendService: BackendService, originsInventory: OriginsInventory): HttpClient = new HttpClient {
+    override def createClient(backendService: BackendService, originsInventory: OriginsInventory, originStatsFactory: OriginStatsFactory): HttpClient = new HttpClient {
       override def sendRequest(request: HttpRequest): Observable[HttpResponse] = Observable
         .just(HttpResponse.Builder
           .response(HttpResponseStatus.OK)

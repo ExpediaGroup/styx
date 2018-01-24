@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.Registry;
@@ -56,7 +57,7 @@ public class BackendServicesRouterTest {
     private static final String APP_B = "appB";
 
     private final BackendServiceClientFactory serviceClientFactory =
-            (backendService, originsInventory) -> request -> responseWithOriginIdHeader(backendService);
+            (backendService, originsInventory, originStatsFactory) -> request -> responseWithOriginIdHeader(backendService);
     private HttpInterceptor.Context context;
 
     private Environment environment;
@@ -204,7 +205,7 @@ public class BackendServicesRouterTest {
         HttpClient secondClient = mock(HttpClient.class);
 
         BackendServiceClientFactory clientFactory = mock(BackendServiceClientFactory.class);
-        when(clientFactory.createClient(any(BackendService.class), any(OriginsInventory.class)))
+        when(clientFactory.createClient(any(BackendService.class), any(OriginsInventory.class), any(OriginStatsFactory.class)))
                 .thenReturn(firstClient)
                 .thenReturn(secondClient);
 
@@ -215,14 +216,14 @@ public class BackendServicesRouterTest {
 
         ArgumentCaptor<OriginsInventory> originsInventory = forClass(OriginsInventory.class);
 
-        verify(clientFactory).createClient(eq(bookingApp), originsInventory.capture());
+        verify(clientFactory).createClient(eq(bookingApp), originsInventory.capture(), any(OriginStatsFactory.class));
 
         BackendService bookingAppMinusOneOrigin = bookingAppMinusOneOrigin();
 
         router.onChange(updated(bookingAppMinusOneOrigin));
 
         assertThat(originsInventory.getValue().closed(), is(true));
-        verify(clientFactory).createClient(eq(bookingAppMinusOneOrigin), any(OriginsInventory.class));
+        verify(clientFactory).createClient(eq(bookingAppMinusOneOrigin), any(OriginsInventory.class), any(OriginStatsFactory.class));
     }
 
     @Test
@@ -232,7 +233,7 @@ public class BackendServicesRouterTest {
 
         ArgumentCaptor<OriginsInventory> originsInventory = forClass(OriginsInventory.class);
         BackendServiceClientFactory clientFactory = mock(BackendServiceClientFactory.class);
-        when(clientFactory.createClient(any(BackendService.class), any(OriginsInventory.class)))
+        when(clientFactory.createClient(any(BackendService.class), any(OriginsInventory.class), any(OriginStatsFactory.class)))
                 .thenReturn(firstClient)
                 .thenReturn(secondClient);
 
@@ -241,7 +242,7 @@ public class BackendServicesRouterTest {
         BackendService bookingApp = appB();
         router.onChange(added(bookingApp));
 
-        verify(clientFactory).createClient(eq(bookingApp), originsInventory.capture());
+        verify(clientFactory).createClient(eq(bookingApp), originsInventory.capture(), any(OriginStatsFactory.class));
 
         router.onChange(removed(bookingApp));
 
