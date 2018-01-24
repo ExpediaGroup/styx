@@ -104,7 +104,7 @@ public class OriginsInventoryTest {
     }
 
     @Test
-    public void updatesOriginPortNumber() throws Exception {
+    public void updatesOriginPortNumber() {
         Origin originV1 = newOriginBuilder("acme.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
         Origin originV2 = newOriginBuilder("acme.com", 443).applicationId(GENERIC_APP).id("acme-01").build();
 
@@ -125,7 +125,7 @@ public class OriginsInventoryTest {
     }
 
     @Test
-    public void updatesOriginHostName() throws Exception {
+    public void updatesOriginHostName() {
         Origin originV1 = newOriginBuilder("acme01.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
         Origin originV2 = newOriginBuilder("acme02.com", 80).applicationId(GENERIC_APP).id("acme-01").build();
 
@@ -184,7 +184,7 @@ public class OriginsInventoryTest {
 
 
     @Test
-    public void ignoresUnchangedOrigins() throws Exception {
+    public void ignoresUnchangedOrigins() {
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
 
         assertThat(inventory, hasActiveOrigins(2));
@@ -203,7 +203,7 @@ public class OriginsInventoryTest {
     }
 
     @Test
-    public void removesOrigin() throws Exception {
+    public void removesOrigin() {
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
 
         assertThat(inventory, hasActiveOrigins(2));

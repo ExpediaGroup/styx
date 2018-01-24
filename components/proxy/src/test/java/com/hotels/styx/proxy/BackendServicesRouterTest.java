@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,16 @@
  */
 package com.hotels.styx.proxy;
 
-import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpHandler2;
-import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpInterceptor.Context;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.Id;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.Registry;
-import org.mockito.ArgumentCaptor;
+import com.hotels.styx.proxy.backends.CommonBackendServiceRegistry.StyxBackendService;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
@@ -34,20 +33,17 @@ import java.util.Optional;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
+import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
 import static com.hotels.styx.client.applications.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static rx.Observable.just;
 
@@ -55,25 +51,26 @@ public class BackendServicesRouterTest {
     private static final String APP_A = "appA";
     private static final String APP_B = "appB";
 
-    private final BackendServiceClientFactory serviceClientFactory =
-            (backendService, originsInventory) -> request -> responseWithOriginIdHeader(backendService);
-    private HttpInterceptor.Context context;
-
-    private Environment environment;
+    private HttpClient clientA;
+    private HttpClient clientB;
 
     @BeforeMethod
     public void before() {
-        environment = new Environment.Builder().build();
+        clientA = mock(HttpClient.class);
+        when(clientA.sendRequest(any(HttpRequest.class))).thenReturn(just(response(OK).header(ORIGIN_ID_DEFAULT, APP_A).build()));
+
+        clientB = mock(HttpClient.class);
+        when(clientB.sendRequest(any(HttpRequest.class))).thenReturn(just(response(OK).header(ORIGIN_ID_DEFAULT, APP_B).build()));
     }
 
     @Test
     public void registersAllRoutes() {
-        Registry.Changes<BackendService> changes = added(
-                appA().newCopy().path("/headers").build(),
-                appB().newCopy().path("/badheaders").build(),
-                appB().newCopy().id("appB-03").path("/cookies").build());
+        Registry.Changes<StyxBackendService> changes = added(
+                styxBackendService(id("appA"), "/headers", clientA),
+                styxBackendService(id("appB"), "/badheaders", clientB),
+                styxBackendService(id("appB"), "/cookies", clientB));
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter();
         router.onChange(changes);
 
         assertThat(router.routes().keySet(), contains("/badheaders", "/cookies", "/headers"));
@@ -81,11 +78,12 @@ public class BackendServicesRouterTest {
 
     @Test
     public void selectsServiceBasedOnPath() {
-        Registry.Changes<BackendService> changes = added(
-                appA().newCopy().path("/").build(),
-                appB().newCopy().path("/appB/hotel/details.html").build());
+        Registry.Changes<StyxBackendService> changes = added(
+                styxBackendService(id("appA"), "/", clientA),
+                styxBackendService(id("appB"), "/appB/hotel/details.html", clientB)
+        );
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter();
         router.onChange(changes);
 
         HttpRequest request = get("/appB/hotel/details.html").build();
@@ -96,11 +94,11 @@ public class BackendServicesRouterTest {
 
     @Test
     public void selectsApplicationBasedOnPathIfAppsAreProvidedInOppositeOrder() {
-        Registry.Changes<BackendService> changes = added(
-                appB().newCopy().path("/appB/hotel/details.html").build(),
-                appA().newCopy().path("/").build());
+        Registry.Changes<StyxBackendService> changes = added(
+                styxBackendService(id("appB"), "/appB/hotel/details.html", clientB),
+                styxBackendService(id("appA"), "/", clientA));
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter();
         router.onChange(changes);
 
         HttpRequest request = get("/appB/hotel/details.html").build();
@@ -109,14 +107,13 @@ public class BackendServicesRouterTest {
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
     }
 
-
     @Test
     public void selectsUsingSingleSlashPath() {
-        Registry.Changes<BackendService> changes = added(
-                appA().newCopy().path("/").build(),
-                appB().newCopy().path("/appB/hotel/details.html").build());
+        Registry.Changes<StyxBackendService> changes = added(
+                styxBackendService(id("appA"), "/", clientA),
+                styxBackendService(id("appB"), "/appB/hotel/details.html", clientB));
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter();
         router.onChange(changes);
 
         HttpRequest request = get("/").build();
@@ -127,26 +124,26 @@ public class BackendServicesRouterTest {
 
     @Test
     public void selectsUsingSingleSlashPathIfAppsAreProvidedInOppositeOrder() {
-        Registry.Changes<BackendService> changes = added(
-                appB().newCopy().path("/appB/hotel/details.html").build(),
-                appA().newCopy().path("/").build());
+        Registry.Changes<StyxBackendService> changes = added(
+                styxBackendService(id("appA"), "/appB/hotel/details.html", clientA),
+                styxBackendService(id("appB"), "/", clientB));
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter();
         router.onChange(changes);
 
         HttpRequest request = get("/").build();
         Optional<HttpHandler2> route = router.route(request);
 
-        assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_A));
+        assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
     }
 
     @Test
     public void selectsUsingPathWithNoSubsequentCharacters() {
-        Registry.Changes<BackendService> changes = added(
-                appA().newCopy().path("/").build(),
-                appB().newCopy().path("/appB/").build());
+        Registry.Changes<StyxBackendService> changes = added(
+                styxBackendService(id("appA"), "/", clientA),
+                styxBackendService(id("appB"), "/appB/", clientB));
 
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter();
         router.onChange(changes);
 
         HttpRequest request = get("/appB/").build();
@@ -157,8 +154,8 @@ public class BackendServicesRouterTest {
 
     @Test
     public void doesNotMatchRequestIfFinalSlashIsMissing() {
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
-        router.onChange(added(appB().newCopy().path("/appB/hotel/details.html").build()));
+        BackendServicesRouter router = new BackendServicesRouter();
+        router.onChange(added(styxBackendService(id("appA"), "/appB/hotel/details.html", clientA)));
 
         HttpRequest request = get("/ba/").build();
         Optional<HttpHandler2> route = router.route(request);
@@ -169,8 +166,8 @@ public class BackendServicesRouterTest {
 
     @Test
     public void throwsExceptionWhenNoApplicationMatches() {
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
-        router.onChange(added(appB().newCopy().path("/appB/hotel/details.html").build()));
+        BackendServicesRouter router = new BackendServicesRouter();
+        router.onChange(added(styxBackendService(id("appA"), "/appB/hotel/details.html", clientA)));
 
         HttpRequest request = get("/qwertyuiop").build();
         assertThat(router.route(request), is(Optional.empty()));
@@ -178,154 +175,46 @@ public class BackendServicesRouterTest {
 
     @Test
     public void updatesRoutesOnBackendServicesChange() {
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        BackendServicesRouter router = new BackendServicesRouter();
 
         HttpRequest request = get("/appB/").build();
 
-
-        router.onChange(added(appB()));
+        router.onChange(added(styxBackendService(id("appB"), "/", clientB)));
 
         Optional<HttpHandler2> route = router.route(request);
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
 
-        router.onChange(new Registry.Changes.Builder<BackendService>().build());
+        router.onChange(new Registry.Changes.Builder<StyxBackendService>().build());
 
         Optional<HttpHandler2> route2 = router.route(request);
         assertThat(proxyTo(route2, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
     }
 
+
+    // TODO: Mikko: Add tests for updated & removed backend services!
+
+    private static StyxBackendService styxBackendService(Id id, String path, HttpClient client) {
+        return new StyxBackendService(mock(OriginsInventory.class), client, newBackendServiceBuilder()
+                .id(id)
+                .path(path)
+                .origins(newOriginBuilder("localhost", 9090).applicationId(id).id(id + "-01").build())
+                .build());
+    }
+
     private HttpResponse proxyTo(Optional<HttpHandler2> pipeline, HttpRequest request) {
-        return pipeline.get().handle(request, context).toBlocking().first();
+        return pipeline.get().handle(request, mock(Context.class)).toBlocking().first();
     }
 
-    @Test
-    public void closesClientWhenBackendServicesAreUpdated() {
-        HttpClient firstClient = mock(HttpClient.class);
-        HttpClient secondClient = mock(HttpClient.class);
-
-        BackendServiceClientFactory clientFactory = mock(BackendServiceClientFactory.class);
-        when(clientFactory.createClient(any(BackendService.class), any(OriginsInventory.class)))
-                .thenReturn(firstClient)
-                .thenReturn(secondClient);
-
-        BackendServicesRouter router = new BackendServicesRouter(clientFactory, environment);
-
-        BackendService bookingApp = appB();
-        router.onChange(added(bookingApp));
-
-        ArgumentCaptor<OriginsInventory> originsInventory = forClass(OriginsInventory.class);
-
-        verify(clientFactory).createClient(eq(bookingApp), originsInventory.capture());
-
-        BackendService bookingAppMinusOneOrigin = bookingAppMinusOneOrigin();
-
-        router.onChange(updated(bookingAppMinusOneOrigin));
-
-        assertThat(originsInventory.getValue().closed(), is(true));
-        verify(clientFactory).createClient(eq(bookingAppMinusOneOrigin), any(OriginsInventory.class));
+    private static Registry.Changes<StyxBackendService> added(StyxBackendService... backendServices) {
+        return new Registry.Changes.Builder<StyxBackendService>().added(backendServices).build();
     }
 
-    @Test
-    public void closesClientWhenBackendServicesAreRemoved() {
-        HttpClient firstClient = mock(HttpClient.class);
-        HttpClient secondClient = mock(HttpClient.class);
-
-        ArgumentCaptor<OriginsInventory> originsInventory = forClass(OriginsInventory.class);
-        BackendServiceClientFactory clientFactory = mock(BackendServiceClientFactory.class);
-        when(clientFactory.createClient(any(BackendService.class), any(OriginsInventory.class)))
-                .thenReturn(firstClient)
-                .thenReturn(secondClient);
-
-        BackendServicesRouter router = new BackendServicesRouter(clientFactory, environment);
-
-        BackendService bookingApp = appB();
-        router.onChange(added(bookingApp));
-
-        verify(clientFactory).createClient(eq(bookingApp), originsInventory.capture());
-
-        router.onChange(removed(bookingApp));
-
-        assertThat(originsInventory.getValue().closed(), is(true));
+    private static Registry.Changes<StyxBackendService> updated(StyxBackendService... backendServices) {
+        return new Registry.Changes.Builder<StyxBackendService>().updated(backendServices).build();
     }
 
-    // This test exists due to a real bug we had when reloading in prod
-    @Test
-    public void deregistersAndReregistersMetricsAppropriately() {
-        CodaHaleMetricRegistry metrics = new CodaHaleMetricRegistry();
-
-        Environment environment = new Environment.Builder()
-                .metricsRegistry(metrics)
-                .build();
-        BackendServicesRouter router = new BackendServicesRouter(
-                new StyxBackendServiceClientFactory(environment), environment);
-
-        router.onChange(added(backendService(APP_B, "/appB/", 9094, "appB-01", 9095, "appB-02")));
-
-        assertThat(metrics.getGauges().get("origins.appB.appB-01.status").getValue(), is(1));
-        assertThat(metrics.getGauges().get("origins.appB.appB-02.status").getValue(), is(1));
-
-        BackendService appMinusOneOrigin = backendService(APP_B, "/appB/", 9094, "appB-01");
-
-        router.onChange(updated(appMinusOneOrigin));
-
-        assertThat(metrics.getGauges().get("origins.appB.appB-01.status").getValue(), is(1));
-        assertThat(metrics.getGauges().get("origins.appB.appB-02.status"), is(nullValue()));
-    }
-
-    private static Registry.Changes<BackendService> added(BackendService... backendServices) {
-        return new Registry.Changes.Builder<BackendService>().added(backendServices).build();
-    }
-
-    private static Registry.Changes<BackendService> updated(BackendService... backendServices) {
-        return new Registry.Changes.Builder<BackendService>().updated(backendServices).build();
-    }
-
-    private static Registry.Changes<BackendService> removed(BackendService... backendServices) {
-        return new Registry.Changes.Builder<BackendService>().removed(backendServices).build();
-    }
-
-    private static BackendService appA() {
-        return newBackendServiceBuilder()
-                .id(APP_A)
-                .path("/")
-                .origins(newOriginBuilder("localhost", 9090).applicationId(APP_A).id("appA-01").build())
-                .build();
-    }
-
-    private static BackendService appB() {
-        return newBackendServiceBuilder()
-                .id(APP_B)
-                .path("/appB/")
-                .origins(
-                        newOriginBuilder("localhost", 9094).applicationId(APP_B).id("appB-01").build(),
-                        newOriginBuilder("localhost", 9095).applicationId(APP_B).id("appB-02").build())
-                .build();
-    }
-
-    private static BackendService backendService(String id, String path, int originPort1, String originId1, int originPort2, String originId2) {
-        return newBackendServiceBuilder()
-                .id(id)
-                .path(path)
-                .origins(
-                        newOriginBuilder("localhost", originPort1).applicationId(id).id(originId1).build(),
-                        newOriginBuilder("localhost", originPort2).applicationId(id).id(originId2).build())
-                .build();
-    }
-
-    private static BackendService bookingAppMinusOneOrigin() {
-        return newBackendServiceBuilder()
-                .id(APP_B)
-                .path("/appB/")
-                .origins(newOriginBuilder("localhost", 9094).applicationId(APP_B).id("appB-01").build())
-                .build();
-    }
-
-    private static BackendService backendService(String id, String path, int originPort, String originId) {
-        return newBackendServiceBuilder()
-                .id(id)
-                .path(path)
-                .origins(newOriginBuilder("localhost", originPort).applicationId(id).id(originId).build())
-                .build();
+    private static Registry.Changes<StyxBackendService> removed(StyxBackendService... backendServices) {
+        return new Registry.Changes.Builder<StyxBackendService>().removed(backendServices).build();
     }
 
     private static Observable<HttpResponse> responseWithOriginIdHeader(BackendService backendService) {

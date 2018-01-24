@@ -33,11 +33,15 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.client.applications.BackendService;
+import com.hotels.styx.common.Pair;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.metrics.reporting.sets.NettyAllocatorMetricSet;
+import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.ProxyServerBuilder;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
+import com.hotels.styx.proxy.backends.CommonBackendServiceRegistry;
+import com.hotels.styx.proxy.backends.OriginInventoryFactory;
 import com.hotels.styx.proxy.interceptors.ConfigurationContextResolverInterceptor;
 import com.hotels.styx.proxy.interceptors.HopByHopHeadersRemovingInterceptor;
 import com.hotels.styx.proxy.interceptors.HttpMessageLoggingInterceptor;
@@ -71,7 +75,9 @@ import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -86,6 +92,7 @@ import static java.lang.String.format;
 import static java.lang.management.ManagementFactory.getPlatformMBeanServer;
 import static java.lang.management.ManagementFactory.getRuntimeMXBean;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.toMap;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -151,6 +158,12 @@ public final class StyxServer extends AbstractService {
         Environment environment = builder.getEnvironment();
         this.metricRegistry = environment.metricRegistry();
 
+        LOG.warn(format("Styx server metricRegistry='%s'", System.identityHashCode(environment.metricRegistry())));
+
+        // TODO: Mikko: read client worker threads count from the configuration:
+        OriginInventoryFactory originInventoryFactory = new OriginInventoryFactory(environment, 10);
+        BackendServiceClientFactory clientFactory = new StyxBackendServiceClientFactory(environment);
+
         registerVersionMetric(environment);
         registerJvmMetrics(environment.metricRegistry());
 
@@ -162,6 +175,15 @@ public final class StyxServer extends AbstractService {
                         StyxService.class),
                 builder.additionalServices());
 
+        Set<Map.Entry<String, Registry<BackendService>>> entries = backendRegistries(servicesFromConfig).entrySet();
+        Map<String, CommonBackendServiceRegistry> namedBackendServiceProviders = entries.stream()
+                .map(entry -> {
+                    String name = entry.getKey();
+                    Registry<BackendService> registry = entry.getValue();
+                    return new Pair<>(name, CommonBackendServiceRegistry.createAndListen(registry, originInventoryFactory, clientFactory));
+                })
+                .collect(toMap(Pair::value1, Pair::value2));
+
         Supplier<Iterable<NamedPlugin>> pluginsSupplier = builder.getPluginsSupplier();
 
         BuiltinInterceptorsFactory builtinInterceptorsFactory = new BuiltinInterceptorsFactory(
@@ -169,7 +191,7 @@ public final class StyxServer extends AbstractService {
 
         Map<String, HttpHandlerFactory> objectFactories = createBuiltinRoutingObjectFactories(
                 environment,
-                servicesFromConfig,
+                namedBackendServiceProviders,
                 pluginsSupplier,
                 builtinInterceptorsFactory);
 
@@ -177,7 +199,7 @@ public final class StyxServer extends AbstractService {
 
         HttpHandler2 pipeline = styxHttpPipeline(
                 environment.styxConfig(),
-                configuredPipeline(environment, servicesFromConfig, pluginsSupplier, routeHandlerFactory));
+                configuredPipeline(environment, namedBackendServiceProviders, pluginsSupplier, routeHandlerFactory));
 
         this.proxyServer = new ProxyServerBuilder(environment)
                 .httpHandler(pipeline)
@@ -208,13 +230,13 @@ public final class StyxServer extends AbstractService {
 
     private ImmutableMap<String, HttpHandlerFactory> createBuiltinRoutingObjectFactories(
             Environment environment,
-            Map<String, StyxService> servicesFromConfig,
+            Map<String, CommonBackendServiceRegistry> servicesFromConfig,
             Supplier<Iterable<NamedPlugin>> pluginsSupplier,
             BuiltinInterceptorsFactory builtinInterceptorsFactory) {
         return ImmutableMap.of(
                 "StaticResponseHandler", new StaticResponseHandler.ConfigFactory(),
                 "ConditionRouter", new ConditionRouter.ConfigFactory(),
-                "BackendServiceProxy", new BackendServiceProxy.ConfigFactory(environment, backendRegistries(servicesFromConfig)),
+                "BackendServiceProxy", new BackendServiceProxy.ConfigFactory(servicesFromConfig),
                 "InterceptorPipeline", new HttpInterceptorPipeline.ConfigFactory(pluginsSupplier, builtinInterceptorsFactory),
                 "ProxyToBackend", new ProxyToBackend.ConfigFactory(environment, new StyxBackendServiceClientFactory(environment))
         );
@@ -252,7 +274,7 @@ public final class StyxServer extends AbstractService {
 
     private HttpHandler2 configuredPipeline(
             Environment environment,
-            Map<String, StyxService> servicesFromConfig,
+            Map<String, CommonBackendServiceRegistry> backendProviders,
             Supplier<Iterable<NamedPlugin>> pluginsSupplier,
             RouteHandlerFactory routeHandlerFactory) {
         HttpPipelineFactory pipelineBuilder;
@@ -263,7 +285,7 @@ public final class StyxServer extends AbstractService {
                 return routeHandlerFactory.build(ImmutableList.of("httpPipeline"), pipelineConfig);
             };
         } else {
-            Registry<BackendService> backendServicesRegistry = (Registry<BackendService>) servicesFromConfig.get(BACKEND_SERVICE_REGISTRY_ID);
+            CommonBackendServiceRegistry backendServicesRegistry = backendProviders.get(BACKEND_SERVICE_REGISTRY_ID);
             pipelineBuilder = new StaticPipelineFactory(environment, backendServicesRegistry, pluginsSupplier);
         }
 

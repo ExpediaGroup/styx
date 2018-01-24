@@ -22,6 +22,9 @@ import java.util.concurrent.CompletableFuture;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Adapts Backend Registry into a StyxService interface.
+ */
 public class RegistryServiceAdapter extends AbstractStyxService implements Registry<BackendService> {
     private Registry<BackendService> delegate;
 
