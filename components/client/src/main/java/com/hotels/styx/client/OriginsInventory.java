@@ -79,8 +79,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  * An inventory of the origins configured for a single application.
  */
 @ThreadSafe
-public final class OriginsInventory
-        implements OriginHealthStatusMonitor.Listener,
+public class OriginsInventory implements
+        OriginHealthStatusMonitor.Listener,
         OriginsCommandsListener,
         ActiveOrigins,
         OriginsInventoryStateChangeListener.Announcer,

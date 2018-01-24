@@ -15,23 +15,17 @@
  */
 package com.hotels.styx.routing.handlers;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.service.spi.StyxService;
-import com.hotels.styx.client.applications.BackendService;
-import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
-import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.BackendServicesRouter;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
-import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
-import com.hotels.styx.routing.config.RouteHandlerFactory;
+import com.hotels.styx.proxy.backends.CommonBackendServiceRegistry;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RouteHandlerDefinition;
+import com.hotels.styx.routing.config.RouteHandlerFactory;
 import rx.Observable;
 
 import java.util.List;
@@ -49,8 +43,8 @@ public class BackendServiceProxy implements HttpHandler2 {
 
     private final RouteHandlerAdapter handler;
 
-    private BackendServiceProxy(BackendServiceClientFactory serviceClientFactory, Registry<BackendService> registry, Environment environment) {
-        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+    private BackendServiceProxy(CommonBackendServiceRegistry registry) {
+        BackendServicesRouter router = new BackendServicesRouter();
         registry.addListener(router);
         handler = new RouteHandlerAdapter(router);
     }
@@ -64,47 +58,26 @@ public class BackendServiceProxy implements HttpHandler2 {
      * Builds a BackendServiceProxy from yaml routing configuration.
      */
     public static class ConfigFactory implements HttpHandlerFactory {
-        private final BackendServiceClientFactory serviceClientFactory;
-        private final Map<String, StyxService> services;
-        private final Environment environment;
+        private final Map<String, CommonBackendServiceRegistry> backendRegistries;
 
-        private static StyxBackendServiceClientFactory serviceClientFactory(Environment environment) {
-            return new StyxBackendServiceClientFactory(environment);
-        }
-
-        @VisibleForTesting
-        ConfigFactory(Environment environment, BackendServiceClientFactory serviceClientFactory, Map<String, StyxService> services) {
-            this.serviceClientFactory = serviceClientFactory;
-            this.services = services;
-            this.environment = environment;
-        }
-
-        public ConfigFactory(Environment environment, Map<String, StyxService> services) {
-            this.services = services;
-            this.serviceClientFactory = serviceClientFactory(environment);
-            this.environment = environment;
+        public ConfigFactory(Map<String, CommonBackendServiceRegistry> backendRegistries) {
+            this.backendRegistries = backendRegistries;
         }
 
         @Override
         public HttpHandler2 build(List<String> parents, RouteHandlerFactory x, RouteHandlerDefinition configBlock) {
             JsonNodeConfig config = new JsonNodeConfig(configBlock.config());
-            String provider = config.get("backendProvider")
+            String providerName = config.get("backendProvider")
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "backendProvider"));
 
-            StyxService service = services.get(provider);
-            if (service == null) {
+            CommonBackendServiceRegistry registry = backendRegistries.get(providerName);
+            if (registry == null) {
                 throw new IllegalArgumentException(
                         format("No such backend service provider exists, attribute='%s', name='%s'",
-                                join(".", append(parents, "backendProvider")), provider));
+                                join(".", append(parents, "backendProvider")), providerName));
             }
-            if (!(service instanceof Registry)) {
-                throw new IllegalArgumentException(
-                        format("Attribute '%s' of BackendServiceProxy must refer to a BackendServiceRegistry service, name='%s'.",
-                                join(".", append(parents, "backendProvider")), provider));
-            }
-            Registry<BackendService> registry = (Registry<BackendService>) service;
 
-            return new BackendServiceProxy(serviceClientFactory, registry, environment);
+            return new BackendServiceProxy(registry);
         }
     }
 

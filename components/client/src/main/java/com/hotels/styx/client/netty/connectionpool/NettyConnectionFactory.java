@@ -59,6 +59,7 @@ public class NettyConnectionFactory implements Connection.Factory {
     private final HttpRequestOperationFactory httpRequestOperationFactory;
     private Bootstrap bootstrap;
 
+    // TODO: Mikko: The dependencies are unclear in terms of metricRegistry vs OriginStatsFactory:
     private NettyConnectionFactory(Builder builder) {
         this.eventLoopFactory = builder.eventLoopFactory();
         this.httpConfig = requireNonNull(builder.httpConfig);

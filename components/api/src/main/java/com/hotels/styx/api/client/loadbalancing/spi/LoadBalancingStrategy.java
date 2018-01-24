@@ -22,8 +22,6 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.OriginsInventoryStateChangeListener;
 
-import java.util.Collections;
-
 /**
  * Used to sort a cluster of origins so that a request can be tried against them, failing over through the sequence if necessary.
  * The LoadBalancingStrategy can also respond to changes in the origins inventory state if needed.

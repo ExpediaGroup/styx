@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
+import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
@@ -36,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hotels.styx.api.support.HostAndPorts.freePort;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.testapi.ssl.SslTesting.acceptAllSslRequests;
 import static java.util.stream.Collectors.toSet;
@@ -61,7 +61,7 @@ public final class StyxServer {
 
         this.server = new StyxServerBuilder(styxConfig())
                 .pluginsSupplier(() -> builder.plugins)
-                .additionalServices("backendServiceRegistry", backendServicesRegistry)
+                .additionalServices("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry))
                 .build();
 
         builder.routes.forEach((path, backendService) ->
