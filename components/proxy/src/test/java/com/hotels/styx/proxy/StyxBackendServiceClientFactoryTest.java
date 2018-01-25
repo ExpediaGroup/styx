@@ -29,6 +29,7 @@ import org.testng.annotations.Test;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
 import static com.hotels.styx.client.applications.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.client.connectionpool.ConnectionPools.simplePoolFactory;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -58,7 +59,10 @@ public class StyxBackendServiceClientFactoryTest {
     public void createsClients() {
         StyxBackendServiceClientFactory factory = new StyxBackendServiceClientFactory(environment);
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService).build();
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+                .connectionPoolFactory(simplePoolFactory())
+                .build();
+
         OriginStatsFactory originStatsFactory = mock(OriginStatsFactory.class);
 
         HttpClient client = factory.createClient(backendService, originsInventory, originStatsFactory);

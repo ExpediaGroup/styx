@@ -1,12 +1,12 @@
 /**
  * Copyright (C) 2013-2018 Expedia Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,9 +21,12 @@ import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.applications.BackendService;
+import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.server.HttpRouter;
@@ -103,13 +106,18 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .longFormat(longFormat)
                     .build();
 
+            ConnectionPool.Factory connectionPoolFactory = connectionPoolFactory(
+                    connectionFactory,
+                    backendService.connectionPoolConfig(),
+                    environment.metricRegistry()
+            );
+
             //TODO: origins inventory builder assumes that appId/originId tuple is unique and it will fail on metrics registration.
             OriginsInventory inventory = new OriginsInventory.Builder(backendService)
                     .version(environment.buildInfo().releaseVersion())
                     .eventBus(environment.eventBus())
                     .metricsRegistry(environment.metricRegistry())
-                    .originStatsFactory(originStatsFactory)
-                    .connectionFactory(connectionFactory)
+                    .connectionPoolFactory(connectionPoolFactory)
                     .build();
 
             pipeline = new ProxyToClientPipeline(newClientHandler(backendService, inventory, originStatsFactory), inventory);
@@ -127,6 +135,19 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     private HttpClient newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
         return clientFactory.createClient(backendService, originsInventory, originStatsFactory);
     }
+
+    private ConnectionPoolFactory connectionPoolFactory(
+            NettyConnectionFactory connectionFactory,
+            ConnectionPool.Settings connectionPoolSettings,
+            MetricRegistry metricsRegistry) {
+
+        return new ConnectionPoolFactory.Builder()
+                .connectionFactory(connectionFactory)
+                .connectionPoolSettings(connectionPoolSettings)
+                .metricRegistry(metricsRegistry)
+                .build();
+    }
+
 
     @Override
     public void onError(Throwable ex) {

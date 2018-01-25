@@ -44,6 +44,7 @@ import static com.google.common.collect.Iterables.getFirst;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
+import static com.hotels.styx.client.connectionpool.ConnectionPools.simplePoolFactory;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
 import static io.netty.handler.codec.http.HttpMethod.HEAD;
 import static java.util.Collections.emptyList;
@@ -347,7 +348,9 @@ public final class StyxHttpClient implements HttpClient {
             }
 
             if (originsInventory == null) {
-                originsInventory = newOriginsInventoryBuilder(backendService).build();
+                originsInventory = newOriginsInventoryBuilder(backendService)
+                        .connectionPoolFactory(simplePoolFactory(backendService, metricsRegistry))
+                        .build();
             }
 
             if (loadBalancingStrategy == null) {

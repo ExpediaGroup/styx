@@ -74,12 +74,12 @@ import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.RUNNING;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
 import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
 import static com.hotels.styx.client.Protocol.HTTP;
 import static com.hotels.styx.client.Protocol.HTTPS;
 import static com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder;
+import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultSettableConnectionPoolSettings;
 import static com.hotels.styx.client.retry.RetryPolicies.doNotRetry;
 import static com.hotels.styx.client.stickysession.StickySessionConfig.newStickySessionConfigBuilder;
 import static com.hotels.styx.client.stickysession.StickySessionConfig.stickySessionDisabled;
@@ -165,6 +165,7 @@ public class StyxHttpClientTest {
         BackendService backendService = backendWithOrigins(originPort);
 
         OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+                .connectionPoolFactory((origin) -> new SimpleConnectionPool(origin, defaultSettableConnectionPoolSettings(), new NettyConnectionFactory.Builder().build()))
                 .build();
 
         return newHttpClientBuilder(backendService)
@@ -469,7 +470,9 @@ public class StyxHttpClientTest {
                 .stickySessionConfig(stickySessionConfig)
                 .build();
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService).build();
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+                .connectionPoolFactory((origin) -> new SimpleConnectionPool(origin, defaultSettableConnectionPoolSettings(), new NettyConnectionFactory.Builder().build()))
+                .build();
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .originsInventory(originsInventory)
