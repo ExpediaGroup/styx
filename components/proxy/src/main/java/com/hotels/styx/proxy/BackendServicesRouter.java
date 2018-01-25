@@ -132,7 +132,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                                     backendService.connectionPoolConfig(),
                                     backendService.healthCheckConfig(),
                                     environment.buildInfo().releaseVersion()
-                                    ));
+                            ));
 
             //TODO: origins inventory builder assumes that appId/originId tuple is unique and it will fail on metrics registration.
             OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
@@ -165,8 +165,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             Optional<TlsSettings> tlsSettings,
             ConnectionPool.Settings connectionPoolSettings,
             HealthCheckConfig healthCheckConfig,
-            String styxVersion)
-    {
+            String styxVersion) {
         NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
                 .name("Health-Check-Monitor-" + appId)
                 .tlsSettings(tlsSettings.orElse(null))
@@ -190,7 +189,6 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
         return new UrlRequestHealthCheck(healthCheckUri, client, metricRegistry);
     }
-
 
     @Override
     public void onError(Throwable ex) {

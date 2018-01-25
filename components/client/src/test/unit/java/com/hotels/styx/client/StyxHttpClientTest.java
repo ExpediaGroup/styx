@@ -32,11 +32,9 @@ import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
-import com.hotels.styx.api.service.spi.AbstractStyxService;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
-import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnection;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
@@ -58,7 +56,6 @@ import rx.observers.TestSubscriber;
 import rx.subjects.PublishSubject;
 
 import java.io.IOException;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
 
@@ -692,27 +689,6 @@ public class StyxHttpClientTest {
                         return responseSubject;
                     }
                 };
-    }
-
-    public static class RecordingOriginHealthStatusMonitor extends AbstractStyxService implements OriginHealthStatusMonitor {
-        RecordingOriginHealthStatusMonitor() {
-            super("Recording health status monitor");
-        }
-
-        @Override
-        public OriginHealthStatusMonitor monitor(Set<Origin> origins) {
-            return this;
-        }
-
-        @Override
-        public OriginHealthStatusMonitor stopMonitoring(Set<Origin> origins) {
-            return this;
-        }
-
-        @Override
-        public OriginHealthStatusMonitor addOriginStatusListener(OriginHealthStatusMonitor.Listener listener) {
-            return this;
-        }
     }
 
     private static class FailingHttRequestOperation extends HttpRequestOperation {
