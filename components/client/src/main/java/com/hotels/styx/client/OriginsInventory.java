@@ -480,6 +480,7 @@ public final class OriginsInventory
         private EventBus eventBus = new EventBus();
         private ConnectionPool.Factory connectionPoolFactory;
         private Set<Origin> initialOrigins = emptySet();
+        private OriginHealthStatusMonitor healthStatusMonitor;
 
         public Builder metricsRegistry(MetricRegistry metricsRegistry) {
             this.metricsRegistry = metricsRegistry;
@@ -501,7 +502,6 @@ public final class OriginsInventory
             return this;
         }
 
-        // TODO: Mikko: seems bit pointless?
         public Builder initialOrigins(Set<Origin> origins) {
             this.initialOrigins = ImmutableSet.copyOf(origins);
             return this;
