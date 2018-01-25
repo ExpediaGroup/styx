@@ -37,6 +37,7 @@ import rx.Observable;
 
 import java.util.List;
 
+import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
@@ -92,13 +93,16 @@ public class ProxyToBackend implements HttpHandler2 {
 
             NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
                     .name("Styx")
+                    .httpRequestOperationFactory(
+                            httpRequestOperationFactoryBuilder()
+                                    .flowControlEnabled(true)
+                                    .originStatsFactory(originStatsFactory)
+                                    .requestLoggingEnabled(requestLoggingEnabled)
+                                    .responseTimeoutMillis(backendService.responseTimeoutMillis())
+                                    .longFormat(longFormat)
+                            .build())
                     .clientWorkerThreadsCount(clientWorkerThreadsCount)
                     .tlsSettings(backendService.tlsSettings().orElse(null))
-                    .flowControlEnabled(true)
-                    .originStatsFactory(originStatsFactory)
-                    .responseTimeoutMillis(backendService.responseTimeoutMillis())
-                    .requestLoggingEnabled(requestLoggingEnabled)
-                    .longFormat(longFormat)
                     .build();
 
             ConnectionPool.Factory connectionPoolFactory = new ConnectionPoolFactory.Builder()

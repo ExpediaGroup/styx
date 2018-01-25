@@ -343,10 +343,6 @@ public final class StyxHttpClient implements HttpClient {
         }
 
         public StyxHttpClient build() {
-            if (metricsRegistry == null) {
-                metricsRegistry = new CodaHaleMetricRegistry();
-            }
-
             if (originsInventory == null) {
                 originsInventory = newOriginsInventoryBuilder(backendService.id())
                         .connectionPoolFactory(simplePoolFactory(backendService, metricsRegistry))

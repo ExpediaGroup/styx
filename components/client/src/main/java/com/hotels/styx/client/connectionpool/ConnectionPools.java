@@ -18,10 +18,10 @@ package com.hotels.styx.client.connectionpool;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.metrics.MetricRegistry;
-import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 
+import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultConnectionPoolSettings;
 
 /**
@@ -45,7 +45,6 @@ public final class ConnectionPools {
                         origin,
                         defaultConnectionPoolSettings(),
                         new NettyConnectionFactory.Builder()
-                                .originStatsFactory(new OriginStatsFactory(metricRegistry))
                                 .build()),
                 metricRegistry);
     }
@@ -66,8 +65,10 @@ public final class ConnectionPools {
 
     public static ConnectionPool.Factory simplePoolFactory(BackendService backendService, MetricRegistry metricRegistry) {
         NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
-                .originStatsFactory(new OriginStatsFactory(metricRegistry))
-                .responseTimeoutMillis(backendService.responseTimeoutMillis())
+                .httpRequestOperationFactory(
+                        httpRequestOperationFactoryBuilder()
+                                .responseTimeoutMillis(backendService.responseTimeoutMillis())
+                                .build())
                 .build();
 
         return origin -> poolForOrigin(origin, metricRegistry, connectionFactory);

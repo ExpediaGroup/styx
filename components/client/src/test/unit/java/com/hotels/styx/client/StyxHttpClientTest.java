@@ -72,6 +72,7 @@ import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
+import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
 import static com.hotels.styx.client.Protocol.HTTP;
 import static com.hotels.styx.client.Protocol.HTTPS;
@@ -194,6 +195,7 @@ public class StyxHttpClientTest {
 
         ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPool.Factory()
                 .connectionFactory(new NettyConnectionFactory.Builder()
+                        .httpRequestOperationFactory(httpRequestOperationFactoryBuilder().build())
                         .tlsSettings(tlsSettings)
                         .build())
                 .connectionPoolSettings(new ConnectionPoolSettings.Builder()

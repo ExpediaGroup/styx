@@ -16,7 +16,6 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.net.HostAndPort;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.netty.ClientEventLoopFactory;
@@ -24,7 +23,6 @@ import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
 import com.hotels.styx.client.ChannelOptionSetting;
 import com.hotels.styx.client.HttpConfig;
 import com.hotels.styx.client.HttpRequestOperationFactory;
-import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
 import com.hotels.styx.client.ssl.TlsSettings;
@@ -40,6 +38,7 @@ import io.netty.handler.ssl.SslContext;
 import rx.Observable;
 
 import static com.hotels.styx.client.HttpConfig.defaultHttpConfig;
+import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static io.netty.channel.ChannelOption.ALLOCATOR;
 import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
 import static io.netty.channel.ChannelOption.SO_KEEPALIVE;
@@ -57,19 +56,15 @@ public class NettyConnectionFactory implements Connection.Factory {
     private Bootstrap bootstrap;
 
     private NettyConnectionFactory(Builder builder) {
-        this.eventLoopFactory = builder.eventLoopFactory();
+        this.eventLoopFactory = eventLoopFactory(builder.name, builder.clientWorkerThreadsCount);
         this.httpConfig = requireNonNull(builder.httpConfig);
         this.sslContext = builder.tlsSettings == null ? null : SslContextFactory.get(builder.tlsSettings);
 
-        this.httpRequestOperationFactory = builder.httpRequestOperationFactory != null
-                ? builder.httpRequestOperationFactory
-                : (HttpRequest request) -> new HttpRequestOperation(
-                            request,
-                            builder.originStatsFactory,
-                            builder.flowControlEnabled,
-                            builder.responseTimeoutMillis,
-                            builder.requestLoggingEnabled,
-                            builder.longFormat);
+        this.httpRequestOperationFactory = requireNonNull(builder.httpRequestOperationFactory);
+    }
+
+    private static ClientEventLoopFactory eventLoopFactory(String name, int threadCount) {
+        return new PlatformAwareClientEventLoopGroupFactory(name, threadCount);
     }
 
     @Override
@@ -130,26 +125,17 @@ public class NettyConnectionFactory implements Connection.Factory {
      * Builder.
      */
     public static final class Builder {
+        private HttpRequestOperationFactory httpRequestOperationFactory = httpRequestOperationFactoryBuilder().build();
         private String name = "Styx-Client";
         private int clientWorkerThreadsCount = 1;
         private HttpConfig httpConfig = defaultHttpConfig();
         private TlsSettings tlsSettings;
-        private int responseTimeoutMillis = 60000;
-        private boolean flowControlEnabled;
-        private boolean requestLoggingEnabled;
-        private boolean longFormat;
-        private HttpRequestOperationFactory httpRequestOperationFactory;
-        private OriginStatsFactory originStatsFactory;
-
-        ClientEventLoopFactory eventLoopFactory() {
-            return new PlatformAwareClientEventLoopGroupFactory(name, clientWorkerThreadsCount);
-        }
 
         /**
          * Sets the name.
          *
          * @param name name
-         * @return this builder
+         * @return this Netty
          */
         public Builder name(String name) {
             this.name = requireNonNull(name);
@@ -160,7 +146,7 @@ public class NettyConnectionFactory implements Connection.Factory {
          * Sets number of client worker threads.
          *
          * @param clientWorkerThreadsCount number of client worker threads
-         * @return this builder
+         * @return this NettyConnectionFactory.Builder
          */
         public Builder clientWorkerThreadsCount(int clientWorkerThreadsCount) {
             this.clientWorkerThreadsCount = clientWorkerThreadsCount;
@@ -171,7 +157,7 @@ public class NettyConnectionFactory implements Connection.Factory {
          * Sets HTTP configuration settings. Uses default settings if not called.
          *
          * @param httpConfig HTTP configuration settings
-         * @return this builder
+         * @return this NettyConnectionFactory.Builder
          */
         public Builder httpConfig(HttpConfig httpConfig) {
             this.httpConfig = requireNonNull(httpConfig);
@@ -182,40 +168,15 @@ public class NettyConnectionFactory implements Connection.Factory {
          * Sets the SSL settings. If not set, non-SSL connections are made.
          *
          * @param tlsSettings SSL settings
-         * @return this builder
+         * @return this NettyConnectionFactory.Builder
          */
         public Builder tlsSettings(TlsSettings tlsSettings) {
             this.tlsSettings = tlsSettings;
             return this;
         }
 
-        public Builder responseTimeoutMillis(int responseTimeoutMillis) {
-            this.responseTimeoutMillis = responseTimeoutMillis;
-            return this;
-        }
-
-        public Builder flowControlEnabled(boolean flowControlEnabled) {
-            this.flowControlEnabled = flowControlEnabled;
-            return this;
-        }
-
-        public Builder requestLoggingEnabled(boolean requestLoggingEnabled) {
-            this.requestLoggingEnabled = requestLoggingEnabled;
-            return this;
-        }
-
-        public Builder longFormat(boolean longFormat) {
-            this.longFormat = longFormat;
-            return this;
-        }
-
         public Builder httpRequestOperationFactory(HttpRequestOperationFactory httpRequestOperationFactory) {
             this.httpRequestOperationFactory = httpRequestOperationFactory;
-            return this;
-        }
-
-        public Builder originStatsFactory(OriginStatsFactory originStatsFactory) {
-            this.originStatsFactory = originStatsFactory;
             return this;
         }
 

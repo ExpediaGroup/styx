@@ -50,6 +50,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.concat;
+import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -107,13 +108,17 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
             NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
                     .name("Styx")
+                    .httpRequestOperationFactory(
+                            httpRequestOperationFactoryBuilder()
+                                    .flowControlEnabled(true)
+                                    .originStatsFactory(originStatsFactory)
+                                    .responseTimeoutMillis(backendService.responseTimeoutMillis())
+                                    .requestLoggingEnabled(requestLoggingEnabled)
+                                    .longFormat(longFormat)
+                                    .build()
+                    )
                     .clientWorkerThreadsCount(clientWorkerThreadsCount)
                     .tlsSettings(backendService.tlsSettings().orElse(null))
-                    .flowControlEnabled(true)
-                    .originStatsFactory(originStatsFactory)
-                    .responseTimeoutMillis(backendService.responseTimeoutMillis())
-                    .requestLoggingEnabled(requestLoggingEnabled)
-                    .longFormat(longFormat)
                     .build();
 
             ConnectionPool.Factory connectionPoolFactory = new ConnectionPoolFactory.Builder()

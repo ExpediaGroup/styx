@@ -42,6 +42,7 @@ import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
 import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultConnectionPoolSettings;
+import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -57,7 +58,10 @@ import static org.hamcrest.core.Is.is;
 public class NettyConnectionFactoryTest {
     private final Connection.Settings connectionSettings = defaultConnectionPoolSettings();
     private final FakeHttpServer server = new FakeHttpServer(0);
-    private final NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder().build();
+
+    private final NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
+            .httpRequestOperationFactory(httpRequestOperationFactoryBuilder().build())
+            .build();
 
     private Origin healthyOrigin;
     private Origin deadOrigin;
