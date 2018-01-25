@@ -19,12 +19,14 @@ import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.netty.exceptions.IsRetryableException;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.Collections;
 
-import static java.util.Collections.*;
-import static java.util.Optional.*;
+import static java.util.Collections.singleton;
+import static java.util.Optional.of;
+import static java.util.Optional.empty;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.mock;
@@ -32,81 +34,71 @@ import static org.mockito.Mockito.when;
 
 public class RetryNTimesTest {
 
+    private RetryNTimes retryNTimesPolicy;
+    private RetryPolicy.Context retryPolicyContext;
+    private LoadBalancingStrategy strategyMock;
+    private LoadBalancingStrategy.Context strategyContextMock;
+    private ConnectionPool connectionPool;
+
+    @BeforeMethod
+    public void setupMocks() {
+        this.retryNTimesPolicy = new RetryNTimes(1);
+
+        this.retryPolicyContext = mock(RetryPolicy.Context.class);
+        this.strategyMock = mock(LoadBalancingStrategy.class);
+        this.strategyContextMock = mock(LoadBalancingStrategy.Context.class);
+        this.connectionPool = mock(ConnectionPool.class);
+
+        when(retryPolicyContext.currentRetryCount()).thenReturn(0);
+        when(retryPolicyContext.lastException()).thenReturn(empty());
+    }
+
     @Test
     public void shouldRetry() {
-        RetryNTimes retryNTimes = new RetryNTimes(1);
-
-        RetryPolicy.Context context = mock(RetryPolicy.Context.class);
-        when(context.currentRetryCount()).thenReturn(0);
-        when(context.lastException()).thenReturn(of(new TestException()));
-        RetryPolicy.Outcome retryOutcome = retryNTimes.evaluate(context,
-                mock(LoadBalancingStrategy.class), mock(LoadBalancingStrategy.Context.class));
+        when(retryPolicyContext.lastException()).thenReturn(of(new TestException()));
+        RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
+                strategyMock, strategyContextMock);
 
         assertThat(retryOutcome.shouldRetry(), equalTo(true));
     }
 
     @Test
     public void shouldNotRetryBasedOnMaxAttemptsReached() {
-        RetryNTimes retryNTimes = new RetryNTimes(1);
-
-        RetryPolicy.Context context = mock(RetryPolicy.Context.class);
-        when(context.currentRetryCount()).thenReturn(1);
-        when(context.lastException()).thenReturn(of(new TestException()));
-        RetryPolicy.Outcome retryOutcome = retryNTimes.evaluate(context,
-                mock(LoadBalancingStrategy.class), mock(LoadBalancingStrategy.Context.class));
+        when(retryPolicyContext.currentRetryCount()).thenReturn(1);
+        when(retryPolicyContext.lastException()).thenReturn(of(new TestException()));
+        RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
+                strategyMock, strategyContextMock);
 
         assertThat(retryOutcome.shouldRetry(), equalTo(false));
     }
 
     @Test
     public void shouldNotRetryBasedOnWrongException() {
-        RetryNTimes retryNTimes = new RetryNTimes(1);
-
-        RetryPolicy.Context context = mock(RetryPolicy.Context.class);
-        when(context.currentRetryCount()).thenReturn(0);
-        when(context.lastException()).thenReturn(of(new RuntimeException()));
-        RetryPolicy.Outcome retryOutcome = retryNTimes.evaluate(context,
-                mock(LoadBalancingStrategy.class), mock(LoadBalancingStrategy.Context.class));
+        when(retryPolicyContext.lastException()).thenReturn(of(new RuntimeException()));
+        RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
+                strategyMock, strategyContextMock);
 
         assertThat(retryOutcome.shouldRetry(), equalTo(false));
     }
 
     @Test
     public void shouldReturnUnfilteredOrigin() {
-        RetryNTimes retryNTimes = new RetryNTimes(1);
+        when(retryPolicyContext.previousOrigins()).thenReturn(Collections.emptyList());
+        when(strategyMock.vote(strategyContextMock)).thenReturn(singleton(connectionPool));
 
-        RetryPolicy.Context context = mock(RetryPolicy.Context.class);
-        ConnectionPool connectionPool = mock(ConnectionPool.class);
-        LoadBalancingStrategy.Context lbContext = mock(LoadBalancingStrategy.Context.class);
-        LoadBalancingStrategy loadBalancingStrategy = mock(LoadBalancingStrategy.class);
-
-        when(context.currentRetryCount()).thenReturn(0);
-        when(context.lastException()).thenReturn(empty());
-        when(context.previousOrigins()).thenReturn(Collections.emptyList());
-
-        when(loadBalancingStrategy.vote(lbContext)).thenReturn(singleton(connectionPool));
-        RetryPolicy.Outcome retryOutcome = retryNTimes.evaluate(context,
-                loadBalancingStrategy, lbContext);
+        RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
+                strategyMock, strategyContextMock);
 
         assertThat(retryOutcome.nextOrigin().get(), equalTo(connectionPool));
     }
 
     @Test
     public void shouldReturnEmptyOriginList() {
-        RetryNTimes retryNTimes = new RetryNTimes(1);
+        when(retryPolicyContext.previousOrigins()).thenReturn(Collections.singleton(connectionPool));
+        when(strategyMock.vote(strategyContextMock)).thenReturn(singleton(connectionPool));
 
-        RetryPolicy.Context context = mock(RetryPolicy.Context.class);
-        ConnectionPool connectionPool = mock(ConnectionPool.class);
-        LoadBalancingStrategy.Context lbContext = mock(LoadBalancingStrategy.Context.class);
-        LoadBalancingStrategy loadBalancingStrategy = mock(LoadBalancingStrategy.class);
-
-        when(context.currentRetryCount()).thenReturn(0);
-        when(context.lastException()).thenReturn(empty());
-        when(context.previousOrigins()).thenReturn(Collections.singleton(connectionPool));
-
-        when(loadBalancingStrategy.vote(lbContext)).thenReturn(singleton(connectionPool));
-        RetryPolicy.Outcome retryOutcome = retryNTimes.evaluate(context,
-                loadBalancingStrategy, lbContext);
+        RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
+                strategyMock, strategyContextMock);
 
         assertThat(retryOutcome.nextOrigin().isPresent(), equalTo(false));
     }
