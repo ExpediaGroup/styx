@@ -59,8 +59,9 @@ public class StyxBackendServiceClientFactoryTest {
     public void createsClients() {
         StyxBackendServiceClientFactory factory = new StyxBackendServiceClientFactory(environment);
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
                 .connectionPoolFactory(simplePoolFactory())
+                .initialOrigins(backendService.origins())
                 .build();
 
         OriginStatsFactory originStatsFactory = mock(OriginStatsFactory.class);

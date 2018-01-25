@@ -185,8 +185,9 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .stickySessionConfig(StickySessionEnabled)
       .build()
 
-    val originsInventory = newOriginsInventoryBuilder(backendService)
+    val originsInventory = newOriginsInventoryBuilder(backendService.id())
         .connectionPoolFactory(simplePoolFactory())
+        .initialOrigins(backendService.origins)
       .build()
 
     val client: StyxHttpClient = newHttpClientBuilder(backendService)

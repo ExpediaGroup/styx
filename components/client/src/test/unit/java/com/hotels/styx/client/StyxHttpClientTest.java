@@ -164,8 +164,9 @@ public class StyxHttpClientTest {
     private static HttpClient httpClient(int originPort) {
         BackendService backendService = backendWithOrigins(originPort);
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
                 .connectionPoolFactory((origin) -> new SimpleConnectionPool(origin, defaultSettableConnectionPoolSettings(), new NettyConnectionFactory.Builder().build()))
+                .initialOrigins(backendService.origins())
                 .build();
 
         return newHttpClientBuilder(backendService)
@@ -201,8 +202,9 @@ public class StyxHttpClientTest {
                 .connectionPoolSettings(new ConnectionPoolSettings.Builder()
                         .build());
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
                 .connectionPoolFactory(connectionPoolFactory)
+                .initialOrigins(backendService.origins())
                 .build();
 
         return newHttpClientBuilder(
@@ -265,8 +267,9 @@ public class StyxHttpClientTest {
         ConnectionPool pool = mockPool(connection);
         BackendService backendService = backendWithOrigins(connection.getOrigin().host().getPort());
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
                 .connectionPoolFactory(origin -> pool)
+                .initialOrigins(backendService.origins())
                 .build();
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
@@ -292,8 +295,9 @@ public class StyxHttpClientTest {
 
         BackendService backendService = backendWithOrigins(connection.getOrigin().host().getPort());
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
                 .connectionPoolFactory(origin -> pool)
+                .initialOrigins(backendService.origins())
                 .build();
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
@@ -320,8 +324,9 @@ public class StyxHttpClientTest {
 
         BackendService backendService = backendWithOrigins(origin.host().getPort());
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
                 .connectionPoolFactory(o -> pool)
+                .initialOrigins(backendService.origins())
                 .build();
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
@@ -371,8 +376,9 @@ public class StyxHttpClientTest {
 
         BackendService backendService = backendWithOrigins(SOME_ORIGIN.host().getPort());
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
                 .connectionPoolFactory(o -> pool)
+                .initialOrigins(backendService.origins())
                 .build();
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
@@ -410,8 +416,9 @@ public class StyxHttpClientTest {
 
         BackendService backendService = backendWithOrigins(SOME_ORIGIN.host().getPort());
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
                 .connectionPoolFactory(o -> pool)
+                .initialOrigins(backendService.origins())
                 .build();
 
         StyxHttpClient styxClient = new StyxHttpClient.Builder(backendService)
@@ -434,8 +441,9 @@ public class StyxHttpClientTest {
 
         BackendService backendService = backendWithOrigins(SOME_ORIGIN.host().getPort());
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
                 .connectionPoolFactory(o -> pool)
+                .initialOrigins(backendService.origins())
                 .build();
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
@@ -470,8 +478,9 @@ public class StyxHttpClientTest {
                 .stickySessionConfig(stickySessionConfig)
                 .build();
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
                 .connectionPoolFactory((origin) -> new SimpleConnectionPool(origin, defaultSettableConnectionPoolSettings(), new NettyConnectionFactory.Builder().build()))
+                .initialOrigins(backendService.origins())
                 .build();
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
@@ -534,7 +543,7 @@ public class StyxHttpClientTest {
     }
 
     @Test
-    public void removesBadContentLength() throws Exception {
+    public void removesBadContentLength() {
         requestOperationFactory = requestOpFactory(request -> just(
                 response(OK)
                         .addHeader(CONTENT_LENGTH, 50)
@@ -565,8 +574,9 @@ public class StyxHttpClientTest {
                 .stickySessionConfig(stickySessionConfig)
                 .build();
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
                 .connectionPoolFactory(origin -> pool)
+                .initialOrigins(backendService.origins())
                 .build();
 
         return new StyxHttpClient.Builder(
@@ -581,8 +591,9 @@ public class StyxHttpClientTest {
                 .stickySessionConfig(stickySessionConfig)
                 .build();
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
                 .connectionPoolFactory(origin -> pool)
+                .initialOrigins(backendService.origins())
                 .build();
 
         return new StyxHttpClient.Builder(
@@ -612,8 +623,9 @@ public class StyxHttpClientTest {
 
         BackendService backendService = backendWithOrigins(SOME_ORIGIN.host().getPort());
 
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService)
+        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
                 .connectionPoolFactory(origin -> pool)
+                .initialOrigins(backendService.origins())
                 .build();
 
         return new StyxHttpClient.Builder(backendService)

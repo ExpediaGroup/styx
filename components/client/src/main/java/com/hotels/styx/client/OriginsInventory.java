@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.Announcer;
-import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
@@ -31,14 +30,8 @@ import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.OriginsInventoryStateChangeListener;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.client.applications.BackendService;
-import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
-import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
-import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
-import com.hotels.styx.client.healthcheck.UrlRequestHealthCheck;
 import com.hotels.styx.client.healthcheck.monitors.NoOriginHealthStatusMonitor;
-import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
@@ -61,6 +54,7 @@ import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
 import static com.hotels.styx.client.OriginsInventory.OriginState.INACTIVE;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -472,28 +466,23 @@ public final class OriginsInventory
         }
     }
 
-    public static Builder newOriginsInventoryBuilder(BackendService backendService) {
-        return new Builder(backendService);
+    public static Builder newOriginsInventoryBuilder(Id appId) {
+        return new Builder(appId);
     }
 
     /**
      * A builder for {@link com.hotels.styx.client.OriginsInventory}.
      */
     public static class Builder {
-        private final BackendService backendService;
-        private OriginHealthStatusMonitor healthStatusMonitor;
+        private final Id appId;
+        private OriginHealthStatusMonitor originHealthMonitor = new NoOriginHealthStatusMonitor();
         private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
-        private String version = "";
         private EventBus eventBus = new EventBus();
         private ConnectionPool.Factory connectionPoolFactory;
+        private Set<Origin> initialOrigins = emptySet();
 
         public Builder metricsRegistry(MetricRegistry metricsRegistry) {
             this.metricsRegistry = metricsRegistry;
-            return this;
-        }
-
-        public Builder version(String version) {
-            this.version = version;
             return this;
         }
 
@@ -502,13 +491,24 @@ public final class OriginsInventory
             return this;
         }
 
+        public Builder originHealthMonitor(OriginHealthStatusMonitor originHealthMonitor) {
+            this.originHealthMonitor = originHealthMonitor;
+            return this;
+        }
+
         public Builder eventBus(EventBus eventBus) {
             this.eventBus = eventBus;
             return this;
         }
 
-        public Builder(BackendService backendService) {
-            this.backendService = backendService;
+        // TODO: Mikko: seems bit pointless?
+        public Builder initialOrigins(Set<Origin> origins) {
+            this.initialOrigins = ImmutableSet.copyOf(origins);
+            return this;
+        }
+
+        public Builder(Id appId) {
+            this.appId = requireNonNull(appId);
         }
 
         public OriginsInventory build() {
@@ -516,44 +516,12 @@ public final class OriginsInventory
                 metricsRegistry = new CodaHaleMetricRegistry();
             }
 
-            healthStatusMonitor = new OriginHealthStatusMonitorFactory()
-                    .create(backendService.id(), backendService.healthCheckConfig(), () -> originHealthCheckFunction(metricsRegistry));
+            await(originHealthMonitor.start());
 
-            return originsInventory(healthStatusMonitor, metricsRegistry);
-        }
-
-        private OriginsInventory originsInventory(OriginHealthStatusMonitor originHealthStatusMonitor,  MetricRegistry metricsRegistry) {
-            await(originHealthStatusMonitor.start());
-
-            OriginsInventory originsInventory = new OriginsInventory(eventBus, backendService.id(), originHealthStatusMonitor, connectionPoolFactory, metricsRegistry);
-            originsInventory.setOrigins(backendService.origins());
+            OriginsInventory originsInventory = new OriginsInventory(eventBus, appId, originHealthMonitor, connectionPoolFactory, metricsRegistry);
+            originsInventory.setOrigins(initialOrigins);
 
             return originsInventory;
-        }
-
-        private OriginHealthCheckFunction originHealthCheckFunction(MetricRegistry metricRegistry) {
-            NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
-                    .name("Health-Check-Monitor-" + backendService.id())
-                    .tlsSettings(backendService.tlsSettings().orElse(null))
-                    .build();
-
-            ConnectionSettings connectionSettings = new ConnectionSettings(
-                    backendService.connectionPoolConfig().connectTimeoutMillis(),
-                    backendService.healthCheckConfig().timeoutMillis());
-
-            HttpClient client = new SimpleNettyHttpClient.Builder()
-                    .userAgent("Styx/" + version)
-                    .connectionDestinationFactory(
-                            new CloseAfterUseConnectionDestination.Factory()
-                                    .connectionSettings(connectionSettings)
-                                    .connectionFactory(connectionFactory))
-                    .build();
-
-            String healthCheckUri = backendService.healthCheckConfig()
-                    .uri()
-                    .orElseThrow(() -> new IllegalArgumentException("Health check URI missing for " + backendService.id()));
-
-            return new UrlRequestHealthCheck(healthCheckUri, client, metricRegistry);
         }
     }
 

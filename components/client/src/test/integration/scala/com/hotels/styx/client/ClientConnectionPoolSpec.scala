@@ -47,9 +47,10 @@ class ClientConnectionPoolSpec extends FunSuite with BeforeAndAfterAll with Even
 
     val backendService = new BackendService.Builder().origins(originOne).build()
 
-    val originsInventory = newOriginsInventoryBuilder(backendService)
+    val originsInventory = newOriginsInventoryBuilder(backendService.id())
       .metricsRegistry(metricRegistry)
       .connectionPoolFactory(simplePoolFactory(metricRegistry))
+      .initialOrigins(backendService.origins)
       .build()
 
     client = newHttpClientBuilder(backendService)

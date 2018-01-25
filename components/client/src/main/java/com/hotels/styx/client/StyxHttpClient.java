@@ -348,8 +348,9 @@ public final class StyxHttpClient implements HttpClient {
             }
 
             if (originsInventory == null) {
-                originsInventory = newOriginsInventoryBuilder(backendService)
+                originsInventory = newOriginsInventoryBuilder(backendService.id())
                         .connectionPoolFactory(simplePoolFactory(backendService, metricsRegistry))
+                        .initialOrigins(backendService.origins())
                         .build();
             }
 

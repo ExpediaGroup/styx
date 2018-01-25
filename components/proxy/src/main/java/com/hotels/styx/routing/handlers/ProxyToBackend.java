@@ -109,11 +109,11 @@ public class ProxyToBackend implements HttpHandler2 {
                     environment.metricRegistry()
             );
 
-            OriginsInventory inventory = new OriginsInventory.Builder(backendService)
-                    .version(environment.buildInfo().releaseVersion())
+            OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(environment.eventBus())
                     .metricsRegistry(environment.metricRegistry())
                     .connectionPoolFactory(connectionPoolFactory)
+                    .initialOrigins(backendService.origins())
                     .build();
             return new ProxyToBackend(clientFactory.createClient(backendService, inventory, originStatsFactory));
         }
