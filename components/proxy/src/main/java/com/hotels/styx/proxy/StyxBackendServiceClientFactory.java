@@ -19,6 +19,7 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.client.applications.BackendService;
@@ -43,7 +44,7 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
     }
 
     @Override
-    public HttpClient createClient(BackendService backendService, OriginsInventory originsInventory) {
+    public HttpClient createClient(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
         RetryPolicy retryPolicy = loadService(environment.configuration(), environment, "retrypolicy.policy.factory", RetryPolicy.class)
                 .orElseGet(() -> defaultRetryPolicy(environment));
 
@@ -62,6 +63,7 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
                 .enableContentValidation()
                 .rewriteRules(backendService.rewrites())
                 .originsInventory(originsInventory)
+                .originStatsFactory(originStatsFactory)
                 .build();
     }
 

@@ -71,7 +71,7 @@ public final class StyxHttpClient implements HttpClient {
         this.backendService = builder.backendService;
         this.id = backendService.id();
 
-        this.originStatsFactory = new OriginStatsFactory(builder.metricsRegistry);
+        this.originStatsFactory = builder.originStatsFactory;
 
         this.loadBalancingStrategy = backendService.stickySessionConfig().stickySessionEnabled()
                 ? new StickySessionLoadBalancingStrategy(builder.originsInventory, builder.loadBalancingStrategy)
@@ -138,9 +138,9 @@ public final class StyxHttpClient implements HttpClient {
         private final OriginStatsFactory originStatsFactory;
 
         LBContext(HttpRequest request, Id id, OriginStatsFactory originStatsFactory) {
-            this.request = request;
-            this.id = id;
-            this.originStatsFactory = originStatsFactory;
+            this.request = requireNonNull(request);
+            this.id = requireNonNull(id);
+            this.originStatsFactory = requireNonNull(originStatsFactory);
         }
 
         @Override
@@ -289,6 +289,7 @@ public final class StyxHttpClient implements HttpClient {
         private LoadBalancingStrategy loadBalancingStrategy;
         private boolean contentValidation;
         private StyxHeaderConfig styxHeaderConfig = new StyxHeaderConfig();
+        private OriginStatsFactory originStatsFactory;
 
         public Builder(BackendService backendService) {
             this.backendService = checkNotNull(backendService);
@@ -335,6 +336,11 @@ public final class StyxHttpClient implements HttpClient {
             return this;
         }
 
+        public Builder originStatsFactory(OriginStatsFactory originStatsFactory) {
+            this.originStatsFactory = originStatsFactory;
+            return this;
+        }
+
         public StyxHttpClient build() {
             if (metricsRegistry == null) {
                 metricsRegistry = new CodaHaleMetricRegistry();
@@ -346,6 +352,10 @@ public final class StyxHttpClient implements HttpClient {
 
             if (loadBalancingStrategy == null) {
                 loadBalancingStrategy = new RoundRobinStrategy(originsInventory);
+            }
+
+            if (originStatsFactory == null) {
+                originStatsFactory = new OriginStatsFactory(metricsRegistry);
             }
             return new StyxHttpClient(this);
         }

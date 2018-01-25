@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import static com.google.common.collect.Iterables.concat;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
@@ -48,15 +49,15 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
     private final HttpRequest request;
     private final Iterable<ConnectionPool> previouslyUsedOrigins;
     private HttpTransaction txn;
-    private OriginStatsFactory originStatsFactory;
+    private final OriginStatsFactory originStatsFactory;
 
     private RetryOnErrorHandler(Builder builder) {
-        this.client = builder.client;
+        this.client = requireNonNull(builder.client);
         this.attemptCount = builder.attemptCount;
-        this.request = builder.request;
+        this.request = requireNonNull(builder.request);
         this.previouslyUsedOrigins = builder.previouslyUsedOrigins;
-        this.txn = builder.transaction;
-        this.originStatsFactory = builder.originStatsFactory;
+        this.txn = requireNonNull(builder.transaction);
+        this.originStatsFactory = requireNonNull(builder.originStatsFactory);
     }
 
     @Override
@@ -87,6 +88,7 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
                 .request(request)
                 .previouslyUsedOrigins(triedOrigins(outcome.nextOrigin()))
                 .transaction(txn)
+                .originStatsFactory(originStatsFactory)
                 .build();
     }
 
@@ -179,7 +181,7 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
         private HttpRequest request;
         private Iterable<ConnectionPool> previouslyUsedOrigins = emptyList();
         private HttpTransaction transaction;
-        public OriginStatsFactory originStatsFactory;
+        private OriginStatsFactory originStatsFactory;
 
         public Builder client(StyxHttpClient client) {
             this.client = client;

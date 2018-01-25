@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public class StaticPipelineBuilderTest {
     @BeforeMethod
     public void staticPipelineBuilderTest() {
         environment = new Environment.Builder().build();
-        clientFactory = (backendService, originsInventory) -> request -> just(response(OK).build());
+        clientFactory = (backendService, originsInventory, originStatsFactory) -> request -> just(response(OK).build());
         registry = backendRegistry(newBackendServiceBuilder().origins(newOriginBuilder("localhost", 0).build())
                 .path("/foo").build());
     }
