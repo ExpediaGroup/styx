@@ -54,7 +54,7 @@ public class RetryNTimesTest {
     }
 
     @Test
-    public void shouldRetry() {
+    public void shouldRetryWithIsRetryableExceptionThrownAndMaxAttemptsNotReached() {
         when(retryPolicyContext.lastException()).thenReturn(of(new TestException()));
         RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
                 strategyMock, strategyContextMock);
@@ -73,7 +73,7 @@ public class RetryNTimesTest {
     }
 
     @Test
-    public void shouldNotRetryBasedOnWrongException() {
+    public void shouldNotRetryBasedOnExceptionOtherThanIsRetryableException() {
         when(retryPolicyContext.lastException()).thenReturn(of(new RuntimeException()));
         RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
                 strategyMock, strategyContextMock);
