@@ -255,8 +255,8 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
          * @param connectionExpirationSeconds connection viability
          * @return this builder
          */
-        public Builder connectionExpirationSeconds(long connectionExpirationSeconds, TimeUnit timeUnit) {
-            this.connectionExpirationSeconds = timeUnit.toSeconds(connectionExpirationSeconds);
+        public Builder connectionExpirationSeconds(long connectionExpirationSeconds) {
+            this.connectionExpirationSeconds = connectionExpirationSeconds;
             return this;
         }
 

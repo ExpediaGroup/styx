@@ -35,6 +35,7 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
 import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
+import com.hotels.styx.client.connectionpool.ConnectionUsageTrackerFactory;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
@@ -606,6 +607,7 @@ public final class OriginsInventory
                     .connectionFactory(cf)
                     .connectionPoolSettings(connectionPoolSettings)
                     .metricRegistry(metricsRegistry)
+                    .connectionUsageTrackerFactory(new ConnectionUsageTrackerFactory(connectionPoolSettings))
                     .build();
         }
     }

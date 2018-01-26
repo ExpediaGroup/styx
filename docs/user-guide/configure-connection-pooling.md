@@ -31,9 +31,9 @@ The two other parameters, *connectTimeoutMillis* and *socketTimeoutMillis* descr
     (*socketTimeoutMillis*).
 
 In case there is a need for periodical termination of connections in the pool, *connectionExpirationSeconds* setting
-allows to specify upper threshold on amount of times the connection can be used before it should
-be closed and recreated. Specifing no-zero value turns off the functionality. This is useful when an origin host is 
-specified as a DNS domain name, and you want to ensure that domain names are re-resolved periodically.
+will create a timer that will be assigned to each connection and initiate a procedure that will close the connection, when it expires.
+This is useful when an origin host is specified as a DNS domain name, and you want to ensure that domain names are re-resolved periodically.
+Specifing non-positive value turns off the functionality. Closing of the connection is performed lazily on incoming request.
 
 When the connection pool gets full, any additional requests 
 for the connections are queued. 

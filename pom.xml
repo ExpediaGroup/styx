@@ -110,7 +110,7 @@
     <slf4j.version>1.6.1</slf4j.version>
 
     <scala.version>2.11</scala.version>
-    <scala-compiler.version>2.11.2</scala-compiler.version>
+    <scala-compiler.version>2.11.4</scala-compiler.version>
 
     <!-- Testing Versions -->
     <hamcrest.all.version>1.3</hamcrest.all.version>

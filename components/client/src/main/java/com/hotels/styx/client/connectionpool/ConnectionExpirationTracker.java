@@ -25,6 +25,7 @@ import rx.Observable;
 
 import java.util.function.Supplier;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -42,12 +43,13 @@ class ConnectionExpirationTracker implements ConnectionUsageTracker {
 
     @Override
     public ExpirableConnection decorate(Connection connection) {
+        requireNonNull(connection);
         return new TrackedConnectionAdapter(connection, connectionExpirationSeconds, tickerSupplier);
     }
 
     @Override
     public boolean shouldTerminate(Connection connection) {
-        return ((ExpirableConnection) connection).isExpired();
+        return connection instanceof ExpirableConnection && ((ExpirableConnection) connection).isExpired();
     }
 
     private class TrackedConnectionAdapter implements ExpirableConnection {

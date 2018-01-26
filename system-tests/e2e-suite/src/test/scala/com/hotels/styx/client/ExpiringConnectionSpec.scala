@@ -33,6 +33,7 @@ import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 
 import scala.concurrent.duration._
+
 class ExpiringConnectionSpec extends FunSpec
   with StyxProxySpec
   with StyxClientSupplier
@@ -40,7 +41,7 @@ class ExpiringConnectionSpec extends FunSpec
 
   val mockServer = FakeHttpServer.HttpStartupConfig()
     .start()
-    .stub(urlStartingWith("/foobar"), aResponse
+    .stub(urlStartingWith("/app1"), aResponse
       .withStatus(200)
       .withHeader(TRANSFER_ENCODING, CHUNKED)
       .withBody("I should be here!")
@@ -52,14 +53,14 @@ class ExpiringConnectionSpec extends FunSpec
     super.beforeAll()
 
     styxServer.setBackends(
-      "/foobar" -> HttpBackend("appOne", Origins(mockServer), responseTimeout = 5.seconds,
+      "/app1" -> HttpBackend("appOne", Origins(mockServer), responseTimeout = 5.seconds,
         connectionPoolConfig = ConnectionPoolSettings(connectionExpirationSeconds = 1L))
     )
 
-    val request = get(s"http://localhost:${mockServer.port()}/foobar").build()
+    val request = get(s"http://localhost:${mockServer.port()}/app1").build()
     val resp = decodedRequest(request)
-    resp.status() should be (OK)
-    resp.bodyAs(UTF_8) should be ("I should be here!")
+    resp.status() should be(OK)
+    resp.bodyAs(UTF_8) should be("I should be here!")
   }
 
   override protected def afterAll(): Unit = {
@@ -67,47 +68,25 @@ class ExpiringConnectionSpec extends FunSpec
     super.afterAll()
   }
 
-  describe("Styx connection pool expiration policy") {
-    it("Should reuse connection after before 1 second passes") {
-      val request = get(styxServer.routerURL("/foobar"))
-        .build()
+  it("Should expire connection after 1 second") {
+    val request = get(styxServer.routerURL("/app1"))
+      .build()
 
-      val response1 = waitForResponse(client.sendRequest(request))
+    val response1 = waitForResponse(client.sendRequest(request))
 
-      assertThat(response1.status(), is(OK))
+    assertThat(response1.status(), is(OK))
 
+    styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
+    styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(0)
+
+    Thread.sleep(1000)
+
+    val response2 = waitForResponse(client.sendRequest(request))
+
+
+    eventually(timeout(2.seconds)) {
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
-      styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(0)
-
-      val response2 = waitForResponse(client.sendRequest(request))
-
-
-      eventually(timeout(3.seconds)) {
-        styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
-        styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(0)
-      }
-    }
-
-    it("Should expire connection after 1 second") {
-      val request = get(styxServer.routerURL("/foobar"))
-        .build()
-
-      val response1 = waitForResponse(client.sendRequest(request))
-
-      assertThat(response1.status(), is(OK))
-
-      styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
-      styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(0)
-
-      Thread.sleep(1000)
-
-      val response2 = waitForResponse(client.sendRequest(request))
-
-
-      eventually(timeout(2.seconds)) {
-        styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
-        styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(1)
-      }
+      styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(1)
     }
   }
 }

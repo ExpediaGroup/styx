@@ -35,4 +35,30 @@ interface ConnectionUsageTracker {
      * @return value whether the connection has expired.
      */
     boolean shouldTerminate(Connection connection);
+
+    /**
+     * Creates a {@link ConnectionUsageTracker} that doesn't affect a tracked connection.
+     * @return tracker that doesn't change the connection characteristics.
+     */
+    static Factory identityConnectionTrackerFactory() {
+        return () -> new ConnectionUsageTracker() {
+
+            @Override
+            public Connection decorate(Connection connection) {
+                return connection;
+            }
+
+            @Override
+            public boolean shouldTerminate(Connection connection) {
+                return false;
+            }
+        };
+    }
+
+    /**
+     * Creates a {@link ConnectionUsageTracker}.
+     */
+    interface Factory {
+        ConnectionUsageTracker createTracker();
+    }
 }
