@@ -56,15 +56,11 @@ public class NettyConnectionFactory implements Connection.Factory {
     private Bootstrap bootstrap;
 
     private NettyConnectionFactory(Builder builder) {
-        this.eventLoopFactory = eventLoopFactory(builder.name, builder.clientWorkerThreadsCount);
+        this.eventLoopFactory = new PlatformAwareClientEventLoopGroupFactory(builder.name, builder.clientWorkerThreadsCount);
         this.httpConfig = requireNonNull(builder.httpConfig);
         this.sslContext = builder.tlsSettings == null ? null : SslContextFactory.get(builder.tlsSettings);
 
         this.httpRequestOperationFactory = requireNonNull(builder.httpRequestOperationFactory);
-    }
-
-    private static ClientEventLoopFactory eventLoopFactory(String name, int threadCount) {
-        return new PlatformAwareClientEventLoopGroupFactory(name, threadCount);
     }
 
     @Override
@@ -135,7 +131,7 @@ public class NettyConnectionFactory implements Connection.Factory {
          * Sets the name.
          *
          * @param name name
-         * @return this Netty
+         * @return this builder
          */
         public Builder name(String name) {
             this.name = requireNonNull(name);
@@ -146,7 +142,7 @@ public class NettyConnectionFactory implements Connection.Factory {
          * Sets number of client worker threads.
          *
          * @param clientWorkerThreadsCount number of client worker threads
-         * @return this NettyConnectionFactory.Builder
+         * @return this builder
          */
         public Builder clientWorkerThreadsCount(int clientWorkerThreadsCount) {
             this.clientWorkerThreadsCount = clientWorkerThreadsCount;
@@ -157,7 +153,7 @@ public class NettyConnectionFactory implements Connection.Factory {
          * Sets HTTP configuration settings. Uses default settings if not called.
          *
          * @param httpConfig HTTP configuration settings
-         * @return this NettyConnectionFactory.Builder
+         * @return this builder
          */
         public Builder httpConfig(HttpConfig httpConfig) {
             this.httpConfig = requireNonNull(httpConfig);
@@ -168,7 +164,7 @@ public class NettyConnectionFactory implements Connection.Factory {
          * Sets the SSL settings. If not set, non-SSL connections are made.
          *
          * @param tlsSettings SSL settings
-         * @return this NettyConnectionFactory.Builder
+         * @return this builder
          */
         public Builder tlsSettings(TlsSettings tlsSettings) {
             this.tlsSettings = tlsSettings;
