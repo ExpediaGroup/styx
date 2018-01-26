@@ -81,7 +81,7 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
      *
      * @return a new instance
      */
-    public static ConnectionPoolSettings defaultSettableConnectionPoolSettings() {
+    public static ConnectionPoolSettings defaultConnectionPoolSettings() {
         return new ConnectionPoolSettings(new Builder());
     }
 

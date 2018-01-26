@@ -27,7 +27,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultSettableConnectionPoolSettings;
+import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
@@ -75,7 +75,7 @@ public class NettyConnectionTest {
     }
 
     private Connection createConnection() {
-        return getFirst(connectionFactory.createConnection(origin, defaultSettableConnectionPoolSettings()));
+        return getFirst(connectionFactory.createConnection(origin, defaultConnectionPoolSettings()));
     }
 
     static class EventCapturingListener implements Connection.Listener {

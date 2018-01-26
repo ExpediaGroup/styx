@@ -17,15 +17,16 @@ package com.hotels.styx.client
 
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.client.Origin
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.metrics.MetricRegistry
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.client.connectionpool.ConnectionPools.simplePoolFactory
+import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 
@@ -46,8 +47,10 @@ class ClientConnectionPoolSpec extends FunSuite with BeforeAndAfterAll with Even
 
     val backendService = new BackendService.Builder().origins(originOne).build()
 
-    val originsInventory = newOriginsInventoryBuilder(backendService)
+    val originsInventory = newOriginsInventoryBuilder(backendService.id())
       .metricsRegistry(metricRegistry)
+      .connectionPoolFactory(simplePoolFactory(metricRegistry))
+      .initialOrigins(backendService.origins)
       .build()
 
     client = newHttpClientBuilder(backendService)

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,15 @@
 package com.hotels.styx.client.loadbalancing.strategies;
 
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.support.api.SimpleEnvironment;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
 
 public class AdaptiveStrategyFactoryTest {
     private final Environment environment = new SimpleEnvironment.Builder().build();
@@ -34,18 +33,14 @@ public class AdaptiveStrategyFactoryTest {
     public void createsAdaptiveStrategyFromConfiguration() {
         Configuration configuration = new Configuration.MapBackedConfiguration().set("requestCount", 57);
 
-        AdaptiveStrategy strategy = new AdaptiveStrategy.Factory().create(environment, configuration,
-                OriginsInventory.newOriginsInventoryBuilder(BackendService.newBackendServiceBuilder().
-                        origins(Origin.newOriginBuilder("",0).build()).build()).build());
+        AdaptiveStrategy strategy = new AdaptiveStrategy.Factory().create(environment, configuration, mock(ActiveOrigins.class));
 
         assertThat(strategy.requestCount(), is(57));
     }
 
     @Test
     public void usesDefaultRequestCountIfNoneSpecified() {
-        AdaptiveStrategy strategy = new AdaptiveStrategy.Factory().create(environment, EMPTY_CONFIGURATION,
-                OriginsInventory.newOriginsInventoryBuilder(BackendService.newBackendServiceBuilder().
-                        origins(Origin.newOriginBuilder("",0).build()).build()).build());
+        AdaptiveStrategy strategy = new AdaptiveStrategy.Factory().create(environment, EMPTY_CONFIGURATION, mock(ActiveOrigins.class));
 
         assertThat(strategy.requestCount(), is(AdaptiveStrategy.DEFAULT_REQUEST_COUNT));
     }

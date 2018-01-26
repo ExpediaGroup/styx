@@ -1,12 +1,12 @@
 /**
  * Copyright (C) 2013-2018 Expedia Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,10 +21,23 @@ import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.Id;
+import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
+import com.hotels.styx.client.SimpleNettyHttpClient;
 import com.hotels.styx.client.applications.BackendService;
+import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
+import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
+import com.hotels.styx.client.healthcheck.HealthCheckConfig;
+import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
+import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
+import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
+import com.hotels.styx.client.healthcheck.UrlRequestHealthCheck;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
+import com.hotels.styx.client.ssl.TlsSettings;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.server.HttpRouter;
 import org.slf4j.Logger;
@@ -103,13 +116,31 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .longFormat(longFormat)
                     .build();
 
+            ConnectionPool.Factory connectionPoolFactory = new ConnectionPoolFactory.Builder()
+                    .connectionFactory(connectionFactory)
+                    .connectionPoolSettings(backendService.connectionPoolConfig())
+                    .metricRegistry(environment.metricRegistry())
+                    .build();
+
+            OriginHealthStatusMonitor healthStatusMonitor = new OriginHealthStatusMonitorFactory()
+                    .create(backendService.id(),
+                            backendService.healthCheckConfig(),
+                            () -> originHealthCheckFunction(
+                                    backendService.id(),
+                                    environment.metricRegistry(),
+                                    backendService.tlsSettings(),
+                                    backendService.connectionPoolConfig(),
+                                    backendService.healthCheckConfig(),
+                                    environment.buildInfo().releaseVersion()
+                                    ));
+
             //TODO: origins inventory builder assumes that appId/originId tuple is unique and it will fail on metrics registration.
-            OriginsInventory inventory = new OriginsInventory.Builder(backendService)
-                    .version(environment.buildInfo().releaseVersion())
+            OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(environment.eventBus())
                     .metricsRegistry(environment.metricRegistry())
-                    .originStatsFactory(originStatsFactory)
-                    .connectionFactory(connectionFactory)
+                    .connectionPoolFactory(connectionPoolFactory)
+                    .originHealthMonitor(healthStatusMonitor)
+                    .initialOrigins(backendService.origins())
                     .build();
 
             pipeline = new ProxyToClientPipeline(newClientHandler(backendService, inventory, originStatsFactory), inventory);
@@ -127,6 +158,39 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     private HttpClient newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
         return clientFactory.createClient(backendService, originsInventory, originStatsFactory);
     }
+
+    private static OriginHealthCheckFunction originHealthCheckFunction(
+            Id appId,
+            MetricRegistry metricRegistry,
+            Optional<TlsSettings> tlsSettings,
+            ConnectionPool.Settings connectionPoolSettings,
+            HealthCheckConfig healthCheckConfig,
+            String styxVersion)
+    {
+        NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
+                .name("Health-Check-Monitor-" + appId)
+                .tlsSettings(tlsSettings.orElse(null))
+                .build();
+
+        ConnectionSettings connectionSettings = new ConnectionSettings(
+                connectionPoolSettings.connectTimeoutMillis(),
+                healthCheckConfig.timeoutMillis());
+
+        HttpClient client = new SimpleNettyHttpClient.Builder()
+                .userAgent("Styx/" + styxVersion)
+                .connectionDestinationFactory(
+                        new CloseAfterUseConnectionDestination.Factory()
+                                .connectionSettings(connectionSettings)
+                                .connectionFactory(connectionFactory))
+                .build();
+
+        String healthCheckUri = healthCheckConfig
+                .uri()
+                .orElseThrow(() -> new IllegalArgumentException("Health check URI missing for " + appId));
+
+        return new UrlRequestHealthCheck(healthCheckUri, client, metricRegistry);
+    }
+
 
     @Override
     public void onError(Throwable ex) {

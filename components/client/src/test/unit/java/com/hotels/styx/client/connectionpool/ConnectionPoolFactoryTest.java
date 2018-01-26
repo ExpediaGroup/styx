@@ -22,8 +22,7 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultSettableConnectionPoolSettings;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.mockito.Mockito.mock;
@@ -36,7 +35,7 @@ public class ConnectionPoolFactoryTest {
         MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
         ConnectionPoolFactory factory = new ConnectionPoolFactory.Builder()
                 .connectionFactory(mock(Connection.Factory.class))
-                .connectionPoolSettings(defaultSettableConnectionPoolSettings())
+                .connectionPoolSettings(defaultConnectionPoolSettings())
                 .metricRegistry(metricRegistry)
                 .build();
 

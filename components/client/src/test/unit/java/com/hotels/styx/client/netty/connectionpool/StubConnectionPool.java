@@ -23,7 +23,7 @@ import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import rx.Observable;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultSettableConnectionPoolSettings;
+import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static rx.Observable.just;
 
 public class StubConnectionPool implements ConnectionPool, Comparable<ConnectionPool> {
@@ -44,7 +44,7 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
     public StubConnectionPool(Connection connection) {
         this.connection = connection;
         this.origin = connection.getOrigin();
-        this.settings = defaultSettableConnectionPoolSettings();
+        this.settings = defaultConnectionPoolSettings();
     }
 
     public StubConnectionPool(Origin origin_one, Settings settings) {

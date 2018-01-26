@@ -22,9 +22,11 @@ import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.applications.BackendService;
+import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
@@ -99,14 +101,20 @@ public class ProxyToBackend implements HttpHandler2 {
                     .longFormat(longFormat)
                     .build();
 
-            OriginsInventory inventory = new OriginsInventory.Builder(backendService)
-                    .version(environment.buildInfo().releaseVersion())
+            ConnectionPool.Factory connectionPoolFactory = new ConnectionPoolFactory.Builder()
+                    .connectionFactory(connectionFactory)
+                    .connectionPoolSettings(backendService.connectionPoolConfig())
+                    .metricRegistry(environment.metricRegistry())
+                    .build();
+
+            OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(environment.eventBus())
                     .metricsRegistry(environment.metricRegistry())
-                    .connectionFactory(connectionFactory)
-                    .originStatsFactory(originStatsFactory)
+                    .connectionPoolFactory(connectionPoolFactory)
+                    .initialOrigins(backendService.origins())
                     .build();
             return new ProxyToBackend(clientFactory.createClient(backendService, inventory, originStatsFactory));
         }
+
     }
 }

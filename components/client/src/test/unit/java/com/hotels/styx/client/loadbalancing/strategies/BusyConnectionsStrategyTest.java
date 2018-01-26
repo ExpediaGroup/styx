@@ -65,7 +65,7 @@ public class BusyConnectionsStrategyTest {
 
     @Test
     public void favoursOriginsWithLessBusyConnectionCount() {
-        ConnectionPool.Settings settings = ConnectionPoolSettings.defaultSettableConnectionPoolSettings();
+        ConnectionPool.Settings settings = ConnectionPoolSettings.defaultConnectionPoolSettings();
 
         ConnectionPool poolOne = new StubConnectionPool(ORIGIN_ONE, settings).withBusyConnections(4);
         ConnectionPool poolTwo = new StubConnectionPool(ORIGIN_TWO, settings).withBusyConnections(3);
@@ -79,7 +79,7 @@ public class BusyConnectionsStrategyTest {
 
     @Test
     public void favoursOriginsWithLessLeasedConnectionsCount() {
-        ConnectionPool.Settings settings = ConnectionPoolSettings.defaultSettableConnectionPoolSettings();
+        ConnectionPool.Settings settings = ConnectionPoolSettings.defaultConnectionPoolSettings();
 
         ConnectionPool poolOne = new StubConnectionPool(ORIGIN_ONE, settings)
                 .withBusyConnections(2)
