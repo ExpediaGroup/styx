@@ -70,7 +70,11 @@ public abstract class AbstractRegistry<T extends Identifiable> implements Regist
         ImmutableList<T> newSnapshot = ImmutableList.copyOf(newObjects);
         Iterable<T> oldSnapshot = snapshot.get();
         snapshot.set(newSnapshot);
-        notifyListeners(changes(newSnapshot, oldSnapshot));
+
+        Changes<T> changes = changes(newSnapshot, oldSnapshot);
+        if (!changes.isEmpty()) {
+            notifyListeners(changes);
+        }
     }
 
     private Changes<T> added(Iterable<T> ch) {

@@ -30,6 +30,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class AbstractRegistryTest {
 
@@ -96,7 +97,7 @@ public class AbstractRegistryTest {
 
         // Does not change:
         registry.set(ImmutableList.of(idObject("a", "1"), idObject("b", "2")));
-        verify(listener1, times(3)).onChange(any(Registry.Changes.class));
+        verifyNoMoreInteractions(listener1);
     }
 
     @Test
