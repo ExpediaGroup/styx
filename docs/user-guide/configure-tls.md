@@ -18,19 +18,20 @@ TLS-protected HTTPS ports simultaneously.
 
 ```yaml
     proxy:
-      https:
-        port:                 8443
-        sslProvider:          OPENSSL # Also supports JDK
-        certificateFile:      /conf/tls/testCredentials.crt
-        certificateKeyFile:   /conf/tls/testCredentials.key
-        sessionTimeoutMillis: 300000
-        sessionCacheSize:     20000
-        protocols:
-          - TLSv1.2
-        cipherSuites:
-          - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-          - ECDHE-RSA-AES256-GCM-SHA384
-          - ECDHE-RSA-AES128-GCM-SHA256
+      connectors:
+        https:
+          port:                 8443
+          sslProvider:          OPENSSL # Also supports JDK
+          certificateFile:      /conf/tls/testCredentials.crt
+          certificateKeyFile:   /conf/tls/testCredentials.key
+          sessionTimeoutMillis: 300000
+          sessionCacheSize:     20000
+          protocols:
+            - TLSv1.2
+          cipherSuites:
+            - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+            - ECDHE-RSA-AES256-GCM-SHA384
+            - ECDHE-RSA-AES128-GCM-SHA256
 ```
 
 
