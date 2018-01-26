@@ -16,7 +16,6 @@
 package com.hotels.styx.support.configuration
 
 import java.util.concurrent.TimeUnit.MILLISECONDS
-import java.util.concurrent.TimeUnit.SECONDS
 
 import com.hotels.styx.api.client.ConnectionPool
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings._
@@ -35,7 +34,7 @@ case class ConnectionPoolSettings(maxConnectionsPerHost: Int = DEFAULT_MAX_CONNE
       .connectTimeout(connectTimeoutMillis, MILLISECONDS)
       .socketTimeout(socketTimeoutMillis, MILLISECONDS)
       .pendingConnectionTimeout(pendingConnectionTimeoutMillis, MILLISECONDS)
-      .connectionExpirationSeconds(connectionExpirationSeconds, SECONDS)
+      .connectionExpirationSeconds(connectionExpirationSeconds)
     .build()
 }
 

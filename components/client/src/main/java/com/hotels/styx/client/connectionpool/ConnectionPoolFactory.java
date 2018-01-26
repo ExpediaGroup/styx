@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,16 +31,19 @@ public final class ConnectionPoolFactory implements ConnectionPool.Factory {
     private final Connection.Factory connectionFactory;
     private final ConnectionPool.Settings poolSettings;
     private final MetricRegistry metricRegistry;
+    private final ConnectionUsageTracker.Factory connectionUsageTrackerFactory;
 
     private ConnectionPoolFactory(Builder builder) {
         this.connectionFactory = checkNotNull(builder.connectionFactory);
         this.poolSettings = new ConnectionPoolSettings.Builder(checkNotNull(builder.poolSettings)).build();
         this.metricRegistry = checkNotNull(builder.metricRegistry);
+        this.connectionUsageTrackerFactory = builder.connectionUsageTrackerFactory;
     }
 
     @Override
     public ConnectionPool create(Origin origin) {
-        return new StatsReportingConnectionPool(new SimpleConnectionPool(origin, poolSettings, connectionFactory), metricRegistry);
+        return new StatsReportingConnectionPool(new SimpleConnectionPool(origin, poolSettings, connectionFactory,
+                connectionUsageTrackerFactory), metricRegistry);
     }
 
     /**
@@ -50,6 +53,7 @@ public final class ConnectionPoolFactory implements ConnectionPool.Factory {
         private Connection.Factory connectionFactory;
         private ConnectionPool.Settings poolSettings;
         private MetricRegistry metricRegistry;
+        private ConnectionUsageTracker.Factory connectionUsageTrackerFactory = ConnectionUsageTracker.identityConnectionTrackerFactory();
 
         public Builder connectionFactory(Connection.Factory connectionFactory) {
             this.connectionFactory = connectionFactory;
@@ -63,6 +67,11 @@ public final class ConnectionPoolFactory implements ConnectionPool.Factory {
 
         public Builder metricRegistry(MetricRegistry metricRegistry) {
             this.metricRegistry = metricRegistry;
+            return this;
+        }
+
+        public Builder connectionUsageTrackerFactory(ConnectionUsageTracker.Factory connectionUsageTrackerFactory) {
+            this.connectionUsageTrackerFactory = connectionUsageTrackerFactory;
             return this;
         }
 
