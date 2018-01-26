@@ -74,7 +74,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static com.hotels.styx.api.configuration.ConfigurationContextResolver.EMPTY_CONFIGURATION_CONTEXT_RESOLVER;
@@ -86,6 +85,7 @@ import static java.lang.String.format;
 import static java.lang.management.ManagementFactory.getPlatformMBeanServer;
 import static java.lang.management.ManagementFactory.getRuntimeMXBean;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.toMap;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -224,7 +224,7 @@ public final class StyxServer extends AbstractService {
         return servicesFromConfig.entrySet()
                 .stream()
                 .filter(entry -> entry.getValue() instanceof Registry)
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> (Registry<BackendService>) entry.getValue()));
+                .collect(toMap(Map.Entry::getKey, entry -> (Registry<BackendService>) entry.getValue()));
     }
 
     private HttpHandler2 styxHttpPipeline(StyxConfig config, HttpHandler2 interceptorsPipeline) {

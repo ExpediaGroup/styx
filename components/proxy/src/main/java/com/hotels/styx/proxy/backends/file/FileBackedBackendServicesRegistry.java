@@ -29,7 +29,6 @@ import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.infrastructure.YamlReader;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Objects.toStringHelper;
@@ -37,6 +36,7 @@ import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 /**
  * File backed {@link com.hotels.styx.client.applications.BackendService} registry.
@@ -47,7 +47,7 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
     @VisibleForTesting
     FileBackedBackendServicesRegistry(FileBackedRegistry<BackendService> fileBackedRegistry) {
         super(format("FileBackedBackendServiceRegistry(%s)", fileBackedRegistry.fileName()));
-        this.fileBackedRegistry = Objects.requireNonNull(fileBackedRegistry);
+        this.fileBackedRegistry = requireNonNull(fileBackedRegistry);
     }
 
 
@@ -82,7 +82,7 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
     protected CompletableFuture<Void> startService() {
         return this.fileBackedRegistry.reload()
                 .thenAccept(result -> {
-                    // Swallow result
+                    // Swallow the result
                 });
     }
 
@@ -118,7 +118,8 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         }
     }
 
-    private static class YAMLBackendServicesReader implements FileBackedRegistry.Reader<BackendService> {
+    @VisibleForTesting
+    static class YAMLBackendServicesReader implements FileBackedRegistry.Reader<BackendService> {
         private final YamlReader<List<BackendService>> delegate = new YamlReader<>();
 
         @Override

@@ -36,6 +36,7 @@ import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
 import static java.util.Collections.emptyMap;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 
 public class ServiceProvisionTest {
     private final String yaml = "" +
@@ -117,8 +118,8 @@ public class ServiceProvisionTest {
         Environment env = environmentWithConfig(yamlForServices);
         Map<String, StyxService> services = loadServices(env.configuration(), env, "multi", StyxService.class);
 
-        assertThat(services.get("backendProvider"), Matchers.instanceOf(BackendServiceProvider.class));
-        assertThat(services.get("routingProvider"), Matchers.instanceOf(RoutingObjectProvider.class));
+        assertThat(services.get("backendProvider"), instanceOf(BackendServiceProvider.class));
+        assertThat(services.get("routingProvider"), instanceOf(RoutingObjectProvider.class));
     }
 
     @Test

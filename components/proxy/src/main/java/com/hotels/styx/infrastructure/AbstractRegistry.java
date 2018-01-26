@@ -50,10 +50,8 @@ public abstract class AbstractRegistry<T extends Identifiable> implements Regist
     }
 
     protected void notifyListeners(Changes<T> changes) {
-        if (!changes.isEmpty()) {
-            LOG.info("notifying about services={} to listeners={}", changes, announcer.listeners());
-            announcer.announce().onChange(changes);
-        }
+        LOG.info("notifying about services={} to listeners={}", changes, announcer.listeners());
+        announcer.announce().onChange(changes);
     }
 
     protected void notifyListenersOnError(Throwable cause) {
