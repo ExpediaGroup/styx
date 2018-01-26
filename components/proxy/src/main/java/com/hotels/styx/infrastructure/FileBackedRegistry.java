@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Throwables.propagate;
+import static com.google.common.hash.HashCode.fromLong;
 import static com.google.common.hash.Hashing.md5;
 import static com.google.common.io.ByteStreams.toByteArray;
 import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
@@ -43,31 +44,16 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     private static final Logger LOG = getLogger(FileBackedRegistry.class);
     private final Resource configurationFile;
     private final Reader<T> reader;
-    private HashCode fileHash;
+    private HashCode fileHash = fromLong(0);
 
     public FileBackedRegistry(Resource configurationFile, Reader<T> reader) {
-        super("FileBackedRegistry");
         this.configurationFile = requireNonNull(configurationFile);
         this.reader = checkNotNull(reader);
-        this.fileHash = null;
     }
 
-    @Override
-    protected CompletableFuture<Void> startService() {
-        return CompletableFuture.runAsync(() -> {
-            LOG.info("starting {}", getClass().getSimpleName());
-
-            byte[] content = readFile();
-            fileHash = md5().hashBytes(content);
-            Iterable<T> resources = reader.read(content);
-
-            snapshot.set(resources);
-            Changes<T> changes = new Changes.Builder<T>()
-                    .added(resources)
-                    .build();
-            notifyListeners(changes);
-        });
-    }
+    public String fileName() {
+        return configurationFile.absolutePath();
+    };
 
     @Override
     public CompletableFuture<ReloadResult> reload() {
@@ -75,7 +61,7 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
             byte[] content = readFile();
             HashCode hashCode = md5().hashBytes(content);
 
-            if (fileHash.equals(hashCode)) {
+            if (hashCode.equals(fileHash)) {
                 LOG.info("Not reloading {} as content did not change", configurationFile.absolutePath());
                 return unchanged("file content did not change");
             } else {
@@ -101,11 +87,10 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     private boolean updateResources(byte[] content, HashCode hashCode) {
 
         Iterable<T> resources = reader.read(content);
-        Changes<T> changes = changes(resources, snapshot.get());
+        Changes<T> changes = changes(resources, get());
 
         if (!changes.isEmpty()) {
-            snapshot.set(resources);
-            notifyListeners(changes);
+            set(resources);
         }
 
         fileHash = hashCode;

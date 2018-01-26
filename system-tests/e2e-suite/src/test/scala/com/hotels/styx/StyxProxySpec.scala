@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package com.hotels.styx
 
-import com.hotels.styx.infrastructure.MemoryBackedRegistry
+import com.hotels.styx.infrastructure.{RegistryServiceAdapter, MemoryBackedRegistry}
 import com.hotels.styx.plugins.PluginPipelineSpec
 import com.hotels.styx.support.{ImplicitStyxConversions, configuration}
 import com.hotels.styx.support.configuration.{ImplicitOriginConversions, StyxBackend, StyxBaseConfig}
@@ -46,7 +46,7 @@ trait StyxProxySpec extends StyxClientSupplier
   }
 
   override protected def beforeAll() = {
-    styxServer = styxConfig.startServer(backendsRegistry)
+    styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
     println("Styx http port is: [%d]".format(styxServer.httpPort))
     println("Styx https port is: [%d]".format(styxServer.secureHttpPort))
   }

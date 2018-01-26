@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,12 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.AggregatedConfiguration;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.service.spi.AbstractStyxService;
+import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.support.api.SimpleEnvironment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ServiceFactory;
+import org.hamcrest.Matchers;
 import org.testng.annotations.Test;
 
 import java.util.Map;
@@ -33,6 +36,7 @@ import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
 import static java.util.Collections.emptyMap;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 
 public class ServiceProvisionTest {
     private final String yaml = "" +
@@ -63,6 +67,29 @@ public class ServiceProvisionTest {
             "      config:\n" +
             "        stringValue: valueNumber3\n";
 
+    private final String yamlForServices = "" +
+            "my:\n" +
+            "  factory:\n" +
+            "    enabled: true\n" +
+            "    class: " + MyFactory.class.getName() + "\n" +
+            "    config:\n" +
+            "      stringValue: expectedValue\n" +
+            "not:\n" +
+            "  real:\n" +
+            "    class: my.FakeClass\n" +
+            "multi:\n" +
+            "  factories:\n" +
+            "    backendProvider:\n" +
+            "      enabled: true\n" +
+            "      class: " + TestBackendServiceProviderFactory.class.getName() + "\n" +
+            "      config:\n" +
+            "        stringValue: valueNumber1\n" +
+            "    routingProvider:\n" +
+            "      enabled: true\n" +
+            "      class: " + TestRoutingObjectProviderFactory.class.getName() + "\n" +
+            "      config:\n" +
+            "        stringValue: valueNumber2\n";
+
     private final Environment environment = environmentWithConfig(yaml);
 
     @Test
@@ -87,6 +114,15 @@ public class ServiceProvisionTest {
     }
 
     @Test
+    public void isInstanceWorks() {
+        Environment env = environmentWithConfig(yamlForServices);
+        Map<String, StyxService> services = loadServices(env.configuration(), env, "multi", StyxService.class);
+
+        assertThat(services.get("backendProvider"), instanceOf(BackendServiceProvider.class));
+        assertThat(services.get("routingProvider"), instanceOf(RoutingObjectProvider.class));
+    }
+
+    @Test
     public void servicesReturnEmptyWhenFactoryKeyDoesNotExist() {
         Map<String, String> services = loadServices(environment.configuration(), environment, "invalid.key", String.class);
 
@@ -104,6 +140,43 @@ public class ServiceProvisionTest {
             return serviceConfiguration.get("stringValue").orElse("VALUE_ABSENT");
         }
     }
+
+
+    public static class TestBackendServiceProviderFactory implements ServiceFactory<StyxService> {
+        @Override
+        public StyxService create(Environment environment, Configuration serviceConfiguration) {
+            return new TestBackendServiceProvider();
+        }
+    }
+
+
+    public static class TestRoutingObjectProviderFactory implements ServiceFactory<StyxService> {
+        @Override
+        public StyxService create(Environment environment, Configuration serviceConfiguration) {
+            return new TestRoutingObjectProvider();
+        }
+    }
+
+    interface BackendServiceProvider {
+
+    }
+
+    interface RoutingObjectProvider {
+
+    }
+
+    static class TestBackendServiceProvider extends AbstractStyxService implements BackendServiceProvider {
+        public TestBackendServiceProvider() {
+            super("TestBackendServiceProvider");
+        }
+    }
+
+    static class TestRoutingObjectProvider extends AbstractStyxService implements RoutingObjectProvider {
+        public TestRoutingObjectProvider() {
+            super("TestBackendServiceProvider");
+        }
+    }
+
 
     private Environment environmentWithConfig(String yaml) {
         Configuration conf = new AggregatedConfiguration(StyxConfig.fromYaml(yaml));

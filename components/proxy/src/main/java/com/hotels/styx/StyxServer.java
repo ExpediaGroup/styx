@@ -85,6 +85,7 @@ import static java.lang.String.format;
 import static java.lang.management.ManagementFactory.getPlatformMBeanServer;
 import static java.lang.management.ManagementFactory.getRuntimeMXBean;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.toMap;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -213,10 +214,17 @@ public final class StyxServer extends AbstractService {
         return ImmutableMap.of(
                 "StaticResponseHandler", new StaticResponseHandler.ConfigFactory(),
                 "ConditionRouter", new ConditionRouter.ConfigFactory(),
-                "BackendServiceProxy", new BackendServiceProxy.ConfigFactory(environment, servicesFromConfig),
+                "BackendServiceProxy", new BackendServiceProxy.ConfigFactory(environment, backendRegistries(servicesFromConfig)),
                 "InterceptorPipeline", new HttpInterceptorPipeline.ConfigFactory(pluginsSupplier, builtinInterceptorsFactory),
                 "ProxyToBackend", new ProxyToBackend.ConfigFactory(environment, new StyxBackendServiceClientFactory(environment))
         );
+    }
+
+    private Map<String, Registry<BackendService>> backendRegistries(Map<String, StyxService> servicesFromConfig) {
+        return servicesFromConfig.entrySet()
+                .stream()
+                .filter(entry -> entry.getValue() instanceof Registry)
+                .collect(toMap(Map.Entry::getKey, entry -> (Registry<BackendService>) entry.getValue()));
     }
 
     private HttpHandler2 styxHttpPipeline(StyxConfig config, HttpHandler2 interceptorsPipeline) {

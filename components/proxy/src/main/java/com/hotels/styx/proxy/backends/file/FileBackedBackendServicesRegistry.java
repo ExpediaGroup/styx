@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 package com.hotels.styx.proxy.backends.file;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
+import com.hotels.styx.api.service.spi.AbstractStyxService;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.applications.BackendServices;
 import com.hotels.styx.infrastructure.FileBackedRegistry;
@@ -28,17 +29,67 @@ import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.infrastructure.YamlReader;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 /**
  * File backed {@link com.hotels.styx.client.applications.BackendService} registry.
  */
-public class FileBackedBackendServicesRegistry extends FileBackedRegistry<BackendService> {
-    private final String originsFileName;
+public class FileBackedBackendServicesRegistry extends AbstractStyxService implements Registry<BackendService> {
+    private final FileBackedRegistry<BackendService> fileBackedRegistry;
+
+    @VisibleForTesting
+    FileBackedBackendServicesRegistry(FileBackedRegistry<BackendService> fileBackedRegistry) {
+        super(format("FileBackedBackendServiceRegistry(%s)", fileBackedRegistry.fileName()));
+        this.fileBackedRegistry = requireNonNull(fileBackedRegistry);
+    }
+
+
+    public static FileBackedBackendServicesRegistry create(String originsFile) {
+        FileBackedRegistry<BackendService> fileBackedRegistry = new FileBackedRegistry<>(
+                newResource(originsFile),
+                new YAMLBackendServicesReader());
+        return new FileBackedBackendServicesRegistry(fileBackedRegistry);
+    }
+
+    @Override
+    public Registry<BackendService> addListener(ChangeListener<BackendService> changeListener) {
+        return this.fileBackedRegistry.addListener(changeListener);
+    }
+
+    @Override
+    public Registry<BackendService> removeListener(ChangeListener<BackendService> changeListener) {
+        return this.fileBackedRegistry.removeListener(changeListener);
+    }
+
+    @Override
+    public CompletableFuture<ReloadResult> reload() {
+        return this.fileBackedRegistry.reload();
+    }
+
+    @Override
+    public Iterable<BackendService> get() {
+        return this.fileBackedRegistry.get();
+    }
+
+    @Override
+    protected CompletableFuture<Void> startService() {
+        return this.fileBackedRegistry.reload()
+                .thenAccept(result -> {
+                    // Swallow the result
+                });
+    }
+
+    @Override
+    public CompletableFuture<Void> stop() {
+        return super.stop();
+    }
 
     /**
      * Factory for creating a {@link FileBackedBackendServicesRegistry}.
@@ -53,9 +104,13 @@ public class FileBackedBackendServicesRegistry extends FileBackedRegistry<Backen
         }
 
         private static Registry<BackendService> registry(String originsFile) {
+            FileBackedRegistry<BackendService> fileBackedRegistry = new FileBackedRegistry<>(
+                    newResource(originsFile),
+                    new YAMLBackendServicesReader());
+
             return originsFile.isEmpty()
                     ? emptyRegistry()
-                    : new FileBackedBackendServicesRegistry(originsFile);
+                    : new FileBackedBackendServicesRegistry(fileBackedRegistry);
         }
 
         private static Registry<BackendService> emptyRegistry() {
@@ -63,17 +118,8 @@ public class FileBackedBackendServicesRegistry extends FileBackedRegistry<Backen
         }
     }
 
-    public FileBackedBackendServicesRegistry(String originsFile) {
-        this(newResource(originsFile));
-    }
-
-    public FileBackedBackendServicesRegistry(Resource resource) {
-        super(resource, new YAMLBackendServicesReader());
-
-        this.originsFileName = resource.absolutePath();
-    }
-
-    private static class YAMLBackendServicesReader implements Reader<BackendService> {
+    @VisibleForTesting
+    static class YAMLBackendServicesReader implements FileBackedRegistry.Reader<BackendService> {
         private final YamlReader<List<BackendService>> delegate = new YamlReader<>();
 
         @Override
@@ -94,7 +140,7 @@ public class FileBackedBackendServicesRegistry extends FileBackedRegistry<Backen
     @Override
     public String toString() {
         return toStringHelper(this)
-                .add("originsFileName", originsFileName)
+                .add("originsFileName", fileBackedRegistry.fileName())
                 .toString();
     }
 }

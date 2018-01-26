@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
@@ -38,26 +36,27 @@ import static com.hotels.styx.infrastructure.Registry.ReloadResult.unchanged;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 public class FileBackedRegistryTest {
 
-    private RegistryChangeListener listener;
     private byte[] originalContent;
     private byte[] newContent;
     private BackendService backendService;
     private FileBackedRegistry<BackendService> registry;
+    private Registry.ChangeListener<BackendService> listener;
 
     @BeforeMethod
-    public void setUp() throws Exception {
-        listener = new RegistryChangeListener();
+    public void setUp() {
         originalContent = "... origins file ...".getBytes(UTF_8);
         newContent = "... new file ...".getBytes(UTF_8);
         backendService = new BackendService.Builder().build();
+        listener = mock(Registry.ChangeListener.class, withSettings().verboseLogging());
     }
 
     @Test
@@ -81,12 +80,9 @@ public class FileBackedRegistryTest {
         registry = new FileBackedRegistry<>(configurationFile, bytes -> ImmutableList.of(backendService));
         registry.addListener(listener);
 
-        await(registry.startService());
+        await(registry.reload());
 
-        assertThat(listener.changeLog().get(0).added(), contains(backendService));
-        assertThat(listener.changeLog().get(0).removed(), emptyIterable());
-        assertThat(listener.changeLog().get(0).updated(), emptyIterable());
-        assertThat(listener.errorLog().size(), is(0));
+        verify(listener).onChange(eq(changeSet().added(backendService).build()));
     }
 
 
@@ -99,15 +95,14 @@ public class FileBackedRegistryTest {
 
         registry = new FileBackedRegistry<>(configurationFile, bytes -> ImmutableList.of(backendService));
         registry.addListener(listener);
-        await(registry.startService());
+        await(registry.reload());
+        verify(listener).onChange(eq(changeSet().added(backendService).build()));
 
         ReloadResult result = registry.reload().get();
         assertThat(result, is(unchanged("file content did not change")));
 
-        assertThat(listener.changeLog().get(0).added(), contains(backendService));
-        assertThat(listener.changeLog().get(0).removed(), emptyIterable());
-        assertThat(listener.changeLog().get(0).updated(), emptyIterable());
-        assertThat(listener.errorLog().size(), is(0));
+        // Still only one invocation, because reload didn't introduce any changes to configuration
+        verify(listener).onChange(eq(changeSet().added(backendService).build()));
     }
 
     @Test
@@ -117,16 +112,15 @@ public class FileBackedRegistryTest {
         registry = new FileBackedRegistry<>(configurationFile, bytes -> ImmutableList.of(backendService));
         registry.addListener(listener);
 
-        await(registry.startService());
+        await(registry.reload());
+        verify(listener).onChange(eq(changeSet().added(backendService).build()));
 
         when(configurationFile.inputStream()).thenReturn(new ByteArrayInputStream(newContent));
         ReloadResult result = registry.reload().get();
         assertThat(result, is(unchanged("file content was not semantically different")));
 
-        assertThat(listener.changeLog().get(0).added(), contains(backendService));
-        assertThat(listener.changeLog().get(0).removed(), emptyIterable());
-        assertThat(listener.changeLog().get(0).updated(), emptyIterable());
-        assertThat(listener.errorLog().size(), is(0));
+        // Still only one invocation, because reload didn't introduce any changes to configuration
+        verify(listener).onChange(eq(changeSet().added(backendService).build()));
     }
 
     @Test
@@ -149,17 +143,22 @@ public class FileBackedRegistryTest {
                 });
 
         registry.addListener(listener);
+        verify(listener).onChange(eq(changeSet().build()));
 
-        await(registry.startService());
+        await(registry.reload());
+        verify(listener).onChange(eq(changeSet().added(backendService1).build()));
 
         ReloadResult result = registry.reload().get();
         assertThat(result, is(reloaded("Changes applied!")));
+        assertThat(backendService1.equals(backendService2), is(false));
 
-        assertThat(listener.changeLog().get(1).added(), emptyIterable());
-        assertThat(listener.changeLog().get(1).removed(), emptyIterable());
-        assertThat(listener.changeLog().get(1).updated(), contains(backendService2));
-        assertThat(listener.errorLog().size(), is(0));
+        verify(listener).onChange(eq(changeSet().updated(backendService2).build()));
     }
+
+    private Registry.Changes.Builder<BackendService> changeSet() {
+        return new Registry.Changes.Builder<>();
+    }
+
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "java.util.concurrent.ExecutionException: java.lang.RuntimeException: Something went wrong...")
     public void completesWithExceptionWhenErrorsDuringReload() throws Exception {
@@ -177,10 +176,14 @@ public class FileBackedRegistryTest {
                     }
                 });
         registry.addListener(listener);
-        await(registry.startService());
-        assertThat(listener.changeLog().get(0).added(), contains(backendService));
+        await(registry.reload());
+
+        verify(listener).onChange(eq(changeSet().added(backendService).build()));
 
         await(registry.reload());
+
+        // Noting changed
+        verify(listener).onChange(eq(changeSet().added(backendService).build()));
     }
 
     private Resource mockResource(String path, ByteArrayInputStream content) throws IOException {
@@ -196,30 +199,6 @@ public class FileBackedRegistryTest {
         when(configuration.inputStream()).thenReturn(content1, contents);
 
         return configuration;
-    }
-
-    static class RegistryChangeListener implements Registry.ChangeListener<BackendService> {
-        private List<Registry.Changes<BackendService>> changeLog = new ArrayList<>();
-        private List<Throwable> errorLog = new ArrayList<>();
-
-        @Override
-        public void onChange(Registry.Changes<BackendService> changes) {
-            System.out.println("onChange: " + changes);
-            changeLog.add(changes);
-        }
-
-        @Override
-        public void onError(Throwable ex) {
-            errorLog.add(ex);
-        }
-
-        List<Registry.Changes<BackendService>> changeLog() {
-            return changeLog;
-        }
-
-        List<Throwable> errorLog() {
-            return errorLog;
-        }
     }
 
     private BackendService backendService(String id, int port) {

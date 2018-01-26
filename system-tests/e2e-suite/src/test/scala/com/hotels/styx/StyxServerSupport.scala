@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hotels.styx
 
 import java.net.InetSocketAddress
@@ -25,9 +24,8 @@ import com.hotels.styx.admin.AdminServerConfig
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration
 import com.hotels.styx.api.plugins.spi.Plugin
+import com.hotels.styx.api.service.spi.StyxService
 import com.hotels.styx.api.{HttpHandler, HttpRequest, HttpResponse}
-import com.hotels.styx.client.applications.BackendService
-import com.hotels.styx.infrastructure.AbstractRegistry
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.metrics.StyxMetrics
 import com.hotels.styx.proxy.ProxyServerConfig
@@ -80,14 +78,14 @@ object StyxServerSupport {
       .set("admin", adminServerConfigBuilder.build()))
   }
 
-  def newStyxServerBuilder(styxConfig: StyxConfig, backendServicesRegistry: AbstractRegistry[BackendService], plugins: List[NamedPlugin] = Nil) = {
+  def newStyxServerBuilder(styxConfig: StyxConfig, styxService: StyxService, plugins: List[NamedPlugin] = Nil) = {
     val plugins1 = plugins.asInstanceOf[Iterable[NamedPlugin]].asJava
     val pluginSupplier = new java.util.function.Supplier[java.lang.Iterable[NamedPlugin]] {
       override def get() = plugins1
     }
 
     val builder = new StyxServerBuilder(styxConfig)
-      .additionalServices("backendServiceRegistry", backendServicesRegistry)
+      .additionalServices("backendServiceRegistry", styxService)
 
     if (plugins.nonEmpty) {
       builder.pluginsSupplier(pluginSupplier)
