@@ -35,8 +35,8 @@ import java.util.Optional;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
 import static com.hotels.styx.client.applications.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;

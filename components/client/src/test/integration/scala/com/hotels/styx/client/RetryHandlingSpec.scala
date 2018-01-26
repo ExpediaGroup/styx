@@ -58,17 +58,17 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
   val server2 = new FakeHttpServer(0, "app", "HEALTHY_ORIGIN_TWO")
 
   var healthyOriginOne: Origin = _
-  var healthyOriginTwo : Origin = _
+  var healthyOriginTwo: Origin = _
 
   val originServer1 = new FakeHttpServer(0, "app", "ORIGIN_ONE")
   val originServer2 = new FakeHttpServer(0, "app", "ORIGIN_TWO")
   val originServer3 = new FakeHttpServer(0, "app", "ORIGIN_THREE")
   val originServer4 = new FakeHttpServer(0, "app", "ORIGIN_FOUR")
 
-  var originOne : Origin = _
-  var originTwo : Origin = _
-  var originThree : Origin = _
-  var originFour : Origin = _
+  var originOne: Origin = _
+  var originTwo: Origin = _
+  var originThree: Origin = _
+  var originFour: Origin = _
 
   val unhealthyOriginOne: Origin = newOriginBuilder(localHostAndFreePort()).id("UNHEALTHY_ORIGIN_ONE").build
   val unhealthyOriginTwo: Origin = newOriginBuilder(localHostAndFreePort()).id("UNHEALTHY_ORIGIN_TWO").build
@@ -186,8 +186,8 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .build()
 
     val originsInventory = newOriginsInventoryBuilder(backendService.id())
-        .connectionPoolFactory(simplePoolFactory())
-        .initialOrigins(backendService.origins)
+      .connectionPoolFactory(simplePoolFactory())
+      .initialOrigins(backendService.origins)
       .build()
 
     val client: StyxHttpClient = newHttpClientBuilder(backendService)

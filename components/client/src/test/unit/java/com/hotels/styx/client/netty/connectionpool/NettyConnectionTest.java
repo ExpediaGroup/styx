@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultConnectionPoolSettings;
+import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
@@ -36,7 +37,9 @@ import static org.hamcrest.core.Is.is;
 
 public class NettyConnectionTest {
     private final FakeHttpServer originServer = new FakeHttpServer(0);
-    private final NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder().build();
+    private final NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
+            .httpRequestOperationFactory(httpRequestOperationFactoryBuilder().build())
+            .build();
 
     private Origin origin;
 

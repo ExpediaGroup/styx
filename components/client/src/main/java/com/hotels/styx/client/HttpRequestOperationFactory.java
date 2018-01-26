@@ -16,6 +16,7 @@
 package com.hotels.styx.client;
 
 import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 
 /**
@@ -29,4 +30,55 @@ public interface HttpRequestOperationFactory {
      * @return a new http operation
      */
     HttpRequestOperation newHttpRequestOperation(HttpRequest request);
+
+    /**
+     * Builds HttpRequestOperationFactory objects.
+     */
+    class Builder {
+        OriginStatsFactory originStatsFactory = new OriginStatsFactory(new CodaHaleMetricRegistry());
+        int responseTimeoutMillis = 60000;
+        boolean flowControlEnabled;
+        boolean requestLoggingEnabled;
+        boolean longFormat;
+
+        public static Builder httpRequestOperationFactoryBuilder() {
+            return new Builder();
+        }
+
+        public Builder originStatsFactory(OriginStatsFactory factory) {
+            this.originStatsFactory = factory;
+            return this;
+        }
+
+        public Builder responseTimeoutMillis(int responseTimeoutMillis) {
+            this.responseTimeoutMillis = responseTimeoutMillis;
+            return this;
+        }
+
+        public Builder flowControlEnabled(boolean flowControlEnabled) {
+            this.flowControlEnabled = flowControlEnabled;
+            return this;
+        }
+
+        public Builder requestLoggingEnabled(boolean requestLoggingEnabled) {
+            this.requestLoggingEnabled = requestLoggingEnabled;
+            return this;
+        }
+
+        public Builder longFormat(boolean longFormat) {
+            this.longFormat = longFormat;
+            return this;
+        }
+
+        public HttpRequestOperationFactory build() {
+            return request -> new HttpRequestOperation(
+                    request,
+                    originStatsFactory,
+                    flowControlEnabled,
+                    responseTimeoutMillis,
+                    requestLoggingEnabled,
+                    longFormat);
+        }
+    }
+
 }

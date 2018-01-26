@@ -32,11 +32,9 @@ import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
-import com.hotels.styx.api.service.spi.AbstractStyxService;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
-import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnection;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
@@ -58,7 +56,6 @@ import rx.observers.TestSubscriber;
 import rx.subjects.PublishSubject;
 
 import java.io.IOException;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
 
@@ -75,6 +72,7 @@ import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
+import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
 import static com.hotels.styx.client.Protocol.HTTP;
 import static com.hotels.styx.client.Protocol.HTTPS;
@@ -152,7 +150,7 @@ public class StyxHttpClientTest {
     }
 
     @Test(expectedExceptions = Exception.class)
-    public void cannotSendHttpWhenConfiguredForHttps()  {
+    public void cannotSendHttpWhenConfiguredForHttps() {
         withOrigin(HTTP, port -> {
             httpsClient(port).sendRequest(httpRequest(8080))
                     .flatMap(r -> r.toFullResponse(MAX_LENGTH))
@@ -197,6 +195,7 @@ public class StyxHttpClientTest {
 
         ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPool.Factory()
                 .connectionFactory(new NettyConnectionFactory.Builder()
+                        .httpRequestOperationFactory(httpRequestOperationFactoryBuilder().build())
                         .tlsSettings(tlsSettings)
                         .build())
                 .connectionPoolSettings(new ConnectionPoolSettings.Builder()
@@ -692,27 +691,6 @@ public class StyxHttpClientTest {
                         return responseSubject;
                     }
                 };
-    }
-
-    public static class RecordingOriginHealthStatusMonitor extends AbstractStyxService implements OriginHealthStatusMonitor {
-        RecordingOriginHealthStatusMonitor() {
-            super("Recording health status monitor");
-        }
-
-        @Override
-        public OriginHealthStatusMonitor monitor(Set<Origin> origins) {
-            return this;
-        }
-
-        @Override
-        public OriginHealthStatusMonitor stopMonitoring(Set<Origin> origins) {
-            return this;
-        }
-
-        @Override
-        public OriginHealthStatusMonitor addOriginStatusListener(OriginHealthStatusMonitor.Listener listener) {
-            return this;
-        }
     }
 
     private static class FailingHttRequestOperation extends HttpRequestOperation {

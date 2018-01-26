@@ -19,6 +19,7 @@ import com.hotels.styx.api.client.UrlConnectionHttpClient
 import com.hotels.styx.api.messages.FullHttpResponse
 import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse}
 import com.hotels.styx.client.HttpConfig.newHttpConfigBuilder
+import com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination.Factory
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory
 import com.hotels.styx.client.{ConnectionSettings, SimpleNettyHttpClient}
@@ -37,6 +38,7 @@ trait StyxClientSupplier {
       .connectionFactory(new NettyConnectionFactory.Builder()
         .name("scalatest-e2e-client")
         .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(2 * 8192).build())
+          .httpRequestOperationFactory(httpRequestOperationFactoryBuilder().build())
         .build())
     )
     .build
