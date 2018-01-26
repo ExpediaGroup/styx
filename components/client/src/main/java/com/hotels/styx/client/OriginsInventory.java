@@ -487,17 +487,17 @@ public final class OriginsInventory
         }
 
         public Builder connectionPoolFactory(ConnectionPool.Factory connectionPoolFactory) {
-            this.connectionPoolFactory = connectionPoolFactory;
+            this.connectionPoolFactory = requireNonNull(connectionPoolFactory);
             return this;
         }
 
         public Builder originHealthMonitor(OriginHealthStatusMonitor originHealthMonitor) {
-            this.originHealthMonitor = originHealthMonitor;
+            this.originHealthMonitor = requireNonNull(originHealthMonitor);
             return this;
         }
 
         public Builder eventBus(EventBus eventBus) {
-            this.eventBus = eventBus;
+            this.eventBus = requireNonNull(eventBus);
             return this;
         }
 
@@ -512,10 +512,6 @@ public final class OriginsInventory
         }
 
         public OriginsInventory build() {
-            if (metricsRegistry == null) {
-                metricsRegistry = new CodaHaleMetricRegistry();
-            }
-
             await(originHealthMonitor.start());
 
             OriginsInventory originsInventory = new OriginsInventory(eventBus, appId, originHealthMonitor, connectionPoolFactory, metricsRegistry);

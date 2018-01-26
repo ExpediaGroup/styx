@@ -79,7 +79,7 @@ import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import static com.hotels.styx.client.Protocol.HTTP;
 import static com.hotels.styx.client.Protocol.HTTPS;
 import static com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder;
-import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultSettableConnectionPoolSettings;
+import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.client.retry.RetryPolicies.doNotRetry;
 import static com.hotels.styx.client.stickysession.StickySessionConfig.newStickySessionConfigBuilder;
 import static com.hotels.styx.client.stickysession.StickySessionConfig.stickySessionDisabled;
@@ -165,7 +165,7 @@ public class StyxHttpClientTest {
         BackendService backendService = backendWithOrigins(originPort);
 
         OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
-                .connectionPoolFactory((origin) -> new SimpleConnectionPool(origin, defaultSettableConnectionPoolSettings(), new NettyConnectionFactory.Builder().build()))
+                .connectionPoolFactory((origin) -> new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), new NettyConnectionFactory.Builder().build()))
                 .initialOrigins(backendService.origins())
                 .build();
 
@@ -479,7 +479,7 @@ public class StyxHttpClientTest {
                 .build();
 
         OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
-                .connectionPoolFactory((origin) -> new SimpleConnectionPool(origin, defaultSettableConnectionPoolSettings(), new NettyConnectionFactory.Builder().build()))
+                .connectionPoolFactory((origin) -> new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), new NettyConnectionFactory.Builder().build()))
                 .initialOrigins(backendService.origins())
                 .build();
 

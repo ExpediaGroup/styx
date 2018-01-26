@@ -41,7 +41,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.client.Origin.checkThatOriginsAreDistinct;
-import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultSettableConnectionPoolSettings;
+import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.client.healthcheck.HealthCheckConfig.noHealthCheck;
 import static com.hotels.styx.client.stickysession.StickySessionConfig.stickySessionDisabled;
 import static java.lang.String.format;
@@ -224,7 +224,7 @@ public final class BackendService implements Identifiable {
         private Id id = GENERIC_APP;
         private String path = "/";
         private Set<Origin> origins = emptySet();
-        private ConnectionPool.Settings connectionPoolSettings = defaultSettableConnectionPoolSettings();
+        private ConnectionPool.Settings connectionPoolSettings = defaultConnectionPoolSettings();
         private StickySessionConfig stickySessionConfig = stickySessionDisabled();
         private HealthCheckConfig healthCheckConfig = noHealthCheck();
         private List<RewriteConfig> rewrites = emptyList();

@@ -23,7 +23,6 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.applications.BackendService;
@@ -102,12 +101,11 @@ public class ProxyToBackend implements HttpHandler2 {
                     .longFormat(longFormat)
                     .build();
 
-
-            ConnectionPool.Factory connectionPoolFactory = connectionPoolFactory(
-                    connectionFactory,
-                    backendService.connectionPoolConfig(),
-                    environment.metricRegistry()
-            );
+            ConnectionPool.Factory connectionPoolFactory = new ConnectionPoolFactory.Builder()
+                    .connectionFactory(connectionFactory)
+                    .connectionPoolSettings(backendService.connectionPoolConfig())
+                    .metricRegistry(environment.metricRegistry())
+                    .build();
 
             OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(environment.eventBus())
@@ -116,18 +114,6 @@ public class ProxyToBackend implements HttpHandler2 {
                     .initialOrigins(backendService.origins())
                     .build();
             return new ProxyToBackend(clientFactory.createClient(backendService, inventory, originStatsFactory));
-        }
-
-        private ConnectionPoolFactory connectionPoolFactory(
-                NettyConnectionFactory connectionFactory,
-                ConnectionPool.Settings connectionPoolSettings,
-                MetricRegistry metricsRegistry) {
-
-            return new ConnectionPoolFactory.Builder()
-                    .connectionFactory(connectionFactory)
-                    .connectionPoolSettings(connectionPoolSettings)
-                    .metricRegistry(metricsRegistry)
-                    .build();
         }
 
     }

@@ -22,7 +22,7 @@ import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 
-import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultSettableConnectionPoolSettings;
+import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultConnectionPoolSettings;
 
 /**
  * Helper routines for building connection pools with default settings.
@@ -32,7 +32,7 @@ public final class ConnectionPools {
     }
 
     public static ConnectionPool poolForOrigin(Origin origin) {
-        return new SimpleConnectionPool(origin, defaultSettableConnectionPoolSettings(), new NettyConnectionFactory.Builder().build());
+        return new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), new NettyConnectionFactory.Builder().build());
     }
 
     public static ConnectionPool.Factory simplePoolFactory() {
@@ -43,7 +43,7 @@ public final class ConnectionPools {
         return new StatsReportingConnectionPool(
                 new SimpleConnectionPool(
                         origin,
-                        defaultSettableConnectionPoolSettings(),
+                        defaultConnectionPoolSettings(),
                         new NettyConnectionFactory.Builder()
                                 .originStatsFactory(new OriginStatsFactory(metricRegistry))
                                 .build()),
@@ -54,7 +54,7 @@ public final class ConnectionPools {
         return new StatsReportingConnectionPool(
                 new SimpleConnectionPool(
                         origin,
-                        defaultSettableConnectionPoolSettings(),
+                        defaultConnectionPoolSettings(),
                         connectionFactory),
                 metricRegistry
         );

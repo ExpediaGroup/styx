@@ -158,7 +158,8 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     private HttpClient newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
         return clientFactory.createClient(backendService, originsInventory, originStatsFactory);
     }
-    private OriginHealthCheckFunction originHealthCheckFunction(
+
+    private static OriginHealthCheckFunction originHealthCheckFunction(
             Id appId,
             MetricRegistry metricRegistry,
             Optional<TlsSettings> tlsSettings,
