@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hotels.styx.client.connectionpool.ConnectionDecorator.identityDecorator;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
@@ -385,7 +386,7 @@ public class SimpleConnectionPoolTest {
         Origin anyOrigin = newOriginBuilder(LOCAL_9090)
                 .build();
         ConnectionPool pool = new SimpleConnectionPool(
-                anyOrigin, new ConnectionPoolSettings.Builder().build(), new StubConnectionFactory(), false);
+                anyOrigin, new ConnectionPoolSettings.Builder().build(), new StubConnectionFactory(), false, identityDecorator());
 
         assertThat(pool.stats(), is(NULL_CONNECTION_POOL_STATS));
     }
@@ -404,7 +405,8 @@ public class SimpleConnectionPoolTest {
             return just(stubConnection);
         };
 
-        ConnectionPool pool = new SimpleConnectionPool(anyOrigin, new ConnectionPoolSettings.Builder().build(), factory, true);
+        ConnectionPool pool = new SimpleConnectionPool(anyOrigin, new ConnectionPoolSettings.Builder().build(), factory, true,
+                identityDecorator());
 
         Connection connection = borrowConnectionSynchronously(pool);
         pool.returnConnection(connection);
@@ -543,10 +545,10 @@ public class SimpleConnectionPoolTest {
         assertThat("busy connections ", this.connectionPool.stats().busyConnectionCount(), is(0));
     }
 
-
+    @Test
     private SimpleConnectionPool sizeOnePool(Connection.Factory factory) {
         return new SimpleConnectionPool.Factory()
-                .connectionPoolSettings(new ConnectionPoolSettings(1, 1, 1000, 1000, 1000))
+                .connectionPoolSettings(new ConnectionPoolSettings(1, 1, 1000, 1000, 1000, 1))
                 .connectionFactory(factory)
                 .create(origin());
     }
@@ -611,11 +613,16 @@ public class SimpleConnectionPoolTest {
 
     private static SimpleConnectionPool originConnectionPool(Id applicationId, HostAndPort host, Connection.Factory factory,
                                                              ConnectionPool.Settings settings) {
+        return originConnectionPool(applicationId, host, factory, settings, identityDecorator());
+    }
+
+    private static SimpleConnectionPool originConnectionPool(Id applicationId, HostAndPort host, Connection.Factory factory,
+                                                             ConnectionPool.Settings settings, ConnectionDecorator connectionDecorator) {
         return new SimpleConnectionPool(
                 newOriginBuilder(host)
                         .applicationId(applicationId)
                         .id("h1")
-                        .build(), settings, factory);
+                        .build(), settings, factory, connectionDecorator);
     }
 
     private static Origin origin() {

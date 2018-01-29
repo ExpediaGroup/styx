@@ -18,6 +18,8 @@ An example configuration block looks like this:
       
       maxPendingConnectionsPerHost: 15
       pendingConnectionTimeoutMillis: 8000
+      connectionExpirationSeconds: 1000 # default value 0
+
 
 Connection pool size is given by *maxConnectionsPerHost* setting. 
 The pool initially has no established TCP connections. 
@@ -27,6 +29,11 @@ The two other parameters, *connectTimeoutMillis* and *socketTimeoutMillis* descr
   * maximum allowed time for TCP connection establishment (*connectTimeoutMillis*)
   * maximum amount of inactivity over the TCP connection before it should be closed
     (*socketTimeoutMillis*).
+
+In case there is a need for periodical termination of connections in the pool, *connectionExpirationSeconds* setting
+will create a timer that will be assigned to each connection and initiate a procedure that will close the connection, when it expires.
+This is useful when an origin host is specified as a DNS domain name, and you want to ensure that domain names are re-resolved periodically.
+Specifing non-positive value turns off the functionality. Closing of the connection is performed lazily on incoming request.
 
 When the connection pool gets full, any additional requests 
 for the connections are queued. 
