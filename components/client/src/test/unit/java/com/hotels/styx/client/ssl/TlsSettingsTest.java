@@ -49,6 +49,7 @@ public class TlsSettingsTest {
                 .sslProvider("JDK")
                 .trustStorePassword("bar")
                 .protocols(ImmutableList.of("TLSv1.2"))
+                .cipherSuites(ImmutableList.of("TLS_RSA_WITH_AES_128_CBC_SHA"))
                 .build();
 
         String result = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(tlsSettings);
@@ -60,6 +61,8 @@ public class TlsSettingsTest {
         // trustStorePath is platform dependent - thus match only until the root path:
         assertThat(result, containsString("\"trustStorePath\" : \"/"));
         assertThat(result, containsString("\"trustStorePassword\" : \"bar"));
+
+        assertThat(result, containsString("TLS_RSA_WITH_AES_128_CBC_SHA"));
     }
 
     @Test
