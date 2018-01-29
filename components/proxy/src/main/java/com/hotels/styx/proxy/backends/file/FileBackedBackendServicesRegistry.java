@@ -24,7 +24,6 @@ import com.hotels.styx.api.service.spi.AbstractStyxService;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.applications.BackendServices;
 import com.hotels.styx.infrastructure.FileBackedRegistry;
-import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.infrastructure.YamlReader;
 
@@ -98,23 +97,28 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         @Override
         public Registry<BackendService> create(Environment environment, Configuration registryConfiguration) {
             return registryConfiguration.get("originsFile", String.class)
+                    .map(Factory::requireNonEmpty)
                     .map(Factory::registry)
                     .orElseThrow(() -> new ConfigurationException(
                             "missing [services.registry.factory.config.originsFile] config value for factory class FileBackedBackendServicesRegistry.Factory"));
         }
 
         private static Registry<BackendService> registry(String originsFile) {
+            requireNonEmpty(originsFile);
+
             FileBackedRegistry<BackendService> fileBackedRegistry = new FileBackedRegistry<>(
                     newResource(originsFile),
                     new YAMLBackendServicesReader());
 
-            return originsFile.isEmpty()
-                    ? emptyRegistry()
-                    : new FileBackedBackendServicesRegistry(fileBackedRegistry);
+            return new FileBackedBackendServicesRegistry(fileBackedRegistry);
         }
 
-        private static Registry<BackendService> emptyRegistry() {
-            return new MemoryBackedRegistry<>();
+        private static String requireNonEmpty(String originsFile) {
+            if (originsFile.isEmpty()) {
+                throw new ConfigurationException("empty [services.registry.factory.config.originsFile] config value for factory class FileBackedBackendServicesRegistry.Factory");
+            } else {
+                return originsFile;
+            }
         }
     }
 
