@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,17 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -156,25 +156,25 @@ public class BusyConnectionsStrategyStressTest {
             boolean vote = app.newRequest(1000, random);
 
             if (vote) {
-                Iterable<ConnectionPool> pools = origins.stream().map(so ->
-                        new StubConnectionPool(so.origin())
+                Iterable<RemoteHost> pools = origins.stream().map(so ->
+                        new RemoteHostWrapper(new StubConnectionPool(so.origin())
                                 .withBusyConnections(so.busyConnections())
-                                .withAvailableConnections(so.availableConnections()))
+                                .withAvailableConnections(so.availableConnections())))
                         .collect(toList());
 
                 final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy(() -> pools);
 
-                Iterable<ConnectionPool> result = strategy.vote(contextFromSimulatedOrigins(origins));
+                Iterable<RemoteHost> result = strategy.vote(contextFromSimulatedOrigins(origins));
 
-                ConnectionPool winner = Iterables.get(result, 0);
-                if (winner.stats().availableConnectionCount() > 0) {
+                RemoteHost winner = Iterables.get(result, 0);
+                if (winner.connectionPool().stats().availableConnectionCount() > 0) {
                     metrics.counter("winner.existingConnections").inc();
                 } else {
                     metrics.counter("winner.newConnections").inc();
                 }
 
-                results.putIfAbsent(winner.getOrigin(), 0);
-                results.computeIfPresent(winner.getOrigin(), (k, v) -> ++v);
+                results.putIfAbsent(winner.connectionPool().getOrigin(), 0);
+                results.computeIfPresent(winner.connectionPool().getOrigin(), (k, v) -> ++v);
 
                 app.borrowFor(i, winner);
             }
@@ -224,8 +224,8 @@ public class BusyConnectionsStrategyStressTest {
             return random.nextDouble() < requestRate / (double) resolution;
         }
 
-        public void borrowFor(int currentTime, ConnectionPool winner) {
-            SimulatedOrigin simulatedOrigin = simulatedOrigins.stream().filter(so -> so.origin().equals(winner.getOrigin())).findFirst().get();
+        public void borrowFor(int currentTime, RemoteHost winner) {
+            SimulatedOrigin simulatedOrigin = simulatedOrigins.stream().filter(so -> so.origin().equals(winner.connectionPool().getOrigin())).findFirst().get();
             simulatedOrigin.borrow(currentTime);
         }
     }

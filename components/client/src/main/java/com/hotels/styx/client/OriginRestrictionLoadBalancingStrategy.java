@@ -20,6 +20,7 @@ import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import org.slf4j.Logger;
 
@@ -55,12 +56,12 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancingStra
     }
 
     @Override
-    public Iterable<ConnectionPool> vote(Context context) {
-        Iterable<ConnectionPool> connectionPools = delegate.vote(context);
-        Optional<Set<ConnectionPool>> matchingOrigins = originPartition(activeOrigins.snapshot(), context);
+    public Iterable<RemoteHost> vote(Context context) {
+        Iterable<RemoteHost> connectionPools = delegate.vote(context);
+        Optional<Set<RemoteHost>> matchingOrigins = originPartition(activeOrigins.snapshot(), context);
 
         if (matchingOrigins.isPresent()) {
-            Set<ConnectionPool> origins = matchingOrigins.get();
+            Set<RemoteHost> origins = matchingOrigins.get();
             return stream(connectionPools.spliterator(), false)
                     .filter(origins::contains)
                     .collect(toList());
@@ -68,24 +69,24 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancingStra
         return connectionPools;
     }
 
-    private Optional<Set<ConnectionPool>> originPartition(Iterable<ConnectionPool> origins, Context context) {
+    private Optional<Set<RemoteHost>> originPartition(Iterable<RemoteHost> origins, Context context) {
         return context.currentRequest().cookie(cookieName)
                 .map(cookie -> restrictedOrigins(origins, cookie));
     }
 
-    private Set<ConnectionPool> restrictedOrigins(Iterable<ConnectionPool> origins, HttpCookie cookie) {
+    private Set<RemoteHost> restrictedOrigins(Iterable<RemoteHost> origins, HttpCookie cookie) {
         return stream(origins.spliterator(), false)
                 .filter(originIsPermittedByCookie(cookie.value()))
                 .collect(toSet());
     }
 
-    private Predicate<ConnectionPool> originIsPermittedByCookie(String cookieValue) {
+    private Predicate<RemoteHost> originIsPermittedByCookie(String cookieValue) {
         return originIdMatcherStream(cookieValue)
                 .reduce(Predicate::or)
                 .orElse(input -> false);
     }
 
-    private Stream<Predicate<ConnectionPool>> originIdMatcherStream(String cookieValue) {
+    private Stream<Predicate<RemoteHost>> originIdMatcherStream(String cookieValue) {
         return regularExpressionStream(cookieValue)
                 .map(this::compileRegularExpression)
                 .map(this::originIdMatches);
@@ -104,8 +105,8 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancingStra
         }
     }
 
-    private Predicate<ConnectionPool> originIdMatches(Pattern pattern) {
-        return connectionPool -> pattern.matcher(originId(connectionPool)).matches();
+    private Predicate<RemoteHost> originIdMatches(Pattern pattern) {
+        return remoteHost -> pattern.matcher(originId(remoteHost.connectionPool())).matches();
     }
 
     private String originId(ConnectionPool pool) {

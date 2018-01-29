@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,15 @@ import com.fasterxml.jackson.databind.type.MapType;
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.admin.tasks.StubConnectionPool;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -124,9 +125,10 @@ public class OriginsInventoryHandlerTest {
                 .collect(toSet());
     }
 
-    private static Collection<ConnectionPool> pool(Set<Origin> origins) {
+    private static List<RemoteHost> pool(Set<Origin> origins) {
         return origins.stream()
                 .map(StubConnectionPool::new)
+                .map(RemoteHostWrapper::new)
                 .collect(toList());
     }
 }

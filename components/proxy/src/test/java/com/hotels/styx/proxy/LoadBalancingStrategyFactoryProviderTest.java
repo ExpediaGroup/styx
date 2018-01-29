@@ -17,8 +17,8 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategyFactory;
 import com.hotels.styx.api.configuration.Configuration;
@@ -36,7 +36,7 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 public class LoadBalancingStrategyFactoryProviderTest {
 
     @Test
-    public void loadsTheConfiguredStrategy() throws Exception {
+    public void loadsTheConfiguredStrategy() {
         String yaml = "" +
                 "loadBalancing:\n" +
                 "  strategy: awesome\n" +
@@ -51,7 +51,7 @@ public class LoadBalancingStrategyFactoryProviderTest {
     }
 
     @Test(expectedExceptions = RuntimeException.class)
-    public void errorsIfCannotFindTheFactoryClass() throws Exception {
+    public void errorsIfCannotFindTheFactoryClass() {
         String yaml = "" +
                 "loadBalancing:\n" +
                 "  strategy: awesome\n" +
@@ -66,7 +66,7 @@ public class LoadBalancingStrategyFactoryProviderTest {
     }
 
     @Test(expectedExceptions = MissingConfigurationException.class)
-    public void errorsIfTheSpecifiedStrategyFactoryKeyClassIsMissing() throws Exception {
+    public void errorsIfTheSpecifiedStrategyFactoryKeyClassIsMissing() {
         String yaml = "" +
                 "loadBalancing:\n" +
                 "  strategy: noentry\n";
@@ -96,7 +96,7 @@ public class LoadBalancingStrategyFactoryProviderTest {
         }
 
         @Override
-        public Iterable<ConnectionPool> vote(Context context) {
+        public Iterable<RemoteHost> vote(Context context) {
             return null;
         }
 

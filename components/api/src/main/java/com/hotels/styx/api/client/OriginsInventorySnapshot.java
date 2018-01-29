@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,9 +61,9 @@ public final class OriginsInventorySnapshot {
      * @param disabledOrigins connection pools for disabled origins
      */
     public OriginsInventorySnapshot(Id appId,
-                                    Collection<ConnectionPool> activeOrigins,
-                                    Collection<ConnectionPool> inactiveOrigins,
-                                    Collection<ConnectionPool> disabledOrigins) {
+                                    Collection<RemoteHost> activeOrigins,
+                                    Collection<RemoteHost> inactiveOrigins,
+                                    Collection<RemoteHost> disabledOrigins) {
         this.appId = checkNotNull(appId);
         this.activeOrigins = mapToOrigins(activeOrigins);
         this.inactiveOrigins = mapToOrigins(inactiveOrigins);
@@ -77,8 +77,11 @@ public final class OriginsInventorySnapshot {
         this.disabledOrigins.forEach(origin -> allOriginsById.put(origin.id(), origin));
     }
 
-    private Set<Origin> mapToOrigins(Collection<ConnectionPool> activeOrigins) {
-        return activeOrigins.stream().map(ConnectionPool::getOrigin).collect(Collectors.toSet());
+    private Set<Origin> mapToOrigins(Collection<RemoteHost> activeOrigins) {
+        return activeOrigins.stream()
+                .map(RemoteHost::connectionPool)
+                .map(ConnectionPool::getOrigin)
+                .collect(Collectors.toSet());
     }
 
     private static Set<Origin> withAppId(Collection<Origin> origins, String appId) {

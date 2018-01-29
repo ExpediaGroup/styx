@@ -19,9 +19,11 @@ package com.hotels.styx.client.loadbalancing.strategies;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategyFactory;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
 
 import java.util.Comparator;
 import java.util.List;
@@ -56,9 +58,9 @@ public class BusyConnectionsStrategy implements LoadBalancingStrategy {
     }
 
     @Override
-    public Iterable<ConnectionPool> vote(Context context) {
+    public Iterable<RemoteHost> vote(Context context) {
         List<ConnectionPoolStatus> poolsList = stream(activeOrigins.snapshot().spliterator(), false)
-                .map(origin -> new ConnectionPoolStatus(origin, context))
+                .map(host -> new ConnectionPoolStatus(host.connectionPool(), context))
                 .collect(toList());
 
         double average5xxRate = average5xxRate(poolsList);
@@ -74,6 +76,7 @@ public class BusyConnectionsStrategy implements LoadBalancingStrategy {
 
         return poolsList.stream()
                 .map(ConnectionPoolStatus::getPool)
+                .map(RemoteHostWrapper::new)
                 .collect(toList());
     }
 

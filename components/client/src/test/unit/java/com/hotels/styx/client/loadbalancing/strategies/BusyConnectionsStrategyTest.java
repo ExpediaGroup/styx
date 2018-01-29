@@ -21,7 +21,9 @@ import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import org.testng.annotations.Test;
@@ -67,13 +69,13 @@ public class BusyConnectionsStrategyTest {
     public void favoursOriginsWithLessBusyConnectionCount() {
         ConnectionPool.Settings settings = ConnectionPoolSettings.defaultConnectionPoolSettings();
 
-        ConnectionPool poolOne = new StubConnectionPool(ORIGIN_ONE, settings).withBusyConnections(4);
-        ConnectionPool poolTwo = new StubConnectionPool(ORIGIN_TWO, settings).withBusyConnections(3);
-        ConnectionPool poolThree = new StubConnectionPool(ORIGIN_THREE, settings).withBusyConnections(6);
+        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE, settings).withBusyConnections(4));
+        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO, settings).withBusyConnections(3));
+        RemoteHost poolThree = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_THREE, settings).withBusyConnections(6));
 
         when(activeOrigins.snapshot()).thenReturn(asList(poolOne, poolTwo, poolThree));
 
-        Iterable<ConnectionPool> sortedPool = strategy.vote(context);
+        Iterable<RemoteHost> sortedPool = strategy.vote(context);
         assertThat(origins(sortedPool), contains(ORIGIN_TWO, ORIGIN_ONE, ORIGIN_THREE));
     }
 
@@ -81,32 +83,32 @@ public class BusyConnectionsStrategyTest {
     public void favoursOriginsWithLessLeasedConnectionsCount() {
         ConnectionPool.Settings settings = ConnectionPoolSettings.defaultConnectionPoolSettings();
 
-        ConnectionPool poolOne = new StubConnectionPool(ORIGIN_ONE, settings)
+        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE, settings)
                 .withBusyConnections(2)
-                .withPendingConnections(4);
+                .withPendingConnections(4));
 
-        ConnectionPool poolTwo = new StubConnectionPool(ORIGIN_TWO, settings)
+        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO, settings)
                 .withBusyConnections(2)
-                .withPendingConnections(2);
+                .withPendingConnections(2));
 
-        ConnectionPool poolThree = new StubConnectionPool(ORIGIN_THREE, settings)
+        RemoteHost poolThree = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_THREE, settings)
                 .withBusyConnections(2)
-                .withPendingConnections(1);
+                .withPendingConnections(1));
 
         when(activeOrigins.snapshot()).thenReturn(asList(poolOne, poolTwo, poolThree));
-        Iterable<ConnectionPool> sortedPool = strategy.vote(context);
+        Iterable<RemoteHost> sortedPool = strategy.vote(context);
         assertThat(origins(sortedPool), contains(ORIGIN_THREE, ORIGIN_TWO, ORIGIN_ONE));
     }
 
 
     @Test
     public void movesHigherThanAverage500RatesToBackOfTheList() {
-        ConnectionPool poolOne = new StubConnectionPool(ORIGIN_ONE).withBusyConnections(2);
-        ConnectionPool poolTwo = new StubConnectionPool(ORIGIN_TWO).withBusyConnections(1);
-        ConnectionPool poolThree = new StubConnectionPool(ORIGIN_THREE).withBusyConnections(3);
+        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE).withBusyConnections(2));
+        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO).withBusyConnections(1));
+        RemoteHost poolThree = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_THREE).withBusyConnections(3));
 
         when(activeOrigins.snapshot()).thenReturn(asList(poolOne, poolTwo, poolThree));
-        Iterable<ConnectionPool> sortedPool = strategy.vote(lbContextWith5xxRates(ImmutableMap.of(
+        Iterable<RemoteHost> sortedPool = strategy.vote(lbContextWith5xxRates(ImmutableMap.of(
                 ORIGIN_ONE, 2.0,
                 ORIGIN_TWO, 3.0,
                 ORIGIN_THREE, 1.0)));
@@ -121,25 +123,25 @@ public class BusyConnectionsStrategyTest {
                 .maxPendingConnectionsPerHost(10)
                 .build();
 
-        ConnectionPool poolOne = new StubConnectionPool(ORIGIN_ONE, settings).withBusyConnections(1).withAvailableConnections(0);
-        ConnectionPool poolTwo = new StubConnectionPool(ORIGIN_TWO, settings).withBusyConnections(2).withAvailableConnections(1);
-        ConnectionPool poolThree = new StubConnectionPool(ORIGIN_THREE, settings).withBusyConnections(3).withAvailableConnections(1);
+        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE, settings).withBusyConnections(1).withAvailableConnections(0));
+        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO, settings).withBusyConnections(2).withAvailableConnections(1));
+        RemoteHost poolThree = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_THREE, settings).withBusyConnections(3).withAvailableConnections(1));
 
         when(activeOrigins.snapshot()).thenReturn(asList(poolTwo, poolOne, poolThree));
-        Iterable<ConnectionPool> sortedPool = strategy.vote(context);
+        Iterable<RemoteHost> sortedPool = strategy.vote(context);
 
         assertThat(origins(sortedPool), contains(ORIGIN_ONE, ORIGIN_TWO, ORIGIN_THREE));
     }
 
     @Test
     public void ranksOriginsWith500ErrorRateFirstThenPoolDepthThenOnAvailableConnections() {
-        ConnectionPool poolOne = new StubConnectionPool(ORIGIN_ONE).withBusyConnections(1).withAvailableConnections(0);
-        ConnectionPool poolTwo = new StubConnectionPool(ORIGIN_TWO).withBusyConnections(1).withAvailableConnections(1);
-        ConnectionPool poolThree = new StubConnectionPool(ORIGIN_THREE).withBusyConnections(1).withAvailableConnections(1);
-        ConnectionPool poolFour = new StubConnectionPool(ORIGIN_FOUR).withBusyConnections(2).withAvailableConnections(1);
+        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE).withBusyConnections(1).withAvailableConnections(0));
+        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO).withBusyConnections(1).withAvailableConnections(1));
+        RemoteHost poolThree = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_THREE).withBusyConnections(1).withAvailableConnections(1));
+        RemoteHost poolFour = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_FOUR).withBusyConnections(2).withAvailableConnections(1));
 
         when(activeOrigins.snapshot()).thenReturn(asList(poolTwo, poolOne, poolThree, poolFour));
-        Iterable<ConnectionPool> sortedPool = strategy.vote(lbContextWith5xxRates(ImmutableMap.of(
+        Iterable<RemoteHost> sortedPool = strategy.vote(lbContextWith5xxRates(ImmutableMap.of(
                 ORIGIN_ONE, 1.0,
                 ORIGIN_TWO, 3.0,
                 ORIGIN_THREE, 1.0,
@@ -151,10 +153,10 @@ public class BusyConnectionsStrategyTest {
 
     @Test
     public void negativeBusyConnectionCount() {
-        ConnectionPool poolOne = new StubConnectionPool(ORIGIN_ONE).withBusyConnections(1);
-        ConnectionPool poolTwo = new StubConnectionPool(ORIGIN_TWO).withBusyConnections(0);
+        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE).withBusyConnections(1));
+        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO).withBusyConnections(0));
 
-        Iterable<ConnectionPool> sortedPool = null;
+        Iterable<RemoteHost> sortedPool = null;
         for (int i = 0; i < 10; i++) {
             when(activeOrigins.snapshot()).thenReturn(asList(poolOne, poolTwo));
             sortedPool = strategy.vote(context);
@@ -172,8 +174,8 @@ public class BusyConnectionsStrategyTest {
         };
     }
 
-    private static Iterable<Origin> origins(Iterable<ConnectionPool> pools) {
-        return transform(pools, ConnectionPool::getOrigin);
+    private static Iterable<Origin> origins(Iterable<RemoteHost> remoteHosts) {
+        return transform(remoteHosts, remoteHost -> remoteHost.connectionPool().getOrigin());
     }
 
 

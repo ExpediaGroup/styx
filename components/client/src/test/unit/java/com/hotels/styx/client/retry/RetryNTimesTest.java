@@ -16,6 +16,7 @@
 package com.hotels.styx.client.retry;
 
 import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.netty.exceptions.IsRetryableException;
@@ -38,7 +39,7 @@ public class RetryNTimesTest {
     private RetryPolicy.Context retryPolicyContext;
     private LoadBalancingStrategy strategyMock;
     private LoadBalancingStrategy.Context strategyContextMock;
-    private ConnectionPool connectionPool;
+    private RemoteHost connectionPool;
 
     @BeforeMethod
     public void setupMocks() {
@@ -47,7 +48,7 @@ public class RetryNTimesTest {
         this.retryPolicyContext = mock(RetryPolicy.Context.class);
         this.strategyMock = mock(LoadBalancingStrategy.class);
         this.strategyContextMock = mock(LoadBalancingStrategy.Context.class);
-        this.connectionPool = mock(ConnectionPool.class);
+        this.connectionPool = mock(RemoteHost.class);
 
         when(retryPolicyContext.currentRetryCount()).thenReturn(0);
         when(retryPolicyContext.lastException()).thenReturn(empty());

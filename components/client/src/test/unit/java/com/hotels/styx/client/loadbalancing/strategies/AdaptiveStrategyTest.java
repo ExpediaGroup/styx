@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,14 @@ import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.rmi.Remote;
 import java.util.Set;
 
 import static com.google.common.collect.Sets.newLinkedHashSet;
@@ -51,8 +54,8 @@ public class AdaptiveStrategyTest {
     RoundRobinStrategy roundRobinStrategy;
     BusyConnectionsStrategy busyConnectionsStrategy;
     AdaptiveStrategy adaptiveStrategy;
-    ConnectionPool origin1;
-    ConnectionPool origin2;
+    RemoteHost origin1;
+    RemoteHost origin2;
     ActiveOrigins activeOrigins;
 
     @BeforeMethod
@@ -74,7 +77,7 @@ public class AdaptiveStrategyTest {
     @Test
     public void willHandleEmptyOrigin() {
         when(activeOrigins.snapshot()).thenReturn(emptyList());
-        Iterable<ConnectionPool> vote = adaptiveStrategy.vote(null);
+        Iterable<RemoteHost> vote = adaptiveStrategy.vote(null);
         assertThat(vote, is(emptyIterable()));
     }
 
@@ -82,7 +85,7 @@ public class AdaptiveStrategyTest {
     public void willHandleSingleOrigin() {
         when(activeOrigins.snapshot()).thenReturn(singletonList(origin1));
 
-        Iterable<ConnectionPool> single = adaptiveStrategy.vote( null);
+        Iterable<RemoteHost> single = adaptiveStrategy.vote( null);
         assertThat(Iterables.size(single), is(1));
     }
     @Test
@@ -128,7 +131,7 @@ public class AdaptiveStrategyTest {
         return (LoadBalancingStrategy.Context) anyObject();
     }
 
-    private AdaptiveStrategy exerciseStrategy(AdaptiveStrategy strategy, ConnectionPool... pools) {
+    private AdaptiveStrategy exerciseStrategy(AdaptiveStrategy strategy, RemoteHost... pools) {
         when(activeOrigins.snapshot()).thenReturn(setOf(pools));
         strategy.vote(UNUSED_CONTEXT);
         return strategy;
@@ -138,11 +141,11 @@ public class AdaptiveStrategyTest {
         return new OriginsInventorySnapshot(GENERIC_APP, emptyList(), emptyList(), emptyList());
     }
 
-    private static StubConnectionPool aConnectionPool(Origin origin) {
-        return new StubConnectionPool(origin);
+    private static RemoteHost aConnectionPool(Origin origin) {
+        return new OriginsInventory.RemoteHostWrapper(new StubConnectionPool(origin));
     }
 
-    private static Set<ConnectionPool> setOf(ConnectionPool... pools) {
+    private static Set<RemoteHost> setOf(RemoteHost... pools) {
         return newLinkedHashSet(asList(pools));
     }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.AtomicDouble;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategyFactory;
 import com.hotels.styx.api.configuration.Configuration;
@@ -85,7 +85,7 @@ public class AdaptiveStrategy implements LoadBalancingStrategy {
     }
 
     @Override
-    public Iterable<ConnectionPool> vote(Context context) {
+    public Iterable<RemoteHost> vote(Context context) {
         int nOrigins = size(activeOrigins.snapshot());
         if (nOrigins < 2) {
             return activeOrigins.snapshot();

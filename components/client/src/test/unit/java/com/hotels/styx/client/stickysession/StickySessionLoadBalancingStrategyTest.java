@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,10 @@ import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.client.OriginsInventory;
+import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import org.mockito.Mockito;
 import org.testng.annotations.Test;
@@ -40,9 +43,9 @@ import static org.mockito.Mockito.when;
 
 
 public class StickySessionLoadBalancingStrategyTest {
-    static final ConnectionPool ORIGIN_0 = new StubConnectionPool(newOriginBuilder("localhost", 0).id("o0").build());
-    static final ConnectionPool ORIGIN_1 = new StubConnectionPool(newOriginBuilder("localhost", 1).id("o1").build());
-    static final ConnectionPool ORIGIN_2 = new StubConnectionPool(newOriginBuilder("localhost", 2).id("o2").build());
+    static final RemoteHost ORIGIN_0 = new RemoteHostWrapper(new StubConnectionPool(newOriginBuilder("localhost", 0).id("o0").build()));
+    static final RemoteHost ORIGIN_1 = new RemoteHostWrapper(new StubConnectionPool(newOriginBuilder("localhost", 1).id("o1").build()));
+    static final RemoteHost ORIGIN_2 = new RemoteHostWrapper(new StubConnectionPool(newOriginBuilder("localhost", 2).id("o2").build()));
 
     final ActiveOrigins activeOrigins = Mockito.mock(ActiveOrigins.class);
 
@@ -58,7 +61,7 @@ public class StickySessionLoadBalancingStrategyTest {
 
         when(activeOrigins.snapshot()).thenReturn(asList(ORIGIN_0, ORIGIN_1, ORIGIN_2));
 
-        Iterable<ConnectionPool> votedOrigins = strategy.vote(context);
+        Iterable<RemoteHost> votedOrigins = strategy.vote(context);
         assertThat(first(votedOrigins), is(ORIGIN_1));
     }
 
@@ -69,7 +72,7 @@ public class StickySessionLoadBalancingStrategyTest {
 
         when(activeOrigins.snapshot()).thenReturn(asList(ORIGIN_0, ORIGIN_2));
 
-        Iterable<ConnectionPool> votedOrigins = strategy.vote(context);
+        Iterable<RemoteHost> votedOrigins = strategy.vote(context);
         assertThat(first(votedOrigins), is(ORIGIN_0));
     }
 
@@ -80,7 +83,7 @@ public class StickySessionLoadBalancingStrategyTest {
 
         when(activeOrigins.snapshot()).thenReturn(EMPTY_LIST);
 
-        Iterable<ConnectionPool> votedOrigins = strategy.vote(context);
+        Iterable<RemoteHost> votedOrigins = strategy.vote(context);
         assertThat(votedOrigins, is(emptyIterable()));
     }
 
@@ -91,18 +94,18 @@ public class StickySessionLoadBalancingStrategyTest {
 
         when(activeOrigins.snapshot()).thenReturn(asList(ORIGIN_2, ORIGIN_1));
 
-        Iterable<ConnectionPool> votedOrigins = strategy.vote(context);
+        Iterable<RemoteHost> votedOrigins = strategy.vote(context);
         assertThat(first(votedOrigins), is(ORIGIN_2));
     }
 
-    private HttpRequest requestWithPreferredOriginSet(ConnectionPool origin) {
+    private HttpRequest requestWithPreferredOriginSet(RemoteHost origin) {
         return get("/request")
                 .addCookie(stickySessionCookie(origin))
                 .build();
     }
 
-    private HttpCookie stickySessionCookie(ConnectionPool pool) {
-        Origin origin = pool.getOrigin();
+    private HttpCookie stickySessionCookie(RemoteHost remoteHost) {
+        Origin origin = remoteHost.connectionPool().getOrigin();
         return newStickySessionCookie(origin.applicationId(), origin.id(), 86400);
     }
 

@@ -18,7 +18,7 @@ package com.hotels.styx.client;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import org.slf4j.Logger;
@@ -47,7 +47,7 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
     private final StyxHttpClient client;
     private final int attemptCount;
     private final HttpRequest request;
-    private final Iterable<ConnectionPool> previouslyUsedOrigins;
+    private final Iterable<RemoteHost> previouslyUsedOrigins;
     private HttpTransaction txn;
     private final OriginStatsFactory originStatsFactory;
 
@@ -92,7 +92,7 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
                 .build();
     }
 
-    private Iterable<ConnectionPool> triedOrigins(Optional<ConnectionPool> lastUsed) {
+    private Iterable<RemoteHost> triedOrigins(Optional<RemoteHost> lastUsed) {
         return lastUsed.map(origin -> concat(previouslyUsedOrigins, singleton(origin)))
                 .orElse(previouslyUsedOrigins);
     }
@@ -121,10 +121,10 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
         private final int retryCount;
         private final Throwable lastException;
         private final HttpRequest request;
-        private final Iterable<ConnectionPool> previouslyUsedOrigins;
+        private final Iterable<RemoteHost> previouslyUsedOrigins;
 
         RetryPolicyContext(Id appId, int retryCount, Throwable lastException, HttpRequest request,
-                           Iterable<ConnectionPool> previouslyUsedOrigins) {
+                           Iterable<RemoteHost> previouslyUsedOrigins) {
             this.appId = appId;
             this.retryCount = retryCount;
             this.lastException = lastException;
@@ -153,7 +153,7 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
         }
 
         @Override
-        public Iterable<ConnectionPool> previousOrigins() {
+        public Iterable<RemoteHost> previousOrigins() {
             return previouslyUsedOrigins;
         }
 
@@ -168,9 +168,9 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
                     .toString();
         }
 
-        private static Iterable<String> hosts(Iterable<ConnectionPool> origins) {
+        private static Iterable<String> hosts(Iterable<RemoteHost> origins) {
             return stream(origins.spliterator(), false)
-                    .map(origin -> origin.getOrigin().hostAsString())
+                    .map(origin -> origin.connectionPool().getOrigin().hostAsString())
                     .collect(toList());
         }
     }
@@ -179,7 +179,7 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
         private StyxHttpClient client;
         private int attemptCount;
         private HttpRequest request;
-        private Iterable<ConnectionPool> previouslyUsedOrigins = emptyList();
+        private Iterable<RemoteHost> previouslyUsedOrigins = emptyList();
         private HttpTransaction transaction;
         private OriginStatsFactory originStatsFactory;
 
@@ -198,12 +198,12 @@ final class RetryOnErrorHandler implements Func1<Throwable, Observable<? extends
             return this;
         }
 
-        public Builder previouslyUsedOrigin(ConnectionPool previouslyUsedOrigin) {
+        public Builder previouslyUsedOrigin(RemoteHost previouslyUsedOrigin) {
             this.previouslyUsedOrigins = previouslyUsedOrigin == null ? emptyList() : singletonList(previouslyUsedOrigin);
             return this;
         }
 
-        public Builder previouslyUsedOrigins(Iterable<ConnectionPool> previouslyUsedOrigins) {
+        public Builder previouslyUsedOrigins(Iterable<RemoteHost> previouslyUsedOrigins) {
             this.previouslyUsedOrigins = previouslyUsedOrigins;
             return this;
         }

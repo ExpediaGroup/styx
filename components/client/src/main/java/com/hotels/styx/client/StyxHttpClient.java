@@ -20,8 +20,8 @@ import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.metrics.MetricRegistry;
@@ -172,7 +172,7 @@ public final class StyxHttpClient implements HttpClient {
     @Override
     public Observable<HttpResponse> sendRequest(HttpRequest request) {
         HttpRequest rewrittenRequest = rewriteUrl(request);
-        Optional<ConnectionPool> pool = selectOrigin(rewrittenRequest);
+        Optional<RemoteHost> pool = selectOrigin(rewrittenRequest);
 
         HttpTransaction txn = transport.send(rewrittenRequest, pool);
 
@@ -190,7 +190,7 @@ public final class StyxHttpClient implements HttpClient {
                 .map(this::addStickySessionIdentifier)
                 .doOnError(throwable -> logError(rewrittenRequest, throwable))
                 .doOnUnsubscribe(() -> {
-                    pool.ifPresent(connectionPool -> originStatsFactory.originStats(connectionPool.getOrigin()).requestCancelled());
+                    pool.ifPresent(connectionPool -> originStatsFactory.originStats(connectionPool.connectionPool().getOrigin()).requestCancelled());
                     retryHandler.cancel();
                 })
                 .doOnNext(this::recordErrorStatusMetrics)
@@ -226,9 +226,9 @@ public final class StyxHttpClient implements HttpClient {
         }
     }
 
-    private Optional<ConnectionPool> selectOrigin(HttpRequest rewrittenRequest) {
+    private Optional<RemoteHost> selectOrigin(HttpRequest rewrittenRequest) {
         LoadBalancingStrategy.Context lbContext = new LBContext(rewrittenRequest, id, originStatsFactory);
-        Iterable<ConnectionPool> votedOrigins = loadBalancingStrategy.vote(lbContext);
+        Iterable<RemoteHost> votedOrigins = loadBalancingStrategy.vote(lbContext);
         return Optional.ofNullable(getFirst(votedOrigins, null));
     }
 

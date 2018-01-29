@@ -15,16 +15,6 @@
  */
 package com.hotels.styx.api.client;
 
-
-/**
- * Holds the origins that are considered ready to accept traffic.
- */
-public interface ActiveOrigins {
-
-    /**
-     * Returns the list of the origins ready to accept traffic.
-     *
-     * @return a list of connection pools for each active origin
-     */
-    Iterable<RemoteHost> snapshot();
+public interface RemoteHost {
+    ConnectionPool connectionPool();
 }

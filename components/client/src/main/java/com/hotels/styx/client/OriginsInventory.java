@@ -28,6 +28,7 @@ import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.OriginsInventoryStateChangeListener;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
@@ -45,6 +46,7 @@ import java.io.Closeable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -363,7 +365,7 @@ public final class OriginsInventory
     }
 
     @Override
-    public Iterable<ConnectionPool> snapshot() {
+    public Iterable<RemoteHost> snapshot() {
         return pools(ACTIVE);
     }
 
@@ -384,10 +386,11 @@ public final class OriginsInventory
         eventBus.post(event);
     }
 
-    private Collection<ConnectionPool> pools(OriginState state) {
+    private Collection<RemoteHost> pools(OriginState state) {
         return origins.values().stream()
                 .filter(origin -> origin.state().equals(state))
                 .map(origin -> origin.connectionPool)
+                .map(RemoteHostWrapper::new)
                 .collect(toList());
     }
 
@@ -554,6 +557,42 @@ public final class OriginsInventory
 
         Map<Id, MonitoredOrigin> updatedOrigins() {
             return monitoredOrigins.build();
+        }
+    }
+
+
+    /**
+     * A Styx remote host.
+     */
+    public static class RemoteHostWrapper implements RemoteHost {
+        private ConnectionPool pool;
+
+        public RemoteHostWrapper(ConnectionPool pool) {
+            this.pool = requireNonNull(pool);
+        }
+
+        @Override
+        public ConnectionPool connectionPool() {
+            return this.pool;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            RemoteHostWrapper that = (RemoteHostWrapper) o;
+            return Objects.equals(pool, that.pool);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(pool);
         }
     }
 }

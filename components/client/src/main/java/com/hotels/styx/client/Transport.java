@@ -20,6 +20,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.netty.exceptions.NoAvailableHostsException;
 import rx.Observable;
 
@@ -39,7 +40,7 @@ class Transport {
         this.styxHeaderConfig = styxHeaderConfig;
     }
 
-    public HttpTransaction send(HttpRequest request, Optional<ConnectionPool> origin) {
+    public HttpTransaction send(HttpRequest request, Optional<RemoteHost> origin) {
         Observable<Connection> connection = connection(request, origin);
 
         AtomicReference<Connection> connectionRef = new AtomicReference<>(null);
@@ -84,26 +85,28 @@ class Transport {
                 return cancelled.get();
             }
 
-            private synchronized void closeIfConnected(Optional<ConnectionPool> connectionPool, AtomicReference<Connection> connectionRef) {
+            private synchronized void closeIfConnected(Optional<RemoteHost> connectionPool, AtomicReference<Connection> connectionRef) {
                 Connection connection = connectionRef.get();
                 if (connection != null && connectionPool.isPresent()) {
-                    connectionPool.get().closeConnection(connection);
+                    connectionPool.get().connectionPool().closeConnection(connection);
                     connectionRef.set(null);
                 }
             }
 
-            private synchronized void returnIfConnected(Optional<ConnectionPool> connectionPool, AtomicReference<Connection> connectionRef) {
+            private synchronized void returnIfConnected(Optional<RemoteHost> connectionPool, AtomicReference<Connection> connectionRef) {
                 Connection connection = connectionRef.get();
                 if (connection != null && connectionPool.isPresent()) {
-                    connectionPool.get().returnConnection(connection);
+                    connectionPool.get().connectionPool().returnConnection(connection);
                     connectionRef.set(null);
                 }
             }
         };
     }
 
-    private Observable<Connection> connection(HttpRequest request, Optional<ConnectionPool> origin) {
-        return origin.map(ConnectionPool::borrowConnection)
+    private Observable<Connection> connection(HttpRequest request, Optional<RemoteHost> origin) {
+        return origin
+                .map(RemoteHost::connectionPool)
+                .map(ConnectionPool::borrowConnection)
                 .orElseGet(() -> {
                     request.body().releaseContentBuffers();
                     return Observable.error(new NoAvailableHostsException(appId));

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,26 +19,26 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.client.OriginsCommandsListener;
+import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
 import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.Set;
 
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
+import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
 import static com.hotels.styx.support.api.matchers.HttpResponseStatusMatcher.hasStatus;
-import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
@@ -47,13 +47,13 @@ import static org.hamcrest.Matchers.is;
 
 public class OriginsCommandHandlerTest {
     final Origin activeOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("activeOriginId").build();
-    final Set<ConnectionPool> activeOrigins = singleton(new StubConnectionPool(activeOrigin));
+    final Set<RemoteHost> activeOrigins = singleton(new RemoteHostWrapper(new StubConnectionPool(activeOrigin)));
 
     final Origin disabledOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("disabledOriginId").build();
-    final Set<ConnectionPool> disabledOrigins = singleton(new StubConnectionPool(disabledOrigin));
+    final Set<RemoteHost> disabledOrigins = singleton(new RemoteHostWrapper(new StubConnectionPool(disabledOrigin)));
 
     final Origin inactiveOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("inactiveOriginId").build();
-    final Set<ConnectionPool> inactiveOrigins = singleton(new StubConnectionPool(inactiveOrigin));
+    final Set<RemoteHost> inactiveOrigins = singleton(new RemoteHostWrapper(new StubConnectionPool(inactiveOrigin)));
 
     final EventBus eventBus = new EventBus();
     final OriginsCommandHandler originsCommand = new OriginsCommandHandler(eventBus);
