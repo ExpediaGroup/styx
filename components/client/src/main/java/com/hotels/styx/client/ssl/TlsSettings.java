@@ -101,6 +101,11 @@ public class TlsSettings {
         return protocols;
     }
 
+    @JsonProperty("cipherSuites")
+    public List<String> cipherSuites() {
+        return this.cipherSuites;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -138,9 +143,6 @@ public class TlsSettings {
                 trustStorePath, Arrays.hashCode(trustStorePassword), protocols, cipherSuites);
     }
 
-    public List<String> cipherSuites() {
-        return this.cipherSuites;
-    }
 
     /**
      * The builder for SSL settings.
