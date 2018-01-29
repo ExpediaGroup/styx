@@ -34,8 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hotels.styx.client.connectionpool.ConnectionUsageTracker.Factory;
-import static com.hotels.styx.client.connectionpool.ConnectionUsageTracker.identityConnectionTrackerFactory;
+import static com.hotels.styx.client.connectionpool.ConnectionDecorator.identityDecorator;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
@@ -53,7 +52,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import static rx.Observable.error;
 import static rx.Observable.just;
@@ -388,7 +386,7 @@ public class SimpleConnectionPoolTest {
         Origin anyOrigin = newOriginBuilder(LOCAL_9090)
                 .build();
         ConnectionPool pool = new SimpleConnectionPool(
-                anyOrigin, new ConnectionPoolSettings.Builder().build(), new StubConnectionFactory(), false, identityConnectionTrackerFactory());
+                anyOrigin, new ConnectionPoolSettings.Builder().build(), new StubConnectionFactory(), false, identityDecorator());
 
         assertThat(pool.stats(), is(NULL_CONNECTION_POOL_STATS));
     }
@@ -408,7 +406,7 @@ public class SimpleConnectionPoolTest {
         };
 
         ConnectionPool pool = new SimpleConnectionPool(anyOrigin, new ConnectionPoolSettings.Builder().build(), factory, true,
-                identityConnectionTrackerFactory());
+                identityDecorator());
 
         Connection connection = borrowConnectionSynchronously(pool);
         pool.returnConnection(connection);
@@ -548,43 +546,6 @@ public class SimpleConnectionPoolTest {
     }
 
     @Test
-    public void verifiesMaxUsageTerminationIsOffWithNegativeSetting() {
-        this.connectionPool = connectionPool(
-                connectionPoolConfig()
-                        .maxConnectionsPerHost(1)
-                        .connectionExpirationSeconds(-1));
-        Connection.Listener listener = mock(Connection.Listener.class);
-        Connection listenedConnection = borrowConnectionSynchronously();
-        listenedConnection.addConnectionListener(listener);
-        connectionPool.returnConnection(listenedConnection);
-
-        Connection connection = borrowConnectionSynchronously();
-        assertThat(connection, is(listenedConnection));
-        connectionPool.returnConnection(connection);
-
-        verifyZeroInteractions(listener);
-    }
-
-    @Test
-    public void verifiesMaxUsageTerminationIsOn() {
-        Factory trackerFactoryStub = new ConnectionUsageTrackerFactoryStub();
-        this.connectionPool = connectionPool(connectionPoolConfig(), trackerFactoryStub);
-
-        Connection.Listener listener = mock(Connection.Listener.class);
-
-        Connection connectionExpired = borrowConnectionSynchronously();
-        connectionExpired.addConnectionListener(listener);
-        connectionPool.returnConnection(connectionExpired);
-
-        Connection connectionNew = borrowConnectionSynchronously();
-
-        assertThat(connectionExpired, is(not(connectionNew)));
-        verify(listener).connectionClosed(any(Connection.class));
-
-        assertThat(connectionPool.stats().closedConnections(), is(1));
-        assertThat(connectionPool.stats().terminatedConnections(), is(1));
-    }
-
     private SimpleConnectionPool sizeOnePool(Connection.Factory factory) {
         return new SimpleConnectionPool.Factory()
                 .connectionPoolSettings(new ConnectionPoolSettings(1, 1, 1000, 1000, 1000, 1))
@@ -606,13 +567,8 @@ public class SimpleConnectionPoolTest {
         return subscriber.getOnNextEvents().get(0);
     }
 
-    private SimpleConnectionPool connectionPool(ConnectionPoolSettings.Builder configuration,
-                                                Factory trackerFactory) {
-        return originConnectionPool(ORIGIN, LOCAL_9090, connectionFactory, configuration.build(), trackerFactory);
-    }
-
     private SimpleConnectionPool connectionPool(ConnectionPoolSettings.Builder configuration) {
-        return connectionPool(configuration, identityConnectionTrackerFactory());
+        return originConnectionPool(ORIGIN, LOCAL_9090, connectionFactory, configuration.build());
     }
 
     private List<Connection> populatePool(ConnectionPool hostConnectionPool, int numConnections) {
@@ -657,16 +613,16 @@ public class SimpleConnectionPoolTest {
 
     private static SimpleConnectionPool originConnectionPool(Id applicationId, HostAndPort host, Connection.Factory factory,
                                                              ConnectionPool.Settings settings) {
-        return originConnectionPool(applicationId, host, factory, settings, identityConnectionTrackerFactory());
+        return originConnectionPool(applicationId, host, factory, settings, identityDecorator());
     }
 
     private static SimpleConnectionPool originConnectionPool(Id applicationId, HostAndPort host, Connection.Factory factory,
-                                                             ConnectionPool.Settings settings, Factory trackerFactory) {
+                                                             ConnectionPool.Settings settings, ConnectionDecorator connectionDecorator) {
         return new SimpleConnectionPool(
                 newOriginBuilder(host)
                         .applicationId(applicationId)
                         .id("h1")
-                        .build(), settings, factory, trackerFactory);
+                        .build(), settings, factory, connectionDecorator);
     }
 
     private static Origin origin() {
@@ -694,22 +650,6 @@ public class SimpleConnectionPoolTest {
                     }
                 });
     }
-    private static class ConnectionUsageTrackerFactoryStub implements ConnectionUsageTracker.Factory {
-            @Override
-            public ConnectionUsageTracker createTracker() {
-                return new ConnectionUsageTracker() {
-                    @Override
-                    public Connection decorate(Connection connection) {
-                        return connection;
-                    }
-
-                    @Override
-                    public boolean shouldTerminate(Connection connection) {
-                        return true;
-                    }
-                };
-            }
-        };
 
     private static ConnectionPoolSettings.Builder connectionPoolConfig() {
         return new ConnectionPoolSettings.Builder()

@@ -21,36 +21,24 @@ import com.hotels.styx.api.client.ConnectionPool;
 
 import java.util.function.Supplier;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * Tracks connections usage and expires them based on configured expiration time.
  */
-public class ConnectionUsageTrackerFactory implements  ConnectionUsageTracker.Factory {
+public class ConnectionTrackerDecorator implements ConnectionDecorator {
 
     private static Supplier<Ticker> systemTicker = Ticker::systemTicker;
     private final Long connectionExpirationSeconds;
 
-    public ConnectionUsageTrackerFactory(ConnectionPool.Settings settings) {
-        this.connectionExpirationSeconds = requireNonNull(settings.connectionExpirationSeconds());
+    public ConnectionTrackerDecorator(ConnectionPool.Settings settings) {
+        this.connectionExpirationSeconds = settings.connectionExpirationSeconds();
     }
 
     @Override
-    public ConnectionUsageTracker createTracker() {
+    public Connection decorate(Connection connection) {
         if (connectionExpirationSeconds > 0) {
-            return new ConnectionExpirationTracker(connectionExpirationSeconds, systemTicker);
+            return new TrackedConnectionAdapter(connection, connectionExpirationSeconds, systemTicker);
         } else {
-            return new ConnectionUsageTracker() {
-                @Override
-                public Connection decorate(Connection connection) {
-                    return connection;
-                }
-
-                @Override
-                public boolean shouldTerminate(Connection connection) {
-                    return false;
-                }
-            };
+            return connection;
         }
     }
 }

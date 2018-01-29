@@ -21,6 +21,7 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.metrics.MetricRegistry;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hotels.styx.client.connectionpool.ConnectionDecorator.identityDecorator;
 
 /**
  * A factory that creates connection pools using the connection pool settings supplied to the constructor.
@@ -31,19 +32,19 @@ public final class ConnectionPoolFactory implements ConnectionPool.Factory {
     private final Connection.Factory connectionFactory;
     private final ConnectionPool.Settings poolSettings;
     private final MetricRegistry metricRegistry;
-    private final ConnectionUsageTracker.Factory connectionUsageTrackerFactory;
+    private final ConnectionDecorator connectionDecorator;
 
     private ConnectionPoolFactory(Builder builder) {
         this.connectionFactory = checkNotNull(builder.connectionFactory);
         this.poolSettings = new ConnectionPoolSettings.Builder(checkNotNull(builder.poolSettings)).build();
         this.metricRegistry = checkNotNull(builder.metricRegistry);
-        this.connectionUsageTrackerFactory = builder.connectionUsageTrackerFactory;
+        this.connectionDecorator = checkNotNull(builder.connectionDecorator);
     }
 
     @Override
     public ConnectionPool create(Origin origin) {
         return new StatsReportingConnectionPool(new SimpleConnectionPool(origin, poolSettings, connectionFactory,
-                connectionUsageTrackerFactory), metricRegistry);
+                connectionDecorator), metricRegistry);
     }
 
     /**
@@ -53,7 +54,7 @@ public final class ConnectionPoolFactory implements ConnectionPool.Factory {
         private Connection.Factory connectionFactory;
         private ConnectionPool.Settings poolSettings;
         private MetricRegistry metricRegistry;
-        private ConnectionUsageTracker.Factory connectionUsageTrackerFactory = ConnectionUsageTracker.identityConnectionTrackerFactory();
+        private ConnectionDecorator connectionDecorator = identityDecorator();
 
         public Builder connectionFactory(Connection.Factory connectionFactory) {
             this.connectionFactory = connectionFactory;
@@ -70,8 +71,8 @@ public final class ConnectionPoolFactory implements ConnectionPool.Factory {
             return this;
         }
 
-        public Builder connectionUsageTrackerFactory(ConnectionUsageTracker.Factory connectionUsageTrackerFactory) {
-            this.connectionUsageTrackerFactory = connectionUsageTrackerFactory;
+        public Builder connectionDecorator(ConnectionDecorator connectionDecorator) {
+            this.connectionDecorator = connectionDecorator;
             return this;
         }
 

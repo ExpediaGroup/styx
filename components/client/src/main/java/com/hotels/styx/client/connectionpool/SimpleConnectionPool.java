@@ -37,11 +37,11 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static com.hotels.styx.client.connectionpool.ConnectionPoolStatsCounter.NULL_CONNECTION_POOL_STATS;
-import static com.hotels.styx.client.connectionpool.ConnectionUsageTracker.identityConnectionTrackerFactory;
+import static com.hotels.styx.client.connectionpool.ConnectionDecorator.identityDecorator;
 import static java.util.Collections.newSetFromMap;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -66,7 +66,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
     private final AtomicInteger connectionFailures = new AtomicInteger(0);
     private final AtomicInteger closedConnections = new AtomicInteger(0);
     private final AtomicInteger terminatedConnections = new AtomicInteger(0);
-    private final ConnectionUsageTracker connectionUsageTracker;
+    private final ConnectionDecorator connectionTracker;
 
     /**
      * Constructs an instance that will record stats, without connection usage tracker.
@@ -76,8 +76,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
      * @param connectionFactory      connection factory
      */
     public SimpleConnectionPool(Origin origin, Settings connectionPoolSettings, Connection.Factory connectionFactory) {
-        this(origin, connectionPoolSettings, connectionFactory, true,
-                identityConnectionTrackerFactory());
+        this(origin, connectionPoolSettings, connectionFactory, true, identityDecorator());
     }
 
     /**
@@ -86,11 +85,11 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
      * @param origin                 origin to connect to
      * @param connectionPoolSettings connection pool configuration
      * @param connectionFactory      connection factory
-     * @param connectionUsageTrackerFactory factory that creates an instance of tracker that might periodically terminate connection.
+     * @param connectionTracker factory that creates an instance of tracker that might periodically terminate connection.
      */
     public SimpleConnectionPool(Origin origin, Settings connectionPoolSettings, Connection.Factory connectionFactory,
-                                ConnectionUsageTracker.Factory connectionUsageTrackerFactory) {
-        this(origin, connectionPoolSettings, connectionFactory, true, connectionUsageTrackerFactory);
+                                ConnectionDecorator connectionTracker) {
+        this(origin, connectionPoolSettings, connectionFactory, true, connectionTracker);
     }
 
     /**
@@ -100,18 +99,18 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
      * @param connectionPoolSettings connection pool configuration
      * @param connectionFactory      connection factory
      * @param recordStats            true if stats should be recorded
-     * @param connectionUsageTrackerFactory factory that creates an instance of tracker that might periodically terminate connection.
+     * @param connectionTracker      decorator that provides a functionality might periodically terminate connection.
      */
     public SimpleConnectionPool(Origin origin, Settings connectionPoolSettings, Connection.Factory connectionFactory,
-                                boolean recordStats, ConnectionUsageTracker.Factory connectionUsageTrackerFactory) {
-        this.connectionPoolSettings = checkNotNull(connectionPoolSettings);
-        this.origin = checkNotNull(origin);
-        this.connectionFactory = checkNotNull(connectionFactory);
+                                boolean recordStats, ConnectionDecorator connectionTracker) {
+        this.connectionPoolSettings = requireNonNull(connectionPoolSettings);
+        this.origin = requireNonNull(origin);
+        this.connectionFactory = requireNonNull(connectionFactory);
         this.availableConnections = new ConcurrentLinkedDeque<>();
         this.borrowedConnections = newSetFromMap(new ConcurrentHashMap<>());
         this.waitingSubscribers = new ConcurrentLinkedDeque<>();
         this.stats = recordStats ? new ConnectionPoolStats() : NULL_CONNECTION_POOL_STATS;
-        this.connectionUsageTracker = connectionUsageTrackerFactory.createTracker();
+        this.connectionTracker = requireNonNull(connectionTracker);
     }
 
     private static <T> void removeEachAndProcess(Queue<T> queue, Consumer<T> consumer) {
@@ -182,11 +181,6 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
         return true;
     }
 
-    private void closeOnExpiration(Connection connection) {
-        connection.close();
-        closedConnections.incrementAndGet();
-    }
-
     private void connectionClosedInternal(Connection connection) {
         boolean removed = borrowedConnections.remove(connection);
         if (removed) {
@@ -224,7 +218,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
                     connectionFailures.incrementAndGet();
                 })
                 .map(connection -> {
-                    connection = connectionUsageTracker.decorate(connection);
+                    connection = connectionTracker.decorate(connection);
                     connection.addConnectionListener(SimpleConnectionPool.this);
                     borrowedConnections.add(connection);
                     return connection;
@@ -237,12 +231,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
 
     private Connection getNextActiveConnectionCloseOnDeadConnection() {
         Connection connection = availableConnections.poll();
-        while (connection != null) {
-            if (connectionUsageTracker.shouldTerminate(connection)) {
-                closeOnExpiration(connection);
-            } else if (connection.isConnected()) {
-                break;
-            }
+        while (connection != null && !connection.isConnected()) {
             connection = this.availableConnections.poll();
         }
         return connection;
@@ -408,7 +397,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
         private Settings connectionPoolSettings;
         private Connection.Factory connectionFactory;
         private boolean recordStats = true;
-        private ConnectionUsageTracker.Factory connectionUsageTrackerFactory = identityConnectionTrackerFactory();
+        private ConnectionDecorator connectionDecorator = identityDecorator();
 
         public Factory connectionPoolSettings(Settings connectionPoolSettings) {
             this.connectionPoolSettings = connectionPoolSettings;
@@ -425,14 +414,14 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
             return this;
         }
 
-        public Factory connectionUsageTracker(ConnectionUsageTracker.Factory connectionUsageTrackerFactory) {
-            this.connectionUsageTrackerFactory = connectionUsageTrackerFactory;
+        public Factory connectionDecorator(ConnectionDecorator connectionDecorator) {
+            this.connectionDecorator = connectionDecorator;
             return this;
         }
 
         public SimpleConnectionPool create(Origin origin) {
             return new SimpleConnectionPool(origin, connectionPoolSettings, connectionFactory, recordStats,
-                    connectionUsageTrackerFactory);
+                    connectionDecorator);
         }
     }
 }
