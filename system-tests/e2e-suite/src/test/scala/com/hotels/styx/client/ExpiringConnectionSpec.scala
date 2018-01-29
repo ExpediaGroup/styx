@@ -83,10 +83,9 @@ class ExpiringConnectionSpec extends FunSpec
 
     val response2 = waitForResponse(client.sendRequest(request))
 
-
     eventually(timeout(2.seconds)) {
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
-      styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(1)
+      styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-terminated").get should be(1)
     }
   }
 }

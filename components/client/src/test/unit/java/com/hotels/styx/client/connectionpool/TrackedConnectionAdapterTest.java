@@ -23,16 +23,17 @@ import org.testng.annotations.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class ConnectionExpirationTrackerTest {
+public class TrackedConnectionAdapterTest {
     @Test
     public void shouldExpireConnection() throws Exception {
-        ConnectionExpirationTracker connectionTracker = new ConnectionExpirationTracker(
+        Connection trackedConnection = new StubConnectionFactory.StubConnection(null);
+
+        TrackedConnectionAdapter connectionTracker = new TrackedConnectionAdapter(trackedConnection,
                 2,
                 DummyTicker::new);
-        Connection trackedConnection = connectionTracker.decorate(new StubConnectionFactory.StubConnection(null));
 
-        assertThat(connectionTracker.shouldTerminate(trackedConnection), is(false));
-        assertThat(connectionTracker.shouldTerminate(trackedConnection), is(true));
+        assertThat(connectionTracker.isConnected(), is(true));
+        assertThat(connectionTracker.isConnected(), is(false));
     }
 
     /**
