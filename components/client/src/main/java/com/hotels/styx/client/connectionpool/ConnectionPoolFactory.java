@@ -21,7 +21,6 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.metrics.MetricRegistry;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hotels.styx.client.connectionpool.ConnectionDecorator.identityDecorator;
 
 /**
  * A factory that creates connection pools using the connection pool settings supplied to the constructor.
@@ -32,19 +31,16 @@ public final class ConnectionPoolFactory implements ConnectionPool.Factory {
     private final Connection.Factory connectionFactory;
     private final ConnectionPool.Settings poolSettings;
     private final MetricRegistry metricRegistry;
-    private final ConnectionDecorator connectionDecorator;
 
     private ConnectionPoolFactory(Builder builder) {
         this.connectionFactory = checkNotNull(builder.connectionFactory);
         this.poolSettings = new ConnectionPoolSettings.Builder(checkNotNull(builder.poolSettings)).build();
         this.metricRegistry = checkNotNull(builder.metricRegistry);
-        this.connectionDecorator = checkNotNull(builder.connectionDecorator);
     }
 
     @Override
     public ConnectionPool create(Origin origin) {
-        return new StatsReportingConnectionPool(new SimpleConnectionPool(origin, poolSettings, connectionFactory,
-                connectionDecorator), metricRegistry);
+        return new StatsReportingConnectionPool(new SimpleConnectionPool(origin, poolSettings, connectionFactory), metricRegistry);
     }
 
     /**
@@ -54,7 +50,6 @@ public final class ConnectionPoolFactory implements ConnectionPool.Factory {
         private Connection.Factory connectionFactory;
         private ConnectionPool.Settings poolSettings;
         private MetricRegistry metricRegistry;
-        private ConnectionDecorator connectionDecorator = identityDecorator();
 
         public Builder connectionFactory(Connection.Factory connectionFactory) {
             this.connectionFactory = connectionFactory;
@@ -68,11 +63,6 @@ public final class ConnectionPoolFactory implements ConnectionPool.Factory {
 
         public Builder metricRegistry(MetricRegistry metricRegistry) {
             this.metricRegistry = metricRegistry;
-            return this;
-        }
-
-        public Builder connectionDecorator(ConnectionDecorator connectionDecorator) {
-            this.connectionDecorator = connectionDecorator;
             return this;
         }
 

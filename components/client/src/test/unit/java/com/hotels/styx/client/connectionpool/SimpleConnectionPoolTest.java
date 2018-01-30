@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hotels.styx.client.connectionpool.ConnectionDecorator.identityDecorator;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
@@ -386,7 +385,7 @@ public class SimpleConnectionPoolTest {
         Origin anyOrigin = newOriginBuilder(LOCAL_9090)
                 .build();
         ConnectionPool pool = new SimpleConnectionPool(
-                anyOrigin, new ConnectionPoolSettings.Builder().build(), new StubConnectionFactory(), false, identityDecorator());
+                anyOrigin, new ConnectionPoolSettings.Builder().build(), new StubConnectionFactory(), false);
 
         assertThat(pool.stats(), is(NULL_CONNECTION_POOL_STATS));
     }
@@ -405,8 +404,7 @@ public class SimpleConnectionPoolTest {
             return just(stubConnection);
         };
 
-        ConnectionPool pool = new SimpleConnectionPool(anyOrigin, new ConnectionPoolSettings.Builder().build(), factory, true,
-                identityDecorator());
+        ConnectionPool pool = new SimpleConnectionPool(anyOrigin, new ConnectionPoolSettings.Builder().build(), factory, true);
 
         Connection connection = borrowConnectionSynchronously(pool);
         pool.returnConnection(connection);
@@ -613,16 +611,11 @@ public class SimpleConnectionPoolTest {
 
     private static SimpleConnectionPool originConnectionPool(Id applicationId, HostAndPort host, Connection.Factory factory,
                                                              ConnectionPool.Settings settings) {
-        return originConnectionPool(applicationId, host, factory, settings, identityDecorator());
-    }
-
-    private static SimpleConnectionPool originConnectionPool(Id applicationId, HostAndPort host, Connection.Factory factory,
-                                                             ConnectionPool.Settings settings, ConnectionDecorator connectionDecorator) {
         return new SimpleConnectionPool(
                 newOriginBuilder(host)
                         .applicationId(applicationId)
                         .id("h1")
-                        .build(), settings, factory, connectionDecorator);
+                        .build(), settings, factory);
     }
 
     private static Origin origin() {

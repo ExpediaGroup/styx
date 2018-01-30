@@ -31,12 +31,12 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Provides wrapper for connection, that stores a connection expiration time. Also provides a method for verification of
  * a time pasted.
  */
-class TrackedConnectionAdapter implements ExpirableConnection {
+class TrackedConnectionDecorator implements Connection {
     private final Connection nettyConnection;
     private final long connectionExpirationSeconds;
     private final Stopwatch stopwatch;
 
-    TrackedConnectionAdapter(Connection nettyConnection, long connectionExpirationSeconds, Supplier<Ticker> tickerSupplier) {
+    TrackedConnectionDecorator(Connection nettyConnection, long connectionExpirationSeconds, Supplier<Ticker> tickerSupplier) {
         this.connectionExpirationSeconds = connectionExpirationSeconds;
         this.nettyConnection = nettyConnection;
         this.stopwatch = Stopwatch.createStarted(tickerSupplier.get());
@@ -76,8 +76,7 @@ class TrackedConnectionAdapter implements ExpirableConnection {
         nettyConnection.close();
     }
 
-    @Override
-    public boolean isExpired() {
+    private boolean isExpired() {
         return stopwatch.elapsed(SECONDS) >= connectionExpirationSeconds;
     }
 }
