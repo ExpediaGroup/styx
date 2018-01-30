@@ -1,12 +1,12 @@
 /**
  * Copyright (C) 2013-2018 Expedia Inc.
- * <p>
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,6 +22,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.client.ConnectionSettings;
@@ -30,6 +31,7 @@ import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.SimpleNettyHttpClient;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
+import com.hotels.styx.client.connectionpool.ConnectionFactoryTrackerDecorator;
 import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
 import com.hotels.styx.client.healthcheck.HealthCheckConfig;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
@@ -106,7 +108,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
             OriginStatsFactory originStatsFactory = new OriginStatsFactory(environment.metricRegistry());
 
-            NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
+            Connection.Factory connectionFactory = new NettyConnectionFactory.Builder()
                     .name("Styx")
                     .httpRequestOperationFactory(
                             httpRequestOperationFactoryBuilder()
@@ -120,6 +122,12 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .clientWorkerThreadsCount(clientWorkerThreadsCount)
                     .tlsSettings(backendService.tlsSettings().orElse(null))
                     .build();
+
+            ConnectionPool.Settings poolSettings = backendService.connectionPoolConfig();
+
+            if (poolSettings.connectionExpirationSeconds() > 0) {
+                connectionFactory = new ConnectionFactoryTrackerDecorator(poolSettings.connectionExpirationSeconds(), connectionFactory);
+            }
 
             ConnectionPool.Factory connectionPoolFactory = new ConnectionPoolFactory.Builder()
                     .connectionFactory(connectionFactory)
