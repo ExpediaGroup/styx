@@ -22,28 +22,31 @@ import rx.Observable;
 
 import java.util.function.Supplier;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Decorator for a connection factory that wraps newly created connections into a decorator that tracks and expires the connection
  * on expiration time.
  */
-public class ConnectionFactoryTrackerDecorator implements Connection.Factory {
+public class ExpiringConnectionFactory implements Connection.Factory {
 
-    private static Supplier<Ticker> systemTicker = Ticker::systemTicker;
+    private static final Supplier<Ticker> SYSTEM_TICKER = Ticker::systemTicker;
     private final long connectionExpirationSeconds;
-    private Connection.Factory connectionFactory;
+    private final Connection.Factory connectionFactory;
 
-    public ConnectionFactoryTrackerDecorator(long connectionExpirationSeconds, Connection.Factory connectionFactory) {
+    public ExpiringConnectionFactory(long connectionExpirationSeconds, Connection.Factory connectionFactory) {
         this.connectionExpirationSeconds = connectionExpirationSeconds;
-        this.connectionFactory = connectionFactory;
-    }
-
-    private Observable<Connection> decorate(Observable<Connection> connection) {
-        return connection.map(conn -> new TrackedConnectionDecorator(conn, connectionExpirationSeconds, systemTicker));
+        this.connectionFactory = requireNonNull(connectionFactory);
     }
 
     @Override
     public Observable<Connection> createConnection(Origin origin, Connection.Settings connectionSettings) {
-        Observable<Connection> connection = connectionFactory.createConnection(origin, connectionSettings);
-        return decorate(connection);
+        return connectionFactory
+                .createConnection(origin, connectionSettings)
+                .map(this::decorate);
+    }
+
+    private Connection decorate(Connection conn) {
+        return new ExpiringConnection(conn, connectionExpirationSeconds, SYSTEM_TICKER);
     }
 }

@@ -25,20 +25,21 @@ import rx.Observable;
 
 import java.util.function.Supplier;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Provides wrapper for connection, that stores a connection expiration time. Also provides a method for verification of
+ * Provides wrapper for connection, that tracks a connection expiration time. Also provides a method for verification of
  * a time pasted.
  */
-class TrackedConnectionDecorator implements Connection {
+class ExpiringConnection implements Connection {
     private final Connection nettyConnection;
     private final long connectionExpirationSeconds;
     private final Stopwatch stopwatch;
 
-    TrackedConnectionDecorator(Connection nettyConnection, long connectionExpirationSeconds, Supplier<Ticker> tickerSupplier) {
+    ExpiringConnection(Connection nettyConnection, long connectionExpirationSeconds, Supplier<Ticker> tickerSupplier) {
         this.connectionExpirationSeconds = connectionExpirationSeconds;
-        this.nettyConnection = nettyConnection;
+        this.nettyConnection = requireNonNull(nettyConnection);
         this.stopwatch = Stopwatch.createStarted(tickerSupplier.get());
     }
 

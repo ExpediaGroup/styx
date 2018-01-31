@@ -23,12 +23,12 @@ import org.testng.annotations.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class TrackedConnectionDecoratorTest {
+public class ExpiringConnectionTest {
     @Test
     public void shouldExpireConnection() throws Exception {
         Connection trackedConnection = new StubConnectionFactory.StubConnection(null);
 
-        TrackedConnectionDecorator connectionTracker = new TrackedConnectionDecorator(trackedConnection,
+        ExpiringConnection connectionTracker = new ExpiringConnection(trackedConnection,
                 2,
                 DummyTicker::new);
 
