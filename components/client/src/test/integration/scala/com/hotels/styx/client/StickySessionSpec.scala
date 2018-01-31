@@ -20,18 +20,19 @@ import java.nio.charset.Charset
 
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
-import com.hotels.styx.support.api.BlockingObservables._
+import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.Id.id
-import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.client.{ActiveOrigins, ConnectionPool, Origin}
-import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
-import com.hotels.styx.client.applications.BackendService
-import com.hotels.styx.client.stickysession.{StickySessionConfig, StickySessionLoadBalancingStrategy}
+import com.hotels.styx.api.client.{ActiveOrigins, Origin, RemoteHost}
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
+import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper
+import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
+import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.client.connectionpool.ConnectionPools
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
+import com.hotels.styx.client.stickysession.{StickySessionConfig, StickySessionLoadBalancingStrategy}
+import com.hotels.styx.support.api.BlockingObservables._
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import org.scalatest.{BeforeAndAfter, FunSuite, ShouldMatchers}
@@ -96,8 +97,8 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
         *
         * @return a list of connection pools for each active origin
         */
-      override def snapshot(): lang.Iterable[ConnectionPool] = backendService.origins().asScala
-        .map(origin => ConnectionPools.poolForOrigin(origin, new CodaHaleMetricRegistry, backendService.responseTimeoutMillis()))
+      override def snapshot(): lang.Iterable[RemoteHost] = backendService.origins().asScala
+        .map(origin => new RemoteHostWrapper(ConnectionPools.poolForOrigin(origin, new CodaHaleMetricRegistry, backendService.responseTimeoutMillis())).asInstanceOf[RemoteHost])
         .asJava
     }
   }

@@ -109,27 +109,14 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .orElse(false);
 
             OriginStatsFactory originStatsFactory = new OriginStatsFactory(environment.metricRegistry());
-
-            Connection.Factory connectionFactory = new NettyConnectionFactory.Builder()
-                    .name("Styx")
-                    .httpRequestOperationFactory(
-                            httpRequestOperationFactoryBuilder()
-                                    .flowControlEnabled(true)
-                                    .originStatsFactory(originStatsFactory)
-                                    .responseTimeoutMillis(backendService.responseTimeoutMillis())
-                                    .requestLoggingEnabled(requestLoggingEnabled)
-                                    .longFormat(longFormat)
-                                    .build()
-                    )
-                    .clientWorkerThreadsCount(clientWorkerThreadsCount)
-                    .tlsSettings(backendService.tlsSettings().orElse(null))
-                    .build();
-
             ConnectionPool.Settings poolSettings = backendService.connectionPoolConfig();
 
-            if (poolSettings.connectionExpirationSeconds() > 0) {
-                connectionFactory = new ExpiringConnectionFactory(poolSettings.connectionExpirationSeconds(), connectionFactory);
-            }
+            Connection.Factory connectionFactory = connectionFactory(
+                    backendService,
+                    requestLoggingEnabled,
+                    longFormat,
+                    originStatsFactory,
+                    poolSettings.connectionExpirationSeconds());
 
             ConnectionPool.Factory connectionPoolFactory = new ConnectionPoolFactory.Builder()
                     .connectionFactory(connectionFactory)
@@ -164,6 +151,34 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             LOG.info("added path={} current routes={}", backendService.path(), routes.keySet());
 
         });
+    }
+
+    private Connection.Factory connectionFactory(
+            BackendService backendService,
+            boolean requestLoggingEnabled,
+            boolean longFormat,
+            OriginStatsFactory originStatsFactory,
+            long connectionExpiration) {
+        Connection.Factory factory = new NettyConnectionFactory.Builder()
+                .name("Styx")
+                .httpRequestOperationFactory(
+                        httpRequestOperationFactoryBuilder()
+                                .flowControlEnabled(true)
+                                .originStatsFactory(originStatsFactory)
+                                .responseTimeoutMillis(backendService.responseTimeoutMillis())
+                                .requestLoggingEnabled(requestLoggingEnabled)
+                                .longFormat(longFormat)
+                                .build()
+                )
+                .clientWorkerThreadsCount(clientWorkerThreadsCount)
+                .tlsSettings(backendService.tlsSettings().orElse(null))
+                .build();
+
+        if (connectionExpiration > 0) {
+            return new ExpiringConnectionFactory(connectionExpiration, factory);
+        } else {
+            return factory;
+        }
     }
 
     private HttpClient newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {

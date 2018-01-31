@@ -135,19 +135,19 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
     val response = waitForResponse(client.sendRequest(request))
   }
 
-  def roundRobinStrategy(origins: Origin*): RoundRobinStrategy =
-    new RoundRobinStrategy(
-      new ActiveOrigins {
-        /**
-          * Returns the list of the origins ready to accept traffic.
-          *
-          * @return a list of connection pools for each active origin
-          */
-        override def snapshot(): lang.Iterable[ConnectionPool] = origins
-            .map(origin => ConnectionPools.poolForOrigin(origin))
-          .asJava
-      }
-    )
+//  def roundRobinStrategy(origins: Origin*): RoundRobinStrategy =
+//    new RoundRobinStrategy(
+//      new ActiveOrigins {
+//        /**
+//          * Returns the list of the origins ready to accept traffic.
+//          *
+//          * @return a list of connection pools for each active origin
+//          */
+//        override def snapshot(): lang.Iterable[ConnectionPool] = origins
+//            .map(origin => ConnectionPools.poolForOrigin(origin))
+//          .asJava
+//      }
+//    )
 
 
 //  test("retries the next available origin on failure") {
@@ -183,17 +183,17 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
 //    subscriber.getOnErrorEvents should not be empty
 //  }
 
-  ignore("retries once if successful before retries runs out") {
-    val client: StyxHttpClient = newHttpClientBuilder(
-      new BackendService.Builder()
-        .origins(healthyOriginOne, healthyOriginTwo, unhealthyOriginOne)
-        .build())
-      .loadBalancingStrategy(roundRobinStrategy(healthyOriginOne, healthyOriginTwo, unhealthyOriginOne))
-      .retryPolicy(new RetryNTimes(1))
-      .build
-    val request: HttpRequest = get("/version.txt").build
-    val response = waitForResponse(client.sendRequest(request))
-  }
+//  ignore("retries once if successful before retries runs out") {
+//    val client: StyxHttpClient = newHttpClientBuilder(
+//      new BackendService.Builder()
+//        .origins(healthyOriginOne, healthyOriginTwo, unhealthyOriginOne)
+//        .build())
+//      .loadBalancingStrategy(roundRobinStrategy(healthyOriginOne, healthyOriginTwo, unhealthyOriginOne))
+//      .retryPolicy(new RetryNTimes(1))
+//      .build
+//    val request: HttpRequest = get("/version.txt").build
+//    val response = waitForResponse(client.sendRequest(request))
+//  }
 
 //  test("It should add sticky session id after a retry succeeded") {
 //    val StickySessionEnabled = new StickySessionConfig.Builder()

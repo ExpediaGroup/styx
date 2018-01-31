@@ -215,7 +215,7 @@ public class StyxHttpClientTest {
 
     private LoadBalancingStrategy mockLbStrategy(ConnectionPool pool) {
         LoadBalancingStrategy lbStrategy = mock(LoadBalancingStrategy.class);
-        when(lbStrategy.vote(any(LoadBalancingStrategy.Context.class))).thenReturn(ImmutableList.of(pool));
+        when(lbStrategy.vote(any(LoadBalancingStrategy.Context.class))).thenReturn(ImmutableList.of(new OriginsInventory.RemoteHostWrapper(pool)));
         return lbStrategy;
     }
 

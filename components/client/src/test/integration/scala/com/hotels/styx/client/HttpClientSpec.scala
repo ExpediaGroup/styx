@@ -21,7 +21,7 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.client.{ActiveOrigins, ConnectionPool, Origin}
+import com.hotels.styx.api.client.{ActiveOrigins, ConnectionPool, Origin, RemoteHost}
 import com.hotels.styx.api.client.Origin._
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException
 import com.hotels.styx.api.support.HostAndPorts._
@@ -36,6 +36,7 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
+import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper
 import com.hotels.styx.client.connectionpool.ConnectionPools
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
@@ -86,8 +87,8 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
         *
         * @return a list of connection pools for each active origin
         */
-      override def snapshot(): lang.Iterable[ConnectionPool] = backendService.origins().asScala
-        .map(origin => ConnectionPools.poolForOrigin(origin, new CodaHaleMetricRegistry, backendService.responseTimeoutMillis()))
+      override def snapshot(): lang.Iterable[RemoteHost] = backendService.origins().asScala
+        .map(origin => new RemoteHostWrapper(ConnectionPools.poolForOrigin(origin, new CodaHaleMetricRegistry, backendService.responseTimeoutMillis())).asInstanceOf[RemoteHost])
         .asJava
     }
   }

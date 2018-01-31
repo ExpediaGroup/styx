@@ -21,10 +21,11 @@ import ch.qos.logback.classic.Level
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.HttpResponse
-import com.hotels.styx.api.client.{ActiveOrigins, ConnectionPool}
+import com.hotels.styx.api.client.{ActiveOrigins, RemoteHost}
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException
+import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper
 import com.hotels.styx.client.connectionpool.ConnectionPools
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
@@ -45,9 +46,9 @@ import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import rx.observers.TestSubscriber
 
+import scala.collection.JavaConverters._
 import scala.compat.java8.StreamConverters._
 import scala.concurrent.duration._
-import scala.collection.JavaConverters._
 
 class OriginClosesConnectionSpec extends FunSuite
   with StyxProxySpec
@@ -107,8 +108,8 @@ class OriginClosesConnectionSpec extends FunSuite
         *
         * @return a list of connection pools for each active origin
         */
-      override def snapshot(): lang.Iterable[ConnectionPool] = backendService.origins().asScala
-        .map(origin => ConnectionPools.poolForOrigin(origin, new CodaHaleMetricRegistry, backendService.responseTimeoutMillis()))
+      override def snapshot(): lang.Iterable[RemoteHost] = backendService.origins().asScala
+        .map(origin => new RemoteHostWrapper(ConnectionPools.poolForOrigin(origin, new CodaHaleMetricRegistry, backendService.responseTimeoutMillis())).asInstanceOf[RemoteHost])
         .asJava
     }
   }
