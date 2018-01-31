@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,18 +25,19 @@ import static org.hamcrest.Matchers.is;
 public class ConnectionPoolSettingsTest {
     @Test
     public void setsConfigurationValues() {
-        ConnectionPoolSettings config = new ConnectionPoolSettings(5, 8, 2345, 1234, 123);
+        ConnectionPoolSettings config = new ConnectionPoolSettings(5, 8, 2345, 1234, 123, 1);
 
         assertThat(config.socketTimeoutMillis(), is(equalTo(1234)));
         assertThat(config.connectTimeoutMillis(), is(equalTo(2345)));
         assertThat(config.pendingConnectionTimeoutMillis(), is(equalTo(123)));
         assertThat(config.maxConnectionsPerHost(), is(equalTo(5)));
         assertThat(config.maxPendingConnectionsPerHost(), is(equalTo(8)));
+        assertThat(config.connectionExpirationSeconds(), is(equalTo(1L)));
     }
 
     @Test
     public void shouldBuildFromOtherPoolSettings() {
-        ConnectionPoolSettings config = new ConnectionPoolSettings(5, 8, 2345, 1234, 123);
+        ConnectionPoolSettings config = new ConnectionPoolSettings(5, 8, 2345, 1234, 123, 1);
         ConnectionPoolSettings newConfig = new ConnectionPoolSettings.Builder(config)
                 .connectTimeout(444, MILLISECONDS)
                 .build();
@@ -46,5 +47,6 @@ public class ConnectionPoolSettingsTest {
         assertThat(newConfig.pendingConnectionTimeoutMillis(), is(equalTo(123)));
         assertThat(newConfig.maxConnectionsPerHost(), is(equalTo(5)));
         assertThat(newConfig.maxPendingConnectionsPerHost(), is(equalTo(8)));
+        assertThat(config.connectionExpirationSeconds(), is(equalTo(1L)));
     }
 }

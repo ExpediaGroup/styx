@@ -17,41 +17,28 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.support.server.FakeHttpServer;
-import org.testng.annotations.AfterMethod;
+import io.netty.channel.Channel;
+import io.netty.channel.embedded.EmbeddedChannel;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultConnectionPoolSettings;
-import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 public class NettyConnectionTest {
-    private final FakeHttpServer originServer = new FakeHttpServer(0);
-    private final NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
-            .httpRequestOperationFactory(httpRequestOperationFactoryBuilder().build())
-            .build();
-
+    private Channel channel;
     private Origin origin;
 
     @BeforeMethod
     public void startOriginServer() {
-        originServer.start();
-        origin = newOriginBuilder("localhost", originServer.port()).build();
-    }
-
-    @AfterMethod
-    public void shutdownServer() {
-        originServer.stop();
+        channel = new EmbeddedChannel();
+        origin = newOriginBuilder("localhost", 0).build();
     }
 
     @Test
@@ -70,15 +57,14 @@ public class NettyConnectionTest {
         EventCapturingListener listener = new EventCapturingListener();
         connection.addConnectionListener(listener);
 
-        originServer.stop();
-        listener.waitForEvent();
+        channel.close();
 
         assertThat(connection.isConnected(), is(false));
         assertThat(listener.closedConnection(), isValue(connection));
     }
 
     private Connection createConnection() {
-        return getFirst(connectionFactory.createConnection(origin, defaultConnectionPoolSettings()));
+        return new NettyConnection(origin, channel, null);
     }
 
     static class EventCapturingListener implements Connection.Listener {
@@ -93,10 +79,6 @@ public class NettyConnectionTest {
 
         Optional<Connection> closedConnection() {
             return Optional.ofNullable(this.closedConnection);
-        }
-
-        void waitForEvent() throws InterruptedException {
-            latch.await(3, TimeUnit.SECONDS);
         }
     }
 }

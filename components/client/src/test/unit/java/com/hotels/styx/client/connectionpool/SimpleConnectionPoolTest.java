@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -543,10 +543,10 @@ public class SimpleConnectionPoolTest {
         assertThat("busy connections ", this.connectionPool.stats().busyConnectionCount(), is(0));
     }
 
-
+    @Test
     private SimpleConnectionPool sizeOnePool(Connection.Factory factory) {
         return new SimpleConnectionPool.Factory()
-                .connectionPoolSettings(new ConnectionPoolSettings(1, 1, 1000, 1000, 1000))
+                .connectionPoolSettings(new ConnectionPoolSettings(1, 1, 1000, 1000, 1000, 1))
                 .connectionFactory(factory)
                 .create(origin());
     }

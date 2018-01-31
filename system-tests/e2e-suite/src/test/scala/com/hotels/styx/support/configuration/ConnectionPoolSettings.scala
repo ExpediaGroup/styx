@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,8 @@ case class ConnectionPoolSettings(maxConnectionsPerHost: Int = DEFAULT_MAX_CONNE
                                   maxPendingConnectionsPerHost: Int = DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST,
                                   connectTimeoutMillis: Int = DEFAULT_CONNECT_TIMEOUT_MILLIS,
                                   socketTimeoutMillis: Int = DEFAULT_SOCKET_TIMEOUT_MILLIS,
-                                  pendingConnectionTimeoutMillis: Int = DEFAULT_CONNECT_TIMEOUT_MILLIS
+                                  pendingConnectionTimeoutMillis: Int = DEFAULT_CONNECT_TIMEOUT_MILLIS,
+                                  connectionExpirationSeconds: Long = DEFAULT_CONNECTION_EXPIRATION_SECONDS
                                ) {
   def asJava: com.hotels.styx.client.connectionpool.ConnectionPoolSettings = new com.hotels.styx.client.connectionpool.ConnectionPoolSettings.Builder()
       .maxConnectionsPerHost(maxConnectionsPerHost)
@@ -33,6 +34,7 @@ case class ConnectionPoolSettings(maxConnectionsPerHost: Int = DEFAULT_MAX_CONNE
       .connectTimeout(connectTimeoutMillis, MILLISECONDS)
       .socketTimeout(socketTimeoutMillis, MILLISECONDS)
       .pendingConnectionTimeout(pendingConnectionTimeoutMillis, MILLISECONDS)
+      .connectionExpirationSeconds(connectionExpirationSeconds)
     .build()
 }
 
@@ -43,6 +45,7 @@ object ConnectionPoolSettings {
       maxPendingConnectionsPerHost = from.maxPendingConnectionsPerHost,
       connectTimeoutMillis = from.connectTimeoutMillis(),
       socketTimeoutMillis = from.socketTimeoutMillis(),
-      pendingConnectionTimeoutMillis = from.pendingConnectionTimeoutMillis
+      pendingConnectionTimeoutMillis = from.pendingConnectionTimeoutMillis,
+      connectionExpirationSeconds = from.connectionExpirationSeconds
     )
 }
