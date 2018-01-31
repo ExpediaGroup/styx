@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,18 @@ package com.hotels.styx.api.client.loadbalancing.spi;
 
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.configuration.ServiceFactory;
 
-import static java.util.Collections.emptyList;
+import java.util.Optional;
 
 /**
- * A factory to create {@link LoadBalancingStrategy} instances based on the {@link Environment}.
+ * A factory to create {@link LoadBalancer} instances based on the {@link Environment}.
  *
- * @see LoadBalancingStrategy
+ * @see LoadBalancer
  * @see Environment
  */
-public interface LoadBalancingStrategyFactory extends ServiceFactory<LoadBalancingStrategy> {
-
+public interface LoadBalancerFactory extends ServiceFactory<LoadBalancer> {
     /**
      * LoadBalancingStrategy requires {@link ActiveOrigins} to perform ordering of origins, so this method
      * doesn't make much sense in that context.
@@ -38,8 +37,8 @@ public interface LoadBalancingStrategyFactory extends ServiceFactory<LoadBalanci
      * @param strategyConfiguration configuration specific to load balancer
      * @return strategy that is returning an empty collection.
      */
-    default LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration) {
-        return context -> emptyList();
+    default LoadBalancer create(Environment environment, Configuration strategyConfiguration) {
+        return context -> Optional.empty();
     }
 
     /**
@@ -49,5 +48,5 @@ public interface LoadBalancingStrategyFactory extends ServiceFactory<LoadBalanci
      * @param strategyConfiguration configuration specific to load balancer
      * @return a new load balancing strategy.
      */
-    LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins);
+    LoadBalancer create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins);
 }

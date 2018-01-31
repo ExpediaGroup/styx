@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package com.hotels.styx.client.retry;
 
 
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 
 /**
@@ -39,8 +39,7 @@ abstract class AbstractRetryPolicy implements RetryPolicy {
     }
 
     @Override
-    public abstract Outcome evaluate(Context context, LoadBalancingStrategy loadBalancingStrategy,
-                                     LoadBalancingStrategy.Context lbContext);
+    public abstract Outcome evaluate(Context context, LoadBalancer loadBalancingStrategy, LoadBalancer.Preferences lbContext);
 
     public int deltaBackoffMillis() {
         return deltaBackoffMillis;

@@ -20,10 +20,11 @@ import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.client.ActiveOrigins
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
-import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
+import com.hotels.styx.client.loadbalancing.strategies.{BusyConnectionsStrategy, RoundRobinStrategy}
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler
 import com.hotels.styx.support.NettyOrigins
@@ -98,9 +99,9 @@ class OriginClosesConnectionSpec extends FunSuite
 
   def activeOrigins(backendService: com.hotels.styx.client.applications.BackendService): ActiveOrigins = newOriginsInventoryBuilder(backendService).build()
 
-  def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins)
+  def busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new BusyConnectionsStrategy(activeOrigins)
 
-  def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, roundRobinStrategy(activeOrigins))
+  def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, busyConnectionStrategy(activeOrigins))
 
   test("Emits ResponseTimeoutException when content subscriber stops requesting data") {
     val timeout = 2.seconds.toMillis.toInt
@@ -111,7 +112,7 @@ class OriginClosesConnectionSpec extends FunSuite
       responseTimeout = timeout.milliseconds).asJava
     val styxClient = com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder(
       backendService)
-        .loadBalancingStrategy(roundRobinStrategy(activeOrigins(backendService)))
+        .loadBalancer(busyConnectionStrategy(activeOrigins(backendService)))
       .build
 
     val responseSubscriber = new TestSubscriber[HttpResponse]()

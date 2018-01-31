@@ -17,9 +17,8 @@ package com.hotels.styx.api.client.retrypolicy.spi;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 
 import java.util.Optional;
 
@@ -81,7 +80,7 @@ public interface RetryPolicy {
         /**
          * Returns the origin that the next retry should target.
          *
-         * @return A {@link ConnectionPool} that the next retry should target
+         * @return A {@link RemoteHost} that the next retry should target
          */
         Optional<RemoteHost> nextOrigin();
 
@@ -98,10 +97,10 @@ public interface RetryPolicy {
      *
      * @param context               A {@link Context} object that indicates the number of retries,
      *                              last requests results, etc
-     * @param loadBalancingStrategy
+     * @param loadBalancer
      * @return A {@link com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy.Outcome}
      * whether the request should be retried and specifies the delay before the next retry
      */
-    Outcome evaluate(Context context, LoadBalancingStrategy loadBalancingStrategy, LoadBalancingStrategy.Context lbContext);
+    Outcome evaluate(Context context, LoadBalancer loadBalancer, LoadBalancer.Preferences lbContext);
 }
 

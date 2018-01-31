@@ -22,13 +22,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.Announcer;
-import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsInventorySnapshot;
-import com.hotels.styx.api.client.OriginsInventoryStateChangeListener;
+import com.hotels.styx.api.client.OriginsSnapshot;
+import com.hotels.styx.api.client.OriginsChangeListener;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
@@ -79,7 +78,7 @@ public final class OriginsInventory
         implements OriginHealthStatusMonitor.Listener,
         OriginsCommandsListener,
         ActiveOrigins,
-        OriginsInventoryStateChangeListener.Announcer,
+        OriginsChangeListener.Announcer,
         Closeable,
         EventProcessor {
     private static final Logger LOG = getLogger(OriginsInventory.class);
@@ -87,7 +86,7 @@ public final class OriginsInventory
     private static final HealthyEvent HEALTHY = new HealthyEvent();
     private static final UnhealthyEvent UNHEALTHY = new UnhealthyEvent();
 
-    private final Announcer<OriginsInventoryStateChangeListener> inventoryListeners = Announcer.to(OriginsInventoryStateChangeListener.class);
+    private final Announcer<OriginsChangeListener> inventoryListeners = Announcer.to(OriginsChangeListener.class);
 
     private final EventBus eventBus;
     private final Id appId;
@@ -179,7 +178,7 @@ public final class OriginsInventory
     }
 
     @Override
-    public void addInventoryStateChangeListener(OriginsInventoryStateChangeListener listener) {
+    public void addOriginsChangeListener(OriginsChangeListener listener) {
         inventoryListeners.addListener(listener);
     }
 
@@ -388,15 +387,15 @@ public final class OriginsInventory
     }
 
     private void notifyStateChange() {
-        OriginsInventorySnapshot event = new OriginsInventorySnapshot(appId, pools(ACTIVE), pools(INACTIVE), pools(DISABLED));
-        inventoryListeners.announce().originsInventoryStateChanged(event);
+        OriginsSnapshot event = new OriginsSnapshot(appId, pools(ACTIVE), pools(INACTIVE), pools(DISABLED));
+        inventoryListeners.announce().originsChanged(event);
         eventBus.post(event);
     }
 
     private Collection<RemoteHost> pools(OriginState state) {
         return origins.values().stream()
                 .filter(origin -> origin.state().equals(state))
-                .map(origin -> remoteHost(origin.origin, origin.connectionPool, origin.hostClient))
+                .map(origin -> remoteHost(origin.origin, origin.hostClient, origin.hostClient))
                 .collect(toList());
     }
 
@@ -418,7 +417,7 @@ public final class OriginsInventory
         private final ConnectionPool connectionPool;
         private final StateMachine<OriginState> machine;
         private final String gaugeName;
-        private final HttpClient hostClient;
+        private final StyxHostHttpClient hostClient;
 
         private MonitoredOrigin(Origin origin) {
             this.origin = origin;

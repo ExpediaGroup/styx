@@ -15,35 +15,18 @@
  */
 package com.hotels.styx.client.loadbalancing.strategies;
 
-import com.google.common.collect.Iterables;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.client.StyxHostHttpClient;
-import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
-import java.util.TreeMap;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
-import static java.util.Comparator.naturalOrder;
-import static java.util.stream.Collectors.toList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.lessThan;
-import static org.mockito.Mockito.mock;
 
 public class BusyConnectionsStrategyStressTest {
     final Origin ORIGIN_ONE = newOriginBuilder(localHostAndFreePort()).id("one").build();
@@ -63,7 +46,7 @@ public class BusyConnectionsStrategyStressTest {
         metrics = new CodaHaleMetricRegistry();
     }
 
-    @DataProvider(name = "origins")
+    @DataProvider(name = "allOrigins")
     private Object[][] origins() {
         return new Object[][]{
                 {new Origin[]{ORIGIN_THREE, ORIGIN_TWO, ORIGIN_ONE, ORIGIN_FOUR}},
@@ -71,119 +54,146 @@ public class BusyConnectionsStrategyStressTest {
         };
     }
 
-    @Test
-    public void distributesLoadWithoutBiasTowardAnyOrigin() {
-        SimulatedOrigin origin1 = new SimulatedOrigin(ORIGIN_ONE);
-        SimulatedOrigin origin2 = new SimulatedOrigin(ORIGIN_TWO);
-        SimulatedOrigin origin3 = new SimulatedOrigin(ORIGIN_THREE);
-        SimulatedOrigin origin4 = new SimulatedOrigin(ORIGIN_FOUR);
-        List<SimulatedOrigin> origins = newArrayList(origin1, origin2, origin3, origin4);
 
-        Map<Origin, Integer> results = simulateLoadBalancerTraffic(origins, new SimulatedApp(5.0, origins));
+//    @Test(dataProvider = "allOrigins")
+//    public void stressTestLeastResponseTimeStrategy(double[] status500Rate, Origin[] expectedOrder) {
+//        SimulatedOrigin origin1 = new SimulatedOrigin(ORIGIN_ONE, status500Rate[0]);
+//        SimulatedOrigin origin2 = new SimulatedOrigin(ORIGIN_TWO, status500Rate[1]);
+//        SimulatedOrigin origin3 = new SimulatedOrigin(ORIGIN_THREE, status500Rate[2]);
+//        SimulatedOrigin origin4 = new SimulatedOrigin(ORIGIN_FOUR, status500Rate[3]);
+//        List<SimulatedOrigin> allOrigins = newArrayList(origin1, origin2, origin3, origin4);
+//
+//        Map<Origin, Integer> results = simulateLoadBalancerTraffic(allOrigins, new SimulatedApp(100.0, allOrigins));
+//
+//        System.out.println("Requests per origin");
+//        results.forEach((origin, count) -> System.out.printf("Origin: %-40s count: %7d%n", origin, count));
+//        System.out.println();
+//
+//        List<Origin> orderedByWinnings = Ordering
+//                .from((o1, o2) -> results.get(o2).compareTo(results.get(o1)))
+//                .sortedCopy(results.keySet());
+//
+//        assertThat(orderedByWinnings, contains(expectedOrder));
+//    }
 
-        System.out.println("Requests per origin");
-        results.forEach((origin, count) -> System.out.printf("Origin: %-40s count: %7d%n", origin, count));
-        System.out.println();
+//    @Test
+//    public void distributesLoadWithoutBiasTowardAnyOrigin() {
+//        SimulatedOrigin origin1 = new SimulatedOrigin(ORIGIN_ONE, 0.0);
+//        SimulatedOrigin origin2 = new SimulatedOrigin(ORIGIN_TWO, 0.0);
+//        SimulatedOrigin origin3 = new SimulatedOrigin(ORIGIN_THREE, 0.0);
+//        SimulatedOrigin origin4 = new SimulatedOrigin(ORIGIN_FOUR, 0.0);
+//        List<SimulatedOrigin> allOrigins = newArrayList(origin1, origin2, origin3, origin4);
+//
+//        Map<Origin, Integer> results = simulateLoadBalancerTraffic(allOrigins, new SimulatedApp(5.0, allOrigins));
+//
+//        System.out.println("Requests per origin");
+//        results.forEach((origin, count) -> System.out.printf("Origin: %-40s count: %7d%n", origin, count));
+//        System.out.println();
+//
+//        double maxCount = results.values().stream().max(naturalOrder()).get();
+//        double minCount = results.values().stream().min(naturalOrder()).get();
+//
+//        assertThat(maxCount / minCount, is(lessThan(1.1)));
+//    }
+//
+//    @Test
+//    public void distributesLoadWithoutBiasTowardAnyOrigin_X() {
+//        int responseLatency = 2 * 60 * 1000;
+//
+//        List<SimulatedOrigin> allOrigins = newArrayList(
+//                new SimulatedOrigin(ORIGIN_ONE, 0.0, responseLatency),
+//                new SimulatedOrigin(ORIGIN_TWO, 0.0, responseLatency + 200),
+//                new SimulatedOrigin(ORIGIN_THREE, 0.0, responseLatency),
+//                new SimulatedOrigin(ORIGIN_FOUR, 0.0, responseLatency),
+//                new SimulatedOrigin(ORIGIN_FIVE, 0.0, responseLatency + 300),
+//                new SimulatedOrigin(ORIGIN_SIX, 0.0, responseLatency),
+//                new SimulatedOrigin(ORIGIN_SEVEN, 0.0, responseLatency),
+//                new SimulatedOrigin(ORIGIN_EIGHT, 0.0, responseLatency + 400),
+//                new SimulatedOrigin(ORIGIN_NINE, 0.0, responseLatency));
+//
+//        Map<Origin, Integer> results = simulateLoadBalancerTraffic(allOrigins, new SimulatedApp(5.0, allOrigins));
+//
+//        System.out.println("Requests per origin");
+//        results.forEach((origin, count) -> System.out.printf("Origin: %-40s count: %7d%n", origin, count));
+//        System.out.println();
+//
+//        System.out.println("  existing connections: " + metrics.counter("winner.existingConnections").getCount());
+//        System.out.println("       new connections: " + metrics.counter("winner.newConnections").getCount());
+//
+//        double maxCount = results.values().stream().max(naturalOrder()).get();
+//        double minCount = results.values().stream().min(naturalOrder()).get();
+//
+//        assertThat(results.size(), is(9));
+//
+//        assertThat(maxCount / minCount, is(lessThan(1.1)));
+//    }
 
-        double maxCount = results.values().stream().max(naturalOrder()).get();
-        double minCount = results.values().stream().min(naturalOrder()).get();
+//    private Map<Origin, Integer> simulateLoadBalancerTraffic(List<SimulatedOrigin> allOrigins, SimulatedApp app) {
+//        Map<Origin, Integer> results = new TreeMap<>();
+//
+//        int totalTimeSec = 60 * 60;
+//        int ticks = totalTimeSec * 1000;
+//        Random random = new Random();
+//
+//        for (int i = 0; i < ticks; i++) {
+//
+//            boolean vote = app.newRequest(1000, random);
+//
+//            if (vote) {
+//                Iterable<RemoteHost> pools = allOrigins.stream().map(so ->
+//                        remoteHost(so.origin, new StubConnectionPool(so.origin())
+//                                .withBusyConnections(so.busyConnections())
+//                                .withAvailableConnections(so.availableConnections()), mock(StyxHostHttpClient.class)))
+//                        .collect(toList());
+//
+//                final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy(() -> pools);
+//
+//                Iterable<RemoteHost> result = strategy.vote(contextFromSimulatedOrigins(allOrigins));
+//
+//                RemoteHost winner = Iterables.get(result, 0);
+//                if (winner.connectionPool().stats().availableConnectionCount() > 0) {
+//                    metrics.counter("winner.existingConnections").inc();
+//                } else {
+//                    metrics.counter("winner.newConnections").inc();
+//                }
+//
+//                results.putIfAbsent(winner.connectionPool().getOrigin(), 0);
+//                results.computeIfPresent(winner.connectionPool().getOrigin(), (k, v) -> ++v);
+//
+//                app.borrowFor(i, winner);
+//            }
+//
+//            for (SimulatedOrigin so : allOrigins) {
+//                so.advanceTime(i, 1000, random);
+//            }
+//        }
+//
+//        return results;
+//    }
 
-        assertThat(maxCount / minCount, is(lessThan(1.1)));
-    }
-
-    @Test
-    public void distributesLoadWithoutBiasTowardAnyOrigin_X() {
-        int responseLatency = 2 * 60 * 1000;
-
-        List<SimulatedOrigin> origins = newArrayList(
-                new SimulatedOrigin(ORIGIN_ONE, responseLatency),
-                new SimulatedOrigin(ORIGIN_TWO, responseLatency + 200),
-                new SimulatedOrigin(ORIGIN_THREE, responseLatency),
-                new SimulatedOrigin(ORIGIN_FOUR, responseLatency),
-                new SimulatedOrigin(ORIGIN_FIVE, responseLatency + 300),
-                new SimulatedOrigin(ORIGIN_SIX, responseLatency),
-                new SimulatedOrigin(ORIGIN_SEVEN, responseLatency),
-                new SimulatedOrigin(ORIGIN_EIGHT, responseLatency + 400),
-                new SimulatedOrigin(ORIGIN_NINE, responseLatency));
-
-        Map<Origin, Integer> results = simulateLoadBalancerTraffic(origins, new SimulatedApp(5.0, origins));
-
-        System.out.println("Requests per origin");
-        results.forEach((origin, count) -> System.out.printf("Origin: %-40s count: %7d%n", origin, count));
-        System.out.println();
-
-        System.out.println("  existing connections: " + metrics.counter("winner.existingConnections").getCount());
-        System.out.println("       new connections: " + metrics.counter("winner.newConnections").getCount());
-
-        double maxCount = results.values().stream().max(naturalOrder()).get();
-        double minCount = results.values().stream().min(naturalOrder()).get();
-
-        assertThat(results.size(), is(9));
-
-        assertThat(maxCount / minCount, is(lessThan(1.1)));
-    }
-
-    private Map<Origin, Integer> simulateLoadBalancerTraffic(List<SimulatedOrigin> origins, SimulatedApp app) {
-        Map<Origin, Integer> results = new TreeMap<>();
-
-        int totalTimeSec = 60 * 60;
-        int ticks = totalTimeSec * 1000;
-        Random random = new Random();
-
-        for (int i = 0; i < ticks; i++) {
-
-            boolean vote = app.newRequest(1000, random);
-
-            if (vote) {
-                Iterable<RemoteHost> pools = origins.stream().map(so ->
-                        remoteHost(so.origin, new StubConnectionPool(so.origin())
-                                .withBusyConnections(so.busyConnections())
-                                .withAvailableConnections(so.availableConnections()), mock(StyxHostHttpClient.class)))
-                        .collect(toList());
-
-                final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy(() -> pools);
-
-                Iterable<RemoteHost> result = strategy.vote(contextFromSimulatedOrigins(origins));
-
-                RemoteHost winner = Iterables.get(result, 0);
-                if (winner.connectionPool().stats().availableConnectionCount() > 0) {
-                    metrics.counter("winner.existingConnections").inc();
-                } else {
-                    metrics.counter("winner.newConnections").inc();
-                }
-
-                results.putIfAbsent(winner.connectionPool().getOrigin(), 0);
-                results.computeIfPresent(winner.connectionPool().getOrigin(), (k, v) -> ++v);
-
-                app.borrowFor(i, winner);
-            }
-
-            for (SimulatedOrigin so : origins) {
-                so.advanceTime(i, 1000, random);
-            }
-        }
-
-        return results;
-    }
-
-    private LoadBalancingStrategy.Context contextFromSimulatedOrigins(List<SimulatedOrigin> origins) {
-        return new LoadBalancingStrategy.Context() {
-            @Override
-            public Id appId() {
-                return null;
-            }
-
-            @Override
-            public HttpRequest currentRequest() {
-                return null;
-            }
-
-            @Override
-            public double oneMinuteRateForStatusCode5xx(Origin origin) {
-                return 0.0;
-            }
-        };
-    }
+//    private LoadBalancingStrategy.Context contextFromSimulatedOrigins(List<SimulatedOrigin> allOrigins) {
+//        return new LoadBalancingStrategy.Context() {
+//            @Override
+//            public Id appId() {
+//                return null;
+//            }
+//
+//            @Override
+//            public HttpRequest currentRequest() {
+//                return null;
+//            }
+//
+//            @Override
+//            public double oneMinuteRateForStatusCode5xx(Origin origin) {
+//                SimulatedOrigin result = allOrigins.stream()
+//                        .filter(so -> so.origin().equals(origin))
+//                        .findFirst()
+//                        .get();
+//
+//                return result.status500Rate();
+//            }
+//        };
+//    }
 
     private static class SimulatedApp {
         private final List<SimulatedOrigin> simulatedOrigins;
@@ -199,7 +209,7 @@ public class BusyConnectionsStrategyStressTest {
         }
 
         public void borrowFor(int currentTime, RemoteHost winner) {
-            SimulatedOrigin simulatedOrigin = simulatedOrigins.stream().filter(so -> so.origin().equals(winner.connectionPool().getOrigin())).findFirst().get();
+            SimulatedOrigin simulatedOrigin = simulatedOrigins.stream().filter(so -> so.origin().equals(winner.origin())).findFirst().get();
             simulatedOrigin.borrow(currentTime);
         }
     }

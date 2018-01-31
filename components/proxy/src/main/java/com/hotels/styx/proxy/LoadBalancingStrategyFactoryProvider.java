@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.proxy;
 
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategyFactory;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancerFactory;
 import com.hotels.styx.api.configuration.MissingConfigurationException;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy;
+import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy;
 import org.slf4j.Logger;
 
 import java.util.function.Supplier;
@@ -30,9 +30,9 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Create the load balancing strategy factory from the configuration.
  */
-public class LoadBalancingStrategyFactoryProvider implements Supplier<LoadBalancingStrategyFactory> {
+public class LoadBalancingStrategyFactoryProvider implements Supplier<LoadBalancerFactory> {
     private static final String LOAD_BALANCING_STRATEGY_KEY = "loadBalancing.strategy";
-    private static final LoadBalancingStrategyFactory ROUND_ROBIN = new RoundRobinStrategy.Factory();
+    private static final LoadBalancerFactory BUSY_CONNECTION_BALANCER = new BusyConnectionsStrategy.Factory();
 
     private static final Logger LOGGER = getLogger(LoadBalancingStrategyFactoryProvider.class);
 
@@ -47,20 +47,20 @@ public class LoadBalancingStrategyFactoryProvider implements Supplier<LoadBalanc
     }
 
     @Override
-    public LoadBalancingStrategyFactory get() {
+    public LoadBalancerFactory get() {
         return configurations.get(LOAD_BALANCING_STRATEGY_KEY)
                 .map(this::newFactoryInstance)
-                .orElse(roundRobin());
+                .orElse(busyConnectionBalancer());
     }
 
-    private LoadBalancingStrategyFactory roundRobin() {
-        LOGGER.info("No configured load-balancing strategy found. Using {}", ROUND_ROBIN);
-        return ROUND_ROBIN;
+    private LoadBalancerFactory busyConnectionBalancer() {
+        LOGGER.info("No configured load-balancing strategy found. Using {}", BUSY_CONNECTION_BALANCER);
+        return BUSY_CONNECTION_BALANCER;
     }
 
-    private LoadBalancingStrategyFactory newFactoryInstance(String strategyName) {
+    private LoadBalancerFactory newFactoryInstance(String strategyName) {
         String factoryClassName = factoryClassName(strategyName);
-        return newInstance(factoryClassName, LoadBalancingStrategyFactory.class);
+        return newInstance(factoryClassName, LoadBalancerFactory.class);
     }
 
     private String factoryClassName(String strategyName) {

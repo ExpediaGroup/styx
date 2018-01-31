@@ -15,13 +15,10 @@
  */
 package com.hotels.styx.client
 
-import java.nio.charset.StandardCharsets.UTF_8
-
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
-import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import com.hotels.styx.api.HttpRequest.Builder._
+import com.hotels.styx.api.client.ActiveOrigins
 import com.hotels.styx.api.client.Origin.newOriginBuilder
-import com.hotels.styx.api.client.{ActiveOrigins, Origin}
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
@@ -29,8 +26,9 @@ import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
+import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
+import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
 import org.scalatest.FunSpec
@@ -64,7 +62,7 @@ class ExpiringConnectionSpec extends FunSpec
       .build()
 
     pooledClient = newHttpClientBuilder(backendService)
-      .loadBalancingStrategy(roundRobinStrategy(activeOrigins(backendService)))
+      .loadBalancer(roundRobinStrategy(activeOrigins(backendService)))
       .build
   }
 
@@ -98,5 +96,5 @@ class ExpiringConnectionSpec extends FunSpec
 
   def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(backendService).build()
 
-  def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins)
+  def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins, activeOrigins.snapshot())
 }

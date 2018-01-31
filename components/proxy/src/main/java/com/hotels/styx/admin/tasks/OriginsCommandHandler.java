@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.OriginsInventorySnapshot;
-import com.hotels.styx.api.client.OriginsInventoryStateChangeListener;
+import com.hotels.styx.api.client.OriginsSnapshot;
+import com.hotels.styx.api.client.OriginsChangeListener;
 import com.hotels.styx.api.http.handlers.BaseHttpHandler;
 import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
@@ -45,14 +45,14 @@ import static java.lang.String.format;
 /**
  * Handles commands for enabling and disabling origins.
  */
-public class OriginsCommandHandler extends BaseHttpHandler implements OriginsInventoryStateChangeListener {
+public class OriginsCommandHandler extends BaseHttpHandler implements OriginsChangeListener {
     private static final String INVALID_APP_ID_FORMAT = "application with id=%s is not found";
     private static final String INVALID_ORIGIN_ID_FORMAT = "origin with id=%s is not found for application=%s";
     private static final List<String> VALID_COMMANDS = ImmutableList.of("enable_origin", "disable_origin");
     private static final String MISSING_ERROR_MESSAGE = format("cmd, appId and originId are all required parameters. cmd can be %s", Joiner.on('|').join(VALID_COMMANDS));
 
     private final EventBus eventBus;
-    private final Map<Id, OriginsInventorySnapshot> originsInventorySnapshotMap = new ConcurrentHashMap<>();
+    private final Map<Id, OriginsSnapshot> originsInventorySnapshotMap = new ConcurrentHashMap<>();
 
     /**
      * Constructs an instance with an event bus to pass commands to, and also to listen to for inventory
@@ -100,7 +100,7 @@ public class OriginsCommandHandler extends BaseHttpHandler implements OriginsInv
     }
 
     private boolean validOriginId(Id appId, Id originId) {
-        OriginsInventorySnapshot inventorySnapshot = originsInventorySnapshotMap.get(appId);
+        OriginsSnapshot inventorySnapshot = originsInventorySnapshotMap.get(appId);
         return inventorySnapshot.containsOrigin(originId);
     }
 
@@ -122,7 +122,7 @@ public class OriginsCommandHandler extends BaseHttpHandler implements OriginsInv
 
     @Subscribe
     @Override
-    public void originsInventoryStateChanged(OriginsInventorySnapshot snapshot) {
+    public void originsChanged(OriginsSnapshot snapshot) {
         originsInventorySnapshotMap.put(snapshot.appId(), snapshot);
     }
 }

@@ -16,119 +16,82 @@
 package com.hotels.styx.client.loadbalancing.strategies;
 
 
+import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategyFactory;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancerFactory;
 import com.hotels.styx.api.configuration.Configuration;
 
-import java.util.Comparator;
-import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 
-import static java.util.Collections.shuffle;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.StreamSupport.stream;
+import static com.google.common.collect.Iterables.toArray;
+import static java.util.Objects.requireNonNull;
 
 
 /**
  * A load balancing strategy that sorts origins according to three functions:
  * <p>
- * Whether they have below or above average 5xx errors.
+ * Whether they have below or above averagxe 5xx errors.
  * The number of busy connections.
  * Whether they having existing connections available.
  */
-public class BusyConnectionsStrategy implements LoadBalancingStrategy {
-    private ActiveOrigins activeOrigins;
+public class BusyConnectionsStrategy implements LoadBalancer {
+    private final ActiveOrigins activeOrigins;
+    private final Random rng;
+
+    @VisibleForTesting
+    BusyConnectionsStrategy(ActiveOrigins activeOrigins, Random rng) {
+        this.activeOrigins = requireNonNull(activeOrigins);
+        this.rng = requireNonNull(rng);
+    }
 
     public BusyConnectionsStrategy(ActiveOrigins activeOrigins) {
-        this.activeOrigins = activeOrigins;
+        this(activeOrigins, new Random());
     }
 
     /**
      * A load balancing strategy that favours the origin with the least response time.
      */
-    public static class Factory implements LoadBalancingStrategyFactory {
+    public static class Factory implements LoadBalancerFactory {
         @Override
-        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins) {
+        public LoadBalancer create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins) {
             return new BusyConnectionsStrategy(activeOrigins);
         }
     }
 
     @Override
-    public Iterable<RemoteHost> vote(Context context) {
-        List<ConnectionPoolStatus> poolsList = stream(activeOrigins.snapshot().spliterator(), false)
-                .map(host -> new ConnectionPoolStatus(host, context))
-                .collect(toList());
+    public Optional<RemoteHost> choose(LoadBalancer.Preferences preferences) {
+        RemoteHost[] hosts = toArray(activeOrigins.snapshot(), RemoteHost.class);
 
-        double average5xxRate = average5xxRate(poolsList);
+        if (hosts.length == 0) {
+            return Optional.empty();
+        } else if (hosts.length == 1) {
+            return Optional.of(hosts[0]);
+        } else {
+            RemoteHost host1 = choose(hosts);
+            RemoteHost host2 = choose(hosts, host1);
 
-        shuffle(poolsList);
-
-        poolsList.sort(byComparing(
-                (first, second) -> Integer.compare(first.busyConnectionCount(), second.busyConnectionCount()),
-                (first, second) -> Integer.compare(first.pendingConnectionCount(), second.pendingConnectionCount()),
-                (first, second) -> Boolean.compare(second.availableConnectionCount() > 0, first.availableConnectionCount() > 0)
-        ));
-
-        return poolsList.stream()
-                .map(ConnectionPoolStatus::host)
-                .collect(toList());
+            return Optional.of(betterOf(host1, host2));
+        }
     }
 
-    private static Comparator<ConnectionPoolStatus> byComparing(Comparator<ConnectionPoolStatus> first, Comparator<ConnectionPoolStatus>... rest) {
-        Comparator<ConnectionPoolStatus> chain = first;
-        for (Comparator<ConnectionPoolStatus> comparator : rest) {
-            chain = chain.thenComparing(comparator);
-        }
-        return chain;
+    private RemoteHost betterOf(RemoteHost host1, RemoteHost host2) {
+        return host1.metric().ongoingConnections() < host2.metric().ongoingConnections() ? host1 : host2;
     }
 
-    private static double average5xxRate(Iterable<ConnectionPoolStatus> pools) {
-        return stream(pools.spliterator(), false)
-                .mapToDouble(ConnectionPoolStatus::status5xxRate)
-                .average()
-                .orElse(0.0);
+    private RemoteHost choose(RemoteHost[] hosts) {
+        int i = rng.nextInt(hosts.length);
+        return hosts[i];
     }
 
-    private static class ConnectionPoolStatus {
-        private final RemoteHost host;
-        private final double status5XxRate;
-        private final int availableCount;
-        private final int busyConnectionCount;
-        private final int pendingConnectionCount;
-
-        public ConnectionPoolStatus(RemoteHost host, Context context) {
-            this.host = host;
-            this.status5XxRate = context.oneMinuteRateForStatusCode5xx(host.origin());
-            this.availableCount = host.connectionPool().stats().availableConnectionCount();
-            this.busyConnectionCount = host.connectionPool().stats().busyConnectionCount();
-            this.pendingConnectionCount = host.connectionPool().stats().pendingConnectionCount();
+    private RemoteHost choose(RemoteHost[] hosts, RemoteHost another) {
+        RemoteHost host = choose(hosts);
+        while (host == another) {
+            host = choose(hosts);
         }
-
-        public double status5xxRate() {
-            return status5XxRate;
-        }
-
-        public int availableConnectionCount() {
-            return availableCount;
-        }
-
-        public int busyConnectionCount() {
-            return busyConnectionCount;
-        }
-
-        public int pendingConnectionCount() {
-            return pendingConnectionCount;
-        }
-
-        public ConnectionPool pool() {
-            return host.connectionPool();
-        }
-
-        public RemoteHost host() {
-            return host;
-        }
+        return host;
     }
 }

@@ -16,70 +16,58 @@
 package com.hotels.styx.client;
 
 import com.google.common.base.Splitter;
-import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import org.slf4j.Logger;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
+import java.util.Random;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * A load balancing strategy that restricts available origins according to a cookie value.
  */
-public class OriginRestrictionLoadBalancingStrategy implements LoadBalancingStrategy {
+public class OriginRestrictionLoadBalancingStrategy implements LoadBalancer {
     private static final Splitter COOKIE_SPLITTER = Splitter.on(',').trimResults();
 
     private static final Logger LOG = getLogger(OriginRestrictionLoadBalancingStrategy.class);
     private static final Pattern MATCH_ALL = Pattern.compile(".*");
 
     private final ActiveOrigins activeOrigins;
-    private final LoadBalancingStrategy delegate;
-    private final String cookieName;
+    private final LoadBalancer delegate;
 
-    public OriginRestrictionLoadBalancingStrategy(ActiveOrigins activeOrigins, LoadBalancingStrategy delegate, String cookieName) {
+    public OriginRestrictionLoadBalancingStrategy(ActiveOrigins activeOrigins, LoadBalancer delegate) {
         this.activeOrigins = activeOrigins;
         this.delegate = checkNotNull(delegate);
-        this.cookieName = checkNotNull(cookieName);
     }
 
     @Override
-    public Iterable<RemoteHost> vote(Context context) {
-        Iterable<RemoteHost> connectionPools = delegate.vote(context);
-        Optional<Set<RemoteHost>> matchingOrigins = originPartition(activeOrigins.snapshot(), context);
-
-        if (matchingOrigins.isPresent()) {
-            Set<RemoteHost> origins = matchingOrigins.get();
-            return stream(connectionPools.spliterator(), false)
-                    .filter(origins::contains)
-                    .collect(toList());
-        }
-        return connectionPools;
+    public Optional<RemoteHost> choose(LoadBalancer.Preferences context) {
+        return context.preferredOrigins()
+                .map(hostPreference -> {
+                            List<RemoteHost> list = stream(activeOrigins.snapshot().spliterator(), false)
+                                    .filter(originIsAllowed(hostPreference))
+                                    .collect(Collectors.toList());
+                            if (list.size() > 0) {
+                                return Optional.of(list.get(new Random().nextInt(list.size())));
+                            } else {
+                                return Optional.<RemoteHost>empty();
+                            }
+                        }
+                )
+                .orElse(delegate.choose(context));
     }
 
-    private Optional<Set<RemoteHost>> originPartition(Iterable<RemoteHost> origins, Context context) {
-        return context.currentRequest().cookie(cookieName)
-                .map(cookie -> restrictedOrigins(origins, cookie));
-    }
-
-    private Set<RemoteHost> restrictedOrigins(Iterable<RemoteHost> origins, HttpCookie cookie) {
-        return stream(origins.spliterator(), false)
-                .filter(originIsPermittedByCookie(cookie.value()))
-                .collect(toSet());
-    }
-
-    private Predicate<RemoteHost> originIsPermittedByCookie(String cookieValue) {
+    private Predicate<RemoteHost> originIsAllowed(String cookieValue) {
         return originIdMatcherStream(cookieValue)
                 .reduce(Predicate::or)
                 .orElse(input -> false);
@@ -108,8 +96,4 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancingStra
         return remoteHost -> pattern.matcher(remoteHost.id().toString()).matches();
     }
 
-    @Override
-    public void originsInventoryStateChanged(OriginsInventorySnapshot snapshot) {
-        delegate.originsInventoryStateChanged(snapshot);
-    }
 }

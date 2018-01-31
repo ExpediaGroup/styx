@@ -15,146 +15,92 @@
  */
 package com.hotels.styx.client.loadbalancing.strategies;
 
+import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetric;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
+import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.client.StyxHostHttpClient;
-import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
-import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import rx.Observer;
 
-import static com.google.common.collect.Iterables.size;
+import java.util.Optional;
+
+import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static java.util.Arrays.asList;
-import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.hamcrest.core.Is.is;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class RoundRobinStrategyTest {
     private static final StubConnectionFactory connectionFactory = new StubConnectionFactory();
-    private static final RemoteHost POOL_1 = createConnectionPoolFor("localhost", 1);
-    private static final RemoteHost POOL_2 = createConnectionPoolFor("localhost", 2);
-    private static final RemoteHost POOL_3 = createConnectionPoolFor("localhost", 3);
-    private static Origin origin;
+    private static final RemoteHost HOST_1 = remoteHostFor("localhost", 1);
+    private static final RemoteHost HOST_2 = remoteHostFor("localhost", 2);
+    private static final RemoteHost HOST_3 = remoteHostFor("localhost", 3);
+    private static final RemoteHost HOST_4 = remoteHostFor("localhost", 4);
+    private static final RemoteHost HOST_5 = remoteHostFor("localhost", 5);
+    private static final RemoteHost HOST_6 = remoteHostFor("localhost", 6);
+    private Id APP_ID = id("app");
 
-    private static RemoteHost createConnectionPoolFor(String host, int port) {
-        origin = newOriginBuilder(host, port).build();
+    private static RemoteHost remoteHostFor(String host, int port) {
+        Origin origin = newOriginBuilder(host, port).build();
 
-        return remoteHost(
-                origin,
-                new SimpleConnectionPool(
-                        origin,
-                        new ConnectionPoolSettings.Builder().maxConnectionsPerHost(1).build(),
-                        connectionFactory),
-                mock(StyxHostHttpClient.class));
+        LoadBalancingMetricSupplier metric = mock(LoadBalancingMetricSupplier.class);
+        when(metric.loadBalancingMetric()).thenReturn(new LoadBalancingMetric(45, false));
+
+        return remoteHost(origin, mock(StyxHostHttpClient.class), metric);
     }
 
-    private LoadBalancingStrategy strategy;
+    private LoadBalancer strategy;
     private ActiveOrigins activeOriginsMock;
 
     @BeforeMethod
     public void setUp() {
         activeOriginsMock = mock(ActiveOrigins.class);
-        strategy = new RoundRobinStrategy(activeOriginsMock);
+        when(activeOriginsMock.snapshot()).thenReturn(asList(HOST_1, HOST_2, HOST_3));
+        strategy = new RoundRobinStrategy.Factory().create(mock(Environment.class), mock(Configuration.class), activeOriginsMock);
     }
 
     @Test
-    public void returnTheSameOrigins() {
-        when(activeOriginsMock.snapshot()).thenReturn(asList(POOL_1, POOL_2, POOL_3));
-        Iterable<RemoteHost> sortedOrigins = strategy.vote(null);
-        assertThat(sortedOrigins, contains(POOL_1, POOL_2, POOL_3));
+    public void cyclesThroughOrigins() {
+        assertThat(strategy.choose(null), is(Optional.of(HOST_1)));
+        assertThat(strategy.choose(null), is(Optional.of(HOST_2)));
+        assertThat(strategy.choose(null), is(Optional.of(HOST_3)));
+        assertThat(strategy.choose(null), is(Optional.of(HOST_1)));
+        assertThat(strategy.choose(null), is(Optional.of(HOST_2)));
     }
 
     @Test
-    public void skipsExhaustedPools() {
-        RemoteHost first = exhaustPool(createConnectionPoolFor("localhost", 1));
-        RemoteHost second = createConnectionPoolFor("localhost", 2);
-        RemoteHost third = createConnectionPoolFor("localhost", 3);
+    public void refreshesAtOriginsChange() {
+        assertThat(strategy.choose(null), is(Optional.of(HOST_1)));
+        assertThat(strategy.choose(null), is(Optional.of(HOST_2)));
+        assertThat(strategy.choose(null), is(Optional.of(HOST_3)));
+        assertThat(strategy.choose(null), is(Optional.of(HOST_1)));
+        assertThat(strategy.choose(null), is(Optional.of(HOST_2)));
 
-        when(activeOriginsMock.snapshot()).thenReturn(asList(first, second, third));
+        when(activeOriginsMock.snapshot()).thenReturn(asList(HOST_2, HOST_4, HOST_6));
+        strategy.originsChanged(new OriginsSnapshot(
+                APP_ID,
+                asList(HOST_2, HOST_4, HOST_6),
+                asList(HOST_1, HOST_3),
+                asList(HOST_5)
+                ));
 
-        Iterable<RemoteHost> sortedPools = strategy.vote(null);
-        assertThat(size(sortedPools), is(2));
+        assertThat(strategy.choose(null), is(Optional.of(HOST_6)));
+        assertThat(strategy.choose(null), is(Optional.of(HOST_2)));
+        assertThat(strategy.choose(null), is(Optional.of(HOST_4)));
+        assertThat(strategy.choose(null), is(Optional.of(HOST_6)));
+        assertThat(strategy.choose(null), is(Optional.of(HOST_2)));
+        assertThat(strategy.choose(null), is(Optional.of(HOST_4)));
     }
 
-    @Test
-    public void doesNotReturnPoolWhenAllPoolsAreExhausted() {
-        Iterable<RemoteHost> exhaustedPools = exhaust(
-                createConnectionPoolFor("localhost", 1),
-                createConnectionPoolFor("localhost", 2),
-                createConnectionPoolFor("localhost", 3));
-
-        when(activeOriginsMock.snapshot()).thenReturn(exhaustedPools);
-
-        Iterable<RemoteHost> sortedPools = strategy.vote(null);
-        assertThat(size(sortedPools), is(0));
-    }
-
-    @Test
-    public void cyclesOrigins() {
-        when(activeOriginsMock.snapshot()).thenReturn(asList(POOL_1, POOL_2, POOL_3));
-        Iterable<RemoteHost> sortedOrigins = strategy.vote(null);
-        assertThat(sortedOrigins, contains(POOL_1, POOL_2, POOL_3));
-
-        sortedOrigins = strategy.vote(null);
-        assertThat(sortedOrigins, contains(POOL_2, POOL_3, POOL_1));
-
-        sortedOrigins = strategy.vote(null);
-        assertThat(sortedOrigins, contains(POOL_3, POOL_1, POOL_2));
-
-        sortedOrigins = strategy.vote(null);
-        assertThat(sortedOrigins, contains(POOL_1, POOL_2, POOL_3));
-    }
-
-    private static RemoteHost exhaustPool(RemoteHost pool) {
-        return exhaust(pool).iterator().next();
-    }
-
-    private static Iterable<RemoteHost> exhaust(RemoteHost... pools) {
-        return stream(pools)
-                .map(RoundRobinStrategyTest::exhaustConnectionPool)
-                .collect(toList());
-    }
-
-    public static class ConnectionCollectingObserver implements Observer<Connection> {
-        private Throwable exception;
-
-        @Override
-        public void onCompleted() {
-        }
-
-        @Override
-        public void onError(Throwable exception) {
-            this.exception = exception;
-        }
-
-        @Override
-        public void onNext(Connection connection) {
-        }
-
-        public Throwable getError() {
-            return exception;
-        }
-    }
-
-    private static RemoteHost exhaustConnectionPool(RemoteHost remoteHost) {
-        ConnectionCollectingObserver observer = new ConnectionCollectingObserver();
-        while (true) {
-            remoteHost.connectionPool().borrowConnection().subscribe(observer);
-            if (observer.getError() != null) {
-                break;
-            }
-        }
-        return remoteHost;
-    }
 }

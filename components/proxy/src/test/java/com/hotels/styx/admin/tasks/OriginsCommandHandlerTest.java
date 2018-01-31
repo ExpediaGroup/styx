@@ -20,8 +20,9 @@ import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.RemoteHost;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.client.OriginsCommandsListener;
 import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.origincommands.DisableOrigin;
@@ -49,13 +50,13 @@ import static org.mockito.Mockito.mock;
 
 public class OriginsCommandHandlerTest {
     final Origin activeOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("activeOriginId").build();
-    final Set<RemoteHost> activeOrigins = singleton(remoteHost(activeOrigin, new StubConnectionPool(activeOrigin), mock(StyxHostHttpClient.class)));
+    final Set<RemoteHost> activeOrigins = singleton(remoteHost(activeOrigin, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)));
 
     final Origin disabledOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("disabledOriginId").build();
-    final Set<RemoteHost> disabledOrigins = singleton(remoteHost(disabledOrigin, new StubConnectionPool(disabledOrigin), mock(StyxHostHttpClient.class)));
+    final Set<RemoteHost> disabledOrigins = singleton(remoteHost(disabledOrigin, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)));
 
     final Origin inactiveOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("inactiveOriginId").build();
-    final Set<RemoteHost> inactiveOrigins = singleton(remoteHost(inactiveOrigin, new StubConnectionPool(inactiveOrigin), mock(StyxHostHttpClient.class)));
+    final Set<RemoteHost> inactiveOrigins = singleton(remoteHost(inactiveOrigin, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)));
 
     final EventBus eventBus = new EventBus();
     final OriginsCommandHandler originsCommand = new OriginsCommandHandler(eventBus);
@@ -64,7 +65,7 @@ public class OriginsCommandHandlerTest {
 
     @BeforeMethod
     public void registerListener() {
-        originsCommand.originsInventoryStateChanged(new OriginsInventorySnapshot(id("activeAppId"), activeOrigins, inactiveOrigins, disabledOrigins));
+        originsCommand.originsChanged(new OriginsSnapshot(id("activeAppId"), activeOrigins, inactiveOrigins, disabledOrigins));
         recordingOriginsCommandsListener = new RecordingOriginsCommandsListener();
         eventBus.register(recordingOriginsCommandsListener);
     }

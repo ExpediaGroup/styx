@@ -4,7 +4,6 @@ Styx supports three load balancing strategies:
 
  - Round robin
  - Busy
- - Adaptive
 
 Styx also provides a mechanism to bypass the load balancer and force
 the origin at source.
@@ -22,14 +21,6 @@ This load balancing algorithm attempts to find the best origin
 to serve the request, based on various real-time metrics such as the number 
 of readily available TCP connections, current pool usage, and 
 the observed 5xx response rate from the origins.
-
-### Adaptive
-
-Adaptive load balancing strategy is a combination of *Round Robin* and
-*Busy* strategies. It always starts off with *Round Robin*, and after a while
-it switches over to *Busy* strategy. It remains in *Busy* strategy until
-a new origin is added to rotation. It then reverts to *Round Robin*, and adapts
-as described.
 
 ## Origins Restriction
 
@@ -69,16 +60,6 @@ To enable Busy load balancing strategy:
     loadBalancing:
       strategy:
         factory: {class: "com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy$Factory"}
-
-To enable Adaptive load balancing strategy:
-
-    loadBalancing:
-      strategy:
-        factory:
-          class: "com.hotels.styx.client.loadbalancing.strategies.AdaptiveStrategy$Factory"
-          config:
-            requestCount: 100
-
 
 The *requestCount* attribute determines how long the adaptive strategy
 remains in the Round Robin phase before switching over to the *Busy* strategy.
