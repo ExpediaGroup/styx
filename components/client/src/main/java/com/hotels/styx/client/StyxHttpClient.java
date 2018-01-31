@@ -28,7 +28,6 @@ import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.applications.OriginStats;
-import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -43,8 +42,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getFirst;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
-import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
-import static com.hotels.styx.client.connectionpool.ConnectionPools.simplePoolFactory;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
 import static io.netty.handler.codec.http.HttpMethod.HEAD;
 import static java.util.Collections.emptyList;
@@ -69,38 +66,24 @@ public final class StyxHttpClient implements HttpClient {
     private final StyxHeaderConfig styxHeaderConfig;
 
     private StyxHttpClient(Builder builder) {
-        this.backendService = builder.backendService;
+        this.backendService = requireNonNull(builder.backendService);
         this.id = backendService.id();
 
-        this.originStatsFactory = builder.originStatsFactory;
+        this.originStatsFactory = requireNonNull(builder.originStatsFactory);
 
-        this.loadBalancingStrategy = backendService.stickySessionConfig().stickySessionEnabled()
-                ? new StickySessionLoadBalancingStrategy(builder.originsInventory, builder.loadBalancingStrategy)
-                : nonStickyLoadBalancingStrategy(builder);
+        this.loadBalancingStrategy = requireNonNull(builder.loadBalancingStrategy);
 
         this.retryPolicy = builder.retryPolicy != null
                 ? builder.retryPolicy
                 : new RetryNTimes(3);
 
         this.rewriteRuleset = new RewriteRuleset(builder.rewriteRules);
-        this.transport = new Transport(id, builder.styxHeaderConfig);
+        this.transport = requireNonNull(builder.transport);
 
         this.metricsRegistry = builder.metricsRegistry;
         this.contentValidation = builder.contentValidation;
 
         this.styxHeaderConfig = builder.styxHeaderConfig;
-    }
-
-    private static LoadBalancingStrategy nonStickyLoadBalancingStrategy(Builder builder) {
-        if (builder.originRestrictionCookie == null) {
-            LOGGER.info("originRestrictionCookie not specified - origin restriction disabled");
-
-            return builder.loadBalancingStrategy;
-        }
-
-        LOGGER.info("originRestrictionCookie specified as {} - origin restriction will apply when this cookie is sent", builder.originRestrictionCookie);
-
-        return new OriginRestrictionLoadBalancingStrategy(builder.originsInventory, builder.loadBalancingStrategy, builder.originRestrictionCookie);
     }
 
     public boolean isHttps() {
@@ -250,7 +233,7 @@ public final class StyxHttpClient implements HttpClient {
     }
 
     private HttpResponse addStickySessionIdentifier(HttpResponse httpResponse) {
-        if (backendService.stickySessionConfig().stickySessionEnabled()) {
+        if (loadBalancingStrategy() instanceof StickySessionLoadBalancingStrategy) {
             Optional<String> originId = httpResponse.header(styxHeaderConfig.originIdHeaderName());
             if (originId.isPresent()) {
                 int maxAge = backendService.stickySessionConfig().stickySessionTimeoutSeconds();
@@ -285,20 +268,14 @@ public final class StyxHttpClient implements HttpClient {
         private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
         private List<RewriteRule> rewriteRules = emptyList();
         private RetryPolicy retryPolicy;
-        private String originRestrictionCookie;
-        private OriginsInventory originsInventory;
         private LoadBalancingStrategy loadBalancingStrategy;
         private boolean contentValidation;
         private StyxHeaderConfig styxHeaderConfig = new StyxHeaderConfig();
         private OriginStatsFactory originStatsFactory;
+        public Transport transport;
 
         public Builder(BackendService backendService) {
             this.backendService = checkNotNull(backendService);
-        }
-
-        public Builder originRestrictionCookie(String originRestrictionCookie) {
-            this.originRestrictionCookie = originRestrictionCookie;
-            return this;
         }
 
         public Builder metricsRegistry(MetricRegistry metricsRegistry) {
@@ -318,17 +295,12 @@ public final class StyxHttpClient implements HttpClient {
 
 
         public Builder loadBalancingStrategy(LoadBalancingStrategy loadBalancingStrategy) {
-            this.loadBalancingStrategy = loadBalancingStrategy;
+            this.loadBalancingStrategy = requireNonNull(loadBalancingStrategy);
             return this;
         }
 
         public Builder styxHeaderNames(StyxHeaderConfig styxHeaderConfig) {
             this.styxHeaderConfig = requireNonNull(styxHeaderConfig);
-            return this;
-        }
-
-        public Builder originsInventory(OriginsInventory originsInventory) {
-            this.originsInventory = originsInventory;
             return this;
         }
 
@@ -342,22 +314,20 @@ public final class StyxHttpClient implements HttpClient {
             return this;
         }
 
+        public Builder transport(Transport transport) {
+            this.transport = transport;
+            return this;
+        }
+
         public StyxHttpClient build() {
-            if (originsInventory == null) {
-                originsInventory = newOriginsInventoryBuilder(backendService.id())
-                        .connectionPoolFactory(simplePoolFactory(backendService, metricsRegistry))
-                        .initialOrigins(backendService.origins())
-                        .build();
-            }
-
-            if (loadBalancingStrategy == null) {
-                loadBalancingStrategy = new RoundRobinStrategy(originsInventory);
-            }
-
             if (originStatsFactory == null) {
                 originStatsFactory = new OriginStatsFactory(metricsRegistry);
             }
+            if (transport == null) {
+                transport = new Transport(backendService.id(), styxHeaderConfig);
+            }
             return new StyxHttpClient(this);
         }
+
     }
 }

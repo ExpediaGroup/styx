@@ -15,12 +15,18 @@
  */
 package com.hotels.styx
 
+import java.lang
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.client.{ActiveOrigins, ConnectionPool}
 import com.hotels.styx.api.messages.HttpResponseStatus._
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.client.StyxHttpClient._
+import com.hotels.styx.client.connectionpool.ConnectionPools
+import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
+import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.configuration.{BackendService, ImplicitOriginConversions, Origins}
@@ -31,7 +37,7 @@ import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
 import rx.observers.TestSubscriber
-
+import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
 class HttpResponseSpec extends FunSuite
@@ -57,12 +63,32 @@ class HttpResponseSpec extends FunSuite
   before {
     testSubscriber = new TestSubscriber[com.hotels.styx.api.HttpResponse]()
 
-    client = newHttpClientBuilder(
-      BackendService(
-        origins = Origins(originOne),
-        responseTimeout = responseTimeout).asJava)
+    val backendService = BackendService(
+      origins = Origins(originOne),
+      responseTimeout = responseTimeout)
+
+    client = newHttpClientBuilder(backendService.asJava)
+      .loadBalancingStrategy(roundRobinStrategy(activeOrigins(backendService.asJava)))
       .build
   }
+
+  def activeOrigins(backendService: com.hotels.styx.client.applications.BackendService): ActiveOrigins = {
+    new ActiveOrigins {
+      /**
+        * Returns the list of the origins ready to accept traffic.
+        *
+        * @return a list of connection pools for each active origin
+        */
+      override def snapshot(): lang.Iterable[ConnectionPool] = backendService.origins().asScala
+        .map(origin => ConnectionPools.poolForOrigin(origin, new CodaHaleMetricRegistry, backendService.responseTimeoutMillis()))
+        .asJava
+    }
+  }
+
+  def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins)
+
+  def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, roundRobinStrategy(activeOrigins))
+
 
   test("Determines response content length from server closing the connection.") {
     originRespondingWith(response200OkFollowedFollowedByServerConnectionClose("Test message body."))

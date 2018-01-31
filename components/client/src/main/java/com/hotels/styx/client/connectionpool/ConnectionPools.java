@@ -49,6 +49,17 @@ public final class ConnectionPools {
                 metricRegistry);
     }
 
+    public static ConnectionPool poolForOrigin(Origin origin, MetricRegistry metricRegistry, int responseTimeoutMillis) {
+        return new StatsReportingConnectionPool(
+                new SimpleConnectionPool(
+                        origin,
+                        defaultConnectionPoolSettings(),
+                        new NettyConnectionFactory.Builder()
+                                .httpRequestOperationFactory(httpRequestOperationFactoryBuilder().responseTimeoutMillis(responseTimeoutMillis).build())
+                                .build()),
+                metricRegistry);
+    }
+
     private static ConnectionPool poolForOrigin(Origin origin, MetricRegistry metricRegistry, NettyConnectionFactory connectionFactory) {
         return new StatsReportingConnectionPool(
                 new SimpleConnectionPool(

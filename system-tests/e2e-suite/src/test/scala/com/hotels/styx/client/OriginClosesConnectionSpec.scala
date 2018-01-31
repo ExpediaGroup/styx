@@ -15,12 +15,19 @@
  */
 package com.hotels.styx.client
 
+import java.lang
+
 import ch.qos.logback.classic.Level
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.HttpResponse
+import com.hotels.styx.api.client.{ActiveOrigins, ConnectionPool}
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException
+import com.hotels.styx.client.connectionpool.ConnectionPools
+import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
+import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.configuration.{BackendService, HttpBackend, Origins}
@@ -40,6 +47,7 @@ import rx.observers.TestSubscriber
 
 import scala.compat.java8.StreamConverters._
 import scala.concurrent.duration._
+import scala.collection.JavaConverters._
 
 class OriginClosesConnectionSpec extends FunSuite
   with StyxProxySpec
@@ -92,14 +100,33 @@ class OriginClosesConnectionSpec extends FunSuite
     errorCount should be(0)
   }
 
+  def activeOrigins(backendService: com.hotels.styx.client.applications.BackendService): ActiveOrigins = {
+    new ActiveOrigins {
+      /**
+        * Returns the list of the origins ready to accept traffic.
+        *
+        * @return a list of connection pools for each active origin
+        */
+      override def snapshot(): lang.Iterable[ConnectionPool] = backendService.origins().asScala
+        .map(origin => ConnectionPools.poolForOrigin(origin, new CodaHaleMetricRegistry, backendService.responseTimeoutMillis()))
+        .asJava
+    }
+  }
+
+  def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins)
+
+  def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, roundRobinStrategy(activeOrigins))
+
   test("Emits ResponseTimeoutException when content subscriber stops requesting data") {
     val timeout = 2.seconds.toMillis.toInt
     originRespondingWith(response200OkFollowedFollowedByServerConnectionClose("Test message body." * 1024))
 
+    val backendService = BackendService(
+      origins = Origins(originOne),
+      responseTimeout = timeout.milliseconds).asJava
     val styxClient = com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder(
-      BackendService(
-        origins = Origins(originOne),
-        responseTimeout = timeout.milliseconds).asJava)
+      backendService)
+        .loadBalancingStrategy(roundRobinStrategy(activeOrigins(backendService)))
       .build
 
     val responseSubscriber = new TestSubscriber[HttpResponse]()

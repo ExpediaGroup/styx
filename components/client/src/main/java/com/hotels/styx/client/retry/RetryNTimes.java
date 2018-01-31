@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,12 +50,17 @@ public class RetryNTimes extends AbstractRetryPolicy {
                         .findFirst();
             }
 
+//            private String formatInfo(ConnectionPool pool, Iterable<ConnectionPool> connectionPools) {
+//                return "Origin: " + pool.getOrigin() + " previous: " + Iterables.transform(connectionPools, ConnectionPool::getOrigin);
+//            }
+
             @Override
             public boolean shouldRetry() {
                 boolean belowMaxRetryAttempts = context.currentRetryCount() < maxAttempts();
                 Optional<Throwable> lastException = context.lastException();
                 return belowMaxRetryAttempts && lastException.isPresent() && lastException.get() instanceof IsRetryableException;
             }
+
         };
     }
 

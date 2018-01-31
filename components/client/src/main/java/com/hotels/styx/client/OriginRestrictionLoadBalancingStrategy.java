@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * A load balancing strategy that restricts available origins according to a cookie value.
  */
-class OriginRestrictionLoadBalancingStrategy implements LoadBalancingStrategy {
+public class OriginRestrictionLoadBalancingStrategy implements LoadBalancingStrategy {
     private static final Splitter COOKIE_SPLITTER = Splitter.on(',').trimResults();
 
     private static final Logger LOG = getLogger(OriginRestrictionLoadBalancingStrategy.class);
@@ -48,7 +48,7 @@ class OriginRestrictionLoadBalancingStrategy implements LoadBalancingStrategy {
     private final LoadBalancingStrategy delegate;
     private final String cookieName;
 
-    OriginRestrictionLoadBalancingStrategy(ActiveOrigins activeOrigins, LoadBalancingStrategy delegate, String cookieName) {
+    public OriginRestrictionLoadBalancingStrategy(ActiveOrigins activeOrigins, LoadBalancingStrategy delegate, String cookieName) {
         this.activeOrigins = activeOrigins;
         this.delegate = checkNotNull(delegate);
         this.cookieName = checkNotNull(cookieName);

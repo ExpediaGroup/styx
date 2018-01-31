@@ -15,10 +15,13 @@
  */
 package com.hotels.styx.client
 
+import java.lang
+
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.client.{ActiveOrigins, ConnectionPool, Origin}
 import com.hotels.styx.api.client.Origin._
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException
 import com.hotels.styx.api.support.HostAndPorts._
@@ -32,10 +35,16 @@ import io.netty.channel.ChannelFutureListener.CLOSE
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
+import com.hotels.styx.client.connectionpool.ConnectionPools
+import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
+import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
 import rx.observers.TestSubscriber
+
+import scala.collection.JavaConverters._
 
 class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers with BeforeAndAfter with Matchers {
   val webappOrigin = newOriginBuilder(localHostAndFreePort).applicationId("webapp").id("webapp-01").build
@@ -60,13 +69,33 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
     originOneServer.reset()
     testSubscriber = new TestSubscriber[com.hotels.styx.api.HttpResponse]()
 
-    client = newHttpClientBuilder(
-      new BackendService.Builder()
-        .origins(webappOrigin)
-        .responseTimeoutMillis(responseTimeout)
-        .build())
+    val backendService = new BackendService.Builder()
+      .origins(webappOrigin)
+      .responseTimeoutMillis(responseTimeout)
+      .build()
+
+    client = newHttpClientBuilder(backendService)
+      .loadBalancingStrategy(roundRobinStrategy(activeOrigins(backendService)))
       .build
   }
+
+  def activeOrigins(backendService: BackendService): ActiveOrigins = {
+    new ActiveOrigins {
+      /**
+        * Returns the list of the origins ready to accept traffic.
+        *
+        * @return a list of connection pools for each active origin
+        */
+      override def snapshot(): lang.Iterable[ConnectionPool] = backendService.origins().asScala
+        .map(origin => ConnectionPools.poolForOrigin(origin, new CodaHaleMetricRegistry, backendService.responseTimeoutMillis()))
+        .asJava
+    }
+  }
+
+  def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins)
+
+  def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, roundRobinStrategy(activeOrigins))
+
 
   test("Emits an HTTP response that contains the original request.") {
     originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))

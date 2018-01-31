@@ -15,20 +15,25 @@
  */
 package com.hotels.styx.client
 
+import java.lang
+
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpRequest.Builder
-import com.hotels.styx.api.client.Origin
+import com.hotels.styx.api.client.{ActiveOrigins, ConnectionPool, Origin}
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.metrics.MetricRegistry
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
-import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
-import com.hotels.styx.client.connectionpool.ConnectionPools.simplePoolFactory
+import com.hotels.styx.client.connectionpool.ConnectionPools
+import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
+import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
+
+import scala.collection.JavaConverters._
 
 class ClientConnectionPoolSpec extends FunSuite with BeforeAndAfterAll with Eventually with ShouldMatchers with Matchers with OriginSupport {
 
@@ -47,15 +52,9 @@ class ClientConnectionPoolSpec extends FunSuite with BeforeAndAfterAll with Even
 
     val backendService = new BackendService.Builder().origins(originOne).build()
 
-    val originsInventory = newOriginsInventoryBuilder(backendService.id())
-      .metricsRegistry(metricRegistry)
-      .connectionPoolFactory(simplePoolFactory(metricRegistry))
-      .initialOrigins(backendService.origins)
-      .build()
-
     client = newHttpClientBuilder(backendService)
       .metricsRegistry(metricRegistry)
-      .originsInventory(originsInventory)
+        .loadBalancingStrategy(roundRobinStrategy(activeOrigins(backendService)))
       .build
   }
 
@@ -63,7 +62,27 @@ class ClientConnectionPoolSpec extends FunSuite with BeforeAndAfterAll with Even
     originServer.stop()
   }
 
-  test("Removes connections from pool when they terminate.") {
+  def activeOrigins(backendService: BackendService): ActiveOrigins = {
+    new ActiveOrigins {
+      /**
+        * Returns the list of the origins ready to accept traffic.
+        *
+        * @return a list of connection pools for each active origin
+        */
+      override def snapshot(): lang.Iterable[ConnectionPool] = backendService.origins().asScala
+        .map(origin => ConnectionPools.poolForOrigin(origin, new CodaHaleMetricRegistry, backendService.responseTimeoutMillis()))
+        .asJava
+    }
+  }
+
+  def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins)
+
+  def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, roundRobinStrategy(activeOrigins))
+
+
+  // TODO: Mikko this is a pseudo-IT test. Should be in the styx server e2e suite because
+  // it is testing mainly for DI and wiring rather than the client functionality itself.
+  ignore("Removes connections from pool when they terminate.") {
     waitForResponse(client.sendRequest(get("/foo"))).status() should be(OK)
 
     eventually {
