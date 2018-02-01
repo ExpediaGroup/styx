@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.Announcer;
+import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
@@ -31,6 +32,7 @@ import com.hotels.styx.api.client.OriginsInventoryStateChangeListener;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.monitors.NoOriginHealthStatusMonitor;
 import com.hotels.styx.client.origincommands.DisableOrigin;
@@ -54,6 +56,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
 import static com.hotels.styx.client.OriginsInventory.OriginState.INACTIVE;
+import static com.hotels.styx.client.connectionpool.ConnectionPools.simplePoolFactory;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -89,6 +92,7 @@ public final class OriginsInventory
     private final Id appId;
     private final OriginHealthStatusMonitor originHealthStatusMonitor;
     private final ConnectionPool.Factory hostConnectionPoolFactory;
+    private final StyxHostHttpClient.Factory hostClientFactory;
     private final MetricRegistry metricRegistry;
     private final QueueDrainingEventProcessor eventQueue;
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -109,11 +113,13 @@ public final class OriginsInventory
                             Id appId,
                             OriginHealthStatusMonitor originHealthStatusMonitor,
                             ConnectionPool.Factory hostConnectionPoolFactory,
+                            StyxHostHttpClient.Factory hostClientFactory,
                             MetricRegistry metricRegistry) {
         this.eventBus = requireNonNull(eventBus);
         this.appId = requireNonNull(appId);
         this.originHealthStatusMonitor = requireNonNull(originHealthStatusMonitor);
         this.hostConnectionPoolFactory = requireNonNull(hostConnectionPoolFactory);
+        this.hostClientFactory = requireNonNull(hostClientFactory);
         this.metricRegistry = requireNonNull(metricRegistry);
 
         this.eventBus.register(this);
@@ -389,8 +395,7 @@ public final class OriginsInventory
     private Collection<RemoteHost> pools(OriginState state) {
         return origins.values().stream()
                 .filter(origin -> origin.state().equals(state))
-                .map(origin -> origin.connectionPool)
-                .map(RemoteHostWrapper::new)
+                .map(origin -> new RemoteHostWrapper(origin.origin.id(), origin.origin, origin.connectionPool, origin.hostClient))
                 .collect(toList());
     }
 
@@ -412,10 +417,12 @@ public final class OriginsInventory
         private final ConnectionPool connectionPool;
         private final StateMachine<OriginState> machine;
         private final String gaugeName;
+        private final StyxHostHttpClient hostClient;
 
         private MonitoredOrigin(Origin origin) {
             this.origin = origin;
             this.connectionPool = hostConnectionPoolFactory.create(origin);
+            this.hostClient = hostClientFactory.create(connectionPool);
 
             this.machine = new StateMachine.Builder<OriginState>()
                     .initialState(ACTIVE)
@@ -473,6 +480,12 @@ public final class OriginsInventory
         return new Builder(appId);
     }
 
+    public static Builder newOriginsInventoryBuilder(BackendService backendService) {
+        return new Builder(backendService.id())
+                .connectionPoolFactory(simplePoolFactory(backendService, new CodaHaleMetricRegistry()))
+                .initialOrigins(backendService.origins());
+    }
+
     /**
      * A builder for {@link com.hotels.styx.client.OriginsInventory}.
      */
@@ -481,9 +494,9 @@ public final class OriginsInventory
         private OriginHealthStatusMonitor originHealthMonitor = new NoOriginHealthStatusMonitor();
         private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
         private EventBus eventBus = new EventBus();
-        private ConnectionPool.Factory connectionPoolFactory;
+        private ConnectionPool.Factory connectionPoolFactory = simplePoolFactory();
+        private StyxHostHttpClient.Factory hostClientFactory;
         private Set<Origin> initialOrigins = emptySet();
-        private OriginHealthStatusMonitor healthStatusMonitor;
 
         public Builder metricsRegistry(MetricRegistry metricsRegistry) {
             this.metricsRegistry = metricsRegistry;
@@ -492,6 +505,11 @@ public final class OriginsInventory
 
         public Builder connectionPoolFactory(ConnectionPool.Factory connectionPoolFactory) {
             this.connectionPoolFactory = requireNonNull(connectionPoolFactory);
+            return this;
+        }
+
+        public Builder hostClientFactory(StyxHostHttpClient.Factory hostClientFactory) {
+            this.hostClientFactory = requireNonNull(hostClientFactory);
             return this;
         }
 
@@ -517,7 +535,18 @@ public final class OriginsInventory
         public OriginsInventory build() {
             await(originHealthMonitor.start());
 
-            OriginsInventory originsInventory = new OriginsInventory(eventBus, appId, originHealthMonitor, connectionPoolFactory, metricsRegistry);
+            if (hostClientFactory == null) {
+                hostClientFactory = (ConnectionPool connectionPool) -> StyxHostHttpClient.create(appId, connectionPool.getOrigin().id(), "X-Origin-Id", connectionPool);
+            }
+
+            OriginsInventory originsInventory = new OriginsInventory(
+                    eventBus,
+                    appId,
+                    originHealthMonitor,
+                    connectionPoolFactory,
+                    hostClientFactory,
+                    metricsRegistry);
+
             originsInventory.setOrigins(initialOrigins);
 
             return originsInventory;
@@ -565,15 +594,41 @@ public final class OriginsInventory
      * A Styx remote host.
      */
     public static class RemoteHostWrapper implements RemoteHost {
+        private final Id id;
+        private final Origin origin;
         private ConnectionPool pool;
+        private StyxHostHttpClient hostClient;
 
-        public RemoteHostWrapper(ConnectionPool pool) {
+        // TODO: Remove this:
+        public RemoteHostWrapper(ConnectionPool pool, StyxHostHttpClient hostClient) {
+            this(Id.id("foo"), null, pool, hostClient);
+        }
+
+        public RemoteHostWrapper(Id id, Origin origin, ConnectionPool pool, StyxHostHttpClient hostClient) {
+            this.id = id;
+            this.origin = origin;
             this.pool = requireNonNull(pool);
+            this.hostClient = hostClient;
+        }
+
+        @Override
+        public Id id() {
+            return this.id;
+        }
+
+        @Override
+        public Origin origin() {
+            return this.origin;
         }
 
         @Override
         public ConnectionPool connectionPool() {
             return this.pool;
+        }
+
+        @Override
+        public HttpClient hostClient() {
+            return hostClient;
         }
 
         @Override

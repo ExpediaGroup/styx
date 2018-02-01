@@ -24,6 +24,7 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
+import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import org.testng.annotations.Test;
@@ -69,9 +70,9 @@ public class BusyConnectionsStrategyTest {
     public void favoursOriginsWithLessBusyConnectionCount() {
         ConnectionPool.Settings settings = ConnectionPoolSettings.defaultConnectionPoolSettings();
 
-        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE, settings).withBusyConnections(4));
-        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO, settings).withBusyConnections(3));
-        RemoteHost poolThree = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_THREE, settings).withBusyConnections(6));
+        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE, settings).withBusyConnections(4), mock(StyxHostHttpClient.class));
+        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO, settings).withBusyConnections(3), mock(StyxHostHttpClient.class));
+        RemoteHost poolThree = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_THREE, settings).withBusyConnections(6), mock(StyxHostHttpClient.class));
 
         when(activeOrigins.snapshot()).thenReturn(asList(poolOne, poolTwo, poolThree));
 
@@ -85,15 +86,15 @@ public class BusyConnectionsStrategyTest {
 
         RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE, settings)
                 .withBusyConnections(2)
-                .withPendingConnections(4));
+                .withPendingConnections(4), mock(StyxHostHttpClient.class));
 
         RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO, settings)
                 .withBusyConnections(2)
-                .withPendingConnections(2));
+                .withPendingConnections(2), mock(StyxHostHttpClient.class));
 
         RemoteHost poolThree = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_THREE, settings)
                 .withBusyConnections(2)
-                .withPendingConnections(1));
+                .withPendingConnections(1), mock(StyxHostHttpClient.class));
 
         when(activeOrigins.snapshot()).thenReturn(asList(poolOne, poolTwo, poolThree));
         Iterable<RemoteHost> sortedPool = strategy.vote(context);
@@ -103,9 +104,9 @@ public class BusyConnectionsStrategyTest {
 
     @Test
     public void movesHigherThanAverage500RatesToBackOfTheList() {
-        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE).withBusyConnections(2));
-        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO).withBusyConnections(1));
-        RemoteHost poolThree = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_THREE).withBusyConnections(3));
+        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE).withBusyConnections(2), mock(StyxHostHttpClient.class));
+        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO).withBusyConnections(1), mock(StyxHostHttpClient.class));
+        RemoteHost poolThree = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_THREE).withBusyConnections(3), mock(StyxHostHttpClient.class));
 
         when(activeOrigins.snapshot()).thenReturn(asList(poolOne, poolTwo, poolThree));
         Iterable<RemoteHost> sortedPool = strategy.vote(lbContextWith5xxRates(ImmutableMap.of(
@@ -123,9 +124,9 @@ public class BusyConnectionsStrategyTest {
                 .maxPendingConnectionsPerHost(10)
                 .build();
 
-        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE, settings).withBusyConnections(1).withAvailableConnections(0));
-        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO, settings).withBusyConnections(2).withAvailableConnections(1));
-        RemoteHost poolThree = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_THREE, settings).withBusyConnections(3).withAvailableConnections(1));
+        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE, settings).withBusyConnections(1).withAvailableConnections(0), mock(StyxHostHttpClient.class));
+        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO, settings).withBusyConnections(2).withAvailableConnections(1), mock(StyxHostHttpClient.class));
+        RemoteHost poolThree = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_THREE, settings).withBusyConnections(3).withAvailableConnections(1), mock(StyxHostHttpClient.class));
 
         when(activeOrigins.snapshot()).thenReturn(asList(poolTwo, poolOne, poolThree));
         Iterable<RemoteHost> sortedPool = strategy.vote(context);
@@ -135,10 +136,10 @@ public class BusyConnectionsStrategyTest {
 
     @Test
     public void ranksOriginsWith500ErrorRateFirstThenPoolDepthThenOnAvailableConnections() {
-        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE).withBusyConnections(1).withAvailableConnections(0));
-        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO).withBusyConnections(1).withAvailableConnections(1));
-        RemoteHost poolThree = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_THREE).withBusyConnections(1).withAvailableConnections(1));
-        RemoteHost poolFour = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_FOUR).withBusyConnections(2).withAvailableConnections(1));
+        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE).withBusyConnections(1).withAvailableConnections(0), mock(StyxHostHttpClient.class));
+        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO).withBusyConnections(1).withAvailableConnections(1), mock(StyxHostHttpClient.class));
+        RemoteHost poolThree = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_THREE).withBusyConnections(1).withAvailableConnections(1), mock(StyxHostHttpClient.class));
+        RemoteHost poolFour = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_FOUR).withBusyConnections(2).withAvailableConnections(1), mock(StyxHostHttpClient.class));
 
         when(activeOrigins.snapshot()).thenReturn(asList(poolTwo, poolOne, poolThree, poolFour));
         Iterable<RemoteHost> sortedPool = strategy.vote(lbContextWith5xxRates(ImmutableMap.of(
@@ -153,8 +154,8 @@ public class BusyConnectionsStrategyTest {
 
     @Test
     public void negativeBusyConnectionCount() {
-        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE).withBusyConnections(1));
-        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO).withBusyConnections(0));
+        RemoteHost poolOne = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_ONE).withBusyConnections(1), mock(StyxHostHttpClient.class));
+        RemoteHost poolTwo = new RemoteHostWrapper(new StubConnectionPool(ORIGIN_TWO).withBusyConnections(0), mock(StyxHostHttpClient.class));
 
         Iterable<RemoteHost> sortedPool = null;
         for (int i = 0; i < 10; i++) {

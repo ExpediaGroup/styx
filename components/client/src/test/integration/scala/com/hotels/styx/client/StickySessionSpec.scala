@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client
 
-import java.lang
 import java.nio.charset.Charset
 
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
@@ -23,23 +22,22 @@ import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.Id.id
-import com.hotels.styx.api.client.{ActiveOrigins, Origin, RemoteHost}
+import com.hotels.styx.api.client.{ActiveOrigins, Origin}
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
-import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper
+import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
-import com.hotels.styx.client.connectionpool.ConnectionPools
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.stickysession.{StickySessionConfig, StickySessionLoadBalancingStrategy}
 import com.hotels.styx.support.api.BlockingObservables._
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
+import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfter, FunSuite, ShouldMatchers}
 
 import scala.collection.JavaConverters._
 
-class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers with OriginSupport {
+class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers with OriginSupport with MockitoSugar {
 
   val server1 = new FakeHttpServer(0, "app", "app-01")
   val server2 = new FakeHttpServer(0, "app", "app-02")
@@ -90,25 +88,14 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
     server2.stop
   }
 
-  def activeOrigins(backendService: BackendService): ActiveOrigins = {
-    new ActiveOrigins {
-      /**
-        * Returns the list of the origins ready to accept traffic.
-        *
-        * @return a list of connection pools for each active origin
-        */
-      override def snapshot(): lang.Iterable[RemoteHost] = backendService.origins().asScala
-        .map(origin => new RemoteHostWrapper(ConnectionPools.poolForOrigin(origin, new CodaHaleMetricRegistry, backendService.responseTimeoutMillis())).asInstanceOf[RemoteHost])
-        .asJava
-    }
-  }
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(backendService).build()
 
   def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins)
 
   def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, roundRobinStrategy(activeOrigins))
 
   test("Responds with sticky session cookie when STICKY_SESSION_ENABLED=true") {
-    val client: StyxHttpClient = newHttpClientBuilder(backendService)
+    val client = newHttpClientBuilder(backendService)
       .loadBalancingStrategy(stickySessionStrategy(activeOrigins(backendService)))
       .build
 

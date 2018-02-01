@@ -19,6 +19,7 @@ import java.lang
 
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.hotels.styx.api.HttpClient
 import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.client.{ActiveOrigins, ConnectionPool, Origin, RemoteHost}
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
@@ -28,15 +29,17 @@ import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.client.connectionpool.ConnectionPools
+import com.hotels.styx.client.connectionpool.ConnectionPools.poolForOrigin
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
+import org.scalatest.mock.MockitoSugar
 
 import scala.collection.JavaConverters._
 
-class ClientConnectionPoolSpec extends FunSuite with BeforeAndAfterAll with Eventually with ShouldMatchers with Matchers with OriginSupport {
+class ClientConnectionPoolSpec extends FunSuite with BeforeAndAfterAll with Eventually with ShouldMatchers with Matchers with OriginSupport with MockitoSugar {
 
   var metricRegistry: CodaHaleMetricRegistry = _
 
@@ -71,7 +74,7 @@ class ClientConnectionPoolSpec extends FunSuite with BeforeAndAfterAll with Even
         * @return a list of connection pools for each active origin
         */
       override def snapshot(): lang.Iterable[RemoteHost] = backendService.origins().asScala
-        .map(origin => new RemoteHostWrapper(ConnectionPools.poolForOrigin(origin, new CodaHaleMetricRegistry, backendService.responseTimeoutMillis())).asInstanceOf[RemoteHost])
+        .map(origin => new RemoteHostWrapper(poolForOrigin(origin, new CodaHaleMetricRegistry, backendService.responseTimeoutMillis()), mock[StyxHostHttpClient]).asInstanceOf[RemoteHost])
         .asJava
     }
   }

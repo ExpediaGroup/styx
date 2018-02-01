@@ -40,13 +40,23 @@ public class StyxHostHttpClient implements HttpClient {
         this.transport = requireNonNull(transport);
     }
 
+    public static StyxHostHttpClient create(Id appId, Id originId, CharSequence headerName, ConnectionPool pool) {
+        return new StyxHostHttpClient(originId, pool, new Transport(appId, headerName));
+    }
+
     @Override
     public Observable<HttpResponse> sendRequest(HttpRequest request) {
         return transport.send(request, Optional.of(pool), originId).response();
     }
 
-
     public void close() {
         pool.close();
+    }
+
+    /**
+     * A factory for creating StyxHostHttpClient instances.
+     */
+    public interface Factory {
+        StyxHostHttpClient create(ConnectionPool connectionPool);
     }
 }

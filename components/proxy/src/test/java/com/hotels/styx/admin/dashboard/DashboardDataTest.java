@@ -25,6 +25,7 @@ import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
+import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.applications.BackendServices;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
@@ -222,7 +223,7 @@ public class DashboardDataTest {
     private RemoteHost pool(Origin origin) {
         ConnectionPool pool = mock(ConnectionPool.class);
         when(pool.getOrigin()).thenReturn(origin);
-        return new RemoteHostWrapper(pool);
+        return new RemoteHostWrapper(origin.id(), origin, pool, mock(StyxHostHttpClient.class));
     }
 
     @Test

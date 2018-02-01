@@ -18,7 +18,6 @@ package com.hotels.styx.client;
 import com.google.common.base.Splitter;
 import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
@@ -106,11 +105,7 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancingStra
     }
 
     private Predicate<RemoteHost> originIdMatches(Pattern pattern) {
-        return remoteHost -> pattern.matcher(originId(remoteHost.connectionPool())).matches();
-    }
-
-    private String originId(ConnectionPool pool) {
-        return pool.getOrigin().id().toString();
+        return remoteHost -> pattern.matcher(remoteHost.id().toString()).matches();
     }
 
     @Override

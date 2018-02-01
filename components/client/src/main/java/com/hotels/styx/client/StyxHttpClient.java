@@ -26,6 +26,7 @@ import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.netty.exceptions.NoAvailableHostsException;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.applications.OriginStats;
 import com.hotels.styx.client.retry.RetryNTimes;
@@ -34,6 +35,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import rx.Observable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,6 +48,8 @@ import static com.hotels.styx.client.stickysession.StickySessionCookie.newSticky
 import static io.netty.handler.codec.http.HttpMethod.HEAD;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -58,12 +62,10 @@ public final class StyxHttpClient implements HttpClient {
     private final RewriteRuleset rewriteRuleset;
     private final LoadBalancingStrategy loadBalancingStrategy;
     private final RetryPolicy retryPolicy;
-    private final Transport transport;
     private final OriginStatsFactory originStatsFactory;
     private final BackendService backendService;
     private final MetricRegistry metricsRegistry;
     private final boolean contentValidation;
-    private final StyxHeaderConfig styxHeaderConfig;
 
     private StyxHttpClient(Builder builder) {
         this.backendService = requireNonNull(builder.backendService);
@@ -78,12 +80,9 @@ public final class StyxHttpClient implements HttpClient {
                 : new RetryNTimes(3);
 
         this.rewriteRuleset = new RewriteRuleset(builder.rewriteRules);
-        this.transport = requireNonNull(builder.transport);
 
         this.metricsRegistry = builder.metricsRegistry;
         this.contentValidation = builder.contentValidation;
-
-        this.styxHeaderConfig = builder.styxHeaderConfig;
     }
 
     public boolean isHttps() {
@@ -108,12 +107,138 @@ public final class StyxHttpClient implements HttpClient {
         return retryPolicy;
     }
 
-    Transport transport() {
-        return transport;
-    }
-
     LoadBalancingStrategy loadBalancingStrategy() {
         return loadBalancingStrategy;
+    }
+
+    private static boolean isError(HttpResponseStatus status) {
+        return status.code() >= 400;
+    }
+
+    private static boolean bodyNeedsToBeRemoved(HttpRequest request, HttpResponse response) {
+        return isHeadRequest(request) || isBodilessResponse(response);
+    }
+
+    private static HttpResponse responseWithoutBody(HttpResponse response) {
+        return response.newBuilder()
+                .header(CONTENT_LENGTH, 0)
+                .removeHeader(TRANSFER_ENCODING)
+                .removeBody()
+                .build();
+    }
+
+    private static boolean isBodilessResponse(HttpResponse response) {
+        int status = response.status().code();
+        return status == 204 || status == 304 || status / 100 == 1;
+    }
+
+    private static boolean isHeadRequest(HttpRequest request) {
+        return request.method().equals(HEAD);
+    }
+
+    private Observable<HttpResponse> sendRequest(HttpRequest request, List<RemoteHost> previousOrigins, int attempt) {
+        if (attempt >= 3) {
+            return Observable.error(new NoAvailableHostsException(this.id()));
+        }
+
+        Optional<RemoteHost> remoteHost = selectOrigin(request);
+        if (remoteHost.isPresent()) {
+            RemoteHost host = remoteHost.get();
+            previousOrigins.add(host);
+
+            return host.hostClient()
+                    .sendRequest(request)
+                    .map(response -> addStickySessionIdentifier(response, host.origin()))
+                    .doOnError(throwable -> logError(request, throwable))
+                    .doOnUnsubscribe(() -> originStatsFactory.originStats(host.origin()).requestCancelled())
+                    .doOnNext(this::recordErrorStatusMetrics)
+                    .map(response -> removeUnexpectedResponseBody(request, response))
+                    .map(this::removeRedundantContentLengthHeader)
+                    .onErrorResumeNext(cause -> {
+
+                        // TODO: retryPolicy.evaluate() does not need all these:
+                        //        Specifically, it does not need (for now):
+                        //        - LB context
+                        //        - load balancing strategy
+
+                        RetryPolicyContext retryContext = new RetryPolicyContext(id(), attempt, cause, request, previousOrigins);
+                        LoadBalancingStrategy.Context lbContext = new LBContext(request, id, originStatsFactory);
+
+                        if (retryPolicy().evaluate(retryContext, loadBalancingStrategy, lbContext).shouldRetry()) {
+                            return sendRequest(request, previousOrigins, attempt + 1);
+                        } else {
+                            return Observable.error(cause);
+                        }
+                    });
+
+        } else {
+            return sendRequest(request, previousOrigins, attempt + 1);
+        }
+    }
+
+    @Override
+    public Observable<HttpResponse> sendRequest(HttpRequest request) {
+        return sendRequest(rewriteUrl(request), new ArrayList<>(), 0);
+    }
+
+
+    private static final class RetryPolicyContext implements RetryPolicy.Context {
+        private final Id appId;
+        private final int retryCount;
+        private final Throwable lastException;
+        private final HttpRequest request;
+        private final Iterable<RemoteHost> previouslyUsedOrigins;
+
+        RetryPolicyContext(Id appId, int retryCount, Throwable lastException, HttpRequest request,
+                           Iterable<RemoteHost> previouslyUsedOrigins) {
+            this.appId = appId;
+            this.retryCount = retryCount;
+            this.lastException = lastException;
+            this.request = request;
+            this.previouslyUsedOrigins = previouslyUsedOrigins;
+        }
+
+        @Override
+        public Id appId() {
+            return appId;
+        }
+
+        @Override
+        public int currentRetryCount() {
+            return retryCount;
+        }
+
+        @Override
+        public Optional<Throwable> lastException() {
+            return Optional.ofNullable(lastException);
+        }
+
+        @Override
+        public HttpRequest currentRequest() {
+            return request;
+        }
+
+        @Override
+        public Iterable<RemoteHost> previousOrigins() {
+            return previouslyUsedOrigins;
+        }
+
+        @Override
+        public String toString() {
+            return toStringHelper(this)
+                    .add("appId", appId)
+                    .add("retryCount", retryCount)
+                    .add("lastException", lastException)
+                    .add("request", request.url())
+                    .add("previouslyUsedOrigins", hosts(previouslyUsedOrigins))
+                    .toString();
+        }
+
+        private static Iterable<String> hosts(Iterable<RemoteHost> origins) {
+            return stream(origins.spliterator(), false)
+                    .map(host -> host.origin().hostAsString())
+                    .collect(toList());
+        }
     }
 
     static class LBContext implements LoadBalancingStrategy.Context {
@@ -142,64 +267,6 @@ public final class StyxHttpClient implements HttpClient {
             OriginStats originStats = originStatsFactory.originStats(origin);
             return originStats.oneMinuteErrorRate();
         }
-    }
-
-    private static boolean isError(HttpResponseStatus status) {
-        return status.code() >= 400;
-    }
-
-    private static boolean bodyNeedsToBeRemoved(HttpRequest request, HttpResponse response) {
-        return isHeadRequest(request) || isBodilessResponse(response);
-    }
-
-    private static HttpResponse responseWithoutBody(HttpResponse response) {
-        return response.newBuilder()
-                .header(CONTENT_LENGTH, 0)
-                .removeHeader(TRANSFER_ENCODING)
-                .removeBody()
-                .build();
-    }
-
-    private static boolean isBodilessResponse(HttpResponse response) {
-        int status = response.status().code();
-        return status == 204 || status == 304 || status / 100 == 1;
-    }
-
-    private static boolean isHeadRequest(HttpRequest request) {
-        return request.method().equals(HEAD);
-    }
-
-    @Override
-    public Observable<HttpResponse> sendRequest(HttpRequest request) {
-        HttpRequest rewrittenRequest = rewriteUrl(request);
-        Optional<RemoteHost> maybeHost = selectOrigin(rewrittenRequest);
-
-        HttpTransaction txn = transport.send(rewrittenRequest, maybeHost.map(RemoteHost::connectionPool), originId(maybeHost));
-
-        RetryOnErrorHandler retryHandler = new RetryOnErrorHandler.Builder()
-                .client(this)
-                .attemptCount(0)
-                .request(rewrittenRequest)
-                .previouslyUsedOrigin(maybeHost.orElse(null))
-                .transaction(txn)
-                .originStatsFactory(originStatsFactory)
-                .build();
-
-        return txn.response()
-                .onErrorResumeNext(retryHandler)
-                .map(this::addStickySessionIdentifier)
-                .doOnError(throwable -> logError(rewrittenRequest, throwable))
-                .doOnUnsubscribe(() -> {
-                    maybeHost.ifPresent(connectionPool -> originStatsFactory.originStats(connectionPool.connectionPool().getOrigin()).requestCancelled());
-                    retryHandler.cancel();
-                })
-                .doOnNext(this::recordErrorStatusMetrics)
-                .map(response -> removeUnexpectedResponseBody(request, response))
-                .map(this::removeRedundantContentLengthHeader);
-    }
-
-    private Id originId(Optional<RemoteHost> maybeRemoteHost) {
-        return maybeRemoteHost.map(host -> host.connectionPool().getOrigin().id()).orElse(Id.id(""));
     }
 
     private static void logError(HttpRequest rewrittenRequest, Throwable throwable) {
@@ -236,17 +303,15 @@ public final class StyxHttpClient implements HttpClient {
         return Optional.ofNullable(getFirst(votedOrigins, null));
     }
 
-    private HttpResponse addStickySessionIdentifier(HttpResponse httpResponse) {
+    private HttpResponse addStickySessionIdentifier(HttpResponse httpResponse, Origin origin) {
         if (loadBalancingStrategy() instanceof StickySessionLoadBalancingStrategy) {
-            Optional<String> originId = httpResponse.header(styxHeaderConfig.originIdHeaderName());
-            if (originId.isPresent()) {
-                int maxAge = backendService.stickySessionConfig().stickySessionTimeoutSeconds();
-                return httpResponse.newBuilder()
-                        .addCookie(newStickySessionCookie(id, Id.id(originId.get()), maxAge))
-                        .build();
-            }
+            int maxAge = backendService.stickySessionConfig().stickySessionTimeoutSeconds();
+            return httpResponse.newBuilder()
+                    .addCookie(newStickySessionCookie(id, origin.id(), maxAge))
+                    .build();
+        } else {
+            return httpResponse;
         }
-        return httpResponse;
     }
 
     private HttpRequest rewriteUrl(HttpRequest request) {
@@ -271,12 +336,10 @@ public final class StyxHttpClient implements HttpClient {
         private final BackendService backendService;
         private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
         private List<RewriteRule> rewriteRules = emptyList();
-        private RetryPolicy retryPolicy;
+        private RetryPolicy retryPolicy = new RetryNTimes(3);
         private LoadBalancingStrategy loadBalancingStrategy;
         private boolean contentValidation;
-        private StyxHeaderConfig styxHeaderConfig = new StyxHeaderConfig();
         private OriginStatsFactory originStatsFactory;
-        public Transport transport;
 
         public Builder(BackendService backendService) {
             this.backendService = checkNotNull(backendService);
@@ -303,11 +366,6 @@ public final class StyxHttpClient implements HttpClient {
             return this;
         }
 
-        public Builder styxHeaderNames(StyxHeaderConfig styxHeaderConfig) {
-            this.styxHeaderConfig = requireNonNull(styxHeaderConfig);
-            return this;
-        }
-
         public Builder enableContentValidation() {
             contentValidation = true;
             return this;
@@ -318,17 +376,9 @@ public final class StyxHttpClient implements HttpClient {
             return this;
         }
 
-        public Builder transport(Transport transport) {
-            this.transport = transport;
-            return this;
-        }
-
         public StyxHttpClient build() {
             if (originStatsFactory == null) {
                 originStatsFactory = new OriginStatsFactory(metricsRegistry);
-            }
-            if (transport == null) {
-                transport = new Transport(backendService.id(), styxHeaderConfig.originIdHeaderName());
             }
             return new StyxHttpClient(this);
         }

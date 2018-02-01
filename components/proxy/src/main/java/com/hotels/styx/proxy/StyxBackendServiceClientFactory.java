@@ -69,7 +69,6 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
         );
 
         return new StyxHttpClient.Builder(backendService)
-                .styxHeaderNames(environment.styxConfig().styxHeaderConfig())
                 .loadBalancingStrategy(loadBalancingStrategy)
                 .metricsRegistry(environment.metricRegistry())
                 .retryPolicy(retryPolicy)

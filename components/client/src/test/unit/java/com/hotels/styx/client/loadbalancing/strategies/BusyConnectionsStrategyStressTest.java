@@ -24,6 +24,7 @@ import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
+import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -44,6 +45,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
+import static org.mockito.Mockito.mock;
 
 public class BusyConnectionsStrategyStressTest {
     final Origin ORIGIN_ONE = newOriginBuilder(localHostAndFreePort()).id("one").build();
@@ -159,7 +161,7 @@ public class BusyConnectionsStrategyStressTest {
                 Iterable<RemoteHost> pools = origins.stream().map(so ->
                         new RemoteHostWrapper(new StubConnectionPool(so.origin())
                                 .withBusyConnections(so.busyConnections())
-                                .withAvailableConnections(so.availableConnections())))
+                                .withAvailableConnections(so.availableConnections()), mock(StyxHostHttpClient.class)))
                         .collect(toList());
 
                 final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy(() -> pools);

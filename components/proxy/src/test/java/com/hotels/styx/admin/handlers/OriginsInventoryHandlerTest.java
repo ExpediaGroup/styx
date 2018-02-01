@@ -25,6 +25,7 @@ import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
+import com.hotels.styx.client.StyxHostHttpClient;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -45,6 +46,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.mockito.Mockito.mock;
 
 public class OriginsInventoryHandlerTest {
     private static final Id APP_ID = id("foo");
@@ -128,7 +130,7 @@ public class OriginsInventoryHandlerTest {
     private static List<RemoteHost> pool(Set<Origin> origins) {
         return origins.stream()
                 .map(StubConnectionPool::new)
-                .map(RemoteHostWrapper::new)
+                .map(pool -> new RemoteHostWrapper(pool.getOrigin().id(), pool.getOrigin(), pool, mock(StyxHostHttpClient.class)))
                 .collect(toList());
     }
 }

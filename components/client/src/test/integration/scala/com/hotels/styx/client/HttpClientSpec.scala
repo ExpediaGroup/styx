@@ -15,18 +15,18 @@
  */
 package com.hotels.styx.client
 
-import java.lang
-
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.client.{ActiveOrigins, ConnectionPool, Origin, RemoteHost}
 import com.hotels.styx.api.client.Origin._
+import com.hotels.styx.api.client.{ActiveOrigins, Origin}
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException
-import com.hotels.styx.api.support.HostAndPorts._
+import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient._
 import com.hotels.styx.client.applications.BackendService
+import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.support.api.BlockingObservables.{waitForResponse, waitForStreamingResponse}
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
@@ -34,23 +34,16 @@ import io.netty.buffer.Unpooled._
 import io.netty.channel.ChannelFutureListener.CLOSE
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
-import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper
-import com.hotels.styx.client.connectionpool.ConnectionPools
-import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
-import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
+import org.scalatest.mock.MockitoSugar
 import rx.observers.TestSubscriber
 
-import scala.collection.JavaConverters._
+class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers with BeforeAndAfter with Matchers with MockitoSugar {
+  var webappOrigin: Origin = _
 
-class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers with BeforeAndAfter with Matchers {
-  val webappOrigin = newOriginBuilder(localHostAndFreePort).applicationId("webapp").id("webapp-01").build
-
-  val originOneServer = new FakeHttpServer(webappOrigin.host().getPort)
+  val originOneServer = new FakeHttpServer(0)
 
   var client: StyxHttpClient = _
 
@@ -60,11 +53,16 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
 
   override protected def beforeAll(): Unit = {
     originOneServer.start()
+    webappOrigin = newOriginBuilder("localhost", originOneServer.port()).applicationId("webapp").id("webapp-01").build()
   }
 
   override protected def afterAll(): Unit = {
     originOneServer.stop()
   }
+
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(backendService).build()
+
+  def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins)
 
   before {
     originOneServer.reset()
@@ -79,24 +77,6 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
       .loadBalancingStrategy(roundRobinStrategy(activeOrigins(backendService)))
       .build
   }
-
-  def activeOrigins(backendService: BackendService): ActiveOrigins = {
-    new ActiveOrigins {
-      /**
-        * Returns the list of the origins ready to accept traffic.
-        *
-        * @return a list of connection pools for each active origin
-        */
-      override def snapshot(): lang.Iterable[RemoteHost] = backendService.origins().asScala
-        .map(origin => new RemoteHostWrapper(ConnectionPools.poolForOrigin(origin, new CodaHaleMetricRegistry, backendService.responseTimeoutMillis())).asInstanceOf[RemoteHost])
-        .asJava
-    }
-  }
-
-  def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins)
-
-  def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, roundRobinStrategy(activeOrigins))
-
 
   test("Emits an HTTP response that contains the original request.") {
     originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
@@ -142,7 +122,7 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
       testSubscriber.awaitTerminalEvent()
     }
 
-    assert(testSubscriber.getOnErrorEvents.get(0).isInstanceOf[ResponseTimeoutException])
+    assert(testSubscriber.getOnErrorEvents.get(0).isInstanceOf[ResponseTimeoutException], "- Client emitted an incorrect exception!")
     println("responseTimeout: " + duration)
     duration shouldBe responseTimeout +- 250
   }

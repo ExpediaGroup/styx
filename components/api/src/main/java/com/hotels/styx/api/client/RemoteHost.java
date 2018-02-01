@@ -15,6 +15,15 @@
  */
 package com.hotels.styx.api.client;
 
+import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.api.Id;
+
 public interface RemoteHost {
+    Id id();
+
+    Origin origin();
+
     ConnectionPool connectionPool();
+
+    HttpClient hostClient();
 }

@@ -17,6 +17,7 @@ package com.hotels.styx.client;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
@@ -36,10 +37,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
 
 public class OriginRestrictionLoadBalancingStrategyTest {
     List<RemoteHost> origins = Stream.of(0, 1, 2, 3, 4, 5, 6)
-            .map(this::origin)
+            .map(this::remoteHost)
             .collect(toList());
 
     OriginRestrictionLoadBalancingStrategy strategy = new OriginRestrictionLoadBalancingStrategy(
@@ -100,11 +102,12 @@ public class OriginRestrictionLoadBalancingStrategyTest {
         assertThat(partition, contains(origins.get(1), origins.get(2), origins.get(3), origins.get(5), origins.get(6)));
     }
 
-    private RemoteHost origin(int number) {
-        return new RemoteHostWrapper(new StubConnectionPool(
-                newOriginBuilder("localhost", 8080 + number)
-                        .id("origin" + number)
-                        .build()));
+    private RemoteHost remoteHost(int number) {
+        Origin origin = newOriginBuilder("localhost", 8080 + number)
+                .id("origin" + number)
+                .build();
+
+        return new RemoteHostWrapper(origin.id(), origin, new StubConnectionPool(origin), mock(StyxHostHttpClient.class));
     }
 
     static StubContext context() {

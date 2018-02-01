@@ -71,6 +71,7 @@ public class OriginsInventoryTest {
     private OriginHealthStatusMonitor monitor;
     private EventBus eventBus;
     private OriginsInventory inventory;
+    private StyxHostHttpClient.Factory hostClientFactory = pool -> mock(StyxHostHttpClient.class);
 
     @BeforeMethod
     public void setUp() {
@@ -78,7 +79,7 @@ public class OriginsInventoryTest {
         logger = new LoggingTestSupport(OriginsInventory.class);
         monitor = mock(OriginHealthStatusMonitor.class);
         eventBus = mock(EventBus.class);
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, metricRegistry);
+        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, metricRegistry);
     }
 
     @AfterMethod
@@ -171,7 +172,7 @@ public class OriginsInventoryTest {
         when(connectionFactory.create(eq(originV1))).thenReturn(pool1);
         when(connectionFactory.create(eq(originV2))).thenReturn(pool2);
 
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, metricRegistry);
+        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, metricRegistry);
 
         inventory.setOrigins(originV1);
         verify(connectionFactory).create(eq(originV1));
@@ -252,7 +253,7 @@ public class OriginsInventoryTest {
         when(connectionFactory.create(eq(originV1))).thenReturn(pool1);
         when(connectionFactory.create(eq(originV2))).thenReturn(pool2);
 
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, metricRegistry);
+        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, metricRegistry);
 
         inventory.setOrigins(originV1, originV2);
 
@@ -463,7 +464,7 @@ public class OriginsInventoryTest {
         when(connectionFactory.create(eq(ORIGIN_1))).thenReturn(pool1);
         when(connectionFactory.create(eq(ORIGIN_2))).thenReturn(pool2);
 
-        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, metricRegistry);
+        inventory = new OriginsInventory(eventBus, GENERIC_APP, monitor, connectionFactory, hostClientFactory, metricRegistry);
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
         inventory.close();
 

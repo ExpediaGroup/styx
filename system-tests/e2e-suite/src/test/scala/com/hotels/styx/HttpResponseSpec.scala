@@ -15,19 +15,15 @@
  */
 package com.hotels.styx
 
-import java.lang
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.client.{ActiveOrigins, RemoteHost}
+import com.hotels.styx.api.client.ActiveOrigins
 import com.hotels.styx.api.messages.HttpResponseStatus._
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry
-import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper
-import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.client.StyxHttpClient._
-import com.hotels.styx.client.connectionpool.ConnectionPools
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
+import com.hotels.styx.client.{OriginsInventory, StyxHttpClient}
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.configuration.{BackendService, ImplicitOriginConversions, Origins}
@@ -39,7 +35,6 @@ import io.netty.handler.codec.http._
 import org.scalatest._
 import rx.observers.TestSubscriber
 
-import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
 class HttpResponseSpec extends FunSuite
@@ -74,18 +69,7 @@ class HttpResponseSpec extends FunSuite
       .build
   }
 
-  def activeOrigins(backendService: com.hotels.styx.client.applications.BackendService): ActiveOrigins = {
-    new ActiveOrigins {
-      /**
-        * Returns the list of the origins ready to accept traffic.
-        *
-        * @return a list of connection pools for each active origin
-        */
-      override def snapshot(): lang.Iterable[RemoteHost] = backendService.origins().asScala
-        .map(origin => new RemoteHostWrapper(ConnectionPools.poolForOrigin(origin, new CodaHaleMetricRegistry, backendService.responseTimeoutMillis())).asInstanceOf[RemoteHost])
-        .asJava
-    }
-  }
+  def activeOrigins(backendService: com.hotels.styx.client.applications.BackendService): ActiveOrigins = OriginsInventory.newOriginsInventoryBuilder(backendService).build()
 
   def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins)
 

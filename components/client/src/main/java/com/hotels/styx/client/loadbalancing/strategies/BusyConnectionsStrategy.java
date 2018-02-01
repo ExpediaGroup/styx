@@ -76,7 +76,8 @@ public class BusyConnectionsStrategy implements LoadBalancingStrategy {
 
         return poolsList.stream()
                 .map(ConnectionPoolStatus::getPool)
-                .map(RemoteHostWrapper::new)
+                // TODO: Mikko: Fix this:
+                .map(pool -> new RemoteHostWrapper(pool, null))
                 .collect(toList());
     }
 

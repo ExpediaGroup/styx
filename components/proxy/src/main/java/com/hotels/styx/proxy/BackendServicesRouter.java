@@ -29,6 +29,8 @@ import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.SimpleNettyHttpClient;
+import com.hotels.styx.client.StyxHeaderConfig;
+import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
 import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
@@ -136,6 +138,11 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                                     environment.buildInfo().releaseVersion()
                             ));
 
+            StyxHostHttpClient.Factory hostClientFactory = (ConnectionPool connectionPool) -> {
+                StyxHeaderConfig headerConfig = environment.styxConfig().styxHeaderConfig();
+                return StyxHostHttpClient.create(backendService.id(), connectionPool.getOrigin().id(), headerConfig.originIdHeaderName(), connectionPool);
+            };
+
             //TODO: origins inventory builder assumes that appId/originId tuple is unique and it will fail on metrics registration.
             OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(environment.eventBus())
@@ -143,6 +150,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .connectionPoolFactory(connectionPoolFactory)
                     .originHealthMonitor(healthStatusMonitor)
                     .initialOrigins(backendService.origins())
+                    .hostClientFactory(hostClientFactory)
                     .build();
 
             pipeline = new ProxyToClientPipeline(newClientHandler(backendService, inventory, originStatsFactory), inventory);

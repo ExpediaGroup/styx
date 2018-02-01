@@ -20,12 +20,11 @@ import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
-import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
+import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import org.mockito.Mockito;
 import org.testng.annotations.Test;
@@ -39,15 +38,16 @@ import static java.util.Collections.EMPTY_LIST;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
 import static org.hamcrest.core.Is.is;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 
 public class StickySessionLoadBalancingStrategyTest {
-    static final RemoteHost ORIGIN_0 = new RemoteHostWrapper(new StubConnectionPool(newOriginBuilder("localhost", 0).id("o0").build()));
-    static final RemoteHost ORIGIN_1 = new RemoteHostWrapper(new StubConnectionPool(newOriginBuilder("localhost", 1).id("o1").build()));
-    static final RemoteHost ORIGIN_2 = new RemoteHostWrapper(new StubConnectionPool(newOriginBuilder("localhost", 2).id("o2").build()));
+    static final RemoteHost ORIGIN_0 = new RemoteHostWrapper(new StubConnectionPool(newOriginBuilder("localhost", 0).id("o0").build()), mock(StyxHostHttpClient.class));
+    static final RemoteHost ORIGIN_1 = new RemoteHostWrapper(new StubConnectionPool(newOriginBuilder("localhost", 1).id("o1").build()), mock(StyxHostHttpClient.class));
+    static final RemoteHost ORIGIN_2 = new RemoteHostWrapper(new StubConnectionPool(newOriginBuilder("localhost", 2).id("o2").build()), mock(StyxHostHttpClient.class));
 
-    final ActiveOrigins activeOrigins = Mockito.mock(ActiveOrigins.class);
+    final ActiveOrigins activeOrigins = mock(ActiveOrigins.class);
 
     final LoadBalancingStrategy FALL_BACK_STRATEGY = (context) -> activeOrigins.snapshot();
 

@@ -20,6 +20,7 @@ import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
+import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
@@ -48,7 +49,7 @@ public class RoundRobinStrategyTest {
         return new RemoteHostWrapper(new SimpleConnectionPool(
                 newOriginBuilder(host, port).build(),
                 new ConnectionPoolSettings.Builder().maxConnectionsPerHost(1).build(),
-                connectionFactory));
+                connectionFactory), mock(StyxHostHttpClient.class));
     }
 
     private LoadBalancingStrategy strategy;

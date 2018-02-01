@@ -24,6 +24,7 @@ import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.client.OriginsCommandsListener;
 import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
+import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
@@ -44,16 +45,17 @@ import static java.lang.String.format;
 import static java.util.Collections.singleton;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
 
 public class OriginsCommandHandlerTest {
     final Origin activeOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("activeOriginId").build();
-    final Set<RemoteHost> activeOrigins = singleton(new RemoteHostWrapper(new StubConnectionPool(activeOrigin)));
+    final Set<RemoteHost> activeOrigins = singleton(new RemoteHostWrapper(activeOrigin.id(), activeOrigin, new StubConnectionPool(activeOrigin), mock(StyxHostHttpClient.class)));
 
     final Origin disabledOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("disabledOriginId").build();
-    final Set<RemoteHost> disabledOrigins = singleton(new RemoteHostWrapper(new StubConnectionPool(disabledOrigin)));
+    final Set<RemoteHost> disabledOrigins = singleton(new RemoteHostWrapper(disabledOrigin.id(), disabledOrigin, new StubConnectionPool(disabledOrigin), mock(StyxHostHttpClient.class)));
 
     final Origin inactiveOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("inactiveOriginId").build();
-    final Set<RemoteHost> inactiveOrigins = singleton(new RemoteHostWrapper(new StubConnectionPool(inactiveOrigin)));
+    final Set<RemoteHost> inactiveOrigins = singleton(new RemoteHostWrapper(inactiveOrigin.id(), inactiveOrigin, new StubConnectionPool(inactiveOrigin), mock(StyxHostHttpClient.class)));
 
     final EventBus eventBus = new EventBus();
     final OriginsCommandHandler originsCommand = new OriginsCommandHandler(eventBus);

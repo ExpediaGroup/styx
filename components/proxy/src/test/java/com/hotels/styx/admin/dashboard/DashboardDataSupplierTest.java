@@ -24,6 +24,7 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
+import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import org.testng.annotations.Test;
@@ -94,7 +95,7 @@ public class DashboardDataSupplierTest {
     private Collection<RemoteHost> pools(Origin... origins) {
         return asList(origins).stream()
                 .map(this::pool)
-                .map(RemoteHostWrapper::new)
+                .map(pool -> new RemoteHostWrapper(pool.getOrigin().id(), pool.getOrigin(), pool, mock(StyxHostHttpClient.class)))
                 .collect(toList());
     }
 
