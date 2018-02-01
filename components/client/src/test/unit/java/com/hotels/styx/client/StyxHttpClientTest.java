@@ -51,6 +51,7 @@ import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
+import static com.hotels.styx.client.TestSupport.remoteHost;
 import static com.hotels.styx.client.retry.RetryPolicies.doNotRetry;
 import static com.hotels.styx.client.stickysession.StickySessionConfig.stickySessionDisabled;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
@@ -103,8 +104,7 @@ public class StyxHttpClientTest {
 
     private static BackendService.Builder backendBuilderWithOrigins(int originPort) {
         return new BackendService.Builder()
-                .origins(newOriginBuilder("localhost", originPort).build())
-                ;
+                .origins(newOriginBuilder("localhost", originPort).build());
     }
 
     private Connection mockConnection(Origin origin, Observable<HttpResponse> response) {
@@ -116,7 +116,7 @@ public class StyxHttpClientTest {
 
     private LoadBalancingStrategy mockLbStrategy(ConnectionPool pool) {
         LoadBalancingStrategy lbStrategy = mock(LoadBalancingStrategy.class);
-        when(lbStrategy.vote(any(LoadBalancingStrategy.Context.class))).thenReturn(ImmutableList.of(new RemoteHostWrapper(pool, mock(StyxHostHttpClient.class))));
+        when(lbStrategy.vote(any(LoadBalancingStrategy.Context.class))).thenReturn(ImmutableList.of(remoteHost(pool.getOrigin(), pool, mock(StyxHostHttpClient.class))));
         return lbStrategy;
     }
 

@@ -23,7 +23,6 @@ import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategyFactory;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
 
 import java.util.Comparator;
 import java.util.List;
@@ -60,7 +59,7 @@ public class BusyConnectionsStrategy implements LoadBalancingStrategy {
     @Override
     public Iterable<RemoteHost> vote(Context context) {
         List<ConnectionPoolStatus> poolsList = stream(activeOrigins.snapshot().spliterator(), false)
-                .map(host -> new ConnectionPoolStatus(host.connectionPool(), context))
+                .map(host -> new ConnectionPoolStatus(host, context))
                 .collect(toList());
 
         double average5xxRate = average5xxRate(poolsList);
@@ -75,9 +74,7 @@ public class BusyConnectionsStrategy implements LoadBalancingStrategy {
         ));
 
         return poolsList.stream()
-                .map(ConnectionPoolStatus::getPool)
-                // TODO: Mikko: Fix this:
-                .map(pool -> new RemoteHostWrapper(pool, null))
+                .map(ConnectionPoolStatus::host)
                 .collect(toList());
     }
 
@@ -97,18 +94,18 @@ public class BusyConnectionsStrategy implements LoadBalancingStrategy {
     }
 
     private static class ConnectionPoolStatus {
-        private final ConnectionPool pool;
+        private final RemoteHost host;
         private final double status5XxRate;
         private final int availableCount;
         private final int busyConnectionCount;
         private final int pendingConnectionCount;
 
-        public ConnectionPoolStatus(ConnectionPool pool, Context context) {
-            this.pool = pool;
-            this.status5XxRate = context.oneMinuteRateForStatusCode5xx(pool.getOrigin());
-            this.availableCount = pool.stats().availableConnectionCount();
-            this.busyConnectionCount = pool.stats().busyConnectionCount();
-            this.pendingConnectionCount = pool.stats().pendingConnectionCount();
+        public ConnectionPoolStatus(RemoteHost host, Context context) {
+            this.host = host;
+            this.status5XxRate = context.oneMinuteRateForStatusCode5xx(host.origin());
+            this.availableCount = host.connectionPool().stats().availableConnectionCount();
+            this.busyConnectionCount = host.connectionPool().stats().busyConnectionCount();
+            this.pendingConnectionCount = host.connectionPool().stats().pendingConnectionCount();
         }
 
         public double status5xxRate() {
@@ -127,8 +124,12 @@ public class BusyConnectionsStrategy implements LoadBalancingStrategy {
             return pendingConnectionCount;
         }
 
-        public ConnectionPool getPool() {
-            return pool;
+        public ConnectionPool pool() {
+            return host.connectionPool();
+        }
+
+        public RemoteHost host() {
+            return host;
         }
     }
 }

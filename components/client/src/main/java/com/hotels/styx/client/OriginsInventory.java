@@ -599,11 +599,6 @@ public final class OriginsInventory
         private ConnectionPool pool;
         private StyxHostHttpClient hostClient;
 
-        // TODO: Remove this:
-        public RemoteHostWrapper(ConnectionPool pool, StyxHostHttpClient hostClient) {
-            this(Id.id("foo"), null, pool, hostClient);
-        }
-
         public RemoteHostWrapper(Id id, Origin origin, ConnectionPool pool, StyxHostHttpClient hostClient) {
             this.id = id;
             this.origin = origin;

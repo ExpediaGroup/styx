@@ -23,15 +23,14 @@ import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
-import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
 import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
-import org.mockito.Mockito;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.client.TestSupport.remoteHost;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
 import static java.util.Arrays.asList;
 import static java.util.Collections.EMPTY_LIST;
@@ -43,9 +42,13 @@ import static org.mockito.Mockito.when;
 
 
 public class StickySessionLoadBalancingStrategyTest {
-    static final RemoteHost ORIGIN_0 = new RemoteHostWrapper(new StubConnectionPool(newOriginBuilder("localhost", 0).id("o0").build()), mock(StyxHostHttpClient.class));
-    static final RemoteHost ORIGIN_1 = new RemoteHostWrapper(new StubConnectionPool(newOriginBuilder("localhost", 1).id("o1").build()), mock(StyxHostHttpClient.class));
-    static final RemoteHost ORIGIN_2 = new RemoteHostWrapper(new StubConnectionPool(newOriginBuilder("localhost", 2).id("o2").build()), mock(StyxHostHttpClient.class));
+    private static final Origin origin0 = newOriginBuilder("localhost", 0).id("o0").build();
+    private static final Origin origin1 = newOriginBuilder("localhost", 1).id("o1").build();
+    private static final Origin origin2 = newOriginBuilder("localhost", 2).id("o2").build();
+
+    static final RemoteHost ORIGIN_0 = remoteHost(origin0, new StubConnectionPool(origin0), mock(StyxHostHttpClient.class));
+    static final RemoteHost ORIGIN_1 = remoteHost(origin1, new StubConnectionPool(origin1), mock(StyxHostHttpClient.class));
+    static final RemoteHost ORIGIN_2 = remoteHost(origin2, new StubConnectionPool(origin2), mock(StyxHostHttpClient.class));
 
     final ActiveOrigins activeOrigins = mock(ActiveOrigins.class);
 

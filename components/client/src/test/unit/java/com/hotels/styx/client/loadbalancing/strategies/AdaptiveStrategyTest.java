@@ -21,7 +21,6 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
-import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import org.testng.annotations.BeforeMethod;
@@ -32,6 +31,7 @@ import java.util.Set;
 import static com.google.common.collect.Sets.newLinkedHashSet;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.client.TestSupport.remoteHost;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -141,7 +141,7 @@ public class AdaptiveStrategyTest {
     }
 
     private static RemoteHost aConnectionPool(Origin origin) {
-        return new OriginsInventory.RemoteHostWrapper(new StubConnectionPool(origin), mock(StyxHostHttpClient.class));
+        return remoteHost(origin, new StubConnectionPool(origin), mock(StyxHostHttpClient.class));
     }
 
     private static Set<RemoteHost> setOf(RemoteHost... pools) {

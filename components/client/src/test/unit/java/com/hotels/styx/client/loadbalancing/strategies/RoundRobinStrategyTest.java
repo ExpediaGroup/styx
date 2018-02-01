@@ -17,9 +17,9 @@ package com.hotels.styx.client.loadbalancing.strategies;
 
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.Connection;
+import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
-import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
 import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
@@ -30,6 +30,7 @@ import rx.Observer;
 
 import static com.google.common.collect.Iterables.size;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.client.TestSupport.remoteHost;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
@@ -44,10 +45,12 @@ public class RoundRobinStrategyTest {
     private static final RemoteHost POOL_1 = createConnectionPoolFor("localhost", 1);
     private static final RemoteHost POOL_2 = createConnectionPoolFor("localhost", 2);
     private static final RemoteHost POOL_3 = createConnectionPoolFor("localhost", 3);
+    private static Origin origin;
 
     private static RemoteHost createConnectionPoolFor(String host, int port) {
-        return new RemoteHostWrapper(new SimpleConnectionPool(
-                newOriginBuilder(host, port).build(),
+        origin = newOriginBuilder(host, port).build();
+
+        return remoteHost(origin, new SimpleConnectionPool(origin,
                 new ConnectionPoolSettings.Builder().maxConnectionsPerHost(1).build(),
                 connectionFactory), mock(StyxHostHttpClient.class));
     }

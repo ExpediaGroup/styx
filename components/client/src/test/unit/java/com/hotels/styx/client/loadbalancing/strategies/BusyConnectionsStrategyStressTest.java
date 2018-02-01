@@ -23,7 +23,6 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
 import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import org.testng.annotations.BeforeMethod;
@@ -39,6 +38,7 @@ import java.util.TreeMap;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
+import static com.hotels.styx.client.TestSupport.remoteHost;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -159,7 +159,7 @@ public class BusyConnectionsStrategyStressTest {
 
             if (vote) {
                 Iterable<RemoteHost> pools = origins.stream().map(so ->
-                        new RemoteHostWrapper(new StubConnectionPool(so.origin())
+                        remoteHost(so.origin, new StubConnectionPool(so.origin())
                                 .withBusyConnections(so.busyConnections())
                                 .withAvailableConnections(so.availableConnections()), mock(StyxHostHttpClient.class)))
                         .collect(toList());
