@@ -178,11 +178,25 @@ public class BackendServicesRouterTest {
     }
 
     @Test
+    public void removesExistingServicesBeforeAddingNewOnes() {
+        BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
+        router.onChange(added(appB()));
+
+        router.onChange(new Registry.Changes.Builder<BackendService>()
+                .added(newBackendServiceBuilder(appB()).id("X").build())
+                .removed(appB())
+                .build());
+
+        HttpRequest request = get("/appB/").build();
+        Optional<HttpHandler2> route = router.route(request);
+        assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue("X"));
+    }
+
+    @Test
     public void updatesRoutesOnBackendServicesChange() {
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
 
         HttpRequest request = get("/appB/").build();
-
 
         router.onChange(added(appB()));
 
