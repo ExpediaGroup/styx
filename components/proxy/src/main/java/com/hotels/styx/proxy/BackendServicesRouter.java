@@ -93,6 +93,8 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
     @Override
     public void onChange(Registry.Changes<BackendService> changes) {
+        changes.removed().forEach(backendService -> routes.remove(backendService.path()).close());
+
         concat(changes.added(), changes.updated()).forEach(backendService -> {
 
             ProxyToClientPipeline pipeline = routes.get(backendService.path());
@@ -162,10 +164,6 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             LOG.info("added path={} current routes={}", backendService.path(), routes.keySet());
 
         });
-
-        changes.removed().forEach(backendService ->
-                routes.remove(backendService.path())
-                        .close());
     }
 
     private HttpClient newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
