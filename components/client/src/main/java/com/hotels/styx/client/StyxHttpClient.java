@@ -98,7 +98,6 @@ public final class StyxHttpClient implements HttpClient {
         return new Builder(backendService);
     }
 
-
     Id id() {
         return id;
     }

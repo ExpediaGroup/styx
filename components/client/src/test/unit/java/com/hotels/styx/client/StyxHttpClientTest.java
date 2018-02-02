@@ -22,6 +22,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.metrics.MetricRegistry;
@@ -43,6 +44,8 @@ import rx.observers.Observers;
 import rx.observers.TestSubscriber;
 import rx.subjects.PublishSubject;
 
+import java.util.List;
+
 import static com.hotels.styx.api.HttpHeaderNames.CHUNKED;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
@@ -59,6 +62,9 @@ import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERR
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_IMPLEMENTED;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
+import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
+import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -151,19 +157,16 @@ public class StyxHttpClientTest {
 //    }
 
 
-
     @Test
     public void sendsRequestToHostChosenByLoadBalancer() {
         StyxHostHttpClient hostClient = mockHostClient(Observable.just(response(OK).build()));
 
-        LoadBalancingStrategy lbStategy = mock(LoadBalancingStrategy.class);
-        when(lbStategy.vote(any(LoadBalancingStrategy.Context.class)))
-                .thenReturn(
-                        ImmutableList.of(new RemoteHostWrapper(SOME_ORIGIN.id(), SOME_ORIGIN, mock(ConnectionPool.class), hostClient)));
-
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .metricsRegistry(metricRegistry)
-                .loadBalancingStrategy(lbStategy)
+                .loadBalancingStrategy(
+                        mockLoadBalancer(
+                                asList(new RemoteHostWrapper(SOME_ORIGIN.id(), SOME_ORIGIN, mock(ConnectionPool.class), hostClient))
+                        ))
                 .build();
 
         HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
@@ -182,26 +185,16 @@ public class StyxHttpClientTest {
 
         ConnectionPool secondPool = mockPool(ORIGIN_2);
         StyxHostHttpClient secondClient = mockHostClient(Observable.just(response(OK).build()));
-        RetryPolicy retryPolicy = mock(RetryPolicy.class);
-        RetryPolicy.Outcome retryOutcome = mock(RetryPolicy.Outcome.class);
-        when(retryOutcome.shouldRetry())
-                .thenReturn(true)
-                .thenReturn(false);
-        when(retryPolicy.evaluate(any(RetryPolicy.Context.class), any(LoadBalancingStrategy.class), any(LoadBalancingStrategy.Context.class)))
-                .thenReturn(retryOutcome);
-
-        LoadBalancingStrategy lbStategy = mock(LoadBalancingStrategy.class);
-        when(lbStategy.vote(any(LoadBalancingStrategy.Context.class)))
-                .thenReturn(
-                        ImmutableList.of(new RemoteHostWrapper(ORIGIN_1.id(), ORIGIN_1, firstPool, firstClient)))
-                .thenReturn(
-                        ImmutableList.of(new RemoteHostWrapper(ORIGIN_2.id(), ORIGIN_2, secondPool, secondClient))
-                );
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .metricsRegistry(metricRegistry)
-                .loadBalancingStrategy(lbStategy)
-                .retryPolicy(retryPolicy)
+                .loadBalancingStrategy(
+                        mockLoadBalancer(
+                                asList(new RemoteHostWrapper(ORIGIN_1.id(), ORIGIN_1, firstPool, firstClient)),
+                                asList(new RemoteHostWrapper(ORIGIN_2.id(), ORIGIN_2, secondPool, secondClient))
+                        ))
+                .retryPolicy(
+                        mockRetryPolicy(true, false))
                 .build();
 
         assertThat(styxHttpClient.sendRequest(SOME_REQ).toBlocking().first().status(), is(OK));
@@ -222,26 +215,15 @@ public class StyxHttpClientTest {
         ConnectionPool thirdPool = mockPool(ORIGIN_2);
         StyxHostHttpClient thirdClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
 
-        RetryPolicy retryPolicy = mock(RetryPolicy.class);
-        RetryPolicy.Outcome retryOutcome = mock(RetryPolicy.Outcome.class);
-        when(retryOutcome.shouldRetry())
-                .thenReturn(true)
-                .thenReturn(false);
-        when(retryPolicy.evaluate(any(RetryPolicy.Context.class), any(LoadBalancingStrategy.class), any(LoadBalancingStrategy.Context.class)))
-                .thenReturn(retryOutcome)
-                .thenReturn(retryOutcome);
-
-        LoadBalancingStrategy lbStategy = mock(LoadBalancingStrategy.class);
-        when(lbStategy.vote(any(LoadBalancingStrategy.Context.class)))
-                .thenReturn(ImmutableList.of(new RemoteHostWrapper(ORIGIN_1.id(), ORIGIN_1, firstPool, firstClient)))
-                .thenReturn(ImmutableList.of(new RemoteHostWrapper(ORIGIN_2.id(), ORIGIN_2, secondPool, secondClient)))
-                .thenReturn(ImmutableList.of(new RemoteHostWrapper(ORIGIN_3.id(), ORIGIN_3, secondPool, secondClient))
-                );
-
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .metricsRegistry(metricRegistry)
-                .loadBalancingStrategy(lbStategy)
-                .retryPolicy(retryPolicy)
+                .loadBalancingStrategy(
+                        mockLoadBalancer(
+                                asList(new RemoteHostWrapper(ORIGIN_1.id(), ORIGIN_1, firstPool, firstClient)),
+                                asList(new RemoteHostWrapper(ORIGIN_2.id(), ORIGIN_2, secondPool, secondClient)),
+                                asList(new RemoteHostWrapper(ORIGIN_3.id(), ORIGIN_3, secondPool, secondClient))
+                        ))
+                .retryPolicy(mockRetryPolicy(true, false))
                 .build();
 
         TestSubscriber<HttpResponse> testSubscriber = new TestSubscriber<>();
@@ -272,31 +254,17 @@ public class StyxHttpClientTest {
         ConnectionPool fourthPool = mockPool(ORIGIN_4);
         StyxHostHttpClient fourthClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_4, new RuntimeException("An error occurred"))));
 
-        RetryPolicy retryPolicy = mock(RetryPolicy.class);
-        RetryPolicy.Outcome retryOutcome = mock(RetryPolicy.Outcome.class);
-        when(retryOutcome.shouldRetry())
-                .thenReturn(true)
-                .thenReturn(true)
-                .thenReturn(true)
-                .thenReturn(true);
-
-        when(retryPolicy.evaluate(any(RetryPolicy.Context.class), any(LoadBalancingStrategy.class), any(LoadBalancingStrategy.Context.class)))
-                .thenReturn(retryOutcome)
-                .thenReturn(retryOutcome)
-                .thenReturn(retryOutcome)
-                .thenReturn(retryOutcome);
-
-        LoadBalancingStrategy lbStategy = mock(LoadBalancingStrategy.class);
-        when(lbStategy.vote(any(LoadBalancingStrategy.Context.class)))
-                .thenReturn(ImmutableList.of(new RemoteHostWrapper(ORIGIN_1.id(), ORIGIN_1, firstPool, firstClient)))
-                .thenReturn(ImmutableList.of(new RemoteHostWrapper(ORIGIN_2.id(), ORIGIN_2, secondPool, secondClient)))
-                .thenReturn(ImmutableList.of(new RemoteHostWrapper(ORIGIN_3.id(), ORIGIN_3, thirdPool, thirdClient)))
-                .thenReturn(ImmutableList.of(new RemoteHostWrapper(ORIGIN_4.id(), ORIGIN_4, fourthPool, fourthClient)));
-
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .metricsRegistry(metricRegistry)
-                .loadBalancingStrategy(lbStategy)
-                .retryPolicy(retryPolicy)
+                .loadBalancingStrategy(
+                        mockLoadBalancer(
+                                asList(new RemoteHostWrapper(ORIGIN_1.id(), ORIGIN_1, firstPool, firstClient)),
+                                asList(new RemoteHostWrapper(ORIGIN_2.id(), ORIGIN_2, secondPool, secondClient)),
+                                asList(new RemoteHostWrapper(ORIGIN_3.id(), ORIGIN_3, thirdPool, thirdClient)),
+                                asList(new RemoteHostWrapper(ORIGIN_4.id(), ORIGIN_4, fourthPool, fourthClient))
+                        ))
+                .retryPolicy(
+                        mockRetryPolicy(true, true, true, true))
                 .build();
 
         TestSubscriber<HttpResponse> testSubscriber = new TestSubscriber<>();
@@ -313,6 +281,52 @@ public class StyxHttpClientTest {
         ordered.verify(fourthClient, never()).sendRequest(any(HttpRequest.class));
     }
 
+
+    @Test
+    public void incrementsResponseStatusMetricsForBadResponse() {
+        StyxHostHttpClient hostClient = mockHostClient(Observable.just(response(BAD_REQUEST).build()));
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+                .metricsRegistry(metricRegistry)
+                .loadBalancingStrategy(
+                        mockLoadBalancer(asList(remoteHost(SOME_ORIGIN, mock(ConnectionPool.class), hostClient))))
+                .build();
+
+        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+
+        assertThat(response.status(), is(BAD_REQUEST));
+        verify(hostClient).sendRequest(eq(SOME_REQ));
+        assertThat(metricRegistry.counter("origins.response.status.400").getCount(), is(1L));
+    }
+
+
+    private LoadBalancingStrategy mockLoadBalancer(List<RemoteHost> first) {
+        LoadBalancingStrategy lbStategy = mock(LoadBalancingStrategy.class);
+        when(lbStategy.vote(any(LoadBalancingStrategy.Context.class))).thenReturn(first, emptyList());
+        return lbStategy;
+    }
+
+    private RetryPolicy mockRetryPolicy(Boolean first, Boolean ...outcomes) {
+        RetryPolicy retryPolicy = mock(RetryPolicy.class);
+        RetryPolicy.Outcome retryOutcome = mock(RetryPolicy.Outcome.class);
+
+        when(retryOutcome.shouldRetry()).thenReturn(first, outcomes);
+
+        RetryPolicy.Outcome[] retryOutcomes = stream(outcomes).map(outcome -> retryOutcome).toArray(RetryPolicy.Outcome[]::new);
+
+        when(retryPolicy.evaluate(any(RetryPolicy.Context.class), any(LoadBalancingStrategy.class), any(LoadBalancingStrategy.Context.class)))
+                .thenReturn(retryOutcome)
+                .thenReturn(retryOutcome, retryOutcomes);
+
+        return retryPolicy;
+    }
+
+    private LoadBalancingStrategy mockLoadBalancer(List<RemoteHost> first, List<RemoteHost>... remoteHostWrappers) {
+        LoadBalancingStrategy lbStategy = mock(LoadBalancingStrategy.class);
+        when(lbStategy.vote(any(LoadBalancingStrategy.Context.class))).thenReturn(first, remoteHostWrappers);
+        return lbStategy;
+    }
+
     private StyxHostHttpClient mockHostClient(Observable<HttpResponse> responseObservable) {
         StyxHostHttpClient secondClient = mock(StyxHostHttpClient.class);
         when(secondClient.sendRequest(any(HttpRequest.class))).thenReturn(responseObservable);
@@ -325,26 +339,6 @@ public class StyxHttpClientTest {
         return firstPool;
     }
 
-
-    @Test(enabled = false)
-    public void incrementsResponseStatusMetricsForBadResponse() {
-        Connection connection = mockConnection(SOME_ORIGIN, just(response(BAD_REQUEST).build()));
-        LoadBalancingStrategy lbStrategy = mockLbStrategy(mockPool(SOME_ORIGIN, connection));
-
-        BackendService backendService = backendBuilderWithOrigins(SOME_ORIGIN.host().getPort())
-                .stickySessionConfig(stickySessionConfig)
-                .build();
-
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
-                .metricsRegistry(metricRegistry)
-                .loadBalancingStrategy(lbStrategy)
-                .build();
-
-        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
-
-        assertThat(response.status(), is(BAD_REQUEST));
-        assertThat(metricRegistry.counter("origins.response.status.400").getCount(), is(1L));
-    }
 
     @Test(enabled = false)
     public void incrementsResponseStatusMetricsFor401() {
