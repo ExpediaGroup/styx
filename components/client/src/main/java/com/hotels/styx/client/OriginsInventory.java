@@ -418,7 +418,7 @@ public final class OriginsInventory
         private final ConnectionPool connectionPool;
         private final StateMachine<OriginState> machine;
         private final String gaugeName;
-        private final StyxHostHttpClient hostClient;
+        private final HttpClient hostClient;
 
         private MonitoredOrigin(Origin origin) {
             this.origin = origin;
@@ -598,9 +598,9 @@ public final class OriginsInventory
         private final Id id;
         private final Origin origin;
         private ConnectionPool pool;
-        private StyxHostHttpClient hostClient;
+        private HttpClient hostClient;
 
-        public RemoteHostWrapper(Id id, Origin origin, ConnectionPool pool, StyxHostHttpClient hostClient) {
+        public RemoteHostWrapper(Id id, Origin origin, ConnectionPool pool, HttpClient hostClient) {
             this.id = id;
             this.origin = origin;
             this.pool = requireNonNull(pool);
@@ -638,12 +638,14 @@ public final class OriginsInventory
             }
 
             RemoteHostWrapper that = (RemoteHostWrapper) o;
-            return Objects.equals(pool, that.pool);
+            return Objects.equals(id, that.id)
+                    && Objects.equals(origin, that.origin)
+                    && Objects.equals(pool, that.pool);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(pool);
+            return Objects.hash(id, origin, pool);
         }
     }
 }

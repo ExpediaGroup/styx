@@ -123,37 +123,6 @@ public class StyxHttpClientTest {
         return lbStrategy;
     }
 
-    // TODO: Mikko: should be moved to styx client factory test:
-    // This is because sticky session functionality is injected into
-    // the client via Load Balancing Strategy alone
-//    @Test
-//    public void usesTheOriginSpecifiedInTheCookieIfStickySessionIsEnabled() {
-//        Connection connection = mockConnection(SOME_ORIGIN, just(response(OK).build()));
-//        ConnectionPool pool = mockPool(SOME_ORIGIN, connection);
-//        LoadBalancingStrategy lbStrategy = mockLbStrategy(pool);
-//
-//        StickySessionConfig stickySessionConfig = newStickySessionConfigBuilder()
-//                .enabled(true)
-//                .build();
-//
-//        StyxHttpClient styxClient = new StyxHttpClient.Builder(backendWithOrigins(9001))
-//                .loadBalancingStrategy(lbStrategy)
-//                .retryPolicy(doNotRetry())
-//                .build();
-//
-//        BackendService backendService = backendBuilderWithOrigins(SOME_ORIGIN.host().getPort())
-//                .stickySessionConfig(stickySessionConfig)
-//                .build();
-//
-//        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
-//                .build();
-//
-//        HttpRequest request = requestWithStickySessionCookie(GENERIC_APP, id("h1"));
-//
-//        styxHttpClient.sendRequest(request).subscribe(new TestSubscriber<>());
-//    }
-
-
     @Test
     public void sendsRequestToHostChosenByLoadBalancer() {
         StyxHostHttpClient hostClient = mockHostClient(just(response(OK).build()));

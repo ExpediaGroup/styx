@@ -57,6 +57,6 @@ public class StyxHostHttpClient implements HttpClient {
      * A factory for creating StyxHostHttpClient instances.
      */
     public interface Factory {
-        StyxHostHttpClient create(ConnectionPool connectionPool);
+        HttpClient create(ConnectionPool connectionPool);
     }
 }

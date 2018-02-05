@@ -50,10 +50,6 @@ public class RetryNTimes extends AbstractRetryPolicy {
                         .findFirst();
             }
 
-//            private String formatInfo(ConnectionPool pool, Iterable<ConnectionPool> connectionPools) {
-//                return "Origin: " + pool.getOrigin() + " previous: " + Iterables.transform(connectionPools, ConnectionPool::getOrigin);
-//            }
-
             @Override
             public boolean shouldRetry() {
                 boolean belowMaxRetryAttempts = context.currentRetryCount() < maxAttempts();

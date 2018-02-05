@@ -17,8 +17,11 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxHttpClient;
@@ -26,10 +29,16 @@ import com.hotels.styx.client.applications.BackendService;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.Id.GENERIC_APP;
+import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
 import static com.hotels.styx.client.applications.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.client.connectionpool.ConnectionPools.simplePoolFactory;
+import static com.hotels.styx.client.stickysession.StickySessionConfig.newStickySessionConfigBuilder;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -42,6 +51,7 @@ public class StyxBackendServiceClientFactoryTest {
     private Environment environment;
     private Connection.Factory connectionFactory;
     private BackendService backendService;
+    private String STICKY_COOKIE = "styx_origin_" + GENERIC_APP;
 
     @BeforeMethod
     public void setUp() {
@@ -75,4 +85,49 @@ public class StyxBackendServiceClientFactoryTest {
         //       these problems are both outside the scope of the current issue being implemented
         //       so for the time being, this test is mostly a placeholder
     }
+
+
+    @Test
+    public void usesTheOriginSpecifiedInTheCookieIfStickySessionIsEnabled() {
+        BackendService backendService = newBackendServiceBuilder()
+                .origins(
+                        newOriginBuilder("localhost", 9091).id("x").build(),
+                        newOriginBuilder("localhost", 9092).id("y").build(),
+                        newOriginBuilder("localhost", 9093).id("z").build())
+                .stickySessionConfig(
+                        newStickySessionConfigBuilder()
+                                .enabled(true)
+                                .build())
+                .build();
+
+        HttpClient styxHttpClient = new StyxBackendServiceClientFactory(environment)
+                .createClient(
+                        backendService,
+                        newOriginsInventoryBuilder(backendService)
+                                .hostClientFactory((pool) -> {
+                                    if (pool.getOrigin().id().equals(id("x"))) {
+                                        return (request) -> just(response(OK).header("X-Origin-Id", "x").build());
+                                    } else if (pool.getOrigin().id().equals(id("y"))) {
+                                        return (request) -> just(response(OK).header("X-Origin-Id", "y").build());
+                                    } else {
+                                        return (request) -> just(response(OK).header("X-Origin-Id", "z").build());
+                                    }
+                                })
+                                .build(),
+                        new OriginStatsFactory(new CodaHaleMetricRegistry()));
+
+        HttpRequest requestz = get("/some-req").addCookie(STICKY_COOKIE, id("z").toString()).build();
+        HttpRequest requestx = get("/some-req").addCookie(STICKY_COOKIE, id("x").toString()).build();
+        HttpRequest requesty = get("/some-req").addCookie(STICKY_COOKIE, id("y").toString()).build();
+
+        HttpResponse responsez = styxHttpClient.sendRequest(requestz).toBlocking().first();
+        HttpResponse responsex = styxHttpClient.sendRequest(requestx).toBlocking().first();
+        HttpResponse responsey = styxHttpClient.sendRequest(requesty).toBlocking().first();
+
+        assertThat(responsex.header("X-Origin-Id").get(), is("x"));
+        assertThat(responsey.header("X-Origin-Id").get(), is("y"));
+        assertThat(responsez.header("X-Origin-Id").get(), is("z"));
+    }
+
+
 }
