@@ -154,25 +154,24 @@ public final class StyxHttpClient implements HttpClient {
                     .map(response -> removeUnexpectedResponseBody(request, response))
                     .map(this::removeRedundantContentLengthHeader)
                     .onErrorResumeNext(cause -> {
-
-                        // TODO: retryPolicy.evaluate() does not need all these:
-                        //        Specifically, it does not need (for now):
-                        //        - LB context
-                        //        - load balancing strategy
-
-                        RetryPolicyContext retryContext = new RetryPolicyContext(id(), attempt, cause, request, previousOrigins);
-                        LoadBalancingStrategy.Context lbContext = new LBContext(request, id, originStatsFactory);
-
-                        if (retryPolicy().evaluate(retryContext, loadBalancingStrategy, lbContext).shouldRetry()) {
-                            return sendRequest(request, previousOrigins, attempt + 1);
-                        } else {
-                            return Observable.error(cause);
-                        }
+                        RetryPolicyContext retryContext = new RetryPolicyContext(id(), attempt + 1, cause, request, previousOrigins);
+                        return retry(request, retryContext, previousOrigins, attempt + 1, cause);
                     });
-
         } else {
-            return sendRequest(request, previousOrigins, attempt + 1);
+            RetryPolicyContext retryContext = new RetryPolicyContext(id(), attempt + 1, null, request, previousOrigins);
+            return retry(request, retryContext, previousOrigins, attempt + 1, new NoAvailableHostsException(this.id()));
         }
+    }
+
+    Observable<HttpResponse> retry(HttpRequest request, RetryPolicyContext retryContext, List<RemoteHost> previousOrigins, int attempt, Throwable cause) {
+        LoadBalancingStrategy.Context lbContext = new LBContext(request, id, originStatsFactory);
+
+        if (retryPolicy().evaluate(retryContext, loadBalancingStrategy, lbContext).shouldRetry()) {
+            return sendRequest(request, previousOrigins, attempt);
+        } else {
+            return Observable.error(cause);
+        }
+
     }
 
     @Override
