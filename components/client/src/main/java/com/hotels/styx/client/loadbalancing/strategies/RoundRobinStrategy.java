@@ -74,7 +74,7 @@ public class RoundRobinStrategy implements LoadBalancingStrategy {
 
     private List<RemoteHost> cycledNonExhaustedOrigins(Iterable<RemoteHost> origins) {
         return cycleOrigins(origins)
-                .filter(remoteHot -> !remoteHot.connectionPool().isExhausted())
+                .filter(host -> !host.connectionPool().isExhausted())
                 .collect(toList());
     }
 

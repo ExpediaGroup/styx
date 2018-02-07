@@ -31,11 +31,11 @@ import static java.util.Objects.requireNonNull;
  */
 public class StyxHostHttpClient implements HttpClient {
     private final Transport transport;
-    private Id originId;
-    private ConnectionPool pool;
+    private final Id originId;
+    private final ConnectionPool pool;
 
     public StyxHostHttpClient(Id originId, ConnectionPool pool, Transport transport) {
-        this.originId = originId;
+        this.originId = requireNonNull(originId);
         this.pool = requireNonNull(pool);
         this.transport = requireNonNull(transport);
     }

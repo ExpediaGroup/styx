@@ -48,7 +48,7 @@ import static com.hotels.styx.client.stickysession.StickySessionCookie.newSticky
 import static io.netty.handler.codec.http.HttpMethod.HEAD;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.StreamSupport.stream;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -57,6 +57,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public final class StyxHttpClient implements HttpClient {
     private static final Logger LOGGER = getLogger(StyxHttpClient.class);
+    private static final int MAX_RETRY_ATTEMPTS = 3;
 
     private final Id id;
     private final RewriteRuleset rewriteRuleset;
@@ -85,6 +86,11 @@ public final class StyxHttpClient implements HttpClient {
         this.contentValidation = builder.contentValidation;
     }
 
+    @Override
+    public Observable<HttpResponse> sendRequest(HttpRequest request) {
+        return sendRequest(rewriteUrl(request), new ArrayList<>(), 0);
+    }
+
     public boolean isHttps() {
         return backendService.tlsSettings().isPresent();
     }
@@ -96,18 +102,6 @@ public final class StyxHttpClient implements HttpClient {
      */
     public static Builder newHttpClientBuilder(BackendService backendService) {
         return new Builder(backendService);
-    }
-
-    Id id() {
-        return id;
-    }
-
-    RetryPolicy retryPolicy() {
-        return retryPolicy;
-    }
-
-    LoadBalancingStrategy loadBalancingStrategy() {
-        return loadBalancingStrategy;
     }
 
     private static boolean isError(HttpResponseStatus status) {
@@ -136,8 +130,8 @@ public final class StyxHttpClient implements HttpClient {
     }
 
     private Observable<HttpResponse> sendRequest(HttpRequest request, List<RemoteHost> previousOrigins, int attempt) {
-        if (attempt >= 3) {
-            return Observable.error(new NoAvailableHostsException(this.id()));
+        if (attempt >= MAX_RETRY_ATTEMPTS) {
+            return Observable.error(new NoAvailableHostsException(this.id));
         }
 
         Optional<RemoteHost> remoteHost = selectOrigin(request);
@@ -154,31 +148,25 @@ public final class StyxHttpClient implements HttpClient {
                     .map(response -> removeUnexpectedResponseBody(request, response))
                     .map(this::removeRedundantContentLengthHeader)
                     .onErrorResumeNext(cause -> {
-                        RetryPolicyContext retryContext = new RetryPolicyContext(id(), attempt + 1, cause, request, previousOrigins);
+                        RetryPolicyContext retryContext = new RetryPolicyContext(this.id, attempt + 1, cause, request, previousOrigins);
                         return retry(request, retryContext, previousOrigins, attempt + 1, cause);
                     });
         } else {
-            RetryPolicyContext retryContext = new RetryPolicyContext(id(), attempt + 1, null, request, previousOrigins);
-            return retry(request, retryContext, previousOrigins, attempt + 1, new NoAvailableHostsException(this.id()));
+            RetryPolicyContext retryContext = new RetryPolicyContext(this.id, attempt + 1, null, request, previousOrigins);
+            return retry(request, retryContext, previousOrigins, attempt + 1, new NoAvailableHostsException(this.id));
         }
     }
 
     Observable<HttpResponse> retry(HttpRequest request, RetryPolicyContext retryContext, List<RemoteHost> previousOrigins, int attempt, Throwable cause) {
         LoadBalancingStrategy.Context lbContext = new LBContext(request, id, originStatsFactory);
 
-        if (retryPolicy().evaluate(retryContext, loadBalancingStrategy, lbContext).shouldRetry()) {
+        if (this.retryPolicy.evaluate(retryContext, loadBalancingStrategy, lbContext).shouldRetry()) {
             return sendRequest(request, previousOrigins, attempt);
         } else {
             return Observable.error(cause);
         }
 
     }
-
-    @Override
-    public Observable<HttpResponse> sendRequest(HttpRequest request) {
-        return sendRequest(rewriteUrl(request), new ArrayList<>(), 0);
-    }
-
 
     private static final class RetryPolicyContext implements RetryPolicy.Context {
         private final Id appId;
@@ -232,10 +220,10 @@ public final class StyxHttpClient implements HttpClient {
                     .toString();
         }
 
-        private static Iterable<String> hosts(Iterable<RemoteHost> origins) {
+        private static String hosts(Iterable<RemoteHost> origins) {
             return stream(origins.spliterator(), false)
                     .map(host -> host.origin().hostAsString())
-                    .collect(toList());
+                    .collect(joining(", "));
         }
     }
 
@@ -302,7 +290,7 @@ public final class StyxHttpClient implements HttpClient {
     }
 
     private HttpResponse addStickySessionIdentifier(HttpResponse httpResponse, Origin origin) {
-        if (loadBalancingStrategy() instanceof StickySessionLoadBalancingStrategy) {
+        if (this.loadBalancingStrategy instanceof StickySessionLoadBalancingStrategy) {
             int maxAge = backendService.stickySessionConfig().stickySessionTimeoutSeconds();
             return httpResponse.newBuilder()
                     .addCookie(newStickySessionCookie(id, origin.id(), maxAge))

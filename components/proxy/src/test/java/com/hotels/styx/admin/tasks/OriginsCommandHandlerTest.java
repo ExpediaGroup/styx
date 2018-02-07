@@ -23,7 +23,6 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.client.OriginsCommandsListener;
-import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
 import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
@@ -36,6 +35,7 @@ import java.util.Set;
 
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
@@ -49,13 +49,13 @@ import static org.mockito.Mockito.mock;
 
 public class OriginsCommandHandlerTest {
     final Origin activeOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("activeOriginId").build();
-    final Set<RemoteHost> activeOrigins = singleton(new RemoteHostWrapper(activeOrigin.id(), activeOrigin, new StubConnectionPool(activeOrigin), mock(StyxHostHttpClient.class)));
+    final Set<RemoteHost> activeOrigins = singleton(remoteHost(activeOrigin, new StubConnectionPool(activeOrigin), mock(StyxHostHttpClient.class)));
 
     final Origin disabledOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("disabledOriginId").build();
-    final Set<RemoteHost> disabledOrigins = singleton(new RemoteHostWrapper(disabledOrigin.id(), disabledOrigin, new StubConnectionPool(disabledOrigin), mock(StyxHostHttpClient.class)));
+    final Set<RemoteHost> disabledOrigins = singleton(remoteHost(disabledOrigin, new StubConnectionPool(disabledOrigin), mock(StyxHostHttpClient.class)));
 
     final Origin inactiveOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("inactiveOriginId").build();
-    final Set<RemoteHost> inactiveOrigins = singleton(new RemoteHostWrapper(inactiveOrigin.id(), inactiveOrigin, new StubConnectionPool(inactiveOrigin), mock(StyxHostHttpClient.class)));
+    final Set<RemoteHost> inactiveOrigins = singleton(remoteHost(inactiveOrigin, new StubConnectionPool(inactiveOrigin), mock(StyxHostHttpClient.class)));
 
     final EventBus eventBus = new EventBus();
     final OriginsCommandHandler originsCommand = new OriginsCommandHandler(eventBus);

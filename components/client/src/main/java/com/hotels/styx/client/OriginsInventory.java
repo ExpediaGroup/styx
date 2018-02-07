@@ -48,11 +48,11 @@ import java.io.Closeable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
 import static com.hotels.styx.client.OriginsInventory.OriginState.INACTIVE;
@@ -396,7 +396,7 @@ public final class OriginsInventory
     private Collection<RemoteHost> pools(OriginState state) {
         return origins.values().stream()
                 .filter(origin -> origin.state().equals(state))
-                .map(origin -> new RemoteHostWrapper(origin.origin.id(), origin.origin, origin.connectionPool, origin.hostClient))
+                .map(origin -> remoteHost(origin.origin, origin.connectionPool, origin.hostClient))
                 .collect(toList());
     }
 
@@ -587,65 +587,6 @@ public final class OriginsInventory
 
         Map<Id, MonitoredOrigin> updatedOrigins() {
             return monitoredOrigins.build();
-        }
-    }
-
-
-    /**
-     * A Styx remote host.
-     */
-    public static class RemoteHostWrapper implements RemoteHost {
-        private final Id id;
-        private final Origin origin;
-        private ConnectionPool pool;
-        private HttpClient hostClient;
-
-        public RemoteHostWrapper(Id id, Origin origin, ConnectionPool pool, HttpClient hostClient) {
-            this.id = id;
-            this.origin = origin;
-            this.pool = requireNonNull(pool);
-            this.hostClient = hostClient;
-        }
-
-        @Override
-        public Id id() {
-            return this.id;
-        }
-
-        @Override
-        public Origin origin() {
-            return this.origin;
-        }
-
-        @Override
-        public ConnectionPool connectionPool() {
-            return this.pool;
-        }
-
-        @Override
-        public HttpClient hostClient() {
-            return hostClient;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            RemoteHostWrapper that = (RemoteHostWrapper) o;
-            return Objects.equals(id, that.id)
-                    && Objects.equals(origin, that.origin)
-                    && Objects.equals(pool, that.pool);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(id, origin, pool);
         }
     }
 }

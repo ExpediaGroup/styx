@@ -31,6 +31,7 @@ import rx.subjects.PublishSubject;
 
 import java.util.Optional;
 
+import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.Id.id;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -56,7 +57,7 @@ public class TransportTest {
 
     @BeforeMethod
     public void setUp() {
-        request = HttpRequest.Builder.get("/").build();
+        request = get("/").build();
         response = HttpResponse.Builder.response(OK).build();
         transport = new Transport(id("x"), X_STYX_ORIGIN_ID);
         responseProvider = PublishSubject.create();
@@ -141,7 +142,7 @@ public class TransportTest {
     }
 
     @Test
-    public void cancelsOnlyOnce() {
+    public void closesConnectionOnlyOnce() {
         ConnectionPool pool = mockPool(mockConnection(responseProvider));
 
         HttpTransaction transaction = transport.send(request, Optional.of(pool), APP_ID);

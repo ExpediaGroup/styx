@@ -23,12 +23,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Holds the state of currently configured origins, i.e. whether the origin is active, inactive or disabled.
@@ -79,16 +79,15 @@ public final class OriginsInventorySnapshot {
 
     private Set<Origin> mapToOrigins(Collection<RemoteHost> activeOrigins) {
         return activeOrigins.stream()
-                .map(RemoteHost::connectionPool)
-                .map(ConnectionPool::getOrigin)
-                .collect(Collectors.toSet());
+                .map(RemoteHost::origin)
+                .collect(toSet());
     }
 
     private static Set<Origin> withAppId(Collection<Origin> origins, String appId) {
         return origins.stream().map(origin -> newOriginBuilder(origin)
                 .applicationId(appId)
                 .build())
-                .collect(Collectors.toSet());
+                .collect(toSet());
     }
 
     /**

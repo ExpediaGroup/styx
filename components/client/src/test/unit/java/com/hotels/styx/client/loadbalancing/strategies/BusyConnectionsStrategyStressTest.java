@@ -38,7 +38,7 @@ import java.util.TreeMap;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
-import static com.hotels.styx.client.TestSupport.remoteHost;
+import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;

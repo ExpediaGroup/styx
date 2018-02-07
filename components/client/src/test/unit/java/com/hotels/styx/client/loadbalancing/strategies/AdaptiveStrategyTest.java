@@ -31,7 +31,7 @@ import java.util.Set;
 import static com.google.common.collect.Sets.newLinkedHashSet;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.client.TestSupport.remoteHost;
+import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;

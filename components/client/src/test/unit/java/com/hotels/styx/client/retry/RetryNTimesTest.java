@@ -15,7 +15,9 @@
  */
 package com.hotels.styx.client.retry;
 
+import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
@@ -26,8 +28,8 @@ import org.testng.annotations.Test;
 import java.util.Collections;
 
 import static java.util.Collections.singleton;
-import static java.util.Optional.of;
 import static java.util.Optional.empty;
+import static java.util.Optional.of;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.mock;
@@ -39,7 +41,7 @@ public class RetryNTimesTest {
     private RetryPolicy.Context retryPolicyContext;
     private LoadBalancingStrategy strategyMock;
     private LoadBalancingStrategy.Context strategyContextMock;
-    private RemoteHost connectionPool;
+    private RemoteHost remoteHost;
 
     @BeforeMethod
     public void setupMocks() {
@@ -48,7 +50,7 @@ public class RetryNTimesTest {
         this.retryPolicyContext = mock(RetryPolicy.Context.class);
         this.strategyMock = mock(LoadBalancingStrategy.class);
         this.strategyContextMock = mock(LoadBalancingStrategy.Context.class);
-        this.connectionPool = mock(RemoteHost.class);
+        this.remoteHost = RemoteHost.remoteHost(mock(Origin.class), mock(ConnectionPool.class), mock(HttpClient.class));
 
         when(retryPolicyContext.currentRetryCount()).thenReturn(0);
         when(retryPolicyContext.lastException()).thenReturn(empty());
@@ -85,18 +87,18 @@ public class RetryNTimesTest {
     @Test
     public void shouldReturnUnfilteredOrigin() {
         when(retryPolicyContext.previousOrigins()).thenReturn(Collections.emptyList());
-        when(strategyMock.vote(strategyContextMock)).thenReturn(singleton(connectionPool));
+        when(strategyMock.vote(strategyContextMock)).thenReturn(singleton(remoteHost));
 
         RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
                 strategyMock, strategyContextMock);
 
-        assertThat(retryOutcome.nextOrigin().get(), equalTo(connectionPool));
+        assertThat(retryOutcome.nextOrigin().get(), equalTo(remoteHost));
     }
 
     @Test
     public void shouldReturnEmptyOriginList() {
-        when(retryPolicyContext.previousOrigins()).thenReturn(Collections.singleton(connectionPool));
-        when(strategyMock.vote(strategyContextMock)).thenReturn(singleton(connectionPool));
+        when(retryPolicyContext.previousOrigins()).thenReturn(Collections.singleton(remoteHost));
+        when(strategyMock.vote(strategyContextMock)).thenReturn(singleton(remoteHost));
 
         RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
                 strategyMock, strategyContextMock);

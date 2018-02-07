@@ -15,11 +15,9 @@
  */
 package com.hotels.styx.client;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
@@ -29,7 +27,6 @@ import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.netty.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
-import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.stickysession.StickySessionConfig;
 import org.hamcrest.Matchers;
@@ -54,8 +51,8 @@ import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
-import static com.hotels.styx.client.TestSupport.remoteHost;
 import static com.hotels.styx.client.stickysession.StickySessionConfig.stickySessionDisabled;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
@@ -99,30 +96,6 @@ public class StyxHttpClientTest {
         metricRegistry = new CodaHaleMetricRegistry();
     }
 
-    private static BackendService backendWithOrigins(int originPort) {
-        return new BackendService.Builder()
-                .origins(newOriginBuilder("localhost", originPort).build())
-                .build();
-    }
-
-    private static BackendService.Builder backendBuilderWithOrigins(int originPort) {
-        return new BackendService.Builder()
-                .origins(newOriginBuilder("localhost", originPort).build());
-    }
-
-    private Connection mockConnection(Origin origin, Observable<HttpResponse> response) {
-        Connection connection = mock(Connection.class);
-        when(connection.write(any(HttpRequest.class))).thenReturn(response);
-        when(connection.getOrigin()).thenReturn(SOME_ORIGIN);
-        return connection;
-    }
-
-    private LoadBalancingStrategy mockLbStrategy(ConnectionPool pool) {
-        LoadBalancingStrategy lbStrategy = mock(LoadBalancingStrategy.class);
-        when(lbStrategy.vote(any(LoadBalancingStrategy.Context.class))).thenReturn(ImmutableList.of(remoteHost(pool.getOrigin(), pool, mock(StyxHostHttpClient.class))));
-        return lbStrategy;
-    }
-
     @Test
     public void sendsRequestToHostChosenByLoadBalancer() {
         StyxHostHttpClient hostClient = mockHostClient(just(response(OK).build()));
@@ -131,7 +104,7 @@ public class StyxHttpClientTest {
                 .metricsRegistry(metricRegistry)
                 .loadBalancingStrategy(
                         mockLoadBalancer(
-                                asList(new RemoteHostWrapper(SOME_ORIGIN.id(), SOME_ORIGIN, mock(ConnectionPool.class), hostClient))
+                                asList(remoteHost(SOME_ORIGIN, mock(ConnectionPool.class), hostClient))
                         ))
                 .build();
 
@@ -190,8 +163,8 @@ public class StyxHttpClientTest {
                 .metricsRegistry(metricRegistry)
                 .loadBalancingStrategy(
                         mockLoadBalancer(
-                                asList(new RemoteHostWrapper(ORIGIN_1.id(), ORIGIN_1, mockPool(ORIGIN_1), firstClient)),
-                                asList(new RemoteHostWrapper(ORIGIN_2.id(), ORIGIN_2, mockPool(ORIGIN_2), secondClient))
+                                asList(remoteHost(ORIGIN_1, mockPool(ORIGIN_1), firstClient)),
+                                asList(remoteHost(ORIGIN_2, mockPool(ORIGIN_2), secondClient))
                         ))
                 .retryPolicy(
                         retryPolicy)
@@ -224,22 +197,17 @@ public class StyxHttpClientTest {
 
     @Test
     public void stopsRetriesWhenRetryPolicyTellsToStop() {
-        ConnectionPool firstPool = mockPool(ORIGIN_1);
         StyxHostHttpClient firstClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_1, new RuntimeException("An error occurred"))));
-
-        ConnectionPool secondPool = mockPool(ORIGIN_2);
         StyxHostHttpClient secondClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
-
-        ConnectionPool thirdPool = mockPool(ORIGIN_2);
         StyxHostHttpClient thirdClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .metricsRegistry(metricRegistry)
                 .loadBalancingStrategy(
                         mockLoadBalancer(
-                                asList(new RemoteHostWrapper(ORIGIN_1.id(), ORIGIN_1, firstPool, firstClient)),
-                                asList(new RemoteHostWrapper(ORIGIN_2.id(), ORIGIN_2, secondPool, secondClient)),
-                                asList(new RemoteHostWrapper(ORIGIN_3.id(), ORIGIN_3, secondPool, secondClient))
+                                asList(remoteHost(ORIGIN_1, mockPool(ORIGIN_1), firstClient)),
+                                asList(remoteHost(ORIGIN_2, mockPool(ORIGIN_2), secondClient)),
+                                asList(remoteHost(ORIGIN_3, mockPool(ORIGIN_3), thirdClient))
                         ))
                 .retryPolicy(mockRetryPolicy(true, false))
                 .build();
@@ -260,26 +228,19 @@ public class StyxHttpClientTest {
 
     @Test
     public void retriesAtMost3Times() {
-        ConnectionPool firstPool = mockPool(ORIGIN_1);
         StyxHostHttpClient firstClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_1, new RuntimeException("An error occurred"))));
-
-        ConnectionPool secondPool = mockPool(ORIGIN_2);
         StyxHostHttpClient secondClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
-
-        ConnectionPool thirdPool = mockPool(ORIGIN_3);
         StyxHostHttpClient thirdClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_3, new RuntimeException("An error occurred"))));
-
-        ConnectionPool fourthPool = mockPool(ORIGIN_4);
         StyxHostHttpClient fourthClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_4, new RuntimeException("An error occurred"))));
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .metricsRegistry(metricRegistry)
                 .loadBalancingStrategy(
                         mockLoadBalancer(
-                                asList(new RemoteHostWrapper(ORIGIN_1.id(), ORIGIN_1, firstPool, firstClient)),
-                                asList(new RemoteHostWrapper(ORIGIN_2.id(), ORIGIN_2, secondPool, secondClient)),
-                                asList(new RemoteHostWrapper(ORIGIN_3.id(), ORIGIN_3, thirdPool, thirdClient)),
-                                asList(new RemoteHostWrapper(ORIGIN_4.id(), ORIGIN_4, fourthPool, fourthClient))
+                                asList(remoteHost(ORIGIN_1, mockPool(ORIGIN_1), firstClient)),
+                                asList(remoteHost(ORIGIN_2, mockPool(ORIGIN_2), secondClient)),
+                                asList(remoteHost(ORIGIN_3, mockPool(ORIGIN_3), thirdClient)),
+                                asList(remoteHost(ORIGIN_4, mockPool(ORIGIN_4), fourthClient))
                         ))
                 .retryPolicy(
                         mockRetryPolicy(true, true, true, true))
@@ -455,12 +416,13 @@ public class StyxHttpClientTest {
         return firstPool;
     }
 
-    private static ConnectionPool mockPool(Origin origin, Connection connection) {
-        ConnectionPool pool = mock(ConnectionPool.class);
-        when(pool.isExhausted()).thenReturn(false);
-        when(pool.getOrigin()).thenReturn(origin);
-        when(pool.borrowConnection()).thenReturn(just(connection));
-        return pool;
+    private static BackendService backendWithOrigins(int originPort) {
+        return backendBuilderWithOrigins(originPort).build();
+    }
+
+    private static BackendService.Builder backendBuilderWithOrigins(int originPort) {
+        return new BackendService.Builder()
+                .origins(newOriginBuilder("localhost", originPort).build());
     }
 
     private static Origin originWithId(String host, String appId, String originId) {

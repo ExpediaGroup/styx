@@ -30,7 +30,7 @@ import rx.Observer;
 
 import static com.google.common.collect.Iterables.size;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.client.TestSupport.remoteHost;
+import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
@@ -50,9 +50,13 @@ public class RoundRobinStrategyTest {
     private static RemoteHost createConnectionPoolFor(String host, int port) {
         origin = newOriginBuilder(host, port).build();
 
-        return remoteHost(origin, new SimpleConnectionPool(origin,
-                new ConnectionPoolSettings.Builder().maxConnectionsPerHost(1).build(),
-                connectionFactory), mock(StyxHostHttpClient.class));
+        return remoteHost(
+                origin,
+                new SimpleConnectionPool(
+                        origin,
+                        new ConnectionPoolSettings.Builder().maxConnectionsPerHost(1).build(),
+                        connectionFactory),
+                mock(StyxHostHttpClient.class));
     }
 
     private LoadBalancingStrategy strategy;

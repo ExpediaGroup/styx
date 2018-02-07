@@ -30,7 +30,7 @@ import org.testng.annotations.Test;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.client.TestSupport.remoteHost;
+import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
 import static java.util.Arrays.asList;
 import static java.util.Collections.EMPTY_LIST;

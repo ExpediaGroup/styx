@@ -18,12 +18,58 @@ package com.hotels.styx.api.client;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.Id;
 
-public interface RemoteHost {
-    Id id();
+import java.util.Objects;
 
-    Origin origin();
+import static java.util.Objects.requireNonNull;
 
-    ConnectionPool connectionPool();
+public final class RemoteHost {
+    private final Origin origin;
+    private final ConnectionPool pool;
+    private final HttpClient hostClient;
 
-    HttpClient hostClient();
+    public RemoteHost(Origin origin, ConnectionPool pool, HttpClient hostClient) {
+        this.origin = origin;
+        this.pool = requireNonNull(pool);
+        this.hostClient = hostClient;
+    }
+
+    public static RemoteHost remoteHost(Origin origin, ConnectionPool pool, HttpClient client) {
+        return new RemoteHost(origin, pool, client);
+    }
+
+    public Id id() {
+        return origin().id();
+    };
+
+    public Origin origin() {
+        return this.origin;
+    }
+
+    public ConnectionPool connectionPool() {
+        return this.pool;
+    }
+
+    public HttpClient hostClient() {
+        return hostClient;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        RemoteHost that = (RemoteHost) o;
+        return Objects.equals(origin, that.origin)
+                && Objects.equals(pool, that.pool);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(origin, pool);
+    }
 }

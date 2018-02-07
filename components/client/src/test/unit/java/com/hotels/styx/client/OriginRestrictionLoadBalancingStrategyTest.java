@@ -15,12 +15,12 @@
  */
 package com.hotels.styx.client;
 
+import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
-import com.hotels.styx.client.OriginsInventory.RemoteHostWrapper;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import org.testng.annotations.Test;
 
@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,7 +42,7 @@ import static org.mockito.Mockito.mock;
 
 public class OriginRestrictionLoadBalancingStrategyTest {
     List<RemoteHost> origins = Stream.of(0, 1, 2, 3, 4, 5, 6)
-            .map(this::remoteHost)
+            .map(this::remoteHostFromPort)
             .collect(toList());
 
     OriginRestrictionLoadBalancingStrategy strategy = new OriginRestrictionLoadBalancingStrategy(
@@ -102,12 +103,12 @@ public class OriginRestrictionLoadBalancingStrategyTest {
         assertThat(partition, contains(origins.get(1), origins.get(2), origins.get(3), origins.get(5), origins.get(6)));
     }
 
-    private RemoteHost remoteHost(int number) {
+    private RemoteHost remoteHostFromPort(int number) {
         Origin origin = newOriginBuilder("localhost", 8080 + number)
                 .id("origin" + number)
                 .build();
 
-        return new RemoteHostWrapper(origin.id(), origin, new StubConnectionPool(origin), mock(StyxHostHttpClient.class));
+        return remoteHost(origin, new StubConnectionPool(origin), mock(HttpClient.class));
     }
 
     static StubContext context() {
