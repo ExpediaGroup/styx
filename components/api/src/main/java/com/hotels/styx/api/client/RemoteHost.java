@@ -28,9 +28,9 @@ public final class RemoteHost {
     private final HttpClient hostClient;
 
     public RemoteHost(Origin origin, ConnectionPool pool, HttpClient hostClient) {
-        this.origin = origin;
+        this.origin = requireNonNull(origin);
         this.pool = requireNonNull(pool);
-        this.hostClient = hostClient;
+        this.hostClient = requireNonNull(hostClient);
     }
 
     public static RemoteHost remoteHost(Origin origin, ConnectionPool pool, HttpClient client) {

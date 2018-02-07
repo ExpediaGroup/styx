@@ -44,7 +44,7 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancingStra
     private static final Logger LOG = getLogger(OriginRestrictionLoadBalancingStrategy.class);
     private static final Pattern MATCH_ALL = Pattern.compile(".*");
 
-    private ActiveOrigins activeOrigins;
+    private final ActiveOrigins activeOrigins;
     private final LoadBalancingStrategy delegate;
     private final String cookieName;
 
