@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client.retry;
 
-import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.netty.exceptions.IsRetryableException;
@@ -44,7 +44,7 @@ public class RetryNTimes extends AbstractRetryPolicy {
             }
 
             @Override
-            public Optional<ConnectionPool> nextOrigin() {
+            public Optional<RemoteHost> nextOrigin() {
                 return stream(loadBalancingStrategy.vote(lbContext).spliterator(), false)
                         .filter(origin -> !contains(context.previousOrigins(), origin))
                         .findFirst();
@@ -56,6 +56,7 @@ public class RetryNTimes extends AbstractRetryPolicy {
                 Optional<Throwable> lastException = context.lastException();
                 return belowMaxRetryAttempts && lastException.isPresent() && lastException.get() instanceof IsRetryableException;
             }
+
         };
     }
 

@@ -29,6 +29,8 @@ import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.SimpleNettyHttpClient;
+import com.hotels.styx.client.StyxHeaderConfig;
+import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
 import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
@@ -109,27 +111,14 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .orElse(false);
 
             OriginStatsFactory originStatsFactory = new OriginStatsFactory(environment.metricRegistry());
-
-            Connection.Factory connectionFactory = new NettyConnectionFactory.Builder()
-                    .name("Styx")
-                    .httpRequestOperationFactory(
-                            httpRequestOperationFactoryBuilder()
-                                    .flowControlEnabled(true)
-                                    .originStatsFactory(originStatsFactory)
-                                    .responseTimeoutMillis(backendService.responseTimeoutMillis())
-                                    .requestLoggingEnabled(requestLoggingEnabled)
-                                    .longFormat(longFormat)
-                                    .build()
-                    )
-                    .clientWorkerThreadsCount(clientWorkerThreadsCount)
-                    .tlsSettings(backendService.tlsSettings().orElse(null))
-                    .build();
-
             ConnectionPool.Settings poolSettings = backendService.connectionPoolConfig();
 
-            if (poolSettings.connectionExpirationSeconds() > 0) {
-                connectionFactory = new ExpiringConnectionFactory(poolSettings.connectionExpirationSeconds(), connectionFactory);
-            }
+            Connection.Factory connectionFactory = connectionFactory(
+                    backendService,
+                    requestLoggingEnabled,
+                    longFormat,
+                    originStatsFactory,
+                    poolSettings.connectionExpirationSeconds());
 
             ConnectionPool.Factory connectionPoolFactory = new ConnectionPoolFactory.Builder()
                     .connectionFactory(connectionFactory)
@@ -149,6 +138,11 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                                     environment.buildInfo().releaseVersion()
                             ));
 
+            StyxHostHttpClient.Factory hostClientFactory = (ConnectionPool connectionPool) -> {
+                StyxHeaderConfig headerConfig = environment.styxConfig().styxHeaderConfig();
+                return StyxHostHttpClient.create(backendService.id(), connectionPool.getOrigin().id(), headerConfig.originIdHeaderName(), connectionPool);
+            };
+
             //TODO: origins inventory builder assumes that appId/originId tuple is unique and it will fail on metrics registration.
             OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(environment.eventBus())
@@ -156,6 +150,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .connectionPoolFactory(connectionPoolFactory)
                     .originHealthMonitor(healthStatusMonitor)
                     .initialOrigins(backendService.origins())
+                    .hostClientFactory(hostClientFactory)
                     .build();
 
             pipeline = new ProxyToClientPipeline(newClientHandler(backendService, inventory, originStatsFactory), inventory);
@@ -164,6 +159,34 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             LOG.info("added path={} current routes={}", backendService.path(), routes.keySet());
 
         });
+    }
+
+    private Connection.Factory connectionFactory(
+            BackendService backendService,
+            boolean requestLoggingEnabled,
+            boolean longFormat,
+            OriginStatsFactory originStatsFactory,
+            long connectionExpiration) {
+        Connection.Factory factory = new NettyConnectionFactory.Builder()
+                .name("Styx")
+                .httpRequestOperationFactory(
+                        httpRequestOperationFactoryBuilder()
+                                .flowControlEnabled(true)
+                                .originStatsFactory(originStatsFactory)
+                                .responseTimeoutMillis(backendService.responseTimeoutMillis())
+                                .requestLoggingEnabled(requestLoggingEnabled)
+                                .longFormat(longFormat)
+                                .build()
+                )
+                .clientWorkerThreadsCount(clientWorkerThreadsCount)
+                .tlsSettings(backendService.tlsSettings().orElse(null))
+                .build();
+
+        if (connectionExpiration > 0) {
+            return new ExpiringConnectionFactory(connectionExpiration, factory);
+        } else {
+            return factory;
+        }
     }
 
     private HttpClient newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {

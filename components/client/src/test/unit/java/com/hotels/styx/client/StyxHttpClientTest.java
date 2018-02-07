@@ -15,37 +15,23 @@
  */
 package com.hotels.styx.client;
 
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.WireMock;
 import com.google.common.net.HostAndPort;
-import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.client.RemoteHost;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
-import com.hotels.styx.api.messages.FullHttpResponse;
-import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.netty.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
-import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
 import com.hotels.styx.client.applications.BackendService;
-import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
-import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
-import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
-import com.hotels.styx.client.netty.connectionpool.NettyConnection;
-import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
-import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
-import com.hotels.styx.client.ssl.TlsSettings;
 import com.hotels.styx.client.stickysession.StickySessionConfig;
-import com.hotels.styx.support.matchers.LoggingTestSupport;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.local.LocalChannel;
+import org.hamcrest.Matchers;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
@@ -55,46 +41,37 @@ import rx.observers.Observers;
 import rx.observers.TestSubscriber;
 import rx.subjects.PublishSubject;
 
-import java.io.IOException;
-import java.util.function.Function;
-import java.util.function.IntConsumer;
+import java.util.List;
+import java.util.Optional;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.HttpHeaderNames.CHUNKED;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.Id.GENERIC_APP;
-import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
-import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
-import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
-import static com.hotels.styx.client.Protocol.HTTP;
-import static com.hotels.styx.client.Protocol.HTTPS;
-import static com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder;
-import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultConnectionPoolSettings;
-import static com.hotels.styx.client.retry.RetryPolicies.doNotRetry;
-import static com.hotels.styx.client.stickysession.StickySessionConfig.newStickySessionConfigBuilder;
 import static com.hotels.styx.client.stickysession.StickySessionConfig.stickySessionDisabled;
-import static com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_IMPLEMENTED;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
+import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
+import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import static rx.Observable.just;
 
@@ -102,234 +79,291 @@ public class StyxHttpClientTest {
     private static final Observer<HttpResponse> DO_NOTHING = Observers.empty();
     private static final Origin SOME_ORIGIN = newOriginBuilder(localhost(9090)).applicationId(GENERIC_APP).build();
     private static final HttpRequest SOME_REQ = get("/some-req").build();
-    private static final int MAX_LENGTH = 1024;
 
-    private final OriginStatsFactory originStatsFactory = new OriginStatsFactory(new CodaHaleMetricRegistry());
+    private static final Origin ORIGIN_1 = newOriginBuilder(localhost(9091)).applicationId("app").id("app-01").build();
+    private static final Origin ORIGIN_2 = newOriginBuilder(localhost(9092)).applicationId("app").id("app-02").build();
+    private static final Origin ORIGIN_3 = newOriginBuilder(localhost(9093)).applicationId("app").id("app-03").build();
+    private static final Origin ORIGIN_4 = newOriginBuilder(localhost(9094)).applicationId("app").id("app-04").build();
+
     private final StickySessionConfig stickySessionConfig = stickySessionDisabled();
-    private HttpRequestOperationFactory requestOperationFactory;
     private MetricRegistry metricRegistry;
+    private final BackendService backendService = backendBuilderWithOrigins(SOME_ORIGIN.host().getPort())
+            .stickySessionConfig(stickySessionConfig)
+            .build();
 
     @BeforeMethod
-    public void setUp() throws Exception {
-        requestOperationFactory = this::mockHttpRequestOperation;
+    public void setUp() {
         metricRegistry = new CodaHaleMetricRegistry();
     }
 
     @Test
-    public void sendsHttp() {
-        withOrigin(HTTP, port -> {
-            FullHttpResponse response = httpClient(port).sendRequest(httpRequest(8080))
-                    .flatMap(r -> r.toFullResponse(MAX_LENGTH))
-                    .toBlocking()
-                    .single();
-
-            assertThat(response.status(), is(HttpResponseStatus.OK));
-        });
-    }
-
-    @Test
-    public void sendsHttps() {
-        withOrigin(HTTPS, port -> {
-            FullHttpResponse response = httpsClient(port).sendRequest(httpsRequest(8080))
-                    .flatMap(r -> r.toFullResponse(MAX_LENGTH))
-                    .toBlocking()
-                    .single();
-
-            assertThat(response.status(), is(HttpResponseStatus.OK));
-        });
-    }
-
-    @Test(expectedExceptions = Exception.class)
-    public void cannotSendHttpsWhenConfiguredForHttp() {
-        withOrigin(HTTPS, port -> {
-            httpClient(port).sendRequest(httpsRequest(8080))
-                    .flatMap(r -> r.toFullResponse(MAX_LENGTH))
-                    .toBlocking()
-                    .single();
-        });
-    }
-
-    @Test(expectedExceptions = Exception.class)
-    public void cannotSendHttpWhenConfiguredForHttps() {
-        withOrigin(HTTP, port -> {
-            httpsClient(port).sendRequest(httpRequest(8080))
-                    .flatMap(r -> r.toFullResponse(MAX_LENGTH))
-                    .toBlocking()
-                    .single();
-        });
-    }
-
-    private static HttpClient httpClient(int originPort) {
-        BackendService backendService = backendWithOrigins(originPort);
-
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
-                .connectionPoolFactory((origin) -> new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), new NettyConnectionFactory.Builder().build()))
-                .initialOrigins(backendService.origins())
-                .build();
-
-        return newHttpClientBuilder(backendService)
-                .originsInventory(originsInventory)
-                .build();
-    }
-
-    private static BackendService backendWithOrigins(int originPort) {
-        return new BackendService.Builder()
-                .origins(newOriginBuilder("localhost", originPort).build())
-                .build();
-    }
-
-    private static BackendService.Builder backendBuilderWithOrigins(int originPort) {
-        return new BackendService.Builder()
-                .origins(newOriginBuilder("localhost", originPort).build())
-                ;
-    }
-
-    private static HttpClient httpsClient(int originPort) {
-        TlsSettings tlsSettings = new TlsSettings.Builder()
-                .trustAllCerts(true)
-                .build();
-
-        BackendService backendService = backendBuilderWithOrigins(originPort)
-                .https(tlsSettings)
-                .build();
-
-        ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPool.Factory()
-                .connectionFactory(new NettyConnectionFactory.Builder()
-                        .httpRequestOperationFactory(httpRequestOperationFactoryBuilder().build())
-                        .tlsSettings(tlsSettings)
-                        .build())
-                .connectionPoolSettings(new ConnectionPoolSettings.Builder()
-                        .build());
-
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
-                .connectionPoolFactory(connectionPoolFactory)
-                .initialOrigins(backendService.origins())
-                .build();
-
-        return newHttpClientBuilder(
-                backendService)
-                .originsInventory(originsInventory)
-                .build();
-    }
-
-    private static HttpRequest httpRequest(int port) {
-        return get("http://localhost:" + port)
-                .header(HOST, "localhost:" + port)
-                .build();
-    }
-
-    private static HttpRequest httpsRequest(int port) {
-        return get("https://localhost:" + port)
-                .header(HOST, "localhost:" + port)
-                .build();
-    }
-
-    private static void withOrigin(Protocol protocol, IntConsumer portConsumer) {
-        WireMockServer server = new WireMockServer(wireMockConfig().dynamicPort().dynamicHttpsPort());
-
-        try {
-            server.start();
-            int port = protocol == HTTP ? server.port() : server.httpsPort();
-            server.stubFor(WireMock.get(urlStartingWith("/")).willReturn(aResponse().withStatus(200)));
-            portConsumer.accept(port);
-        } finally {
-            server.stop();
-        }
-    }
-
-    @Test
-    public void asksTheConnectionPoolForAConnection() {
-        Connection connection = aConnection();
-        ConnectionPool pool = mockPool(connection);
-        StyxHttpClient styxHttpClient = newStyxHttpClient(pool);
-        styxHttpClient.sendRequest(SOME_REQ).subscribe(DO_NOTHING);
-        verify(pool).borrowConnection();
-    }
-
-    @Test
-    public void releasesConnectionWhenOperationExecutionIsFinished() {
-        Connection connection = aConnection();
-        ConnectionPool pool = mockPool(connection);
-        StyxHttpClient styxHttpClient = newStyxHttpClient(pool);
-        TestSubscriber<HttpResponse> subscriber = new TestSubscriber<>();
-        styxHttpClient.sendRequest(SOME_REQ).subscribe(subscriber);
-        subscriber.awaitTerminalEvent();
-        verify(pool).returnConnection(connection);
-    }
-
-    @Test
-    public void closesConnectionWhenTransactionIsUnsubscribed() throws IOException {
-        PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
-        requestOperationFactory = newRequestOperationFactory(responseSubject);
-
-        Connection connection = aConnection();
-        ConnectionPool pool = mockPool(connection);
-        BackendService backendService = backendWithOrigins(connection.getOrigin().host().getPort());
-
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
-                .connectionPoolFactory(origin -> pool)
-                .initialOrigins(backendService.origins())
-                .build();
+    public void sendsRequestToHostChosenByLoadBalancer() {
+        StyxHostHttpClient hostClient = mockHostClient(just(response(OK).build()));
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
-                .originsInventory(originsInventory)
+                .metricsRegistry(metricRegistry)
+                .loadBalancingStrategy(
+                        mockLoadBalancer(
+                                asList(remoteHost(SOME_ORIGIN, mock(ConnectionPool.class), hostClient))
+                        ))
                 .build();
 
-        Subscription txnSubscription = styxHttpClient.sendRequest(SOME_REQ).subscribe();
-        responseSubject.onNext(response(OK).build());
+        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
 
-        txnSubscription.unsubscribe();
-        responseSubject.onCompleted();
-
-        verify(pool).closeConnection(connection);
+        assertThat(response.status(), is(OK));
+        verify(hostClient).sendRequest(eq(SOME_REQ));
     }
 
+
     @Test
-    public void closesConnectionWhenTransactionIsCancelled() throws IOException {
-        PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
-        requestOperationFactory = newRequestOperationFactory(responseSubject);
-
-        Connection connection = aConnection();
-        ConnectionPool pool = mockPool(connection);
-
-        BackendService backendService = backendWithOrigins(connection.getOrigin().host().getPort());
-
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
-                .connectionPoolFactory(origin -> pool)
-                .initialOrigins(backendService.origins())
-                .build();
+    public void constructsRetryContextWhenLoadBalancerDoesNotFindAvailableOrigins() {
+        RetryPolicy retryPolicy = mockRetryPolicy(true, true, true);
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
-                .originsInventory(originsInventory)
+                .metricsRegistry(metricRegistry)
+                .loadBalancingStrategy(
+                        mockLoadBalancer(
+                                asList(),
+                                asList(remoteHost(SOME_ORIGIN, mockPool(SOME_ORIGIN), mockHostClient(just(response(OK).build()))))))
+                .retryPolicy(retryPolicy)
                 .build();
 
-        Observable<HttpResponse> transaction = styxHttpClient.sendRequest(SOME_REQ);
+        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
 
-        Subscription subscription = transaction.subscribe();
-        responseSubject.onNext(response(OK).build());
+        ArgumentCaptor<RetryPolicy.Context> retryContext = ArgumentCaptor.forClass(RetryPolicy.Context.class);
+        ArgumentCaptor<LoadBalancingStrategy> lbStrategy= ArgumentCaptor.forClass(LoadBalancingStrategy.class);
+        ArgumentCaptor<LoadBalancingStrategy.Context> lbContext = ArgumentCaptor.forClass(LoadBalancingStrategy.Context.class);
 
-        subscription.unsubscribe();
+        verify(retryPolicy).evaluate(retryContext.capture(), lbStrategy.capture(), lbContext.capture());
 
-        verify(pool).closeConnection(connection);
+        assertThat(retryContext.getValue().appId(), is(backendService.id()));
+        assertThat(retryContext.getValue().currentRetryCount(), is(1));
+        assertThat(retryContext.getValue().lastException(), is(Optional.empty()));
+
+        assertThat(lbStrategy.getValue(), notNullValue());
+
+        assertThat(lbContext.getValue().appId(), is(backendService.id()));
+        assertThat(lbContext.getValue().oneMinuteRateForStatusCode5xx(SOME_ORIGIN), is(0.0));
+        assertThat(lbContext.getValue().currentRequest(), is(SOME_REQ));
+
+        assertThat(response.status(), is(OK));
     }
 
     @Test
-    public void updatesCountersWhenTransactionIsCancelled() throws IOException {
-        PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
-        MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
+    public void retriesWhenRetryPolicyTellsToRetry() {
+        RetryPolicy retryPolicy = mockRetryPolicy(true, false);
+
+        StyxHostHttpClient firstClient = mockHostClient(Observable.error(
+                new OriginUnreachableException(ORIGIN_1, new RuntimeException("An error occurred"))));
+
+        StyxHostHttpClient secondClient = mockHostClient(just(response(OK).build()));
+
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+                .metricsRegistry(metricRegistry)
+                .loadBalancingStrategy(
+                        mockLoadBalancer(
+                                asList(remoteHost(ORIGIN_1, mockPool(ORIGIN_1), firstClient)),
+                                asList(remoteHost(ORIGIN_2, mockPool(ORIGIN_2), secondClient))
+                        ))
+                .retryPolicy(
+                        retryPolicy)
+                .build();
+
+        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+
+        ArgumentCaptor<RetryPolicy.Context> retryContext = ArgumentCaptor.forClass(RetryPolicy.Context.class);
+        ArgumentCaptor<LoadBalancingStrategy> lbStrategy= ArgumentCaptor.forClass(LoadBalancingStrategy.class);
+        ArgumentCaptor<LoadBalancingStrategy.Context> lbContext = ArgumentCaptor.forClass(LoadBalancingStrategy.Context.class);
+
+        verify(retryPolicy).evaluate(retryContext.capture(), lbStrategy.capture(), lbContext.capture());
+
+        assertThat(retryContext.getValue().appId(), is(backendService.id()));
+        assertThat(retryContext.getValue().currentRetryCount(), is(1));
+        assertThat(retryContext.getValue().lastException().get(), Matchers.instanceOf(OriginUnreachableException.class));
+
+        assertThat(lbStrategy.getValue(), notNullValue());
+
+        assertThat(lbContext.getValue().appId(), is(backendService.id()));
+        assertThat(lbContext.getValue().oneMinuteRateForStatusCode5xx(SOME_ORIGIN), is(0.0));
+        assertThat(lbContext.getValue().currentRequest(), is(SOME_REQ));
+
+        assertThat(response.status(), is(OK));
+
+        InOrder ordered = inOrder(firstClient, secondClient);
+        ordered.verify(firstClient).sendRequest(eq(SOME_REQ));
+        ordered.verify(secondClient).sendRequest(eq(SOME_REQ));
+    }
+
+    @Test
+    public void stopsRetriesWhenRetryPolicyTellsToStop() {
+        StyxHostHttpClient firstClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_1, new RuntimeException("An error occurred"))));
+        StyxHostHttpClient secondClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
+        StyxHostHttpClient thirdClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+                .metricsRegistry(metricRegistry)
+                .loadBalancingStrategy(
+                        mockLoadBalancer(
+                                asList(remoteHost(ORIGIN_1, mockPool(ORIGIN_1), firstClient)),
+                                asList(remoteHost(ORIGIN_2, mockPool(ORIGIN_2), secondClient)),
+                                asList(remoteHost(ORIGIN_3, mockPool(ORIGIN_3), thirdClient))
+                        ))
+                .retryPolicy(mockRetryPolicy(true, false))
+                .build();
+
+        TestSubscriber<HttpResponse> testSubscriber = new TestSubscriber<>();
+        styxHttpClient.sendRequest(SOME_REQ).subscribe(testSubscriber);
+        testSubscriber.awaitTerminalEvent();
+
+        assertThat(testSubscriber.getOnErrorEvents().size(), is(1));
+        assertThat(testSubscriber.getOnErrorEvents().get(0), instanceOf(OriginUnreachableException.class));
+
+        InOrder ordered = inOrder(firstClient, secondClient, thirdClient);
+        ordered.verify(firstClient).sendRequest(eq(SOME_REQ));
+        ordered.verify(secondClient).sendRequest(eq(SOME_REQ));
+        ordered.verify(thirdClient, never()).sendRequest(eq(SOME_REQ));
+    }
+
+
+    @Test
+    public void retriesAtMost3Times() {
+        StyxHostHttpClient firstClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_1, new RuntimeException("An error occurred"))));
+        StyxHostHttpClient secondClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
+        StyxHostHttpClient thirdClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_3, new RuntimeException("An error occurred"))));
+        StyxHostHttpClient fourthClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_4, new RuntimeException("An error occurred"))));
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+                .metricsRegistry(metricRegistry)
+                .loadBalancingStrategy(
+                        mockLoadBalancer(
+                                asList(remoteHost(ORIGIN_1, mockPool(ORIGIN_1), firstClient)),
+                                asList(remoteHost(ORIGIN_2, mockPool(ORIGIN_2), secondClient)),
+                                asList(remoteHost(ORIGIN_3, mockPool(ORIGIN_3), thirdClient)),
+                                asList(remoteHost(ORIGIN_4, mockPool(ORIGIN_4), fourthClient))
+                        ))
+                .retryPolicy(
+                        mockRetryPolicy(true, true, true, true))
+                .build();
+
+        TestSubscriber<HttpResponse> testSubscriber = new TestSubscriber<>();
+        styxHttpClient.sendRequest(SOME_REQ).subscribe(testSubscriber);
+        testSubscriber.awaitTerminalEvent();
+
+        assertThat(testSubscriber.getOnErrorEvents().size(), is(1));
+        assertThat(testSubscriber.getOnErrorEvents().get(0), instanceOf(NoAvailableHostsException.class));
+
+        InOrder ordered = inOrder(firstClient, secondClient, thirdClient, fourthClient);
+        ordered.verify(firstClient).sendRequest(eq(SOME_REQ));
+        ordered.verify(secondClient).sendRequest(eq(SOME_REQ));
+        ordered.verify(thirdClient).sendRequest(eq(SOME_REQ));
+        ordered.verify(fourthClient, never()).sendRequest(any(HttpRequest.class));
+    }
+
+
+    @Test
+    public void incrementsResponseStatusMetricsForBadResponse() {
+        StyxHostHttpClient hostClient = mockHostClient(just(response(BAD_REQUEST).build()));
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+                .metricsRegistry(metricRegistry)
+                .loadBalancingStrategy(
+                        mockLoadBalancer(asList(remoteHost(SOME_ORIGIN, mock(ConnectionPool.class), hostClient))))
+                .build();
+
+        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+
+        assertThat(response.status(), is(BAD_REQUEST));
+        verify(hostClient).sendRequest(eq(SOME_REQ));
+        assertThat(metricRegistry.counter("origins.response.status.400").getCount(), is(1L));
+    }
+
+    @Test
+    public void incrementsResponseStatusMetricsFor401() {
+        StyxHostHttpClient hostClient = mockHostClient(just(response(UNAUTHORIZED).build()));
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+                .metricsRegistry(metricRegistry)
+                .loadBalancingStrategy(
+                        mockLoadBalancer(asList(remoteHost(SOME_ORIGIN, mock(ConnectionPool.class), hostClient)))
+                )
+                .build();
+
+        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+
+        assertThat(response.status(), is(UNAUTHORIZED));
+        verify(hostClient).sendRequest(eq(SOME_REQ));
+        assertThat(metricRegistry.counter("origins.response.status.401").getCount(), is(1L));
+    }
+
+    @Test
+    public void incrementsResponseStatusMetricsFor500() {
+        StyxHostHttpClient hostClient = mockHostClient(just(response(INTERNAL_SERVER_ERROR).build()));
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+                .metricsRegistry(metricRegistry)
+                .loadBalancingStrategy(
+                        mockLoadBalancer(asList(remoteHost(SOME_ORIGIN, mock(ConnectionPool.class), hostClient)))
+                )
+                .build();
+
+        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+
+        assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
+        verify(hostClient).sendRequest(eq(SOME_REQ));
+        assertThat(metricRegistry.counter("origins.response.status.500").getCount(), is(1L));
+    }
+
+    @Test
+    public void incrementsResponseStatusMetricsFor501() {
+        StyxHostHttpClient hostClient = mockHostClient(just(response(NOT_IMPLEMENTED).build()));
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+                .metricsRegistry(metricRegistry)
+                .loadBalancingStrategy(
+                        mockLoadBalancer(asList(remoteHost(SOME_ORIGIN, mock(ConnectionPool.class), hostClient)))
+                )
+                .build();
+
+        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        assertThat(response.status(), is(NOT_IMPLEMENTED));
+        verify(hostClient).sendRequest(SOME_REQ);
+        assertThat(metricRegistry.counter("origins.response.status.501").getCount(), is(1L));
+    }
+
+    @Test
+    public void removesBadContentLength() {
+        StyxHostHttpClient hostClient = mockHostClient(
+                just(response(OK)
+                        .addHeader(CONTENT_LENGTH, 50)
+                        .addHeader(TRANSFER_ENCODING, CHUNKED)
+                        .build()));
+
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+                .metricsRegistry(metricRegistry)
+                .loadBalancingStrategy(
+                        mockLoadBalancer(asList(remoteHost(SOME_ORIGIN, mock(ConnectionPool.class), hostClient)))
+                )
+                .enableContentValidation()
+                .build();
+
+        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+
+        assertThat(response.status(), is(OK));
+
+        assertThat(response.contentLength().isPresent(), is(false));
+        assertThat(response.header(TRANSFER_ENCODING).get(), is("chunked"));
+    }
+
+    @Test
+    public void updatesCountersWhenTransactionIsCancelled() {
         Origin origin = originWithId("localhost:234", "App-X", "Origin-Y");
+        PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
 
-        ConnectionPool pool = connectionPool(origin);
-
-        BackendService backendService = backendWithOrigins(origin.host().getPort());
-
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
-                .connectionPoolFactory(o -> pool)
-                .initialOrigins(backendService.origins())
-                .build();
-
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
-                .originsInventory(originsInventory)
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.host().getPort()))
+                .loadBalancingStrategy(
+                        mockLoadBalancer(asList(remoteHost(origin, mock(ConnectionPool.class), mockHostClient(responseSubject))))
+                )
                 .metricsRegistry(metricRegistry)
                 .build();
 
@@ -343,307 +377,52 @@ public class StyxHttpClientTest {
         assertThat(metricRegistry.counter("origins.App-X.Origin-Y.requests.cancelled").getCount(), is(1L));
     }
 
-    @Test
-    public void doesNotRetryAnAlreadyCancelledRequest() {
+    private RetryPolicy mockRetryPolicy(Boolean first, Boolean... outcomes) {
         RetryPolicy retryPolicy = mock(RetryPolicy.class);
-        PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
-        StyxHttpClient styxHttpClient = styxClient(nettyConnection(mock(Channel.class)), responseSubject, retryPolicy);
+        RetryPolicy.Outcome retryOutcome = mock(RetryPolicy.Outcome.class);
 
-        LoggingTestSupport support = new LoggingTestSupport(StyxHttpClient.class);
-        try {
-            Subscription subscription = styxHttpClient
-                    .sendRequest(SOME_REQ)
-                    .subscribe(new TestSubscriber<>());
+        when(retryOutcome.shouldRetry()).thenReturn(first, outcomes);
 
-            responseSubject.onNext(response(OK).build());
-            subscription.unsubscribe();
+        RetryPolicy.Outcome[] retryOutcomes = stream(outcomes).map(outcome -> retryOutcome).toArray(RetryPolicy.Outcome[]::new);
 
-            responseSubject.onError(new OriginUnreachableException(newOriginBuilder("hotels.com", 8080).build(), new RuntimeException("test")));
+        when(retryPolicy.evaluate(any(RetryPolicy.Context.class), any(LoadBalancingStrategy.class), any(LoadBalancingStrategy.Context.class)))
+                .thenReturn(retryOutcome)
+                .thenReturn(retryOutcome, retryOutcomes);
 
-            verifyZeroInteractions(retryPolicy);
-        } finally {
-            support.stop();
-        }
+        return retryPolicy;
     }
 
-    @Test
-    public void releasesConnectionWhenOperationExecutionFails() {
-        requestOperationFactory = newFailingRequestOperationFactory(new RuntimeException());
-
-        Connection connection = openConnection(SOME_ORIGIN);
-        ConnectionPool pool = mockPool(connection);
-
-        BackendService backendService = backendWithOrigins(SOME_ORIGIN.host().getPort());
-
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
-                .connectionPoolFactory(o -> pool)
-                .initialOrigins(backendService.origins())
-                .build();
-
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
-                .originsInventory(originsInventory)
-                .retryPolicy(doNotRetry())
-                .build();
-
-        TestSubscriber<HttpResponse> subscriber = new TestSubscriber<>();
-        styxHttpClient.sendRequest(SOME_REQ).subscribe(subscriber);
-        subscriber.awaitTerminalEvent();
-        verify(pool).closeConnection(connection);
+    private LoadBalancingStrategy mockLoadBalancer(List<RemoteHost> first) {
+        LoadBalancingStrategy lbStategy = mock(LoadBalancingStrategy.class);
+        when(lbStategy.vote(any(LoadBalancingStrategy.Context.class))).thenReturn(first, emptyList());
+        return lbStategy;
     }
 
-    @Test
-    public void doesNotReleaseConnectionWhenBorrowingFails() {
-        ConnectionPool pool = mock(ConnectionPool.class);
-        when(pool.getOrigin()).thenReturn(SOME_ORIGIN);
-        when(pool.borrowConnection()).thenReturn(Observable.error(new ResponseTimeoutException(SOME_ORIGIN)));
-
-        StyxHttpClient styxHttpClient = newStyxHttpClient(pool);
-
-        TestSubscriber<HttpResponse> subscriber = new TestSubscriber<>();
-        styxHttpClient.sendRequest(SOME_REQ).subscribe(subscriber);
-
-        subscriber.awaitTerminalEvent();
-        verify(pool, never()).returnConnection(any(Connection.class));
+    private LoadBalancingStrategy mockLoadBalancer(List<RemoteHost> first, List<RemoteHost>... remoteHostWrappers) {
+        LoadBalancingStrategy lbStategy = mock(LoadBalancingStrategy.class);
+        when(lbStategy.vote(any(LoadBalancingStrategy.Context.class))).thenReturn(first, remoteHostWrappers);
+        return lbStategy;
     }
 
-    @Test
-    public void notifiesSubscribersOnConnectionBorrowingFailure() {
-        ConnectionPool pool = mock(ConnectionPool.class);
-        when(pool.getOrigin()).thenReturn(SOME_ORIGIN);
-        Throwable timeoutException = new ResponseTimeoutException(SOME_ORIGIN);
-        when(pool.borrowConnection()).thenReturn(Observable.error(timeoutException));
-
-        BackendService backendService = backendWithOrigins(SOME_ORIGIN.host().getPort());
-
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
-                .connectionPoolFactory(o -> pool)
-                .initialOrigins(backendService.origins())
-                .build();
-
-        StyxHttpClient styxClient = new StyxHttpClient.Builder(backendService)
-                .retryPolicy(doNotRetry())
-                .originsInventory(originsInventory)
-                .build();
-
-        TestSubscriber<HttpResponse> subscriber = new TestSubscriber<>();
-        styxClient.sendRequest(SOME_REQ).subscribe(subscriber);
-        subscriber.awaitTerminalEvent();
-        assertThat(getOnErrorEvents(subscriber), contains(timeoutException));
+    private StyxHostHttpClient mockHostClient(Observable<HttpResponse> responseObservable) {
+        StyxHostHttpClient secondClient = mock(StyxHostHttpClient.class);
+        when(secondClient.sendRequest(any(HttpRequest.class))).thenReturn(responseObservable);
+        return secondClient;
     }
 
-    @Test
-    public void notifiesSubscribersOnOperationFailure() {
-        Throwable operationException = new RuntimeException("Error happened");
-        requestOperationFactory = newFailingRequestOperationFactory(operationException);
-
-        ConnectionPool pool = mockPool(openConnection(SOME_ORIGIN));
-
-        BackendService backendService = backendWithOrigins(SOME_ORIGIN.host().getPort());
-
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
-                .connectionPoolFactory(o -> pool)
-                .initialOrigins(backendService.origins())
-                .build();
-
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
-                .originsInventory(originsInventory)
-                .build();
-
-        TestSubscriber<HttpResponse> subscriber = new TestSubscriber<>();
-        styxHttpClient.sendRequest(SOME_REQ).subscribe(subscriber);
-        subscriber.awaitTerminalEvent();
-        assertThat(getOnErrorEvents(subscriber), contains(operationException));
+    private ConnectionPool mockPool(Origin someOrigin) {
+        ConnectionPool firstPool = mock(ConnectionPool.class);
+        when(firstPool.getOrigin()).thenReturn(someOrigin);
+        return firstPool;
     }
 
-    @Test
-    public void notifiesSubscribersOnSuccessfulOperation() {
-        ConnectionPool pool = mockPool(openConnection(SOME_ORIGIN));
-        StyxHttpClient styxHttpClient = newStyxHttpClient(pool);
-
-        TestSubscriber<HttpResponse> subscriber = new TestSubscriber<>();
-        styxHttpClient.sendRequest(SOME_REQ).subscribe(subscriber);
-        subscriber.awaitTerminalEvent();
-
-        assertThat(responseFrom(subscriber).status(), is(OK));
+    private static BackendService backendWithOrigins(int originPort) {
+        return backendBuilderWithOrigins(originPort).build();
     }
 
-    @Test
-    public void usesTheOriginSpecifiedInTheCookieIfStickySessionIsEnabled() {
-        StickySessionConfig stickySessionConfig = newStickySessionConfigBuilder()
-                .enabled(true)
-                .build();
-
-        BackendService backendService = backendBuilderWithOrigins(SOME_ORIGIN.host().getPort())
-                .stickySessionConfig(stickySessionConfig)
-                .build();
-
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
-                .connectionPoolFactory((origin) -> new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), new NettyConnectionFactory.Builder().build()))
-                .initialOrigins(backendService.origins())
-                .build();
-
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
-                .originsInventory(originsInventory)
-                .build();
-
-        HttpRequest request = requestWithStickySessionCookie(GENERIC_APP, id("h1"));
-
-        styxHttpClient.sendRequest(request).subscribe(new TestSubscriber<>());
-    }
-
-    @Test
-    public void incrementsResponseStatusMetricsForBadResponse() throws Exception {
-        requestOperationFactory = requestOpFactory(request -> just(response(BAD_REQUEST).build()));
-        StyxHttpClient styxHttpClient = newStyxHttpClient(mockPool(openConnection(SOME_ORIGIN)));
-
-        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
-        assertThat(response.status(), is(BAD_REQUEST));
-        assertThat(metricRegistry.counter("origins.response.status.400").getCount(), is(1L));
-    }
-
-    @Test
-    public void incrementsResponseStatusMetricsFor401() throws Exception {
-        requestOperationFactory = requestOpFactory(request -> just(response(UNAUTHORIZED).build()));
-        StyxHttpClient styxHttpClient = newStyxHttpClient(mockPool(openConnection(SOME_ORIGIN)));
-
-        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
-        assertThat(response.status(), is(UNAUTHORIZED));
-        assertThat(metricRegistry.counter("origins.response.status.401").getCount(), is(1L));
-    }
-
-    @Test
-    public void incrementsResponseStatusMetricsFor500() throws Exception {
-        requestOperationFactory = requestOpFactory(request -> just(response(INTERNAL_SERVER_ERROR).build()));
-        StyxHttpClient styxHttpClient = newStyxHttpClient(mockPool(openConnection(SOME_ORIGIN)));
-
-        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
-        assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
-        assertThat(metricRegistry.counter("origins.response.status.500").getCount(), is(1L));
-    }
-
-    @Test
-    public void incrementsResponseStatusMetricsFor501() throws Exception {
-        requestOperationFactory = requestOpFactory(request -> just(response(NOT_IMPLEMENTED).build()));
-        StyxHttpClient styxHttpClient = newStyxHttpClient(mockPool(openConnection(SOME_ORIGIN)));
-
-        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
-        assertThat(response.status(), is(NOT_IMPLEMENTED));
-        assertThat(metricRegistry.counter("origins.response.status.501").getCount(), is(1L));
-    }
-
-    @Test
-    public void doesNotIncrementMetricsForSuccessfulResponses() throws Exception {
-        requestOperationFactory = requestOpFactory(request -> just(response(OK).build()));
-        StyxHttpClient styxHttpClient = newStyxHttpClient(mockPool(openConnection(SOME_ORIGIN)));
-
-        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
-        assertThat(response.status(), is(OK));
-        assertThat(metricRegistry.counter("origins.response.status.200").getCount(), is(0L));
-    }
-
-    @Test
-    public void removesBadContentLength() {
-        requestOperationFactory = requestOpFactory(request -> just(
-                response(OK)
-                        .addHeader(CONTENT_LENGTH, 50)
-                        .addHeader(TRANSFER_ENCODING, CHUNKED)
-                        .build()));
-
-        StyxHttpClient styxHttpClient = newStyxHttpClientBuilder(mockPool(openConnection(SOME_ORIGIN)))
-                .enableContentValidation()
-                .build();
-
-        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
-        assertThat(response.status(), is(OK));
-        assertThat(response.contentLength().isPresent(), is(false));
-        assertThat(response.header(TRANSFER_ENCODING).get(), is("chunked"));
-    }
-
-    private HttpRequestOperationFactory requestOpFactory(Function<HttpRequest, Observable<HttpResponse>> handler) {
-        return request -> new HttpRequestOperation(request, originStatsFactory) {
-            @Override
-            public Observable<HttpResponse> execute(NettyConnection nettyConnection) {
-                return handler.apply(request);
-            }
-        };
-    }
-
-    private StyxHttpClient newStyxHttpClient(ConnectionPool pool) {
-        BackendService backendService = backendBuilderWithOrigins(SOME_ORIGIN.host().getPort())
-                .stickySessionConfig(stickySessionConfig)
-                .build();
-
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
-                .connectionPoolFactory(origin -> pool)
-                .initialOrigins(backendService.origins())
-                .build();
-
-        return new StyxHttpClient.Builder(
-                backendService)
-                .originsInventory(originsInventory)
-                .metricsRegistry(metricRegistry)
-                .build();
-    }
-
-    private StyxHttpClient.Builder newStyxHttpClientBuilder(ConnectionPool pool) {
-        BackendService backendService = backendBuilderWithOrigins(SOME_ORIGIN.host().getPort())
-                .stickySessionConfig(stickySessionConfig)
-                .build();
-
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
-                .connectionPoolFactory(origin -> pool)
-                .initialOrigins(backendService.origins())
-                .build();
-
-        return new StyxHttpClient.Builder(
-                backendService)
-                .originsInventory(originsInventory)
-                .metricsRegistry(metricRegistry);
-    }
-
-    private static ConnectionPool mockPool(Connection connection) {
-        ConnectionPool pool = mock(ConnectionPool.class);
-        when(pool.isExhausted()).thenReturn(false);
-        when(pool.getOrigin()).thenReturn(connection.getOrigin());
-        when(pool.borrowConnection()).thenReturn(just(connection));
-        return pool;
-    }
-
-    private static Iterable<Throwable> getOnErrorEvents(TestSubscriber<?> subscriber) {
-        return subscriber.getOnErrorEvents();
-    }
-
-    private static HttpResponse responseFrom(TestSubscriber<HttpResponse> subscriber) {
-        return subscriber.getOnNextEvents().iterator().next();
-    }
-
-    private StyxHttpClient styxClient(Connection connection, PublishSubject<HttpResponse> responseSubject, RetryPolicy retryPolicy) {
-        StubConnectionPool pool = new StubConnectionPool(connection);
-
-        BackendService backendService = backendWithOrigins(SOME_ORIGIN.host().getPort());
-
-        OriginsInventory originsInventory = newOriginsInventoryBuilder(backendService.id())
-                .connectionPoolFactory(origin -> pool)
-                .initialOrigins(backendService.origins())
-                .build();
-
-        return new StyxHttpClient.Builder(backendService)
-                .originsInventory(originsInventory)
-                .retryPolicy(retryPolicy)
-                .build();
-    }
-
-    private Connection nettyConnection(Channel channel) {
-        when(channel.pipeline()).thenReturn(mock(ChannelPipeline.class));
-        when(channel.closeFuture()).thenReturn(mock(ChannelFuture.class));
-        when(channel.isOpen()).thenReturn(true);
-        return new NettyConnection(SOME_ORIGIN, channel, requestOperationFactory);
-    }
-
-    private static HttpRequest requestWithStickySessionCookie(Id applicationId, Id originId) {
-        return get("/some-req")
-                .addCookie("styx_origin_" + applicationId, originId.toString())
-                .build();
+    private static BackendService.Builder backendBuilderWithOrigins(int originPort) {
+        return new BackendService.Builder()
+                .origins(newOriginBuilder("localhost", originPort).build());
     }
 
     private static Origin originWithId(String host, String appId, String originId) {
@@ -653,57 +432,4 @@ public class StyxHttpClientTest {
                 .build();
     }
 
-    private ConnectionPool connectionPool(Origin origin) {
-        Connection connection = aConnection(origin);
-        return mockPool(connection);
-    }
-
-    private Connection openConnection(Origin origin) {
-        return new NettyConnection(origin, new LocalChannel(), requestOperationFactory);
-    }
-
-    private Connection aConnection() {
-        return aConnection(SOME_ORIGIN);
-    }
-
-    private Connection aConnection(Origin origin) {
-        return openConnection(origin);
-    }
-
-    private HttpRequestOperation mockHttpRequestOperation(HttpRequest request) {
-        return new HttpRequestOperation(request, originStatsFactory) {
-            @Override
-            public Observable<HttpResponse> execute(NettyConnection nettyConnection) {
-                return just(response().body("body").build());
-            }
-        };
-    }
-
-    private HttpRequestOperationFactory newFailingRequestOperationFactory(Throwable operationException) {
-        return request -> new FailingHttRequestOperation(request, originStatsFactory, operationException);
-    }
-
-    private HttpRequestOperationFactory newRequestOperationFactory(Observable<HttpResponse> responseSubject) {
-        return request ->
-                new HttpRequestOperation(request, originStatsFactory) {
-                    @Override
-                    public Observable<HttpResponse> execute(NettyConnection nettyConnection) {
-                        return responseSubject;
-                    }
-                };
-    }
-
-    private static class FailingHttRequestOperation extends HttpRequestOperation {
-        private final Throwable ex;
-
-        FailingHttRequestOperation(HttpRequest request, OriginStatsFactory originStatsFactory, Throwable ex) {
-            super(request, originStatsFactory);
-            this.ex = ex;
-        }
-
-        @Override
-        public Observable<HttpResponse> execute(NettyConnection nettyConnection) {
-            throw propagate(ex);
-        }
-    }
 }

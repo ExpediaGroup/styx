@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package com.hotels.styx.client;
 import com.google.common.base.Splitter;
 import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import org.slf4j.Logger;
 
@@ -38,29 +38,29 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * A load balancing strategy that restricts available origins according to a cookie value.
  */
-class OriginRestrictionLoadBalancingStrategy implements LoadBalancingStrategy {
+public class OriginRestrictionLoadBalancingStrategy implements LoadBalancingStrategy {
     private static final Splitter COOKIE_SPLITTER = Splitter.on(',').trimResults();
 
     private static final Logger LOG = getLogger(OriginRestrictionLoadBalancingStrategy.class);
     private static final Pattern MATCH_ALL = Pattern.compile(".*");
 
-    private ActiveOrigins activeOrigins;
+    private final ActiveOrigins activeOrigins;
     private final LoadBalancingStrategy delegate;
     private final String cookieName;
 
-    OriginRestrictionLoadBalancingStrategy(ActiveOrigins activeOrigins, LoadBalancingStrategy delegate, String cookieName) {
+    public OriginRestrictionLoadBalancingStrategy(ActiveOrigins activeOrigins, LoadBalancingStrategy delegate, String cookieName) {
         this.activeOrigins = activeOrigins;
         this.delegate = checkNotNull(delegate);
         this.cookieName = checkNotNull(cookieName);
     }
 
     @Override
-    public Iterable<ConnectionPool> vote(Context context) {
-        Iterable<ConnectionPool> connectionPools = delegate.vote(context);
-        Optional<Set<ConnectionPool>> matchingOrigins = originPartition(activeOrigins.snapshot(), context);
+    public Iterable<RemoteHost> vote(Context context) {
+        Iterable<RemoteHost> connectionPools = delegate.vote(context);
+        Optional<Set<RemoteHost>> matchingOrigins = originPartition(activeOrigins.snapshot(), context);
 
         if (matchingOrigins.isPresent()) {
-            Set<ConnectionPool> origins = matchingOrigins.get();
+            Set<RemoteHost> origins = matchingOrigins.get();
             return stream(connectionPools.spliterator(), false)
                     .filter(origins::contains)
                     .collect(toList());
@@ -68,24 +68,24 @@ class OriginRestrictionLoadBalancingStrategy implements LoadBalancingStrategy {
         return connectionPools;
     }
 
-    private Optional<Set<ConnectionPool>> originPartition(Iterable<ConnectionPool> origins, Context context) {
+    private Optional<Set<RemoteHost>> originPartition(Iterable<RemoteHost> origins, Context context) {
         return context.currentRequest().cookie(cookieName)
                 .map(cookie -> restrictedOrigins(origins, cookie));
     }
 
-    private Set<ConnectionPool> restrictedOrigins(Iterable<ConnectionPool> origins, HttpCookie cookie) {
+    private Set<RemoteHost> restrictedOrigins(Iterable<RemoteHost> origins, HttpCookie cookie) {
         return stream(origins.spliterator(), false)
                 .filter(originIsPermittedByCookie(cookie.value()))
                 .collect(toSet());
     }
 
-    private Predicate<ConnectionPool> originIsPermittedByCookie(String cookieValue) {
+    private Predicate<RemoteHost> originIsPermittedByCookie(String cookieValue) {
         return originIdMatcherStream(cookieValue)
                 .reduce(Predicate::or)
                 .orElse(input -> false);
     }
 
-    private Stream<Predicate<ConnectionPool>> originIdMatcherStream(String cookieValue) {
+    private Stream<Predicate<RemoteHost>> originIdMatcherStream(String cookieValue) {
         return regularExpressionStream(cookieValue)
                 .map(this::compileRegularExpression)
                 .map(this::originIdMatches);
@@ -104,12 +104,8 @@ class OriginRestrictionLoadBalancingStrategy implements LoadBalancingStrategy {
         }
     }
 
-    private Predicate<ConnectionPool> originIdMatches(Pattern pattern) {
-        return connectionPool -> pattern.matcher(originId(connectionPool)).matches();
-    }
-
-    private String originId(ConnectionPool pool) {
-        return pool.getOrigin().id().toString();
+    private Predicate<RemoteHost> originIdMatches(Pattern pattern) {
+        return remoteHost -> pattern.matcher(remoteHost.id().toString()).matches();
     }
 
     @Override

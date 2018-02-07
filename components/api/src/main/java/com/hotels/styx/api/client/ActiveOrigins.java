@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,5 +26,5 @@ public interface ActiveOrigins {
      *
      * @return a list of connection pools for each active origin
      */
-    Iterable<ConnectionPool> snapshot();
+    Iterable<RemoteHost> snapshot();
 }

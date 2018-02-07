@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,9 @@ import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.RemoteHost;
+import static com.hotels.styx.api.client.RemoteHost.remoteHost;
+import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import org.testng.annotations.Test;
@@ -89,9 +92,10 @@ public class DashboardDataSupplierTest {
         assertThat(fooBackend.origin("foo1").status(), is("inactive"));
     }
 
-    private Collection<ConnectionPool> pools(Origin... origins) {
+    private Collection<RemoteHost> pools(Origin... origins) {
         return asList(origins).stream()
                 .map(this::pool)
+                .map(pool -> remoteHost(pool.getOrigin(), pool, mock(StyxHostHttpClient.class)))
                 .collect(toList());
     }
 

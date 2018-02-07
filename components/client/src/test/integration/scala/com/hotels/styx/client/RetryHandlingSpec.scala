@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.client
 
+import java.lang
 import java.nio.charset.Charset
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit.{MILLISECONDS, SECONDS}
@@ -24,7 +25,7 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.client.Origin
+import com.hotels.styx.api.client.{ActiveOrigins, ConnectionPool, Origin}
 import com.hotels.styx.api.client.Origin._
 import com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
@@ -32,10 +33,10 @@ import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
-import com.hotels.styx.client.connectionpool.ConnectionPoolSettings
-import com.hotels.styx.client.connectionpool.ConnectionPools.simplePoolFactory
+import com.hotels.styx.client.connectionpool.{ConnectionPoolSettings, ConnectionPools, SimpleConnectionPool}
+import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.retry.RetryNTimes
-import com.hotels.styx.client.stickysession.StickySessionConfig
+import com.hotels.styx.client.stickysession.{StickySessionConfig, StickySessionLoadBalancingStrategy}
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
@@ -49,6 +50,7 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
 import rx.observers.TestSubscriber
 
 import scala.util.Try
+import scala.collection.JavaConverters._
 
 class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers with OriginSupport {
 
@@ -134,25 +136,37 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
     val response = waitForResponse(client.sendRequest(request))
   }
 
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(backendService).build()
+
+  def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins)
+
+  def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, roundRobinStrategy(activeOrigins))
+
+
   test("retries the next available origin on failure") {
-    val client: StyxHttpClient = newHttpClientBuilder(new BackendService.Builder()
+    val backendService = new BackendService.Builder()
       .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree, healthyOriginTwo)
-      .build())
-      .retryPolicy(new RetryNTimes(3))
+      .build()
+    val client: StyxHttpClient = newHttpClientBuilder(backendService)
+      .retryPolicy(new RetryNTimes(5))
+      .loadBalancingStrategy(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
     val request: HttpRequest = get("/version.txt").build
 
     val response = waitForResponse(client.sendRequest(request))
 
+    println("response: " + response)
+
     assertThat(response.header(ORIGIN_ID_DEFAULT).get(), containsString("HEALTHY_ORIGIN_TWO"))
   }
 
   test("propagates the last observed exception if all retries failed") {
-    val client: StyxHttpClient = newHttpClientBuilder(
-      new BackendService.Builder()
-        .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree)
-        .build())
+    val backendService = new BackendService.Builder()
+      .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree)
+      .build()
+    val client: StyxHttpClient = newHttpClientBuilder(backendService)
+      .loadBalancingStrategy(stickySessionStrategy(activeOrigins(backendService)))
       .retryPolicy(new RetryNTimes(2))
       .build
 
@@ -165,10 +179,11 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
   }
 
   ignore("retries once if successful before retries runs out") {
-    val client: StyxHttpClient = newHttpClientBuilder(
-      new BackendService.Builder()
-        .origins(healthyOriginOne, healthyOriginTwo, unhealthyOriginOne)
-        .build())
+    val backendService = new BackendService.Builder()
+      .origins(healthyOriginOne, healthyOriginTwo, unhealthyOriginOne)
+      .build()
+    val client: StyxHttpClient = newHttpClientBuilder(backendService)
+      .loadBalancingStrategy(stickySessionStrategy(activeOrigins(backendService)))
       .retryPolicy(new RetryNTimes(1))
       .build
     val request: HttpRequest = get("/version.txt").build
@@ -185,14 +200,9 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .stickySessionConfig(StickySessionEnabled)
       .build()
 
-    val originsInventory = newOriginsInventoryBuilder(backendService.id())
-      .connectionPoolFactory(simplePoolFactory())
-      .initialOrigins(backendService.origins)
-      .build()
-
     val client: StyxHttpClient = newHttpClientBuilder(backendService)
-      .originsInventory(originsInventory)
       .retryPolicy(new RetryNTimes(3))
+      .loadBalancingStrategy(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
     val request: HttpRequest = get("/version.txt").build

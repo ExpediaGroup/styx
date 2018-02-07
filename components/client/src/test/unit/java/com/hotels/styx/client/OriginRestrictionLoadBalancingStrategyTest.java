@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,11 @@
  */
 package com.hotels.styx.client;
 
+import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import org.testng.annotations.Test;
@@ -29,16 +31,18 @@ import java.util.stream.Stream;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
 
 public class OriginRestrictionLoadBalancingStrategyTest {
-    List<ConnectionPool> origins = Stream.of(0, 1, 2, 3, 4, 5, 6)
-            .map(this::origin)
+    List<RemoteHost> origins = Stream.of(0, 1, 2, 3, 4, 5, 6)
+            .map(this::remoteHostFromPort)
             .collect(toList());
 
     OriginRestrictionLoadBalancingStrategy strategy = new OriginRestrictionLoadBalancingStrategy(
@@ -46,7 +50,7 @@ public class OriginRestrictionLoadBalancingStrategyTest {
 
     @Test
     public void shouldDisregardRestrictionCookieValueIfNotValid() {
-        Iterable<ConnectionPool> partition = strategy.vote(contextWith(request ->
+        Iterable<RemoteHost> partition = strategy.vote(contextWith(request ->
                 request.addCookie("originRestrictionCookie", "*-01")));
 
         assertThat(partition, contains(origins.toArray()));
@@ -54,7 +58,7 @@ public class OriginRestrictionLoadBalancingStrategyTest {
 
     @Test
     public void usesSingleOriginMatchingRegularExpression() {
-        Iterable<ConnectionPool> partition = strategy.vote(contextWith(request ->
+        Iterable<RemoteHost> partition = strategy.vote(contextWith(request ->
                 request.addCookie("originRestrictionCookie", "origin1")));
 
         assertThat(partition, contains(origins.get(1)));
@@ -62,7 +66,7 @@ public class OriginRestrictionLoadBalancingStrategyTest {
 
     @Test
     public void usesMultipleOriginsMatchingRegularExpression() {
-        Iterable<ConnectionPool> partition = strategy.vote(contextWith(request ->
+        Iterable<RemoteHost> partition = strategy.vote(contextWith(request ->
                 request.addCookie("originRestrictionCookie", "origin[2-4]")));
 
         assertThat(partition, contains(origins.get(2), origins.get(3), origins.get(4)));
@@ -70,7 +74,7 @@ public class OriginRestrictionLoadBalancingStrategyTest {
 
     @Test
     public void usesNoOriginsWhenRegularExpressionMatchesNone() {
-        Iterable<ConnectionPool> partition = strategy.vote(contextWith(request ->
+        Iterable<RemoteHost> partition = strategy.vote(contextWith(request ->
                 request.addCookie("originRestrictionCookie", "foo")));
 
         assertThat(partition, is(emptyIterable()));
@@ -78,14 +82,14 @@ public class OriginRestrictionLoadBalancingStrategyTest {
 
     @Test
     public void usesAllOriginsWhenCookieIsAbsent() {
-        Iterable<ConnectionPool> partition = strategy.vote(context());
+        Iterable<RemoteHost> partition = strategy.vote(context());
 
         assertThat(partition, contains(origins.toArray()));
     }
 
     @Test
     public void usesAllOriginsWhenRegularExpressionMatchesAll() {
-        Iterable<ConnectionPool> partition = strategy.vote(contextWith(request ->
+        Iterable<RemoteHost> partition = strategy.vote(contextWith(request ->
                 request.addCookie("originRestrictionCookie", ".*")));
 
         assertThat(partition, contains(origins.toArray()));
@@ -93,17 +97,18 @@ public class OriginRestrictionLoadBalancingStrategyTest {
 
     @Test
     public void usesOriginsMatchingAnyOfAListOfRegularExpressions() {
-        Iterable<ConnectionPool> partition = strategy.vote(contextWith(request ->
+        Iterable<RemoteHost> partition = strategy.vote(contextWith(request ->
                 request.addCookie("originRestrictionCookie", "origin[1-3], origin(5|6)")));
 
         assertThat(partition, contains(origins.get(1), origins.get(2), origins.get(3), origins.get(5), origins.get(6)));
     }
 
-    private ConnectionPool origin(int number) {
-        return new StubConnectionPool(
-                newOriginBuilder("localhost", 8080 + number)
-                        .id("origin" + number)
-                        .build());
+    private RemoteHost remoteHostFromPort(int number) {
+        Origin origin = newOriginBuilder("localhost", 8080 + number)
+                .id("origin" + number)
+                .build();
+
+        return remoteHost(origin, new StubConnectionPool(origin), mock(HttpClient.class));
     }
 
     static StubContext context() {

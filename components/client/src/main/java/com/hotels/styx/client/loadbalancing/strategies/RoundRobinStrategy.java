@@ -17,8 +17,8 @@ package com.hotels.styx.client.loadbalancing.strategies;
 
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategyFactory;
 import com.hotels.styx.api.configuration.Configuration;
@@ -67,14 +67,14 @@ public class RoundRobinStrategy implements LoadBalancingStrategy {
     private final AtomicInteger index = new AtomicInteger(0);
 
     @Override
-    public Iterable<ConnectionPool> vote(Context context) {
-        Iterable<ConnectionPool> snapshot = activeOrigins.snapshot();
+    public Iterable<RemoteHost> vote(Context context) {
+        Iterable<RemoteHost> snapshot = activeOrigins.snapshot();
         return isEmpty(snapshot) ? snapshot : cycledNonExhaustedOrigins(snapshot);
     }
 
-    private List<ConnectionPool> cycledNonExhaustedOrigins(Iterable<ConnectionPool> origins) {
+    private List<RemoteHost> cycledNonExhaustedOrigins(Iterable<RemoteHost> origins) {
         return cycleOrigins(origins)
-                .filter(pool -> !pool.isExhausted())
+                .filter(host -> !host.connectionPool().isExhausted())
                 .collect(toList());
     }
 
@@ -83,18 +83,18 @@ public class RoundRobinStrategy implements LoadBalancingStrategy {
         index.set(0);
     }
 
-    private Stream<ConnectionPool> cycleOrigins(Iterable<ConnectionPool> origins) {
-        List<ConnectionPool> originsList = newArrayList(origins);
+    private Stream<RemoteHost> cycleOrigins(Iterable<RemoteHost> origins) {
+        List<RemoteHost> originsList = newArrayList(origins);
         return cycleToOffset(nextIndex(originsList), originsList);
     }
 
-    private int nextIndex(List<ConnectionPool> origins) {
+    private int nextIndex(List<RemoteHost> origins) {
         return index.getAndIncrement() % origins.size();
     }
 
-    private static Stream<ConnectionPool> cycleToOffset(int index, List<ConnectionPool> origins) {
-        List<ConnectionPool> first = origins.subList(index, origins.size());
-        List<ConnectionPool> second = origins.subList(0, index);
+    private static Stream<RemoteHost> cycleToOffset(int index, List<RemoteHost> origins) {
+        List<RemoteHost> first = origins.subList(index, origins.size());
+        List<RemoteHost> second = origins.subList(0, index);
         return concat(first.stream(), second.stream());
     }
 

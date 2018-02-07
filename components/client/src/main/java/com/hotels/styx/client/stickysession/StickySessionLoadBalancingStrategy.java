@@ -18,8 +18,8 @@ package com.hotels.styx.client.stickysession;
 import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
 
 import java.util.Collections;
@@ -42,17 +42,17 @@ public class StickySessionLoadBalancingStrategy implements LoadBalancingStrategy
     }
 
     @Override
-    public Iterable<ConnectionPool> vote(Context context) {
+    public Iterable<RemoteHost> vote(Context context) {
         return stickySessionOriginId(context)
                 .flatMap(preferredOriginId -> originsById(activeOrigins.snapshot(), preferredOriginId))
                 .orElseGet(() -> delegate.vote(context));
     }
 
-    private Optional<Iterable<ConnectionPool>> originsById(Iterable<ConnectionPool> origins, Id id) {
+    private Optional<Iterable<RemoteHost>> originsById(Iterable<RemoteHost> origins, Id id) {
         return originById(origins, id).map(Collections::singleton);
     }
 
-    private Optional<ConnectionPool> originById(Iterable<ConnectionPool> origins, Id id) {
+    private Optional<RemoteHost> originById(Iterable<RemoteHost> origins, Id id) {
         return stream(origins.spliterator(), false)
                 .filter(hasId(id))
                 .findFirst();
@@ -65,8 +65,8 @@ public class StickySessionLoadBalancingStrategy implements LoadBalancingStrategy
                 .map(Id::id);
     }
 
-    private static Predicate<ConnectionPool> hasId(Id id) {
-        return input -> input.getOrigin().id().equals(id);
+    private static Predicate<RemoteHost> hasId(Id id) {
+        return input -> input.connectionPool().getOrigin().id().equals(id);
     }
 
     @Override

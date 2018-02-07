@@ -19,28 +19,32 @@ import java.nio.charset.Charset
 
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
-import com.hotels.styx.support.api.BlockingObservables._
+import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.Id.id
-import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.client.Origin
+import com.hotels.styx.api.client.{ActiveOrigins, Origin}
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
-import com.hotels.styx.client.stickysession.StickySessionConfig
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
+import com.hotels.styx.client.stickysession.{StickySessionConfig, StickySessionLoadBalancingStrategy}
+import com.hotels.styx.support.api.BlockingObservables._
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
+import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfter, FunSuite, ShouldMatchers}
 
 import scala.collection.JavaConverters._
 
-class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers with OriginSupport {
+class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers with OriginSupport with MockitoSugar {
 
   val server1 = new FakeHttpServer(0, "app", "app-01")
   val server2 = new FakeHttpServer(0, "app", "app-02")
 
   var appOriginOne: Origin = _
   var appOriginTwo: Origin = _
+  var backendService: BackendService = _
 
   val StickySessionEnabled = new StickySessionConfig.Builder()
     .enabled(true)
@@ -49,7 +53,6 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
   val StickySessionDisabled = new StickySessionConfig.Builder()
     .enabled(false)
     .build()
-
 
   before {
     server1.start
@@ -72,6 +75,12 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .withHeader(CONTENT_LENGTH.toString, response.getBytes(Charset.defaultCharset()).size.toString)
       .withHeader("Stub-Origin-Info", appOriginTwo.applicationInfo())
       .withBody(response))
+
+    backendService = new BackendService.Builder()
+      .id(id("app"))
+      .origins(appOriginOne, appOriginTwo)
+      .build()
+
   }
 
   after {
@@ -79,14 +88,15 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
     server2.stop
   }
 
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(backendService).build()
+
+  def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins)
+
+  def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, roundRobinStrategy(activeOrigins))
 
   test("Responds with sticky session cookie when STICKY_SESSION_ENABLED=true") {
-    val client: StyxHttpClient = newHttpClientBuilder(
-      new BackendService.Builder()
-        .id(id("app"))
-        .origins(appOriginOne, appOriginTwo)
-        .stickySessionConfig(StickySessionEnabled)
-        .build())
+    val client = newHttpClientBuilder(backendService)
+      .loadBalancingStrategy(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
     val request: HttpRequest = Builder.get("/")
@@ -97,13 +107,9 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
     response.cookie("styx_origin_app").get().toString should fullyMatch regex "styx_origin_app=app-0[12]; Max-Age=.*; Path=/; HttpOnly"
   }
 
-  test("Responds without sticky session cookie when STICKY_SESSION_ENABLED=false") {
-    val client: StyxHttpClient = newHttpClientBuilder(new BackendService.Builder()
-      .id(id("app"))
-      .origins(appOriginOne, appOriginTwo)
-      .stickySessionConfig(StickySessionDisabled)
-      .build()
-    )
+  test("Responds without sticky session cookie when sticky session is not enabled") {
+    val client: StyxHttpClient = newHttpClientBuilder(backendService)
+      .loadBalancingStrategy(roundRobinStrategy(activeOrigins(backendService)))
       .build
 
     val request: HttpRequest = Builder.get("/")
@@ -115,18 +121,13 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
   }
 
   test("Routes to origins indicated by sticky session cookie.") {
-    val client: StyxHttpClient = newHttpClientBuilder(new BackendService.Builder()
-      .id(id("app"))
-      .origins(appOriginOne, appOriginTwo)
-      .stickySessionConfig(StickySessionEnabled)
-      .build()
-    )
+    val client: StyxHttpClient = newHttpClientBuilder(backendService)
+      .loadBalancingStrategy(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
     val request: HttpRequest = Builder.get("/")
       .addCookie("styx_origin_app", "app-02")
       .build
-
 
     val response1 = waitForResponse(client.sendRequest(request))
     val response2 = waitForResponse(client.sendRequest(request))
@@ -138,12 +139,8 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
   }
 
   test("Routes to origins indicated by sticky session cookie when other cookies are provided.") {
-    val client: StyxHttpClient = newHttpClientBuilder(new BackendService.Builder()
-      .id(id("app"))
-      .origins(appOriginOne, appOriginTwo)
-      .stickySessionConfig(StickySessionEnabled)
-      .build()
-    )
+    val client: StyxHttpClient = newHttpClientBuilder(backendService)
+      .loadBalancingStrategy(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
     val request: HttpRequest = Builder.get("/")
@@ -163,12 +160,8 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
   }
 
   test("Routes to new origin when the origin indicated by sticky session cookie does not exist.") {
-    val client: StyxHttpClient = newHttpClientBuilder(
-      new BackendService.Builder()
-        .id(id("app"))
-        .origins(appOriginOne, appOriginTwo)
-        .stickySessionConfig(StickySessionEnabled)
-        .build())
+    val client: StyxHttpClient = newHttpClientBuilder(backendService)
+      .loadBalancingStrategy(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
     val request: HttpRequest = Builder.get("/")
@@ -185,12 +178,8 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
   test("Routes to new origin when the origin indicated by sticky session cookie is no longer available.") {
     server1.stop()
 
-    val client: StyxHttpClient = newHttpClientBuilder(
-      new BackendService.Builder()
-        .id(id("app"))
-        .origins(appOriginOne, appOriginTwo)
-        .stickySessionConfig(StickySessionEnabled)
-        .build())
+    val client: StyxHttpClient = newHttpClientBuilder(backendService)
+      .loadBalancingStrategy(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
     val request: HttpRequest = Builder.get("/")

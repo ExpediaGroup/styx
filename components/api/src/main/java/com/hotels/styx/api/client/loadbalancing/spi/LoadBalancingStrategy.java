@@ -17,12 +17,10 @@ package com.hotels.styx.api.client.loadbalancing.spi;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.OriginsInventoryStateChangeListener;
-
-import java.util.Collections;
+import com.hotels.styx.api.client.RemoteHost;
 
 /**
  * Used to sort a cluster of origins so that a request can be tried against them, failing over through the sequence if necessary.
@@ -65,7 +63,7 @@ public interface LoadBalancingStrategy extends OriginsInventoryStateChangeListen
      * @param context load balancing context
      * @return the origins sorted into a new order
      */
-    Iterable<ConnectionPool> vote(Context context);
+    Iterable<RemoteHost> vote(Context context);
 
     default void originsInventoryStateChanged(OriginsInventorySnapshot snapshot) {
         // do nothing

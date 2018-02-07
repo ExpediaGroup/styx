@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,22 +20,25 @@ import com.fasterxml.jackson.databind.type.MapType;
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.admin.tasks.StubConnectionPool;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.client.StyxHostHttpClient;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -43,7 +46,7 @@ import static java.util.stream.IntStream.range;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.mockito.Mockito.mock;
 
 public class OriginsInventoryHandlerTest {
     private static final Id APP_ID = id("foo");
@@ -124,9 +127,10 @@ public class OriginsInventoryHandlerTest {
                 .collect(toSet());
     }
 
-    private static Collection<ConnectionPool> pool(Set<Origin> origins) {
+    private static List<RemoteHost> pool(Set<Origin> origins) {
         return origins.stream()
                 .map(StubConnectionPool::new)
+                .map(pool -> remoteHost(pool.getOrigin(), pool, mock(StyxHostHttpClient.class)))
                 .collect(toList());
     }
 }

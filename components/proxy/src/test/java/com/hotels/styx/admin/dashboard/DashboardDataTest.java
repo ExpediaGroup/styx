@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,10 @@ import com.hotels.styx.Version;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.applications.BackendServices;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
@@ -35,6 +37,7 @@ import java.util.Map;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static com.hotels.styx.client.applications.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
 import static java.util.Collections.emptyList;
@@ -217,10 +220,10 @@ public class DashboardDataTest {
         assertThat(connectionsPool.pending(), is(1100));
     }
 
-    private ConnectionPool pool(Origin origin) {
+    private RemoteHost pool(Origin origin) {
         ConnectionPool pool = mock(ConnectionPool.class);
         when(pool.getOrigin()).thenReturn(origin);
-        return pool;
+        return remoteHost(origin, pool, mock(StyxHostHttpClient.class));
     }
 
     @Test

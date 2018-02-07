@@ -27,26 +27,28 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Encapsulates a single connection to remote server which we can use to send the messages.
  */
 class Transport {
     private final Id appId;
-    private final StyxHeaderConfig styxHeaderConfig;
+    private final CharSequence originIdHeaderName;
 
-    public Transport(Id appId, StyxHeaderConfig styxHeaderConfig) {
-        this.appId = appId;
-        this.styxHeaderConfig = styxHeaderConfig;
+    public Transport(Id appId, CharSequence originIdHeaderName) {
+        this.appId = requireNonNull(appId);
+        this.originIdHeaderName = requireNonNull(originIdHeaderName);
     }
 
-    public HttpTransaction send(HttpRequest request, Optional<ConnectionPool> origin) {
+    public HttpTransaction send(HttpRequest request, Optional<ConnectionPool> origin, Id originId) {
         Observable<Connection> connection = connection(request, origin);
 
         AtomicReference<Connection> connectionRef = new AtomicReference<>(null);
         Observable<HttpResponse> observableResponse = connection.flatMap(tConnection -> {
             connectionRef.set(tConnection);
             return tConnection.write(request)
-                    .map(response -> addOriginId(tConnection, response));
+                    .map(response -> addOriginId(originId, response));
         });
 
         return new HttpTransaction() {
@@ -103,16 +105,17 @@ class Transport {
     }
 
     private Observable<Connection> connection(HttpRequest request, Optional<ConnectionPool> origin) {
-        return origin.map(ConnectionPool::borrowConnection)
+        return origin
+                .map(ConnectionPool::borrowConnection)
                 .orElseGet(() -> {
                     request.body().releaseContentBuffers();
                     return Observable.error(new NoAvailableHostsException(appId));
                 });
     }
 
-    private HttpResponse addOriginId(Connection tConnection, HttpResponse response) {
+    private HttpResponse addOriginId(Id originId, HttpResponse response) {
         return response.newBuilder()
-                .header(styxHeaderConfig.originIdHeaderName(), tConnection.getOrigin().id())
+                .header(originIdHeaderName, originId)
                 .build();
     }
 }
