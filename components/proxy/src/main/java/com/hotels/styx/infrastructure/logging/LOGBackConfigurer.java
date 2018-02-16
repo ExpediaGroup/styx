@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,8 @@ public final class LOGBackConfigurer {
             }
             // clean up location
             location = location.replaceAll("\\\\", "/");
-            Logger.getLogger(LOGBackConfigurer.class.getName()).info("Initializing LOGBack from [" + sanitise(location) + "]");
+            String notice = "If you are watching the console output, it may stop after this point, if configured to only write to file.";
+            Logger.getLogger(LOGBackConfigurer.class.getName()).info("Initializing LOGBack from [" + sanitise(location) + "]. " + notice);
 
             initLogging(getURL(location), installJULBridge);
 
