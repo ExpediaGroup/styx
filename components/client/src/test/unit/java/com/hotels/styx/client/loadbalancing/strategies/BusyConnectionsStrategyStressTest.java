@@ -16,7 +16,6 @@
 package com.hotels.styx.client.loadbalancing.strategies;
 
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Ordering;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Origin;
@@ -37,12 +36,11 @@ import java.util.TreeMap;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
 import static com.hotels.styx.api.client.RemoteHost.remoteHost;
+import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.mockito.Mockito.mock;
@@ -68,38 +66,17 @@ public class BusyConnectionsStrategyStressTest {
     @DataProvider(name = "origins")
     private Object[][] origins() {
         return new Object[][]{
-                {new double[]{5.0, 3.0, 2.0, 7.0}, new Origin[]{ORIGIN_THREE, ORIGIN_TWO, ORIGIN_ONE, ORIGIN_FOUR}},
-                {new double[]{10.0, 0.0, 0.1, 4.0}, new Origin[]{ORIGIN_TWO, ORIGIN_THREE, ORIGIN_FOUR, ORIGIN_ONE}},
+                {new Origin[]{ORIGIN_THREE, ORIGIN_TWO, ORIGIN_ONE, ORIGIN_FOUR}},
+                {new Origin[]{ORIGIN_TWO, ORIGIN_THREE, ORIGIN_FOUR, ORIGIN_ONE}},
         };
-    }
-
-    @Test(dataProvider = "origins")
-    public void stressTestLeastResponseTimeStrategy(double[] status500Rate, Origin[] expectedOrder) {
-        SimulatedOrigin origin1 = new SimulatedOrigin(ORIGIN_ONE, status500Rate[0]);
-        SimulatedOrigin origin2 = new SimulatedOrigin(ORIGIN_TWO, status500Rate[1]);
-        SimulatedOrigin origin3 = new SimulatedOrigin(ORIGIN_THREE, status500Rate[2]);
-        SimulatedOrigin origin4 = new SimulatedOrigin(ORIGIN_FOUR, status500Rate[3]);
-        List<SimulatedOrigin> origins = newArrayList(origin1, origin2, origin3, origin4);
-
-        Map<Origin, Integer> results = simulateLoadBalancerTraffic(origins, new SimulatedApp(100.0, origins));
-
-        System.out.println("Requests per origin");
-        results.forEach((origin, count) -> System.out.printf("Origin: %-40s count: %7d%n", origin, count));
-        System.out.println();
-
-        List<Origin> orderedByWinnings = Ordering
-                .from((o1, o2) -> results.get(o2).compareTo(results.get(o1)))
-                .sortedCopy(results.keySet());
-
-        assertThat(orderedByWinnings, contains(expectedOrder));
     }
 
     @Test
     public void distributesLoadWithoutBiasTowardAnyOrigin() {
-        SimulatedOrigin origin1 = new SimulatedOrigin(ORIGIN_ONE, 0.0);
-        SimulatedOrigin origin2 = new SimulatedOrigin(ORIGIN_TWO, 0.0);
-        SimulatedOrigin origin3 = new SimulatedOrigin(ORIGIN_THREE, 0.0);
-        SimulatedOrigin origin4 = new SimulatedOrigin(ORIGIN_FOUR, 0.0);
+        SimulatedOrigin origin1 = new SimulatedOrigin(ORIGIN_ONE);
+        SimulatedOrigin origin2 = new SimulatedOrigin(ORIGIN_TWO);
+        SimulatedOrigin origin3 = new SimulatedOrigin(ORIGIN_THREE);
+        SimulatedOrigin origin4 = new SimulatedOrigin(ORIGIN_FOUR);
         List<SimulatedOrigin> origins = newArrayList(origin1, origin2, origin3, origin4);
 
         Map<Origin, Integer> results = simulateLoadBalancerTraffic(origins, new SimulatedApp(5.0, origins));
@@ -119,15 +96,15 @@ public class BusyConnectionsStrategyStressTest {
         int responseLatency = 2 * 60 * 1000;
 
         List<SimulatedOrigin> origins = newArrayList(
-                new SimulatedOrigin(ORIGIN_ONE, 0.0, responseLatency),
-                new SimulatedOrigin(ORIGIN_TWO, 0.0, responseLatency + 200),
-                new SimulatedOrigin(ORIGIN_THREE, 0.0, responseLatency),
-                new SimulatedOrigin(ORIGIN_FOUR, 0.0, responseLatency),
-                new SimulatedOrigin(ORIGIN_FIVE, 0.0, responseLatency + 300),
-                new SimulatedOrigin(ORIGIN_SIX, 0.0, responseLatency),
-                new SimulatedOrigin(ORIGIN_SEVEN, 0.0, responseLatency),
-                new SimulatedOrigin(ORIGIN_EIGHT, 0.0, responseLatency + 400),
-                new SimulatedOrigin(ORIGIN_NINE, 0.0, responseLatency));
+                new SimulatedOrigin(ORIGIN_ONE, responseLatency),
+                new SimulatedOrigin(ORIGIN_TWO, responseLatency + 200),
+                new SimulatedOrigin(ORIGIN_THREE, responseLatency),
+                new SimulatedOrigin(ORIGIN_FOUR, responseLatency),
+                new SimulatedOrigin(ORIGIN_FIVE, responseLatency + 300),
+                new SimulatedOrigin(ORIGIN_SIX, responseLatency),
+                new SimulatedOrigin(ORIGIN_SEVEN, responseLatency),
+                new SimulatedOrigin(ORIGIN_EIGHT, responseLatency + 400),
+                new SimulatedOrigin(ORIGIN_NINE, responseLatency));
 
         Map<Origin, Integer> results = simulateLoadBalancerTraffic(origins, new SimulatedApp(5.0, origins));
 
@@ -203,12 +180,7 @@ public class BusyConnectionsStrategyStressTest {
 
             @Override
             public double oneMinuteRateForStatusCode5xx(Origin origin) {
-                SimulatedOrigin result = origins.stream()
-                        .filter(so -> so.origin().equals(origin))
-                        .findFirst()
-                        .get();
-
-                return result.status500Rate();
+                return 0.0;
             }
         };
     }
@@ -233,21 +205,18 @@ public class BusyConnectionsStrategyStressTest {
     }
 
     private static class SimulatedOrigin {
-        private final double status500Rate;
         private final int responseLatency;
 
         private final Origin origin;
         private final List<Integer> ongoingRequests = new ArrayList<>();
-        private final List<Integer> errorsInLastMinute = new ArrayList<>();
         private int maxOngoingrequests = 0;
 
-        public SimulatedOrigin(Origin origin, double status500Rate) {
-            this(origin, status500Rate, 100);
+        public SimulatedOrigin(Origin origin) {
+            this(origin, 100);
         }
 
-        public SimulatedOrigin(Origin origin, double status500Rate, int responseLatency) {
+        public SimulatedOrigin(Origin origin, int responseLatency) {
             this.origin = origin;
-            this.status500Rate = status500Rate;
             this.responseLatency = responseLatency;
         }
 
@@ -259,14 +228,6 @@ public class BusyConnectionsStrategyStressTest {
         public void advanceTime(int currentTime, int resolution, Random random) {
             if (ongoingRequests.size() > 0 && ongoingRequests.get(0) == currentTime) {
                 ongoingRequests.remove(0);
-
-                if (random.nextDouble() < status500Rate / 100) {
-                    errorsInLastMinute.add(currentTime + 60 * resolution);
-                }
-            }
-
-            if (errorsInLastMinute.size() > 0 && errorsInLastMinute.get(0) == currentTime) {
-                errorsInLastMinute.remove(0);
             }
         }
 
@@ -276,10 +237,6 @@ public class BusyConnectionsStrategyStressTest {
 
         public int busyConnections() {
             return ongoingRequests.size();
-        }
-
-        public double status500Rate() {
-            return errorsInLastMinute.size();
         }
 
         public int availableConnections() {

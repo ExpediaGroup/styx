@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client.loadbalancing.strategies;
 
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ActiveOrigins;
@@ -28,12 +27,10 @@ import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
 import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import org.testng.annotations.Test;
 
-import java.util.Map;
-
 import static com.google.common.collect.Iterables.transform;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
 import static com.hotels.styx.api.client.RemoteHost.remoteHost;
+import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -101,22 +98,6 @@ public class BusyConnectionsStrategyTest {
         assertThat(origins(sortedPool), contains(ORIGIN_THREE, ORIGIN_TWO, ORIGIN_ONE));
     }
 
-
-    @Test
-    public void movesHigherThanAverage500RatesToBackOfTheList() {
-        RemoteHost poolOne = remoteHost(ORIGIN_ONE, new StubConnectionPool(ORIGIN_ONE).withBusyConnections(2), mock(StyxHostHttpClient.class));
-        RemoteHost poolTwo = remoteHost(ORIGIN_TWO, new StubConnectionPool(ORIGIN_TWO).withBusyConnections(1), mock(StyxHostHttpClient.class));
-        RemoteHost poolThree = remoteHost(ORIGIN_THREE, new StubConnectionPool(ORIGIN_THREE).withBusyConnections(3), mock(StyxHostHttpClient.class));
-
-        when(activeOrigins.snapshot()).thenReturn(asList(poolOne, poolTwo, poolThree));
-        Iterable<RemoteHost> sortedPool = strategy.vote(lbContextWith5xxRates(ImmutableMap.of(
-                ORIGIN_ONE, 2.0,
-                ORIGIN_TWO, 3.0,
-                ORIGIN_THREE, 1.0)));
-
-        assertThat(origins(sortedPool), contains(ORIGIN_ONE, ORIGIN_THREE, ORIGIN_TWO));
-    }
-
     @Test
     public void movesOriginsWithNoAvailableConnectionsBehindTheGoodOnes() {
         ConnectionPool.Settings settings = new ConnectionPoolSettings.Builder()
@@ -135,21 +116,15 @@ public class BusyConnectionsStrategyTest {
     }
 
     @Test
-    public void ranksOriginsWith500ErrorRateFirstThenPoolDepthThenOnAvailableConnections() {
+    public void ranksOriginsWithPoolDepthFirstThenOnAvailableConnections() {
         RemoteHost poolOne = remoteHost(ORIGIN_ONE, new StubConnectionPool(ORIGIN_ONE).withBusyConnections(1).withAvailableConnections(0), mock(StyxHostHttpClient.class));
         RemoteHost poolTwo = remoteHost(ORIGIN_TWO, new StubConnectionPool(ORIGIN_TWO).withBusyConnections(1).withAvailableConnections(1), mock(StyxHostHttpClient.class));
-        RemoteHost poolThree = remoteHost(ORIGIN_THREE, new StubConnectionPool(ORIGIN_THREE).withBusyConnections(1).withAvailableConnections(1), mock(StyxHostHttpClient.class));
-        RemoteHost poolFour = remoteHost(ORIGIN_FOUR, new StubConnectionPool(ORIGIN_FOUR).withBusyConnections(2).withAvailableConnections(1), mock(StyxHostHttpClient.class));
+        RemoteHost poolThree = remoteHost(ORIGIN_THREE, new StubConnectionPool(ORIGIN_THREE).withBusyConnections(2).withAvailableConnections(1), mock(StyxHostHttpClient.class));
 
-        when(activeOrigins.snapshot()).thenReturn(asList(poolTwo, poolOne, poolThree, poolFour));
-        Iterable<RemoteHost> sortedPool = strategy.vote(lbContextWith5xxRates(ImmutableMap.of(
-                ORIGIN_ONE, 1.0,
-                ORIGIN_TWO, 3.0,
-                ORIGIN_THREE, 1.0,
-                ORIGIN_FOUR, 1.0
-        )));
+        when(activeOrigins.snapshot()).thenReturn(asList(poolTwo, poolOne, poolThree));
+        Iterable<RemoteHost> sortedPool = strategy.vote(mock(LoadBalancingStrategy.Context.class));
 
-        assertThat(origins(sortedPool), contains(ORIGIN_THREE, ORIGIN_ONE, ORIGIN_FOUR, ORIGIN_TWO));
+        assertThat(origins(sortedPool), contains(ORIGIN_TWO, ORIGIN_ONE, ORIGIN_THREE));
     }
 
     @Test
@@ -166,29 +141,7 @@ public class BusyConnectionsStrategyTest {
         assertThat(origins(sortedPool), contains(ORIGIN_TWO, ORIGIN_ONE));
     }
 
-    private LBContextAdapter lbContextWith5xxRates(Map<Origin, Double> ratesForOrigins) {
-        return new LBContextAdapter() {
-            @Override
-            public double oneMinuteRateForStatusCode5xx(Origin origin) {
-                return ratesForOrigins.get(origin);
-            }
-        };
-    }
-
     private static Iterable<Origin> origins(Iterable<RemoteHost> remoteHosts) {
         return transform(remoteHosts, remoteHost -> remoteHost.connectionPool().getOrigin());
-    }
-
-
-    static class LBContextAdapter implements LoadBalancingStrategy.Context {
-        @Override
-        public Id appId() {
-            return null;
-        }
-
-        @Override
-        public HttpRequest currentRequest() {
-            return null;
-        }
     }
 }
