@@ -67,7 +67,6 @@ public class BusyConnectionsStrategy implements LoadBalancingStrategy {
         shuffle(poolsList);
 
         poolsList.sort(byComparing(
-                (first, second) -> Boolean.compare(first.status5xxRate() > average5xxRate, second.status5xxRate() > average5xxRate),
                 (first, second) -> Integer.compare(first.busyConnectionCount(), second.busyConnectionCount()),
                 (first, second) -> Integer.compare(first.pendingConnectionCount(), second.pendingConnectionCount()),
                 (first, second) -> Boolean.compare(second.availableConnectionCount() > 0, first.availableConnectionCount() > 0)
