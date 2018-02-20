@@ -249,6 +249,8 @@ public class GraphiteReporter extends ScheduledReporter {
             attemptErrorHandling(graphite::connect);
         } else if (e.getCause() != null) {
             reconnectIfNecessary(e.getCause());
+        } else {
+            attemptErrorHandling(graphite::close);
         }
     }
 
