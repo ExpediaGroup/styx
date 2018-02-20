@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -30,6 +29,7 @@ import static com.hotels.styx.support.api.matchers.HttpHeadersMatcher.isNotCache
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_IMPLEMENTED;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -59,7 +59,8 @@ public class HealthCheckHandlerTest {
         HttpResponse response = handle(get("/healthcheck").build());
         assertThat(response.headers(), isNotCacheable());
         assertThat(response, hasStatus(OK));
-        assertThat(response, hasBody("{\"fun\":{\"healthy\":true,\"message\":\"whee\"}}"));
+        assertThat(response, hasBody(matchesRegex("\\{\"fun\":" +
+                "\\{\"healthy\":true,\"message\":\"whee\",\"timestamp\":\".*\"}}")));
     }
 
     @Test
@@ -88,7 +89,10 @@ public class HealthCheckHandlerTest {
         HttpResponse response = handle(get("/healthcheck").build());
         assertThat(response.headers(), isNotCacheable());
         assertThat(response, hasStatus(INTERNAL_SERVER_ERROR));
-        assertThat(response, hasBody("{\"fun\":{\"healthy\":true,\"message\":\"whee\"},\"notFun\":{\"healthy\":false,\"message\":\"whee\"}}"));
+        assertThat(response, hasBody(matchesRegex(
+                "\\{\"fun\":" +
+                        "\\{\"healthy\":true,\"message\":\"whee\",\"timestamp\":\".*\"},\"notFun\":" +
+                        "\\{\"healthy\":false,\"message\":\"whee\",\"timestamp\":\".*\"}}")));
     }
 
     private HttpResponse handle(HttpRequest request) {

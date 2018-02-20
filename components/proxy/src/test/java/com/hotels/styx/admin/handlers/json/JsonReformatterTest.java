@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ public class JsonReformatterTest {
                 "  \"timers\":{\n" +
                 "\n" +
                 "  },\n" +
-                "  \"version\":\"3.0.0\"\n" +
+                "  \"version\":\"3.1.3\"\n" +
                 "}"));
     }
 
