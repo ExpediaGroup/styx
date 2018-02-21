@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,7 +171,7 @@ public class GraphiteReporterTest {
         assertThat(reported.sent(), hasItem("prefix.timer.max, 5678.00"));
 
         // connects when report is called, and then again after an IOException
-        verify(graphite, times(2)).connect();
+        verify(graphite, times(6)).connect();
     }
 
     @Test(dataProvider = "metricTypes")
