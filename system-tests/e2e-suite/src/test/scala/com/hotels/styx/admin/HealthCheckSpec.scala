@@ -77,7 +77,7 @@ class HealthCheckSpec extends FunSpec
 
         assert(healthCheckResponse.status == INTERNAL_SERVER_ERROR)
         assert(healthCheckResponse.isNotCacheAble())
-        healthCheckResponse.bodyAs(UTF_8) should include regex "\\{\"errors.rate.500\":\\{\"healthy\":false,\"message\":\"error count=[0-9]+ m1_rate=[0-9.]+ is greater than 1.0\"}"
+        healthCheckResponse.bodyAs(UTF_8) should include regex "\\{\"errors.rate.500\":\\{\"healthy\":false,\"message\":\"error count=[0-9]+ m1_rate=[0-9.]+ is greater than 1.0\",\"timestamp\":\".*\"}"
       }
     }
   }

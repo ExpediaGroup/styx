@@ -44,6 +44,6 @@ public class MetricsHandlerTest {
     public void exposesRegisteredMetrics() {
         metricRegistry.counter("foo").inc();
         FullHttpResponse response = waitForResponse(handler.handle(get("/metrics").build()));
-        assertThat(response.bodyAs(UTF_8), is("{\"version\":\"3.0.0\",\"gauges\":{},\"counters\":{\"foo\":{\"count\":1}},\"histograms\":{},\"meters\":{},\"timers\":{}}"));
+        assertThat(response.bodyAs(UTF_8), is("{\"version\":\"3.1.3\",\"gauges\":{},\"counters\":{\"foo\":{\"count\":1}},\"histograms\":{},\"meters\":{},\"timers\":{}}"));
     }
 }

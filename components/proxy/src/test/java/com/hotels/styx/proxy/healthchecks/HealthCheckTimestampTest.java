@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.testng.annotations.Test;
 import java.time.Instant;
 
 import static com.hotels.styx.api.Clocks.stoppedClock;
-import static org.hamcrest.CoreMatchers.is;
+import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class HealthCheckTimestampTest {
@@ -29,6 +29,7 @@ public class HealthCheckTimestampTest {
 
     @Test
     public void printsTheCurrentTime() throws Exception {
-        assertThat(healthCheckTimestamp.check().toString(), is("Result{isHealthy=true, message=1970-01-01T00:00:00.001+0000}"));
+        assertThat(healthCheckTimestamp.check().toString(), matchesRegex(
+                "Result\\{isHealthy=true, message=1970-01-01T00:00:00.001\\+0000, timestamp=.*\\}"));
     }
 }

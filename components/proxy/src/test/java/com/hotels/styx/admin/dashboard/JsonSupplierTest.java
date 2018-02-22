@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public class JsonSupplierTest {
 
         JsonSupplier supplier = JsonSupplier.create(() -> metricsRegistry, new MetricsModule(SECONDS, MILLISECONDS, false));
 
-        assertThat(supplier.get(), is("{\"version\":\"3.0.0\",\"gauges\":{\"gauge\":{\"value\":\"foo\"}},\"counters\":{\"counter\":{\"count\":7}},\"histograms\":{},\"meters\":{},\"timers\":{}}"));
+        assertThat(supplier.get(), is("{\"version\":\"3.1.3\",\"gauges\":{\"gauge\":{\"value\":\"foo\"}},\"counters\":{\"counter\":{\"count\":7}},\"histograms\":{},\"meters\":{},\"timers\":{}}"));
     }
 
     private Gauge<String> gauge(String value) {

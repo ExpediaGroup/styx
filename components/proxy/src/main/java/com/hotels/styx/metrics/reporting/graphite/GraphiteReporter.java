@@ -208,10 +208,6 @@ public class GraphiteReporter extends ScheduledReporter {
         long timestamp = clock.getTime() / 1000;
 
         try {
-            if (!graphite.isConnected()) {
-                graphite.connect();
-            }
-
             gauges.forEach((name, gauge) ->
                     doReport(name, gauge, timestamp, this::reportGauge));
 
@@ -230,12 +226,20 @@ public class GraphiteReporter extends ScheduledReporter {
             graphite.flush();
         } catch (Exception e) {
             LOGGER.error("Error reporting metrics" + e.getMessage(), e);
-            reconnectIfNecessary(e);
+            try {
+                graphite.close();
+            } catch (IOException e1) {
+                LOGGER.warn("Error closing Graphite", graphite, e1);
+            }
         }
     }
 
     private <M extends Metric> void doReport(String name, M metric, long timestamp, MetricReportingAction<M> consumer) {
         try {
+            if (!graphite.isConnected()) {
+                graphite.connect();
+            }
+
             consumer.execute(name, metric, timestamp);
         } catch (Exception e) {
             LOGGER.error("Error reporting metric '" + name + "': " + e.getMessage(), e);
