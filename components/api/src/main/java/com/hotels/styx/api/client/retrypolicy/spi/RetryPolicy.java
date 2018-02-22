@@ -79,13 +79,6 @@ public interface RetryPolicy {
         long retryIntervalMillis();
 
         /**
-         * Returns the origin that the next retry should target.
-         *
-         * @return A {@link ConnectionPool} that the next retry should target
-         */
-        Optional<RemoteHost> nextOrigin();
-
-        /**
          * Specifies if the current outcome is to retry or not.
          *
          * @return true if the operation should be retried
