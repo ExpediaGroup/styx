@@ -76,7 +76,7 @@ class ExpiringConnectionSpec extends FunSpec
 
     assertThat(response1.status(), is(OK))
 
-    eventually(timeout(1.seconds)) {
+    eventually(timeout(2.seconds)) {
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(0)
     }
