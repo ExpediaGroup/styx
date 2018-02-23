@@ -47,6 +47,7 @@ class ExpiringConnectionSpec extends FunSpec
     .start()
     .stub(urlStartingWith("/app1"), aResponse
       .withStatus(200)
+      .withHeader("ExpiringConnectionSpec", "x")
       .withHeader(TRANSFER_ENCODING, CHUNKED)
       .withBody("I should be here!")
     )
@@ -57,6 +58,10 @@ class ExpiringConnectionSpec extends FunSpec
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
+    val request = get(s"http://localhost:${mockServer.port()}/app1/expiry1").build()
+    val resp = decodedRequest(request)
+    resp.status() should be(OK)
+    resp.bodyAs(UTF_8) should be("I should be here!")
 
     styxServer.setBackends(
       "/app1" -> HttpBackend("appOne", Origins(mockServer), responseTimeout = 5.seconds,
@@ -72,6 +77,7 @@ class ExpiringConnectionSpec extends FunSpec
 
   override protected def afterAll(): Unit = {
     mockServer.stop()
+    println("Metrics Snapshot after ExpiringConnectionSpec: \n" + styxServer.metricsSnapshot)
     super.afterAll()
   }
 
@@ -79,8 +85,7 @@ class ExpiringConnectionSpec extends FunSpec
     val request = get(styxServer.routerURL("/app1"))
       .build()
 
-
-    val response1 = waitForResponse(pooledClient.sendRequest(request))
+    val response1 = waitForResponse(pooledClient.sendRequest(get(styxServer.routerURL("/app1/expiry2")).build()))
 
     assertThat(response1.status(), is(OK))
 
@@ -91,8 +96,8 @@ class ExpiringConnectionSpec extends FunSpec
 
     Thread.sleep(1000)
 
-    val response2 = waitForResponse(pooledClient.sendRequest(request))
-
+    val response2 = waitForResponse(pooledClient.sendRequest(get(styxServer.routerURL("/app1/expiry3")).build()))
+    
     eventually(timeout(2.seconds)) {
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-terminated").get should be(1)
