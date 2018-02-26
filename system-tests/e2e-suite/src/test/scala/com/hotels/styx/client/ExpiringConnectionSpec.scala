@@ -26,7 +26,7 @@ import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.applications.BackendService
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
-import com.hotels.styx.support.api.BlockingObservables.waitForResponse
+import com.hotels.styx.support.api.BlockingObservables.waitForSingleResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
@@ -58,7 +58,7 @@ class ExpiringConnectionSpec extends FunSpec
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val request = get(s"http://localhost:${mockServer.port()}/app1/expiry1").build()
+    val request = get(s"http://localhost:${mockServer.port()}/app1/origin-ping").build()
     val resp = decodedRequest(request)
     resp.status() should be(OK)
     resp.bodyAs(UTF_8) should be("I should be here!")
@@ -77,15 +77,13 @@ class ExpiringConnectionSpec extends FunSpec
 
   override protected def afterAll(): Unit = {
     mockServer.stop()
-    println("Metrics Snapshot after ExpiringConnectionSpec: \n" + styxServer.metricsSnapshot)
     super.afterAll()
   }
 
   it("Should expire connection after 1 second") {
-    val request = get(styxServer.routerURL("/app1"))
-      .build()
+    val request = get(styxServer.routerURL("/app1")).build()
 
-    val response1 = waitForResponse(pooledClient.sendRequest(get(styxServer.routerURL("/app1/expiry2")).build()))
+    val response1 = waitForSingleResponse(pooledClient.sendRequest(request))
 
     assertThat(response1.status(), is(OK))
 
@@ -96,8 +94,9 @@ class ExpiringConnectionSpec extends FunSpec
 
     Thread.sleep(1000)
 
-    val response2 = waitForResponse(pooledClient.sendRequest(get(styxServer.routerURL("/app1/expiry3")).build()))
-    
+    val response2 = waitForSingleResponse(pooledClient.sendRequest(request))
+    assertThat(response2.status(), is(OK))
+
     eventually(timeout(2.seconds)) {
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-terminated").get should be(1)
