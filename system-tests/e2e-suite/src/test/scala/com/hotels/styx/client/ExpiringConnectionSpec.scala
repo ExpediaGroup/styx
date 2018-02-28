@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import com.hotels.styx.api.HttpRequest.Builder._
+import com.hotels.styx.api.client.Origin.newOriginBuilder
 import com.hotels.styx.api.client.{ActiveOrigins, Origin}
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
@@ -52,13 +53,15 @@ class ExpiringConnectionSpec extends FunSpec
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    
+
     styxServer.setBackends(
       "/app1" -> HttpBackend("appOne", Origins(mockServer), responseTimeout = 5.seconds,
         connectionPoolConfig = ConnectionPoolSettings(connectionExpirationSeconds = 1L))
     )
 
-    val backendService = new BackendService.Builder().origins(Origin.newOriginBuilder("localhost", styxServer.httpPort).build()).build()
+    val backendService = new BackendService.Builder()
+      .origins(newOriginBuilder("localhost", styxServer.httpPort).build())
+      .build()
 
     pooledClient = newHttpClientBuilder(backendService)
       .loadBalancingStrategy(roundRobinStrategy(activeOrigins(backendService)))
