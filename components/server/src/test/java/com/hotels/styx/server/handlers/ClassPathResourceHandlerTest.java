@@ -23,9 +23,7 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.messages.HttpResponseStatus.FORBIDDEN;
-import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.*;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -37,12 +35,13 @@ public class ClassPathResourceHandlerTest {
 
     @Test
     public void readsClassPathResources() throws IOException {
+        String expectedMessage = "Foo"+System.lineSeparator()+"Bar"+System.lineSeparator();
         HttpRequest request = get("/admin/dashboard/expected.txt").build();
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.contentLength(), isValue("Foo\nBar\n".length()));
-        assertThat(response.bodyAs(UTF_8), is("Foo\nBar\n"));
+        assertThat(response.contentLength(), isValue(expectedMessage.length()));
+        assertThat(response.bodyAs(UTF_8), is(expectedMessage));
     }
 
     @Test

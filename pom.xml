@@ -887,9 +887,9 @@
         <artifactId>license-maven-plugin</artifactId>
         <version>3.0</version>
         <configuration>
-          <header>file://${main.basedir}/src/license/templates/APACHE-2.txt</header>
+          <header>file:///${main.basedir}/src/license/templates/APACHE-2.txt</header>
           <headerDefinitions>
-            <headerDefinition>file://${main.basedir}/src/license/header-definitions.xml</headerDefinition>
+            <headerDefinition>file:///${main.basedir}/src/license/header-definitions.xml</headerDefinition>
           </headerDefinitions>
           <properties>
             <owner>Expedia Inc.</owner>

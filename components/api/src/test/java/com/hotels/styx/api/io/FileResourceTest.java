@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2013-2017 Expedia Inc.
+/*
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 
 import static com.google.common.io.Files.createTempDir;
 import static com.google.common.io.Files.write;
@@ -65,7 +64,7 @@ public class FileResourceTest {
 
         assertThat(resource.path(), is(absolutePath));
         assertThat(resource.absolutePath(), is(absolutePath));
-        assertThat(resource.url(), is(new URL("file:" + absolutePath)));
+        assertThat(resource.url(), is(tempFile.toURI().toURL()));
         assertThat(resource, contains(TEMP_FILE_CONTENT));
     }
 
@@ -87,21 +86,22 @@ public class FileResourceTest {
 
         assertThat(resource.path(), is(absolutePath));
         assertThat(resource.absolutePath(), is(absolutePath));
-        assertThat(resource.url(), is(new URL("file:" + absolutePath)));
+        assertThat(resource.url(), is(tempFile.toURI().toURL()));
         assertThat(resource, contains(TEMP_FILE_CONTENT));
     }
 
     @Test
     public void readsValidResourceFromDirectoryAndFile() throws MalformedURLException {
         FileResource resource = new FileResource(tempDir, namedTempFile);
-
+        File expectedFile = new File(tempDir,"test.txt");
         assertThat(resource.path(), is("test.txt"));
-        assertThat(resource.absolutePath(), is(tempDir + "/test.txt"));
-        assertThat(resource.url(), is(new URL("file:" + tempDir + "/test.txt")));
+
+        assertThat(resource.absolutePath(), is(expectedFile.getPath()));
+        assertThat(resource.url(), is(expectedFile.toURI().toURL()));
         assertThat(resource, contains(NAMED_TEMP_FILE_CONTENT));
     }
 
-    @Test(expectedExceptions = FileNotFoundException.class, expectedExceptionsMessageRegExp = "foobar \\(No such file or directory\\)")
+    @Test(expectedExceptions = FileNotFoundException.class, expectedExceptionsMessageRegExp = "foobar.*")
     public void nonExistentResourceThrowsExceptionWhenTryingToGetInputStream() throws IOException {
         FileResource resource = new FileResource("foobar");
 

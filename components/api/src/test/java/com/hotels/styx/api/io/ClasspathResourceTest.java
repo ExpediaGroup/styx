@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2013-2017 Expedia Inc.
+/*
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public class ClasspathResourceTest {
         assertThat(resource.path(), is("com/hotels/styx/api/io/resource.txt"));
         assertThat(resource.absolutePath(), is(absolutePath("/com/hotels/styx/api/io/resource.txt")));
         assertThat(resource.url(), is(new URL("file:" + absolutePath("/com/hotels/styx/api/io/resource.txt"))));
-        assertThat(resource, contains("This is an example resource.\nIt has content to use in automated tests."));
+        assertThat(resource, contains("This is an example resource."+System.lineSeparator()+"It has content to use in automated tests."));
     }
 
     @DataProvider(name = "validPaths")

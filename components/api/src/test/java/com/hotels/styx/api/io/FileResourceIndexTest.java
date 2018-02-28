@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2013-2017 Expedia Inc.
+/*
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
 public class FileResourceIndexTest {
-    Path PLUGINS_FIXTURE_PATH = ResourcePaths.fixturesHome(FileResourceIndexTest.class, "/plugins");
-    FileResourceIndex resourceIndex = new FileResourceIndex();
+    private Path PLUGINS_FIXTURE_PATH = ResourcePaths.fixturesHome(FileResourceIndexTest.class, "/plugins");
+    private FileResourceIndex resourceIndex = new FileResourceIndex();
+    private String EXISTING_PLUGIN_RELPATH = "oneplugin/url-rewrite-1.0-SNAPSHOT.jar";
 
     @Test
     public void listsResourcesFromFileSystemDirectory() {
         Iterable<Resource> jars = resourceIndex.list(PLUGINS_FIXTURE_PATH.toString(), ".jar");
 
-        assertThat(jars, contains(resourceWithPath("oneplugin/url-rewrite-1.0-SNAPSHOT.jar")));
+        assertThat(jars, contains(resourceWithPath(EXISTING_PLUGIN_RELPATH)));
     }
 
     @Test
