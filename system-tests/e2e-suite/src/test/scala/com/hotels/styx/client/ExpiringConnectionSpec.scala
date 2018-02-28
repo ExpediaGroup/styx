@@ -18,15 +18,19 @@ package com.hotels.styx.client
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
+import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import com.hotels.styx.api.HttpRequest.Builder._
+import com.hotels.styx.api.client.Origin.newOriginBuilder
+import com.hotels.styx.api.client.{ActiveOrigins, Origin}
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
+import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
+import com.hotels.styx.client.applications.BackendService
+import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
-import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
-import io.netty.handler.codec.http.HttpHeaders.Names._
-import io.netty.handler.codec.http.HttpHeaders.Values._
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
 import org.scalatest.FunSpec
@@ -35,19 +39,17 @@ import org.scalatest.concurrent.Eventually
 import scala.concurrent.duration._
 
 class ExpiringConnectionSpec extends FunSpec
+  with DefaultStyxConfiguration
   with StyxProxySpec
-  with StyxClientSupplier
   with Eventually {
 
   val mockServer = FakeHttpServer.HttpStartupConfig()
     .start()
     .stub(urlStartingWith("/app1"), aResponse
       .withStatus(200)
-      .withHeader(TRANSFER_ENCODING, CHUNKED)
-      .withBody("I should be here!")
     )
 
-  override val styxConfig = StyxConfig()
+  var pooledClient: StyxHttpClient = _
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -57,10 +59,13 @@ class ExpiringConnectionSpec extends FunSpec
         connectionPoolConfig = ConnectionPoolSettings(connectionExpirationSeconds = 1L))
     )
 
-    val request = get(s"http://localhost:${mockServer.port()}/app1").build()
-    val resp = decodedRequest(request)
-    resp.status() should be(OK)
-    resp.bodyAs(UTF_8) should be("I should be here!")
+    val backendService = new BackendService.Builder()
+      .origins(newOriginBuilder("localhost", styxServer.httpPort).build())
+      .build()
+
+    pooledClient = newHttpClientBuilder(backendService)
+      .loadBalancingStrategy(roundRobinStrategy(activeOrigins(backendService)))
+      .build
   }
 
   override protected def afterAll(): Unit = {
@@ -69,25 +74,29 @@ class ExpiringConnectionSpec extends FunSpec
   }
 
   it("Should expire connection after 1 second") {
-    val request = get(styxServer.routerURL("/app1"))
-      .build()
+    val request = get(styxServer.routerURL("/app1")).build()
 
-    val response1 = waitForResponse(client.sendRequest(request))
+    val response1 = waitForResponse(pooledClient.sendRequest(request))
 
     assertThat(response1.status(), is(OK))
 
-    eventually(timeout(2.seconds)) {
+    eventually(timeout(1.seconds)) {
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-closed").get should be(0)
     }
 
     Thread.sleep(1000)
 
-    val response2 = waitForResponse(client.sendRequest(request))
+    val response2 = waitForResponse(pooledClient.sendRequest(request))
+    assertThat(response2.status(), is(OK))
 
     eventually(timeout(2.seconds)) {
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.available-connections").get should be(1)
       styxServer.metricsSnapshot.gauge(s"origins.appOne.generic-app-01.connectionspool.connections-terminated").get should be(1)
     }
   }
+
+  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(backendService).build()
+
+  def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins)
 }
