@@ -88,19 +88,19 @@ public class OriginsInventoryHandlerTest {
         eventBus.post(new OriginsSnapshot(APP_ID, pool(emptySet()), pool(emptySet()), pool(disabledOrigins)));
 
         FullHttpResponse response = waitForResponse(handler.handle(get("/?pretty=1").build()));
-        assertThat(response.bodyAs(UTF_8), matchesRegex("\\{\n" +
-                "  \"" + APP_ID + "\" : \\{\n" +
-                "    \"appId\" : \"" + APP_ID + "\",\n" +
-                "    \"activeOrigins\" : \\[ ],\n" +
-                "    \"inactiveOrigins\" : \\[ ],\n" +
-                "    \"disabledOrigins\" : \\[ \\{\n" +
-                "      \"id\" : \"origin.\",\n" +
-                "      \"host\" : \"localhost:....\"\n" +
-                "    }, \\{\n" +
-                "      \"id\" : \"origin.\",\n" +
-                "      \"host\" : \"localhost:....\"\n" +
-                "    } ]\n" +
-                "  }\n" +
+        assertThat(response.bodyAs(UTF_8), matchesRegex("\\{\\R" +
+                "  \"" + APP_ID + "\" : \\{\\R" +
+                "    \"appId\" : \"" + APP_ID + "\",\\R" +
+                "    \"activeOrigins\" : \\[ ],\\R" +
+                "    \"inactiveOrigins\" : \\[ ],\\R" +
+                "    \"disabledOrigins\" : \\[ \\{\\R" +
+                "      \"id\" : \"origin.\",\\R" +
+                "      \"host\" : \"localhost:....\"\\R" +
+                "    }, \\{\\R" +
+                "      \"id\" : \"origin.\",\\R" +
+                "      \"host\" : \"localhost:....\"\\R" +
+                "    } ]\\R" +
+                "  }\\R" +
                 "}"));
     }
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.messages.FullHttpResponse;
 import org.testng.annotations.Test;
 import rx.Observable;
+
+import java.io.File;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
@@ -45,7 +47,9 @@ public class StyxConfigurationHandlerTest {
 
         FullHttpResponse adminPageResponse = waitForResponse(browseForCurrentConfiguration(yaml, false));
 
-        assertThat(adminPageResponse.bodyAs(UTF_8), is("{\"proxy\":{\"connectors\":{\"http\":{\"port\":8080}}},\"loadBalancing\":{\"strategy\":\"ROUND_ROBIN\"},\"originsFile\":\"" + ORIGINS_FILE + "\"}\n"));
+        assertThat(adminPageResponse.bodyAs(UTF_8), is("{\"proxy\":{\"connectors\":{\"http\":{\"port\":8080}}}," +
+                "\"loadBalancing\":{\"strategy\":\"ROUND_ROBIN\"},\"originsFile\":\"" +
+                formatPathLikeYamlConfig(ORIGINS_FILE) + "\"}\n"));
     }
 
     @Test
@@ -61,19 +65,26 @@ public class StyxConfigurationHandlerTest {
 
         FullHttpResponse adminPageResponse = waitForResponse(browseForCurrentConfiguration(yaml, true));
 
-        assertThat(adminPageResponse.bodyAs(UTF_8), is("{\n" +
-                        "  \"proxy\" : {\n" +
-                        "    \"connectors\" : {\n" +
-                        "      \"http\" : {\n" +
-                        "        \"port\" : 8080\n" +
-                        "      }\n" +
-                        "    }\n" +
-                        "  },\n" +
-                        "  \"loadBalancing\" : {\n" +
-                        "    \"strategy\" : \"ROUND_ROBIN\"\n" +
-                        "  },\n" +
-                        "  \"originsFile\" : \"" + ORIGINS_FILE + "\"\n" +
-                        "}"));
+        assertThat(adminPageResponse.bodyAs(UTF_8), is(("{\n" +
+                "  \"proxy\" : {\n" +
+                "    \"connectors\" : {\n" +
+                "      \"http\" : {\n" +
+                "        \"port\" : 8080\n" +
+                "      }\n" +
+                "    }\n" +
+                "  },\n" +
+                "  \"loadBalancing\" : {\n" +
+                "    \"strategy\" : \"ROUND_ROBIN\"\n" +
+                "  },\n" +
+                "  \"originsFile\" : \"" + formatPathLikeYamlConfig(ORIGINS_FILE) + "\"\n" +
+                "}").replace("\n", System.lineSeparator())));
+    }
+
+    private static String formatPathLikeYamlConfig(String path) {
+        if (File.separator.equals("\\")) {
+            return path.replace("\\", "\\\\");
+        }
+        return path;
     }
 
     private static Observable<HttpResponse> browseForCurrentConfiguration(String yaml, boolean pretty) {

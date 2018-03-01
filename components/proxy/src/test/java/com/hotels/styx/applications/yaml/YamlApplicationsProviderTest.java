@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 package com.hotels.styx.applications.yaml;
 
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.client.ssl.TlsSettings;
 import com.hotels.styx.client.RewriteConfig;
 import com.hotels.styx.client.applications.ApplicationsProvider;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.applications.BackendServices;
+import com.hotels.styx.client.ssl.TlsSettings;
 import org.hamcrest.CoreMatchers;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -33,14 +33,14 @@ import java.util.stream.StreamSupport;
 
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.client.ssl.Certificate.certificate;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadApplicationsFrom;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadFromPath;
-import static com.hotels.styx.support.ApplicationConfigurationMatcher.anApplication;
 import static com.hotels.styx.client.applications.BackendService.Protocol.HTTP;
 import static com.hotels.styx.client.applications.BackendService.Protocol.HTTPS;
 import static com.hotels.styx.client.healthcheck.HealthCheckConfig.newHealthCheckConfigBuilder;
+import static com.hotels.styx.client.ssl.Certificate.certificate;
 import static com.hotels.styx.client.stickysession.StickySessionConfig.newStickySessionConfigBuilder;
+import static com.hotels.styx.support.ApplicationConfigurationMatcher.anApplication;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -211,7 +211,7 @@ public class YamlApplicationsProviderTest {
         loadFromPath("classpath:/conf/origins/empty-origins-for-configtest.yml");
     }
 
-    @Test(expectedExceptions = Exception.class, expectedExceptionsMessageRegExp = "Unable to load YAML from /sadiusadasd: /sadiusadasd \\(No such file or directory\\)")
+    @Test(expectedExceptions = Exception.class, expectedExceptionsMessageRegExp = "Unable to load YAML from.*")
     public void doesNotLoadIfFileDoesNotExist() {
         loadFromPath("/sadiusadasd");
     }

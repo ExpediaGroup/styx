@@ -25,9 +25,7 @@ import org.testng.annotations.Test;
 import java.util.List;
 
 import static com.hotels.styx.api.HttpRequest.Builder.put;
-import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
-import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.*;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -61,7 +59,7 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.bodyAs(UTF_8), is("{\"message\":\"State of 'off' changed to 'enabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"enabled\"}}\n"));
+        assertThat(response.bodyAs(UTF_8), is("{\"message\":\"State of 'off' changed to 'enabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"enabled\"}}"+System.lineSeparator()));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(true));
     }
@@ -73,7 +71,7 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.bodyAs(UTF_8), is("{\"message\":\"State of 'on' changed to 'disabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"disabled\"}}\n"));
+        assertThat(response.bodyAs(UTF_8), is("{\"message\":\"State of 'on' changed to 'disabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"disabled\"}}"+System.lineSeparator()));
         assertThat(initiallyEnabled.enabled(), is(false));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -85,7 +83,7 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.bodyAs(UTF_8), is("{\"message\":\"State of 'off' was already 'disabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"disabled\"}}\n"));
+        assertThat(response.bodyAs(UTF_8), is("{\"message\":\"State of 'off' was already 'disabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"disabled\"}}"+System.lineSeparator()));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -97,7 +95,7 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.bodyAs(UTF_8), is("{\"message\":\"State of 'on' was already 'enabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"enabled\"}}\n"));
+        assertThat(response.bodyAs(UTF_8), is("{\"message\":\"State of 'on' was already 'enabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"enabled\"}}"+System.lineSeparator()));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -109,7 +107,7 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(BAD_REQUEST));
-        assertThat(response.bodyAs(UTF_8), is("Invalid URL\n"));
+        assertThat(response.bodyAs(UTF_8), is("Invalid URL"+System.lineSeparator()));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -121,7 +119,7 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(BAD_REQUEST));
-        assertThat(response.bodyAs(UTF_8), is("No such state: only 'true' and 'false' are valid.\n"));
+        assertThat(response.bodyAs(UTF_8), is("No such state: only 'true' and 'false' are valid."+System.lineSeparator()));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -133,7 +131,7 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(NOT_FOUND));
-        assertThat(response.bodyAs(UTF_8), is("No such plugin\n"));
+        assertThat(response.bodyAs(UTF_8), is("No such plugin"+System.lineSeparator()));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -145,7 +143,7 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(BAD_REQUEST));
-        assertThat(response.bodyAs(UTF_8), is("No such state: only 'true' and 'false' are valid.\n"));
+        assertThat(response.bodyAs(UTF_8), is("No such state: only 'true' and 'false' are valid."+System.lineSeparator()));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }

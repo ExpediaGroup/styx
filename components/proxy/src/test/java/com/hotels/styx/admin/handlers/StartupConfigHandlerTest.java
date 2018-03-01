@@ -23,6 +23,7 @@ import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
+import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -41,10 +42,10 @@ public class StartupConfigHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.bodyAs(UTF_8), is("<html><body>" +
-                "Styx Home='/foo'" +
-                "<br />Config File Location='/bar/configure-me.yml'" +
-                "<br />Log Config Location='/baz/logback-conf.xml'" +
+        assertThat(response.bodyAs(UTF_8), matchesRegex("<html><body>" +
+                "Styx Home='[/\\\\]foo'" +
+                "<br />Config File Location='.*[/\\\\]bar[/\\\\]configure-me.yml'" +
+                "<br />Log Config Location='.*[/\\\\]baz[/\\\\]logback-conf.xml'" +
                 "</body></html>"));
     }
 }

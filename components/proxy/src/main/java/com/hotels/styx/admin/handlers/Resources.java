@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,13 @@ package com.hotels.styx.admin.handlers;
 import com.hotels.styx.api.Resource;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
 
+import static com.google.common.base.Throwables.propagate;
 import static java.lang.System.lineSeparator;
 import static java.util.stream.Collectors.joining;
 
@@ -31,7 +33,11 @@ final class Resources {
     }
 
     public static String load(Resource resource) throws IOException {
-        return fileContents(Paths.get(resource.absolutePath()));
+        try {
+            return fileContents(Paths.get(resource.url().toURI()));
+        }catch (URISyntaxException e){
+            throw propagate(e);
+        }
     }
 
     private static String fileContents(Path path) throws IOException {

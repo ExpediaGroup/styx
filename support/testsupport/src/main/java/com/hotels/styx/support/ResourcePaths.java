@@ -15,10 +15,12 @@
  */
 package com.hotels.styx.support;
 
+import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static com.google.common.base.Throwables.propagate;
 import static java.lang.String.format;
 
 public final class ResourcePaths {
@@ -27,14 +29,19 @@ public final class ResourcePaths {
     }
 
     public static String fixturesHome() {
-        return ResourcePaths.class.getResource("/").getPath();
+        try {
+            return Paths.get(ResourcePaths.class.getResource("/").toURI()).toString() + File.separator;
+        } catch (URISyntaxException e) {
+            throw propagate(e);
+        }
     }
+
 
     public static Path fixturesHome(Class clazz, String path) {
         System.out.println(format("clazz.getResource(%s) -> ", path) + clazz.getResource(path));
         try {
             return Paths.get(clazz.getResource(path).toURI());
-        }catch (URISyntaxException e){
+        } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }

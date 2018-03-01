@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class FileSystemPluginFactoryLoaderTest {
                     "name=pluginA, " +
                     "factory=ObjectFactory\\{" +
                     "factoryClass=incorrect.plugin.class.name.TestPluginModule, " +
-                    "classPath=.*/components/proxy/target/test-classes/plugins/oneplugin/testPluginA-1.0-SNAPSHOT.jar" +
+                    "classPath=.*[\\\\/]components[\\\\/]proxy[\\\\/]target[\\\\/]test-classes[\\\\/]plugins[\\\\/]oneplugin[\\\\/]testPluginA-1.0-SNAPSHOT.jar" +
                     "\\}\\}")
     public void providesMeaningfulErrorMessageWhenConfiguredFactoryClassCannotBeLoaded() throws URISyntaxException {
         String jarFile = "/plugins/oneplugin/testPluginA-1.0-SNAPSHOT.jar";
