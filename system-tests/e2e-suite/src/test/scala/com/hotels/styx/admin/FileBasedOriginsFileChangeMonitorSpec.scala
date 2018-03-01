@@ -21,9 +21,8 @@ import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import java.nio.file.{Files, Path, Paths}
 
 import com.google.common.io.Files.createTempDir
-import com.hotels.styx.api.messages.FullHttpRequest.{get, post}
+import com.hotels.styx.api.messages.FullHttpRequest.get
 import com.hotels.styx.api.messages.HttpResponseStatus
-import com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
@@ -70,12 +69,19 @@ class FileBasedOriginsFileChangeMonitorSpec extends FunSpec
        |    http:
        |      port: 0
        |
+       |admin:
+       |  connectors:
+       |    http:
+       |      port: 0
+       |
        |services:
        |  factories:
        |    backendServiceRegistry:
        |      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry$$Factory"
        |      config:
        |        originsFile: "${styxOriginsFile.toString}"
+       |        monitor:
+       |          enabled: true
     """.stripMargin
 
   writeConfig(styxOriginsFile, configTemplate.format("appv1", "/app01/", origin.port()))
@@ -96,10 +102,7 @@ class FileBasedOriginsFileChangeMonitorSpec extends FunSpec
 
     writeConfig(styxOriginsFile, configTemplate.format("appv2", "/app02/", origin.port()))
 
-//    waitForResponse(
-//      client.sendRequest(
-//        post(styxServer.adminURL("/admin/tasks/origins/reload")).build().toStreamingRequest
-//      )).status() should be(HttpResponseStatus.OK)
+    Thread.sleep(11000)
 
     waitForResponse(client.sendRequest(reqToApp01.toStreamingRequest)).status() should be (HttpResponseStatus.BAD_GATEWAY)
     waitForResponse(client.sendRequest(reqToApp02.toStreamingRequest)).status() should be (HttpResponseStatus.OK)

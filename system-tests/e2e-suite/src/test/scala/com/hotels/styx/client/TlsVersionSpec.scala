@@ -152,10 +152,9 @@ class TlsVersionSpec extends FunSpec
         getRequestedFor(urlEqualTo("/tlsDefault/b1"))
           .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")))
 
-
-      val response = decodedRequest(httpRequest("/tls12/b2"))
-      assert(response.status() == OK)
-      assert(response.bodyAs(UTF_8) == "Hello, World!")
+      val response2 = decodedRequest(httpRequest("/tls12/b2"))
+      assert(response2.status() == OK)
+      assert(response2.bodyAs(UTF_8) == "Hello, World!")
 
       appOriginTlsv12.verify(
         getRequestedFor(urlEqualTo("/tls12/b2"))

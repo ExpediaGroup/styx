@@ -25,22 +25,53 @@ import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.common.StyxFutures;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
+import com.hotels.styx.proxy.backends.file.FileChangeMonitor.FileMonitorSettings;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
+import static com.google.common.io.Files.createTempDir;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.serviceproviders.ServiceProvision.loadService;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class FileBackedBackendServicesRegistryFactoryTest {
+
+    private File tempDir;
+    private Path monitoredFile;
+
+    @BeforeMethod
+    public void setUp() throws Exception {
+        tempDir = createTempDir();
+        monitoredFile = Paths.get(tempDir.toString(), "origins.yml");
+        write(monitoredFile, "content-v1");
+    }
+
+    @AfterMethod
+    public void tearDown() throws Exception {
+        Files.delete(monitoredFile);
+        Files.delete(tempDir.toPath());
+    }
+
+
     @Test
     public void instantiatesFromYaml() {
         Environment environment = environment("classpath:conf/environment/backend-factory-config.yml");
@@ -72,9 +103,34 @@ public class FileBackedBackendServicesRegistryFactoryTest {
         new FileBackedBackendServicesRegistry.Factory().create(environment, configuration);
     }
 
-    private Configuration mockConfiguration(Optional<String> s) {
+    @Test
+    public void fileMonitorIsTurnedOffByDefault() {
+        Environment environment = new com.hotels.styx.Environment.Builder().build();
+        Configuration configuration = mockConfiguration(Optional.of("/styx/config/path/origins.yml"), Optional.empty());
+
+        FileBackedBackendServicesRegistry registry = (FileBackedBackendServicesRegistry)new FileBackedBackendServicesRegistry.Factory().create(environment, configuration);
+        assertThat(registry.monitor(), is(FileMonitor.DISABLED));
+    }
+
+    @Test
+    public void createsWithFileChangeMonitor() {
+        Environment environment = new com.hotels.styx.Environment.Builder().build();
+        Configuration configuration = mockConfiguration(Optional.of(monitoredFile.toString()), Optional.of(new FileMonitorSettings(true)));
+
+        FileBackedBackendServicesRegistry registry = (FileBackedBackendServicesRegistry)new FileBackedBackendServicesRegistry.Factory().create(environment, configuration);
+        assertThat(registry.monitor(), instanceOf(FileChangeMonitor.class));
+    }
+
+    private Configuration mockConfiguration(Optional<String> path) {
         Configuration configuration = mock(Configuration.class);
-        when(configuration.get(eq("originsFile"), eq(String.class))).thenReturn(s);
+        when(configuration.get(eq("originsFile"), eq(String.class))).thenReturn(path);
+        return configuration;
+    }
+
+    private Configuration mockConfiguration(Optional<String> path, Optional<FileMonitorSettings> monitorSettings) {
+        Configuration configuration = mock(Configuration.class);
+        when(configuration.get(eq("originsFile"), eq(String.class))).thenReturn(path);
+        when(configuration.get(eq("monitor"), eq(FileMonitorSettings.class))).thenReturn(monitorSettings);
         return configuration;
     }
 
@@ -94,4 +150,9 @@ public class FileBackedBackendServicesRegistryFactoryTest {
                 .aggregatedConfiguration(configuration)
                 .build();
     }
+
+    void write(Path path, String text) throws Exception {
+        Files.copy(new ByteArrayInputStream(text.getBytes(UTF_8)), path, REPLACE_EXISTING);
+    }
+
 }

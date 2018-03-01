@@ -51,6 +51,11 @@ class Tls12Spec extends FunSpec
         |      certificateKeyFile: $keyFile
         |      protocols:
         |       - TLSv1.2
+        |admin:
+        |  connectors:
+        |    http:
+        |      port: 0
+        |
       """.stripMargin
   )
 
