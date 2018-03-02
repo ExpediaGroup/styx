@@ -44,7 +44,7 @@ trait StyxProxySpec extends StyxClientSupplier
 
   def resourcesPluginsPath: String = {
     val url = classOf[PluginPipelineSpec].getClassLoader.getResource("plugins")
-    Paths.get(url.toURI).toString
+    Paths.get(url.toURI).toString.replace("\\", "/")
   }
 
   override protected def beforeAll() = {
