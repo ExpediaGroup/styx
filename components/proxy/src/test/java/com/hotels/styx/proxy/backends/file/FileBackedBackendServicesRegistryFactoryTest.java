@@ -42,6 +42,8 @@ import static com.google.common.io.Files.createTempDir;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.serviceproviders.ServiceProvision.loadService;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.Files.copy;
+import static java.nio.file.Files.delete;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
@@ -67,8 +69,8 @@ public class FileBackedBackendServicesRegistryFactoryTest {
 
     @AfterMethod
     public void tearDown() throws Exception {
-        Files.delete(monitoredFile);
-        Files.delete(tempDir.toPath());
+        delete(monitoredFile);
+        delete(tempDir.toPath());
     }
 
 
@@ -152,7 +154,7 @@ public class FileBackedBackendServicesRegistryFactoryTest {
     }
 
     void write(Path path, String text) throws Exception {
-        Files.copy(new ByteArrayInputStream(text.getBytes(UTF_8)), path, REPLACE_EXISTING);
+        copy(new ByteArrayInputStream(text.getBytes(UTF_8)), path, REPLACE_EXISTING);
     }
 
 }

@@ -23,13 +23,16 @@ import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static com.google.common.io.Files.createTempDir;
+import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.Files.copy;
+import static java.nio.file.Files.delete;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -40,75 +43,107 @@ public class FileChangeMonitorTest {
 
     private File tempDir;
     private Path monitoredFile;
+    private FileMonitor.Listener listener;
+    private FileChangeMonitor monitor;
 
     @BeforeMethod
     public void setUp() throws Exception {
         tempDir = createTempDir();
         monitoredFile = Paths.get(tempDir.toString(), "origins.yml");
-        write(monitoredFile, "content-v1");
+        write(monitoredFile, "content-v0");
+        listener = mock(FileChangeMonitor.Listener.class);
+        monitor = new FileChangeMonitor(monitoredFile.toString(), 250, MILLISECONDS);
     }
 
     @AfterMethod
     public void tearDown() throws Exception {
-        Files.delete(monitoredFile);
-        Files.delete(tempDir.toPath());
+        try {
+            delete(monitoredFile);
+        } catch (java.nio.file.NoSuchFileException cause) {
+            // Pass ...
+        }
+
+        delete(tempDir.toPath());
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void throwExceptionIfFileDoesNotExist() throws Exception {
+    public void throwExceptionIfFileDoesNotExist() {
         new FileChangeMonitor("/nonexistant/file");
     }
 
-    @Test
-    public void notifiesListenersOnFileChange() throws Exception {
+    @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = "File monitor for '.*' is already started")
+    public void canBeStartedOnlyOnce() {
         FileChangeMonitor.Listener listener = mock(FileChangeMonitor.Listener.class);
         FileChangeMonitor monitor = new FileChangeMonitor(monitoredFile.toString());
 
-        LOGGER.info("Monitored file: " + monitoredFile);
         monitor.start(listener);
-
-        // TODO: these Thread.sleep()s are necessary, otherwise the watcher doesn't pick up the change,
-        // as if the monitored file gets written out just before the monitoring actually starts.
-        Thread.sleep(1000);
-
-        write(monitoredFile, "content-v2");
-        verify(listener, timeout(30000).times(1)).fileChanged();
-        LOGGER.info("verified v2");
-
-        write(monitoredFile, "content-v3");
-        verify(listener, timeout(30000).times(2)).fileChanged();
-        LOGGER.info("verified v3");
+        monitor.start(listener);
     }
 
     @Test
-    public void processesCascadingEvents() throws Exception {
-        FileChangeMonitor.Listener listener = mock(FileChangeMonitor.Listener.class);
-        FileChangeMonitor monitor = new FileChangeMonitor(monitoredFile.toString());
-
-        LOGGER.info("Monitored file: " + monitoredFile);
+    public void initialPollNotifiesListeners() {
         monitor.start(listener);
+        verify(listener, timeout(3000).times(1)).fileChanged();
+    }
 
-        // TODO: these Thread.sleep()s are necessary, otherwise the watcher doesn't pick up the change,
-        // as if the monitored file gets written out just before the monitoring actually starts.
+
+    @Test
+    public void notifiesListenersOnFileChange() throws Exception {
+        monitor.start(listener);
+        verify(listener, timeout(3000).times(1)).fileChanged();
+
         Thread.sleep(1000);
 
-        write(monitoredFile, "content-v2");
-        verify(listener, timeout(30000).times(1)).fileChanged();
-        LOGGER.info("verified v2");
+        for (int i = 2; i < 10; i++) {
+            write(monitoredFile, format("content-v%d", i));
+            verify(listener, timeout(3000).times(i)).fileChanged();
+            LOGGER.info(format("verified v%d", i));
+        }
+    }
 
-        write(monitoredFile, "content-v3");
-        write(monitoredFile, "content-v4");
-        write(monitoredFile, "content-v5");
-        write(monitoredFile, "content-v6");
+    @Test
+    public void notifiesListenersOnFileChangeX() throws Exception {
+        LOGGER.info("Monitored file: " + monitoredFile);
+        monitor.start(listener);
+        verify(listener, timeout(5000).times(1)).fileChanged();
 
-        verify(listener, timeout(30000).times(2)).fileChanged();
-        LOGGER.info("verified v3");
+        Thread.sleep(1500);
+
+        for (int i = 2; i < 12; i++) {
+            write(monitoredFile, format("content-v%d", i));
+            verify(listener, timeout(5000).times(i)).fileChanged();
+            LOGGER.info(format("verified v%da", i));
+        }
+    }
+
+    @Test
+    public void recoversFromFileDeletions() throws Exception {
+        monitor.start(listener);
+        verify(listener, timeout(3000).times(1)).fileChanged();
+
+        delete(monitoredFile);
+        Thread.sleep(3000);
+
+        write(monitoredFile, "some new content");
+        verify(listener, timeout(3000).times(2)).fileChanged();
+    }
+
+    @Test
+    public void recoversFromTruncatedFiles() throws Exception {
+        monitor.start(listener);
+        verify(listener, timeout(3000).times(1)).fileChanged();
+
+        write(monitoredFile, "");
+        verify(listener, timeout(3000).times(2)).fileChanged();
+
+        write(monitoredFile, "some new content");
+        verify(listener, timeout(3000).times(3)).fileChanged();
     }
 
     void write(Path path, String text) throws Exception {
-        LOGGER.info("Updating temporary file '{}", path);
+        LOGGER.info("Writing to temporary file '{}", path);
         LOGGER.info(text);
-        Files.copy(new ByteArrayInputStream(text.getBytes(UTF_8)), path, REPLACE_EXISTING);
+        copy(new ByteArrayInputStream(text.getBytes(UTF_8)), path, REPLACE_EXISTING);
     }
 
 }

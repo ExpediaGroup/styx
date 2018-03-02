@@ -18,111 +18,118 @@ package com.hotels.styx.proxy.backends.file;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.hash.HashCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.nio.file.attribute.FileTime;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hotels.styx.common.Files.fileContentMd5;
 import static java.lang.String.format;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
-import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
+import static java.nio.file.Files.exists;
+import static java.nio.file.Files.getLastModifiedTime;
+import static java.nio.file.Files.isReadable;
 import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Monitors a file system object and notifies the consumer of any changes.
  */
 public class FileChangeMonitor implements FileMonitor {
     private final Path monitoredFile;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ScheduledExecutorService executor = newSingleThreadScheduledExecutor();
+    private final long pollPeriod;
+    private final TimeUnit timeUnit;
+    private ScheduledFuture<?> monitoredTask;
+
+    private AtomicReference<FileTime> lastChangedTime = new AtomicReference<>(FileTime.fromMillis(0));
+    private AtomicReference<HashCode> hashCode = new AtomicReference<>();
+    private volatile boolean performHashCheck;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileChangeMonitor.class);
 
-    public FileChangeMonitor(String monitoredFile) {
+    @VisibleForTesting
+    FileChangeMonitor(String monitoredFile, long pollPeriod, TimeUnit timeUnit) {
         requireExists(requireNonNull(monitoredFile));
         this.monitoredFile = Paths.get(monitoredFile);
+        this.pollPeriod = pollPeriod;
+        this.timeUnit = requireNonNull(timeUnit);
+        this.hashCode.set(HashCode.fromLong(0));
+    }
+
+    public FileChangeMonitor(String monitoredFile) {
+        this(monitoredFile, 1, SECONDS);
     }
 
     @Override
     public void start(Listener listener) {
-        WatchService watcher = newWatchService();
-        WatchKey watchKey = register(this.monitoredFile.getParent(), watcher);
-
-        executor.submit(() -> {
-            for (;;) {
-                WatchKey key = watcherPoll(watcher, watchKey, 1000, MILLISECONDS);
-                if (key == null) {
-                    continue;
-                }
-
-                LOGGER.debug("key.pollEvents()");
-                for (WatchEvent<?> event : key.pollEvents()) {
-                    WatchEvent.Kind<?> kind = event.kind();
-                    LOGGER.debug("Event detected: {}", kind);
-
-                    if (kind == OVERFLOW) {
-                        continue;
-                    }
-
-                    WatchEvent<Path> ev = (WatchEvent<Path>) event;
-                    Path filename = ev.context();
-
-                    if (this.monitoredFile.getFileName().equals(filename)) {
-                        LOGGER.info("Monitored file changed");
-                        listener.fileChanged();
-                    }
-                }
-
-                if (!key.reset()) {
-                    return;
-                }
+        synchronized (this) {
+            if (monitoredTask != null) {
+                throw new IllegalStateException(format("File monitor for '{}' is already started", monitoredFile));
             }
-        });
+
+            monitoredTask = executor.scheduleAtFixedRate(newPollerTask(listener), pollPeriod, pollPeriod, timeUnit);
+        }
     }
 
-    private static WatchService newWatchService() {
+    private Runnable newPollerTask(Listener listener) {
+        return () -> {
+            if (!exists(monitoredFile)) {
+                LOGGER.debug("Monitored file does not exist. Path={}", monitoredFile);
+                return;
+            }
+
+            if (!isReadable(monitoredFile)) {
+                LOGGER.debug("Monitored file is no longer readable. Path={}", monitoredFile);
+                return;
+            }
+
+            if (modificationTimeChanged(monitoredFile)) {
+                hashCode.set(fileContentMd5(monitoredFile));
+                performHashCheck = true;
+
+                listener.fileChanged();
+                return;
+            }
+
+            if (performHashCheck && contentHashChanged(monitoredFile)) {
+                listener.fileChanged();
+            }
+        };
+    }
+
+    private boolean modificationTimeChanged(Path monitoredFile) {
         try {
-            return FileSystems.getDefault().newWatchService();
+            FileTime current = getLastModifiedTime(monitoredFile);
+            FileTime previous = lastChangedTime.getAndSet(current);
+            boolean changed = !previous.equals(current);
+            LOGGER.debug("modificationTimeChange probe. Changed={}", changed);
+            return changed;
         } catch (IOException e) {
+            LOGGER.debug("modificationTimeChange probe failed. Cause={}", e);
             throw new RuntimeException(e);
         }
     }
 
-    private WatchKey register(Path target, WatchService watcher) {
-        try {
-            return target.register(watcher, OVERFLOW, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private WatchKey watcherPoll(WatchService watcher, WatchKey watchKey, int timeout, TimeUnit timeUnit) {
-        try {
-            LOGGER.debug("watcher.poll()");
-            return watcher.poll(timeout, timeUnit);
-        } catch (InterruptedException e) {
-            watchKey.cancel();
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
+    private boolean contentHashChanged(Path monitoredFile) {
+        HashCode newHashCode = fileContentMd5(monitoredFile);
+        boolean changed = !hashCode.getAndSet(newHashCode).equals(newHashCode);
+        LOGGER.debug("contentHashChanged probe. Changed={}", changed);
+        return changed;
     }
 
     private static void requireExists(String path) {
         Paths.get(path);
 
-        if (!Files.isReadable(Paths.get(path))) {
+        if (!isReadable(Paths.get(path))) {
             throw new IllegalArgumentException(format("File '%s' does not exist or is not readable.", path));
         }
     }
