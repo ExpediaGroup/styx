@@ -43,8 +43,6 @@ class FileBasedOriginsFileChangeMonitorSpec extends FunSpec
 
   val origin = FakeHttpServer.HttpStartupConfig(appId = "app", originId="app").start()
 
-  // TODO: Mikko: Investigate why changing the path fails!
-
   val configTemplate =
     """---
       |- id: "%s"
@@ -96,7 +94,7 @@ class FileBasedOriginsFileChangeMonitorSpec extends FunSpec
     styxServer.isRunning should be(true)
   }
 
-  it("Responds with BAD_REQUEST when the origins cannot be read") {
+  it("Automatically detects changes in origins file.") {
     waitForResponse(client.sendRequest(reqToApp01.toStreamingRequest)).status() should be (HttpResponseStatus.OK)
     waitForResponse(client.sendRequest(reqToApp02.toStreamingRequest)).status() should be (HttpResponseStatus.BAD_GATEWAY)
 

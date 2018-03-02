@@ -48,11 +48,12 @@ public class FileChangeMonitor implements FileMonitor {
     private final ScheduledExecutorService executor = newSingleThreadScheduledExecutor();
     private final long pollPeriod;
     private final TimeUnit timeUnit;
-    private ScheduledFuture<?> monitoredTask;
 
-    private AtomicReference<FileTime> lastChangedTime = new AtomicReference<>(FileTime.fromMillis(0));
-    private AtomicReference<HashCode> hashCode = new AtomicReference<>();
+    private final AtomicReference<FileTime> lastChangedTime = new AtomicReference<>(FileTime.fromMillis(0));
+    private final AtomicReference<HashCode> hashCode = new AtomicReference<>();
+
     private volatile boolean performHashCheck;
+    private ScheduledFuture<?> monitoredTask;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileChangeMonitor.class);
 
@@ -73,14 +74,15 @@ public class FileChangeMonitor implements FileMonitor {
     public void start(Listener listener) {
         synchronized (this) {
             if (monitoredTask != null) {
-                throw new IllegalStateException(format("File monitor for '{}' is already started", monitoredFile));
+                String message = format("File monitor for '%s' is already started", monitoredFile);
+                throw new IllegalStateException(message);
             }
 
-            monitoredTask = executor.scheduleAtFixedRate(newPollerTask(listener), pollPeriod, pollPeriod, timeUnit);
+            monitoredTask = executor.scheduleAtFixedRate(detectFileChangesTask(listener), pollPeriod, pollPeriod, timeUnit);
         }
     }
 
-    private Runnable newPollerTask(Listener listener) {
+    private Runnable detectFileChangesTask(Listener listener) {
         return () -> {
             if (!exists(monitoredFile)) {
                 LOGGER.debug("Monitored file does not exist. Path={}", monitoredFile);
@@ -111,17 +113,19 @@ public class FileChangeMonitor implements FileMonitor {
             FileTime current = getLastModifiedTime(monitoredFile);
             FileTime previous = lastChangedTime.getAndSet(current);
             boolean changed = !previous.equals(current);
+
             LOGGER.debug("modificationTimeChange probe. Changed={}", changed);
             return changed;
         } catch (IOException e) {
-            LOGGER.debug("modificationTimeChange probe failed. Cause={}", e);
-            throw new RuntimeException(e);
+            String message = format("Cannot get modification time for Path=%s", monitoredFile);
+            throw new RuntimeException(message, e);
         }
     }
 
     private boolean contentHashChanged(Path monitoredFile) {
         HashCode newHashCode = fileContentMd5(monitoredFile);
         boolean changed = !hashCode.getAndSet(newHashCode).equals(newHashCode);
+
         LOGGER.debug("contentHashChanged probe. Changed={}", changed);
         return changed;
     }

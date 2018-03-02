@@ -19,6 +19,7 @@ import com.google.common.hash.HashCode;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 
 import static com.google.common.hash.Hashing.md5;
@@ -29,8 +30,8 @@ public final class Files {
     }
 
     public static HashCode fileContentMd5(Path path) {
-        try {
-           return md5().hashBytes(toByteArray(new FileInputStream(path.toFile())));
+        try (InputStream stream = new FileInputStream(path.toFile())) {
+           return md5().hashBytes(toByteArray(stream));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

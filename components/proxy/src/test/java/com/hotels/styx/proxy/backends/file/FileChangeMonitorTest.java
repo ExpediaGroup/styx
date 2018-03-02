@@ -92,7 +92,7 @@ public class FileChangeMonitorTest {
         monitor.start(listener);
         verify(listener, timeout(3000).times(1)).fileChanged();
 
-        Thread.sleep(1000);
+        Thread.sleep(250);
 
         for (int i = 2; i < 10; i++) {
             write(monitoredFile, format("content-v%d", i));
@@ -102,30 +102,21 @@ public class FileChangeMonitorTest {
     }
 
     @Test
-    public void notifiesListenersOnFileChangeX() throws Exception {
-        LOGGER.info("Monitored file: " + monitoredFile);
-        monitor.start(listener);
-        verify(listener, timeout(5000).times(1)).fileChanged();
-
-        Thread.sleep(1500);
-
-        for (int i = 2; i < 12; i++) {
-            write(monitoredFile, format("content-v%d", i));
-            verify(listener, timeout(5000).times(i)).fileChanged();
-            LOGGER.info(format("verified v%da", i));
-        }
-    }
-
-    @Test
     public void recoversFromFileDeletions() throws Exception {
         monitor.start(listener);
         verify(listener, timeout(3000).times(1)).fileChanged();
 
         delete(monitoredFile);
-        Thread.sleep(3000);
+        Thread.sleep(2000);
 
         write(monitoredFile, "some new content");
         verify(listener, timeout(3000).times(2)).fileChanged();
+    }
+
+    @Test
+    public void detectsFileSizeChanges() throws Exception {
+        monitor.start(listener);
+        verify(listener, timeout(3000).times(1)).fileChanged();
     }
 
     @Test

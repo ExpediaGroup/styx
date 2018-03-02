@@ -108,6 +108,7 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         return super.stop();
     }
 
+    @VisibleForTesting
     FileMonitor monitor() {
         return fileChangeMonitor;
     }
@@ -142,11 +143,8 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
                     newResource(originsFile),
                     new YAMLBackendServicesReader());
 
-            if (monitorSettings.enabled()) {
-                return new FileBackedBackendServicesRegistry(fileBackedRegistry, new FileChangeMonitor(originsFile));
-            } else {
-                return new FileBackedBackendServicesRegistry(fileBackedRegistry, FileMonitor.DISABLED);
-            }
+            FileMonitor monitor = monitorSettings.enabled() ? new FileChangeMonitor(originsFile) : FileMonitor.DISABLED;
+            return new FileBackedBackendServicesRegistry(fileBackedRegistry, monitor);
         }
 
         private static String requireNonEmpty(String originsFile) {

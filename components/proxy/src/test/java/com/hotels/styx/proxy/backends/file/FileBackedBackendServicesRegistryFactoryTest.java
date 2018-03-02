@@ -32,7 +32,6 @@ import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -59,12 +58,14 @@ public class FileBackedBackendServicesRegistryFactoryTest {
 
     private File tempDir;
     private Path monitoredFile;
+    private Environment environment;
 
     @BeforeMethod
     public void setUp() throws Exception {
         tempDir = createTempDir();
         monitoredFile = Paths.get(tempDir.toString(), "origins.yml");
         write(monitoredFile, "content-v1");
+        environment = new com.hotels.styx.Environment.Builder().build();
     }
 
     @AfterMethod
@@ -76,7 +77,7 @@ public class FileBackedBackendServicesRegistryFactoryTest {
 
     @Test
     public void instantiatesFromYaml() {
-        Environment environment = environment("classpath:conf/environment/backend-factory-config.yml");
+        environment = environment("classpath:conf/environment/backend-factory-config.yml");
 
         FileBackedBackendServicesRegistry registry = loadService(environment.configuration(), environment, "services.factories.backendServiceRegistry", FileBackedBackendServicesRegistry.class).get();
 
@@ -91,7 +92,6 @@ public class FileBackedBackendServicesRegistryFactoryTest {
 
     @Test(expectedExceptions = ConfigurationException.class, expectedExceptionsMessageRegExp = "empty .services.registry.factory.config.originsFile. config value for factory class FileBackedBackendServicesRegistry.Factory")
     public void requiresOriginsFileToBeSet() {
-        Environment environment = new com.hotels.styx.Environment.Builder().build();
         Configuration configuration = mockConfiguration(Optional.of(""));
 
         new FileBackedBackendServicesRegistry.Factory().create(environment, configuration);
@@ -99,7 +99,6 @@ public class FileBackedBackendServicesRegistryFactoryTest {
 
     @Test(expectedExceptions = ConfigurationException.class, expectedExceptionsMessageRegExp = "missing .services.registry.factory.config.originsFile. config value for factory class FileBackedBackendServicesRegistry.Factory")
     public void requiresOriginsFileToBeNonEmpty() {
-        Environment environment = new com.hotels.styx.Environment.Builder().build();
         Configuration configuration = mockConfiguration(Optional.empty());
 
         new FileBackedBackendServicesRegistry.Factory().create(environment, configuration);
@@ -107,7 +106,6 @@ public class FileBackedBackendServicesRegistryFactoryTest {
 
     @Test
     public void fileMonitorIsTurnedOffByDefault() {
-        Environment environment = new com.hotels.styx.Environment.Builder().build();
         Configuration configuration = mockConfiguration(Optional.of("/styx/config/path/origins.yml"), Optional.empty());
 
         FileBackedBackendServicesRegistry registry = (FileBackedBackendServicesRegistry)new FileBackedBackendServicesRegistry.Factory().create(environment, configuration);
@@ -116,7 +114,6 @@ public class FileBackedBackendServicesRegistryFactoryTest {
 
     @Test
     public void createsWithFileChangeMonitor() {
-        Environment environment = new com.hotels.styx.Environment.Builder().build();
         Configuration configuration = mockConfiguration(Optional.of(monitoredFile.toString()), Optional.of(new FileMonitorSettings(true)));
 
         FileBackedBackendServicesRegistry registry = (FileBackedBackendServicesRegistry)new FileBackedBackendServicesRegistry.Factory().create(environment, configuration);
