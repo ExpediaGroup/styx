@@ -34,7 +34,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * A load balancing strategy that sorts origins according to three functions:
  * <p>
- * Whether they have below or above averagxe 5xx errors.
+ * Whether they have below or above average 5xx errors.
  * The number of busy connections.
  * Whether they having existing connections available.
  */

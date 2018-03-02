@@ -27,7 +27,7 @@ import static java.util.Objects.requireNonNull;
 public final class RemoteHost {
     private final Origin origin;
     private final HttpClient hostClient;
-    private LoadBalancingMetricSupplier metricSupplier;
+    private final LoadBalancingMetricSupplier metricSupplier;
 
     private RemoteHost(Origin origin, HttpClient hostClient, LoadBalancingMetricSupplier metricSupplier) {
         this.origin = requireNonNull(origin);

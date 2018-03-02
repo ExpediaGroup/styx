@@ -48,6 +48,32 @@ public class OriginRestrictionLoadBalancingStrategyTest {
     OriginRestrictionLoadBalancingStrategy strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate);
 
     @Test
+    public void randomlyChoosesOneOfTheMatchingOrigins() {
+        Map<Id, Integer> frequencies = new HashMap<>();
+        frequencies.putIfAbsent(origins.get(0).id(), 0);
+        frequencies.putIfAbsent(origins.get(1).id(), 0);
+        frequencies.putIfAbsent(origins.get(2).id(), 0);
+        frequencies.putIfAbsent(origins.get(3).id(), 0);
+        frequencies.putIfAbsent(origins.get(4).id(), 0);
+        frequencies.putIfAbsent(origins.get(5).id(), 0);
+        frequencies.putIfAbsent(origins.get(6).id(), 0);
+
+        for (int i = 0; i < 100; i++) {
+            Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("origin-[1-3], origin-(5|6)")));
+            frequencies.compute(chosenOne.get().id(), (id, value) -> value + 1);
+        }
+
+        assertThat(frequencies.get(origins.get(0).id()), is(0));
+        assertThat(frequencies.get(origins.get(4).id()), is(0));
+
+        assertThat(frequencies.get(origins.get(1).id()), greaterThan(0));
+        assertThat(frequencies.get(origins.get(2).id()), greaterThan(0));
+        assertThat(frequencies.get(origins.get(3).id()), greaterThan(0));
+        assertThat(frequencies.get(origins.get(5).id()), greaterThan(0));
+        assertThat(frequencies.get(origins.get(6).id()), greaterThan(0));
+    }
+
+    @Test
     public void shouldDisregardRestrictionCookieValueIfNotValid() {
         for (int i = 0; i < 10; i++) {
             Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("*-01")));
@@ -93,33 +119,6 @@ public class OriginRestrictionLoadBalancingStrategyTest {
             Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of(".*")));
             assertThat(chosenOne.get(), isOneOf(origins.toArray()));
         }
-    }
-
-    @Test
-
-    public void randomlyChoosesOneOfTheMatchingOrigins() {
-        Map<Id, Integer> frequencies = new HashMap<>();
-        frequencies.putIfAbsent(origins.get(0).id(), 0);
-        frequencies.putIfAbsent(origins.get(1).id(), 0);
-        frequencies.putIfAbsent(origins.get(2).id(), 0);
-        frequencies.putIfAbsent(origins.get(3).id(), 0);
-        frequencies.putIfAbsent(origins.get(4).id(), 0);
-        frequencies.putIfAbsent(origins.get(5).id(), 0);
-        frequencies.putIfAbsent(origins.get(6).id(), 0);
-
-        for (int i = 0; i < 100; i++) {
-            Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("origin-[1-3], origin-(5|6)")));
-            frequencies.compute(chosenOne.get().id(), (id, value) -> value + 1);
-        }
-
-        assertThat(frequencies.get(origins.get(0).id()), is(0));
-        assertThat(frequencies.get(origins.get(4).id()), is(0));
-
-        assertThat(frequencies.get(origins.get(1).id()), greaterThan(0));
-        assertThat(frequencies.get(origins.get(2).id()), greaterThan(0));
-        assertThat(frequencies.get(origins.get(3).id()), greaterThan(0));
-        assertThat(frequencies.get(origins.get(5).id()), greaterThan(0));
-        assertThat(frequencies.get(origins.get(6).id()), greaterThan(0));
     }
 
     // TODO: MIKKO: Add test for the error log message about invalid patterns.

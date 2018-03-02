@@ -58,7 +58,18 @@ public interface LoadBalancer extends OriginsChangeListener {
      *
      */
     interface Preferences {
+        /**
+         * Returns an Optional regular expression pattern matching the preferred origin IDs.
+         *
+         * @return An Optional regular expression string.
+         */
         Optional<String> preferredOrigins();
+
+        /**
+         * Returns List of origin IDs to avoid.
+         *
+         * @return A list of origins.
+         */
         List<Origin> avoidOrigins();
     }
 }

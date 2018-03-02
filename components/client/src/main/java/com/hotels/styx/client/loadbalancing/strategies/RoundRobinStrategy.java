@@ -54,7 +54,7 @@ public class RoundRobinStrategy implements LoadBalancer {
 
     public RoundRobinStrategy(ActiveOrigins activeOrigins, Iterable<RemoteHost> initialOrigins) {
         this.activeOrigins = requireNonNull(activeOrigins);
-        origins = new AtomicReference<>(new ArrayList<>(newArrayList(initialOrigins)));
+        this.origins = new AtomicReference<>(new ArrayList<>(newArrayList(initialOrigins)));
     }
 
     /**
@@ -75,7 +75,7 @@ public class RoundRobinStrategy implements LoadBalancer {
 
     @Override
     public void originsChanged(OriginsSnapshot snapshot) {
-        this.origins.set(Lists.newArrayList(activeOrigins.snapshot()));
+        origins.set(Lists.newArrayList(activeOrigins.snapshot()));
     }
 
     @Override

@@ -276,7 +276,7 @@ public final class StyxHttpClient implements HttpClient {
     private Optional<RemoteHost> selectOrigin(HttpRequest rewrittenRequest) {
 
 
-        LoadBalancer.Preferences lbContext = new LoadBalancer.Preferences() {
+        LoadBalancer.Preferences preferences = new LoadBalancer.Preferences() {
             @Override
             public Optional<String> preferredOrigins() {
                 if (nonNull(originsRestrictionCookieName)) {
@@ -294,7 +294,7 @@ public final class StyxHttpClient implements HttpClient {
                 return Collections.emptyList();
             }
         };
-        return loadBalancer.choose(lbContext);
+        return loadBalancer.choose(preferences);
     }
 
     private HttpResponse addStickySessionIdentifier(HttpResponse httpResponse, Origin origin) {
