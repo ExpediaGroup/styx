@@ -21,6 +21,7 @@ import com.hotels.styx.api.Resource;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -98,8 +99,8 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     }
 
     private byte[] readFile() {
-        try {
-            return toByteArray(configurationFile.inputStream());
+        try (InputStream configurationContent = configurationFile.inputStream()) {
+            return toByteArray(configurationContent);
         } catch (IOException e) {
             throw propagate(e);
         }
