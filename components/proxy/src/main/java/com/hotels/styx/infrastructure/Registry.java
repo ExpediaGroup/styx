@@ -71,10 +71,7 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
      * @param <T> The type of configuration referred to by this ChangeListener
      */
     interface ChangeListener<T extends Identifiable> extends EventListener {
-
         void onChange(Changes<T> changes);
-
-        void onError(Throwable ex);
     }
 
     /**

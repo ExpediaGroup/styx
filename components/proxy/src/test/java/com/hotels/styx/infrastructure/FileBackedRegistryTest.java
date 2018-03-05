@@ -26,11 +26,9 @@ import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.common.StyxFutures.await;
-import static com.hotels.styx.infrastructure.FileBackedRegistry.changes;
 import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
 import static com.hotels.styx.infrastructure.Registry.ReloadResult.unchanged;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -43,8 +41,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
-public class FileBackedRegistryTest {
 
+public class FileBackedRegistryTest {
     private byte[] originalContent;
     private byte[] newContent;
     private BackendService backendService;
@@ -63,18 +61,17 @@ public class FileBackedRegistryTest {
     public void calculatesTheDifferenceBetweenCurrentAndNewResources() {
         Iterable<BackendService> newResources = singletonList(backendService("one", 9090));
         Iterable<BackendService> currentResources = singletonList(backendService("two", 9091));
-
-        Registry.Changes<BackendService> changes = changes(newResources, currentResources);
         Registry.Changes<Identifiable> expected = new Registry.Changes.Builder<>()
                 .added(backendService("one", 9090))
                 .removed(backendService("two", 9091))
                 .build();
 
+        Registry.Changes<BackendService> changes = FileBackedRegistry.changes(newResources, currentResources);
         assertThat(changes.toString(), is(expected.toString()));
     }
 
     @Test
-    public void announcesInitialStateWhenStarts() throws IOException, ExecutionException, InterruptedException {
+    public void announcesInitialStateWhenStarts() throws IOException {
         Resource configurationFile = mockResource("/styx/config", new ByteArrayInputStream(originalContent));
 
         registry = new FileBackedRegistry<>(configurationFile, bytes -> ImmutableList.of(backendService));
@@ -84,7 +81,6 @@ public class FileBackedRegistryTest {
 
         verify(listener).onChange(eq(changeSet().added(backendService).build()));
     }
-
 
     @Test
     public void announcesNoMeaningfulChangesWhenFileDidNotChange() throws Exception {
@@ -99,7 +95,7 @@ public class FileBackedRegistryTest {
         verify(listener).onChange(eq(changeSet().added(backendService).build()));
 
         ReloadResult result = registry.reload().get();
-        assertThat(result, is(unchanged("file content did not change")));
+        assertThat(result, is(unchanged("md5-hash=c346e70114eff08dceb13562f9abaa48, Identical file content.")));
 
         // Still only one invocation, because reload didn't introduce any changes to configuration
         verify(listener).onChange(eq(changeSet().added(backendService).build()));
@@ -117,7 +113,7 @@ public class FileBackedRegistryTest {
 
         when(configurationFile.inputStream()).thenReturn(new ByteArrayInputStream(newContent));
         ReloadResult result = registry.reload().get();
-        assertThat(result, is(unchanged("file content was not semantically different")));
+        assertThat(result, is(unchanged("md5-hash=24996b9d53b21a60c35dcb7ca3fb331a, No semantic changes.")));
 
         // Still only one invocation, because reload didn't introduce any changes to configuration
         verify(listener).onChange(eq(changeSet().added(backendService).build()));
@@ -149,7 +145,7 @@ public class FileBackedRegistryTest {
         verify(listener).onChange(eq(changeSet().added(backendService1).build()));
 
         ReloadResult result = registry.reload().get();
-        assertThat(result, is(reloaded("Changes applied!")));
+        assertThat(result, is(reloaded("md5-hash=24996b9d53b21a60c35dcb7ca3fb331a, File reloaded.")));
         assertThat(backendService1.equals(backendService2), is(false));
 
         verify(listener).onChange(eq(changeSet().updated(backendService2).build()));

@@ -31,6 +31,7 @@ import static com.google.common.hash.Hashing.md5;
 import static com.google.common.io.ByteStreams.toByteArray;
 import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
 import static com.hotels.styx.infrastructure.Registry.ReloadResult.unchanged;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
@@ -64,21 +65,20 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
 
             if (hashCode.equals(fileHash)) {
                 LOG.info("Not reloading {} as content did not change", configurationFile.absolutePath());
-                return unchanged("file content did not change");
+                return unchanged(format("md5-hash=%s, Identical file content.", hashCode));
             } else {
                 try {
                     boolean changesPerformed = updateResources(content, hashCode);
 
                     if (!changesPerformed) {
                         LOG.info("Not firing change event for {} as content was not semantically different", configurationFile.absolutePath());
-                        return unchanged("file content was not semantically different");
+                        return unchanged(format("md5-hash=%s, No semantic changes.", hashCode));
                     } else {
                         LOG.debug("Changes applied!");
-                        return reloaded("Changes applied!");
+                        return reloaded(format("md5-hash=%s, File reloaded.", hashCode));
                     }
                 } catch (Exception e) {
                     LOG.error("Not reloading {} as there was an error reading content", configurationFile.absolutePath(), e);
-                    notifyListenersOnError(e);
                     throw e;
                 }
             }

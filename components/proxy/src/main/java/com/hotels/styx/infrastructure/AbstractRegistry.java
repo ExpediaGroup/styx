@@ -54,11 +54,6 @@ public abstract class AbstractRegistry<T extends Identifiable> implements Regist
         announcer.announce().onChange(changes);
     }
 
-    protected void notifyListenersOnError(Throwable cause) {
-        LOG.info("notifying about error={} to listeners={}", cause, announcer.listeners());
-        announcer.announce().onError(cause);
-    }
-
     @Override
     public Registry<T> addListener(ChangeListener<T> changeListener) {
         announcer.addListener(changeListener);
