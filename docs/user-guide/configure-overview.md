@@ -1,14 +1,12 @@
 ## Configuring Styx environment
 
 Styx supports a YAML-based configuration. A yaml file can be specified using a system property `YAML_CONFIG_LOCATION=your/file/path`.
-By default a file is taken from the classpath at `classpath:conf/environment/styx-config.yaml`.
-Regardless of file location, these properties can all be overwritten using system properties by the same name.
-
+By default, the file is read from the classpath at `classpath:conf/environment/styx-config.yaml`.
+In addition to the configuration file, all these properties can be overwritten using system properties with the same name.
 
 ### Example styx-config
 
-    ---
-
+```yaml
     # A string uniquely identifying the host running the application, must be different for all running instances of the application
     # the default value is suitable only for non clustered environments
     jvmRouteName: "${jvm.route:noJvmRouteSet}"
@@ -122,14 +120,11 @@ Regardless of file location, these properties can all be overwritten using syste
         name: "X-Styx-Origin-Id"
       requestId:
         name: "X-Styx-Request-Id"
-
+ ```
 
 Without the comments, it looks like this:
-
-    ---
-
-    jvmRouteName: "${jvm.route:noJvmRouteSet}"
-
+```yaml
+   jvmRouteName: "${jvm.route:noJvmRouteSet}"
     proxy:
       connectors:
       - type: http
@@ -188,4 +183,4 @@ Without the comments, it looks like this:
         name: "X-Styx-Origin-Id"
       requestId:
         name: "X-Styx-Request-Id"
-
+```

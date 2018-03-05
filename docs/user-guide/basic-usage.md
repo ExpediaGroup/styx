@@ -2,34 +2,30 @@
 
 ## System Requirements
 
-Building Styx requires Java 1.8. It can be built with 1.8.0_45. Earlier maintenance
-releases may work, but are not guaranteed to.
-
-The build system requires Apache Maven. The Styx team uses Maven version 3.2.1
-for automated continuous integration builds. On Mac OSX, a version installed 
-by HomeBrew is satisfactory.
+Running Styx requires Java 1.8. It can be run with 1.8.0_45 or later versions. Earlier maintenance
+releases or Java 1.9 may work, but are not guaranteed to.
 
 
 ## Step 1: Installing Styx:
 
 Styx comes pre-packaged in a zip file. Extract the zip file to a directory of choice:
 
-    $ unzip styx.zip 
+    $ unzip styx-<VERSION>-<OS>-<PLATFORM>.zip 
 
-This creates a subdirectory called `styx` that contains Styx binaries and a set 
- of configuration examples. Example configuration files can be found in `styx/conf`
+This creates a subdirectory called `styx-<VERSION>` that contains Styx binaries and a set 
+ of configuration examples. Example configuration files can be found in `styx-<VERSION>/conf`
  subdirectory. There are some files worth noticing:
  
 * `default.yml`   - A Styx server configuration file. It specifies the Styx server
                       port numbers and other application configuration.
                       
-* `styx/conf/origins` subdirectory containing examples of Styx origins configuration 
+* `conf/origins` subdirectory containing examples of Styx origins configuration 
  files. A styx origins configuration file specifies the backend services for Styx.
  Especially, have a look at `origins-configuration-documentation.yml`. It explains 
- all aspects of origins configuration settings.
+ all aspects of origins configuration settings (you can see more details in [Backend services and origins](configure-origins.md)).
 
                        
-* `logback.xml`      - Logging configuration file. There are more examples in the `styx/conf/logback`
+* `logback.xml`      - Logging configuration file. There are more examples in the `conf/logback`
                       subdirectory.
                       
 * `styx-env.sh`     - JVM settings file. See <TODO> section below.
@@ -41,17 +37,17 @@ This creates a subdirectory called `styx` that contains Styx binaries and a set
 To start Styx, run the startup script from *bin/* directory, passing in the
 configuration file as an argument:
 
-    $ ./styx/bin/startup ~/configs/staging.yml
+    $ ./bin/startup ~/configs/staging.yml
 
-This starts Styx according to a configuration specified in *staging.yml* file.
+This starts Styx according to the configuration specified in *staging.yml* file.
 
 You also can specify the configuration via *STYX_CONFIG* environment
 variable. For example:
 
-    STYX_CONFIG=~/configs/production.yml ./styx/bin/startup
+    STYX_CONFIG=~/configs/production.yml ./bin/startup
 
 If the configuration file is not specified as a command line argument or as an environment 
-variable, Styx by default attempts to load configuration from *$STYX_HOME/conf/default.yaml*.
+variable, Styx by default attempts to load its configuration from *$STYX_HOME/conf/default.yaml*.
 
 Once Styx has started up, it displays the Styx logo banner, followed by information
 about the port numbers it is listening on.
@@ -152,7 +148,7 @@ Command line options are:
         Any environment variable starting with <JVM_> declares a command line
         option for the underlying Java Virtual Machine. 
         The startup throws away the JVM_<SETTING> part, and passes the
-        <VALUE>, verbatim, for the JVM as a command line option.
+        <VALUE>, verbatim, as a command line option for the JVM.
         
         
 

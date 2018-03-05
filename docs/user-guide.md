@@ -2,12 +2,15 @@
 # User Manual
 
 Welcome to Styx user manual. 
- - [Reverse Proxying](user-guide/reverse-proxying.md) - Overview of Styx proxy functionality.
- 
+
  - [Basic Usage](user-guide/basic-usage.md) - Installing, Starting, and basic configuration of Styx.
+ 
+ - [Reverse Proxying](user-guide/reverse-proxying.md) - Overview of Styx proxy functionality.
   
  - [Configuration Overview](user-guide/configure-overview.md) - Overview of Styx configuration.
  
+ - [Backend services and origins](user-guide/configure-origins.md) - Configuration of a backend service and its origins.
+  
  - [Transport Layer Security](user-guide/configure-tls.md) - Configure TLS for Styx proxying.
  
  - [Load Balancing](user-guide/configure-load-balancing.md) - Configure load balancing.

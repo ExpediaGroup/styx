@@ -1,8 +1,7 @@
 # Configuring Transport Layer Security
 
-Transport Layer Security (TLS) can be enabled on Styx network
-interfaces. You can enable it on the proxy server port, and also for
-each of the backend services, where necessary.
+Transport Layer Security (TLS) can be enabled on Styx both for the incoming interface
+(connections from clients) and the connections with the backend services.
 
 TLS can be enabled independently for each network interface. You can
 enable it independently for proxy server port, and for each of the
