@@ -40,6 +40,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -133,6 +134,27 @@ public class FileBackedBackendServicesRegistryTest {
         Resource resource = newResource("classpath:/backends/origins-with-invalid-path.yml");
 
         new YAMLBackendServicesReader().read(toByteArray(resource.inputStream()));
+    }
+
+    @Test
+    public void monitorsFileChanges() {
+        FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
+        when(delegate.reload()).thenReturn(completedFuture(reloaded("Changes applied!")));
+        when(delegate.fileName()).thenReturn("/path/to/styx.yaml");
+
+        FileChangeMonitor monitor = mock(FileChangeMonitor.class);
+        registry = new FileBackedBackendServicesRegistry(delegate, monitor);
+
+        CompletableFuture<Void> future = registry.start();
+        await(future);
+
+        verify(monitor).start(eq(registry));
+
+        registry.fileChanged();
+        verify(delegate, times(2)).reload();
+
+        registry.fileChanged();
+        verify(delegate, times(3)).reload();
     }
 
     private CompletableFuture<ReloadResult> failedFuture(Throwable cause) {

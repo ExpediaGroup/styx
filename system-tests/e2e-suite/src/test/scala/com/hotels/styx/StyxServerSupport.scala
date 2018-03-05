@@ -94,6 +94,21 @@ object StyxServerSupport {
     }
   }
 
+  def newStyxServerBuilder(styxConfig: StyxConfig, plugins: List[NamedPlugin]) = {
+    val plugins1 = plugins.asInstanceOf[Iterable[NamedPlugin]].asJava
+    val pluginSupplier = new java.util.function.Supplier[java.lang.Iterable[NamedPlugin]] {
+      override def get() = plugins1
+    }
+
+    val builder = new StyxServerBuilder(styxConfig)
+
+    if (plugins.nonEmpty) {
+      builder.pluginsSupplier(pluginSupplier)
+    } else {
+      builder
+    }
+  }
+
   def noOp[T] = (x: T) => x
 
   //  implicit class StyxServerOperations(val styxServer: StyxServer) extends StyxServerSupplements

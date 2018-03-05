@@ -20,8 +20,6 @@ import java.util
 
 import com.hotels.styx.StyxServerSupport._
 import com.hotels.styx.api.service.spi.StyxService
-import com.hotels.styx.api.support.HostAndPorts._
-import com.hotels.styx.infrastructure.Registry
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
@@ -47,6 +45,8 @@ sealed trait StyxBaseConfig {
   def plugins: List[NamedPlugin]
 
   def startServer(backendsRegistry: StyxService): StyxServer
+
+  def startServer(): StyxServer
 
   def services(backendsRegistry: StyxService): Map[String, StyxService] = if (additionalServices.nonEmpty) {
     this.additionalServices
@@ -104,6 +104,41 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
     styxServer
   }
 
+  override def startServer(): StyxServer = {
+
+    val proxyConfig = this.proxyConfig.copy(connectors = Connectors(httpConnectorWithPort(), httpsConnectorWithPort()))
+
+    val proxyConfigBuilder = new ProxyServerConfig.Builder()
+      .setConnectors(proxyConfig.connectors.asJava)
+      .setBossThreadsCount(proxyConfig.bossThreadCount)
+      .setClientWorkerThreadsCount(proxyConfig.workerThreadsCount)
+      .setKeepAliveTimeoutMillis(proxyConfig.keepAliveTimeoutMillis)
+      .setMaxChunkSize(proxyConfig.maxChunkSize)
+      .setMaxConnectionsCount(proxyConfig.maxConnectionsCount)
+      .setMaxContentLength(proxyConfig.maxContentLength)
+      .setMaxHeaderSize(proxyConfig.maxHeaderSize)
+      .setMaxInitialLineLength(proxyConfig.maxInitialLineLength)
+      .setNioAcceptorBacklog(proxyConfig.nioAcceptorBacklog)
+      .setNioKeepAlive(proxyConfig.nioKeepAlive)
+      .setNioReuseAddress(proxyConfig.nioReuseAddress)
+      .setTcpNoDelay(proxyConfig.tcpNoDelay)
+      .setRequestTimeoutMillis(proxyConfig.requestTimeoutMillis)
+      .setClientWorkerThreadsCount(proxyConfig.clientWorkerThreadsCount)
+
+    val styxConfig = newStyxConfig(this.yamlText,
+      proxyConfigBuilder,
+      newAdminServerConfigBuilder(newHttpConnConfig(adminPort))
+    )
+
+
+    val styxServerBuilder = newStyxServerBuilder(styxConfig, this.plugins)
+      .logConfigLocation(this.logbackXmlLocation.toString)
+
+    val styxServer = styxServerBuilder.build()
+    styxServer.startAsync().awaitRunning()
+    styxServer
+  }
+
   private def httpConnectorWithPort() = this.proxyConfig.connectors.httpConnectorConfig
 
   private def httpsConnectorWithPort() = this.proxyConfig.connectors.httpsConnectorConfig
@@ -121,6 +156,17 @@ case class StyxYamlConfig(yamlConfig: String,
 
     val styxServer = new StyxServerBuilder(styxConfig)
       .additionalServices(services(backendsRegistry).asJava)
+      .logConfigLocation(logbackXmlLocation.toString).build()
+
+    styxServer.startAsync().awaitRunning()
+    styxServer
+  }
+
+  override def startServer(): StyxServer = {
+    val config: YamlConfig = new YamlConfig(yamlConfig)
+    val styxConfig = new com.hotels.styx.StyxConfig(yamlConfig)
+
+    val styxServer = new StyxServerBuilder(styxConfig)
       .logConfigLocation(logbackXmlLocation.toString).build()
 
     styxServer.startAsync().awaitRunning()

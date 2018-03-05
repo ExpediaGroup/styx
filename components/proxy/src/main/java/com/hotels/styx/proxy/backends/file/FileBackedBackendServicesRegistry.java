@@ -26,6 +26,7 @@ import com.hotels.styx.client.applications.BackendServices;
 import com.hotels.styx.infrastructure.FileBackedRegistry;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.infrastructure.YamlReader;
+import com.hotels.styx.proxy.backends.file.FileChangeMonitor.FileMonitorSettings;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -40,21 +41,31 @@ import static java.util.Objects.requireNonNull;
 /**
  * File backed {@link com.hotels.styx.client.applications.BackendService} registry.
  */
-public class FileBackedBackendServicesRegistry extends AbstractStyxService implements Registry<BackendService> {
+public class FileBackedBackendServicesRegistry extends AbstractStyxService implements Registry<BackendService>, FileChangeMonitor.Listener {
     private final FileBackedRegistry<BackendService> fileBackedRegistry;
+    private final FileMonitor fileChangeMonitor;
 
     @VisibleForTesting
     FileBackedBackendServicesRegistry(FileBackedRegistry<BackendService> fileBackedRegistry) {
-        super(format("FileBackedBackendServiceRegistry(%s)", fileBackedRegistry.fileName()));
-        this.fileBackedRegistry = requireNonNull(fileBackedRegistry);
+        this(fileBackedRegistry, FileMonitor.DISABLED);
     }
 
+    @VisibleForTesting
+    FileBackedBackendServicesRegistry(FileBackedRegistry<BackendService> fileBackedRegistry, FileMonitor fileChangeMonitor) {
+        super(format("FileBackedBackendServiceRegistry(%s)", fileBackedRegistry.fileName()));
+        this.fileBackedRegistry = requireNonNull(fileBackedRegistry);
+        this.fileChangeMonitor = requireNonNull(fileChangeMonitor);
+    }
 
     public static FileBackedBackendServicesRegistry create(String originsFile) {
+        return create(originsFile, FileMonitor.DISABLED);
+    }
+
+    static FileBackedBackendServicesRegistry create(String originsFile, FileMonitor fileChangeMonitor) {
         FileBackedRegistry<BackendService> fileBackedRegistry = new FileBackedRegistry<>(
                 newResource(originsFile),
                 new YAMLBackendServicesReader());
-        return new FileBackedBackendServicesRegistry(fileBackedRegistry);
+        return new FileBackedBackendServicesRegistry(fileBackedRegistry, fileChangeMonitor);
     }
 
     @Override
@@ -79,6 +90,13 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
 
     @Override
     protected CompletableFuture<Void> startService() {
+        try {
+            fileChangeMonitor.start(this);
+        } catch (Exception e) {
+            CompletableFuture<Void> x = new CompletableFuture<>();
+            x.completeExceptionally(e);
+            return x;
+        }
         return this.fileBackedRegistry.reload()
                 .thenAccept(result -> {
                     // Swallow the result
@@ -90,27 +108,43 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         return super.stop();
     }
 
+    @VisibleForTesting
+    FileMonitor monitor() {
+        return fileChangeMonitor;
+    }
+
+    @Override
+    public void fileChanged() {
+        this.fileBackedRegistry.reload();
+    }
+
     /**
      * Factory for creating a {@link FileBackedBackendServicesRegistry}.
      */
     public static class Factory implements Registry.Factory<BackendService> {
+
         @Override
         public Registry<BackendService> create(Environment environment, Configuration registryConfiguration) {
-            return registryConfiguration.get("originsFile", String.class)
+            String originsFile = registryConfiguration.get("originsFile", String.class)
                     .map(Factory::requireNonEmpty)
-                    .map(Factory::registry)
                     .orElseThrow(() -> new ConfigurationException(
                             "missing [services.registry.factory.config.originsFile] config value for factory class FileBackedBackendServicesRegistry.Factory"));
+
+            FileMonitorSettings monitorSettings = registryConfiguration.get("monitor", FileMonitorSettings.class)
+                    .orElse(new FileMonitorSettings());
+
+            return registry(originsFile, monitorSettings);
         }
 
-        private static Registry<BackendService> registry(String originsFile) {
+        private static Registry<BackendService> registry(String originsFile, FileMonitorSettings monitorSettings) {
             requireNonEmpty(originsFile);
 
             FileBackedRegistry<BackendService> fileBackedRegistry = new FileBackedRegistry<>(
                     newResource(originsFile),
                     new YAMLBackendServicesReader());
 
-            return new FileBackedBackendServicesRegistry(fileBackedRegistry);
+            FileMonitor monitor = monitorSettings.enabled() ? new FileChangeMonitor(originsFile) : FileMonitor.DISABLED;
+            return new FileBackedBackendServicesRegistry(fileBackedRegistry, monitor);
         }
 
         private static String requireNonEmpty(String originsFile) {
