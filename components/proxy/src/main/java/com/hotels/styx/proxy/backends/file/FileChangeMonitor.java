@@ -86,23 +86,16 @@ public class FileChangeMonitor implements FileMonitor {
         return () -> {
             if (!exists(monitoredFile)) {
                 LOGGER.debug("Monitored file does not exist. Path={}", monitoredFile);
-                return;
-            }
 
-            if (!isReadable(monitoredFile)) {
+            } else if (!isReadable(monitoredFile)) {
                 LOGGER.debug("Monitored file is no longer readable. Path={}", monitoredFile);
-                return;
-            }
 
-            if (modificationTimeChanged(monitoredFile)) {
+            } else if (modificationTimeChanged(monitoredFile)) {
                 hashCode.set(fileContentMd5(monitoredFile));
                 performHashCheck = true;
-
                 listener.fileChanged();
-                return;
-            }
 
-            if (performHashCheck && contentHashChanged(monitoredFile)) {
+            } else if (performHashCheck && contentHashChanged(monitoredFile)) {
                 listener.fileChanged();
             }
         };
