@@ -124,8 +124,6 @@ class FileChangeMonitor implements FileMonitor {
     }
 
     private static void requireExists(String path) {
-        Paths.get(path);
-
         if (!isReadable(Paths.get(path))) {
             throw new IllegalArgumentException(format("File '%s' does not exist or is not readable.", path));
         }
@@ -144,7 +142,7 @@ class FileChangeMonitor implements FileMonitor {
             this(false);
         }
 
-        public boolean enabled() {
+        boolean enabled() {
             return enabled;
         }
     }

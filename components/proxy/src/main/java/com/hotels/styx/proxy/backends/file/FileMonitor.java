@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy.backends.file;
 
 interface FileMonitor {
-    FileMonitor DISABLED = (x) -> { };
+    FileMonitor DISABLED = x -> { };
 
     void start(Listener listener);
 
