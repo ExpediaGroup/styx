@@ -43,7 +43,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Monitors a file system object and notifies the consumer of any changes.
  */
-public class FileChangeMonitor implements FileMonitor {
+class FileChangeMonitor implements FileMonitor {
     private final Path monitoredFile;
     private final ScheduledExecutorService executor = newSingleThreadScheduledExecutor();
     private final long pollPeriod;
