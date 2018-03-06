@@ -16,7 +16,6 @@
 package com.hotels.styx.proxy.backends.file;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -26,6 +25,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static ch.qos.logback.classic.Level.INFO;
 import static com.google.common.io.Files.createTempDir;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -36,10 +36,11 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
+import static org.slf4j.LoggerFactory.getLogger;
 
 
 public class FileChangeMonitorTest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileChangeMonitorTest.class);
+    private static final Logger LOGGER = getLogger(FileChangeMonitorTest.class);
 
     private File tempDir;
     private Path monitoredFile;
@@ -53,6 +54,7 @@ public class FileChangeMonitorTest {
         write(monitoredFile, "content-v0");
         listener = mock(FileChangeMonitor.Listener.class);
         monitor = new FileChangeMonitor(monitoredFile.toString(), 250, MILLISECONDS);
+        ((ch.qos.logback.classic.Logger) getLogger(FileChangeMonitor.class)).setLevel(INFO);
     }
 
     @AfterMethod

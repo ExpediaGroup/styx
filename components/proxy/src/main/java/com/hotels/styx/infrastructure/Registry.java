@@ -23,11 +23,13 @@ import com.hotels.styx.api.configuration.ServiceFactory;
 
 import java.util.EventListener;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hotels.styx.infrastructure.Registry.Outcome.FAILED;
 import static com.hotels.styx.infrastructure.Registry.Outcome.RELOADED;
 import static com.hotels.styx.infrastructure.Registry.Outcome.UNCHANGED;
 import static java.util.Arrays.asList;
@@ -200,28 +202,34 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
      */
     enum Outcome {
         RELOADED,
-        UNCHANGED
+        UNCHANGED,
+        FAILED
     }
 
     /**
      * Result of registry reload.
      */
     class ReloadResult {
+        private final Outcome outcome;
+        private final String message;
+        private final Throwable cause;
 
-        Outcome outcome;
-        String message;
-
-        private ReloadResult(Outcome outcome, String message) {
+        private ReloadResult(Outcome outcome, String message, Throwable cause) {
             this.outcome = outcome;
             this.message = message;
+            this.cause = cause;
         }
 
         public static ReloadResult reloaded(String message) {
-            return new ReloadResult(RELOADED, message);
+            return new ReloadResult(RELOADED, message, null);
+        }
+
+        public static ReloadResult failed(String message, Throwable cause) {
+            return new ReloadResult(FAILED, message, cause);
         }
 
         public static ReloadResult unchanged(String message) {
-            return new ReloadResult(UNCHANGED, message);
+            return new ReloadResult(UNCHANGED, message, null);
         }
 
         public Outcome outcome() {
@@ -230,6 +238,10 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
 
         public String message() {
             return message;
+        }
+
+        public Optional<Throwable> cause() {
+            return Optional.ofNullable(cause);
         }
 
         @Override
@@ -243,21 +255,20 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
             }
 
             ReloadResult that = (ReloadResult) o;
-            return outcome == that.outcome && Objects.equals(message, that.message);
+            return outcome == that.outcome && Objects.equals(message, that.message) && Objects.equals(cause, that.cause);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(outcome, message);
+            return Objects.hash(outcome, message, cause);
         }
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("ReloadResult{");
-            sb.append("outcome=").append(outcome);
-            sb.append(", message='").append(message).append('\'');
-            sb.append('}');
-            return sb.toString();
+            return "ReloadResult{" + "outcome=" + outcome
+                    + ", message='" + message + '\''
+                    + ", cause='" + cause + "\'"
+                    + '}';
         }
     }
 }

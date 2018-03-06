@@ -34,6 +34,7 @@ import static com.hotels.styx.infrastructure.Registry.ReloadResult.unchanged;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -156,7 +157,7 @@ public class FileBackedRegistryTest {
     }
 
 
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "java.util.concurrent.ExecutionException: java.lang.RuntimeException: Something went wrong...")
+    @Test
     public void completesWithExceptionWhenErrorsDuringReload() throws Exception {
         Resource configurationFile = mockResource("/styx/config",
                 new ByteArrayInputStream(originalContent),
@@ -172,11 +173,14 @@ public class FileBackedRegistryTest {
                     }
                 });
         registry.addListener(listener);
-        await(registry.reload());
+        ReloadResult outcome = await(registry.reload());
+        assertThat(outcome, is(reloaded("md5-hash=c346e70114eff08dceb13562f9abaa48, File reloaded.")));
 
         verify(listener).onChange(eq(changeSet().added(backendService).build()));
-
-        await(registry.reload());
+        outcome = await(registry.reload());
+        assertThat(outcome.outcome(), is(Registry.Outcome.FAILED));
+        assertThat(outcome.message(), is("md5-hash=24996b9d53b21a60c35dcb7ca3fb331a, Reload failure."));
+        assertThat(outcome.cause().get(), instanceOf(RuntimeException.class));
 
         // Noting changed
         verify(listener).onChange(eq(changeSet().added(backendService).build()));

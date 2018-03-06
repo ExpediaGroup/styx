@@ -22,6 +22,9 @@ import com.hotels.styx.infrastructure.FileBackedRegistry;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.infrastructure.Registry.ReloadResult;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry.YAMLBackendServicesReader;
+import com.hotels.styx.support.matchers.LoggingTestSupport;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -29,13 +32,19 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
+import static ch.qos.logback.classic.Level.ERROR;
+import static ch.qos.logback.classic.Level.INFO;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.io.ByteStreams.toByteArray;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.common.StyxFutures.await;
+import static com.hotels.styx.infrastructure.Registry.ReloadResult.failed;
 import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
+import static com.hotels.styx.infrastructure.Registry.ReloadResult.unchanged;
+import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.eq;
@@ -46,10 +55,22 @@ import static org.mockito.Mockito.when;
 
 public class FileBackedBackendServicesRegistryTest {
     FileBackedBackendServicesRegistry registry;
+    LoggingTestSupport log;
+
+    @BeforeMethod
+    public void setUp() {
+        log = new LoggingTestSupport(FileBackedBackendServicesRegistry.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        log.stop();
+    }
 
     @Test
     public void relaysReloadToRegistryDelegate() {
         FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
+        when(delegate.reload()).thenReturn(CompletableFuture.completedFuture(ReloadResult.reloaded("relaod ok")));
 
         registry = new FileBackedBackendServicesRegistry(delegate);
         registry.reload();
@@ -155,6 +176,145 @@ public class FileBackedBackendServicesRegistryTest {
 
         registry.fileChanged();
         verify(delegate, times(3)).reload();
+    }
+
+    @Test
+    public void serviceStarts_logsInfoWhenReloadSucceeds() throws Exception {
+        FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
+        when(delegate.fileName()).thenReturn("/monitored/origins.yml");
+        when(delegate.reload()).thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")));
+
+        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry.startService().get();
+
+        assertThat(log.log(), hasItem(
+                loggingEvent(INFO, "Backend services reloaded. reason='Initial load', md5-hash: 9034890345289043, Successfully reloaded, file='/monitored/origins.yml'")
+        ));
+    }
+
+    @Test
+    public void serviceStarts_logsInfoWhenReloadFails() throws Exception {
+        FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
+        when(delegate.fileName()).thenReturn("/monitored/origins.yml");
+        when(delegate.reload()).thenReturn(
+                completedFuture(failed(
+                        "md5-hash: 9034890345289043, Failed to load file",
+                        new RuntimeException("something went wrong"))));
+
+        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry.startService().get();
+
+        assertThat(log.lastMessage(), is(
+                loggingEvent(
+                        ERROR,
+                        "Backend services reload failed. reason='Initial load', md5-hash: 9034890345289043, Failed to load file, file='/monitored/origins.yml'",
+                        RuntimeException.class,
+                        "something went wrong")
+        ));
+    }
+
+    @Test
+    public void reload_logsInfoWhenFileIsUnchanged() throws Exception {
+        FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
+        when(delegate.fileName()).thenReturn("/monitored/origins.yml");
+        when(delegate.reload())
+                .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
+                .thenReturn(completedFuture(unchanged("md5-hash: 9034890345289043, No changes detected")));
+
+        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry.startService().get();
+
+        registry.reload().get();
+        assertThat(log.log(), hasItem(
+                loggingEvent(INFO, "Backend services reloaded. reason='Admin Interface', md5-hash: 9034890345289043, No changes detected, file='/monitored/origins.yml'")
+        ));
+    }
+
+    @Test
+    public void reload_logsInfoWhenFailsToReadFile() throws Exception {
+        FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
+        when(delegate.fileName()).thenReturn("/monitored/origins.yml");
+        when(delegate.reload())
+                .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
+                .thenReturn(completedFuture(failed("md5-hash: 9034890345289043, Failed to load file", new RuntimeException("error occurred"))));
+
+        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry.startService().get();
+
+        registry.reload().get();
+        assertThat(log.log(), hasItem(
+                loggingEvent(ERROR, "Backend services reload failed. reason='Admin Interface', md5-hash: 9034890345289043, Failed to load file, file='/monitored/origins.yml'",
+                        RuntimeException.class, "error occurred")
+        ));
+    }
+
+    @Test
+    public void reload_logsInfoOnSuccessfulReload() throws Exception {
+        FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
+        when(delegate.fileName()).thenReturn("/monitored/origins.yml");
+        when(delegate.reload())
+                .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
+                .thenReturn(completedFuture(reloaded("md5-hash: 3428432789453897, Successfully reloaded")));
+
+        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry.startService().get();
+
+        registry.reload().get();
+        assertThat(log.log(), hasItem(
+                loggingEvent(INFO, "Backend services reloaded. reason='Admin Interface', md5-hash: 3428432789453897, Successfully reloaded, file='/monitored/origins.yml'")
+        ));
+    }
+
+    @Test
+    public void fileChanged_logsInfoWhenFileIsUnchanged() throws Exception {
+        FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
+        when(delegate.fileName()).thenReturn("/monitored/origins.yml");
+        when(delegate.reload())
+                .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
+                .thenReturn(completedFuture(unchanged("md5-hash: 9034890345289043, Unchanged")));
+
+        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry.startService().get();
+
+        registry.fileChanged();
+        assertThat(log.lastMessage(), is(
+                loggingEvent(INFO, "Backend services reloaded. reason='File Monitor', md5-hash: 9034890345289043, Unchanged, file='/monitored/origins.yml'")
+        ));
+    }
+
+    @Test
+    public void fileChanged_logsInfoWhenFailsToReadFile() throws Exception {
+        FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
+        when(delegate.fileName()).thenReturn("/monitored/origins.yml");
+        when(delegate.reload())
+                .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
+                .thenReturn(completedFuture(failed("md5-hash: 9034890345289043, Failed to reload", new RuntimeException("something went wrong"))));
+
+        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry.startService().get();
+
+        registry.fileChanged();
+        assertThat(log.lastMessage(), is(
+                loggingEvent(ERROR, "Backend services reload failed. reason='File Monitor', md5-hash: 9034890345289043, Failed to reload, file='/monitored/origins.yml'",
+                        RuntimeException.class, "something went wrong")
+        ));
+    }
+
+    @Test
+    public void fileChanged_logsInfoOnSuccessfulReload() throws Exception {
+        FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
+        when(delegate.fileName()).thenReturn("/monitored/origins.yml");
+        when(delegate.reload())
+                .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
+                .thenReturn(completedFuture(reloaded("md5-hash: 3428432789453897, Successfully reloaded")));
+
+        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry.startService().get();
+
+        registry.fileChanged();
+        assertThat(log.lastMessage(), is(
+                loggingEvent(INFO, "Backend services reloaded. reason='File Monitor', md5-hash: 3428432789453897, Successfully reloaded, file='/monitored/origins.yml'")
+        ));
     }
 
     private CompletableFuture<ReloadResult> failedFuture(Throwable cause) {

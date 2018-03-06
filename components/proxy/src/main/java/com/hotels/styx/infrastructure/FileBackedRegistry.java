@@ -29,6 +29,7 @@ import static com.google.common.base.Throwables.propagate;
 import static com.google.common.hash.HashCode.fromLong;
 import static com.google.common.hash.Hashing.md5;
 import static com.google.common.io.ByteStreams.toByteArray;
+import static com.hotels.styx.infrastructure.Registry.ReloadResult.failed;
 import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
 import static com.hotels.styx.infrastructure.Registry.ReloadResult.unchanged;
 import static java.lang.String.format;
@@ -79,7 +80,7 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
                     }
                 } catch (Exception e) {
                     LOG.error("Not reloading {} as there was an error reading content", configurationFile.absolutePath(), e);
-                    throw e;
+                    return failed(format("md5-hash=%s, Reload failure.", hashCode), e);
                 }
             }
         }, newSingleThreadExecutor());
