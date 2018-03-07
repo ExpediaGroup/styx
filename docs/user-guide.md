@@ -30,4 +30,5 @@ Welcome to Styx user manual.
  
  - [Response Headers](user-guide/headers.md)
  
+ - [HTTP Server Error Responses](user-guide/response-codes.md)
  
