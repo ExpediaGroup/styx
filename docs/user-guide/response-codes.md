@@ -8,6 +8,7 @@ Styx responds with specific error codes when things don't go according to plan.
  Here is a summary of those codes:
 ![Styx 5xx Response Codes Diagram](../assets/styx-server-errors-diagram.png)
 
+
 ## 502 Bad Gateway
 
 * No route configured to backend service. An unexpected path prefix is received,
