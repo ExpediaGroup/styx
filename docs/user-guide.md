@@ -5,8 +5,10 @@ Welcome to Styx user manual.
 
  - [Basic Usage](user-guide/basic-usage.md) - Installing, Starting, and basic configuration of Styx.
  
- - [Reverse Proxying](user-guide/reverse-proxying.md) - Overview of Styx proxy functionality.
-  
+ - [Styx Reverse Proxy and Routing](user-guide/reverse-proxying.md) - Overview of Styx proxy functionality.
+ 
+ - [Styx response codes](user-guide/response-codes.md) - List of possible response codes.
+   
  - [Configuration Overview](user-guide/configure-overview.md) - Overview of Styx configuration.
  
  - [Backend services and origins](user-guide/configure-origins.md) - Configuration of a backend service and its origins.
