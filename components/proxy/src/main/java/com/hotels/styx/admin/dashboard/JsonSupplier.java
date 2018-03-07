@@ -16,8 +16,6 @@
 package com.hotels.styx.admin.dashboard;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.util.DefaultIndenter;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -25,6 +23,7 @@ import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Throwables.propagate;
+import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
 
 /**
  * A supplier that serialises the output of another supplier into JSON. It will call the source supplier each time it
@@ -34,7 +33,6 @@ public class JsonSupplier implements Supplier<String> {
     private final Supplier<?> objectSupplier;
     private final ObjectMapper mapper;
     private final boolean pretty;
-    private final DefaultPrettyPrinter prettyPrinter;
 
     /**
      * Constructs an instance.
@@ -66,15 +64,6 @@ public class JsonSupplier implements Supplier<String> {
         for (Module module : modules) {
             mapper.registerModule(module);
         }
-
-        this.prettyPrinter = prettyPrinter();
-    }
-
-    // Always uses unix-style line separators regardless of platform
-    private static DefaultPrettyPrinter prettyPrinter() {
-        return new DefaultPrettyPrinter()
-                .withObjectIndenter(new DefaultIndenter().withLinefeed("\n"))
-                .withArrayIndenter(new DefaultIndenter().withLinefeed("\n"));
     }
 
     @Override
@@ -85,7 +74,7 @@ public class JsonSupplier implements Supplier<String> {
     private String toJson(Object object) {
         try {
             if (pretty) {
-                return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
+                return mapper.writer(PRETTY_PRINTER).writeValueAsString(object);
             } else {
                 return mapper.writer().writeValueAsString(object);
             }

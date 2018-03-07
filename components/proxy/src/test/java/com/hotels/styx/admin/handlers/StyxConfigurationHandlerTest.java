@@ -65,7 +65,7 @@ public class StyxConfigurationHandlerTest {
 
         FullHttpResponse adminPageResponse = waitForResponse(browseForCurrentConfiguration(yaml, true));
 
-        assertThat(adminPageResponse.bodyAs(UTF_8), is(("{\n" +
+        assertThat(adminPageResponse.bodyAs(UTF_8), is("{\n" +
                 "  \"proxy\" : {\n" +
                 "    \"connectors\" : {\n" +
                 "      \"http\" : {\n" +
@@ -77,7 +77,7 @@ public class StyxConfigurationHandlerTest {
                 "    \"strategy\" : \"ROUND_ROBIN\"\n" +
                 "  },\n" +
                 "  \"originsFile\" : \"" + formatPathLikeYamlConfig(ORIGINS_FILE) + "\"\n" +
-                "}").replace("\n", System.lineSeparator())));
+                "}"));
     }
 
     private static String formatPathLikeYamlConfig(String path) {

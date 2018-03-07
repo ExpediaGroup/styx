@@ -85,7 +85,7 @@ public class JsonReformatterTest {
 
         String after = JsonReformatter.reformat(before);
 
-        String expectedString = "{\n" +
+        assertThat(after, is("{\n" +
                 "  \"counters\":{\n" +
                 "    \"foo.bar.count\":4,\n" +
                 "    \"styx\":{\n" +
@@ -107,8 +107,7 @@ public class JsonReformatterTest {
                 "\n" +
                 "  },\n" +
                 "  \"version\":\"3.1.3\"\n" +
-                "}";
-        assertThat(after, is(expectedString.replace("\n", System.lineSeparator())));
+                "}"));
     }
 
     private static String removeWhiteSpace(String text) {

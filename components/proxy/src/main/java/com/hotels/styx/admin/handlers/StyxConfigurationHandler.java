@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.Map;
 
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
+import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
 
 /**
  * Returns a response consisting of the configuration variables.
@@ -71,7 +72,7 @@ public class StyxConfigurationHandler implements HttpHandler {
     private String prettify(Configuration configuration) {
         try {
             return objectMapper
-                    .writerWithDefaultPrettyPrinter()
+                    .writer(PRETTY_PRINTER)
                     .writeValueAsString(objectMapper.readValue(body(configuration), Map.class));
         } catch (Throwable cause) {
             throw propagate(cause);

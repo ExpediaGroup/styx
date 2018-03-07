@@ -48,7 +48,7 @@ public class ExceptionConverterTest {
     @Test
     public void extractsTheExceptionClassMethodAndCreatesAUniqueExceptionId() throws Exception {
         ExceptionConverter converter = newExceptionConverter();
-        assertThat(converter.convert(loggingEvent), endsWith("[exceptionClass=com.hotels.styx.infrastructure.logging.ExceptionConverterTest, exceptionMethod=<init>, exceptionID=10d7182c]"+System.lineSeparator()));
+        assertThat(converter.convert(loggingEvent).trim(), endsWith("[exceptionClass=com.hotels.styx.infrastructure.logging.ExceptionConverterTest, exceptionMethod=<init>, exceptionID=10d7182c]"));
     }
 
     @Test
@@ -84,7 +84,7 @@ public class ExceptionConverterTest {
                 .putProperty(TARGET_CLASSES_PROPERTY_NAME, "TargetClass");
 
         ILoggingEvent loggingEvent = newErrorLoggingEvent(new TargetClass().blow());
-        assertThat(converter.convert(loggingEvent), endsWith("[exceptionClass=com.hotels.styx.infrastructure.logging.ExceptionConverterTest$TargetClass, exceptionMethod=blow, exceptionID=8b93d529]"+System.lineSeparator()));
+        assertThat(converter.convert(loggingEvent).trim(), endsWith("[exceptionClass=com.hotels.styx.infrastructure.logging.ExceptionConverterTest$TargetClass, exceptionMethod=blow, exceptionID=8b93d529]"));
     }
 
     @Test

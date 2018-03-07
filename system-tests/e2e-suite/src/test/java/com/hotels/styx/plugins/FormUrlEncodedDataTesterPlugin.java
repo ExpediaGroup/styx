@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hotels.styx.plugins;
 
 import com.hotels.styx.api.FormData;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpRequest.DecodedRequest;
 import com.hotels.styx.api.HttpResponse;
@@ -33,7 +32,6 @@ import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static io.netty.handler.codec.http.HttpMethod.POST;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;
-import static java.lang.System.lineSeparator;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -55,7 +53,7 @@ public class FormUrlEncodedDataTesterPlugin implements Plugin {
                         response(OK)
                                 .body(paramsFrom(request)
                                         .stream()
-                                        .collect(joining(lineSeparator())))
+                                        .collect(joining("\n")))
                                 .build()
         );
     }

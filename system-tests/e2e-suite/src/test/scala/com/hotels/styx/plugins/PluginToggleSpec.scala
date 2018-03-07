@@ -49,7 +49,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
     resp2.status() should be (OK)
     resp2.bodyAs(UTF_8) should include("response-from-plugin")
 
-    checkPluginEnabled() should be(raw"enabled${System.lineSeparator}")
+    checkPluginEnabled() should be("enabled\n")
   }
 
   override protected def afterAll(): Unit = {
@@ -80,7 +80,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
 
       val outcome = setPluginEnabled("true")
       outcome should be("{\"message\":\"State of 'pluginUnderTest' changed to 'enabled'\",\"plugin\":{\"name\":\"pluginUnderTest\",\"state\":\"enabled\"}}"+System.lineSeparator)
-      checkPluginEnabled() should be(raw"enabled${System.lineSeparator}")
+      checkPluginEnabled() should be("enabled\n")
     }
   }
 
@@ -89,7 +89,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
 
     outcome should be("{\"message\":\"State of 'pluginUnderTest' changed to 'disabled'\",\"plugin\":{\"name\":\"pluginUnderTest\",\"state\":\"disabled\"}}"+System.lineSeparator)
 
-    checkPluginEnabled() should be(raw"disabled${System.lineSeparator}")
+    checkPluginEnabled() should be("disabled\n")
   }
 
   private def setPluginEnabled(enabled : String): String = {
