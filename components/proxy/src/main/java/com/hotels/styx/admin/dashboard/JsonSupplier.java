@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package com.hotels.styx.admin.dashboard;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.util.DefaultIndenter;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -32,6 +34,7 @@ public class JsonSupplier implements Supplier<String> {
     private final Supplier<?> objectSupplier;
     private final ObjectMapper mapper;
     private final boolean pretty;
+    private final DefaultPrettyPrinter prettyPrinter;
 
     /**
      * Constructs an instance.
@@ -47,8 +50,8 @@ public class JsonSupplier implements Supplier<String> {
      * Constructs an instance.
      *
      * @param objectSupplier A supplier that will provide an object each time it is called, that can be transformed into JSON.
-     * @oaram pretty         Enable or disable pretty printing. Defaults to false.
      * @param modules        Modules for the object mapper.
+     * @oaram pretty         Enable or disable pretty printing. Defaults to false.
      */
     public static JsonSupplier create(Supplier<?> objectSupplier, boolean pretty, Module... modules) {
         return new JsonSupplier(objectSupplier, pretty, modules);
@@ -63,6 +66,15 @@ public class JsonSupplier implements Supplier<String> {
         for (Module module : modules) {
             mapper.registerModule(module);
         }
+
+        this.prettyPrinter = prettyPrinter();
+    }
+
+    // Always uses unix-style line separators regardless of platform
+    private static DefaultPrettyPrinter prettyPrinter() {
+        return new DefaultPrettyPrinter()
+                .withObjectIndenter(new DefaultIndenter().withLinefeed("\n"))
+                .withArrayIndenter(new DefaultIndenter().withLinefeed("\n"));
     }
 
     @Override

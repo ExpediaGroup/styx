@@ -16,26 +16,25 @@
 package com.hotels.styx.api.io;
 
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.support.ResourcePaths;
 import org.testng.annotations.Test;
 
 import java.io.File;
 import java.nio.file.Path;
 
 import static com.hotels.styx.api.io.ResourcePathMatcher.resourceWithPath;
+import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
 public class FileResourceIndexTest {
-    private Path PLUGINS_FIXTURE_PATH = ResourcePaths.fixturesHome(FileResourceIndexTest.class, "/plugins");
+    private Path PLUGINS_FIXTURE_PATH = fixturesHome(FileResourceIndexTest.class, "/plugins");
     private FileResourceIndex resourceIndex = new FileResourceIndex();
-    private String EXISTING_PLUGIN_RELPATH = "oneplugin/url-rewrite-1.0-SNAPSHOT.jar";
 
     @Test
     public void listsResourcesFromFileSystemDirectory() {
         Iterable<Resource> jars = resourceIndex.list(PLUGINS_FIXTURE_PATH.toString(), ".jar");
 
-        assertThat(jars, contains(resourceWithPath(EXISTING_PLUGIN_RELPATH)));
+        assertThat(jars, contains(resourceWithPath("oneplugin/url-rewrite-1.0-SNAPSHOT.jar")));
     }
 
     @Test

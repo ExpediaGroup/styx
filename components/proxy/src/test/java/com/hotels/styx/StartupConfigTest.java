@@ -24,7 +24,10 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static com.hotels.styx.StartupConfig.*;
+import static com.hotels.styx.StartupConfig.CONFIG_FILE_LOCATION_VAR_NAME;
+import static com.hotels.styx.StartupConfig.LOGBACK_CONFIG_LOCATION_VAR_NAME;
+import static com.hotels.styx.StartupConfig.STYX_HOME_VAR_NAME;
+import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static java.lang.System.clearProperty;
 import static java.lang.System.setProperty;
@@ -55,7 +58,6 @@ public class StartupConfigTest {
     public void readsConfigurationFromDefaultLocation() {
         setProperty(STYX_HOME_VAR_NAME, fixturesHome());
         StartupConfig config = StartupConfig.load();
-
 
         assertThat(config.styxHome(), is(Paths.get(fixturesHome())));
     }

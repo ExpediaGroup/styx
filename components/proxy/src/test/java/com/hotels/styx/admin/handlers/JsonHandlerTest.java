@@ -83,15 +83,15 @@ public class JsonHandlerTest {
     }
 
     @Test
-    public void prettyPrintsOutputWhenPrettyIsSetToTrue() throws Exception {
+    public void prettyPrintsOutputWhenPrettyIsSetToTrue() {
         HttpRequest request = get("/?pretty=true").build();
 
         Supplier<Convertible> supplier = sequentialSupplier(new Convertible("foo", 456));
         JsonHandler<Convertible> handler = new JsonHandler<>(supplier, Optional.empty());
 
-        assertThat(responseFor(handler, request), is("{" + System.lineSeparator() +
-                "  \"string\" : \"foo\"," + System.lineSeparator() +
-                "  \"integer\" : 456" + System.lineSeparator() +
+        assertThat(responseFor(handler, request), is("{\n" +
+                "  \"string\" : \"foo\",\n" +
+                "  \"integer\" : 456\n" +
                 "}"));
     }
 

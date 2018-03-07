@@ -26,7 +26,7 @@ public class ResourceFactoryTest {
     public void canAcquireClasspathResources() {
         Resource resource = ResourceFactory.newResource("classpath:com/hotels/styx/api/io/resource.txt");
         
-        assertThat(resource, contains("This is an example resource."+System.lineSeparator()+"It has content to use in automated tests."));
+        assertThat(resource, contains("This is an example resource.\nIt has content to use in automated tests."));
     }
 
     @Test
@@ -35,6 +35,6 @@ public class ResourceFactoryTest {
         
         Resource resource = ResourceFactory.newResource(filePath);
 
-        assertThat(resource, contains("This is an example resource."+System.lineSeparator()+"It has content to use in automated tests."));
+        assertThat(resource, contains("This is an example resource.\nIt has content to use in automated tests."));
     }
 }

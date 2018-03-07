@@ -35,7 +35,7 @@ final class Resources {
     public static String load(Resource resource) throws IOException {
         try {
             return fileContents(Paths.get(resource.url().toURI()));
-        }catch (URISyntaxException e){
+        } catch (URISyntaxException e) {
             throw propagate(e);
         }
     }

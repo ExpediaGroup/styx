@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Throwables.propagate;
+import static java.lang.System.lineSeparator;
 
 public class ResourceContentMatcher extends TypeSafeMatcher<Resource> {
     private final String expected;
@@ -56,7 +57,7 @@ public class ResourceContentMatcher extends TypeSafeMatcher<Resource> {
 
     private static String read(Resource item) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(item.inputStream()))) {
-            return CharStreams.toString(reader);
+            return CharStreams.toString(reader).replace(lineSeparator(), "\n");
         } catch (IOException e) {
             throw propagate(e);
         }

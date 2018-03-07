@@ -45,7 +45,7 @@ public class ClasspathResourceTest {
         assertThat(resource.path(), is("com/hotels/styx/api/io/resource.txt"));
         assertThat(resource.absolutePath(), is(absolutePath("/com/hotels/styx/api/io/resource.txt")));
         assertThat(resource.url(), is(new URL("file:" + absolutePath("/com/hotels/styx/api/io/resource.txt"))));
-        assertThat(resource, contains("This is an example resource."+System.lineSeparator()+"It has content to use in automated tests."));
+        assertThat(resource, contains("This is an example resource.\nIt has content to use in automated tests."));
     }
 
     @DataProvider(name = "validPaths")
