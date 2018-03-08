@@ -1,6 +1,6 @@
 # Retry Policy Configuration
 
-Styx has a configurable retry policy that is configured globally.
+Styx has a configurable retry policy that is configured globally for the Styx server.
 It attempts to re-send requests under certain failure conditions,
 specifically when:
 

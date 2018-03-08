@@ -81,6 +81,6 @@ To enable Adaptive load balancing strategy:
 
 
 The *requestCount* attribute determines how long the adaptive strategy
-remains in the Round Robin phase before switching to the *Busy* strategy.
+remains in the Round Robin phase before switching over to the *Busy* strategy.
 Its value is the number of requests proxied *per origin*.
 

@@ -57,7 +57,7 @@ TLS-protected HTTPS ports simultaneously (on different ports).
 
   - *cipherSuites* - A list of enabled cipher suites, in order
     of preference. Leave absent to use the SSL provider defaults.
-    Note that the cipher suite names are specific to the SSL provider.
+    Note that the cipher suite names are specific to each SSL provider.
 
   - *protocols* - A list of TLS protocol versions to use.
     Use this attribute to enforce a more secure version like `TLSv1.2`.
