@@ -54,9 +54,9 @@ two interceptors, in this case plugins:
  - *redirect-old-domain*
  - *bad-cookie-fixer* before
 
-After this pipeline the traffic is handled by a *ConditionRouter* which
-sends all traffic satisfying the condition *protocol() == "https" to
-BackendServiceProxy called *secure-backends*, and all other traffic to
+After this pipeline, the traffic is handled by a *ConditionRouter* which
+sends all traffic satisfying the condition *protocol() == "https" to a 
+BackendServiceProxy called *secure-backends*, and all the other traffic to
 another BackendServiceProxy called *insecure-backends*.
 
 Graphically the object model can be represented as:
@@ -82,21 +82,21 @@ Graphically the object model can be represented as:
 
 ## Concepts
 
-Routing object model consist of *Http Handler* and *Interceptor* objects.
+The routing object model consist of *Http Handler* and *Interceptor* objects.
 
 The *Http Handler* objects consume and handle HTTP requests in some
-non-trivial ways, such as proxy the traffic to backend services, etc.
+non-trivial ways, such as proxying the traffic to backend services, etc.
 The *InterceptorPipeline*, *ConditionRouter*, and a *BackendServiceProxy*
 in above example are all HTTP handlers. Some handlers like *InterceptorPipeline*
 or *ConditionRouter* can pass the traffic for other handlers to consume.
 
-HTTP *Interceptor* objects are intended for performing simple actions
+HTTP *Interceptor* objects are intended to perform simple actions
 (eg logging) or transforming requests and/or responses along the way
 (Rewrite).
 
 List of built-in handlers:
 
- - BackendServiceProxy. It proxies to configured backends based on URL path prefix.
+ - BackendServiceProxy. It proxies to configured backends based on the URL path prefix.
  - HttpInterceptorPipeline. It runs the request through the interceptor pipeline before passing on to the next handler.
  - ProxyToBackend. It proxies to an individual configured backend service.
  - StaticResponseHandler. Responds with specified response.
@@ -116,11 +116,11 @@ main styx configuration file.
 
 ### Routing Config Objects
 
-Routing object model is configured in Yaml with *Routing Config Noders*.
-It is either a *ROUTING-CONFIG-REF* which is a reference to another named
-object, or a *ROUTING-CONFIG-DEF* that is block of of configuration.
+Routing object model is configured in Yaml with *Routing Config Nodes*.
+It is either a `ROUTING-CONFIG-REF` which is a reference to another named
+object, or a `ROUTING-CONFIG-DEF` that is block of of configuration.
 
-A *ROUTNG-CONFIG-DEF* has a common format of:
+A `ROUTNG-CONFIG-DEF` has a common format of:
 
     ROUTING-CONFIG-DEF:
        name: <optional, a descriptive name>
@@ -130,7 +130,7 @@ A *ROUTNG-CONFIG-DEF* has a common format of:
 
 The list of types and their configuration layouts are specified below.
 
-A *ROUTING-CONFIG-REF* is just a string that is supposed to reference
+A `ROUTING-CONFIG-REF` is just a string that is supposed to reference
 to another routing config object, styx service, or plugin.
 
 
@@ -139,7 +139,7 @@ to another routing config object, styx service, or plugin.
 Runs the configured interceptors (or plugins) before passing on to
 the next handler in the processing chain.
 
-Configuration:
+*Configuration*:
 
     name: <descriptive name for this object (optional)>
     type: InterceptorPipeline
@@ -149,7 +149,7 @@ Configuration:
         handler:
            <ROUTING-CONFIG-DEFINITION>
 
-Pipeline:
+*Pipeline*:
 
 Routing config node list can have both routing config references and
 definitions mixed together. A routing config reference must always
@@ -157,17 +157,17 @@ refer to a valid plugin name that has been declared in the Styx *plugins*
 section. A routing config definition can be used to insert styx built-in
 interceptors.
 
-Handler:
+*Handler*:
 
 This is a routing config definition block that defines the handler used.
 
 
 ### ConditionRouter
 
-Subjects HTTP request to a set of tests, or *conditions*, that determine
-which handler to pass the request next.
+The Condition router subjects the HTTP request to a set of tests, or *conditions*, that determine
+which handler to pass the request to next.
 
-Configuration:
+*Configuration*:
 
     name: <descriptive name for this object (optional)>
     type: ConditionRouter
@@ -177,20 +177,20 @@ Configuration:
         fallback:
            <ROUTING-CONFIG-DEFINITION>
 
-routes:
+*Routes*:
 
-This is a list of "routes" that activate based on the outcome of the conditions.
+This block contains a list of destinations that are activated depending on the outcome of the conditions.
 
     CONDITION-DESTINATION:
        condition: <STRING, DSL predicate>
        destination:
          <ROUTING-CONFIG-DEFINITION>
 
-Conditions are evaluated in order they appear in the routes list.
+Conditions are evaluated in the order in which they appear in the routes list.
 The request is sent to the first destination that results in a positive
 match from the condition.
 
-fallback:
+*Fallback*:
 
 An optional field that specifies a handler which the request is sent
 when none of the configured routes match with the request. When fallback
@@ -201,7 +201,7 @@ is absent, a *502 Bad Gateway* is returned by default.
 
 Proxies a request to a backend service.
 
-Configuration:
+*Configuration*:
 
     name: <descriptive name for this object (optional)>
     type: ProxyToBackend
@@ -209,8 +209,8 @@ Configuration:
         backend:
            <STYX-HTTP-BACKEND-DEF>
 
-The Styx HTTP backend definition follows the syntax of syntax
-of backends in the origins file, but without the path attribute.
+The Styx HTTP backend definition follows the syntax of backends in the origins file,
+ but without the path attribute.
 
       backend:
         id: "ba"
@@ -224,7 +224,7 @@ of backends in the origins file, but without the path attribute.
 
 ### StaticResponseHandler
 
-Responds with configured response.
+Responds with a preconfigured response.
 
     name: <descriptive name for this object (optional)>
     type: StaticResponseHandler
@@ -235,14 +235,14 @@ Responds with configured response.
 
 ### BackendServiceProxy
 
-Standard path-prefix based backend service router/proxy.
+Standard path-prefix based router/proxy to backend services.
 
     name: <descriptive name for this object (optional)>
     type: BackendServiceProxy
     config:
         backendProvider: <name>
 
-The backendProvider attribute must refer to a named backend service
+The `backendProvider` attribute must refer to a named backend service
 in the `services` section. For example, to proxy between HTTP and HTTPS
 origins based on the incoming protocol:
 
@@ -282,17 +282,17 @@ And in the services:
 
 ## Routing DSL
 
-Routing DSL supports following functions:
+The routing DSL supports the following functions:
 
-    method()     - returns HTTP method name as a string
-    path()       - returns URL path as a string
-    userAgent()  - returns user agent header as a tring
-    protocol()   - returns protocol (http, or https) as a string
+    method()     - returns the HTTP method name as a string
+    path()       - returns the URL path as a string
+    userAgent()  - returns the user agent header as a tring
+    protocol()   - returns the protocol (http, or https) as a string
     header(NAME) - returns a given header value
     cookie(NAME) - returns a given cookie name
 
 
-The functions are always used in as a part of equivalency tests,
+These functions are always used as a part of equivalency tests,
 so that the `ConditionRouter` predicate always evaluates to either
 true or false.
 
@@ -330,7 +330,3 @@ User agent:
 
     userAgent() == "Mozilla Firefox 1.1.2" OR userAgent() =~ "Safari.*"
 
-
-## Example Configuration
-
-TBD
