@@ -57,7 +57,7 @@ However, the interceptor plugins can change this behaviour. They are able to sto
 and forward the full request/response should it be necessary for the business requirements. 
 
 Styx uses flow control to adapt the relative speeds of upstream and downstream 
-when proxying, protecting Styx from being overwhelmed when the sender 
+when proxying, and thus protecting Styx from being overwhelmed when the sender 
 is sending faster than the receiver can consume.
 
 ## Response codes
