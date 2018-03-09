@@ -1,17 +1,31 @@
-# Configuring backend services and Origins
+# Configuring backend services and origins
 
+This document describes 
 ## Configuration file
-Backend services and origins known to Styx are configured in their own YAML file, which is referenced by the main 
-configuration via the **originsFile** property.
 
-The value for this **originsFile** property accepts including environment variables (with the ${ENV_VAR} format) and can reference:
+Backend services and origins known to Styx are configured in their own YAML file, which is referenced by the main 
+configuration via the `originsFile` property in the services block.
+
+The value for this `originsFile` property accepts including environment variables (with the ${ENV_VAR} format) and can reference:
  - A path in the filesystem by default.
  - A resource in the classpath by using the prefix *classpath:*.
 
 ###Examples:
+Using the absolute path of the file:
 ```yaml
-    originsFile=${STYX_HOME}/conf/env-development/origins.yaml
-    originsFile=classpath:/conf/origins.yaml
+services:
+  factories:
+    backendServiceRegistry:
+      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry$Factory"
+      config: {originsFile: "${STYX_HOME}/conf/env-development/origins.yaml"}
+ ```
+Using a file in the classpath:
+```yaml
+services:
+  factories:
+    backendServiceRegistry:
+      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry$Factory"
+      config: {originsFile: "classpath:/conf/origins.yaml"}
  ```
     
 ## Backend services

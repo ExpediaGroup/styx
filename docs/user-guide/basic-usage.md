@@ -41,7 +41,7 @@ configuration file as an argument:
 
 This starts Styx according to the configuration specified in *staging.yml* file.
 
-You also can specify the configuration via *STYX_CONFIG* environment
+You also can specify the configuration via the `STYX_CONFIG` environment
 variable. For example:
 
     STYX_CONFIG=conf/env-development/styx-config.yml ./bin/startup
@@ -70,12 +70,12 @@ script runs. Use this file as a "startup hook" to initialise Styx before it gets
 You can configure JVM settings, system properties, and any other installation that may be 
 necessary before startup.
 
-The styx startup script accepts an {-e} or {--env} command line option for specifying an alternative
+The styx startup script accepts an `-e` or `--env` command line option for specifying an alternative
 Styx environment file:
 
     $ ./bin/startup -e conf/env-development/styx-env.sh
 
-The custom environment file can also be specified via *STYX_ENV_FILE* environment variable.
+The custom environment file can also be specified via the *STYX_ENV_FILE* environment variable.
      
 
 # Configuring Logging
@@ -84,7 +84,7 @@ Styx uses [Logback style](https://logback.qos.ch/manual/index.html) configuratio
 configuration.
 
 By default, the logback file is loaded from *$STYX_HOME/conf/logback.xml*. You can specify an alternative
-logging configuration file using {-l} or {--logback} command line options:
+logging configuration file using `-l` or `--logback` command line options:
 
     $ ./bin/startup --logback conf/env-development/logback.xml
     

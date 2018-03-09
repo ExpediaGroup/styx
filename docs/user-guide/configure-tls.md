@@ -3,9 +3,9 @@
 Transport Layer Security (TLS) can be enabled on Styx both for the incoming interface
 (connections from clients) and the connections with the backend services.
 
-TLS can be enabled independently for each network resource. You can
-enable it independently for each port of the proxy server, and for each of the
-backend services. Styx will convert between the protocols where
+TLS can be enabled independently for each port of the proxy server, 
+and for each of the backend services. 
+Styx will convert between the protocols where
 necessary. For example, if you have insecure HTTP traffic coming in,
 it will be converted to secure HTTPS if necessary.
 
@@ -108,8 +108,9 @@ be specified as separate backends.
 ### Backend Application Attributes:
 
 
-  - trustAllCerts - Turns off (true) or on (true) client-side TLS authentication. When `trustAllCerts` is false,
-  origin servers need to provide a trusted certificate or the connection will be rejected.
+  - *trustAllCerts* -  When `trustAllCerts` is false,origin servers need to provide a 
+  trusted certificate or the connection will be rejected. If true, all the server certificates
+  will be allowed.
 
   - *sslProvider* - Specifies a Java service provider implementation for the TLS protocol.
     Supported values are `JDK` and `OPENSSL`. Note that `OPENSSL` is a platform dependent
@@ -125,7 +126,7 @@ be specified as separate backends.
 
       - *path*  - A path to the certificate file.
 
-  - *trustStorePath* - Styx can load the list of trusted certificates from a Java JKS keystore.
+  - *trustStorePath* - Styx can load the list of trusted certificates from a Java JKS truststore.
     This attribute specifies a path to the truststore file containing the trusted certificates.
 
   - *trustStorePassword* - A password for the keystore file specified in

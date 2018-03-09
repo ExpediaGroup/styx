@@ -1,8 +1,13 @@
 ## Configuring Styx
 
-Styx supports a YAML file-based configuration. The YAML file can be specified using the system property `YAML_CONFIG_LOCATION=your/file/path`.
-By default, the file is read from the classpath at `classpath:conf/environment/styx-config.yaml`.
-Additionally, all these properties can be overwritten using environment variables with the same name as the property.
+Styx supports a YAML file-based configuration. The path to the YAML file can be passed
+as a parameter to the startup script (`startup <CONFIG_FILE>`)
+or configured via the environment variable `STYX_CONFIG`.
+
+By default, the file is read from `conf/default.yaml`.
+
+Additionally, all these properties can be overwritten
+using environment variables with the same name as the property.
 
 ### Example styx-config
 
