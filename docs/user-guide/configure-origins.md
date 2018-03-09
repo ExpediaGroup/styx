@@ -1,4 +1,4 @@
-# Configuring backend services and origins
+# Configuring Backend Services and Origins
 
 This document describes 
 ## Configuration file
