@@ -1,5 +1,20 @@
 # Starting Styx
 
+## Building Styx from source code 
+ 
+ In order to build styx from source code, Java 8 (1.8.0_45 or later) is required. 
+ The build system requires Apache Maven. The Styx CI pipeline uses Maven version 3.2.1 
+ for the automated continuous integration builds. On Mac OSX, a version installed 
+ by HomeBrew is satisfactory.
+ 
+ The instructions are:
+ 1. Download the code from github
+ 2. Generate the artifact using maven.
+```
+git clone https://github.com/HotelsDotCom/styx.git
+cd styx && mvn package
+```
+ 
 ## System Requirements
 
 Running Styx requires Java 1.8. It can be run with 1.8.0_45 or later versions. Earlier maintenance
