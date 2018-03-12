@@ -22,26 +22,39 @@ import org.testng.annotations.Test;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.util.Collections.emptyMap;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.testng.Assert.fail;
 
 public class ParserTest {
+    private final StubConfigSources config = new StubConfigSources()
+            .plus("test-config", ImmutableMap.of(
+                    "number", 123,
+                    "string", "abc",
+                    "numberFromParent", 999,
+                    "include", "parent-config-source"))
+
+            .plus("test-parent-config", ImmutableMap.of(
+                    "numberFromParent", 111,
+                    "stringFromParent", "DEF"));
+
     @Test
     public void providesConfig() {
-        Map<String, Object> values = ImmutableMap.of(
-                "foo", 123,
-                "bar", "abc");
-
-        StubConfiguration configuration = new StubConfiguration(values);
+        StubConfigSources configWithoutIncludes = new StubConfigSources()
+                .plus("test-config", ImmutableMap.of(
+                        "foo", 123,
+                        "bar", "abc"));
 
         Parser<StubConfiguration> parser = new Parser.Builder<StubConfiguration>()
-                .format(new StubConfigurationFormat("test-string", configuration))
+                .format(format(configWithoutIncludes))
                 .overrides(emptyMap())
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-string"));
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
 
         assertThat(parsedConfiguration.get("foo", Integer.class), isValue(123));
         assertThat(parsedConfiguration.get("bar", String.class), isValue("abc"));
@@ -49,55 +62,41 @@ public class ParserTest {
 
     @Test
     public void includesParent() {
-        Map<String, Object> parentValues = ImmutableMap.of(
-                "foo", 456,
-                "baz", "DEF");
-
-        Map<String, Object> values = ImmutableMap.of(
-                "foo", 123,
-                "bar", "abc",
-                "include", "parent");
-
-        StubConfigurationFormat format = new StubConfigurationFormat(ImmutableMap.of(
-                "test-string", new StubConfiguration(values),
-                "parent-test-string", new StubConfiguration(parentValues)
-        ));
-
-        Map<String, ConfigurationProvider> providers = ImmutableMap.of("parent", ConfigurationProvider.from("parent-test-string"));
-
         Parser<StubConfiguration> parser = new Parser.Builder<StubConfiguration>()
-                .format(format)
+                .format(format(config))
+                .includeProviderFunction(includedConfigProvider("parent-config-source", "test-parent-config"))
                 .overrides(emptyMap())
-                .includeProviderFunction(providers::get)
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-string"));
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
 
-        assertThat(parsedConfiguration.get("foo", Integer.class), isValue(123));
-        assertThat(parsedConfiguration.get("bar", String.class), isValue("abc"));
-        assertThat(parsedConfiguration.get("baz", String.class), isValue("DEF"));
+        // Present in child
+        assertThat(parsedConfiguration.get("string", String.class), isValue("abc"));
+
+        // Present in parent, not present in child
+        assertThat(parsedConfiguration.get("stringFromParent", String.class), isValue("DEF"));
+
+        // Present in parent, overridden by child
+        assertThat(parsedConfiguration.get("numberFromParent", Integer.class), isValue(999));
     }
 
-    private static class StubConfigurationFormat implements ConfigurationFormat<StubConfiguration> {
-        private final Map<String, StubConfiguration> configurations;
+    @Test(enabled = false)
+    public void resolvesPlaceholders() {
+        Parser<StubConfiguration> parser = new Parser.Builder<StubConfiguration>()
+                .format(format(config))
+                .includeProviderFunction(includedConfigProvider("parent-config-source", "test-parent-config"))
+                .overrides(emptyMap())
+                .build();
 
-        StubConfigurationFormat(String expectedString, StubConfiguration configuration) {
-            this(ImmutableMap.of(expectedString, configuration));
-        }
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
 
-        StubConfigurationFormat(Map<String, StubConfiguration> configurations) {
-            this.configurations = configurations;
-        }
+    }
 
-        @Override
-        public StubConfiguration deserialise(String string) {
-            return configurations.get(string);
-        }
-
-        @Override
-        public StubConfiguration deserialise(Resource resource) {
-            return null;
-        }
+    private static Function<String, ConfigurationProvider> includedConfigProvider(String source, String providedString) {
+        return actualSource -> {
+            assertThat(actualSource, is(source));
+            return ConfigurationProvider.from(providedString);
+        };
     }
 
     private static class StubConfiguration implements ExtensibleConfiguration<StubConfiguration> {
@@ -120,4 +119,35 @@ public class ParserTest {
         }
     }
 
+    private static ConfigurationFormat<StubConfiguration> format(StubConfigSources configurations) {
+        return new ConfigurationFormat<StubConfiguration>() {
+            @Override
+            public StubConfiguration deserialise(String string) {
+                return configurations.config(string);
+            }
+
+            @Override
+            public StubConfiguration deserialise(Resource resource) {
+                fail("Unexpected method call with arg " + resource);
+                return null;
+            }
+        };
+    }
+
+    private static class StubConfigSources {
+        private final Map<String, StubConfiguration> configurations;
+
+        StubConfigSources() {
+            this.configurations = new HashMap<>();
+        }
+
+        StubConfigSources plus(String source, Map<String, Object> values) {
+            configurations.put(source, new StubConfiguration(values));
+            return this;
+        }
+
+        StubConfiguration config(String source) {
+            return configurations.get(source);
+        }
+    }
 }
