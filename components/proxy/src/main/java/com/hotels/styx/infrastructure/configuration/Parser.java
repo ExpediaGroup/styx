@@ -59,9 +59,6 @@ public final class Parser<C extends ExtensibleConfiguration<C>> {
     }
 
     private C resolvePlaceholders(C config) {
-        if(config == null)
-            throw new IllegalArgumentException("WHAT THE FUCK");
-
         if (config.unresolvedPlaceholderCount() == 0) {
             return config;
         }
