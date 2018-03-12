@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static ch.qos.logback.classic.Level.INFO;
@@ -192,8 +193,9 @@ public class FileBackedBackendServicesRegistryTest {
         ));
     }
 
-    @Test
-    public void serviceStarts_logsInfoWhenReloadFails() throws Exception {
+    @Test(expectedExceptions = ExecutionException.class,
+            expectedExceptionsMessageRegExp = "java.lang.RuntimeException: java.lang.RuntimeException: something went wrong")
+    public void serviceStarts_failsToStartWhenReloadFails() throws Exception {
         FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
         when(delegate.fileName()).thenReturn("/monitored/origins.yml");
         when(delegate.reload()).thenReturn(
@@ -203,14 +205,32 @@ public class FileBackedBackendServicesRegistryTest {
 
         registry = new FileBackedBackendServicesRegistry(delegate);
         registry.startService().get();
+    }
 
-        assertThat(log.lastMessage(), is(
-                loggingEvent(
-                        ERROR,
-                        "Backend services reload failed. reason='Initial load', md5-hash: 9034890345289043, Failed to load file, file='/monitored/origins.yml'",
-                        RuntimeException.class,
-                        "something went wrong")
-        ));
+    @Test
+    public void serviceStarts_logsInfoWhenReloadFails() {
+        FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
+        when(delegate.fileName()).thenReturn("/monitored/origins.yml");
+        when(delegate.reload()).thenReturn(
+                completedFuture(failed(
+                        "md5-hash: 9034890345289043, Failed to load file",
+                        new RuntimeException("something went wrong"))));
+
+        registry = new FileBackedBackendServicesRegistry(delegate);
+
+        try {
+            registry.startService().get();
+        } catch (Throwable any) {
+              // pass
+        } finally {
+            assertThat(log.lastMessage(), is(
+                    loggingEvent(
+                            ERROR,
+                            "Backend services reload failed. reason='Initial load', md5-hash: 9034890345289043, Failed to load file, file='/monitored/origins.yml'",
+                            RuntimeException.class,
+                            "something went wrong")
+            ));
+        }
     }
 
     @Test

@@ -37,6 +37,7 @@ import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
+import static com.hotels.styx.infrastructure.Registry.Outcome.FAILED;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -102,7 +103,12 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
             return x;
         }
         return this.fileBackedRegistry.reload()
-                .thenAccept(result -> logReloadAttempt("Initial load", result));
+                .thenApply(result -> logReloadAttempt("Initial load", result))
+                .thenAccept(result -> {
+                    if (result.outcome() == FAILED) {
+                        throw new RuntimeException(result.cause().orElse(null));
+                    }
+                });
     }
 
     @Override
@@ -125,7 +131,7 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         String fileName = this.fileBackedRegistry.fileName();
         if (outcome.outcome() == Outcome.RELOADED || outcome.outcome() == Outcome.UNCHANGED) {
             LOGGER.info("Backend services reloaded. reason='{}', {}, file='{}'", new Object[]{reason, outcome.message(), fileName});
-        } else if (outcome.outcome() == Outcome.FAILED) {
+        } else if (outcome.outcome() == FAILED) {
             LOGGER.error("Backend services reload failed. reason='{}', {}, file='{}'",
                     new Object[]{reason, outcome.message(), fileName, outcome.cause().get()});
         }
