@@ -19,13 +19,13 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.Resource;
 import org.testng.annotations.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.util.Collections.emptyMap;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 
 public class ParserTest {
     @Test
@@ -47,7 +47,7 @@ public class ParserTest {
         assertThat(parsedConfiguration.get("bar", String.class), isValue("abc"));
     }
 
-    @Test(enabled = false)
+    @Test
     public void includesParent() {
         Map<String, Object> parentValues = ImmutableMap.of(
                 "foo", 456,
@@ -55,34 +55,43 @@ public class ParserTest {
 
         Map<String, Object> values = ImmutableMap.of(
                 "foo", 123,
-                "bar", "abc");
+                "bar", "abc",
+                "include", "parent");
 
-        StubConfiguration configuration = new StubConfiguration(values);
+        StubConfigurationFormat format = new StubConfigurationFormat(ImmutableMap.of(
+                "test-string", new StubConfiguration(values),
+                "parent-test-string", new StubConfiguration(parentValues)
+        ));
+
+        Map<String, ConfigurationProvider> providers = ImmutableMap.of("parent", ConfigurationProvider.from("parent-test-string"));
 
         Parser<StubConfiguration> parser = new Parser.Builder<StubConfiguration>()
-                .format(new StubConfigurationFormat("test-string", configuration))
+                .format(format)
                 .overrides(emptyMap())
+                .includeProviderFunction(providers::get)
                 .build();
 
         StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-string"));
 
         assertThat(parsedConfiguration.get("foo", Integer.class), isValue(123));
         assertThat(parsedConfiguration.get("bar", String.class), isValue("abc"));
+        assertThat(parsedConfiguration.get("baz", String.class), isValue("DEF"));
     }
 
     private static class StubConfigurationFormat implements ConfigurationFormat<StubConfiguration> {
-        private final String expectedString;
-        private final StubConfiguration configuration;
+        private final Map<String, StubConfiguration> configurations;
 
         StubConfigurationFormat(String expectedString, StubConfiguration configuration) {
-            this.expectedString = expectedString;
-            this.configuration = configuration;
+            this(ImmutableMap.of(expectedString, configuration));
+        }
+
+        StubConfigurationFormat(Map<String, StubConfiguration> configurations) {
+            this.configurations = configurations;
         }
 
         @Override
         public StubConfiguration deserialise(String string) {
-            assertThat(string, is(expectedString));
-            return configuration;
+            return configurations.get(string);
         }
 
         @Override
@@ -100,7 +109,9 @@ public class ParserTest {
 
         @Override
         public StubConfiguration withParent(StubConfiguration parent) {
-            return null;
+            Map<String, Object> newValues = new HashMap<>(parent.values);
+            newValues.putAll(this.values);
+            return new StubConfiguration(newValues);
         }
 
         @Override

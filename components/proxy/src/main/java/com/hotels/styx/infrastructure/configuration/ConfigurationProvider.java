@@ -29,6 +29,11 @@ public interface ConfigurationProvider {
             public <C extends ExtensibleConfiguration<C>> C deserialise(ConfigurationFormat<C> format) {
                 return format.deserialise(string);
             }
+
+            @Override
+            public String toString() {
+                return "\"" + string + "\"";
+            }
         };
     }
 
@@ -37,6 +42,11 @@ public interface ConfigurationProvider {
             @Override
             public <C extends ExtensibleConfiguration<C>> C deserialise(ConfigurationFormat<C> format) {
                 return format.deserialise(resource);
+            }
+
+            @Override
+            public String toString() {
+                return resource.toString();
             }
         };
     }
