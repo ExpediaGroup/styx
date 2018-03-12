@@ -40,8 +40,8 @@ public final class Parser<C extends ExtensibleConfiguration<C>> {
         this.format = requireNonNull(builder.format);
         this.overrides = requireNonNull(builder.overrides);
         this.includeProviderFunction = builder.includeProviderFunction != null
-        ? builder.includeProviderFunction
-        : Parser::includeProvider;
+                ? builder.includeProviderFunction
+                : Parser::includeProvider;
     }
 
     public C parse(ConfigurationProvider provider) {
@@ -53,14 +53,33 @@ public final class Parser<C extends ExtensibleConfiguration<C>> {
 
         return main.get("include")
                 .map(include -> resolvePlaceholdersInText(include, overrides))
-                .map(includePath -> {
-                    ConfigurationProvider includedConfigurationProvider = includeProviderFunction.apply(includePath);
-
-                    C includedConfig = parse(includedConfigurationProvider);
-
-                    return main.withParent(includedConfig);
-                })
+                .map(includePath -> main.withParent(parent(includePath)))
+                .map(this::resolvePlaceholders)
                 .orElse(main);
+    }
+
+    private C resolvePlaceholders(C config) {
+        if(config == null)
+            throw new IllegalArgumentException("WHAT THE FUCK");
+
+        if (config.unresolvedPlaceholderCount() == 0) {
+            return config;
+        }
+
+        int previousUnresolvedPlaceholderCount;
+
+        do {
+            previousUnresolvedPlaceholderCount = config.unresolvedPlaceholderCount();
+            config = config.resolvePlaceholders(overrides);
+        } while (config.unresolvedPlaceholderCount() < previousUnresolvedPlaceholderCount);
+
+        return config;
+    }
+
+    private C parent(String includePath) {
+        ConfigurationProvider includedConfigurationProvider = includeProviderFunction.apply(includePath);
+
+        return parse(includedConfigurationProvider);
     }
 
     private static String resolvePlaceholdersInText(String text, Map<String, String> overrides) {

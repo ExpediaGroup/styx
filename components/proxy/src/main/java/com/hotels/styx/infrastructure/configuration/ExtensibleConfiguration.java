@@ -17,6 +17,8 @@ package com.hotels.styx.infrastructure.configuration;
 
 import com.hotels.styx.api.configuration.Configuration;
 
+import java.util.Map;
+
 /**
  * Extensible configuration, interface is agnostic to how it is stored in memory.
  *
@@ -24,4 +26,8 @@ import com.hotels.styx.api.configuration.Configuration;
  */
 public interface ExtensibleConfiguration<C extends ExtensibleConfiguration<C>> extends Configuration {
     C withParent(C parent);
+
+    int unresolvedPlaceholderCount();
+
+    C resolvePlaceholders(Map<String, String> overrides);
 }

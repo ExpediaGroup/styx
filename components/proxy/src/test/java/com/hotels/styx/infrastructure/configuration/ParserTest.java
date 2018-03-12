@@ -21,11 +21,13 @@ import org.testng.annotations.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.util.Collections.emptyMap;
+import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.testng.Assert.fail;
@@ -38,7 +40,7 @@ public class ParserTest {
                     "string", "abc",
                     "numberFromParent", 999,
                     "hasPlaceholder", "${string}"
-                    ))
+            ))
 
             .plus("test-parent-config", ImmutableMap.of(
                     "numberFromParent", 111,
@@ -83,7 +85,7 @@ public class ParserTest {
     }
 
     @Test
-    public void resolvesPlaceholders() {
+    public void resolvesPlaceholdersWithOtherConfigValues() {
         Parser<StubConfiguration> parser = new Parser.Builder<StubConfiguration>()
                 .format(format(config))
                 .includeProviderFunction(includedConfigProvider("parent-config-source", "test-parent-config"))
@@ -118,6 +120,33 @@ public class ParserTest {
             Map<String, Object> newValues = new HashMap<>(parent.values);
             newValues.putAll(this.values);
             return new StubConfiguration(newValues);
+        }
+
+        @Override
+        public int unresolvedPlaceholderCount() {
+            return (int) values.values().stream()
+                    .filter(object -> object instanceof String)
+                    .map(String.class::cast)
+                    .filter(value -> Objects.equals(value, "${string}"))
+                    .count();
+        }
+
+        @Override
+        public StubConfiguration resolvePlaceholders(Map<String, String> overrides) {
+            Map<String, Object> resolved = values.entrySet().stream().collect(toMap(
+                    Map.Entry::getKey,
+                    entry -> resolve(entry.getValue())
+            ));
+
+            return new StubConfiguration(resolved);
+        }
+
+        private Object resolve(Object original) {
+            if (Objects.equals(original, "${string}")) {
+                return values.get("string");
+            }
+
+            return original;
         }
 
         @Override
