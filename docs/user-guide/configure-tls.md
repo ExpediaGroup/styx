@@ -70,7 +70,7 @@ The accepted protocol names and cipher suite names for `JDK` provider
 are listed in [Oracle Java Cryptography Architecture documentation](https://docs.oracle.com/javase/8/docs/technotes/guides/security/SunProviders.html).
 
 
-## Backend Applications Configuration
+## Backend Services Configuration
 
 HTTPS protocol is enabled by inserting a *tlsSettings* attribute in the
 backend services configuration, as follows:
@@ -105,7 +105,7 @@ If your backend application exposes both HTTP and HTTPS endpoints, they must
 be specified as separate backends.
 
 
-### Backend Application Attributes:
+### Backend Service Attributes:
 
 
   - *trustAllCerts* -  When `trustAllCerts` is false, origin servers need to provide a 

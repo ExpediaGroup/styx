@@ -49,7 +49,7 @@ When this timeout expires, a connection request is removed from the queue,
 
 # Metrics
 
-Connection pool metrics are prefixed with `com.hotels.styx.$APPLICATION.$ORIGIN.connectionspool`.
+Connection pool metrics are prefixed with `com.hotels.styx.$BACKEND_SERVICE.$ORIGIN.connectionspool`.
 
  - `busy-connections` 
      - Number of currently borrowed connections.     

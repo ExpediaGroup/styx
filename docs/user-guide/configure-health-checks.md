@@ -79,7 +79,7 @@ into `BackendService`.
 
 ## Metrics
 
-A meter of failed health check attempts per backend application:
+A meter of failed health check attempts per backend service:
 
     origins.healthcheck.failure.<BACKEND-ID>.count
     origins.healthcheck.failure.<BACKEND-ID>.m1_rate

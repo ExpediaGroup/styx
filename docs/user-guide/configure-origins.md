@@ -1,6 +1,5 @@
 # Configuring Backend Services and Origins
 
-This document describes 
 ## Configuration file
 
 Backend services and origins known to Styx are configured in their own YAML file, which is referenced by the main 
@@ -32,18 +31,18 @@ services:
 
 Each service has the following properties:
 
-*   **id**: a unique name used to identify applications
+*   **id**: a unique name used to identify backend services
 
-*   **path**: the beginning of a (relative) URI used by Styx to determine which application to route a request to.
+*   **path**: the beginning of a (relative) URI used by Styx to determine which backend service to route a request to.
 
 *   **healthCheck**: a group of parameters a relative URI for Styx to contact to determine whether an origin is "alive".
 
-*   **origins**: a list of origins (instances of the application)
+*   **origins**: a list of origins (instances of the backend service)
 
 *   **stickySession**: a group of parameters enabling Styx to pin down an HTTP session to a specific origin.
  Styx achieves this by inserting a session cookie in HTTP responses.
 
-*   **connectionPool**: configuration for the connection pools used to communicate with this application.
+*   **connectionPool**: configuration for the connection pools used to communicate with this backend service.
 
 *   **responseTimeoutMillis**: amount of time, in milliseconds, Styx waits for a response from origin.
 Defaults to 60000 milliseconds.
