@@ -59,6 +59,7 @@ public class FileChangeMonitorTest {
 
     @AfterMethod
     public void tearDown() throws Exception {
+        monitor.stop();
         try {
             delete(monitoredFile);
         } catch (java.nio.file.NoSuchFileException cause) {
