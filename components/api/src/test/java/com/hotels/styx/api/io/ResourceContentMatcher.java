@@ -36,8 +36,16 @@ public class ResourceContentMatcher extends TypeSafeMatcher<Resource> {
         this.expected = checkNotNull(expected);
     }
 
+    /**
+     * Returns a Matcher that will compare the textual content of this {@link Resource} (using UTF-8 encoding)
+     * to the provided String.  Line separator differences will be ignored as long the CRLF or LF sequences
+     * are used for line breaks.
+     *
+     * @param expected text string to which this resource will be compared.
+     * @return
+     */
     public static ResourceContentMatcher contains(String expected) {
-        return new ResourceContentMatcher(expected);
+        return new ResourceContentMatcher(expected.replace("\r\n", "\n"));
     }
 
     @Override

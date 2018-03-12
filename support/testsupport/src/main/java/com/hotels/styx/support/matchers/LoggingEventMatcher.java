@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ public final class LoggingEventMatcher extends TypeSafeMatcher<ILoggingEvent> {
     @Override
     protected boolean matchesSafely(ILoggingEvent event) {
         return this.level.equals(event.getLevel())
-                && this.message.matches(event.getFormattedMessage().replace("\n", ""))
+                && this.message.matches(event.getFormattedMessage().replace(System.lineSeparator(), ""))
                 && exceptionMatches(event.getThrowableProxy());
     }
 
@@ -138,7 +138,7 @@ public final class LoggingEventMatcher extends TypeSafeMatcher<ILoggingEvent> {
         @Override
         protected boolean matchesSafely(IThrowableProxy item) {
             return exceptionClass.equals(item.getClassName())
-                    && exceptionMessage.matches(item.getMessage().replace("\n", ""))
+                    && exceptionMessage.matches(item.getMessage().replace(System.lineSeparator(), ""))
                     && item.getStackTraceElementProxyArray().length > 0;
         }
     }

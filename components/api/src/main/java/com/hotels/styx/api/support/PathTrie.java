@@ -252,7 +252,7 @@ public class PathTrie<T> {
 
     private String removeAsterisk(String path) {
         String newPath = path;
-        if (path.endsWith("*")) {
+        if (path.endsWith("/*")) {
             newPath = path.substring(0, path.length() - 1);
         }
         return newPath;

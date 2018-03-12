@@ -39,11 +39,10 @@ import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import io.netty.handler.codec.http._
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.{hasItem, is}
+import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{FunSpec, Ignore}
 
 import scala.concurrent.duration._
-@Ignore
 class BadRequestsSpec extends FunSpec
   with StyxProxySpec
   with TestClientSupport
@@ -133,7 +132,7 @@ class BadRequestsSpec extends FunSpec
           assert(response.status == BAD_REQUEST, s"\nExpecting 400 Bad Request in message: \n$response \n\n$content\n\n")
           assertThat(response.headers().get(STYX_INFO_DEFAULT), matchesRegex("noJvmRouteSet;"))
 
-          assertThat(loggingSupport.log(), hasItem(loggingEvent(ERROR, "Failure status=\"400 Bad Request\"", "io.netty.handler.codec.DecoderException", "com.hotels.styx.server.BadRequestException: Bad Host header.*")))
+          assertThat(loggingSupport.log(), hasItem(loggingEvent(ERROR, "Failure status=\"400 Bad Request\"", "io.netty.handler.codec.DecoderException", "com.hotels.styx.server.BadRequestException: Bad Host header. .*")))
         }
       }
 

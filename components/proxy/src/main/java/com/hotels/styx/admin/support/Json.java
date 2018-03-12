@@ -25,9 +25,7 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 public final class Json {
     // Always uses unix-style line separators regardless of platform
     public static final PrettyPrinter PRETTY_PRINTER = new DefaultPrettyPrinter()
-            .withObjectIndenter(new DefaultIndenter().withLinefeed("\n"))
-            .withArrayIndenter(new DefaultIndenter().withLinefeed("\n"));
-
+            .withObjectIndenter(new DefaultIndenter().withLinefeed("\n"));
 
     private Json() {
     }

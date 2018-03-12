@@ -15,34 +15,22 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.google.common.io.CharStreams;
 import com.hotels.styx.api.Resource;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Stream;
-
-import static com.google.common.base.Throwables.propagate;
-import static java.lang.System.lineSeparator;
-import static java.util.stream.Collectors.joining;
+import java.io.InputStreamReader;
+import java.io.Reader;
 
 final class Resources {
     private Resources() {
     }
 
     public static String load(Resource resource) throws IOException {
-        try {
-            return fileContents(Paths.get(resource.url().toURI()));
-        } catch (URISyntaxException e) {
-            throw propagate(e);
+        try (Reader reader = new BufferedReader(new InputStreamReader(resource.inputStream()))) {
+            return CharStreams.toString(reader);
         }
     }
 
-    private static String fileContents(Path path) throws IOException {
-        try (Stream<String> lines = Files.lines(path)) {
-            return lines.collect(joining(lineSeparator()));
-        }
-    }
 }

@@ -16,6 +16,7 @@
 package com.hotels.styx.api.messages;
 
 import java.lang.reflect.Field;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.lang.reflect.Modifier.isStatic;
@@ -133,5 +134,19 @@ public final class HttpResponseStatus {
     @Override
     public String toString() {
         return code + " " + description;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HttpResponseStatus that = (HttpResponseStatus) o;
+        return code == that.code;
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(code);
     }
 }

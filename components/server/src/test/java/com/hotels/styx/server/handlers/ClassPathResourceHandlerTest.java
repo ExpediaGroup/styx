@@ -40,7 +40,6 @@ public class ClassPathResourceHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.contentLength(), isValue("Foo\nBar\n".length()));
         assertThat(body(response), is("Foo\nBar\n"));
     }
 
