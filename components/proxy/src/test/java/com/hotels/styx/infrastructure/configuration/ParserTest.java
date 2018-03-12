@@ -33,10 +33,12 @@ import static org.testng.Assert.fail;
 public class ParserTest {
     private final StubConfigSources config = new StubConfigSources()
             .plus("test-config", ImmutableMap.of(
+                    "include", "parent-config-source",
                     "number", 123,
                     "string", "abc",
                     "numberFromParent", 999,
-                    "include", "parent-config-source"))
+                    "hasPlaceholder", "${string}"
+                    ))
 
             .plus("test-parent-config", ImmutableMap.of(
                     "numberFromParent", 111,
@@ -56,8 +58,8 @@ public class ParserTest {
 
         StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
 
+        assertThat(parsedConfiguration.get("bar"), isValue("abc"));
         assertThat(parsedConfiguration.get("foo", Integer.class), isValue(123));
-        assertThat(parsedConfiguration.get("bar", String.class), isValue("abc"));
     }
 
     @Test
@@ -71,16 +73,16 @@ public class ParserTest {
         StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
 
         // Present in child
-        assertThat(parsedConfiguration.get("string", String.class), isValue("abc"));
+        assertThat(parsedConfiguration.get("string"), isValue("abc"));
 
         // Present in parent, not present in child
-        assertThat(parsedConfiguration.get("stringFromParent", String.class), isValue("DEF"));
+        assertThat(parsedConfiguration.get("stringFromParent"), isValue("DEF"));
 
         // Present in parent, overridden by child
         assertThat(parsedConfiguration.get("numberFromParent", Integer.class), isValue(999));
     }
 
-    @Test(enabled = false)
+    @Test
     public void resolvesPlaceholders() {
         Parser<StubConfiguration> parser = new Parser.Builder<StubConfiguration>()
                 .format(format(config))
@@ -90,7 +92,12 @@ public class ParserTest {
 
         StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
 
+        assertThat(parsedConfiguration.get("hasPlaceholder"), isValue("abc"));
     }
+
+    // TODO test values added by overrides
+    // TODO test placeholder in "include" value
+    // TODO test placeholders filled by overrides
 
     private static Function<String, ConfigurationProvider> includedConfigProvider(String source, String providedString) {
         return actualSource -> {
