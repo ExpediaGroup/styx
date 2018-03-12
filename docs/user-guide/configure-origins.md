@@ -10,7 +10,7 @@ The value for this `originsFile` property accepts including environment variable
  - A path in the filesystem by default.
  - A resource in the classpath by using the prefix *classpath:*.
 
-###Examples:
+### Examples:
 Using the absolute path of the file:
 ```yaml
 services:

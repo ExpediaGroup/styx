@@ -108,7 +108,7 @@ be specified as separate backends.
 ### Backend Application Attributes:
 
 
-  - *trustAllCerts* -  When `trustAllCerts` is false,origin servers need to provide a 
+  - *trustAllCerts* -  When `trustAllCerts` is false, origin servers need to provide a 
   trusted certificate or the connection will be rejected. If true, all the server certificates
   will be allowed.
 
@@ -126,8 +126,7 @@ be specified as separate backends.
 
       - *path*  - A path to the certificate file.
 
-  - *trustStorePath* - Styx can load the list of trusted certificates from a Java JKS truststore.
-    This attribute specifies a path to the truststore file containing the trusted certificates.
+  - *trustStorePath* - Styx can load the list of trusted certificates from a Java truststore. This attribute specifies a path to the truststore.
 
   - *trustStorePassword* - A password for the keystore file specified in
     *trustStorePath* attribute.

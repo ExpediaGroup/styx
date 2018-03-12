@@ -9,9 +9,7 @@ Styx supports three load balancing strategies:
 Styx also provides a mechanism to bypass the load balancer and force
 the origin at source.
 
-
-##Load balancing strategies
-
+## Load balancing strategies
 
 ### Round Robin
 
