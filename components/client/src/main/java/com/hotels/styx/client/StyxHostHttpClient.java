@@ -59,7 +59,7 @@ public class StyxHostHttpClient implements HttpClient, LoadBalancingMetricSuppli
 
     @Override
     public LoadBalancingMetric loadBalancingMetric() {
-        return new LoadBalancingMetric(this.pool.stats().busyConnectionCount() + pool.stats().pendingConnectionCount(), pool.isExhausted());
+        return new LoadBalancingMetric(this.pool.stats().busyConnectionCount() + pool.stats().pendingConnectionCount());
     }
 
     /**

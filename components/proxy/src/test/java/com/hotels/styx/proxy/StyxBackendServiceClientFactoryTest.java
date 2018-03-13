@@ -182,7 +182,7 @@ public class StyxBackendServiceClientFactoryTest {
     private StyxHostHttpClient hostClient(HttpResponse response) {
         StyxHostHttpClient mockClient = mock(StyxHostHttpClient.class);
         when(mockClient.sendRequest(any(HttpRequest.class))).thenReturn(just(response));
-        when(mockClient.loadBalancingMetric()).thenReturn(new LoadBalancingMetric(1, false));
+        when(mockClient.loadBalancingMetric()).thenReturn(new LoadBalancingMetric(1));
         return mockClient;
     }
 

@@ -20,20 +20,13 @@ package com.hotels.styx.api.client.loadbalancing.spi;
  */
 public final class LoadBalancingMetric {
     private final int ongoingConnections;
-    private final boolean saturated;
 
-    public LoadBalancingMetric(int ongoingConnections, boolean saturated) {
+    public LoadBalancingMetric(int ongoingConnections) {
         this.ongoingConnections = ongoingConnections;
-        this.saturated = saturated;
     }
 
     public int ongoingConnections() {
         return ongoingConnections;
     }
 
-    // TODO: Remove this metric.
-    //  - Pool saturation should be handled by a circuit breaker or a retry policy.
-    public boolean isSaturated() {
-        return saturated;
-    }
 }

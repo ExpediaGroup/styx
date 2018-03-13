@@ -55,7 +55,7 @@ public class RoundRobinStrategyTest {
         Origin origin = newOriginBuilder(host, port).build();
 
         LoadBalancingMetricSupplier metric = mock(LoadBalancingMetricSupplier.class);
-        when(metric.loadBalancingMetric()).thenReturn(new LoadBalancingMetric(45, false));
+        when(metric.loadBalancingMetric()).thenReturn(new LoadBalancingMetric(45));
 
         return remoteHost(origin, mock(StyxHostHttpClient.class), metric);
     }

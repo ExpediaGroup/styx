@@ -99,7 +99,7 @@ public class BusyConnectionsStrategyTest {
     }
 
     private LoadBalancingMetricSupplier lbMetrics(int ongoing) {
-        return () -> new LoadBalancingMetric(ongoing, false);
+        return () -> new LoadBalancingMetric(ongoing);
     }
 
 }
