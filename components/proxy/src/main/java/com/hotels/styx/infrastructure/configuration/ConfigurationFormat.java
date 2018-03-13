@@ -17,6 +17,8 @@ package com.hotels.styx.infrastructure.configuration;
 
 import com.hotels.styx.api.Resource;
 
+import java.util.Map;
+
 /**
  * Format for configuration, e.g. JSON, YAML.
  *
@@ -26,4 +28,6 @@ public interface ConfigurationFormat<C extends ExtensibleConfiguration<C>> {
     C deserialise(String string);
 
     C deserialise(Resource resource);
+
+    String resolvePlaceholdersInText(String text, Map<String, String> overrides);
 }

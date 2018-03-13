@@ -1,12 +1,12 @@
 /**
  * Copyright (C) 2013-2018 Expedia Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -105,7 +105,7 @@ public class ParserTest {
                 .overrides(ImmutableMap.of(
                         "not-present-in-original", "foo-bar",
                         "string", "overridden"
-                        ))
+                ))
                 .build();
 
         StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
@@ -114,7 +114,31 @@ public class ParserTest {
         assertThat(parsedConfiguration.get("string"), isValue("overridden"));
     }
 
-    // TODO test placeholder in "include" value
+    @Test
+    public void includeValueCanContainPlaceholder() {
+        StubConfigSources config = new StubConfigSources()
+                .plus("test-config", ImmutableMap.of(
+                        "include", "${include-placeholder}",
+                        "number", 123,
+                        "string", "abc",
+                        "numberFromParent", 999,
+                        "hasPlaceholder", "${string}"
+                ))
+
+                .plus("test-parent-config", ImmutableMap.of(
+                        "numberFromParent", 111,
+                        "stringFromParent", "DEF"));
+
+        Parser<StubConfiguration> parser = new Parser.Builder<StubConfiguration>()
+                .format(format(config))
+                .includeProviderFunction(includedConfigProvider("parent-config-source", "test-parent-config"))
+                .overrides(ImmutableMap.of("include-placeholder", "parent-config-source"))
+                .build();
+
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
+
+        assertThat(parsedConfiguration.get("stringFromParent"), isValue("DEF"));
+    }
 
     private static Function<String, ConfigurationProvider> includedConfigProvider(String source, String providedString) {
         return actualSource -> {
@@ -188,6 +212,17 @@ public class ParserTest {
             public StubConfiguration deserialise(Resource resource) {
                 fail("Unexpected method call with arg " + resource);
                 return null;
+            }
+
+            @Override
+            public String resolvePlaceholdersInText(String text, Map<String, String> overrides) {
+                String resolved = text;
+
+                for (Map.Entry<String, String> entry : overrides.entrySet()) {
+                    resolved = resolved.replace("${" + entry.getKey() + "}", entry.getValue());
+                }
+
+                return resolved;
             }
         };
     }

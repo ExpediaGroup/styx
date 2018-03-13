@@ -80,9 +80,8 @@ public final class Parser<C extends ExtensibleConfiguration<C>> {
         return parse(includedConfigurationProvider);
     }
 
-    private static String resolvePlaceholdersInText(String text, Map<String, String> overrides) {
-        // TODO finish this
-        return text;
+    private String resolvePlaceholdersInText(String text, Map<String, String> overrides) {
+        return format.resolvePlaceholdersInText(text, overrides);
     }
 
     private static ConfigurationProvider includeProvider(String includePath) {
