@@ -71,27 +71,20 @@ public class BusyConnectionsStrategy implements LoadBalancer {
         } else if (hosts.length == 1) {
             return Optional.of(hosts[0]);
         } else {
-            RemoteHost host1 = choose(hosts);
-            RemoteHost host2 = choose(hosts, host1);
+            int i1 = rng.nextInt(hosts.length);
+            int i2 = drawFromRemaining(hosts.length, i1);
 
-            return Optional.of(betterOf(host1, host2));
+            return Optional.of(betterOf(hosts[i1], hosts[i2]));
         }
+    }
+
+    private int drawFromRemaining(int bound, int otherIndex) {
+        int i = rng.nextInt(bound - 1);
+        return (i < otherIndex) ? i : i + 1;
     }
 
     private RemoteHost betterOf(RemoteHost host1, RemoteHost host2) {
         return host1.metric().ongoingConnections() < host2.metric().ongoingConnections() ? host1 : host2;
     }
 
-    private RemoteHost choose(RemoteHost[] hosts) {
-        int i = rng.nextInt(hosts.length);
-        return hosts[i];
-    }
-
-    private RemoteHost choose(RemoteHost[] hosts, RemoteHost another) {
-        RemoteHost host = choose(hosts);
-        while (host == another) {
-            host = choose(hosts);
-        }
-        return host;
-    }
 }

@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client.loadbalancing.strategies;
 
-import com.google.common.collect.Lists;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.OriginsSnapshot;
@@ -75,7 +74,7 @@ public class RoundRobinStrategy implements LoadBalancer {
 
     @Override
     public void originsChanged(OriginsSnapshot snapshot) {
-        origins.set(Lists.newArrayList(activeOrigins.snapshot()));
+        origins.set(newArrayList(activeOrigins.snapshot()));
     }
 
     @Override

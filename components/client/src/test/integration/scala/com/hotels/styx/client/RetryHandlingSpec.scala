@@ -25,7 +25,6 @@ import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.client.Origin._
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.client.{ActiveOrigins, Origin}
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort
@@ -43,8 +42,6 @@ import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import io.netty.handler.codec.http.LastHttpContent
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
-
-import scala.util.{Success, Try}
 
 class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers with OriginSupport {
 
@@ -117,39 +114,24 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
     originServer4.stop()
   }
 
-  def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(backendService).build()
+  private def activeOrigins(backendService: BackendService) = newOriginsInventoryBuilder(backendService).build()
 
-  def loadBalancerFor(activeOrigins: ActiveOrigins): LoadBalancer = new RoundRobinStrategy(activeOrigins, activeOrigins.snapshot())
-
-  def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, loadBalancerFor(activeOrigins))
+  private def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(
+    activeOrigins,
+    new RoundRobinStrategy(activeOrigins, activeOrigins.snapshot()))
 
   test("retries the next available origin on failure") {
-    val totalAttempts = 100
-
     val backendService = new BackendService.Builder()
-      .origins(unhealthyOriginOne, healthyOriginOne, unhealthyOriginThree, healthyOriginTwo)
+      .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree, healthyOriginTwo)
       .build()
 
     val client: StyxHttpClient = newHttpClientBuilder(backendService)
-      .retryPolicy(new RetryNTimes(5))
+      .retryPolicy(new RetryNTimes(3))
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
-    val attempts = (1 to totalAttempts).map { i =>
-      val request: HttpRequest = get("/version.txt").build
-      Try {
-        val response = waitForResponse(client.sendRequest(request))
-        response.status()
-      }
-    }
-
-    val successful = attempts.count {
-      case Success(OK) => true
-      case _ => false
-    }
-
-    println("oks: " + successful)
-    successful/totalAttempts.toDouble should be > 0.75
+    val response = waitForResponse(client.sendRequest(get("/version.txt").build))
+    response.status() should be (OK)
   }
 
   test("propagates the last observed exception if all retries failed") {
@@ -184,17 +166,9 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
     response.cookie("styx_origin_generic-app").get().toString should fullyMatch regex "styx_origin_generic-app=HEALTHY_ORIGIN_TWO; Max-Age=.*; Path=/; HttpOnly"
   }
 
-  // TODO: We have to test the following two scenarios:
-  //   1) Retries at most N times.
-  //   2) Does not retry if content observable fails.
-  //   3) Does not retry when ...
-
-
-  private def respondWithHeadersOnly(): ResponseDefinitionBuilder = {
-    return aResponse
+  private def respondWithHeadersOnly(): ResponseDefinitionBuilder = aResponse
       .withStatus(200)
       .withHeader(TRANSFER_ENCODING, CHUNKED)
-  }
 
   private def doNotRespond(retryCount: AtomicInteger): (ChannelHandlerContext, Any) => Unit = {
     (ctx: ChannelHandlerContext, msg: scala.Any) => {

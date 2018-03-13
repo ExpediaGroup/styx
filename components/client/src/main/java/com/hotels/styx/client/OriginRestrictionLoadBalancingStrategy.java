@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.client;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.RemoteHost;
@@ -26,10 +27,10 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -44,10 +45,17 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancer {
 
     private final ActiveOrigins activeOrigins;
     private final LoadBalancer delegate;
+    private Random rng;
 
     public OriginRestrictionLoadBalancingStrategy(ActiveOrigins activeOrigins, LoadBalancer delegate) {
+        this(activeOrigins, delegate, new Random());
+    }
+
+    @VisibleForTesting
+    OriginRestrictionLoadBalancingStrategy(ActiveOrigins activeOrigins, LoadBalancer delegate, Random rng) {
         this.activeOrigins = activeOrigins;
         this.delegate = checkNotNull(delegate);
+        this.rng = checkNotNull(rng);
     }
 
     @Override
@@ -56,9 +64,9 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancer {
                 .map(hostPreference -> {
                             List<RemoteHost> list = stream(activeOrigins.snapshot().spliterator(), false)
                                     .filter(originIsAllowed(hostPreference))
-                                    .collect(Collectors.toList());
+                                    .collect(toList());
                             if (list.size() > 0) {
-                                return Optional.of(list.get(new Random().nextInt(list.size())));
+                                return Optional.of(list.get(rng.nextInt(list.size())));
                             } else {
                                 return Optional.<RemoteHost>empty();
                             }
@@ -87,7 +95,7 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancer {
         try {
             return Pattern.compile(regex);
         } catch (Exception e) {
-            LOG.error("Invalid origin restriction cookie value={}", regex, e);
+            LOG.error("Invalid origin restriction cookie value={}, Cause={}", regex, e.getMessage());
             return MATCH_ALL;
         }
     }

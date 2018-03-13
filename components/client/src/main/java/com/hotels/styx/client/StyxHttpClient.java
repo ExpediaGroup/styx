@@ -16,7 +16,6 @@
 package com.hotels.styx.client;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpRequest;
@@ -44,6 +43,7 @@ import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
@@ -142,7 +142,7 @@ public final class StyxHttpClient implements HttpClient {
         Optional<RemoteHost> remoteHost = selectOrigin(request);
         if (remoteHost.isPresent()) {
             RemoteHost host = remoteHost.get();
-            List<RemoteHost> newPreviousOrigins = Lists.newArrayList(previousOrigins);
+            List<RemoteHost> newPreviousOrigins = newArrayList(previousOrigins);
             newPreviousOrigins.add(remoteHost.get());
 
             return host.hostClient()

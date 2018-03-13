@@ -15,27 +15,36 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
+import com.hotels.styx.support.matchers.LoggingTestSupport;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Stream;
 
+import static ch.qos.logback.classic.Level.ERROR;
+import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.client.RemoteHost.remoteHost;
+import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
+import static java.util.Optional.empty;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isOneOf;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class OriginRestrictionLoadBalancingStrategyTest {
     List<RemoteHost> origins = Stream.of(0, 1, 2, 3, 4, 5, 6)
@@ -43,86 +52,124 @@ public class OriginRestrictionLoadBalancingStrategyTest {
             .map(origin -> remoteHost(origin, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)))
             .collect(toList());
 
-    private final LoadBalancer delegate = (preferences) -> Optional.of(origins.get(0));
+    private LoadBalancer delegate;
 
-    OriginRestrictionLoadBalancingStrategy strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate);
+    private OriginRestrictionLoadBalancingStrategy strategy;
+    private LoggingTestSupport log;
 
-    @Test
-    public void randomlyChoosesOneOfTheMatchingOrigins() {
-        Map<Id, Integer> frequencies = new HashMap<>();
-        frequencies.putIfAbsent(origins.get(0).id(), 0);
-        frequencies.putIfAbsent(origins.get(1).id(), 0);
-        frequencies.putIfAbsent(origins.get(2).id(), 0);
-        frequencies.putIfAbsent(origins.get(3).id(), 0);
-        frequencies.putIfAbsent(origins.get(4).id(), 0);
-        frequencies.putIfAbsent(origins.get(5).id(), 0);
-        frequencies.putIfAbsent(origins.get(6).id(), 0);
+    @BeforeMethod
+    public void setUp() {
+        delegate = mock(LoadBalancer.class);
+        when(delegate.choose(any(LoadBalancer.Preferences.class))).thenReturn(Optional.of(origins.get(0)));
 
-        for (int i = 0; i < 100; i++) {
-            Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("origin-[1-3], origin-(5|6)")));
-            frequencies.compute(chosenOne.get().id(), (id, value) -> value + 1);
-        }
+        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate);
 
-        assertThat(frequencies.get(origins.get(0).id()), is(0));
-        assertThat(frequencies.get(origins.get(4).id()), is(0));
+        log = new LoggingTestSupport(OriginRestrictionLoadBalancingStrategy.class);
+    }
 
-        assertThat(frequencies.get(origins.get(1).id()), greaterThan(0));
-        assertThat(frequencies.get(origins.get(2).id()), greaterThan(0));
-        assertThat(frequencies.get(origins.get(3).id()), greaterThan(0));
-        assertThat(frequencies.get(origins.get(5).id()), greaterThan(0));
-        assertThat(frequencies.get(origins.get(6).id()), greaterThan(0));
+    @AfterMethod
+    public void tearDown() {
+        log.stop();
     }
 
     @Test
-    public void shouldDisregardRestrictionCookieValueIfNotValid() {
-        for (int i = 0; i < 10; i++) {
-            Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("*-01")));
-            assertThat(chosenOne.get(), isOneOf(origins.toArray()));
-        }
+    public void randomlyChoosesOneOfTheMatchingOrigins() {
+        Random mockRandom = mock(Random.class);
+        when(mockRandom.nextInt(5)).thenReturn(3);
+
+        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+
+        Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("origin-[1-3], origin-(5|6)")));
+
+        // The preferred origins are [1, 2, 3, 5, 6]
+        // The index 3 (as chosen by rng) contains:
+        assertThat(chosenOne.get().id(), is(id("origin-5")));
+    }
+
+    @Test
+    public void randomlyChoosesOneOfTheOriginsWithInvalidPreferences() {
+        Random mockRandom = mock(Random.class);
+        when(mockRandom.nextInt(any(Integer.class))).thenReturn(3);
+
+        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+
+        Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("*-01")));
+
+        // Chooses one from *all (= 7)* origins:
+        verify(mockRandom).nextInt(eq(7));
+
+        assertThat(chosenOne.get().id(), is(id("origin-3")));
     }
 
     @Test
     public void usesSingleOriginMatchingRegularExpression() {
-        for (int i = 0; i < 10; i++) {
-            Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("origin-1")));
-            assertThat(chosenOne.get(), is(origins.get(1)));
-        }
+        Random mockRandom = mock(Random.class);
+        when(mockRandom.nextInt(eq(1))).thenReturn(0);
+
+        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+
+        Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("origin-1")));
+        assertThat(chosenOne.get(), is(origins.get(1)));
     }
 
     @Test
     public void usesMultipleOriginsMatchingRegularExpression() {
-        for (int i = 0; i < 10; i++) {
-            Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("origin-[2-4]")));
-            assertThat(chosenOne.get(), isOneOf(origins.get(2), origins.get(3), origins.get(4)));
-        }
+        Random mockRandom = mock(Random.class);
+        when(mockRandom.nextInt(eq(3))).thenReturn(1);
+
+        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+
+        Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("origin-[2-4]")));
+        verify(mockRandom).nextInt(eq(3));
+        assertThat(chosenOne.get(), is(origins.get(3)));
     }
 
     @Test
     public void usesNoOriginsWhenRegularExpressionMatchesNone() {
-        for (int i = 0; i < 10; i++) {
-            Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("foo")));
-            assertThat(chosenOne, is(Optional.empty()));
-        }
+        Random mockRandom = mock(Random.class);
+
+        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+
+        Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of("foo")));
+        assertThat(chosenOne, is(empty()));
+        verify(mockRandom, never()).nextInt(any(Integer.class));
     }
 
     @Test
     public void usesAllOriginsWhenCookieIsAbsent() {
-        for (int i = 0; i < 10; i++) {
-            Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.empty()));
-            assertThat(chosenOne.get(), is(origins.get(0)));
-        }
+        Random mockRandom = mock(Random.class);
+
+        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+
+        Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(empty()));
+        assertThat(chosenOne.get(), is(origins.get(0)));
+
+        verify(mockRandom, never()).nextInt(any(Integer.class));
+        verify(delegate).choose(any(LoadBalancer.Preferences.class));
     }
 
     @Test
     public void usesAllOriginsWhenRegularExpressionMatchesAll() {
-        for (int i = 0; i < 10; i++) {
-            Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of(".*")));
-            assertThat(chosenOne.get(), isOneOf(origins.toArray()));
-        }
+        Random mockRandom = mock(Random.class);
+        when(mockRandom.nextInt(any(Integer.class))).thenReturn(3);
+
+        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+
+        Optional<RemoteHost> chosenOne = strategy.choose(lbPreference(Optional.of(".*")));
+        assertThat(chosenOne.get(), isOneOf(origins.get(3)));
+        verify(mockRandom).nextInt(eq(7));
     }
 
-    // TODO: MIKKO: Add test for the error log message about invalid patterns.
-    // Ensure that full stack trace is not printed.
+
+    @Test
+    public void logsInvalidPatterns() {
+        Random mockRandom = mock(Random.class);
+        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+
+        strategy.choose(lbPreference(Optional.of("*-01")));
+
+        assertThat(log.lastMessage(), is(loggingEvent(ERROR, "Invalid origin restriction cookie value=.*, Cause=Dangling meta character .*")));
+    }
 
     private static LoadBalancer.Preferences lbPreference(Optional<String> preferredOrigins) {
         return new LoadBalancer.Preferences() {
