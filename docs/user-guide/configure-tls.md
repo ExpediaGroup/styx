@@ -1,20 +1,19 @@
 # Configuring Transport Layer Security
 
-Transport Layer Security (TLS) can be enabled on Styx network
-interfaces. You can enable it on the proxy server port, and also for
-each of the backend services, where necessary.
+Transport Layer Security (TLS) can be enabled on Styx both for the incoming interface
+(connections from clients) and the connections with the backend services.
 
-TLS can be enabled independently for each network interface. You can
-enable it independently for proxy server port, and for each of the
-back-end services. Styx will convert between the protocols where
+TLS can be enabled independently for each port of the proxy server, 
+and for each of the backend services. 
+Styx will convert between the protocols where
 necessary. For example, if you have insecure HTTP traffic coming in,
 it will be converted to secure HTTPS if necessary.
 
 ## Server Side TLS Configuration
 
-An example configuration block for enabling TLS security on Styx server
+An example configuration block to enable TLS security on a Styx server
 port is shown below. Note that you can enable both HTTP and
-TLS-protected HTTPS ports simultaneously.
+TLS-protected HTTPS ports simultaneously (on different ports).
 
 ```yaml
     proxy:
@@ -40,7 +39,7 @@ TLS-protected HTTPS ports simultaneously.
   - *port* - Server port number. Mandatory.
 
   - *sslProvider* - Specifies a Java service provider implementation for the TLS protocol.
-    Supported values are `JDK` and `OPENSSL`. Note that `OPENSSL` is a platform dependent
+    Supported values are `JDK` and `OPENSSL`. Note that `OPENSSL` is platform dependent
     (Linux/Mac/Windows) implementation and you must use an appropriate Styx build for your
     deployment target.
 
@@ -48,17 +47,17 @@ TLS-protected HTTPS ports simultaneously.
 
   - *keyFile* - A PKCS#8 private key file in PEM format.
 
-  - *sessionCacheSize* - Sets the cache size for storing SSL session objects.
+  - *sessionCacheSize* - Sets the cache size for the storage of SSL session objects.
     Set `0` to use the default value. This is an optional attribute. When absent, it
     reverts to a default value.
 
   - *sessionTimeoutMillis* - Sets the timeout for the cached SSL session
-    objects, in seconds. Set `0` to use the default value.
+    objects, in milliseconds. Set `0` to use the default value.
     This is an optional attribute. When absent, it reverts to a default value.
 
   - *cipherSuites* - A list of enabled cipher suites, in order
     of preference. Leave absent to use the SSL provider defaults.
-    Note that the cipher suite names are specific to a SSL provider.
+    Note that the cipher suite names are specific to the SSL provider.
 
   - *protocols* - A list of TLS protocol versions to use.
     Use this attribute to enforce a more secure version like `TLSv1.2`.
@@ -71,7 +70,7 @@ The accepted protocol names and cipher suite names for `JDK` provider
 are listed in [Oracle Java Cryptography Architecture documentation](https://docs.oracle.com/javase/8/docs/technotes/guides/security/SunProviders.html).
 
 
-## Backend Applications Configuration
+## Backend Services Configuration
 
 HTTPS protocol is enabled by inserting a *tlsSettings* attribute in the
 backend services configuration, as follows:
@@ -106,9 +105,12 @@ If your backend application exposes both HTTP and HTTPS endpoints, they must
 be specified as separate backends.
 
 
-### Backend Application Attributes:
+### Backend Service Attributes:
 
-  - trustAllCerts - Whether (true) or not (false) to authenticate server side.
+
+  - *trustAllCerts* -  When `trustAllCerts` is false, origin servers need to provide a 
+  trusted certificate or the connection will be rejected. If true, all the server certificates
+  will be allowed.
 
   - *sslProvider* - Specifies a Java service provider implementation for the TLS protocol.
     Supported values are `JDK` and `OPENSSL`. Note that `OPENSSL` is a platform dependent
@@ -116,42 +118,43 @@ be specified as separate backends.
     deployment target.
 
   - *addlCerts* - A list of additional certificates that can be specified
-    in addition to the certificates available in Trust Store. When Styx starts
-    up it creates an in-memory keystore and loads these certificates there.
+    in addition to the certificates available in the Trust Store. When Styx starts
+    up, it creates an in-memory keystore and loads these certificates there.
     Each specified certificate entry must have these two attributes:
 
-      - *alias* - A symbolic name for the certificate. Used as an alias for keystore.
+      - *alias* - A symbolic name for the certificate. Used as an alias in the keystore.
 
       - *path*  - A path to the certificate file.
 
-  - *trustStorePath* - Styx can load the relevant secure material from Java truststore.
-    This attribute specifies a path to the keystore file containing relevant trust material.
+  - *trustStorePath* - Styx can load the list of trusted certificates from a Java truststore. This attribute specifies a path to the truststore.
 
   - *trustStorePassword* - A password for the keystore file specified in
     *trustStorePath* attribute.
 
   - *cipherSuites* - A list of enabled cipher suites, in order
-    of preference. Leave absent to use the SSL provider defaults.
+    of preference. Omit this property to use the SSL provider defaults.
     Note that the cipher suite names are specific to a SSL provider.
 
   - *protocols* - A list of TLS protocol versions to use.
     Use this attribute to enforce a more secure version like `TLSv1.2`.
-    When absent, enables all default protocols depending on the `sslProvider`.
+    When absent, enables all default protocols for the `sslProvider`.
     Possible protocol names are: `TLS`, `TLSv1`, `TLSv1.1`, and `TLSv1.2`.
 
+Attributes that accept lists can be defined with the following format: ['ITEM1', 'ITEM2']
 
 ## Troubleshooting TLS Configuration
 
 ### Failing SSL Handshake attempts on Styx server
 
 Unsuccessful SSL handshake attempts from remote clients to Styx server are logged by *HttpErrorStatusCauseLogger*
-on *ERROR* level. The message contains a stack trace with keyword *SSLHandshakeException*. Content of the message
-will vary depending on the configured SSL provider and the exact cause. To get an idea of failed handshake attempts
-look for *SSLHandshakeException* in the logs.
+at *ERROR* level. This error message contains a stack trace with the keyword *SSLHandshakeException*. 
+The content of this message will vary depending on the configured SSL provider and the exact cause. 
+To discover failed handshake attempts, look for *SSLHandshakeException* in the logs.
 
-In addition to log, `styx.exception.io_netty_handler_codec_DecoderException` counter is also incremented.
+Additionally, the`styx.exception.io_netty_handler_codec_DecoderException` counter is also incremented when a SSL
+ handshake error occurs.
 
-An example stack trace might look like:
+An example stack trace looks like:
 
 ```
 ERROR 2018-01-22 08:59:49 [c.h.s.a.m.HttpErrorStatusCauseLogger] [Proxy-Worker-0-Thread] - Failure status="500 Internal Server Error"

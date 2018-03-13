@@ -2,17 +2,17 @@
 
 ## Introduction
 
-Styx automatically monitors connectivity and health of configured
+Styx automatically monitors the connectivity and health of configured
 backend services. This feature is called "health checking", and
 can be enabled or disabled by including a `healthCheck` attribute
 in a backend service configuration block.
 
-Health checking is configured for a specific URI endpoint on a
-backend service. Styx polls this endpoint, for every backend
-service origin, at configured intervals.
+Health checking is configured for a specific backend service, using the `uri` attribute
+to indicate the URI of the health check endpoint.
+ Styx polls this endpoint, for every backend service origin, at configured intervals.
 
-When an origin fails to respond to the poll from Styx `unhealthyThreshold`
-times, Styx will mark the origin as *INACTIVE* and remove it from
+When an origin fails to respond to the poll from Styx for `unhealthyThreshold`
+times, Styx will mark the origin as *INACTIVE* and remove it from the
 load balancer rotation. Conversely, when an *INACTIVE* origin starts
 responding to the polls, it must respond at least `healthyThreshold`
 times before Styx moves it back into the *ACTIVE* state and puts it back into 
@@ -38,7 +38,7 @@ Styx from sending traffic to a potentially broken origin, the origin
 is initially enabled in an *INACTIVE* state. It gets activated only
 after health checks have confirmed the origin is healthy.
 
-However, if the health checks are disabled, the origin will be activated
+However, if health checks for the backend service are disabled, the origin will be activated
 straight away.
 
 
@@ -79,7 +79,7 @@ into `BackendService`.
 
 ## Metrics
 
-A meter of failed health check attempts per backend application:
+A meter of failed health check attempts per backend service:
 
     origins.healthcheck.failure.<BACKEND-ID>.count
     origins.healthcheck.failure.<BACKEND-ID>.m1_rate

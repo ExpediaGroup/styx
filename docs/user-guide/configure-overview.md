@@ -1,14 +1,17 @@
-## Configuring Styx environment
+## Configuring Styx
 
-Styx supports a YAML-based configuration. A yaml file can be specified using a system property `YAML_CONFIG_LOCATION=your/file/path`.
-By default a file is taken from the classpath at `classpath:conf/environment/styx-config.yaml`.
-Regardless of file location, these properties can all be overwritten using system properties by the same name.
+Styx supports a YAML file-based configuration. The path to the YAML file can be passed
+as a parameter to the startup script (`startup <CONFIG_FILE>`)
+or configured via the environment variable `STYX_CONFIG`.
 
+By default, the file is read from `conf/default.yaml`.
+
+Additionally, all these properties can be overwritten
+using environment variables with the same name as the property.
 
 ### Example styx-config
 
-    ---
-
+```yaml
     # A string uniquely identifying the host running the application, must be different for all running instances of the application
     # the default value is suitable only for non clustered environments
     jvmRouteName: "${jvm.route:noJvmRouteSet}"
@@ -73,8 +76,9 @@ Regardless of file location, these properties can all be overwritten using syste
         expirationMillis: 10000
 
     loadBalancing:
-      # Load balancer strategy type. Allowed values: "LEAST\_RESPONSE\_TIME", "ROUND\_ROBIN", and "ADAPTIVE". Defaults to "ROUND_ROBIN".
-      strategy: "ADAPTIVE"
+      strategy: #Check load balancing documentation for all the possible strategies
+        factory: {class: "com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy$Factory"}
+ 
 
 
       adaptive:
@@ -122,14 +126,11 @@ Regardless of file location, these properties can all be overwritten using syste
         name: "X-Styx-Origin-Id"
       requestId:
         name: "X-Styx-Request-Id"
-
+ ```
 
 Without the comments, it looks like this:
-
-    ---
-
-    jvmRouteName: "${jvm.route:noJvmRouteSet}"
-
+```yaml
+   jvmRouteName: "${jvm.route:noJvmRouteSet}"
     proxy:
       connectors:
       - type: http
@@ -188,4 +189,4 @@ Without the comments, it looks like this:
         name: "X-Styx-Origin-Id"
       requestId:
         name: "X-Styx-Request-Id"
-
+```
