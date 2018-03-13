@@ -45,18 +45,28 @@ public final class Parser<C extends ExtensibleConfiguration<C>> {
     }
 
     public C parse(ConfigurationProvider provider) {
+        C main = deserialise(provider);
+        C extended = applyParentConfig(main);
+        C withOverrides = extended.withOverrides(overrides);
+
+        return resolvePlaceholders(withOverrides);
+    }
+
+    private C applyParentConfig(C main) {
+        return main.get("include")
+                .map(include -> resolvePlaceholdersInText(include, overrides))
+                .map(includePath -> main.withParent(parent(includePath)))
+                .orElse(main);
+    }
+
+    private C deserialise(ConfigurationProvider provider) {
         C main = provider.deserialise(format);
 
         if (main == null) {
             throw new IllegalStateException("Cannot deserialise from " + provider + " using " + format);
         }
 
-        C extended = main.get("include")
-                .map(include -> resolvePlaceholdersInText(include, overrides))
-                .map(includePath -> main.withParent(parent(includePath)))
-                .orElse(main);
-
-        return resolvePlaceholders(extended.withOverrides(overrides));
+        return main;
     }
 
     private C resolvePlaceholders(C config) {
