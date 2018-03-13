@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ import java.util.regex.Pattern;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Maps.newHashMap;
 import static com.hotels.styx.infrastructure.configuration.yaml.JsonTreeTraversal.traverseJsonTree;
-import static java.lang.String.format;
 import static java.util.regex.Pattern.compile;
 import static java.util.regex.Pattern.quote;
 import static org.slf4j.LoggerFactory.getLogger;

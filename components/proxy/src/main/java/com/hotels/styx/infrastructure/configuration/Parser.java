@@ -1,12 +1,12 @@
 /**
  * Copyright (C) 2013-2018 Expedia Inc.
- * <p>
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,7 +21,6 @@ import com.hotels.styx.infrastructure.configuration.ExtensibleConfiguration.Plac
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -123,6 +122,7 @@ public final class Parser<C extends ExtensibleConfiguration<C>> {
     private ParsingResult<C> resolvePlaceholders(C config) {
         PlaceholderResolutionResult<C> result = config.resolvePlaceholders(overrides);
 
+        // TODO put this outside the parser
 //        if (!result.unresolvedPlaceholders().isEmpty()) {
 //            throw new IllegalStateException("Unresolved placeholders: " + result.unresolvedPlaceholders());
 //        }
@@ -145,6 +145,11 @@ public final class Parser<C extends ExtensibleConfiguration<C>> {
         return ConfigurationProvider.from(newResource(includePath));
     }
 
+    /**
+     * Outcome of parsing.
+     *
+     * @param <C> configuration type
+     */
     public static class ParsingResult<C extends ExtensibleConfiguration<C>> {
         private final C configuration;
         private final Collection<UnresolvedPlaceholder> unresolvedPlaceholders;

@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) 2013-2018 Expedia Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.hotels.styx.infrastructure.configuration.yaml;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -21,7 +36,7 @@ import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- *
+ * Configuration using YAML format.
  */
 public class YamlConfiguration implements ExtensibleConfiguration<YamlConfiguration> {
     private static final Logger LOGGER = getLogger(YamlConfigurationFormat.class);
@@ -42,7 +57,6 @@ public class YamlConfiguration implements ExtensibleConfiguration<YamlConfigurat
         JsonNode newRootNode = rootNode.deepCopy();
 
         applyExternalOverrides(newRootNode, overrides);
-//        System.out.printf("%nCALC: %n%s%n+%n%s%n=%n%s%n%n", rootNode, overrides, newRootNode);
 
         return new YamlConfiguration(newRootNode);
     }
@@ -101,16 +115,10 @@ public class YamlConfiguration implements ExtensibleConfiguration<YamlConfigurat
 
     // This is for when the override names match config properties, NOT when they appear in placeholders
     private static void applyExternalOverrides(JsonNode rootNode, Map<String, String> overrides) {
-
-
         overrides.forEach((key, value) -> {
             NodePath nodePath = new NodePath(key);
 
             boolean success = nodePath.override(rootNode, value);
-
-//            if (!success) {
-//                System.out.println("Nothing to override for " + nodePath);
-//            }
         });
     }
 
