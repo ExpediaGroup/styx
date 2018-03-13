@@ -74,7 +74,7 @@ public class ParserTest {
 
         StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
 
-        // Present in child
+        // Present in child only
         assertThat(parsedConfiguration.get("string"), isValue("abc"));
 
         // Present in parent, not present in child
@@ -85,7 +85,7 @@ public class ParserTest {
     }
 
     @Test
-    public void resolvesPlaceholdersWithOtherConfigValues() {
+    public void resolvesPlaceholdersInConfig() {
         Parser<StubConfiguration> parser = new Parser.Builder<StubConfiguration>()
                 .format(format(config))
                 .includeProviderFunction(includedConfigProvider("parent-config-source", "test-parent-config"))
@@ -97,9 +97,24 @@ public class ParserTest {
         assertThat(parsedConfiguration.get("hasPlaceholder"), isValue("abc"));
     }
 
-    // TODO test values added by overrides
+    @Test
+    public void appliesOverrides() {
+        Parser<StubConfiguration> parser = new Parser.Builder<StubConfiguration>()
+                .format(format(config))
+                .includeProviderFunction(includedConfigProvider("parent-config-source", "test-parent-config"))
+                .overrides(ImmutableMap.of(
+                        "not-present-in-original", "foo-bar",
+                        "string", "overridden"
+                        ))
+                .build();
+
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
+
+        assertThat(parsedConfiguration.get("not-present-in-original"), isValue("foo-bar"));
+        assertThat(parsedConfiguration.get("string"), isValue("overridden"));
+    }
+
     // TODO test placeholder in "include" value
-    // TODO test placeholders filled by overrides
 
     private static Function<String, ConfigurationProvider> includedConfigProvider(String source, String providedString) {
         return actualSource -> {
@@ -123,6 +138,13 @@ public class ParserTest {
         }
 
         @Override
+        public StubConfiguration withOverrides(Map<String, String> overrides) {
+            Map<String, Object> newValues = new HashMap<>(this.values);
+            newValues.putAll(overrides);
+            return new StubConfiguration(newValues);
+        }
+
+        @Override
         public int unresolvedPlaceholderCount() {
             return (int) values.values().stream()
                     .filter(object -> object instanceof String)
@@ -132,7 +154,7 @@ public class ParserTest {
         }
 
         @Override
-        public StubConfiguration resolvePlaceholders(Map<String, String> overrides) {
+        public StubConfiguration resolvePlaceholders() {
             Map<String, Object> resolved = values.entrySet().stream().collect(toMap(
                     Map.Entry::getKey,
                     entry -> resolve(entry.getValue())

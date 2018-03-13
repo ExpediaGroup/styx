@@ -27,7 +27,9 @@ import java.util.Map;
 public interface ExtensibleConfiguration<C extends ExtensibleConfiguration<C>> extends Configuration {
     C withParent(C parent);
 
+    C withOverrides(Map<String, String> overrides);
+
     int unresolvedPlaceholderCount();
 
-    C resolvePlaceholders(Map<String, String> overrides);
+    C resolvePlaceholders();
 }

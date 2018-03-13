@@ -51,11 +51,12 @@ public final class Parser<C extends ExtensibleConfiguration<C>> {
             throw new IllegalStateException("Cannot deserialise from " + provider + " using " + format);
         }
 
-        return main.get("include")
+        C extended = main.get("include")
                 .map(include -> resolvePlaceholdersInText(include, overrides))
                 .map(includePath -> main.withParent(parent(includePath)))
-                .map(this::resolvePlaceholders)
                 .orElse(main);
+
+        return resolvePlaceholders(extended.withOverrides(overrides));
     }
 
     private C resolvePlaceholders(C config) {
@@ -67,7 +68,7 @@ public final class Parser<C extends ExtensibleConfiguration<C>> {
 
         do {
             previousUnresolvedPlaceholderCount = config.unresolvedPlaceholderCount();
-            config = config.resolvePlaceholders(overrides);
+            config = config.resolvePlaceholders();
         } while (config.unresolvedPlaceholderCount() < previousUnresolvedPlaceholderCount);
 
         return config;
