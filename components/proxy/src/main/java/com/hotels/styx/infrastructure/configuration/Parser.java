@@ -16,6 +16,7 @@
 package com.hotels.styx.infrastructure.configuration;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hotels.styx.infrastructure.configuration.ExtensibleConfiguration.PlaceholderResolutionResult;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 
 import java.util.Map;
@@ -70,18 +71,13 @@ public final class Parser<C extends ExtensibleConfiguration<C>> {
     }
 
     private C resolvePlaceholders(C config) {
-        if (config.unresolvedPlaceholderCount() == 0) {
-            return config;
+        PlaceholderResolutionResult<C> result = config.resolvePlaceholders();
+
+        if (!result.unresolvedPlaceholders().isEmpty()) {
+            throw new IllegalStateException("Unresolved placeholders: " + result.unresolvedPlaceholders());
         }
 
-        int previousUnresolvedPlaceholderCount;
-
-        do {
-            previousUnresolvedPlaceholderCount = config.unresolvedPlaceholderCount();
-            config = config.resolvePlaceholders();
-        } while (config.unresolvedPlaceholderCount() < previousUnresolvedPlaceholderCount);
-
-        return config;
+        return result.resolvedConfiguration();
     }
 
     private C parent(String includePath) {

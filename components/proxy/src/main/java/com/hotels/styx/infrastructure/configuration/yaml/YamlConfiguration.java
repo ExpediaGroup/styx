@@ -5,15 +5,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hotels.styx.api.configuration.ConversionException;
 import com.hotels.styx.infrastructure.configuration.ExtensibleConfiguration;
+import com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.UnresolvedPlaceholder;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML_MAPPER;
+import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -21,25 +24,49 @@ import static java.util.Objects.requireNonNull;
  */
 public class YamlConfiguration implements ExtensibleConfiguration<YamlConfiguration> {
     private final JsonNode rootNode;
-    private final int unresolvedPlaceholders;
 
     public YamlConfiguration(JsonNode rootNode) {
         this.rootNode = requireNonNull(rootNode);
-        this.unresolvedPlaceholders = countUnresolvedPlaceholders();
-    }
-
-    private YamlConfiguration(JsonNode rootNode, int unresolvedPlaceholders) {
-        this.rootNode = requireNonNull(rootNode);
-        this.unresolvedPlaceholders = unresolvedPlaceholders;
-    }
-
-    private static int countUnresolvedPlaceholders() {
-        return 0;
     }
 
     @Override
     public YamlConfiguration withParent(YamlConfiguration parent) {
         return new YamlConfiguration(merge(parent.rootNode.deepCopy(), rootNode));
+    }
+
+    @Override
+    public YamlConfiguration withOverrides(Map<String, String> overrides) {
+        JsonNode newRootNode = rootNode.deepCopy();
+
+        applyExternalOverrides(newRootNode, overrides);
+
+        return new YamlConfiguration(newRootNode);
+    }
+
+    @Override
+    public PlaceholderResolutionResult<YamlConfiguration> resolvePlaceholders() {
+        JsonNode newRootNode = rootNode.deepCopy();
+
+        Collection<UnresolvedPlaceholder> unresolvedPlaceholders = PlaceholderResolver.resolvePlaceholders(newRootNode, emptyMap());
+
+        return new PlaceholderResolutionResult<>(new YamlConfiguration(newRootNode), unresolvedPlaceholders);
+    }
+
+    @Override
+    public <T> Optional<T> get(String property, Class<T> tClass) {
+        return nodeAt(property)
+                .map(node -> {
+                    if (tClass == Path.class) {
+                        return (T) Paths.get(node.textValue());
+                    }
+
+                    return parseNodeToClass(node, tClass);
+                });
+    }
+
+    @Override
+    public <X> X as(Class<X> type) throws ConversionException {
+        return parseNodeToClass(rootNode, type);
     }
 
     private static JsonNode merge(JsonNode baseNode, JsonNode overrideNode) {
@@ -63,52 +90,12 @@ public class YamlConfiguration implements ExtensibleConfiguration<YamlConfigurat
         return baseNode;
     }
 
-    @Override
-    public YamlConfiguration withOverrides(Map<String, String> overrides) {
-        JsonNode newRootNode = rootNode.deepCopy();
-
-        applyExternalOverrides(newRootNode, overrides);
-
-        return new YamlConfiguration(newRootNode, unresolvedPlaceholders);
-    }
-
     private static void applyExternalOverrides(JsonNode rootNode, Map<String, String> overrides) {
         overrides.forEach((key, value) -> {
             NodePath nodePath = new NodePath(key);
 
             nodePath.override(rootNode, value);
         });
-    }
-
-    @Override
-    public int unresolvedPlaceholderCount() {
-        return unresolvedPlaceholders;
-    }
-
-    @Override
-    public YamlConfiguration resolvePlaceholders() {
-        int stillUnresolved = 0;
-
-        JsonNode newRootNode = null;
-
-        return new YamlConfiguration(newRootNode, stillUnresolved);
-    }
-
-    @Override
-    public <T> Optional<T> get(String property, Class<T> tClass) {
-        return nodeAt(property)
-                .map(node -> {
-                    if (tClass == Path.class) {
-                        return (T) Paths.get(node.textValue());
-                    }
-
-                    return parseNodeToClass(node, tClass);
-                });
-    }
-
-    @Override
-    public <X> X as(Class<X> type) throws ConversionException {
-        return parseNodeToClass(rootNode, type);
     }
 
     private Optional<JsonNode> nodeAt(String property) {
