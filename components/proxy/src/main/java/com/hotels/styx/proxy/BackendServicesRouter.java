@@ -224,11 +224,6 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         return new UrlRequestHealthCheck(healthCheckUri, client, metricRegistry);
     }
 
-    @Override
-    public void onError(Throwable ex) {
-        LOG.warn("Error from registry", ex);
-    }
-
     private static class ProxyToClientPipeline implements HttpHandler2 {
         private final HttpClient client;
         private final OriginsInventory originsInventory;

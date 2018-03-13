@@ -19,8 +19,8 @@ import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import java.nio.file.{Files, Paths}
 
 import com.google.common.io.Files.createTempDir
-import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST
+import com.hotels.styx.api.HttpRequest.Builder.post
+import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.configuration._
@@ -44,7 +44,7 @@ class OriginsReloadCommandSpec extends FunSpec
   val styxOriginsFile = Paths.get(tempDir.toString, "origins.yml")
   var styxServer: StyxServer = _
 
-  it("Responds with BAD_REQUEST when the origins cannot be read") {
+  it("Responds with INTERNAL_SERVER_ERROR when the origins cannot be read") {
     val fileBasedBackendsRegistry = FileBackedBackendServicesRegistry.create(styxOriginsFile.toString)
     styxServer = StyxConfig().startServer(fileBasedBackendsRegistry)
 
@@ -52,8 +52,8 @@ class OriginsReloadCommandSpec extends FunSpec
 
     Files.copy(originsNok, styxOriginsFile, REPLACE_EXISTING)
 
-    val resp = decodedRequest(HttpRequest.Builder.post(styxServer.adminURL("/admin/tasks/origins/reload")).build())
-    resp.status() should be(BAD_REQUEST)
+    val resp = decodedRequest(post(styxServer.adminURL("/admin/tasks/origins/reload")).build())
+    resp.status() should be(INTERNAL_SERVER_ERROR)
 
     BackendService.fromJava(fileBasedBackendsRegistry.get().asScala.head) should be(
       BackendService(

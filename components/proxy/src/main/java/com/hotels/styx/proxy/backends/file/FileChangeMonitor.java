@@ -82,6 +82,12 @@ class FileChangeMonitor implements FileMonitor {
         }
     }
 
+    public void stop() {
+        if (monitoredTask != null) {
+            monitoredTask.cancel(true);
+        }
+    }
+
     private Runnable detectFileChangesTask(Listener listener) {
         return () -> {
             if (!exists(monitoredFile)) {
