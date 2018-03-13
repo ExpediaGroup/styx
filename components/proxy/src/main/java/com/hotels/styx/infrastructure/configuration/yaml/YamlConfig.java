@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.Placeholder;
-import com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.UnresolvedPlaceholder;
+import com.hotels.styx.infrastructure.configuration.UnresolvedPlaceholder;
 import org.slf4j.Logger;
 
 import java.io.IOException;

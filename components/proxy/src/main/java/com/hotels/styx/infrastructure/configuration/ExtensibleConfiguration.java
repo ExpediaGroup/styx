@@ -17,7 +17,6 @@ package com.hotels.styx.infrastructure.configuration;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.UnresolvedPlaceholder;
 
 import java.util.Collection;
 import java.util.Map;
@@ -33,7 +32,7 @@ public interface ExtensibleConfiguration<C extends ExtensibleConfiguration<C>> e
 
     C withOverrides(Map<String, String> overrides);
 
-    PlaceholderResolutionResult<C> resolvePlaceholders();
+    PlaceholderResolutionResult<C> resolvePlaceholders(Map<String, String> overrides);
 
     class PlaceholderResolutionResult<C extends ExtensibleConfiguration<C>> {
         private final C resolvedConfiguration;

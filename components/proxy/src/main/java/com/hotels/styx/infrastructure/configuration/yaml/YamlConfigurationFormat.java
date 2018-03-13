@@ -23,11 +23,16 @@ import static org.slf4j.LoggerFactory.getLogger;
  *
  */
 public class YamlConfigurationFormat implements ConfigurationFormat<YamlConfiguration> {
+    public static final YamlConfigurationFormat YAML = new YamlConfigurationFormat();
+
     private static final Logger LOGGER = getLogger(YamlConfigurationFormat.class);
 
     static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
             .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(AUTO_CLOSE_SOURCE, true);
+
+    private YamlConfigurationFormat() {
+    }
 
     @Override
     public YamlConfiguration deserialise(String string) {

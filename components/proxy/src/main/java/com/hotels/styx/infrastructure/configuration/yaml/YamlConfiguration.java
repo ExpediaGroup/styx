@@ -5,7 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hotels.styx.api.configuration.ConversionException;
 import com.hotels.styx.infrastructure.configuration.ExtensibleConfiguration;
-import com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.UnresolvedPlaceholder;
+import com.hotels.styx.infrastructure.configuration.UnresolvedPlaceholder;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -16,13 +17,15 @@ import java.util.Optional;
 
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML_MAPPER;
-import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  *
  */
 public class YamlConfiguration implements ExtensibleConfiguration<YamlConfiguration> {
+    private static final Logger LOGGER = getLogger(YamlConfigurationFormat.class);
+
     private final JsonNode rootNode;
 
     public YamlConfiguration(JsonNode rootNode) {
@@ -39,15 +42,16 @@ public class YamlConfiguration implements ExtensibleConfiguration<YamlConfigurat
         JsonNode newRootNode = rootNode.deepCopy();
 
         applyExternalOverrides(newRootNode, overrides);
+//        System.out.printf("%nCALC: %n%s%n+%n%s%n=%n%s%n%n", rootNode, overrides, newRootNode);
 
         return new YamlConfiguration(newRootNode);
     }
 
     @Override
-    public PlaceholderResolutionResult<YamlConfiguration> resolvePlaceholders() {
+    public PlaceholderResolutionResult<YamlConfiguration> resolvePlaceholders(Map<String, String> overrides) {
         JsonNode newRootNode = rootNode.deepCopy();
 
-        Collection<UnresolvedPlaceholder> unresolvedPlaceholders = PlaceholderResolver.resolvePlaceholders(newRootNode, emptyMap());
+        Collection<UnresolvedPlaceholder> unresolvedPlaceholders = PlaceholderResolver.resolvePlaceholders(newRootNode, overrides);
 
         return new PlaceholderResolutionResult<>(new YamlConfiguration(newRootNode), unresolvedPlaceholders);
     }
@@ -67,6 +71,11 @@ public class YamlConfiguration implements ExtensibleConfiguration<YamlConfigurat
     @Override
     public <X> X as(Class<X> type) throws ConversionException {
         return parseNodeToClass(rootNode, type);
+    }
+
+    @Override
+    public String toString() {
+        return rootNode.toString();
     }
 
     private static JsonNode merge(JsonNode baseNode, JsonNode overrideNode) {
@@ -90,11 +99,18 @@ public class YamlConfiguration implements ExtensibleConfiguration<YamlConfigurat
         return baseNode;
     }
 
+    // This is for when the override names match config properties, NOT when they appear in placeholders
     private static void applyExternalOverrides(JsonNode rootNode, Map<String, String> overrides) {
+
+
         overrides.forEach((key, value) -> {
             NodePath nodePath = new NodePath(key);
 
-            nodePath.override(rootNode, value);
+            boolean success = nodePath.override(rootNode, value);
+
+//            if (!success) {
+//                System.out.println("Nothing to override for " + nodePath);
+//            }
         });
     }
 

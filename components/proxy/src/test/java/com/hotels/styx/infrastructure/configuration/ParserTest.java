@@ -1,12 +1,12 @@
 /**
  * Copyright (C) 2013-2018 Expedia Inc.
- * <p>
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -58,7 +59,7 @@ public class ParserTest {
                 .overrides(emptyMap())
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config")).configuration();
 
         assertThat(parsedConfiguration.get("bar"), isValue("abc"));
         assertThat(parsedConfiguration.get("foo", Integer.class), isValue(123));
@@ -72,7 +73,7 @@ public class ParserTest {
                 .overrides(emptyMap())
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config")).configuration();
 
         // Present in child only
         assertThat(parsedConfiguration.get("string"), isValue("abc"));
@@ -92,7 +93,7 @@ public class ParserTest {
                 .overrides(emptyMap())
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config")).configuration();
 
         assertThat(parsedConfiguration.get("hasPlaceholder"), isValue("abc"));
     }
@@ -108,7 +109,7 @@ public class ParserTest {
                 ))
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config")).configuration();
 
         assertThat(parsedConfiguration.get("not-present-in-original"), isValue("foo-bar"));
         assertThat(parsedConfiguration.get("string"), isValue("overridden"));
@@ -135,7 +136,7 @@ public class ParserTest {
                 .overrides(ImmutableMap.of("include-placeholder", "parent-config-source"))
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config")).configuration();
 
         assertThat(parsedConfiguration.get("stringFromParent"), isValue("DEF"));
     }
@@ -169,22 +170,13 @@ public class ParserTest {
         }
 
         @Override
-        public int unresolvedPlaceholderCount() {
-            return (int) values.values().stream()
-                    .filter(object -> object instanceof String)
-                    .map(String.class::cast)
-                    .filter(value -> Objects.equals(value, "${string}"))
-                    .count();
-        }
-
-        @Override
-        public StubConfiguration resolvePlaceholders() {
+        public PlaceholderResolutionResult<StubConfiguration> resolvePlaceholders(Map<String, String> overrides) {
             Map<String, Object> resolved = values.entrySet().stream().collect(toMap(
                     Map.Entry::getKey,
                     entry -> resolve(entry.getValue())
             ));
 
-            return new StubConfiguration(resolved);
+            return new PlaceholderResolutionResult<>(new StubConfiguration(resolved), emptyList());
         }
 
         private Object resolve(Object original) {

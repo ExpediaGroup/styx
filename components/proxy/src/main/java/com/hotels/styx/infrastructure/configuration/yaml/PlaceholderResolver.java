@@ -22,7 +22,9 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.databind.node.ValueNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.infrastructure.configuration.UnresolvedPlaceholder;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonTreeTraversal.JsonTreeVisitor;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,6 +43,7 @@ import static com.hotels.styx.infrastructure.configuration.yaml.JsonTreeTraversa
 import static java.lang.String.format;
 import static java.util.regex.Pattern.compile;
 import static java.util.regex.Pattern.quote;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Resolves placeholders in JSON trees.
@@ -48,6 +51,8 @@ import static java.util.regex.Pattern.quote;
 public class PlaceholderResolver {
     private static final Pattern PLACEHOLDER_REGEX_CAPTURE_ALL = compile("(\\$\\{[_a-zA-Z0-9\\[\\]\\.]+(:[^\\}]*?)?\\})");
     private static final Pattern PLACEHOLDER_REGEX_CAPTURE_NAME_AND_DEFAULT = compile("\\$\\{([_a-zA-Z0-9\\[\\]\\.]+)(?::([^\\}]*?))?\\}");
+
+    private static final Logger LOGGER = getLogger(PlaceholderResolver.class);
 
     private final ObjectNode rootNode;
     private final Map<String, String> externalProperties;
@@ -127,6 +132,10 @@ public class PlaceholderResolver {
 
                         last(pathAsList).setChild(parent.get(), TextNode.valueOf(valueWithReplacements));
 
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("At {}, replaced {} with {}", new Object[]{pathAsList, value, valueWithReplacements});
+                        }
+
                         value = valueWithReplacements;
                         changes = true;
                     }
@@ -134,8 +143,6 @@ public class PlaceholderResolver {
                 passAgain |= changes;
             }
         }
-
-
     }
 
     private static class DefaultsVisitor implements JsonTreeVisitor {
@@ -151,6 +158,10 @@ public class PlaceholderResolver {
                         String valueWithReplacements = replacePlaceholder(value, placeholder.name(), placeholder.defaultValue());
 
                         last(path).setChild(parent.get(), TextNode.valueOf(valueWithReplacements));
+
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("At {}, replaced {} with {}", new Object[]{path, value, valueWithReplacements});
+                        }
                     }
                 }
             }
@@ -173,38 +184,6 @@ public class PlaceholderResolver {
                     unresolvedPlaceholderDescriptions.add(new UnresolvedPlaceholder(pathString, value, placeholder));
                 }
             }
-        }
-    }
-
-    /**
-     * UnresolvedPlaceholder.
-     */
-    public static final class UnresolvedPlaceholder {
-        private final String path;
-        private final String value;
-        private final String placeholder;
-
-        private UnresolvedPlaceholder(String path, String value, String placeholder) {
-            this.path = path;
-            this.value = value;
-            this.placeholder = placeholder;
-        }
-
-        public String path() {
-            return path;
-        }
-
-        public String value() {
-            return value;
-        }
-
-        public String placeholder() {
-            return placeholder;
-        }
-
-        @Override
-        public String toString() {
-            return format("%s in %s=%s", placeholder, path, value);
         }
     }
 
