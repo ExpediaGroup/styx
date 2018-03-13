@@ -66,11 +66,6 @@ public final class RetryPolicies {
         }
 
         @Override
-        public Optional<RemoteHost> nextOrigin() {
-            return origin;
-        }
-
-        @Override
         public boolean shouldRetry() {
             return shouldRetry;
         }

@@ -25,9 +25,7 @@ import com.hotels.styx.api.netty.exceptions.IsRetryableException;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.Collections;
-
-import static java.util.Collections.singleton;
+import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,7 +39,6 @@ public class RetryNTimesTest {
     private RetryPolicy.Context retryPolicyContext;
     private LoadBalancingStrategy strategyMock;
     private LoadBalancingStrategy.Context strategyContextMock;
-    private RemoteHost remoteHost;
 
     @BeforeMethod
     public void setupMocks() {
@@ -50,7 +47,7 @@ public class RetryNTimesTest {
         this.retryPolicyContext = mock(RetryPolicy.Context.class);
         this.strategyMock = mock(LoadBalancingStrategy.class);
         this.strategyContextMock = mock(LoadBalancingStrategy.Context.class);
-        this.remoteHost = RemoteHost.remoteHost(mock(Origin.class), mock(ConnectionPool.class), mock(HttpClient.class));
+        RemoteHost remoteHost = remoteHost(mock(Origin.class), mock(ConnectionPool.class), mock(HttpClient.class));
 
         when(retryPolicyContext.currentRetryCount()).thenReturn(0);
         when(retryPolicyContext.lastException()).thenReturn(empty());
@@ -82,28 +79,6 @@ public class RetryNTimesTest {
                 strategyMock, strategyContextMock);
 
         assertThat(retryOutcome.shouldRetry(), equalTo(false));
-    }
-
-    @Test
-    public void shouldReturnUnfilteredOrigin() {
-        when(retryPolicyContext.previousOrigins()).thenReturn(Collections.emptyList());
-        when(strategyMock.vote(strategyContextMock)).thenReturn(singleton(remoteHost));
-
-        RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
-                strategyMock, strategyContextMock);
-
-        assertThat(retryOutcome.nextOrigin().get(), equalTo(remoteHost));
-    }
-
-    @Test
-    public void shouldReturnEmptyOriginList() {
-        when(retryPolicyContext.previousOrigins()).thenReturn(Collections.singleton(remoteHost));
-        when(strategyMock.vote(strategyContextMock)).thenReturn(singleton(remoteHost));
-
-        RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
-                strategyMock, strategyContextMock);
-
-        assertThat(retryOutcome.nextOrigin().isPresent(), equalTo(false));
     }
 
     private final static class TestException extends RuntimeException implements IsRetryableException {
