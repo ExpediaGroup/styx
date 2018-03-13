@@ -76,8 +76,9 @@ using environment variables with the same name as the property.
         expirationMillis: 10000
 
     loadBalancing:
-      # Load balancer strategy type. Allowed values: "LEAST\_RESPONSE\_TIME", "ROUND\_ROBIN", and "ADAPTIVE". Defaults to "ROUND_ROBIN".
-      strategy: "ADAPTIVE"
+      strategy: #Check load balancing documentation for all the possible strategies
+        factory: {class: "com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy$Factory"}
+ 
 
 
       adaptive:

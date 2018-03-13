@@ -97,7 +97,7 @@ chain.proceed(request). Otherwise a FORBIDDEN response is returned.
         }
     }
 	
-###Asynchronously transform response object
+### Asynchronously transform response object
 
 Processing a HTTP response asynchronously is very similar to processing response synchronously. Instead of Rx map() 
 operator, you'll use a flatMap().  In this example, we assume asyncOperation() makes a network call, performs I/O, 
