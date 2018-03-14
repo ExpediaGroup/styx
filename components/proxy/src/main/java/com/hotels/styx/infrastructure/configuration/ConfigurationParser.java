@@ -16,14 +16,12 @@
 package com.hotels.styx.infrastructure.configuration;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.infrastructure.configuration.ExtensibleConfiguration.PlaceholderResolutionResult;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import org.slf4j.Logger;
 
-import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Properties;
 import java.util.function.Function;
 
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
@@ -54,60 +52,25 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
     public C parse(ConfigurationProvider provider) {
         C configuration = doParse(provider);
 
-        ParsingResult<C> resolved = resolvePlaceholders(configuration);
+        PlaceholderResolutionResult<C> resolved = resolvePlaceholders(configuration);
 
         if (!resolved.unresolvedPlaceholders().isEmpty()) {
             throw new IllegalStateException("Unresolved placeholders: " + resolved.unresolvedPlaceholders());
         }
 
-        return resolved.configuration();
+        return resolved.resolvedConfiguration();
     }
 
     private C doParse(ConfigurationProvider provider) {
         C main = deserialise(provider);
-
-        String textRepresentation = main.toString();
-
         C extended = applyParentConfig(main);
 
-        textRepresentation = logChange("Including parent", textRepresentation, extended);
-
-        C withOverrides = applyExternalOverrides(extended);
-
-        textRepresentation = logChange("Overridding properties", textRepresentation, withOverrides);
-
-//        ParsingResult<C> resolved = resolvePlaceholders(withOverrides);
-//
-//        logChange("Resolving placeholders", textRepresentation, resolved.configuration());
-
-        return withOverrides;
-    }
-
-    private ParsingResult<C> resolvePlaceholders(ParsingResult<C> withOverrides) {
-        ParsingResult<C> parsingResult = resolvePlaceholders(withOverrides.configuration());
-
-        Collection<UnresolvedPlaceholder> originalUPs = withOverrides.unresolvedPlaceholders();
-        Collection<UnresolvedPlaceholder> newUPs = parsingResult.unresolvedPlaceholders();
-        Collection<UnresolvedPlaceholder> finalUPs = new LinkedHashSet<>();
-        finalUPs.addAll(originalUPs);
-        finalUPs.addAll(newUPs);
-
-        return new ParsingResult<>(parsingResult.configuration(), finalUPs);
+        return applyExternalOverrides(extended);
     }
 
     private C applyExternalOverrides(C extended) {
         return extended.withOverrides(overrides);
     }
-
-    private static String logChange(String action, String textRepresentation, Object newTextObject) {
-        if (!textRepresentation.equals(newTextObject.toString())) {
-            LOGGER.debug("{} changed config from:\n    {}\n        to\n    {}", new Object[]{action, textRepresentation, newTextObject});
-            return newTextObject.toString();
-        }
-
-        return textRepresentation;
-    }
-
 
     private C applyParentConfig(C main) {
         return main.get("include")
@@ -126,10 +89,8 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
         return main;
     }
 
-    private ParsingResult<C> resolvePlaceholders(C config) {
-        PlaceholderResolutionResult<C> result = config.resolvePlaceholders(overrides);
-
-        return new ParsingResult<>(result);
+    private PlaceholderResolutionResult<C> resolvePlaceholders(C config) {
+        return config.resolvePlaceholders(overrides);
     }
 
     private C parent(String includePath) {
@@ -145,33 +106,6 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
     private static ConfigurationProvider includeProvider(String includePath) {
         getLogger(YamlConfig.class).info("Including config file: path={}", sanitise(includePath));
         return ConfigurationProvider.from(newResource(includePath));
-    }
-
-    /**
-     * Outcome of parsing.
-     *
-     * @param <C> configuration type
-     */
-    public static class ParsingResult<C extends ExtensibleConfiguration<C>> {
-        private final C configuration;
-        private final Collection<UnresolvedPlaceholder> unresolvedPlaceholders;
-
-        private ParsingResult(C configuration, Collection<UnresolvedPlaceholder> unresolvedPlaceholders) {
-            this.configuration = requireNonNull(configuration);
-            this.unresolvedPlaceholders = ImmutableList.copyOf(unresolvedPlaceholders);
-        }
-
-        private ParsingResult(PlaceholderResolutionResult<C> result) {
-            this(result.resolvedConfiguration(), result.unresolvedPlaceholders());
-        }
-
-        public C configuration() {
-            return configuration;
-        }
-
-        public Collection<UnresolvedPlaceholder> unresolvedPlaceholders() {
-            return unresolvedPlaceholders;
-        }
     }
 
     /**
@@ -192,6 +126,10 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
         public Builder<C> overrides(Map<String, String> overrides) {
             this.overrides = requireNonNull(overrides);
             return this;
+        }
+
+        public Builder<C> overrides(Properties properties) {
+            return overrides((Map) properties);
         }
 
         @VisibleForTesting
