@@ -26,6 +26,7 @@ import java.util.function.Function;
 
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.common.Logging.sanitise;
+import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -115,7 +116,7 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
      */
     public static final class Builder<C extends ExtensibleConfiguration<C>> {
         private ConfigurationFormat<C> format;
-        private Map<String, String> overrides;
+        private Map<String, String> overrides = emptyMap();
         private Function<String, ConfigurationProvider> includeProviderFunction;
 
         public Builder<C> format(ConfigurationFormat<C> format) {
