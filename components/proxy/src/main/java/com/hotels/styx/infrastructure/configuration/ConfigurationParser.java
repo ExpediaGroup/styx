@@ -51,9 +51,11 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
     }
 
     public C parse(ConfigurationProvider provider) {
+        LOGGER.debug("Parsing {} from {}", format, provider);
+
         C configuration = doParse(provider);
 
-        PlaceholderResolutionResult<C> resolved = resolvePlaceholders(configuration);
+        PlaceholderResolutionResult<C> resolved = configuration.resolvePlaceholders(overrides);
 
         if (!resolved.unresolvedPlaceholders().isEmpty()) {
             throw new IllegalStateException("Unresolved placeholders: " + resolved.unresolvedPlaceholders());
@@ -63,45 +65,24 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
     }
 
     private C doParse(ConfigurationProvider provider) {
-        C main = deserialise(provider);
+        C main = provider.deserialise(format);
         C extended = applyParentConfig(main);
 
-        return applyExternalOverrides(extended);
-    }
-
-    private C applyExternalOverrides(C extended) {
         return extended.withOverrides(overrides);
     }
 
     private C applyParentConfig(C main) {
         return main.get("include")
-                .map(include -> resolvePlaceholdersInText(include, overrides))
-                .map(includePath -> main.withParent(parent(includePath)))
+                .map(include -> format.resolvePlaceholdersInText(include, overrides))
+                .map(this::parent)
+                .map(main::withParent)
                 .orElse(main);
-    }
-
-    private C deserialise(ConfigurationProvider provider) {
-        C main = provider.deserialise(format);
-
-        if (main == null) {
-            throw new IllegalStateException("Cannot deserialise from " + provider + " using " + format);
-        }
-
-        return main;
-    }
-
-    private PlaceholderResolutionResult<C> resolvePlaceholders(C config) {
-        return config.resolvePlaceholders(overrides);
     }
 
     private C parent(String includePath) {
         ConfigurationProvider includedConfigurationProvider = includeProviderFunction.apply(includePath);
 
         return doParse(includedConfigurationProvider);
-    }
-
-    private String resolvePlaceholdersInText(String text, Map<String, String> overrides) {
-        return format.resolvePlaceholdersInText(text, overrides);
     }
 
     private static ConfigurationProvider includeProvider(String includePath) {

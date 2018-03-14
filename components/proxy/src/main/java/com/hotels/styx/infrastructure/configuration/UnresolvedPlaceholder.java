@@ -18,6 +18,7 @@ package com.hotels.styx.infrastructure.configuration;
 import java.util.Objects;
 
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Information on an unresolved placeholder.
@@ -28,19 +29,34 @@ public final class UnresolvedPlaceholder {
     private final String placeholder;
 
     public UnresolvedPlaceholder(String path, String value, String placeholder) {
-        this.path = path;
-        this.value = value;
-        this.placeholder = placeholder;
+        this.path = requireNonNull(path);
+        this.value = requireNonNull(value);
+        this.placeholder = requireNonNull(placeholder);
     }
 
+    /**
+     * The path/key at which the value containing the placeholder was found.
+     *
+     * @return path/key
+     */
     public String path() {
         return path;
     }
 
+    /**
+     * The value that contained the placeholder.
+     *
+     * @return value
+     */
     public String value() {
         return value;
     }
 
+    /**
+     * The placeholder itself.
+     *
+     * @return placeholder
+     */
     public String placeholder() {
         return placeholder;
     }

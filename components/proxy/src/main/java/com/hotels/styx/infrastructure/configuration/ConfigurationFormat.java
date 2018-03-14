@@ -25,9 +25,29 @@ import java.util.Map;
  * @param <C> configuration type
  */
 public interface ConfigurationFormat<C extends ExtensibleConfiguration<C>> {
+    /**
+     * Deserialise configuration from a literal string. This is primarily intended for tests,
+     * but could be used whenever the configuration has already been loaded.
+     *
+     * @param string string
+     * @return configuration
+     */
     C deserialise(String string);
 
+    /**
+     * Deserialise configuration from a resource.
+     *
+     * @param resource resource
+     * @return configuration
+     */
     C deserialise(Resource resource);
 
+    /**
+     * Resolves placeholders in a piece of text, using only overrides, not loaded configuration.
+     *
+     * @param text text
+     * @param overrides overrides
+     * @return text with resolved placeholders
+     */
     String resolvePlaceholdersInText(String text, Map<String, String> overrides);
 }

@@ -21,8 +21,21 @@ import com.hotels.styx.api.Resource;
  * Provider of configuration, e.g. file, in-memory string.
  */
 public interface ConfigurationProvider {
+    /**
+     * Deserialise configuration that is in a given format.
+     *
+     * @param format format
+     * @param <C> configuration type
+     * @return configuration
+     */
     <C extends ExtensibleConfiguration<C>> C deserialise(ConfigurationFormat<C> format);
 
+    /**
+     * Configuration taken from a string in memory.
+     *
+     * @param string a string
+     * @return configuration provider
+     */
     static ConfigurationProvider from(String string) {
         return new ConfigurationProvider() {
             @Override
@@ -37,6 +50,12 @@ public interface ConfigurationProvider {
         };
     }
 
+    /**
+     * Configuration from a resource.
+     *
+     * @param resource resource
+     * @return configuration provider
+     */
     static ConfigurationProvider from(Resource resource) {
         return new ConfigurationProvider() {
             @Override

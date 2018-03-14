@@ -28,14 +28,34 @@ import java.util.Objects;
  * @param <C> its own type
  */
 public interface ExtensibleConfiguration<C extends ExtensibleConfiguration<C>> extends Configuration {
+    /**
+     * Merges this configuration with parent configuration.
+     *
+     * @param parent parent configuration
+     * @return merged configuration
+     */
     C withParent(C parent);
 
+    /**
+     * Overrides configuration properties with mapped values.
+     *
+     * @param overrides override values
+     * @return overridden configuration
+     */
     C withOverrides(Map<String, String> overrides);
 
+    /**
+     * Resolves placeholders in this configuration, using both its own properties and overrides.
+     *
+     * @param overrides override values
+     * @return result of resolution
+     */
     PlaceholderResolutionResult<C> resolvePlaceholders(Map<String, String> overrides);
 
     /**
-     * The outcome of resolving placeholders.
+     * The outcome of resolving placeholders. It is possible that not all placeholders will be resolved,
+     * due to having no available value, and these unresolved placeholders are made available alongside the
+     * resolved configuration.
      *
      * @param <C> the configuration type
      */
@@ -48,10 +68,20 @@ public interface ExtensibleConfiguration<C extends ExtensibleConfiguration<C>> e
             this.unresolvedPlaceholders = ImmutableList.copyOf(unresolvedPlaceholders);
         }
 
+        /**
+         * Configuration with placeholders resolved.
+         *
+         * @return resolved configuration
+         */
         public C resolvedConfiguration() {
             return resolvedConfiguration;
         }
 
+        /**
+         * Placeholders that could not be resolved.
+         *
+         * @return unresolved placeholders
+         */
         public Collection<UnresolvedPlaceholder> unresolvedPlaceholders() {
             return unresolvedPlaceholders;
         }
