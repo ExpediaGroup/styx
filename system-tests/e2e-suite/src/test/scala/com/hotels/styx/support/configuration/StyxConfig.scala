@@ -164,7 +164,7 @@ case class StyxYamlConfig(yamlConfig: String,
   }
 
   override def startServer(): StyxServer = {
-    val config: YamlConfig = new YamlConfig(yamlConfig)
+    val config: YamlConfiguration = Config.config(yamlConfig)
     val styxConfig = new com.hotels.styx.StyxConfig(yamlConfig)
 
     val styxServer = new StyxServerBuilder(styxConfig)
