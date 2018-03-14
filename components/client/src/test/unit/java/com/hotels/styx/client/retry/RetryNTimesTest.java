@@ -16,10 +16,10 @@
 package com.hotels.styx.client.retry;
 
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.netty.exceptions.IsRetryableException;
 import org.testng.annotations.BeforeMethod;
@@ -27,40 +27,37 @@ import org.testng.annotations.Test;
 
 import java.util.Collections;
 
-import static java.util.Collections.singleton;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class RetryNTimesTest {
 
-    private RetryNTimes retryNTimesPolicy;
     private RetryPolicy.Context retryPolicyContext;
-    private LoadBalancingStrategy strategyMock;
-    private LoadBalancingStrategy.Context strategyContextMock;
     private RemoteHost remoteHost;
+    private LoadBalancer loadBalancer;
 
     @BeforeMethod
     public void setupMocks() {
-        this.retryNTimesPolicy = new RetryNTimes(1);
-
         this.retryPolicyContext = mock(RetryPolicy.Context.class);
-        this.strategyMock = mock(LoadBalancingStrategy.class);
-        this.strategyContextMock = mock(LoadBalancingStrategy.Context.class);
-        this.remoteHost = RemoteHost.remoteHost(mock(Origin.class), mock(ConnectionPool.class), mock(HttpClient.class));
-
         when(retryPolicyContext.currentRetryCount()).thenReturn(0);
         when(retryPolicyContext.lastException()).thenReturn(empty());
+
+        this.remoteHost = RemoteHost.remoteHost(mock(Origin.class), mock(HttpClient.class), mock(LoadBalancingMetricSupplier.class));
+        this.loadBalancer = mock(LoadBalancer.class);
+
     }
 
     @Test
-    public void shouldRetryWithIsRetryableExceptionThrownAndMaxAttemptsNotReached() {
-        when(retryPolicyContext.lastException()).thenReturn(of(new TestException()));
-        RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
-                strategyMock, strategyContextMock);
+    public void shouldRetryWithIsRetryableException() {
+        when(retryPolicyContext.lastException()).thenReturn(of(new RetryableTestException()));
+
+        RetryPolicy.Outcome retryOutcome = new RetryNTimes(1).evaluate(
+                retryPolicyContext, loadBalancer, null);
 
         assertThat(retryOutcome.shouldRetry(), equalTo(true));
     }
@@ -68,9 +65,10 @@ public class RetryNTimesTest {
     @Test
     public void shouldNotRetryBasedOnMaxAttemptsReached() {
         when(retryPolicyContext.currentRetryCount()).thenReturn(1);
-        when(retryPolicyContext.lastException()).thenReturn(of(new TestException()));
-        RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
-                strategyMock, strategyContextMock);
+        when(retryPolicyContext.lastException()).thenReturn(of(new RetryableTestException()));
+
+        RetryPolicy.Outcome retryOutcome = new RetryNTimes(1).evaluate(
+                retryPolicyContext, loadBalancer, null);
 
         assertThat(retryOutcome.shouldRetry(), equalTo(false));
     }
@@ -78,35 +76,36 @@ public class RetryNTimesTest {
     @Test
     public void shouldNotRetryBasedOnExceptionOtherThanIsRetryableException() {
         when(retryPolicyContext.lastException()).thenReturn(of(new RuntimeException()));
-        RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
-                strategyMock, strategyContextMock);
+
+        RetryPolicy.Outcome retryOutcome = new RetryNTimes(1).evaluate(
+                retryPolicyContext, loadBalancer, null);
 
         assertThat(retryOutcome.shouldRetry(), equalTo(false));
     }
 
     @Test
-    public void shouldReturnUnfilteredOrigin() {
+    public void returnsPreviouslyNonAttemptedOrigin() {
         when(retryPolicyContext.previousOrigins()).thenReturn(Collections.emptyList());
-        when(strategyMock.vote(strategyContextMock)).thenReturn(singleton(remoteHost));
+        when(loadBalancer.choose(any(LoadBalancer.Preferences.class))).thenReturn(of(remoteHost));
 
-        RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
-                strategyMock, strategyContextMock);
+        RetryPolicy.Outcome retryOutcome = new RetryNTimes(1).evaluate(
+                retryPolicyContext, loadBalancer, null);
 
         assertThat(retryOutcome.nextOrigin().get(), equalTo(remoteHost));
     }
 
     @Test
-    public void shouldReturnEmptyOriginList() {
+    public void filtersOutPreviouslyAttemptedOrigins() {
         when(retryPolicyContext.previousOrigins()).thenReturn(Collections.singleton(remoteHost));
-        when(strategyMock.vote(strategyContextMock)).thenReturn(singleton(remoteHost));
+        when(loadBalancer.choose(any(LoadBalancer.Preferences.class))).thenReturn(of(remoteHost));
 
-        RetryPolicy.Outcome retryOutcome = retryNTimesPolicy.evaluate(retryPolicyContext,
-                strategyMock, strategyContextMock);
+        RetryPolicy.Outcome retryOutcome = new RetryNTimes(1).evaluate(
+                retryPolicyContext, loadBalancer, null);
 
         assertThat(retryOutcome.nextOrigin().isPresent(), equalTo(false));
     }
 
-    private final static class TestException extends RuntimeException implements IsRetryableException {
+    private final static class RetryableTestException extends RuntimeException implements IsRetryableException {
 
     }
 }

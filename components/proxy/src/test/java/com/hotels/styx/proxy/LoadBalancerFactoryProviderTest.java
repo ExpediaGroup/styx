@@ -17,15 +17,16 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategyFactory;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancerFactory;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.MissingConfigurationException;
-import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy;
+import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import org.testng.annotations.Test;
+
+import java.util.Optional;
 
 import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATION;
 import static com.hotels.styx.proxy.LoadBalancingStrategyFactoryProvider.newProvider;
@@ -33,7 +34,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 
-public class LoadBalancingStrategyFactoryProviderTest {
+public class LoadBalancerFactoryProviderTest {
 
     @Test
     public void loadsTheConfiguredStrategy() {
@@ -42,7 +43,7 @@ public class LoadBalancingStrategyFactoryProviderTest {
                 "  strategy: awesome\n" +
                 "  strategies:\n" +
                 "    awesome:\n" +
-                "      factory: {class: \"com.hotels.styx.proxy.LoadBalancingStrategyFactoryProviderTest$NewAwesomeStrategy\"}\n";
+                "      factory: {class: \"com.hotels.styx.proxy.LoadBalancerFactoryProviderTest$NewAwesomeStrategy\"}\n";
 
         Configuration configuration = new YamlConfig(yaml);
 
@@ -80,28 +81,24 @@ public class LoadBalancingStrategyFactoryProviderTest {
     @Test
     public void loadsRoundRobinAsDefaultStrategy() throws Exception {
         LoadBalancingStrategyFactoryProvider factoryProvider = newProvider(EMPTY_CONFIGURATION);
-        assertThat(factoryProvider.get(), is(instanceOf(RoundRobinStrategy.Factory.class)));
+        assertThat(factoryProvider.get(), is(instanceOf(BusyConnectionsStrategy.Factory.class)));
     }
 
-    public static class NewAwesomeStrategy implements LoadBalancingStrategyFactory, LoadBalancingStrategy {
+    public static class NewAwesomeStrategy implements LoadBalancerFactory, LoadBalancer {
 
         @Override
-        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration) {
+        public LoadBalancer create(Environment environment, Configuration strategyConfiguration) {
             return null;
         }
 
         @Override
-        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins) {
+        public LoadBalancer create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins) {
             return null;
         }
 
         @Override
-        public Iterable<RemoteHost> vote(Context context) {
+        public Optional<RemoteHost> choose(LoadBalancer.Preferences preferences) {
             return null;
-        }
-
-        @Override
-        public void originsInventoryStateChanged(OriginsInventorySnapshot snapshot) {
         }
     }
 }

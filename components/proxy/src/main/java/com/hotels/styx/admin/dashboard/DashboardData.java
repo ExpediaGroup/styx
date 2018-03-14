@@ -25,8 +25,8 @@ import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.Version;
-import com.hotels.styx.api.client.OriginsInventorySnapshot;
-import com.hotels.styx.api.client.OriginsInventoryStateChangeListener;
+import com.hotels.styx.api.client.OriginsSnapshot;
+import com.hotels.styx.api.client.OriginsChangeListener;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.Registry;
@@ -466,7 +466,7 @@ public class DashboardData {
     /**
      * Origin-related data.
      */
-    public final class Origin implements OriginsInventoryStateChangeListener {
+    public final class Origin implements OriginsChangeListener {
         private final com.hotels.styx.api.client.Origin origin;
         private final Supplier<Map<String, Integer>> responsesSupplier;
         private final Requests requests;
@@ -485,7 +485,7 @@ public class DashboardData {
 
         @Subscribe
         @Override
-        public void originsInventoryStateChanged(OriginsInventorySnapshot snapshot) {
+        public void originsChanged(OriginsSnapshot snapshot) {
             if (snapshot.activeOrigins().contains(origin)) {
                 status = "active";
             } else if (snapshot.inactiveOrigins().contains(origin)) {

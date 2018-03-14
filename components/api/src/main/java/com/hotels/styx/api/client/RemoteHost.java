@@ -17,6 +17,8 @@ package com.hotels.styx.api.client;
 
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetric;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
 
 import java.util.Objects;
 
@@ -24,17 +26,17 @@ import static java.util.Objects.requireNonNull;
 
 public final class RemoteHost {
     private final Origin origin;
-    private final ConnectionPool pool;
     private final HttpClient hostClient;
+    private final LoadBalancingMetricSupplier metricSupplier;
 
-    public RemoteHost(Origin origin, ConnectionPool pool, HttpClient hostClient) {
+    private RemoteHost(Origin origin, HttpClient hostClient, LoadBalancingMetricSupplier metricSupplier) {
         this.origin = requireNonNull(origin);
-        this.pool = requireNonNull(pool);
         this.hostClient = requireNonNull(hostClient);
+        this.metricSupplier = requireNonNull(metricSupplier);
     }
 
-    public static RemoteHost remoteHost(Origin origin, ConnectionPool pool, HttpClient client) {
-        return new RemoteHost(origin, pool, client);
+    public static RemoteHost remoteHost(Origin origin, HttpClient client, LoadBalancingMetricSupplier metricSupplier) {
+        return new RemoteHost(origin, client, metricSupplier);
     }
 
     public Id id() {
@@ -45,12 +47,20 @@ public final class RemoteHost {
         return this.origin;
     }
 
-    public ConnectionPool connectionPool() {
-        return this.pool;
-    }
-
     public HttpClient hostClient() {
         return hostClient;
+    }
+
+    public LoadBalancingMetric metric() {
+        return metricSupplier.loadBalancingMetric();
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("RemoteHost{");
+        sb.append("origin=").append(origin);
+        sb.append('}');
+        return sb.toString();
     }
 
     @Override
@@ -64,12 +74,11 @@ public final class RemoteHost {
         }
 
         RemoteHost that = (RemoteHost) o;
-        return Objects.equals(origin, that.origin)
-                && Objects.equals(pool, that.pool);
+        return Objects.equals(origin, that.origin);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(origin, pool);
+        return Objects.hash(origin);
     }
 }

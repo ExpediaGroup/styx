@@ -17,18 +17,18 @@ package com.hotels.styx.client;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.netty.exceptions.NoAvailableHostsException;
 import com.hotels.styx.client.applications.BackendService;
-import com.hotels.styx.client.applications.OriginStats;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -36,17 +36,20 @@ import org.slf4j.Logger;
 import rx.Observable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.Iterables.getFirst;
+import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
 import static io.netty.handler.codec.http.HttpMethod.HEAD;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.StreamSupport.stream;
@@ -61,12 +64,13 @@ public final class StyxHttpClient implements HttpClient {
 
     private final Id id;
     private final RewriteRuleset rewriteRuleset;
-    private final LoadBalancingStrategy loadBalancingStrategy;
+    private final LoadBalancer loadBalancer;
     private final RetryPolicy retryPolicy;
     private final OriginStatsFactory originStatsFactory;
     private final BackendService backendService;
     private final MetricRegistry metricsRegistry;
     private final boolean contentValidation;
+    private final String originsRestrictionCookieName;
 
     private StyxHttpClient(Builder builder) {
         this.backendService = requireNonNull(builder.backendService);
@@ -74,7 +78,7 @@ public final class StyxHttpClient implements HttpClient {
 
         this.originStatsFactory = requireNonNull(builder.originStatsFactory);
 
-        this.loadBalancingStrategy = requireNonNull(builder.loadBalancingStrategy);
+        this.loadBalancer = requireNonNull(builder.loadBalancer);
 
         this.retryPolicy = builder.retryPolicy != null
                 ? builder.retryPolicy
@@ -84,6 +88,7 @@ public final class StyxHttpClient implements HttpClient {
 
         this.metricsRegistry = builder.metricsRegistry;
         this.contentValidation = builder.contentValidation;
+        this.originsRestrictionCookieName = builder.originsRestrictionCookieName;
     }
 
     @Override
@@ -137,7 +142,8 @@ public final class StyxHttpClient implements HttpClient {
         Optional<RemoteHost> remoteHost = selectOrigin(request);
         if (remoteHost.isPresent()) {
             RemoteHost host = remoteHost.get();
-            previousOrigins.add(host);
+            List<RemoteHost> newPreviousOrigins = newArrayList(previousOrigins);
+            newPreviousOrigins.add(remoteHost.get());
 
             return host.hostClient()
                     .sendRequest(request)
@@ -149,7 +155,7 @@ public final class StyxHttpClient implements HttpClient {
                     .map(this::removeRedundantContentLengthHeader)
                     .onErrorResumeNext(cause -> {
                         RetryPolicyContext retryContext = new RetryPolicyContext(this.id, attempt + 1, cause, request, previousOrigins);
-                        return retry(request, retryContext, previousOrigins, attempt + 1, cause);
+                        return retry(request, retryContext, newPreviousOrigins, attempt + 1, cause);
                     });
         } else {
             RetryPolicyContext retryContext = new RetryPolicyContext(this.id, attempt + 1, null, request, previousOrigins);
@@ -158,9 +164,21 @@ public final class StyxHttpClient implements HttpClient {
     }
 
     Observable<HttpResponse> retry(HttpRequest request, RetryPolicyContext retryContext, List<RemoteHost> previousOrigins, int attempt, Throwable cause) {
-        LoadBalancingStrategy.Context lbContext = new LBContext(request, id, originStatsFactory);
+        LoadBalancer.Preferences lbContext = new LoadBalancer.Preferences() {
+            @Override
+            public Optional<String> preferredOrigins() {
+                return Optional.empty();
+            }
 
-        if (this.retryPolicy.evaluate(retryContext, loadBalancingStrategy, lbContext).shouldRetry()) {
+            @Override
+            public List<Origin> avoidOrigins() {
+                return previousOrigins.stream()
+                        .map(RemoteHost::origin)
+                        .collect(Collectors.toList());
+            }
+        };
+
+        if (this.retryPolicy.evaluate(retryContext, loadBalancer, lbContext).shouldRetry()) {
             return sendRequest(request, previousOrigins, attempt);
         } else {
             return Observable.error(cause);
@@ -227,34 +245,6 @@ public final class StyxHttpClient implements HttpClient {
         }
     }
 
-    static class LBContext implements LoadBalancingStrategy.Context {
-        private final HttpRequest request;
-        private final Id id;
-        private final OriginStatsFactory originStatsFactory;
-
-        LBContext(HttpRequest request, Id id, OriginStatsFactory originStatsFactory) {
-            this.request = requireNonNull(request);
-            this.id = requireNonNull(id);
-            this.originStatsFactory = requireNonNull(originStatsFactory);
-        }
-
-        @Override
-        public Id appId() {
-            return id;
-        }
-
-        @Override
-        public HttpRequest currentRequest() {
-            return request;
-        }
-
-        @Override
-        public double oneMinuteRateForStatusCode5xx(Origin origin) {
-            OriginStats originStats = originStatsFactory.originStats(origin);
-            return originStats.oneMinuteErrorRate();
-        }
-    }
-
     private static void logError(HttpRequest rewrittenRequest, Throwable throwable) {
         LOGGER.error("Error Handling request={} exceptionClass={} exceptionMessage=\"{}\"",
                 new Object[]{rewrittenRequest, throwable.getClass().getName(), throwable.getMessage()});
@@ -284,13 +274,31 @@ public final class StyxHttpClient implements HttpClient {
     }
 
     private Optional<RemoteHost> selectOrigin(HttpRequest rewrittenRequest) {
-        LoadBalancingStrategy.Context lbContext = new LBContext(rewrittenRequest, id, originStatsFactory);
-        Iterable<RemoteHost> votedOrigins = loadBalancingStrategy.vote(lbContext);
-        return Optional.ofNullable(getFirst(votedOrigins, null));
+
+
+        LoadBalancer.Preferences preferences = new LoadBalancer.Preferences() {
+            @Override
+            public Optional<String> preferredOrigins() {
+                if (nonNull(originsRestrictionCookieName)) {
+                    return rewrittenRequest.cookie(originsRestrictionCookieName)
+                            .map(HttpCookie::value)
+                            .map(Optional::of)
+                            .orElse(rewrittenRequest.cookie("styx_origin_" + id).map(HttpCookie::value));
+                } else {
+                    return rewrittenRequest.cookie("styx_origin_" + id).map(HttpCookie::value);
+                }
+            }
+
+            @Override
+            public List<Origin> avoidOrigins() {
+                return Collections.emptyList();
+            }
+        };
+        return loadBalancer.choose(preferences);
     }
 
     private HttpResponse addStickySessionIdentifier(HttpResponse httpResponse, Origin origin) {
-        if (this.loadBalancingStrategy instanceof StickySessionLoadBalancingStrategy) {
+        if (this.loadBalancer instanceof StickySessionLoadBalancingStrategy) {
             int maxAge = backendService.stickySessionConfig().stickySessionTimeoutSeconds();
             return httpResponse.newBuilder()
                     .addCookie(newStickySessionCookie(id, origin.id(), maxAge))
@@ -311,7 +319,7 @@ public final class StyxHttpClient implements HttpClient {
                 .add("stickySessionConfig", backendService.stickySessionConfig())
                 .add("retryPolicy", retryPolicy)
                 .add("rewriteRuleset", rewriteRuleset)
-                .add("loadBalancingStrategy", loadBalancingStrategy)
+                .add("loadBalancingStrategy", loadBalancer)
                 .toString();
     }
 
@@ -323,9 +331,10 @@ public final class StyxHttpClient implements HttpClient {
         private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
         private List<RewriteRule> rewriteRules = emptyList();
         private RetryPolicy retryPolicy = new RetryNTimes(3);
-        private LoadBalancingStrategy loadBalancingStrategy;
+        private LoadBalancer loadBalancer;
         private boolean contentValidation;
         private OriginStatsFactory originStatsFactory;
+        private String originsRestrictionCookieName;
 
         public Builder(BackendService backendService) {
             this.backendService = checkNotNull(backendService);
@@ -347,8 +356,8 @@ public final class StyxHttpClient implements HttpClient {
         }
 
 
-        public Builder loadBalancingStrategy(LoadBalancingStrategy loadBalancingStrategy) {
-            this.loadBalancingStrategy = requireNonNull(loadBalancingStrategy);
+        public Builder loadBalancer(LoadBalancer loadBalancer) {
+            this.loadBalancer = requireNonNull(loadBalancer);
             return this;
         }
 
@@ -362,12 +371,16 @@ public final class StyxHttpClient implements HttpClient {
             return this;
         }
 
+        public Builder originsRestrictionCookieName(String originsRestrictionCookieName) {
+            this.originsRestrictionCookieName = originsRestrictionCookieName;
+            return this;
+        }
+
         public StyxHttpClient build() {
             if (originStatsFactory == null) {
                 originStatsFactory = new OriginStatsFactory(metricsRegistry);
             }
             return new StyxHttpClient(this);
         }
-
     }
 }

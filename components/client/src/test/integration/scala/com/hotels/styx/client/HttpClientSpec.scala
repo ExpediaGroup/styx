@@ -20,13 +20,14 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.client.Origin._
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.client.{ActiveOrigins, Origin}
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient._
 import com.hotels.styx.client.applications.BackendService
-import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
+import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.support.api.BlockingObservables.{waitForResponse, waitForStreamingResponse}
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
@@ -62,7 +63,7 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
 
   def activeOrigins(backendService: BackendService): ActiveOrigins = newOriginsInventoryBuilder(backendService).build()
 
-  def roundRobinStrategy(activeOrigins: ActiveOrigins): RoundRobinStrategy = new RoundRobinStrategy(activeOrigins)
+  def busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new BusyConnectionsStrategy(activeOrigins)
 
   before {
     originOneServer.reset()
@@ -74,7 +75,7 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
       .build()
 
     client = newHttpClientBuilder(backendService)
-      .loadBalancingStrategy(roundRobinStrategy(activeOrigins(backendService)))
+      .loadBalancer(busyConnectionStrategy(activeOrigins(backendService)))
       .build
   }
 

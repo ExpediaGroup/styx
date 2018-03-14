@@ -15,62 +15,38 @@
  */
 package com.hotels.styx.client.stickysession;
 
-import com.hotels.styx.api.HttpCookie;
-import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.OriginsInventorySnapshot;
 import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 
-import java.util.Collections;
 import java.util.Optional;
-import java.util.function.Predicate;
 
-import static com.hotels.styx.client.stickysession.StickySessionCookie.stickySessionCookieName;
 import static java.util.stream.StreamSupport.stream;
 
 /**
  * A load balancing strategy that selects first a preferred origin.
  */
-public class StickySessionLoadBalancingStrategy implements LoadBalancingStrategy {
-    private final LoadBalancingStrategy delegate;
+public class StickySessionLoadBalancingStrategy implements LoadBalancer {
+    private final LoadBalancer delegate;
     private final ActiveOrigins activeOrigins;
 
-    public StickySessionLoadBalancingStrategy(ActiveOrigins activeOrigins, LoadBalancingStrategy delegate) {
+    public StickySessionLoadBalancingStrategy(ActiveOrigins activeOrigins, LoadBalancer delegate) {
         this.delegate = delegate;
         this.activeOrigins = activeOrigins;
     }
 
     @Override
-    public Iterable<RemoteHost> vote(Context context) {
-        return stickySessionOriginId(context)
-                .flatMap(preferredOriginId -> originsById(activeOrigins.snapshot(), preferredOriginId))
-                .orElseGet(() -> delegate.vote(context));
+    public Optional<RemoteHost> choose(LoadBalancer.Preferences context) {
+        return context.preferredOrigins()
+                .flatMap(preferredHost -> originById(activeOrigins.snapshot(), preferredHost))
+                .map(Optional::of)
+                .orElse(delegate.choose(context));
     }
 
-    private Optional<Iterable<RemoteHost>> originsById(Iterable<RemoteHost> origins, Id id) {
-        return originById(origins, id).map(Collections::singleton);
-    }
-
-    private Optional<RemoteHost> originById(Iterable<RemoteHost> origins, Id id) {
+    private Optional<RemoteHost> originById(Iterable<RemoteHost> origins, String id) {
         return stream(origins.spliterator(), false)
-                .filter(hasId(id))
+                .filter(host -> host.id().toString().equals(id))
                 .findFirst();
     }
 
-    private static Optional<Id> stickySessionOriginId(Context context) {
-        return context.currentRequest()
-                .cookie(stickySessionCookieName(context.appId()))
-                .map(HttpCookie::value)
-                .map(Id::id);
-    }
-
-    private static Predicate<RemoteHost> hasId(Id id) {
-        return input -> input.connectionPool().getOrigin().id().equals(id);
-    }
-
-    @Override
-    public void originsInventoryStateChanged(OriginsInventorySnapshot snapshot) {
-        delegate.originsInventoryStateChanged(snapshot);
-    }
 }

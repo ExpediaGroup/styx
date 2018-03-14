@@ -21,8 +21,9 @@ import com.google.common.eventbus.EventBus;
 import com.hotels.styx.admin.tasks.StubConnectionPool;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.RemoteHost;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.client.StyxHostHttpClient;
 import org.testng.annotations.Test;
@@ -60,16 +61,16 @@ public class OriginsInventoryHandlerTest {
         Set<Origin> inactiveOrigins = generateOrigins(4);
         Set<Origin> disabledOrigins = generateOrigins(2);
 
-        eventBus.post(new OriginsInventorySnapshot(APP_ID, pool(activeOrigins), pool(inactiveOrigins), pool(disabledOrigins)));
+        eventBus.post(new OriginsSnapshot(APP_ID, pool(activeOrigins), pool(inactiveOrigins), pool(disabledOrigins)));
 
         FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
         assertThat(response.bodyAs(UTF_8).split("\n").length, is(1));
 
-        Map<Id, OriginsInventorySnapshot> output = deserialiseJson(response.bodyAs(UTF_8));
+        Map<Id, OriginsSnapshot> output = deserialiseJson(response.bodyAs(UTF_8));
 
         assertThat(output.keySet(), contains(APP_ID));
 
-        OriginsInventorySnapshot snapshot = output.get(APP_ID);
+        OriginsSnapshot snapshot = output.get(APP_ID);
 
         assertThat(snapshot.appId(), is(APP_ID));
         assertThat(snapshot.activeOrigins(), is(activeOrigins));
@@ -84,7 +85,7 @@ public class OriginsInventoryHandlerTest {
 
         Set<Origin> disabledOrigins = generateOrigins(2);
 
-        eventBus.post(new OriginsInventorySnapshot(APP_ID, pool(emptySet()), pool(emptySet()), pool(disabledOrigins)));
+        eventBus.post(new OriginsSnapshot(APP_ID, pool(emptySet()), pool(emptySet()), pool(disabledOrigins)));
 
         FullHttpResponse response = waitForResponse(handler.handle(get("/?pretty=1").build()));
         assertThat(response.bodyAs(UTF_8), matchesRegex("\\{\n" +
@@ -112,9 +113,9 @@ public class OriginsInventoryHandlerTest {
         assertThat(response.bodyAs(UTF_8), is("{}"));
     }
 
-    private static Map<Id, OriginsInventorySnapshot> deserialiseJson(String json) throws IOException {
+    private static Map<Id, OriginsSnapshot> deserialiseJson(String json) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        MapType type = mapper.getTypeFactory().constructMapType(Map.class, Id.class, OriginsInventorySnapshot.class);
+        MapType type = mapper.getTypeFactory().constructMapType(Map.class, Id.class, OriginsSnapshot.class);
         return mapper.readValue(json, type);
     }
 
@@ -130,7 +131,7 @@ public class OriginsInventoryHandlerTest {
     private static List<RemoteHost> pool(Set<Origin> origins) {
         return origins.stream()
                 .map(StubConnectionPool::new)
-                .map(pool -> remoteHost(pool.getOrigin(), pool, mock(StyxHostHttpClient.class)))
+                .map(pool -> remoteHost(pool.getOrigin(), mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)))
                 .collect(toList());
     }
 }

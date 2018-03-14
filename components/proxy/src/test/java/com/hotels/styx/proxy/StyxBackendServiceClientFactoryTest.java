@@ -16,14 +16,18 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
+import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetric;
+import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
+import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.client.applications.BackendService;
 import org.testng.annotations.BeforeMethod;
@@ -52,6 +56,7 @@ public class StyxBackendServiceClientFactoryTest {
     private Connection.Factory connectionFactory;
     private BackendService backendService;
     private String STICKY_COOKIE = "styx_origin_" + GENERIC_APP;
+    private String ORIGINS_RESTRICTION_COOKIE = "styx-origins-restriction";
 
     @BeforeMethod
     public void setUp() {
@@ -88,7 +93,7 @@ public class StyxBackendServiceClientFactoryTest {
 
 
     @Test
-    public void usesTheOriginSpecifiedInTheCookieIfStickySessionIsEnabled() {
+    public void usesTheOriginSpecifiedInTheStickySessionCookie() {
         BackendService backendService = newBackendServiceBuilder()
                 .origins(
                         newOriginBuilder("localhost", 9091).id("x").build(),
@@ -106,11 +111,11 @@ public class StyxBackendServiceClientFactoryTest {
                         newOriginsInventoryBuilder(backendService)
                                 .hostClientFactory((pool) -> {
                                     if (pool.getOrigin().id().equals(id("x"))) {
-                                        return (request) -> just(response(OK).header("X-Origin-Id", "x").build());
+                                        return hostClient(response(OK).header("X-Origin-Id", "x").build());
                                     } else if (pool.getOrigin().id().equals(id("y"))) {
-                                        return (request) -> just(response(OK).header("X-Origin-Id", "y").build());
+                                        return hostClient(response(OK).header("X-Origin-Id", "y").build());
                                     } else {
-                                        return (request) -> just(response(OK).header("X-Origin-Id", "z").build());
+                                        return hostClient(response(OK).header("X-Origin-Id", "z").build());
                                     }
                                 })
                                 .build(),
@@ -129,5 +134,56 @@ public class StyxBackendServiceClientFactoryTest {
         assertThat(responsez.header("X-Origin-Id").get(), is("z"));
     }
 
+    @Test
+    public void usesTheOriginSpecifiedInTheOriginsRestrictionCookie() {
+        MapBackedConfiguration config = new MapBackedConfiguration();
+        config.set("originRestrictionCookie", ORIGINS_RESTRICTION_COOKIE);
+
+        environment = new Environment.Builder()
+                .configuration(new StyxConfig(config))
+                .build();
+
+        BackendService backendService = newBackendServiceBuilder()
+                .origins(
+                        newOriginBuilder("localhost", 9091).id("x").build(),
+                        newOriginBuilder("localhost", 9092).id("y").build(),
+                        newOriginBuilder("localhost", 9093).id("z").build())
+                .build();
+
+        HttpClient styxHttpClient = new StyxBackendServiceClientFactory(environment)
+                .createClient(
+                        backendService,
+                        newOriginsInventoryBuilder(backendService)
+                                .hostClientFactory((pool) -> {
+                                    if (pool.getOrigin().id().equals(id("x"))) {
+                                        return hostClient(response(OK).header("X-Origin-Id", "x").build());
+                                    } else if (pool.getOrigin().id().equals(id("y"))) {
+                                        return hostClient(response(OK).header("X-Origin-Id", "y").build());
+                                    } else {
+                                        return hostClient(response(OK).header("X-Origin-Id", "z").build());
+                                    }
+                                })
+                                .build(),
+                        new OriginStatsFactory(new CodaHaleMetricRegistry()));
+
+        HttpRequest requestz = get("/some-req").addCookie(ORIGINS_RESTRICTION_COOKIE, id("z").toString()).build();
+        HttpRequest requestx = get("/some-req").addCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString()).build();
+        HttpRequest requesty = get("/some-req").addCookie(ORIGINS_RESTRICTION_COOKIE, id("y").toString()).build();
+
+        HttpResponse responsez = styxHttpClient.sendRequest(requestz).toBlocking().first();
+        HttpResponse responsex = styxHttpClient.sendRequest(requestx).toBlocking().first();
+        HttpResponse responsey = styxHttpClient.sendRequest(requesty).toBlocking().first();
+
+        assertThat(responsex.header("X-Origin-Id").get(), is("x"));
+        assertThat(responsey.header("X-Origin-Id").get(), is("y"));
+        assertThat(responsez.header("X-Origin-Id").get(), is("z"));
+    }
+
+    private StyxHostHttpClient hostClient(HttpResponse response) {
+        StyxHostHttpClient mockClient = mock(StyxHostHttpClient.class);
+        when(mockClient.sendRequest(any(HttpRequest.class))).thenReturn(just(response));
+        when(mockClient.loadBalancingMetric()).thenReturn(new LoadBalancingMetric(1));
+        return mockClient;
+    }
 
 }

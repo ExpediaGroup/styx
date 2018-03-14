@@ -20,8 +20,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsInventorySnapshot;
-import com.hotels.styx.api.client.OriginsInventoryStateChangeListener;
+import com.hotels.styx.api.client.OriginsSnapshot;
+import com.hotels.styx.api.client.OriginsChangeListener;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
@@ -101,7 +101,7 @@ public class OriginsInventoryTest {
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(1));
         assertThat(gaugeValue("origins.generic-app.app-02.status"), isValue(1));
 
-        verify(eventBus).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus).post(any(OriginsSnapshot.class));
     }
 
     @Test
@@ -114,7 +114,7 @@ public class OriginsInventoryTest {
         assertThat(inventory, hasActiveOrigins(1));
         verify(monitor).monitor(singleton(originV1));
         assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
-        verify(eventBus).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus).post(any(OriginsSnapshot.class));
 
         inventory.setOrigins(originV2);
 
@@ -122,7 +122,7 @@ public class OriginsInventoryTest {
         verify(monitor).stopMonitoring(singleton(originV1));
         verify(monitor).monitor(singleton(originV2));
         assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
-        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
     }
 
     @Test
@@ -135,7 +135,7 @@ public class OriginsInventoryTest {
         assertThat(inventory, hasActiveOrigins(1));
         verify(monitor).monitor(singleton(originV1));
         assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
-        verify(eventBus).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus).post(any(OriginsSnapshot.class));
 
         inventory.setOrigins(originV2);
 
@@ -143,7 +143,7 @@ public class OriginsInventoryTest {
         verify(monitor).stopMonitoring(singleton(originV1));
         verify(monitor).monitor(singleton(originV2));
         assertThat(gaugeValue("origins.generic-app.acme-01.status"), isValue(1));
-        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
     }
 
     @Test
@@ -193,14 +193,14 @@ public class OriginsInventoryTest {
         verify(monitor).monitor(singleton(ORIGIN_2));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(1));
         assertThat(gaugeValue("origins.generic-app.app-02.status"), isValue(1));
-        verify(eventBus).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus).post(any(OriginsSnapshot.class));
 
         inventory.setOrigins(ORIGIN_1, ORIGIN_2);
 
         assertThat(inventory, hasActiveOrigins(2));
         verify(monitor, times(1)).monitor(singleton(ORIGIN_1));
         verify(monitor, times(1)).monitor(singleton(ORIGIN_2));
-        verify(eventBus).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus).post(any(OriginsSnapshot.class));
     }
 
     @Test
@@ -212,7 +212,7 @@ public class OriginsInventoryTest {
         verify(monitor).monitor(singleton(ORIGIN_2));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(1));
         assertThat(gaugeValue("origins.generic-app.app-02.status"), isValue(1));
-        verify(eventBus).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus).post(any(OriginsSnapshot.class));
 
         inventory.setOrigins(ORIGIN_2);
 
@@ -220,7 +220,7 @@ public class OriginsInventoryTest {
         verify(monitor).stopMonitoring(singleton(ORIGIN_1));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isAbsent());
         assertThat(gaugeValue("origins.generic-app.app-02.status"), isValue(1));
-        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
     }
 
 
@@ -269,12 +269,12 @@ public class OriginsInventoryTest {
     @Test
     public void willNotDisableOriginsNotBelongingToTheApp() {
         inventory.setOrigins(ORIGIN_1);
-        verify(eventBus).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus).post(any(OriginsSnapshot.class));
 
         inventory.onCommand(new DisableOrigin(id("some-other-app"), ORIGIN_1.id()));
 
         assertThat(inventory, hasActiveOrigins(1));
-        verify(eventBus).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus).post(any(OriginsSnapshot.class));
     }
 
     @Test
@@ -285,7 +285,7 @@ public class OriginsInventoryTest {
         inventory.onCommand(new EnableOrigin(id("some-other-app"), ORIGIN_1.id()));
 
         assertThat(inventory, hasNoActiveOrigins());
-        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
     }
 
     @Test
@@ -299,7 +299,7 @@ public class OriginsInventoryTest {
 
         verify(monitor).stopMonitoring(singleton(ORIGIN_1));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(-1));
-        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
     }
 
     @Test
@@ -314,7 +314,7 @@ public class OriginsInventoryTest {
 
         verify(monitor).stopMonitoring(singleton(ORIGIN_1));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(-1));
-        verify(eventBus, times(3)).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus, times(3)).post(any(OriginsSnapshot.class));
     }
 
     @Test
@@ -326,7 +326,7 @@ public class OriginsInventoryTest {
 
         verify(monitor, times(2)).monitor(singleton(ORIGIN_1));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(0));
-        verify(eventBus, times(3)).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus, times(3)).post(any(OriginsSnapshot.class));
     }
 
     @Test
@@ -338,7 +338,7 @@ public class OriginsInventoryTest {
 
         assertThat(inventory, hasNoActiveOrigins());
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(0));
-        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
     }
 
     @Test
@@ -351,7 +351,7 @@ public class OriginsInventoryTest {
 
         assertThat(inventory, hasActiveOrigins(1));
         assertThat(gaugeValue("origins.generic-app.app-01.status"), isValue(1));
-        verify(eventBus, times(3)).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus, times(3)).post(any(OriginsSnapshot.class));
     }
 
     @Test
@@ -364,7 +364,7 @@ public class OriginsInventoryTest {
         inventory.originHealthy(ORIGIN_1);
 
         assertThat(inventory, hasActiveOrigins(1));
-        verify(eventBus, times(1)).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus, times(1)).post(any(OriginsSnapshot.class));
     }
 
     @Test
@@ -377,18 +377,18 @@ public class OriginsInventoryTest {
         inventory.originUnhealthy(ORIGIN_1);
 
         assertThat(inventory, hasActiveOrigins(0));
-        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
     }
 
     @Test
     public void announcesListenersOnOriginStateChanges() {
-        OriginsInventoryStateChangeListener listener = mock(OriginsInventoryStateChangeListener.class);
-        inventory.addInventoryStateChangeListener(listener);
+        OriginsChangeListener listener = mock(OriginsChangeListener.class);
+        inventory.addOriginsChangeListener(listener);
 
         inventory.setOrigins(ORIGIN_1);
         inventory.originUnhealthy(ORIGIN_1);
 
-        verify(listener, times(2)).originsInventoryStateChanged(any(OriginsInventorySnapshot.class));
+        verify(listener, times(2)).originsChanged(any(OriginsSnapshot.class));
     }
 
     @Test
@@ -476,7 +476,7 @@ public class OriginsInventoryTest {
         verify(pool1).close();
         verify(pool2).close();
 
-        verify(eventBus, times(2)).post(any(OriginsInventorySnapshot.class));
+        verify(eventBus, times(2)).post(any(OriginsSnapshot.class));
         verify(eventBus).unregister(eq(inventory));
     }
 

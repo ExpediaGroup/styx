@@ -20,8 +20,9 @@ import com.google.common.eventbus.EventBus;
 import com.hotels.styx.Version;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.RemoteHost;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.StyxHostHttpClient;
@@ -185,7 +186,7 @@ public class DashboardDataTest {
 
         DashboardData.Backend backend = newDashboardData(backendServicesRegistry).downstream().firstBackend();
 
-        eventBus.post(new OriginsInventorySnapshot(id("app"),
+        eventBus.post(new OriginsSnapshot(id("app"),
                 singleton(pool(origin("app", "app-01", "localhost", 9090))),
                 emptyList(),
                 singleton(pool(origin("app", "app-02", "localhost", 9091)))));
@@ -223,7 +224,7 @@ public class DashboardDataTest {
     private RemoteHost pool(Origin origin) {
         ConnectionPool pool = mock(ConnectionPool.class);
         when(pool.getOrigin()).thenReturn(origin);
-        return remoteHost(origin, pool, mock(StyxHostHttpClient.class));
+        return remoteHost(origin, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class));
     }
 
     @Test
@@ -270,7 +271,7 @@ public class DashboardDataTest {
 
         DashboardData.Origin origin = newDashboardData().downstream().firstBackend().firstOrigin();
 
-        eventBus.post(new OriginsInventorySnapshot(id("app"),
+        eventBus.post(new OriginsSnapshot(id("app"),
                 singleton(pool(origin("app", "app-01", "localhost", 9090))),
                 emptyList(),
                 emptyList()));

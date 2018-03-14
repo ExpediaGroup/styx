@@ -77,7 +77,7 @@ using environment variables with the same name as the property.
 
     loadBalancing:
       strategy: #Check load balancing documentation for all the possible strategies
-        factory: {class: "com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy$Factory"}
+        factory: {class: "com.hotels.styx.client.loadbalancing.strategies.PowerOfTwoStrategy$Factory"}
  
 
 

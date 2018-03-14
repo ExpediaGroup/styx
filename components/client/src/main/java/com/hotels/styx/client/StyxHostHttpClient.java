@@ -20,6 +20,8 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetric;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
 import rx.Observable;
 
 import java.util.Optional;
@@ -29,7 +31,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * A Styx HTTP Client for proxying to an individual origin host.
  */
-public class StyxHostHttpClient implements HttpClient {
+public class StyxHostHttpClient implements HttpClient, LoadBalancingMetricSupplier {
     private final Transport transport;
     private final Id originId;
     private final ConnectionPool pool;
@@ -46,17 +48,25 @@ public class StyxHostHttpClient implements HttpClient {
 
     @Override
     public Observable<HttpResponse> sendRequest(HttpRequest request) {
-        return transport.send(request, Optional.of(pool), originId).response();
+        return transport
+                .send(request, Optional.of(pool), originId)
+                .response();
     }
 
     public void close() {
         pool.close();
     }
 
+    @Override
+    public LoadBalancingMetric loadBalancingMetric() {
+        return new LoadBalancingMetric(this.pool.stats().busyConnectionCount() + pool.stats().pendingConnectionCount());
+    }
+
     /**
      * A factory for creating StyxHostHttpClient instances.
      */
     public interface Factory {
-        HttpClient create(ConnectionPool connectionPool);
+        StyxHostHttpClient create(ConnectionPool connectionPool);
     }
+
 }

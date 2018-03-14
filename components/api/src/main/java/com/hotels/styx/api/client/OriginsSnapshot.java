@@ -33,7 +33,7 @@ import static java.util.stream.Collectors.toSet;
 /**
  * Holds the state of currently configured origins, i.e. whether the origin is active, inactive or disabled.
  */
-public final class OriginsInventorySnapshot {
+public final class OriginsSnapshot {
     private final Id appId;
     private final Set<Origin> activeOrigins;
     private final Set<Origin> inactiveOrigins;
@@ -41,10 +41,10 @@ public final class OriginsInventorySnapshot {
     private final Map<Id, Origin> allOriginsById = new HashMap<>();
 
     @JsonCreator
-    OriginsInventorySnapshot(@JsonProperty("appId") String appId,
-                             @JsonProperty("activeOrigins") Collection<Origin> activeOrigins,
-                             @JsonProperty("inactiveOrigins") Collection<Origin> inactiveOrigins,
-                             @JsonProperty("disabledOrigins") Collection<Origin> disabledOrigins) {
+    OriginsSnapshot(@JsonProperty("appId") String appId,
+                    @JsonProperty("activeOrigins") Collection<Origin> activeOrigins,
+                    @JsonProperty("inactiveOrigins") Collection<Origin> inactiveOrigins,
+                    @JsonProperty("disabledOrigins") Collection<Origin> disabledOrigins) {
         this.appId = id(appId);
         this.activeOrigins = withAppId(activeOrigins, appId);
         this.inactiveOrigins = withAppId(inactiveOrigins, appId);
@@ -60,10 +60,10 @@ public final class OriginsInventorySnapshot {
      * @param inactiveOrigins connection pools for inactive origins
      * @param disabledOrigins connection pools for disabled origins
      */
-    public OriginsInventorySnapshot(Id appId,
-                                    Collection<RemoteHost> activeOrigins,
-                                    Collection<RemoteHost> inactiveOrigins,
-                                    Collection<RemoteHost> disabledOrigins) {
+    public OriginsSnapshot(Id appId,
+                           Collection<RemoteHost> activeOrigins,
+                           Collection<RemoteHost> inactiveOrigins,
+                           Collection<RemoteHost> disabledOrigins) {
         this.appId = checkNotNull(appId);
         this.activeOrigins = mapToOrigins(activeOrigins);
         this.inactiveOrigins = mapToOrigins(inactiveOrigins);

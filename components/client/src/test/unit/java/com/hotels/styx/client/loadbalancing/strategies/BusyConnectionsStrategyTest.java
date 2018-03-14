@@ -15,133 +15,92 @@
  */
 package com.hotels.styx.client.loadbalancing.strategies;
 
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetric;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.client.StyxHostHttpClient;
-import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
-import com.hotels.styx.client.netty.connectionpool.StubConnectionPool;
 import org.testng.annotations.Test;
 
-import static com.google.common.collect.Iterables.transform;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class BusyConnectionsStrategyTest {
-    final Origin ORIGIN_ONE = newOriginBuilder(localHostAndFreePort()).id("one").build();
-    final Origin ORIGIN_TWO = newOriginBuilder(localHostAndFreePort()).id("two").build();
-    final Origin ORIGIN_THREE = newOriginBuilder(localHostAndFreePort()).id("three").build();
-    final Origin ORIGIN_FOUR = newOriginBuilder(localHostAndFreePort()).id("four").build();
+    private static final Origin ORIGIN_ONE = newOriginBuilder(localHostAndFreePort()).id("one").build();
+    private static final Origin ORIGIN_TWO = newOriginBuilder(localHostAndFreePort()).id("two").build();
+    private static final Origin ORIGIN_THREE = newOriginBuilder(localHostAndFreePort()).id("three").build();
 
-    ActiveOrigins activeOrigins = mock(ActiveOrigins.class);
-    final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy(activeOrigins);
+    private final ActiveOrigins activeOrigins = mock(ActiveOrigins.class);
+    private final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy(activeOrigins);
 
-    private LoadBalancingStrategy.Context context = new LoadBalancingStrategy.Context() {
-        @Override
-        public Id appId() {
-            return null;
+
+    @Test
+    public void tieBreaksOriginsWithEqualMetric() {
+        RemoteHost hostOne = remoteHost(ORIGIN_ONE, mock(StyxHostHttpClient.class), lbMetrics(3));
+        RemoteHost hostTwo = remoteHost(ORIGIN_TWO, mock(StyxHostHttpClient.class), lbMetrics(3));
+        RemoteHost hostThree = remoteHost(ORIGIN_THREE, mock(StyxHostHttpClient.class), lbMetrics(3));
+
+        when(activeOrigins.snapshot()).thenReturn(asList(hostOne, hostTwo, hostThree));
+
+        List<RemoteHost> results = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            results.add(strategy.choose(null).get());
         }
 
-        @Override
-        public HttpRequest currentRequest() {
-            return null;
-        }
-
-        @Override
-        public double oneMinuteRateForStatusCode5xx(Origin origin) {
-            return 1.0;
-        }
-    };
+        assertThat(count(hostOne, results), greaterThan(10L));
+        assertThat(count(hostTwo, results), greaterThan(10L));
+        assertThat(count(hostThree, results), greaterThan(10L));
+    }
 
     @Test
     public void favoursOriginsWithLessBusyConnectionCount() {
-        ConnectionPool.Settings settings = ConnectionPoolSettings.defaultConnectionPoolSettings();
+        RemoteHost hostOne = remoteHost(ORIGIN_ONE, mock(StyxHostHttpClient.class), lbMetrics(4));
+        RemoteHost hostTwo = remoteHost(ORIGIN_TWO, mock(StyxHostHttpClient.class), lbMetrics(3));
+        RemoteHost hostThree = remoteHost(ORIGIN_THREE, mock(StyxHostHttpClient.class), lbMetrics(6));
 
-        RemoteHost poolOne = remoteHost(ORIGIN_ONE, new StubConnectionPool(ORIGIN_ONE, settings).withBusyConnections(4), mock(StyxHostHttpClient.class));
-        RemoteHost poolTwo = remoteHost(ORIGIN_TWO, new StubConnectionPool(ORIGIN_TWO, settings).withBusyConnections(3), mock(StyxHostHttpClient.class));
-        RemoteHost poolThree = remoteHost(ORIGIN_THREE, new StubConnectionPool(ORIGIN_THREE, settings).withBusyConnections(6), mock(StyxHostHttpClient.class));
+        when(activeOrigins.snapshot()).thenReturn(asList(hostOne, hostTwo, hostThree));
 
-        when(activeOrigins.snapshot()).thenReturn(asList(poolOne, poolTwo, poolThree));
-
-        Iterable<RemoteHost> sortedPool = strategy.vote(context);
-        assertThat(origins(sortedPool), contains(ORIGIN_TWO, ORIGIN_ONE, ORIGIN_THREE));
+        Optional<RemoteHost> sortedPool = strategy.choose(null);
+        assertThat(sortedPool, is(Optional.of(hostTwo)));
     }
 
     @Test
-    public void favoursOriginsWithLessLeasedConnectionsCount() {
-        ConnectionPool.Settings settings = ConnectionPoolSettings.defaultConnectionPoolSettings();
+    public void copesWithOnlyOneActiveOrigin() {
+        RemoteHost hostOne = remoteHost(ORIGIN_ONE, mock(StyxHostHttpClient.class), lbMetrics(4));
 
-        RemoteHost poolOne = remoteHost(ORIGIN_ONE, new StubConnectionPool(ORIGIN_ONE, settings)
-                .withBusyConnections(2)
-                .withPendingConnections(4), mock(StyxHostHttpClient.class));
+        when(activeOrigins.snapshot()).thenReturn(asList(hostOne));
 
-        RemoteHost poolTwo = remoteHost(ORIGIN_TWO, new StubConnectionPool(ORIGIN_TWO, settings)
-                .withBusyConnections(2)
-                .withPendingConnections(2), mock(StyxHostHttpClient.class));
-
-        RemoteHost poolThree = remoteHost(ORIGIN_THREE, new StubConnectionPool(ORIGIN_THREE, settings)
-                .withBusyConnections(2)
-                .withPendingConnections(1), mock(StyxHostHttpClient.class));
-
-        when(activeOrigins.snapshot()).thenReturn(asList(poolOne, poolTwo, poolThree));
-        Iterable<RemoteHost> sortedPool = strategy.vote(context);
-        assertThat(origins(sortedPool), contains(ORIGIN_THREE, ORIGIN_TWO, ORIGIN_ONE));
+        Optional<RemoteHost> sortedPool = strategy.choose(null);
+        assertThat(sortedPool, is(Optional.of(hostOne)));
     }
 
     @Test
-    public void movesOriginsWithNoAvailableConnectionsBehindTheGoodOnes() {
-        ConnectionPool.Settings settings = new ConnectionPoolSettings.Builder()
-                .maxConnectionsPerHost(10)
-                .maxPendingConnectionsPerHost(10)
-                .build();
+    public void returnsEmptyOptionalWhenNoActiveOrigins() {
+        when(activeOrigins.snapshot()).thenReturn(asList());
 
-        RemoteHost poolOne = remoteHost(ORIGIN_ONE, new StubConnectionPool(ORIGIN_ONE, settings).withBusyConnections(1).withAvailableConnections(0), mock(StyxHostHttpClient.class));
-        RemoteHost poolTwo = remoteHost(ORIGIN_TWO, new StubConnectionPool(ORIGIN_TWO, settings).withBusyConnections(2).withAvailableConnections(1), mock(StyxHostHttpClient.class));
-        RemoteHost poolThree = remoteHost(ORIGIN_THREE, new StubConnectionPool(ORIGIN_THREE, settings).withBusyConnections(3).withAvailableConnections(1), mock(StyxHostHttpClient.class));
-
-        when(activeOrigins.snapshot()).thenReturn(asList(poolTwo, poolOne, poolThree));
-        Iterable<RemoteHost> sortedPool = strategy.vote(context);
-
-        assertThat(origins(sortedPool), contains(ORIGIN_ONE, ORIGIN_TWO, ORIGIN_THREE));
+        Optional<RemoteHost> sortedPool = strategy.choose(null);
+        assertThat(sortedPool, is(Optional.empty()));
     }
 
-    @Test
-    public void ranksOriginsWithPoolDepthFirstThenOnAvailableConnections() {
-        RemoteHost poolOne = remoteHost(ORIGIN_ONE, new StubConnectionPool(ORIGIN_ONE).withBusyConnections(1).withAvailableConnections(0), mock(StyxHostHttpClient.class));
-        RemoteHost poolTwo = remoteHost(ORIGIN_TWO, new StubConnectionPool(ORIGIN_TWO).withBusyConnections(1).withAvailableConnections(1), mock(StyxHostHttpClient.class));
-        RemoteHost poolThree = remoteHost(ORIGIN_THREE, new StubConnectionPool(ORIGIN_THREE).withBusyConnections(2).withAvailableConnections(1), mock(StyxHostHttpClient.class));
-
-        when(activeOrigins.snapshot()).thenReturn(asList(poolTwo, poolOne, poolThree));
-        Iterable<RemoteHost> sortedPool = strategy.vote(mock(LoadBalancingStrategy.Context.class));
-
-        assertThat(origins(sortedPool), contains(ORIGIN_TWO, ORIGIN_ONE, ORIGIN_THREE));
+    private long count(RemoteHost host, List<RemoteHost> results) {
+        long count = results.stream().filter(h -> h == host).count();
+        return count;
     }
 
-    @Test
-    public void negativeBusyConnectionCount() {
-        RemoteHost poolOne = remoteHost(ORIGIN_ONE, new StubConnectionPool(ORIGIN_ONE).withBusyConnections(1), mock(StyxHostHttpClient.class));
-        RemoteHost poolTwo = remoteHost(ORIGIN_TWO, new StubConnectionPool(ORIGIN_TWO).withBusyConnections(0), mock(StyxHostHttpClient.class));
-
-        Iterable<RemoteHost> sortedPool = null;
-        for (int i = 0; i < 10; i++) {
-            when(activeOrigins.snapshot()).thenReturn(asList(poolOne, poolTwo));
-            sortedPool = strategy.vote(context);
-        }
-
-        assertThat(origins(sortedPool), contains(ORIGIN_TWO, ORIGIN_ONE));
+    private LoadBalancingMetricSupplier lbMetrics(int ongoing) {
+        return () -> new LoadBalancingMetric(ongoing);
     }
 
-    private static Iterable<Origin> origins(Iterable<RemoteHost> remoteHosts) {
-        return transform(remoteHosts, remoteHost -> remoteHost.connectionPool().getOrigin());
-    }
 }

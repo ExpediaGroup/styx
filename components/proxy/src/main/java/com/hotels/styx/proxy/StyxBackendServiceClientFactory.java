@@ -17,7 +17,7 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.client.OriginRestrictionLoadBalancingStrategy;
@@ -25,7 +25,7 @@ import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.client.applications.BackendService;
-import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy;
+import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
 import org.slf4j.Logger;
@@ -55,13 +55,14 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
         RetryPolicy retryPolicy = loadService(styxConfig, environment, "retrypolicy.policy.factory", RetryPolicy.class)
                 .orElseGet(() -> defaultRetryPolicy(environment));
 
-        LoadBalancingStrategy configuredLbStrategy = loadService(
-                styxConfig, environment, "loadBalancing.strategy.factory", LoadBalancingStrategy.class, originsInventory)
-                .orElseGet(() -> new RoundRobinStrategy(originsInventory));
+        LoadBalancer configuredLbStrategy = loadService(
+                styxConfig, environment, "loadBalancing.strategy.factory", LoadBalancer.class, originsInventory)
+                .orElseGet(() -> new BusyConnectionsStrategy(originsInventory));
 
-        originsInventory.addInventoryStateChangeListener(configuredLbStrategy);
+        // TODO: Ensure that listeners are also unregistered:
+        originsInventory.addOriginsChangeListener(configuredLbStrategy);
 
-        LoadBalancingStrategy loadBalancingStrategy = decorateLoadBalancer(
+        LoadBalancer loadBalancingStrategy = decorateLoadBalancer(
                 configuredLbStrategy,
                 stickySessionEnabled,
                 originsInventory,
@@ -69,16 +70,17 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
         );
 
         return new StyxHttpClient.Builder(backendService)
-                .loadBalancingStrategy(loadBalancingStrategy)
+                .loadBalancer(loadBalancingStrategy)
                 .metricsRegistry(environment.metricRegistry())
                 .retryPolicy(retryPolicy)
                 .enableContentValidation()
                 .rewriteRules(backendService.rewrites())
                 .originStatsFactory(originStatsFactory)
+                .originsRestrictionCookieName(originRestrictionCookie)
                 .build();
     }
 
-    private LoadBalancingStrategy decorateLoadBalancer(LoadBalancingStrategy configuredLbStrategy, boolean stickySessionEnabled, OriginsInventory originsInventory, String originRestrictionCookie) {
+    private LoadBalancer decorateLoadBalancer(LoadBalancer configuredLbStrategy, boolean stickySessionEnabled, OriginsInventory originsInventory, String originRestrictionCookie) {
         if (stickySessionEnabled) {
             return new StickySessionLoadBalancingStrategy(originsInventory, configuredLbStrategy);
         } else if (originRestrictionCookie == null) {
@@ -86,7 +88,7 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
             return configuredLbStrategy;
         } else {
             LOGGER.info("originRestrictionCookie specified as {} - origin restriction will apply when this cookie is sent", originRestrictionCookie);
-            return new OriginRestrictionLoadBalancingStrategy(originsInventory, configuredLbStrategy, originRestrictionCookie);
+            return new OriginRestrictionLoadBalancingStrategy(originsInventory, configuredLbStrategy);
         }
     }
 

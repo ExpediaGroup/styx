@@ -4,7 +4,6 @@ Styx supports three load balancing strategies:
 
  - Round robin
  - Busy
- - Adaptive
 
 Styx also provides a mechanism to bypass the load balancer and force
 the origin at source.
@@ -18,18 +17,15 @@ while skipping over the origins with saturated connection pools.
 
 ### Busy
 
-This load balancing algorithm attempts to find the best origin
-to serve the request, based on various real-time metrics such as the number 
-of readily available TCP connections, current pool usage, and 
-the observed 5xx response rate from the origins.
+This algorithm always returns the origin with a least number of 
+simultaneously ongoing requests. Randomly chooses a winner
+when there is a tie between the "best" origins.
 
-### Adaptive
+### Power Of Two
 
-Adaptive load balancing strategy is a combination of *Round Robin* and
-*Busy* strategies. It always starts off with *Round Robin*, and after a while
-it switches over to *Busy* strategy. It remains in *Busy* strategy until
-a new origin is added to rotation. It then reverts to *Round Robin*, and adapts
-as described.
+This load balancing algorithm randomly picks two origins, and chooses the
+better out of the two. 
+
 
 ## Origins Restriction
 
@@ -57,28 +53,23 @@ the name of the cookie that should contain the origins restriction information.
 Load balancing strategies and the origin restriction feature are configured
 in the Styx proxy configuration file.
 
-
-To enable Round Robin load balancing strategy:
+To enable Busy load balancing strategy:
 
     loadBalancing:
       strategy:
-        factory: {class: "com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy$Factory"}
-        
+        factory: {class: "com.hotels.styx.client.loadbalancing.strategies.PowerOfTwoStrategy$Factory"}
+
 To enable Busy load balancing strategy:
 
     loadBalancing:
       strategy:
         factory: {class: "com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy$Factory"}
 
-To enable Adaptive load balancing strategy:
+To enable Round Robin load balancing strategy:
 
     loadBalancing:
       strategy:
-        factory:
-          class: "com.hotels.styx.client.loadbalancing.strategies.AdaptiveStrategy$Factory"
-          config:
-            requestCount: 100
-
+        factory: {class: "com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy$Factory"}
 
 The *requestCount* attribute determines how long the adaptive strategy
 remains in the Round Robin phase before switching over to the *Busy* strategy.

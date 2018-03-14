@@ -17,20 +17,19 @@ package com.hotels.styx.client.loadbalancing.strategies;
 
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategy;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingStrategyFactory;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancerFactory;
 import com.hotels.styx.api.configuration.Configuration;
 
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static com.google.common.collect.Iterables.isEmpty;
 import static com.google.common.collect.Lists.newArrayList;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Stream.concat;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A load balancing strategy that favours all origins equally, iterating through them in the order that they are provided.
@@ -46,56 +45,36 @@ import static java.util.stream.Stream.concat;
  * <p/>
  * Please note that for the strategy to iterate like this, the origins must be provided in the same order on each call.
  */
-public class RoundRobinStrategy implements LoadBalancingStrategy {
+public class RoundRobinStrategy implements LoadBalancer {
 
-    private final ActiveOrigins activeOrigins;
+    private ActiveOrigins activeOrigins;
+    private final AtomicReference<ArrayList<RemoteHost>> origins;
+    private final AtomicInteger index = new AtomicInteger(0);
 
-    public RoundRobinStrategy(ActiveOrigins activeOrigins) {
-        this.activeOrigins = activeOrigins;
+    public RoundRobinStrategy(ActiveOrigins activeOrigins, Iterable<RemoteHost> initialOrigins) {
+        this.activeOrigins = requireNonNull(activeOrigins);
+        this.origins = new AtomicReference<>(new ArrayList<>(newArrayList(initialOrigins)));
     }
 
     /**
      * Factory for creating {@link com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy}.
      */
-    public static class Factory implements LoadBalancingStrategyFactory {
+    public static class Factory implements LoadBalancerFactory {
         @Override
-        public LoadBalancingStrategy create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins) {
-            return new RoundRobinStrategy(activeOrigins);
+        public LoadBalancer create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins) {
+            return new RoundRobinStrategy(activeOrigins, activeOrigins.snapshot());
         }
     }
 
-    private final AtomicInteger index = new AtomicInteger(0);
-
     @Override
-    public Iterable<RemoteHost> vote(Context context) {
-        Iterable<RemoteHost> snapshot = activeOrigins.snapshot();
-        return isEmpty(snapshot) ? snapshot : cycledNonExhaustedOrigins(snapshot);
-    }
-
-    private List<RemoteHost> cycledNonExhaustedOrigins(Iterable<RemoteHost> origins) {
-        return cycleOrigins(origins)
-                .filter(host -> !host.connectionPool().isExhausted())
-                .collect(toList());
+    public Optional<RemoteHost> choose(Preferences preferences) {
+        ArrayList<RemoteHost> remoteHosts = origins.get();
+        return Optional.ofNullable(remoteHosts.get(index.getAndIncrement() % remoteHosts.size()));
     }
 
     @Override
-    public void originsInventoryStateChanged(OriginsInventorySnapshot snapshot) {
-        index.set(0);
-    }
-
-    private Stream<RemoteHost> cycleOrigins(Iterable<RemoteHost> origins) {
-        List<RemoteHost> originsList = newArrayList(origins);
-        return cycleToOffset(nextIndex(originsList), originsList);
-    }
-
-    private int nextIndex(List<RemoteHost> origins) {
-        return index.getAndIncrement() % origins.size();
-    }
-
-    private static Stream<RemoteHost> cycleToOffset(int index, List<RemoteHost> origins) {
-        List<RemoteHost> first = origins.subList(index, origins.size());
-        List<RemoteHost> second = origins.subList(0, index);
-        return concat(first.stream(), second.stream());
+    public void originsChanged(OriginsSnapshot snapshot) {
+        origins.set(newArrayList(activeOrigins.snapshot()));
     }
 
     @Override

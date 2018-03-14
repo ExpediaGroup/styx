@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.OriginsInventorySnapshot;
-import com.hotels.styx.api.client.OriginsInventoryStateChangeListener;
+import com.hotels.styx.api.client.OriginsSnapshot;
+import com.hotels.styx.api.client.OriginsChangeListener;
 import com.hotels.styx.api.http.handlers.BaseHttpHandler;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
 import org.slf4j.Logger;
@@ -41,12 +41,12 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Returns an origins inventory snapshot in an HTTP response.
  */
-public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsInventoryStateChangeListener {
+public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsChangeListener {
     private static final Logger LOG = getLogger(OriginsInventoryHandler.class);
 
     private final ObjectMapper mapper = new ObjectMapper().disable(FAIL_ON_EMPTY_BEANS);
 
-    private final Map<Id, OriginsInventorySnapshot> originsInventorySnapshotMap = new ConcurrentHashMap<>();
+    private final Map<Id, OriginsSnapshot> originsInventorySnapshotMap = new ConcurrentHashMap<>();
 
     /**
      * Construct an instance.
@@ -71,7 +71,7 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsI
         return originsInventorySnapshotMap.isEmpty() ? "{}" : marshall(originsInventorySnapshotMap, pretty);
     }
 
-    private String marshall(Map<Id, OriginsInventorySnapshot> originsInventorySnapshotMap, boolean pretty) {
+    private String marshall(Map<Id, OriginsSnapshot> originsInventorySnapshotMap, boolean pretty) {
         try {
             return writer(pretty).writeValueAsString(originsInventorySnapshotMap);
         } catch (JsonProcessingException e) {
@@ -91,7 +91,7 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsI
 
     @Subscribe
     @Override
-    public void originsInventoryStateChanged(OriginsInventorySnapshot snapshot) {
+    public void originsChanged(OriginsSnapshot snapshot) {
         LOG.debug("received origins inventory state change {}", snapshot);
         originsInventorySnapshotMap.put(snapshot.appId(), snapshot);
     }

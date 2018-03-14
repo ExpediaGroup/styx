@@ -21,9 +21,11 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsInventorySnapshot;
+import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.RemoteHost;
 import static com.hotels.styx.api.client.RemoteHost.remoteHost;
+
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
@@ -73,7 +75,7 @@ public class DashboardDataSupplierTest {
         registry.add(backend("bar", origin("bar1")));
 
         // Set statuses
-        environment.eventBus().post(new OriginsInventorySnapshot(id("foo"), pools(foo1), pools(foo2), pools()));
+        environment.eventBus().post(new OriginsSnapshot(id("foo"), pools(foo1), pools(foo2), pools()));
 
         DashboardData.Downstream downstream = supplier.get().downstream();
         DashboardData.Backend fooBackend = downstream.backend("STYXPRES-foo");
@@ -84,7 +86,7 @@ public class DashboardDataSupplierTest {
 
 
         // Set statuses again
-        environment.eventBus().post(new OriginsInventorySnapshot(id("foo"), pools(), pools(foo1), pools(foo2)));
+        environment.eventBus().post(new OriginsSnapshot(id("foo"), pools(), pools(foo1), pools(foo2)));
 
         fooBackend = supplier.get().downstream().backend("STYXPRES-foo");
 
@@ -95,7 +97,7 @@ public class DashboardDataSupplierTest {
     private Collection<RemoteHost> pools(Origin... origins) {
         return asList(origins).stream()
                 .map(this::pool)
-                .map(pool -> remoteHost(pool.getOrigin(), pool, mock(StyxHostHttpClient.class)))
+                .map(pool -> remoteHost(pool.getOrigin(), mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)))
                 .collect(toList());
     }
 
