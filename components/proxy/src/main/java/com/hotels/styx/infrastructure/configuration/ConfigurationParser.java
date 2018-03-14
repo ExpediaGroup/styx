@@ -32,23 +32,23 @@ import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * Generic-parser work-in-progress.
+ * Configuration parser.
  *
  * @param <C> configuration type
  */
-public final class Parser<C extends ExtensibleConfiguration<C>> {
-    private static final Logger LOGGER = getLogger(Parser.class);
+public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
+    private static final Logger LOGGER = getLogger(ConfigurationParser.class);
 
     private final ConfigurationFormat<C> format;
     private final Map<String, String> overrides;
     private final Function<String, ConfigurationProvider> includeProviderFunction;
 
-    private Parser(Builder<C> builder) {
+    private ConfigurationParser(Builder<C> builder) {
         this.format = requireNonNull(builder.format);
         this.overrides = requireNonNull(builder.overrides);
         this.includeProviderFunction = builder.includeProviderFunction != null
                 ? builder.includeProviderFunction
-                : Parser::includeProvider;
+                : ConfigurationParser::includeProvider;
     }
 
     public C parse(ConfigurationProvider provider) {
@@ -200,8 +200,8 @@ public final class Parser<C extends ExtensibleConfiguration<C>> {
             return this;
         }
 
-        public Parser<C> build() {
-            return new Parser<>(this);
+        public ConfigurationParser<C> build() {
+            return new ConfigurationParser<>(this);
         }
     }
 }

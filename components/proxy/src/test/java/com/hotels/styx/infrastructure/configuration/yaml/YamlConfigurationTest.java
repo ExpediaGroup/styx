@@ -18,7 +18,7 @@ package com.hotels.styx.infrastructure.configuration.yaml;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.infrastructure.configuration.ConfigurationProvider;
-import com.hotels.styx.infrastructure.configuration.Parser;
+import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
 import com.hotels.styx.support.matchers.IsOptional;
 import com.hotels.styx.support.matchers.MapMatcher;
 import org.testng.annotations.Test;
@@ -65,7 +65,7 @@ public class YamlConfigurationTest {
     private final YamlConfiguration yamlConfiguration = config(yaml);
 
     private static YamlConfiguration config(String yaml) {
-        return new Parser.Builder<YamlConfiguration>()
+        return new ConfigurationParser.Builder<YamlConfiguration>()
                 .format(YAML)
                 .overrides(emptyMap())
                 .build()
@@ -73,7 +73,7 @@ public class YamlConfigurationTest {
     }
 
     private static YamlConfiguration config(String yaml, Map<String, String> overrides) {
-        return new Parser.Builder<YamlConfiguration>()
+        return new ConfigurationParser.Builder<YamlConfiguration>()
                 .format(YAML)
                 .overrides(overrides)
                 .build()
@@ -503,7 +503,7 @@ public class YamlConfigurationTest {
             writeFile(testFiles[0], yaml0);
             writeFile(testFiles[1], yaml1);
 
-            new Parser.Builder<YamlConfiguration>()
+            new ConfigurationParser.Builder<YamlConfiguration>()
                     .format(YAML)
                     .overrides(emptyMap())
                     .build()

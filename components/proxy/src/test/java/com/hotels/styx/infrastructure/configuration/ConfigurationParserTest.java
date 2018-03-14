@@ -20,7 +20,6 @@ import com.hotels.styx.api.Resource;
 import org.testng.annotations.Test;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -35,7 +34,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.testng.Assert.fail;
 
-public class ParserTest {
+public class ConfigurationParserTest {
     private final StubConfigSources config = new StubConfigSources()
             .plus("test-config", ImmutableMap.of(
                     "include", "parent-config-source",
@@ -56,7 +55,7 @@ public class ParserTest {
                         "foo", 123,
                         "bar", "abc"));
 
-        Parser<StubConfiguration> parser = new Parser.Builder<StubConfiguration>()
+        ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
                 .format(format(configWithoutIncludes))
                 .overrides(emptyMap())
                 .build();
@@ -69,7 +68,7 @@ public class ParserTest {
 
     @Test
     public void includesParent() {
-        Parser<StubConfiguration> parser = new Parser.Builder<StubConfiguration>()
+        ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
                 .format(format(config))
                 .includeProviderFunction(includedConfigProvider("parent-config-source", "test-parent-config"))
                 .overrides(emptyMap())
@@ -89,7 +88,7 @@ public class ParserTest {
 
     @Test
     public void resolvesPlaceholdersInConfig() {
-        Parser<StubConfiguration> parser = new Parser.Builder<StubConfiguration>()
+        ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
                 .format(format(config))
                 .includeProviderFunction(includedConfigProvider("parent-config-source", "test-parent-config"))
                 .overrides(emptyMap())
@@ -102,7 +101,7 @@ public class ParserTest {
 
     @Test
     public void appliesOverrides() {
-        Parser<StubConfiguration> parser = new Parser.Builder<StubConfiguration>()
+        ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
                 .format(format(config))
                 .includeProviderFunction(includedConfigProvider("parent-config-source", "test-parent-config"))
                 .overrides(ImmutableMap.of(
@@ -132,7 +131,7 @@ public class ParserTest {
                         "numberFromParent", 111,
                         "stringFromParent", "DEF"));
 
-        Parser<StubConfiguration> parser = new Parser.Builder<StubConfiguration>()
+        ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
                 .format(format(config))
                 .includeProviderFunction(includedConfigProvider("parent-config-source", "test-parent-config"))
                 .overrides(ImmutableMap.of("include-placeholder", "parent-config-source"))
