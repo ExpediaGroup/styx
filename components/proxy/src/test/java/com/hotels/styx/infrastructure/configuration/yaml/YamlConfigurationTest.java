@@ -16,12 +16,9 @@
 package com.hotels.styx.infrastructure.configuration.yaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.infrastructure.configuration.ConfigurationProvider;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
+import com.hotels.styx.infrastructure.configuration.ConfigurationProvider;
 import com.hotels.styx.support.matchers.IsOptional;
 import com.hotels.styx.support.matchers.MapMatcher;
 import org.testng.annotations.Test;
@@ -34,6 +31,7 @@ import java.util.Objects;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
+import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.IsOptional.matches;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
@@ -105,9 +103,9 @@ public class YamlConfigurationTest {
 
     @Test
     public void resolvesPlaceholderFromSystemProperty() {
-        YamlConfiguration yamlConfiguration = config(yaml, singletonMap("jvm.route", "staging"));
+        YamlConfiguration yamlConfig = config(yaml, singletonMap("jvm.route", "staging"));
 
-        assertThat(yamlConfiguration.get("jvmRouteName", String.class), isValue("staging"));
+        assertThat(yamlConfig.get("jvmRouteName", String.class), isValue("staging"));
     }
 
     @Test
@@ -116,9 +114,9 @@ public class YamlConfigurationTest {
                 "prop1: ${prop2}\n" +
                 "prop2: 1234\n";
 
-        YamlConfiguration yamlConfiguration = config(yaml);
+        YamlConfiguration yamlConfig = config(yaml);
 
-        assertThat(yamlConfiguration.get("prop1", Integer.class), isValue(1234));
+        assertThat(yamlConfig.get("prop1", Integer.class), isValue(1234));
     }
 
     @Test
@@ -139,10 +137,10 @@ public class YamlConfigurationTest {
                 "        - http\n" +
                 "        - https";
 
-        YamlConfiguration yamlConfiguration = config(yaml);
+        YamlConfiguration yamlConfig = config(yaml);
 
-        assertThat(yamlConfiguration.get("proxy.supportedProtocols[0]", String.class), isValue("http"));
-        assertThat(yamlConfiguration.get("proxy.supportedProtocols[1]", String.class), isValue("https"));
+        assertThat(yamlConfig.get("proxy.supportedProtocols[0]", String.class), isValue("http"));
+        assertThat(yamlConfig.get("proxy.supportedProtocols[1]", String.class), isValue("https"));
     }
 
     @Test
@@ -153,10 +151,10 @@ public class YamlConfigurationTest {
                 "  - nested1\n" +
                 "  - nested2\n";
 
-        YamlConfiguration yamlConfiguration = config(yaml);
+        YamlConfiguration yamlConfig = config(yaml);
 
-        assertThat(yamlConfiguration.get("list[0][0]", String.class), isValue("nested1"));
-        assertThat(yamlConfiguration.get("list[0][1]", String.class), isValue("nested2"));
+        assertThat(yamlConfig.get("list[0][0]", String.class), isValue("nested1"));
+        assertThat(yamlConfig.get("list[0][1]", String.class), isValue("nested2"));
     }
 
     @Test
@@ -165,7 +163,7 @@ public class YamlConfigurationTest {
                 "type", "http",
                 "port", 8080);
 
-        assertThat(yamlConfig.get("proxy.connectors[0]", Map.class), IsOptional.matches(MapMatcher.isMap(expected)));
+        assertThat(yamlConfig.get("proxy.connectors[0]", Map.class), matches(MapMatcher.isMap(expected)));
     }
 
     @Test
@@ -185,55 +183,55 @@ public class YamlConfigurationTest {
 
     @Test
     public void doesNotGetNonOverridingSystemProperty() {
-        YamlConfiguration yamlConfiguration = config(yaml, singletonMap("foo", "bar"));
+        YamlConfiguration yamlConfig = config(yaml, singletonMap("foo", "bar"));
 
-        assertThat(yamlConfiguration.get("foo", String.class), IsOptional.isAbsent());
+        assertThat(yamlConfig.get("foo", String.class), isAbsent());
     }
 
     @Test
     public void systemPropertyOverridesSimpleProperty() {
-        YamlConfiguration yamlConfiguration = config(yaml, singletonMap("simpleProperty", "foo"));
+        YamlConfiguration yamlConfig = config(yaml, singletonMap("simpleProperty", "foo"));
 
-        assertThat(yamlConfiguration.get("simpleProperty", String.class), isValue("foo"));
+        assertThat(yamlConfig.get("simpleProperty", String.class), isValue("foo"));
     }
 
     @Test
     public void systemPropertyOverridesCanBeConvertedToNonStringTypes() {
-        YamlConfiguration yamlConfiguration = config(yaml, singletonMap("simpleProperty", "1234"));
+        YamlConfiguration yamlConfig = config(yaml, singletonMap("simpleProperty", "1234"));
 
-        assertThat(yamlConfiguration.get("simpleProperty", Integer.class), isValue(1234));
+        assertThat(yamlConfig.get("simpleProperty", Integer.class), isValue(1234));
     }
 
     @Test
     public void systemPropertyOverridesPropertyInAnnotatedClass() {
-        YamlConfiguration yamlConfiguration = config(yaml, singletonMap("metrics.graphite.host", "example.org"));
+        YamlConfiguration yamlConfig = config(yaml, singletonMap("metrics.graphite.host", "example.org"));
 
-        assertThat(yamlConfiguration.get("metrics.graphite", StubGraphiteConfig.class), isValue(new StubGraphiteConfig("example.org", 2003)));
+        assertThat(yamlConfig.get("metrics.graphite", StubGraphiteConfig.class), isValue(new StubGraphiteConfig("example.org", 2003)));
     }
 
     @Test
     public void systemPropertyOverridesPropertyInAnnotatedClassEvenIfTypeIsNotString() {
-        YamlConfiguration yamlConfiguration = config(yaml, singletonMap("metrics.graphite.port", "1234"));
+        YamlConfiguration yamlConfig = config(yaml, singletonMap("metrics.graphite.port", "1234"));
 
-        assertThat(yamlConfiguration.get("metrics.graphite", StubGraphiteConfig.class), isValue(new StubGraphiteConfig("data.internal.com", 1234)));
+        assertThat(yamlConfig.get("metrics.graphite", StubGraphiteConfig.class), isValue(new StubGraphiteConfig("data.internal.com", 1234)));
     }
 
     @Test
     public void systemPropertyOverridesComplexProperty() {
-        YamlConfiguration yamlConfiguration = config(yaml, singletonMap("proxy.connectors[0].port", "5555"));
+        YamlConfiguration yamlConfig = config(yaml, singletonMap("proxy.connectors[0].port", "5555"));
 
-        assertThat(yamlConfiguration.get("proxy.connectors[0].port", Integer.class), isValue(5555));
+        assertThat(yamlConfig.get("proxy.connectors[0].port", Integer.class), isValue(5555));
     }
 
     @Test
     public void systemPropertiesCannotAddStructuresNotPresentInOriginalYaml() {
         String yaml = "foo: bar\n";
 
-        YamlConfiguration yamlConfiguration = config(yaml, ImmutableMap.of(
+        YamlConfiguration yamlConfig = config(yaml, ImmutableMap.of(
                 "metrics.graphite.host", "data.internal.com",
                 "metrics.graphite.port", "2003"));
 
-        assertThat(yamlConfiguration.get("metrics.graphite", StubGraphiteConfig.class), IsOptional.isAbsent());
+        assertThat(yamlConfig.get("metrics.graphite", StubGraphiteConfig.class), isAbsent());
     }
 
     @Test
@@ -241,9 +239,9 @@ public class YamlConfigurationTest {
         String yaml = "" +
                 "proxy.connectors[0].port: 5555\n";
 
-        YamlConfiguration yamlConfiguration = config(yaml, singletonMap("foo", "bar"));
+        YamlConfiguration yamlConfig = config(yaml, singletonMap("foo", "bar"));
 
-        assertThat(yamlConfiguration.get("foo"), IsOptional.isAbsent());
+        assertThat(yamlConfig.get("foo"), isAbsent());
     }
 
     @Test
@@ -251,19 +249,19 @@ public class YamlConfigurationTest {
         String yaml = "" +
                 "foo: 1\n";
 
-        YamlConfiguration yamlConfiguration = config(yaml, ImmutableMap.of(
+        YamlConfiguration yamlConfig = config(yaml, ImmutableMap.of(
                 "list[0][0]", "nested1",
                 "list[0][1]", "nested2"));
 
-        assertThat(yamlConfiguration.get("list[0][0]", String.class), IsOptional.isAbsent());
-        assertThat(yamlConfiguration.get("list[0][1]", String.class), IsOptional.isAbsent());
+        assertThat(yamlConfig.get("list[0][0]", String.class), isAbsent());
+        assertThat(yamlConfig.get("list[0][1]", String.class), isAbsent());
     }
 
     @Test
     public void systemPropertyWithInvalidPathHasNoEffect() {
-        YamlConfiguration yamlConfiguration = config(yaml, singletonMap("metrics.graphite[0]", "example.org"));
+        YamlConfiguration yamlConfig = config(yaml, singletonMap("metrics.graphite[0]", "example.org"));
 
-        assertThat(yamlConfiguration.get("metrics.graphite", StubGraphiteConfig.class), isValue(new StubGraphiteConfig("data.internal.com", 2003)));
+        assertThat(yamlConfig.get("metrics.graphite", StubGraphiteConfig.class), isValue(new StubGraphiteConfig("data.internal.com", 2003)));
     }
 
     @Test
@@ -290,9 +288,9 @@ public class YamlConfigurationTest {
                 "    port: 2003\n" +
                 "    intervalMillis: 5000\n";
 
-        testYamlWithInclude(yaml, include, yamlConfiguration -> {
-            assertThat(yamlConfiguration.get("metrics.graphite.intervalMillis", Integer.class), isValue(5000));
-            assertThat(yamlConfiguration.get("metrics.graphite.port", Integer.class), isValue(2004));
+        testYamlWithInclude(yaml, include, yamlConfig -> {
+            assertThat(yamlConfig.get("metrics.graphite.intervalMillis", Integer.class), isValue(5000));
+            assertThat(yamlConfig.get("metrics.graphite.port", Integer.class), isValue(2004));
         });
     }
 
@@ -309,8 +307,8 @@ public class YamlConfigurationTest {
                 "- \"wrong1\"\n" +
                 "- \"wrong2\"\n";
 
-        testYamlWithInclude(yaml, include, yamlConfiguration ->
-                assertThat(yamlConfiguration.get("array", List.class), IsOptional.isIterable(contains("right1", "right2"))));
+        testYamlWithInclude(yaml, include, yamlConfig ->
+                assertThat(yamlConfig.get("array", List.class), IsOptional.isIterable(contains("right1", "right2"))));
     }
 
     @Test
@@ -322,8 +320,8 @@ public class YamlConfigurationTest {
         String include = "" +
                 "myprop: \"${resolution}\"\n";
 
-        testYamlWithInclude(yaml, include, yamlConfiguration ->
-                assertThat(yamlConfiguration.get("myprop", String.class), isValue("resolved")));
+        testYamlWithInclude(yaml, include, yamlConfig ->
+                assertThat(yamlConfig.get("myprop", String.class), isValue("resolved")));
     }
 
     @Test
@@ -335,12 +333,12 @@ public class YamlConfigurationTest {
                 "- ${element3:gamma}\n" +
                 "- ${element4}\n";
 
-        YamlConfiguration yamlConfiguration = config(yaml, ImmutableMap.of("element1", "alpha", "element2", "beta", "element4", "delta"));
+        YamlConfiguration yamlConfig = config(yaml, ImmutableMap.of("element1", "alpha", "element2", "beta", "element4", "delta"));
 
-        assertThat(yamlConfiguration.get("array[0]"), isValue("alpha"));
-        assertThat(yamlConfiguration.get("array[1]"), isValue("beta"));
-        assertThat(yamlConfiguration.get("array[2]"), isValue("gamma"));
-        assertThat(yamlConfiguration.get("array[3]"), isValue("delta"));
+        assertThat(yamlConfig.get("array[0]"), isValue("alpha"));
+        assertThat(yamlConfig.get("array[1]"), isValue("beta"));
+        assertThat(yamlConfig.get("array[2]"), isValue("gamma"));
+        assertThat(yamlConfig.get("array[3]"), isValue("delta"));
     }
 
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = "Unresolved placeholders: \\[\\$\\{cannotResolveMe\\} in bar=abc \\$\\{cannotResolveMe\\} xyz\\]", enabled = false)
@@ -361,8 +359,8 @@ public class YamlConfigurationTest {
         String include = "" +
                 "resolution: \"resolved\"\n";
 
-        testYamlWithInclude(yaml, include, yamlConfiguration ->
-                assertThat(yamlConfiguration.get("myprop", String.class), isValue("resolved")));
+        testYamlWithInclude(yaml, include, yamlConfig ->
+                assertThat(yamlConfig.get("myprop", String.class), isValue("resolved")));
     }
 
     @Test
@@ -374,8 +372,8 @@ public class YamlConfigurationTest {
         String include = "" +
                 "foo: included\n";
 
-        testYamlWithInclude(yaml, include, yamlConfiguration ->
-                assertThat(yamlConfiguration.get("foo", String.class), isValue("main")));
+        testYamlWithInclude(yaml, include, yamlConfig ->
+                assertThat(yamlConfig.get("foo", String.class), isValue("main")));
     }
 
     @Test
@@ -397,10 +395,10 @@ public class YamlConfigurationTest {
 
             String yamlWithResolvedInclude = format(yaml, file);
 
-            YamlConfiguration yamlConfiguration = config(yamlWithResolvedInclude, systemProperties);
+            YamlConfiguration yamlConfig = config(yamlWithResolvedInclude, systemProperties);
 
-            assertThat(yamlConfiguration.get("foo", String.class), isValue(""));
-            assertThat(yamlConfiguration.get("domain", String.class), isValue("de.example.com"));
+            assertThat(yamlConfig.get("foo", String.class), isValue(""));
+            assertThat(yamlConfig.get("domain", String.class), isValue("de.example.com"));
         } finally {
             deleteFile(file);
         }
@@ -427,10 +425,10 @@ public class YamlConfigurationTest {
 
             String yamlWithResolvedInclude = format(yaml, file);
 
-            YamlConfiguration yamlConfiguration = config(yamlWithResolvedInclude, systemProperties);
+            YamlConfiguration yamlConfig = config(yamlWithResolvedInclude, systemProperties);
 
-            assertThat(yamlConfiguration.get("foo", String.class), isValue(""));
-            assertThat(yamlConfiguration.get("domain", String.class), isValue("de.example.com"));
+            assertThat(yamlConfig.get("foo", String.class), isValue(""));
+            assertThat(yamlConfig.get("domain", String.class), isValue("de.example.com"));
         } finally {
             deleteFile(file);
         }
@@ -467,18 +465,18 @@ public class YamlConfigurationTest {
             writeFile(testFiles[0], yaml0);
             writeFile(testFiles[1], yaml1);
 
-            YamlConfiguration yamlConfiguration = config(yaml2);
+            YamlConfiguration yamlConfig = config(yaml2);
 
-            assertThat(yamlConfiguration.get("onlyIn0"), isValue("foo"));
-            assertThat(yamlConfiguration.get("onlyIn1"), isValue("abc"));
-            assertThat(yamlConfiguration.get("onlyIn2"), isValue("alpha"));
+            assertThat(yamlConfig.get("onlyIn0"), isValue("foo"));
+            assertThat(yamlConfig.get("onlyIn1"), isValue("abc"));
+            assertThat(yamlConfig.get("onlyIn2"), isValue("alpha"));
 
 
-            assertThat(yamlConfiguration.get("override0With1"), isValue("ghi"));
-            assertThat(yamlConfiguration.get("override1With2"), isValue("beta"));
-            assertThat(yamlConfiguration.get("override0With2"), isValue("gamma"));
+            assertThat(yamlConfig.get("override0With1"), isValue("ghi"));
+            assertThat(yamlConfig.get("override1With2"), isValue("beta"));
+            assertThat(yamlConfig.get("override0With2"), isValue("gamma"));
 
-            assertThat(yamlConfiguration.get("override0With1Then2"), isValue("delta"));
+            assertThat(yamlConfig.get("override0With1Then2"), isValue("delta"));
         } finally {
             deleteFiles(testFiles);
         }
@@ -567,7 +565,7 @@ public class YamlConfigurationTest {
     }
 
     interface Callback {
-        void execute(YamlConfiguration yamlConfiguration) throws Exception;
+        void execute(YamlConfiguration yamlConfig) throws Exception;
     }
 
     static class StubGraphiteConfig {
