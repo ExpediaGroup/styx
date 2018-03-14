@@ -15,38 +15,23 @@
  */
 package com.hotels.styx.infrastructure.configuration.yaml;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.Placeholder;
-import com.hotels.styx.infrastructure.configuration.UnresolvedPlaceholder;
-import org.slf4j.Logger;
+import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.configuration.ConversionException;
+import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
+import com.hotels.styx.infrastructure.configuration.ConfigurationProvider;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-import static com.google.common.base.Throwables.propagate;
-import static com.hotels.styx.api.io.ResourceFactory.newResource;
-import static com.hotels.styx.common.Logging.sanitise;
-import static com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.extractPlaceholders;
-import static com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.replacePlaceholder;
-import static com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.resolvePlaceholders;
+import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static java.util.Collections.emptyMap;
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Yaml-based configuration object.
  */
-public class YamlConfig extends JsonNodeConfig {
-    private static final Logger LOGGER = getLogger(YamlConfig.class);
-
-    private static final Map<String, String> NO_OVERRIDES = emptyMap();
+public class YamlConfig implements Configuration {
+    private final YamlConfiguration config;
 
     /**
      * Constructs an instance by parsing YAML from a string.
@@ -54,11 +39,15 @@ public class YamlConfig extends JsonNodeConfig {
      * @param yaml a YAML string
      */
     public YamlConfig(String yaml) {
-        this(yaml, NO_OVERRIDES);
+        this(yaml, emptyMap());
     }
 
     public YamlConfig(String yaml, Map<String, String> overrides) {
-        this(YAML_MAPPER, () -> YAML_MAPPER.readTree(yaml), overrides);
+       this.config = new ConfigurationParser.Builder<YamlConfiguration>()
+               .format(YAML)
+               .overrides(overrides)
+               .build()
+               .parse(ConfigurationProvider.from(yaml));
     }
 
     /**
@@ -67,7 +56,7 @@ public class YamlConfig extends JsonNodeConfig {
      * @param resource resource
      */
     public YamlConfig(Resource resource) {
-        this(resource, NO_OVERRIDES);
+        this(resource, emptyMap());
     }
 
     /**
@@ -78,155 +67,20 @@ public class YamlConfig extends JsonNodeConfig {
      * @param overrides overrides
      */
     public YamlConfig(Resource resource, Map overrides) {
-        this(YAML_MAPPER, provider(resource), overrides);
+        this.config = new ConfigurationParser.Builder<YamlConfiguration>()
+                .format(YAML)
+                .overrides((Map<String, String>) overrides)
+                .build()
+                .parse(ConfigurationProvider.from(resource));
     }
 
-    /**
-     * Constructs an instance by parsing YAML from a resource using the provided mapper.
-     * This is useful when using YamlConfig from other JVM languages such as Scala.
-     *
-     * @param mapper    mapper to be used in de-serialising YAML.
-     * @param resource  resource
-     * @param overrides overrides
-     */
-    public YamlConfig(ObjectMapper mapper, Resource resource, Map<String, String> overrides) {
-        this(mapper, provider(resource), overrides);
+    @Override
+    public <X> Optional<X> get(String key, Class<X> type) {
+        return config.get(key, type);
     }
 
-    private static JsonProvider provider(Resource resource) {
-        return () -> {
-            LOGGER.info("Loading configuration from file: path={}", resource);
-
-            try (InputStream inputStream = resource.inputStream()) {
-                return YAML_MAPPER.readTree(inputStream);
-            } catch (IOException e) {
-                throw propagate(e);
-            }
-        };
-    }
-
-    /**
-     * Constructs an instance by parsing YAML from a string using the provided mapper.
-     * This is useful when using YamlConfig from other JVM languages such as Scala.
-     *
-     * @param mapper    mapper to be used in de-serialising YAML.
-     * @param yaml      YAML string to be de-serialised.
-     * @param overrides overrides
-     */
-    public YamlConfig(ObjectMapper mapper, String yaml, Map<String, String> overrides) {
-        this(mapper, () -> mapper.readTree(yaml), overrides);
-    }
-
-    private YamlConfig(ObjectMapper mapper, JsonProvider jsonProvider, Map<String, String> overrides) {
-        super(rootNode(jsonProvider, overrides), mapper);
-    }
-
-    private static JsonNode rootNode(JsonProvider jsonProvider, Map<String, String> overrides) {
-        JsonNode rootNode;
-
-        try {
-            JsonNode mainNode = jsonProvider.get();
-            rootNode = mergeIfRequired(mainNode, overrides);
-        } catch (IOException e) {
-            throw propagate(e);
-        }
-
-        Collection<UnresolvedPlaceholder> unresolvedPlaceholders = resolvePlaceholders(rootNode, overrides);
-
-        if (!unresolvedPlaceholders.isEmpty()) {
-            throw new IllegalStateException("Unresolved placeholders: " + unresolvedPlaceholders);
-        }
-
-        applyExternalOverrides(rootNode, overrides);
-
-        return rootNode;
-    }
-
-    private static void applyExternalOverrides(JsonNode rootNode, Map<String, String> overrides) {
-        overrides.forEach((key, value) -> {
-            NodePath nodePath = new NodePath(key);
-
-            nodePath.override(rootNode, value);
-        });
-    }
-
-    private static JsonNode mergeIfRequired(JsonNode mainNode, Map<String, String> overrides) throws IOException {
-        if (mainNode.get("include") != null) {
-            resolvePlaceholdersInInclude(mainNode, overrides);
-
-            JsonNode include = mainNode.get("include");
-
-            String includePath = include.textValue();
-
-            getLogger(YamlConfig.class).info("Including config file: path={}", sanitise(includePath));
-
-            JsonNode includedBaseNode = YAML_MAPPER.readTree(newResource(includePath).inputStream());
-            includedBaseNode = mergeIfRequired(includedBaseNode, overrides);
-            return merge(includedBaseNode, mainNode);
-        }
-        return mainNode;
-    }
-
-    @VisibleForTesting
-    static void resolvePlaceholdersInInclude(JsonNode mainNode, Map<String, String> overrides) {
-        JsonNode include = mainNode.get("include");
-        String textValue = include.textValue();
-
-        textValue = resolvePlaceholdersInText(textValue, overrides);
-
-        ((ObjectNode) mainNode).set("include", TextNode.valueOf(textValue));
-    }
-
-    private static String resolvePlaceholdersInText(String text, Map<String, String> overrides) {
-        List<Placeholder> placeholders = extractPlaceholders(text);
-
-        String resolvedText = text;
-
-        for (Placeholder placeholder : placeholders) {
-            resolvedText = resolvePlaceholderInText(resolvedText, placeholder, overrides);
-        }
-
-        return resolvedText;
-    }
-
-    private static String resolvePlaceholderInText(String textValue, Placeholder placeholder, Map<String, String> overrides) {
-        String placeholderName = placeholder.name();
-
-        String override = overrides.get(placeholderName);
-
-        if (override != null) {
-            return replacePlaceholder(textValue, placeholderName, override);
-        }
-
-        if (placeholder.hasDefaultValue()) {
-            return replacePlaceholder(textValue, placeholderName, placeholder.defaultValue());
-        }
-
-        throw new IllegalStateException("Cannot resolve placeholder '" + placeholder + "' in include:" + textValue);
-    }
-
-    private interface JsonProvider {
-        JsonNode get() throws IOException;
-    }
-
-    private static JsonNode merge(JsonNode baseNode, JsonNode overrideNode) {
-        Iterable<String> fieldNames = overrideNode::fieldNames;
-
-        for (String fieldName : fieldNames) {
-            JsonNode jsonNode = baseNode.get(fieldName);
-
-            // if field exists and is an embedded object
-            if (jsonNode != null && jsonNode.isObject()) {
-                merge(jsonNode, overrideNode.get(fieldName));
-            } else {
-                if (baseNode instanceof ObjectNode) {
-                    // Overwrite field
-                    JsonNode value = overrideNode.get(fieldName);
-                    ((ObjectNode) baseNode).put(fieldName, value);
-                }
-            }
-        }
-
-        return baseNode;
+    @Override
+    public <X> X as(Class<X> type) throws ConversionException {
+        return config.as(type);
     }
 }
