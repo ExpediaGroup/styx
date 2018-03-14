@@ -17,7 +17,6 @@ package com.hotels.styx.infrastructure.configuration;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.infrastructure.configuration.ExtensibleConfiguration.PlaceholderResolutionResult;
-import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -86,7 +85,7 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
     }
 
     private static ConfigurationProvider includeProvider(String includePath) {
-        getLogger(YamlConfig.class).info("Including config file: path={}", sanitise(includePath));
+        LOGGER.info("Including config file: path={}", sanitise(includePath));
         return ConfigurationProvider.from(newResource(includePath));
     }
 

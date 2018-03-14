@@ -26,7 +26,7 @@ import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration
 import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.api.service.spi.StyxService
 import com.hotels.styx.api.{HttpHandler, HttpRequest, HttpResponse}
-import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
+import com.hotels.styx.config.Config
 import com.hotels.styx.metrics.StyxMetrics
 import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
@@ -73,7 +73,7 @@ object StyxServerSupport {
   }
 
   def newStyxConfig(yaml: String, proxyServerConfigBuilder: ProxyServerConfig.Builder, adminServerConfigBuilder: AdminServerConfig.Builder) = {
-    new StyxConfig(new MapBackedConfiguration(new YamlConfig(yaml))
+    new StyxConfig(new MapBackedConfiguration(Config.config(yaml))
       .set("proxy", proxyServerConfigBuilder.build())
       .set("admin", adminServerConfigBuilder.build()))
   }

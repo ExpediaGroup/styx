@@ -27,17 +27,9 @@ import java.util.Optional;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static java.util.Collections.emptyMap;
 
-/**
- * Yaml-based configuration object.
- */
 public class YamlConfig implements Configuration {
     private final YamlConfiguration config;
 
-    /**
-     * Constructs an instance by parsing YAML from a string.
-     *
-     * @param yaml a YAML string
-     */
     public YamlConfig(String yaml) {
         this(yaml, emptyMap());
     }
@@ -50,22 +42,10 @@ public class YamlConfig implements Configuration {
                .parse(ConfigurationProvider.from(yaml));
     }
 
-    /**
-     * Constructs an instance by parsing YAML from a resource.
-     *
-     * @param resource resource
-     */
     public YamlConfig(Resource resource) {
         this(resource, emptyMap());
     }
 
-    /**
-     * Constructs an instance by parsing YAML from a resource. Parsed properties can be overridden by
-     * supplying alternative values in the overrides map.
-     *
-     * @param resource  resource
-     * @param overrides overrides
-     */
     public YamlConfig(Resource resource, Map overrides) {
         this.config = new ConfigurationParser.Builder<YamlConfiguration>()
                 .format(YAML)

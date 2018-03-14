@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,12 @@ package com.hotels.styx.support.origins;
 
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
+import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.client.applications.BackendServices;
-import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
+import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
+import com.hotels.styx.infrastructure.configuration.ConfigurationProvider;
+import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
@@ -31,9 +34,11 @@ import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactor
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.Properties;
 
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadApplicationsFrom;
+import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
@@ -78,7 +83,7 @@ public class StyxOriginsStarterApp {
                 .build();
 
         if (args.length < 4) {
-            YamlConfig yamlConfig = new YamlConfig(startupConfig.configFileLocation(), System.getProperties());
+            YamlConfiguration yamlConfig = config(startupConfig.configFileLocation(), System.getProperties());
 
             StyxConfig config = new StyxConfig(startupConfig, yamlConfig);
 
@@ -89,6 +94,14 @@ public class StyxOriginsStarterApp {
         } else {
             originsStarterApp(args[3]).run();
         }
+    }
+
+    private static YamlConfiguration config(Resource resource, Properties properties) {
+        return new ConfigurationParser.Builder<YamlConfiguration>()
+                .overrides(properties)
+                .format(YAML)
+                .build()
+                .parse(ConfigurationProvider.from(resource));
     }
 
     public void run() {
