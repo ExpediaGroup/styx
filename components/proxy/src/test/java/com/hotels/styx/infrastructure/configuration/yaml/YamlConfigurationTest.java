@@ -19,14 +19,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.infrastructure.configuration.ConfigurationProvider;
 import com.hotels.styx.infrastructure.configuration.Parser;
-import com.hotels.styx.infrastructure.configuration.UnresolvedPlaceholder;
 import com.hotels.styx.support.matchers.IsOptional;
 import com.hotels.styx.support.matchers.MapMatcher;
 import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -71,8 +69,7 @@ public class YamlConfigurationTest {
                 .format(YAML)
                 .overrides(emptyMap())
                 .build()
-                .parse(ConfigurationProvider.from(yaml))
-                .configuration();
+                .parse(ConfigurationProvider.from(yaml));
     }
 
     private static YamlConfiguration config(String yaml, Map<String, String> overrides) {
@@ -80,8 +77,7 @@ public class YamlConfigurationTest {
                 .format(YAML)
                 .overrides(overrides)
                 .build()
-                .parse(ConfigurationProvider.from(yaml))
-                .configuration();
+                .parse(ConfigurationProvider.from(yaml));
     }
 
     @Test
@@ -379,7 +375,6 @@ public class YamlConfigurationTest {
                 assertThat(yamlConfiguration.get("foo", String.class), isValue("main")));
     }
 
-    // Why was the code expected to act this way in the first place? System properties should reign supreme.
     @Test
     public void overridesPropertiesWithReplacedPlaceholders() throws Exception {
         Map<String, String> systemProperties = ImmutableMap.of("FOO", "production1");
@@ -402,13 +397,12 @@ public class YamlConfigurationTest {
             YamlConfiguration yamlConfiguration = config(yamlWithResolvedInclude, systemProperties);
 
             assertThat(yamlConfiguration.get("foo", String.class), isValue(""));
-            assertThat(yamlConfiguration.get("domain", String.class), isValue("de.production1-example.com"));
+            assertThat(yamlConfiguration.get("domain", String.class), isValue("de.example.com"));
         } finally {
             deleteFile(file);
         }
     }
 
-    // Note: test was wrong before! System property should take highest priority. Have to look into consequences of fixing it.
     @Test
     public void includePlaceholdersAreResolved() throws Exception {
         Map<String, String> systemProperties = ImmutableMap.of(
@@ -433,7 +427,7 @@ public class YamlConfigurationTest {
             YamlConfiguration yamlConfiguration = config(yamlWithResolvedInclude, systemProperties);
 
             assertThat(yamlConfiguration.get("foo", String.class), isValue(""));
-            assertThat(yamlConfiguration.get("domain", String.class), isValue("de.production1-example.com"));
+            assertThat(yamlConfiguration.get("domain", String.class), isValue("de.example.com"));
         } finally {
             deleteFile(file);
         }
@@ -509,14 +503,11 @@ public class YamlConfigurationTest {
             writeFile(testFiles[0], yaml0);
             writeFile(testFiles[1], yaml1);
 
-            Collection<UnresolvedPlaceholder> unresolvedPlaceholders = new Parser.Builder<YamlConfiguration>()
+            new Parser.Builder<YamlConfiguration>()
                     .format(YAML)
                     .overrides(emptyMap())
                     .build()
-                    .parse(ConfigurationProvider.from(yaml2))
-                    .unresolvedPlaceholders();
-
-            throw new IllegalStateException("Unresolved placeholders: " + unresolvedPlaceholders);
+                    .parse(ConfigurationProvider.from(yaml2));
         } finally {
             deleteFiles(testFiles);
         }

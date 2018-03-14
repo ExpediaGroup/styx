@@ -28,7 +28,6 @@ import java.util.function.Function;
 
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.common.Logging.sanitise;
-import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -52,24 +51,36 @@ public final class Parser<C extends ExtensibleConfiguration<C>> {
                 : Parser::includeProvider;
     }
 
-    public ParsingResult<C> parse(ConfigurationProvider provider) {
+    public C parse(ConfigurationProvider provider) {
+        C configuration = doParse(provider);
+
+        ParsingResult<C> resolved = resolvePlaceholders(configuration);
+
+        if (!resolved.unresolvedPlaceholders().isEmpty()) {
+            throw new IllegalStateException("Unresolved placeholders: " + resolved.unresolvedPlaceholders());
+        }
+
+        return resolved.configuration();
+    }
+
+    private C doParse(ConfigurationProvider provider) {
         C main = deserialise(provider);
 
         String textRepresentation = main.toString();
 
-        ParsingResult<C> extended = applyParentConfig(main);
+        C extended = applyParentConfig(main);
 
-        textRepresentation = logChange("Including parent", textRepresentation, extended.configuration());
+        textRepresentation = logChange("Including parent", textRepresentation, extended);
 
-        ParsingResult<C> withOverrides = applyExternalOverrides(extended);
+        C withOverrides = applyExternalOverrides(extended);
 
-        textRepresentation = logChange("Overridding properties", textRepresentation, withOverrides.configuration());
+        textRepresentation = logChange("Overridding properties", textRepresentation, withOverrides);
 
-        ParsingResult<C> resolved = resolvePlaceholders(withOverrides);
+//        ParsingResult<C> resolved = resolvePlaceholders(withOverrides);
+//
+//        logChange("Resolving placeholders", textRepresentation, resolved.configuration());
 
-        logChange("Resolving placeholders", textRepresentation, resolved.configuration());
-
-        return resolved;
+        return withOverrides;
     }
 
     private ParsingResult<C> resolvePlaceholders(ParsingResult<C> withOverrides) {
@@ -84,8 +95,8 @@ public final class Parser<C extends ExtensibleConfiguration<C>> {
         return new ParsingResult<>(parsingResult.configuration(), finalUPs);
     }
 
-    private ParsingResult<C> applyExternalOverrides(ParsingResult<C> extended) {
-        return new ParsingResult<>(extended.configuration().withOverrides(overrides), extended.unresolvedPlaceholders());
+    private C applyExternalOverrides(C extended) {
+        return extended.withOverrides(overrides);
     }
 
     private static String logChange(String action, String textRepresentation, Object newTextObject) {
@@ -98,15 +109,11 @@ public final class Parser<C extends ExtensibleConfiguration<C>> {
     }
 
 
-    private ParsingResult<C> applyParentConfig(C main) {
+    private C applyParentConfig(C main) {
         return main.get("include")
                 .map(include -> resolvePlaceholdersInText(include, overrides))
-                .map(includePath -> {
-                    ParsingResult<C> parentResult = parent(includePath);
-                    C parentConfig = parentResult.configuration();
-                    return new ParsingResult<>(main.withParent(parentConfig), parentResult.unresolvedPlaceholders());
-                })
-                .orElse(new ParsingResult<>(main, emptyList()));
+                .map(includePath -> main.withParent(parent(includePath)))
+                .orElse(main);
     }
 
     private C deserialise(ConfigurationProvider provider) {
@@ -122,18 +129,13 @@ public final class Parser<C extends ExtensibleConfiguration<C>> {
     private ParsingResult<C> resolvePlaceholders(C config) {
         PlaceholderResolutionResult<C> result = config.resolvePlaceholders(overrides);
 
-        // TODO put this outside the parser
-//        if (!result.unresolvedPlaceholders().isEmpty()) {
-//            throw new IllegalStateException("Unresolved placeholders: " + result.unresolvedPlaceholders());
-//        }
-
         return new ParsingResult<>(result);
     }
 
-    private ParsingResult<C> parent(String includePath) {
+    private C parent(String includePath) {
         ConfigurationProvider includedConfigurationProvider = includeProviderFunction.apply(includePath);
 
-        return parse(includedConfigurationProvider);
+        return doParse(includedConfigurationProvider);
     }
 
     private String resolvePlaceholdersInText(String text, Map<String, String> overrides) {

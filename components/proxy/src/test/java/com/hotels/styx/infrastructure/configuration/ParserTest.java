@@ -20,9 +20,11 @@ import com.hotels.styx.api.Resource;
 import org.testng.annotations.Test;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.function.Function;
 
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
@@ -59,7 +61,7 @@ public class ParserTest {
                 .overrides(emptyMap())
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config")).configuration();
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
 
         assertThat(parsedConfiguration.get("bar"), isValue("abc"));
         assertThat(parsedConfiguration.get("foo", Integer.class), isValue(123));
@@ -73,7 +75,7 @@ public class ParserTest {
                 .overrides(emptyMap())
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config")).configuration();
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
 
         // Present in child only
         assertThat(parsedConfiguration.get("string"), isValue("abc"));
@@ -93,7 +95,7 @@ public class ParserTest {
                 .overrides(emptyMap())
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config")).configuration();
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
 
         assertThat(parsedConfiguration.get("hasPlaceholder"), isValue("abc"));
     }
@@ -109,7 +111,7 @@ public class ParserTest {
                 ))
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config")).configuration();
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
 
         assertThat(parsedConfiguration.get("not-present-in-original"), isValue("foo-bar"));
         assertThat(parsedConfiguration.get("string"), isValue("overridden"));
@@ -136,7 +138,7 @@ public class ParserTest {
                 .overrides(ImmutableMap.of("include-placeholder", "parent-config-source"))
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config")).configuration();
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
 
         assertThat(parsedConfiguration.get("stringFromParent"), isValue("DEF"));
     }
@@ -152,7 +154,7 @@ public class ParserTest {
         private final Map<String, Object> values;
 
         StubConfiguration(Map<String, Object> values) {
-            this.values = values;
+            this.values = new TreeMap<>(values);
         }
 
         @Override
@@ -190,6 +192,11 @@ public class ParserTest {
         @Override
         public <X> Optional<X> get(String key, Class<X> type) {
             return Optional.ofNullable(values.get(key)).map(type::cast);
+        }
+
+        @Override
+        public String toString() {
+            return values.toString();
         }
     }
 

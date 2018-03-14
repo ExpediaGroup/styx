@@ -118,7 +118,7 @@ public class YamlConfiguration implements ExtensibleConfiguration<YamlConfigurat
         overrides.forEach((key, value) -> {
             NodePath nodePath = new NodePath(key);
 
-            boolean success = nodePath.override(rootNode, value);
+            nodePath.override(rootNode, value);
         });
     }
 
