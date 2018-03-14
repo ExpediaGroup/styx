@@ -17,10 +17,15 @@ while skipping over the origins with saturated connection pools.
 
 ### Busy
 
-This load balancing algorithm attempts to find the best origin
-to serve the request, based on various real-time metrics such as the number 
-of readily available TCP connections, current pool usage, and 
-the observed 5xx response rate from the origins.
+This algorithm always returns the origin with a least number of 
+simultaneously ongoing requests. Randomly chooses a winner
+when there is a tie between the "best" origins.
+
+### Power Of Two
+
+This load balancing algorithm randomly picks two origins, and chooses the
+better out of the two. 
+
 
 ## Origins Restriction
 
@@ -48,18 +53,23 @@ the name of the cookie that should contain the origins restriction information.
 Load balancing strategies and the origin restriction feature are configured
 in the Styx proxy configuration file.
 
+To enable Busy load balancing strategy:
+
+    loadBalancing:
+      strategy:
+        factory: {class: "com.hotels.styx.client.loadbalancing.strategies.PowerOfTwoStrategy$Factory"}
+
+To enable Busy load balancing strategy:
+
+    loadBalancing:
+      strategy:
+        factory: {class: "com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy$Factory"}
 
 To enable Round Robin load balancing strategy:
 
     loadBalancing:
       strategy:
         factory: {class: "com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy$Factory"}
-        
-To enable Busy load balancing strategy:
-
-    loadBalancing:
-      strategy:
-        factory: {class: "com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy$Factory"}
 
 The *requestCount* attribute determines how long the adaptive strategy
 remains in the Round Robin phase before switching over to the *Busy* strategy.

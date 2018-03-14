@@ -1,12 +1,12 @@
 /**
  * Copyright (C) 2013-2018 Expedia Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,87 +15,88 @@
  */
 package com.hotels.styx.client.loadbalancing.strategies;
 
-import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetric;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
+import com.hotels.styx.client.StyxHostHttpClient;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class BusyConnectionsStrategyTest {
-    final Origin ORIGIN_ONE = newOriginBuilder(localHostAndFreePort()).id("one").build();
-    final Origin ORIGIN_TWO = newOriginBuilder(localHostAndFreePort()).id("two").build();
-    final Origin ORIGIN_THREE = newOriginBuilder(localHostAndFreePort()).id("three").build();
-    final Origin ORIGIN_FOUR = newOriginBuilder(localHostAndFreePort()).id("four").build();
+    private static final Origin ORIGIN_ONE = newOriginBuilder(localHostAndFreePort()).id("one").build();
+    private static final Origin ORIGIN_TWO = newOriginBuilder(localHostAndFreePort()).id("two").build();
+    private static final Origin ORIGIN_THREE = newOriginBuilder(localHostAndFreePort()).id("three").build();
 
-    private final RemoteHost HOST_ONE = remoteHost(ORIGIN_ONE, mock(HttpClient.class), lbMetrics(5));
-    private final RemoteHost HOST_TWO = remoteHost(ORIGIN_TWO, mock(HttpClient.class), lbMetrics(6));
-    private final RemoteHost HOST_THREE = remoteHost(ORIGIN_THREE, mock(HttpClient.class), lbMetrics(3));
-    private final RemoteHost HOST_FOUR = remoteHost(ORIGIN_FOUR, mock(HttpClient.class), lbMetrics(2));
-    List<RemoteHost> allOrigins = asList(HOST_ONE, HOST_TWO, HOST_THREE,  HOST_FOUR);
+    private final ActiveOrigins activeOrigins = mock(ActiveOrigins.class);
+    private final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy(activeOrigins);
 
-    private long RNG_SEED = 5;
 
     @Test
-    public void choosesBetterOfTwoRandomChoices() {
-        ActiveOrigins activeOrigins = mock(ActiveOrigins.class);
-        when(activeOrigins.snapshot()).thenReturn(allOrigins);
+    public void tieBreaksOriginsWithEqualMetric() {
+        RemoteHost hostOne = remoteHost(ORIGIN_ONE, mock(StyxHostHttpClient.class), lbMetrics(3));
+        RemoteHost hostTwo = remoteHost(ORIGIN_TWO, mock(StyxHostHttpClient.class), lbMetrics(3));
+        RemoteHost hostThree = remoteHost(ORIGIN_THREE, mock(StyxHostHttpClient.class), lbMetrics(3));
 
-        Random rng = new Random(RNG_SEED);
-        int first = rng.nextInt(4);
-        assert(first == 2);
+        when(activeOrigins.snapshot()).thenReturn(asList(hostOne, hostTwo, hostThree));
 
-        int second = rng.nextInt(4);
-        assert(second == 0);
-
-        BusyConnectionsStrategy loadBalancer = new BusyConnectionsStrategy(activeOrigins, new Random(RNG_SEED));
-        Optional<RemoteHost> chosenOne = loadBalancer.choose(mock(LoadBalancer.Preferences.class));
-
-        assertThat(chosenOne.get(), is(betterOf(allOrigins.get(first), allOrigins.get(second))));
-    }
-
-    @Test
-    public void choosesSoleOriginOutOfOne() {
-        ActiveOrigins activeOrigins = mock(ActiveOrigins.class);
-        when(activeOrigins.snapshot()).thenReturn(asList(HOST_ONE));
-
-        BusyConnectionsStrategy loadBalancer = new BusyConnectionsStrategy(activeOrigins, new Random(RNG_SEED));
-
-        for (int i = 0; i < 10; i++) {
-            Optional<RemoteHost> chosenOne = loadBalancer.choose(mock(LoadBalancer.Preferences.class));
-            assertThat(chosenOne.get(), is(HOST_ONE));
+        List<RemoteHost> results = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            results.add(strategy.choose(null).get());
         }
+
+        assertThat(count(hostOne, results), greaterThan(10L));
+        assertThat(count(hostTwo, results), greaterThan(10L));
+        assertThat(count(hostThree, results), greaterThan(10L));
     }
 
     @Test
-    public void returnsEmptyWhenNoOriginsAreAvailable() {
-        ActiveOrigins activeOrigins = mock(ActiveOrigins.class);
+    public void favoursOriginsWithLessBusyConnectionCount() {
+        RemoteHost hostOne = remoteHost(ORIGIN_ONE, mock(StyxHostHttpClient.class), lbMetrics(4));
+        RemoteHost hostTwo = remoteHost(ORIGIN_TWO, mock(StyxHostHttpClient.class), lbMetrics(3));
+        RemoteHost hostThree = remoteHost(ORIGIN_THREE, mock(StyxHostHttpClient.class), lbMetrics(6));
+
+        when(activeOrigins.snapshot()).thenReturn(asList(hostOne, hostTwo, hostThree));
+
+        Optional<RemoteHost> sortedPool = strategy.choose(null);
+        assertThat(sortedPool, is(Optional.of(hostTwo)));
+    }
+
+    @Test
+    public void copesWithOnlyOneActiveOrigin() {
+        RemoteHost hostOne = remoteHost(ORIGIN_ONE, mock(StyxHostHttpClient.class), lbMetrics(4));
+
+        when(activeOrigins.snapshot()).thenReturn(asList(hostOne));
+
+        Optional<RemoteHost> sortedPool = strategy.choose(null);
+        assertThat(sortedPool, is(Optional.of(hostOne)));
+    }
+
+    @Test
+    public void returnsEmptyOptionalWhenNoActiveOrigins() {
         when(activeOrigins.snapshot()).thenReturn(asList());
 
-        BusyConnectionsStrategy loadBalancer = new BusyConnectionsStrategy(activeOrigins, new Random(RNG_SEED));
-        Optional<RemoteHost> chosenOne = loadBalancer.choose(mock(LoadBalancer.Preferences.class));
-
-        assertThat(chosenOne, is(Optional.empty()));
-
+        Optional<RemoteHost> sortedPool = strategy.choose(null);
+        assertThat(sortedPool, is(Optional.empty()));
     }
 
-    private RemoteHost betterOf(RemoteHost first, RemoteHost second) {
-        return first.metric().ongoingConnections() < second.metric().ongoingConnections() ? first : second;
+    private long count(RemoteHost host, List<RemoteHost> results) {
+        long count = results.stream().filter(h -> h == host).count();
+        return count;
     }
 
     private LoadBalancingMetricSupplier lbMetrics(int ongoing) {
