@@ -16,8 +16,6 @@
 package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.util.DefaultIndenter;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.eventbus.EventBus;
@@ -25,8 +23,8 @@ import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.OriginsChangeListener;
+import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.http.handlers.BaseHttpHandler;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
 import org.slf4j.Logger;

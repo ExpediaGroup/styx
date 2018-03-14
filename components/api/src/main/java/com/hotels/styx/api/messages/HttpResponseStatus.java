@@ -16,7 +16,6 @@
 package com.hotels.styx.api.messages;
 
 import java.lang.reflect.Field;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.lang.reflect.Modifier.isStatic;
