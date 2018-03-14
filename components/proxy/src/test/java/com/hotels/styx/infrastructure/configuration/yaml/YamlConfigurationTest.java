@@ -16,6 +16,9 @@
 package com.hotels.styx.infrastructure.configuration.yaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.infrastructure.configuration.ConfigurationProvider;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
@@ -62,7 +65,7 @@ public class YamlConfigurationTest {
             "my:\n" +
             "  substitute: placeholderValue\n";
 
-    private final YamlConfiguration yamlConfiguration = config(yaml);
+    private final YamlConfiguration yamlConfig = config(yaml);
 
     private static YamlConfiguration config(String yaml) {
         return new ConfigurationParser.Builder<YamlConfiguration>()
@@ -82,22 +85,22 @@ public class YamlConfigurationTest {
 
     @Test
     public void getsProperty() {
-        assertThat(yamlConfiguration.get("simpleProperty", String.class), isValue("simpleValue"));
+        assertThat(yamlConfig.get("simpleProperty", String.class), isValue("simpleValue"));
     }
 
     @Test
     public void getsNestedProperties() {
-        assertThat(yamlConfiguration.get("metrics.graphite.host", String.class), isValue("data.internal.com"));
+        assertThat(yamlConfig.get("metrics.graphite.host", String.class), isValue("data.internal.com"));
     }
 
     @Test
     public void resolvesPlaceholderFromYaml() {
-        assertThat(yamlConfiguration.get("propWithPlaceholder", String.class), isValue("placeholderValue"));
+        assertThat(yamlConfig.get("propWithPlaceholder", String.class), isValue("placeholderValue"));
     }
 
     @Test
     public void usesDefaultIfPlaceholderCannotBeResolved() {
-        assertThat(yamlConfiguration.get("jvmRouteName", String.class), isValue("noJvmRouteSet"));
+        assertThat(yamlConfig.get("jvmRouteName", String.class), isValue("noJvmRouteSet"));
     }
 
     @Test
@@ -120,12 +123,12 @@ public class YamlConfigurationTest {
 
     @Test
     public void getsAndConvertsTypes() {
-        assertThat(yamlConfiguration.get("metrics.graphite.port", Integer.class), isValue(2003));
+        assertThat(yamlConfig.get("metrics.graphite.port", Integer.class), isValue(2003));
     }
 
     @Test
     public void getsListItems() {
-        assertThat(yamlConfiguration.get("proxy.connectors[0].port", Integer.class), isValue(8080));
+        assertThat(yamlConfig.get("proxy.connectors[0].port", Integer.class), isValue(8080));
     }
 
     @Test
@@ -162,7 +165,7 @@ public class YamlConfigurationTest {
                 "type", "http",
                 "port", 8080);
 
-        assertThat(yamlConfiguration.get("proxy.connectors[0]", Map.class), IsOptional.matches(MapMatcher.isMap(expected)));
+        assertThat(yamlConfig.get("proxy.connectors[0]", Map.class), IsOptional.matches(MapMatcher.isMap(expected)));
     }
 
     @Test
@@ -171,13 +174,13 @@ public class YamlConfigurationTest {
                 "type", "http",
                 "port", 8080);
 
-        assertThat(yamlConfiguration.get("proxy.connectors", List.class), matches(contains(isMap(expected))));
+        assertThat(yamlConfig.get("proxy.connectors", List.class), matches(contains(isMap(expected))));
 
     }
 
     @Test
     public void getsAndConvertsToAnnotatedClass() {
-        assertThat(yamlConfiguration.get("metrics.graphite", StubGraphiteConfiguration.class), isValue(new StubGraphiteConfiguration("data.internal.com", 2003)));
+        assertThat(yamlConfig.get("metrics.graphite", StubGraphiteConfig.class), isValue(new StubGraphiteConfig("data.internal.com", 2003)));
     }
 
     @Test
@@ -205,14 +208,14 @@ public class YamlConfigurationTest {
     public void systemPropertyOverridesPropertyInAnnotatedClass() {
         YamlConfiguration yamlConfiguration = config(yaml, singletonMap("metrics.graphite.host", "example.org"));
 
-        assertThat(yamlConfiguration.get("metrics.graphite", StubGraphiteConfiguration.class), isValue(new StubGraphiteConfiguration("example.org", 2003)));
+        assertThat(yamlConfiguration.get("metrics.graphite", StubGraphiteConfig.class), isValue(new StubGraphiteConfig("example.org", 2003)));
     }
 
     @Test
     public void systemPropertyOverridesPropertyInAnnotatedClassEvenIfTypeIsNotString() {
         YamlConfiguration yamlConfiguration = config(yaml, singletonMap("metrics.graphite.port", "1234"));
 
-        assertThat(yamlConfiguration.get("metrics.graphite", StubGraphiteConfiguration.class), isValue(new StubGraphiteConfiguration("data.internal.com", 1234)));
+        assertThat(yamlConfiguration.get("metrics.graphite", StubGraphiteConfig.class), isValue(new StubGraphiteConfig("data.internal.com", 1234)));
     }
 
     @Test
@@ -230,7 +233,7 @@ public class YamlConfigurationTest {
                 "metrics.graphite.host", "data.internal.com",
                 "metrics.graphite.port", "2003"));
 
-        assertThat(yamlConfiguration.get("metrics.graphite", StubGraphiteConfiguration.class), IsOptional.isAbsent());
+        assertThat(yamlConfiguration.get("metrics.graphite", StubGraphiteConfig.class), IsOptional.isAbsent());
     }
 
     @Test
@@ -260,7 +263,7 @@ public class YamlConfigurationTest {
     public void systemPropertyWithInvalidPathHasNoEffect() {
         YamlConfiguration yamlConfiguration = config(yaml, singletonMap("metrics.graphite[0]", "example.org"));
 
-        assertThat(yamlConfiguration.get("metrics.graphite", StubGraphiteConfiguration.class), isValue(new StubGraphiteConfiguration("data.internal.com", 2003)));
+        assertThat(yamlConfiguration.get("metrics.graphite", StubGraphiteConfig.class), isValue(new StubGraphiteConfig("data.internal.com", 2003)));
     }
 
     @Test
@@ -513,20 +516,6 @@ public class YamlConfigurationTest {
         }
     }
 
-//    @Test
-//    public void canResolvePlaceholdersInInclude() throws IOException {
-//        Map<String, String> overrides = ImmutableMap.of("CONFIG_LOCATION", "some_location");
-//
-//        String yaml = "" +
-//                "include: ${CONFIG_LOCATION:classpath:}/conf/environment/default.yaml";
-//
-//        JsonNode node = new ObjectMapper(new YAMLFactory()).readTree(yaml);
-//
-//        YamlConfiguration.resolvePlaceholdersInInclude(node, overrides);
-//
-//        assertThat(node.get("include").textValue(), is("some_location/conf/environment/default.yaml"));
-//    }
-
     private static void writeFile(File file, String string) throws IOException {
         write(file.toPath(), string.getBytes(UTF_8));
     }
@@ -581,11 +570,11 @@ public class YamlConfigurationTest {
         void execute(YamlConfiguration yamlConfiguration) throws Exception;
     }
 
-    static class StubGraphiteConfiguration {
+    static class StubGraphiteConfig {
         private final String host;
         private final Integer port;
 
-        StubGraphiteConfiguration(
+        StubGraphiteConfig(
                 @JsonProperty("host") String host,
                 @JsonProperty("port") Integer port) {
             this.host = host;
@@ -600,7 +589,7 @@ public class YamlConfigurationTest {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            StubGraphiteConfiguration that = (StubGraphiteConfiguration) o;
+            StubGraphiteConfig that = (StubGraphiteConfig) o;
             return Objects.equals(host, that.host) &&
                     Objects.equals(port, that.port);
         }

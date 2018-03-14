@@ -20,7 +20,8 @@ import com.hotels.styx.api.configuration.Configuration;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Extensible configuration, interface is agnostic to how it is stored in memory.
@@ -64,7 +65,7 @@ public interface ExtensibleConfiguration<C extends ExtensibleConfiguration<C>> e
         private final Collection<UnresolvedPlaceholder> unresolvedPlaceholders;
 
         public PlaceholderResolutionResult(C resolvedConfiguration, Collection<UnresolvedPlaceholder> unresolvedPlaceholders) {
-            this.resolvedConfiguration = Objects.requireNonNull(resolvedConfiguration);
+            this.resolvedConfiguration = requireNonNull(resolvedConfiguration);
             this.unresolvedPlaceholders = ImmutableList.copyOf(unresolvedPlaceholders);
         }
 

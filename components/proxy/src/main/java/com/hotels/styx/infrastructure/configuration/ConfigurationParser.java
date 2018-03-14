@@ -51,7 +51,7 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
     }
 
     public C parse(ConfigurationProvider provider) {
-        LOGGER.debug("Parsing {} from {}", format, provider);
+        LOGGER.debug("Parsing configuration in format={} from source={}", format, provider);
 
         C configuration = doParse(provider);
 
