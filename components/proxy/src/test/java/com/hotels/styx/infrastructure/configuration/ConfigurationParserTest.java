@@ -60,7 +60,7 @@ public class ConfigurationParserTest {
                 .overrides(emptyMap())
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationSource.from("test-config"));
 
         assertThat(parsedConfiguration.get("bar"), isValue("abc"));
         assertThat(parsedConfiguration.get("foo", Integer.class), isValue(123));
@@ -70,11 +70,11 @@ public class ConfigurationParserTest {
     public void includesParent() {
         ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
                 .format(format(config))
-                .includeProviderFunction(includedConfigProvider("parent-config-source", "test-parent-config"))
+                .sourceFromIncludeFunction(sourceFromIncludeFunction("parent-config-source", "test-parent-config"))
                 .overrides(emptyMap())
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationSource.from("test-config"));
 
         // Present in child only
         assertThat(parsedConfiguration.get("string"), isValue("abc"));
@@ -90,11 +90,11 @@ public class ConfigurationParserTest {
     public void resolvesPlaceholdersInConfig() {
         ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
                 .format(format(config))
-                .includeProviderFunction(includedConfigProvider("parent-config-source", "test-parent-config"))
+                .sourceFromIncludeFunction(sourceFromIncludeFunction("parent-config-source", "test-parent-config"))
                 .overrides(emptyMap())
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationSource.from("test-config"));
 
         assertThat(parsedConfiguration.get("hasPlaceholder"), isValue("abc"));
     }
@@ -103,14 +103,14 @@ public class ConfigurationParserTest {
     public void appliesOverrides() {
         ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
                 .format(format(config))
-                .includeProviderFunction(includedConfigProvider("parent-config-source", "test-parent-config"))
+                .sourceFromIncludeFunction(sourceFromIncludeFunction("parent-config-source", "test-parent-config"))
                 .overrides(ImmutableMap.of(
                         "not-present-in-original", "foo-bar",
                         "string", "overridden"
                 ))
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationSource.from("test-config"));
 
         assertThat(parsedConfiguration.get("not-present-in-original"), isValue("foo-bar"));
         assertThat(parsedConfiguration.get("string"), isValue("overridden"));
@@ -133,19 +133,19 @@ public class ConfigurationParserTest {
 
         ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
                 .format(format(config))
-                .includeProviderFunction(includedConfigProvider("parent-config-source", "test-parent-config"))
+                .sourceFromIncludeFunction(sourceFromIncludeFunction("parent-config-source", "test-parent-config"))
                 .overrides(ImmutableMap.of("include-placeholder", "parent-config-source"))
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationProvider.from("test-config"));
+        StubConfiguration parsedConfiguration = parser.parse(ConfigurationSource.from("test-config"));
 
         assertThat(parsedConfiguration.get("stringFromParent"), isValue("DEF"));
     }
 
-    private static Function<String, ConfigurationProvider> includedConfigProvider(String source, String providedString) {
+    private static Function<String, ConfigurationSource> sourceFromIncludeFunction(String source, String providedString) {
         return actualSource -> {
             assertThat(actualSource, is(source));
-            return ConfigurationProvider.from(providedString);
+            return ConfigurationSource.from(providedString);
         };
     }
 

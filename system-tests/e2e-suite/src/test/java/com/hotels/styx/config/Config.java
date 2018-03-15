@@ -16,7 +16,7 @@
 package com.hotels.styx.config;
 
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
-import com.hotels.styx.infrastructure.configuration.ConfigurationProvider;
+import com.hotels.styx.infrastructure.configuration.ConfigurationSource;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 
 import java.util.Map;
@@ -30,7 +30,7 @@ public final class Config {
 
     public static YamlConfiguration config(String string) {
         return parser(emptyMap())
-                .parse(ConfigurationProvider.from(string));
+                .parse(ConfigurationSource.from(string));
     }
 
     private static ConfigurationParser<YamlConfiguration> parser(Map overrides) {

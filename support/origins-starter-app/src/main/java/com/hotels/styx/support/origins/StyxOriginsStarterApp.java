@@ -23,7 +23,7 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.client.applications.BackendServices;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
-import com.hotels.styx.infrastructure.configuration.ConfigurationProvider;
+import com.hotels.styx.infrastructure.configuration.ConfigurationSource;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpServer;
@@ -102,7 +102,7 @@ public class StyxOriginsStarterApp {
                 .overrides(properties)
                 .format(YAML)
                 .build()
-                .parse(ConfigurationProvider.from(resource));
+                .parse(ConfigurationSource.from(resource));
     }
 
     public void run() {

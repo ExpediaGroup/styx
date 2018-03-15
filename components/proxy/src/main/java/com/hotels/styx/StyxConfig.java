@@ -22,7 +22,7 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.io.ResourceFactory;
 import com.hotels.styx.client.StyxHeaderConfig;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
-import com.hotels.styx.infrastructure.configuration.ConfigurationProvider;
+import com.hotels.styx.infrastructure.configuration.ConfigurationSource;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.proxy.ProxyServerConfig;
 
@@ -74,7 +74,7 @@ public final class StyxConfig implements Configuration {
         return new ConfigurationParser.Builder<YamlConfiguration>()
                 .format(YAML)
                 .build()
-                .parse(ConfigurationProvider.from(yaml));
+                .parse(ConfigurationSource.from(yaml));
     }
 
     @Override

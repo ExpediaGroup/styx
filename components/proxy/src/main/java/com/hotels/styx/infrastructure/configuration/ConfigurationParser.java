@@ -20,9 +20,11 @@ import com.hotels.styx.infrastructure.configuration.ExtensibleConfiguration.Plac
 import org.slf4j.Logger;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.common.Logging.sanitise;
 import static java.util.Collections.emptyMap;
@@ -39,54 +41,48 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
 
     private final ConfigurationFormat<C> format;
     private final Map<String, String> overrides;
-    private final Function<String, ConfigurationProvider> includeProviderFunction;
+    private final Function<String, ConfigurationSource> sourceFromIncludeFunction;
 
     private ConfigurationParser(Builder<C> builder) {
         this.format = requireNonNull(builder.format);
         this.overrides = requireNonNull(builder.overrides);
-        this.includeProviderFunction = builder.includeProviderFunction != null
-                ? builder.includeProviderFunction
-                : ConfigurationParser::includeProvider;
+        this.sourceFromIncludeFunction = builder.sourceFromIncludeFunction != null
+                ? builder.sourceFromIncludeFunction
+                : ConfigurationParser::sourceFromInclude;
     }
 
-    public C parse(ConfigurationProvider provider) {
+    public C parse(ConfigurationSource provider) {
         LOGGER.debug("Parsing configuration in format={} from source={}", format, provider);
 
         C configuration = doParse(provider);
 
         PlaceholderResolutionResult<C> resolved = configuration.resolvePlaceholders(overrides);
 
-        if (!resolved.unresolvedPlaceholders().isEmpty()) {
-            throw new IllegalStateException("Unresolved placeholders: " + resolved.unresolvedPlaceholders());
-        }
+        checkState(resolved.unresolvedPlaceholders().isEmpty(), "Unresolved placeholders: %s", resolved.unresolvedPlaceholders());
 
         return resolved.resolvedConfiguration();
     }
 
-    private C doParse(ConfigurationProvider provider) {
+    private C doParse(ConfigurationSource provider) {
         C main = provider.deserialise(format);
-        C extended = applyParentConfig(main);
 
-        return extended.withOverrides(overrides);
-    }
-
-    private C applyParentConfig(C main) {
-        return main.get("include")
-                .map(include -> format.resolvePlaceholdersInText(include, overrides))
-                .map(this::parent)
+        C withInclude = includedParentConfig(main)
                 .map(main::withParent)
                 .orElse(main);
+
+        return withInclude.withOverrides(overrides);
     }
 
-    private C parent(String includePath) {
-        ConfigurationProvider includedConfigurationProvider = includeProviderFunction.apply(includePath);
-
-        return doParse(includedConfigurationProvider);
+    private Optional<C> includedParentConfig(C main) {
+        return main.get("include")
+                .map(include -> format.resolvePlaceholdersInText(include, overrides))
+                .map(sourceFromIncludeFunction)
+                .map(this::doParse);
     }
 
-    private static ConfigurationProvider includeProvider(String includePath) {
+    private static ConfigurationSource sourceFromInclude(String includePath) {
         LOGGER.info("Including config file: path={}", sanitise(includePath));
-        return ConfigurationProvider.from(newResource(includePath));
+        return ConfigurationSource.from(newResource(includePath));
     }
 
     /**
@@ -97,7 +93,7 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
     public static final class Builder<C extends ExtensibleConfiguration<C>> {
         private ConfigurationFormat<C> format;
         private Map<String, String> overrides = emptyMap();
-        private Function<String, ConfigurationProvider> includeProviderFunction;
+        private Function<String, ConfigurationSource> sourceFromIncludeFunction;
 
         public Builder<C> format(ConfigurationFormat<C> format) {
             this.format = requireNonNull(format);
@@ -114,8 +110,8 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
         }
 
         @VisibleForTesting
-        Builder<C> includeProviderFunction(Function<String, ConfigurationProvider> includeProviderFunction) {
-            this.includeProviderFunction = requireNonNull(includeProviderFunction);
+        Builder<C> sourceFromIncludeFunction(Function<String, ConfigurationSource> sourceFromIncludeFunction) {
+            this.sourceFromIncludeFunction = requireNonNull(sourceFromIncludeFunction);
             return this;
         }
 

@@ -36,7 +36,7 @@ import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.Registry;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
-import com.hotels.styx.infrastructure.configuration.ConfigurationProvider;
+import com.hotels.styx.infrastructure.configuration.ConfigurationSource;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.metrics.reporting.sets.NettyAllocatorMetricSet;
 import com.hotels.styx.proxy.ProxyServerBuilder;
@@ -135,7 +135,7 @@ public final class StyxServer extends AbstractService {
                             .format(YAML)
                             .overrides(System.getProperties())
                             .build()
-                            .parse(ConfigurationProvider.from(startupConfig.configFileLocation()));
+                            .parse(ConfigurationSource.from(startupConfig.configFileLocation()));
 
             StyxConfig styxConfig = new StyxConfig(startupConfig, configFromFile);
 
