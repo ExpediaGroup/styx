@@ -30,6 +30,7 @@ import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.admin.AdminServerBuilder;
 import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.client.applications.BackendService;
@@ -129,14 +130,14 @@ public final class StyxServer extends AbstractService {
             LOG.info("Styx configFileLocation={}", startupConfig.configFileLocation());
             LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
 
-            YamlConfiguration yamlConfig =
+            Configuration configFromFile =
                     new ConfigurationParser.Builder<YamlConfiguration>()
                             .format(YAML)
                             .overrides(System.getProperties())
                             .build()
                             .parse(ConfigurationProvider.from(startupConfig.configFileLocation()));
 
-            StyxConfig styxConfig = new StyxConfig(startupConfig, yamlConfig);
+            StyxConfig styxConfig = new StyxConfig(startupConfig, configFromFile);
 
             return new StyxServerBuilder(styxConfig)
                     .logConfigLocationFromEnvironment()

@@ -20,6 +20,7 @@ import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.client.applications.BackendServices;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
 import com.hotels.styx.infrastructure.configuration.ConfigurationProvider;
@@ -58,11 +59,11 @@ public class StyxOriginsStarterApp {
     public StyxOriginsStarterApp(BackendServices backendServices) {
         this.originsServers = stream(backendServices.spliterator(), false)
                 .flatMap(application -> application.origins().stream())
-                .map(this::createHttpServer)
+                .map(StyxOriginsStarterApp::createHttpServer)
                 .collect(toList());
     }
 
-    private HttpServer createHttpServer(Origin origin) {
+    private static HttpServer createHttpServer(Origin origin) {
         LOG.info("creating server for {}", origin.host());
 
         return new NettyServerBuilder()
@@ -83,9 +84,9 @@ public class StyxOriginsStarterApp {
                 .build();
 
         if (args.length < 4) {
-            YamlConfiguration yamlConfig = config(startupConfig.configFileLocation(), System.getProperties());
+            Configuration configurationFromFile = config(startupConfig.configFileLocation(), System.getProperties());
 
-            StyxConfig config = new StyxConfig(startupConfig, yamlConfig);
+            StyxConfig config = new StyxConfig(startupConfig, configurationFromFile);
 
             String originsFile = config.applicationsConfigurationPath().orElseThrow(() ->
                     new IllegalStateException("Cannot start origins: No origins file specified"));
@@ -96,7 +97,7 @@ public class StyxOriginsStarterApp {
         }
     }
 
-    private static YamlConfiguration config(Resource resource, Properties properties) {
+    private static Configuration config(Resource resource, Properties properties) {
         return new ConfigurationParser.Builder<YamlConfiguration>()
                 .overrides(properties)
                 .format(YAML)
