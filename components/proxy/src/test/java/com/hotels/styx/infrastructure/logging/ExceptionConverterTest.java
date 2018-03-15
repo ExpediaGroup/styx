@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class ExceptionConverterTest {
     @Test
     public void extractsTheExceptionClassMethodAndCreatesAUniqueExceptionId() throws Exception {
         ExceptionConverter converter = newExceptionConverter();
-        assertThat(converter.convert(loggingEvent), endsWith("[exceptionClass=com.hotels.styx.infrastructure.logging.ExceptionConverterTest, exceptionMethod=<init>, exceptionID=10d7182c]\n"));
+        assertThat(converter.convert(loggingEvent).trim(), endsWith("[exceptionClass=com.hotels.styx.infrastructure.logging.ExceptionConverterTest, exceptionMethod=<init>, exceptionID=10d7182c]"));
     }
 
     @Test
@@ -84,7 +84,7 @@ public class ExceptionConverterTest {
                 .putProperty(TARGET_CLASSES_PROPERTY_NAME, "TargetClass");
 
         ILoggingEvent loggingEvent = newErrorLoggingEvent(new TargetClass().blow());
-        assertThat(converter.convert(loggingEvent), endsWith("[exceptionClass=com.hotels.styx.infrastructure.logging.ExceptionConverterTest$TargetClass, exceptionMethod=blow, exceptionID=8b93d529]\n"));
+        assertThat(converter.convert(loggingEvent).trim(), endsWith("[exceptionClass=com.hotels.styx.infrastructure.logging.ExceptionConverterTest$TargetClass, exceptionMethod=blow, exceptionID=8b93d529]"));
     }
 
     @Test

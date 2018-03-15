@@ -27,6 +27,7 @@ import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
+import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -42,7 +43,7 @@ public class LoggingConfigurationHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.bodyAs(UTF_8), is("Could not load resource='/foo/bar'"));
+        assertThat(response.bodyAs(UTF_8), matchesRegex("Could not load resource=.*foo[\\\\/]bar'"));
     }
 
     @Test

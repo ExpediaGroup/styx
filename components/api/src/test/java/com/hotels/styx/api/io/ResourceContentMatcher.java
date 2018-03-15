@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Throwables.propagate;
+import static java.lang.System.lineSeparator;
 
 public class ResourceContentMatcher extends TypeSafeMatcher<Resource> {
     private final String expected;
@@ -35,8 +36,16 @@ public class ResourceContentMatcher extends TypeSafeMatcher<Resource> {
         this.expected = checkNotNull(expected);
     }
 
+    /**
+     * Returns a Matcher that will compare the textual content of this {@link Resource} (using UTF-8 encoding)
+     * to the provided String.  Line separator differences will be ignored as long the CRLF or LF sequences
+     * are used for line breaks.
+     *
+     * @param expected text string to which this resource will be compared.
+     * @return
+     */
     public static ResourceContentMatcher contains(String expected) {
-        return new ResourceContentMatcher(expected);
+        return new ResourceContentMatcher(expected.replace("\r\n", "\n"));
     }
 
     @Override
@@ -56,7 +65,7 @@ public class ResourceContentMatcher extends TypeSafeMatcher<Resource> {
 
     private static String read(Resource item) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(item.inputStream()))) {
-            return CharStreams.toString(reader);
+            return CharStreams.toString(reader).replace(lineSeparator(), "\n");
         } catch (IOException e) {
             throw propagate(e);
         }

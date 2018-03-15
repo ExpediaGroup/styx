@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import com.hotels.styx.api.Resource;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 
+import java.nio.file.Paths;
 import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -31,7 +32,7 @@ public class ResourcePathMatcher extends TypeSafeMatcher<Resource> {
     }
 
     public static ResourcePathMatcher resourceWithPath(String path) {
-        return new ResourcePathMatcher(path);
+        return new ResourcePathMatcher(Paths.get(path).toString());
     }
 
     @Override

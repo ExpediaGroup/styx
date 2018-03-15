@@ -140,7 +140,7 @@
     <maven-resources-plugin.version>2.6</maven-resources-plugin.version>
     <maven-site-plugin.version>3.3</maven-site-plugin.version>
     <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
-    <maven-surefire-plugin.version>2.16</maven-surefire-plugin.version>
+    <maven-surefire-plugin.version>2.19</maven-surefire-plugin.version>
 
     <!-- non apache plugin versions and configurations, please sort alphabetically -->
     <animal-sniffer-maven-plugin.version>1.0</animal-sniffer-maven-plugin.version>
@@ -887,9 +887,9 @@
         <artifactId>license-maven-plugin</artifactId>
         <version>3.0</version>
         <configuration>
-          <header>file://${main.basedir}/src/license/templates/APACHE-2.txt</header>
+          <header>file:///${main.basedir}/src/license/templates/APACHE-2.txt</header>
           <headerDefinitions>
-            <headerDefinition>file://${main.basedir}/src/license/header-definitions.xml</headerDefinition>
+            <headerDefinition>file:///${main.basedir}/src/license/header-definitions.xml</headerDefinition>
           </headerDefinitions>
           <properties>
             <owner>Expedia Inc.</owner>

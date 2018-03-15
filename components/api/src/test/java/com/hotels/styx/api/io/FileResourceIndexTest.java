@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 package com.hotels.styx.api.io;
 
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.support.ResourcePaths;
 import org.testng.annotations.Test;
 
 import java.io.File;
 import java.nio.file.Path;
 
 import static com.hotels.styx.api.io.ResourcePathMatcher.resourceWithPath;
+import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
 public class FileResourceIndexTest {
-    Path PLUGINS_FIXTURE_PATH = ResourcePaths.fixturesHome(FileResourceIndexTest.class, "/plugins");
-    FileResourceIndex resourceIndex = new FileResourceIndex();
+    private Path PLUGINS_FIXTURE_PATH = fixturesHome(FileResourceIndexTest.class, "/plugins");
+    private FileResourceIndex resourceIndex = new FileResourceIndex();
 
     @Test
     public void listsResourcesFromFileSystemDirectory() {

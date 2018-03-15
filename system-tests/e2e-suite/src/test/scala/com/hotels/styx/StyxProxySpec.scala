@@ -15,10 +15,12 @@
  */
 package com.hotels.styx
 
-import com.hotels.styx.infrastructure.{RegistryServiceAdapter, MemoryBackedRegistry}
+import java.nio.file.Paths
+
+import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.plugins.PluginPipelineSpec
-import com.hotels.styx.support.{ImplicitStyxConversions, configuration}
 import com.hotels.styx.support.configuration.{ImplicitOriginConversions, StyxBackend, StyxBaseConfig}
+import com.hotels.styx.support.{ImplicitStyxConversions, configuration}
 import org.scalatest._
 
 
@@ -42,7 +44,7 @@ trait StyxProxySpec extends StyxClientSupplier
 
   def resourcesPluginsPath: String = {
     val url = classOf[PluginPipelineSpec].getClassLoader.getResource("plugins")
-    url.getPath
+    Paths.get(url.toURI).toString.replace("\\", "/")
   }
 
   override protected def beforeAll() = {

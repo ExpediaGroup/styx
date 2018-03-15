@@ -21,16 +21,14 @@ import com.google.common.collect.ImmutableSet;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import static com.hotels.styx.client.ssl.Certificate.certificate;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.endsWith;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
 public class TlsSettingsTest {
 
@@ -58,8 +56,8 @@ public class TlsSettingsTest {
         assertThat(result, containsString("\"sslProvider\" : \"JDK\""));
         assertThat(result, containsString("\"addlCerts\" : [ ]"));
 
-        // trustStorePath is platform dependent - thus match only until the root path:
-        assertThat(result, containsString("\"trustStorePath\" : \"/"));
+        // trustStorePath is platform dependent - thus match only until just before the root path:
+        assertThat(result, containsString("\"trustStorePath\" : \""));
         assertThat(result, containsString("\"trustStorePassword\" : \"bar"));
 
         assertThat(result, containsString("TLS_RSA_WITH_AES_128_CBC_SHA"));
@@ -73,7 +71,7 @@ public class TlsSettingsTest {
         assertThat(tlsSettings.trustAllCerts(), is(true));
         assertThat(tlsSettings.sslProvider(), is("JDK"));
         assertThat(tlsSettings.additionalCerts().isEmpty(), is(true));
-        assertThat(tlsSettings.trustStorePath(), endsWith("security/cacerts"));
+        assertThat(tlsSettings.trustStorePath(), endsWith(new File("security/cacerts").getPath()));
         assertThat(tlsSettings.trustStorePassword(), is("".toCharArray()));
         assertThat(tlsSettings.protocols(), is(Collections.emptyList()));
         assertThat(tlsSettings.cipherSuites(), is(Collections.emptyList()));

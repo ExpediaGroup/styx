@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -122,7 +123,7 @@ public class PathTrie<T> {
         checkArgument(!isNullOrEmpty(path));
         checkNotNull(value);
 
-        List<String> components = pathToComponents(removeAsterisk(Paths.get(path)));
+        List<String> components = pathToComponents(Paths.get(removeAsterisk(path)));
 
         if (path.endsWith("/") || path.endsWith("/*")) {
             // it is a directory
@@ -249,10 +250,10 @@ public class PathTrie<T> {
         return components;
     }
 
-    private Path removeAsterisk(Path path) {
-        Path newPath = path;
-        if (path.endsWith(Paths.get("*"))) {
-            newPath = path.getParent();
+    private String removeAsterisk(String path) {
+        String newPath = path;
+        if (path.endsWith("/*")) {
+            newPath = path.substring(0, path.length() - 1);
         }
         return newPath;
     }

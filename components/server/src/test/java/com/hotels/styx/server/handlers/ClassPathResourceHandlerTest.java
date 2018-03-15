@@ -20,14 +20,13 @@ import com.hotels.styx.api.messages.FullHttpResponse;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
-
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.FORBIDDEN;
 import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
+import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,17 +35,20 @@ public class ClassPathResourceHandlerTest {
     ClassPathResourceHandler handler = new ClassPathResourceHandler("/admin/dashboard");
 
     @Test
-    public void readsClassPathResources() throws IOException {
+    public void readsClassPathResources() {
         HttpRequest request = get("/admin/dashboard/expected.txt").build();
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.contentLength(), isValue("Foo\nBar\n".length()));
-        assertThat(response.bodyAs(UTF_8), is("Foo\nBar\n"));
+        assertThat(body(response), is("Foo\nBar\n"));
+    }
+
+    private static String body(FullHttpResponse response) {
+        return response.bodyAs(UTF_8).replace(lineSeparator(), "\n");
     }
 
     @Test
-    public void returns404IfResourceDoesNotExist() throws IOException {
+    public void returns404IfResourceDoesNotExist() {
         HttpRequest request = get("/admin/dashboard/unexpected.txt").build();
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
@@ -64,7 +66,7 @@ public class ClassPathResourceHandlerTest {
 
 
     @Test(dataProvider = "forbiddenPaths")
-    public void returns403IfTryingToAccessResourcesOutsidePermittedRoot(String path) throws IOException {
+    public void returns403IfTryingToAccessResourcesOutsidePermittedRoot(String path) {
         HttpRequest request = get(path).build();
         FullHttpResponse response = waitForResponse(handler.handle(request));
 

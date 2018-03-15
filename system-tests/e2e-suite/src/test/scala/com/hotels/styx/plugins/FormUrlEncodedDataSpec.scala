@@ -54,7 +54,7 @@ class FormUrlEncodedDataSpec extends FunSpec with StyxProxySpec with Eventually 
         .build()
       val resp = decodedRequest(request)
       assert(resp.status() == OK)
-      assert(resp.bodyAs(UTF_8) == "app: bar\nversion: 54.0")
+      assert(resp.bodyAs(UTF_8) == s"app: bar\nversion: 54.0")
     }
   }
 

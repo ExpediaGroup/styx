@@ -17,6 +17,7 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.MapType;
+import com.google.common.base.Charsets;
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.admin.tasks.StubConnectionPool;
 import com.hotels.styx.api.Id;
@@ -79,7 +80,7 @@ public class OriginsInventoryHandlerTest {
     }
 
     @Test
-    public void prettyPrintsOriginsSnapshot() throws Exception {
+    public void prettyPrintsOriginsSnapshot() {
         EventBus eventBus = new EventBus();
         OriginsInventoryHandler handler = new OriginsInventoryHandler(eventBus);
 
@@ -88,20 +89,21 @@ public class OriginsInventoryHandlerTest {
         eventBus.post(new OriginsSnapshot(APP_ID, pool(emptySet()), pool(emptySet()), pool(disabledOrigins)));
 
         FullHttpResponse response = waitForResponse(handler.handle(get("/?pretty=1").build()));
-        assertThat(response.bodyAs(UTF_8), matchesRegex("\\{\n" +
-                "  \"" + APP_ID + "\" : \\{\n" +
-                "    \"appId\" : \"" + APP_ID + "\",\n" +
-                "    \"activeOrigins\" : \\[ ],\n" +
-                "    \"inactiveOrigins\" : \\[ ],\n" +
-                "    \"disabledOrigins\" : \\[ \\{\n" +
-                "      \"id\" : \"origin.\",\n" +
-                "      \"host\" : \"localhost:....\"\n" +
-                "    }, \\{\n" +
-                "      \"id\" : \"origin.\",\n" +
-                "      \"host\" : \"localhost:....\"\n" +
-                "    } ]\n" +
-                "  }\n" +
-                "}"));
+        assertThat(body(response).replace("\r\n", "\n"),
+                matchesRegex("\\{\n" +
+                        "  \"" + APP_ID + "\" : \\{\n" +
+                        "    \"appId\" : \"" + APP_ID + "\",\n" +
+                        "    \"activeOrigins\" : \\[ ],\n" +
+                        "    \"inactiveOrigins\" : \\[ ],\n" +
+                        "    \"disabledOrigins\" : \\[ \\{\n" +
+                        "      \"id\" : \"origin.\",\n" +
+                        "      \"host\" : \"localhost:....\"\n" +
+                        "    }, \\{\n" +
+                        "      \"id\" : \"origin.\",\n" +
+                        "      \"host\" : \"localhost:....\"\n" +
+                        "    } ]\n" +
+                        "  }\n" +
+                        "}"));
     }
 
     @Test
@@ -133,5 +135,9 @@ public class OriginsInventoryHandlerTest {
                 .map(StubConnectionPool::new)
                 .map(pool -> remoteHost(pool.getOrigin(), mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)))
                 .collect(toList());
+    }
+
+    private String body(FullHttpResponse response){
+        return response.bodyAs(Charsets.UTF_8).replace("\r\n", "\n");
     }
 }

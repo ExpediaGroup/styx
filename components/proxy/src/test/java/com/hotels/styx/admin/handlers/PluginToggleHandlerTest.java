@@ -61,7 +61,7 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.bodyAs(UTF_8), is("{\"message\":\"State of 'off' changed to 'enabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"enabled\"}}\n"));
+        assertThat(body(response), is("{\"message\":\"State of 'off' changed to 'enabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"enabled\"}}"));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(true));
     }
@@ -73,7 +73,7 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.bodyAs(UTF_8), is("{\"message\":\"State of 'on' changed to 'disabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"disabled\"}}\n"));
+        assertThat(body(response), is("{\"message\":\"State of 'on' changed to 'disabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"disabled\"}}"));
         assertThat(initiallyEnabled.enabled(), is(false));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -85,7 +85,7 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.bodyAs(UTF_8), is("{\"message\":\"State of 'off' was already 'disabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"disabled\"}}\n"));
+        assertThat(body(response), is("{\"message\":\"State of 'off' was already 'disabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"disabled\"}}"));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -97,7 +97,7 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(OK));
-        assertThat(response.bodyAs(UTF_8), is("{\"message\":\"State of 'on' was already 'enabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"enabled\"}}\n"));
+        assertThat(body(response), is("{\"message\":\"State of 'on' was already 'enabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"enabled\"}}"));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -109,7 +109,7 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(BAD_REQUEST));
-        assertThat(response.bodyAs(UTF_8), is("Invalid URL\n"));
+        assertThat(body(response), is("Invalid URL"));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -121,7 +121,7 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(BAD_REQUEST));
-        assertThat(response.bodyAs(UTF_8), is("No such state: only 'true' and 'false' are valid.\n"));
+        assertThat(body(response), is("No such state: only 'true' and 'false' are valid."));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -133,7 +133,7 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(NOT_FOUND));
-        assertThat(response.bodyAs(UTF_8), is("No such plugin\n"));
+        assertThat(body(response), is("No such plugin"));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }
@@ -145,8 +145,12 @@ public class PluginToggleHandlerTest {
         FullHttpResponse response = waitForResponse(handler.handle(request));
 
         assertThat(response.status(), is(BAD_REQUEST));
-        assertThat(response.bodyAs(UTF_8), is("No such state: only 'true' and 'false' are valid.\n"));
+        assertThat(body(response), is("No such state: only 'true' and 'false' are valid."));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
+    }
+
+    private static String body(FullHttpResponse response) {
+        return response.bodyAs(UTF_8).trim();
     }
 }

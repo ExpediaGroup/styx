@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import com.google.common.io.Resources;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -62,17 +63,17 @@ public class StartupConfigTest {
     }
 
     @Test
-    public void willLoadLogbackFromDefaultLocationIfNotSpecified() {
+    public void willLoadLogbackFromDefaultLocationIfNotSpecified() throws URISyntaxException {
         String styxHome = fixturesHome();
         setProperty(STYX_HOME_VAR_NAME, styxHome);
 
         StartupConfig startupConfig = StartupConfig.load();
 
-        assertThat(startupConfig.logConfigLocation().url().getFile(), is(realPathOf("conf/logback.xml").toString()));
+        assertThat(startupConfig.logConfigLocation().url().toURI(), is(realPathOf("conf/logback.xml").toUri()));
     }
 
     @Test
-    public void shouldLoadLogbackFromClasspath() throws URISyntaxException {
+    public void shouldLoadLogbackFromClasspath() {
         String styxHome = fixturesHome();
         setProperty(STYX_HOME_VAR_NAME, styxHome);
 
@@ -84,14 +85,14 @@ public class StartupConfigTest {
     }
 
     @Test
-    public void logbackLocationCanBeOverridden() throws URISyntaxException {
+    public void logbackLocationCanBeOverridden() {
         String styxHome = fixturesHome();
         setProperty(STYX_HOME_VAR_NAME, styxHome);
         setProperty(LOGBACK_CONFIG_LOCATION_VAR_NAME, "/conf/foobar.xml");
 
         StartupConfig startupConfig = StartupConfig.load();
 
-        assertThat(startupConfig.logConfigLocation().toString(), is("/conf/foobar.xml"));
+        assertThat(startupConfig.logConfigLocation().path(), is(new File("/conf/foobar.xml").getPath()));
     }
 
     @Test
@@ -101,7 +102,7 @@ public class StartupConfigTest {
 
         StartupConfig config = StartupConfig.load();
 
-        assertThat(config.configFileLocation().path(), is("conf/foobar.yml"));
+        assertThat(config.configFileLocation().path(), is("conf/foobar.yml".replace("/", File.separator)));
     }
 
     @Test
@@ -109,7 +110,7 @@ public class StartupConfigTest {
         setProperty(STYX_HOME_VAR_NAME, fixturesHome());
 
         StartupConfig config = StartupConfig.load();
-        Path fullPath = Paths.get(Resources.getResource(".").getFile(), "conf/default.yml");
+        Path fullPath = new File(Resources.getResource(".").getFile(), "conf/default.yml").toPath();
 
         assertThat(config.configFileLocation().path(), is(fullPath.toString()));
     }

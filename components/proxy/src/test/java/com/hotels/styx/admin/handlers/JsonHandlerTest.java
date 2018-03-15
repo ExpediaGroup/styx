@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,14 @@ package com.hotels.styx.admin.handlers;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Clock;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -84,7 +83,7 @@ public class JsonHandlerTest {
     }
 
     @Test
-    public void prettyPrintsOutputWhenPrettyIsSetToTrue() throws Exception {
+    public void prettyPrintsOutputWhenPrettyIsSetToTrue() {
         HttpRequest request = get("/?pretty=true").build();
 
         Supplier<Convertible> supplier = sequentialSupplier(new Convertible("foo", 456));

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,16 +24,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.DecoderException;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.DefaultHttpRequest;
-import io.netty.handler.codec.http.DefaultLastHttpContent;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.*;
 import org.hamcrest.Matchers;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -50,13 +41,9 @@ import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.api.UniqueIdSuppliers.fixedUniqueIdSupplier;
-import static com.hotels.styx.support.netty.HttpMessageSupport.httpMessageToBytes;
-import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequest;
-import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequestAsBuf;
+import static com.hotels.styx.support.netty.HttpMessageSupport.*;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static io.netty.handler.codec.http.HttpHeaders.Names.EXPECT;
-import static io.netty.handler.codec.http.HttpHeaders.Names.HOST;
-import static io.netty.handler.codec.http.HttpHeaders.Names.TRANSFER_ENCODING;
+import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpHeaders.Values.CHUNKED;
 import static io.netty.handler.codec.http.HttpHeaders.Values.CONTINUE;
 import static io.netty.handler.codec.http.HttpMethod.GET;
@@ -65,9 +52,7 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class NettyToStyxRequestDecoderTest {
     private final UniqueIdSupplier uniqueIdSupplier = fixedUniqueIdSupplier("1");
@@ -88,7 +73,7 @@ public class NettyToStyxRequestDecoderTest {
         bodyCompletedLatch = new CountDownLatch(1);
     }
 
-    @Test(expectedExceptions = BadRequestException.class, expectedExceptionsMessageRegExp = "Error while decoding request.*\n.*")
+    @Test(expectedExceptions = BadRequestException.class, expectedExceptionsMessageRegExp = "Error while decoding request.*\\R.*")
     public void throwsBadRequestExceptionOnInvalidRequests() throws Throwable {
         try {
             channel.writeInbound(perturb(httpRequestAsBuf(GET, "http://foo.com/")));

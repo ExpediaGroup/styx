@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.util.regex.Pattern;
 
 import static com.google.common.base.Strings.padStart;
 import static com.google.common.base.Throwables.propagate;
-import static java.lang.System.lineSeparator;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -32,7 +31,8 @@ import static java.util.stream.Collectors.joining;
  */
 public final class JsonReformatter {
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final String LINE_SEPARATOR = lineSeparator();
+    // Always uses unix-style line separators regardless of platform
+    private static final String LINE_SEPARATOR = "\n";
 
     private JsonReformatter() {
     }

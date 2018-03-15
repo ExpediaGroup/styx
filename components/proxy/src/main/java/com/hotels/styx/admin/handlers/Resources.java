@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,28 +15,22 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.google.common.io.CharStreams;
 import com.hotels.styx.api.Resource;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Stream;
-
-import static java.lang.System.lineSeparator;
-import static java.util.stream.Collectors.joining;
+import java.io.InputStreamReader;
+import java.io.Reader;
 
 final class Resources {
     private Resources() {
     }
 
     public static String load(Resource resource) throws IOException {
-        return fileContents(Paths.get(resource.absolutePath()));
-    }
-
-    private static String fileContents(Path path) throws IOException {
-        try (Stream<String> lines = Files.lines(path)) {
-            return lines.collect(joining(lineSeparator()));
+        try (Reader reader = new BufferedReader(new InputStreamReader(resource.inputStream()))) {
+            return CharStreams.toString(reader);
         }
     }
+
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Throwables.propagate;
+import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
 
 /**
  * A supplier that serialises the output of another supplier into JSON. It will call the source supplier each time it
@@ -47,8 +48,8 @@ public class JsonSupplier implements Supplier<String> {
      * Constructs an instance.
      *
      * @param objectSupplier A supplier that will provide an object each time it is called, that can be transformed into JSON.
-     * @oaram pretty         Enable or disable pretty printing. Defaults to false.
      * @param modules        Modules for the object mapper.
+     * @oaram pretty         Enable or disable pretty printing. Defaults to false.
      */
     public static JsonSupplier create(Supplier<?> objectSupplier, boolean pretty, Module... modules) {
         return new JsonSupplier(objectSupplier, pretty, modules);
@@ -73,7 +74,7 @@ public class JsonSupplier implements Supplier<String> {
     private String toJson(Object object) {
         try {
             if (pretty) {
-                return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
+                return mapper.writer(PRETTY_PRINTER).writeValueAsString(object);
             } else {
                 return mapper.writer().writeValueAsString(object);
             }
