@@ -57,7 +57,7 @@ services:
   factories:
     backendServiceRegistry:
       class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry$Factory"
-      config: {originsFile: "${originsFile:}"}
+      config: {originsFile: "${STYX_HOME:classpath:}/conf/origins.yml"}
 #    graphite:
 #      enabled: false
 #      class: "com.hotels.styx.metrics.reporting.graphite.GraphiteReporterServiceFactory"
