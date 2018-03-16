@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,7 +91,6 @@ public final class HttpMessageBody {
                     composite.addComponent(part);
                     composite.writerIndex(composite.writerIndex() + part.readableBytes());
                 })
-
                 .map((CompositeByteBuf aggregate) -> decodeAndRelease(decoder, aggregate));
     }
 

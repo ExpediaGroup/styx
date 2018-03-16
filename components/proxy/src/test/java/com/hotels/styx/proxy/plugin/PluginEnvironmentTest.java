@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.infrastructure.configuration.ObjectFactory;
+import com.hotels.styx.spi.config.SpiExtension;
+import com.hotels.styx.spi.config.SpiExtensionFactory;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -68,10 +69,10 @@ public class PluginEnvironmentTest {
         return new PluginEnvironment(styxEnvironment, pluginMetadata(pluginName), styxScope);
     }
 
-    private static PluginMetadata pluginMetadata(String pluginName) {
-        ObjectFactory factory = new ObjectFactory("PluginXFactory", "/path");
+    private static SpiExtension pluginMetadata(String pluginName) {
+        SpiExtensionFactory factory = new SpiExtensionFactory("PluginXFactory", "/path");
 
-        return new PluginMetadata(pluginName, factory, null);
+        return new SpiExtension(pluginName, factory, null);
     }
 
 }

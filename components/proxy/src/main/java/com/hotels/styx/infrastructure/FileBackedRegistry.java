@@ -19,6 +19,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.hash.HashCode;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.Resource;
+import com.hotels.styx.api.service.spi.AbstractRegistry;
 import org.slf4j.Logger;
 
 import java.io.IOException;

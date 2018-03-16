@@ -64,19 +64,6 @@ public class FileBackedRegistryTest {
     }
 
     @Test
-    public void calculatesTheDifferenceBetweenCurrentAndNewResources() {
-        Iterable<BackendService> newResources = singletonList(backendService("one", 9090));
-        Iterable<BackendService> currentResources = singletonList(backendService("two", 9091));
-        Registry.Changes<Identifiable> expected = new Registry.Changes.Builder<>()
-                .added(backendService("one", 9090))
-                .removed(backendService("two", 9091))
-                .build();
-
-        Registry.Changes<BackendService> changes = FileBackedRegistry.changes(newResources, currentResources);
-        assertThat(changes.toString(), is(expected.toString()));
-    }
-
-    @Test
     public void announcesInitialStateWhenStarts() throws IOException {
         Resource configurationFile = mockResource("/styx/config", new ByteArrayInputStream(originalContent));
 
@@ -225,14 +212,4 @@ public class FileBackedRegistryTest {
         return configuration;
     }
 
-    private BackendService backendService(String id, int port) {
-        return new BackendService.Builder()
-                .id(id)
-                .origins(newOrigin(port))
-                .build();
-    }
-
-    private Origin newOrigin(int port) {
-        return newOriginBuilder("localhost", port).build();
-    }
 }

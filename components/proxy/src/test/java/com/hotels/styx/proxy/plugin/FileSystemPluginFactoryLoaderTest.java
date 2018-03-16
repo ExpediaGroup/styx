@@ -17,7 +17,8 @@ package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.infrastructure.configuration.ObjectFactory;
+import com.hotels.styx.spi.config.SpiExtension;
+import com.hotels.styx.spi.config.SpiExtensionFactory;
 import org.testng.annotations.Test;
 
 import java.net.URISyntaxException;
@@ -35,27 +36,27 @@ public class FileSystemPluginFactoryLoaderTest {
 
     @Test
     public void pluginLoaderLoadsPluginFromJarFile() {
-        ObjectFactory factory = new ObjectFactory("testgrp.TestPluginModule", pluginsPath.toString());
+        SpiExtensionFactory factory = new SpiExtensionFactory("testgrp.TestPluginModule", pluginsPath.toString());
 
-        PluginFactory plugin = pluginFactoryLoader.load(new PluginMetadata("pluginA", factory, null));
+        PluginFactory plugin = pluginFactoryLoader.load(new SpiExtension("pluginA", factory, null));
 
         assertThat(plugin, is(not(nullValue())));
         assertThat(plugin.getClass().getName(), is("testgrp.TestPluginModule"));
     }
 
     @Test(expectedExceptions = ConfigurationException.class, expectedExceptionsMessageRegExp =
-            "Could not load a plugin factory for configuration=PluginMetadata\\{" +
+            "Could not load a plugin factory for configuration=SpiExtension\\{" +
                     "name=pluginA, " +
-                    "factory=ObjectFactory\\{" +
-                    "factoryClass=incorrect.plugin.class.name.TestPluginModule, " +
-                    "classPath=.*[\\\\/]components[\\\\/]proxy[\\\\/]target[\\\\/]test-classes[\\\\/]plugins[\\\\/]oneplugin[\\\\/]testPluginA-1.0-SNAPSHOT.jar" +
+                    "factory=SpiExtensionFactory\\{" +
+                    "class=incorrect.plugin.class.name.TestPluginModule, " +
+                            "classPath=.*[\\\\/]components[\\\\/]proxy[\\\\/]target[\\\\/]test-classes[\\\\/]plugins[\\\\/]oneplugin[\\\\/]testPluginA-1.0-SNAPSHOT.jar" +
                     "\\}\\}")
     public void providesMeaningfulErrorMessageWhenConfiguredFactoryClassCannotBeLoaded() throws URISyntaxException {
         String jarFile = "/plugins/oneplugin/testPluginA-1.0-SNAPSHOT.jar";
         Path pluginsPath = fixturesHome(PluginSuppliersTest.class, jarFile);
 
-        ObjectFactory factory = new ObjectFactory("incorrect.plugin.class.name.TestPluginModule", pluginsPath.toString());
-        PluginMetadata metadata = new PluginMetadata("pluginA", factory, null);
+        SpiExtensionFactory factory = new SpiExtensionFactory("incorrect.plugin.class.name.TestPluginModule", pluginsPath.toString());
+        SpiExtension metadata = new SpiExtension("pluginA", factory, null);
         new FileSystemPluginFactoryLoader().load(metadata);
     }
 }

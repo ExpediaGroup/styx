@@ -30,6 +30,7 @@ import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
 import org.slf4j.Logger;
 
+import static com.hotels.styx.serviceproviders.ServiceProvision.loadLoadBalancer;
 import static com.hotels.styx.serviceproviders.ServiceProvision.loadService;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -55,7 +56,7 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
         RetryPolicy retryPolicy = loadService(styxConfig, environment, "retrypolicy.policy.factory", RetryPolicy.class)
                 .orElseGet(() -> defaultRetryPolicy(environment));
 
-        LoadBalancer configuredLbStrategy = loadService(
+        LoadBalancer configuredLbStrategy = loadLoadBalancer(
                 styxConfig, environment, "loadBalancing.strategy.factory", LoadBalancer.class, originsInventory)
                 .orElseGet(() -> new BusyConnectionsStrategy(originsInventory));
 

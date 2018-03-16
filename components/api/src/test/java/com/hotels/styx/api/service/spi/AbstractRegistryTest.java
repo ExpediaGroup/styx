@@ -13,18 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.infrastructure;
+package com.hotels.styx.api.service.spi;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
-import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.client.Origin;
 import org.testng.annotations.Test;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.infrastructure.AbstractRegistryTest.IdObject.idObject;
+import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.service.spi.AbstractRegistryTest.IdObject.idObject;
+import static java.util.Collections.singletonList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -139,6 +143,30 @@ public class AbstractRegistryTest {
         verify(listener1).onChange(changeSet().removed(idObject("b", "2")).build());
         verify(listener2, never()).onChange(changeSet().removed(idObject("b", "2")).build());
 
+    }
+
+    @Test
+    public void calculatesTheDifferenceBetweenCurrentAndNewResources() {
+        Iterable<BackendService> newResources = singletonList(backendService("one", 9090));
+        Iterable<BackendService> currentResources = singletonList(backendService("two", 9091));
+        Registry.Changes<Identifiable> expected = new Registry.Changes.Builder<>()
+                .added(backendService("one", 9090))
+                .removed(backendService("two", 9091))
+                .build();
+
+        Registry.Changes<BackendService> changes = AbstractRegistry.changes(newResources, currentResources);
+        assertThat(changes.toString(), is(expected.toString()));
+    }
+
+    private BackendService backendService(String id, int port) {
+        return new BackendService.Builder()
+                .id(id)
+                .origins(newOrigin(port))
+                .build();
+    }
+
+    private Origin newOrigin(int port) {
+        return newOriginBuilder("localhost", port).build();
     }
 
     private Registry.Changes.Builder<IdObject> changeSet() {

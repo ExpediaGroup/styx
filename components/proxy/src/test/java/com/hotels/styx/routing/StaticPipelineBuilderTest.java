@@ -22,7 +22,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.service.spi.BackendService;
-import com.hotels.styx.infrastructure.AbstractRegistry;
+import com.hotels.styx.api.service.spi.AbstractRegistry;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hotels.styx.infrastructure.configuration;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationFactory;
+import com.hotels.styx.proxy.plugin.ObjectFactories;
+import com.hotels.styx.spi.config.SpiExtensionFactory;
 import org.slf4j.Logger;
 
 import java.util.Optional;
@@ -54,14 +56,14 @@ public final class ConfigurationSupplier implements Supplier<Configuration> {
         return createConfigurationFactory(configurationConfig.factory);
     }
 
-    private static Optional<ConfigurationFactory> createConfigurationFactory(ObjectFactory factory) {
-        Optional<ConfigurationFactory> cf = factory.newInstance(ConfigurationFactory.class);
+    private static Optional<ConfigurationFactory> createConfigurationFactory(SpiExtensionFactory factory) {
+        Optional<ConfigurationFactory> cf = ObjectFactories.newInstance(factory, ConfigurationFactory.class);
         LOGGER.info("Loaded a configuration factory={} from metadata={}", cf, factory);
         return cf;
     }
 
     private static class ConfigurationConfig {
         @JsonProperty("factory")
-        ObjectFactory factory;
+        SpiExtensionFactory factory;
     }
 }

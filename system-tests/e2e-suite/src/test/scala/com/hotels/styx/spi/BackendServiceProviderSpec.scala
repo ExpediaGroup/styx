@@ -13,36 +13,58 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.plugins
+package com.hotels.styx.spi
 
 import com.google.common.net.HostAndPort
 import com.google.common.net.HostAndPort._
 import com.hotels.styx.StyxProxySpec
 import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.support.backends.FakeHttpServer
+import com.hotels.styx.support.configuration.StyxConfig
 import org.scalatest.FunSpec
 
-class PluginPipelineSpec extends FunSpec with StyxProxySpec {
+class BackendServiceProviderSpec extends FunSpec with StyxProxySpec {
   val normalBackend = FakeHttpServer.HttpStartupConfig().start()
   val pluginsFolder = resourcesPluginsPath
 
   override val styxConfig = StyxConfig(
     yamlText = s"""
-        |plugins:
-        |  active: PluginA
-        |  all:
-        |     PluginA:
-        |       factory:
-        |          class: testgrp.TestPluginModule
-        |          classPath: "$pluginsFolder"
-        |       config: /my/plugin/config/directory
+        |proxy:
+        |  connectors:
+        |    http:
+        |      port: 8080
+        |
+        |admin:
+        |  connectors:
+        |    http:
+        |      port: 9000
+        |
+        |services:
+        |  factories:
+        |    backendServiceRegistry:
+        |      factory:
+        |        class: "testgrp.TestBackendProvider$$Factory"
+        |        classPath: "$pluginsFolder"
+        |      config:
+        |        backendService:
+        |            id: "app"
+        |            path: "/"
+        |            connectionPool:
+        |              maxConnectionsPerHost: 45
+        |              maxPendingConnectionsPerHost: 15
+        |              socketTimeoutMillis: 120000
+        |              connectTimeoutMillis: 8000
+        |              pendingConnectionTimeoutMillis: 8000
+        |            origins:
+        |              - id: "app-01"
+        |                host: "localhost:${normalBackend.port()}"
+        |                responseTimeoutMillis: 60000
         """.stripMargin('|')
   )
 
   override protected def beforeAll(): Unit = {
-    super.beforeAll()
-    styxServer.setBackends("/" -> HttpBackend("app1", Origins(normalBackend)))
+    styxServer = styxConfig.startServer()
   }
 
   override protected def afterAll(): Unit = {
@@ -50,19 +72,9 @@ class PluginPipelineSpec extends FunSpec with StyxProxySpec {
     super.afterAll()
   }
 
-  describe("plugins ") {
-
-    it("Styx loads the plugins during startup.") {
-      val response = decodedRequest(anHttpRequest)
-
-      response.header("X-Hcom-Plugins").get() should be("test-plugin-a")
-      response.header("X-Hcom-Plugins-List").get() should be("PluginA")
-    }
-
-    it("Styx exposes the plugin configuration directory") {
-      val response = decodedRequest(anHttpRequest)
-      response.header("X-Hcom-Plugin-Configuration-Path").get() should be("/my/plugin/config/directory")
-      response.header("X-Hcom-Plugins-List").get() should be("PluginA")
+  describe("SPI Backend Service Provider") {
+    it("Loads during startup") {
+      decodedRequest(anHttpRequest).status() should be(OK)
     }
   }
 

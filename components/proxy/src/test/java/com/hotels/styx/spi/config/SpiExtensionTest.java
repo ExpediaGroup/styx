@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.proxy.plugin;
+package com.hotels.styx.spi.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.hotels.styx.infrastructure.configuration.ObjectFactory;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -28,14 +27,14 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class PluginMetadataTest {
+public class SpiExtensionTest {
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory()).configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Test
     public void getsConfigAsClass() throws IOException {
         JsonNode configNode = MAPPER.readTree("foo: bar");
 
-        PluginMetadata metadata = new PluginMetadata("plugin_name", new ObjectFactory("factoryClass", "classPath"), configNode);
+        SpiExtension metadata = new SpiExtension("plugin_name", new SpiExtensionFactory("factoryClass", "classPath"), configNode);
 
         TestObject config = metadata.config(TestObject.class);
 

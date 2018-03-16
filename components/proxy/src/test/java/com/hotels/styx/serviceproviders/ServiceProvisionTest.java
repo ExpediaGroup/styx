@@ -24,7 +24,6 @@ import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.support.api.SimpleEnvironment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ServiceFactory;
-import org.hamcrest.Matchers;
 import org.testng.annotations.Test;
 
 import java.util.Map;
@@ -37,6 +36,7 @@ import static com.hotels.styx.support.matchers.MapMatcher.isMap;
 import static java.util.Collections.emptyMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 
 public class ServiceProvisionTest {
     private final String yaml = "" +
@@ -90,6 +90,50 @@ public class ServiceProvisionTest {
             "      config:\n" +
             "        stringValue: valueNumber2\n";
 
+    private final String yamlForServiceFactories = "" +
+            "multi:\n" +
+            "  factories:\n" +
+            "    backendProvider:\n" +
+            "      factory:\n" +
+            "        class: " + TestBackendServiceProviderFactory.class.getName() + "\n" +
+            "        config:\n" +
+            "          stringValue: valueNumber1\n" +
+            "    routingProvider:\n" +
+            "      factory:\n" +
+            "        class: " + TestRoutingObjectProviderFactory.class.getName() + "\n" +
+            "        config:\n" +
+            "          stringValue: valueNumber2\n";
+
+    private final String yamlForMixedServiceFactories = "" +
+            "multi:\n" +
+            "  factories:\n" +
+            "    backendProvider:\n" +
+            "      enabled: true\n" +
+            "      class: " + TestBackendServiceProviderFactory.class.getName() + "\n" +
+            "      config:\n" +
+            "        stringValue: valueNumber1\n" +
+            "    routingProvider:\n" +
+            "      factory:\n" +
+            "        class: " + TestRoutingObjectProviderFactory.class.getName() + "\n" +
+            "        config:\n" +
+            "          stringValue: valueNumber2\n";
+
+    private final String mixedDisabledServices = "" +
+            "multi:\n" +
+            "  factories:\n" +
+            "    backendProvider:\n" +
+            "      enabled: false\n" +
+            "      class: " + TestBackendServiceProviderFactory.class.getName() + "\n" +
+            "      config:\n" +
+            "        stringValue: valueNumber1\n" +
+            "    routingProvider:\n" +
+            "      enabled: false\n" +
+            "      factory:\n" +
+            "        class: " + TestRoutingObjectProviderFactory.class.getName() + "\n" +
+            "        config:\n" +
+            "          stringValue: valueNumber2\n";
+
+
     private final Environment environment = environmentWithConfig(yaml);
 
     @Test
@@ -121,6 +165,34 @@ public class ServiceProvisionTest {
         assertThat(services.get("backendProvider"), instanceOf(BackendServiceProvider.class));
         assertThat(services.get("routingProvider"), instanceOf(RoutingObjectProvider.class));
     }
+
+    @Test
+    public void loadsNewConfigurationFormat() {
+        Environment env = environmentWithConfig(yamlForServiceFactories);
+        Map<String, StyxService> services = loadServices(env.configuration(), env, "multi", StyxService.class);
+
+        assertThat(services.get("backendProvider"), instanceOf(BackendServiceProvider.class));
+        assertThat(services.get("routingProvider"), instanceOf(RoutingObjectProvider.class));
+    }
+
+
+    @Test
+    public void loadsFromMixedConfigFormat() {
+        Environment env = environmentWithConfig(yamlForMixedServiceFactories);
+        Map<String, StyxService> services = loadServices(env.configuration(), env, "multi", StyxService.class);
+
+        assertThat(services.get("backendProvider"), instanceOf(BackendServiceProvider.class));
+        assertThat(services.get("routingProvider"), instanceOf(RoutingObjectProvider.class));
+    }
+
+    @Test
+    public void ignoresDisabledServices() {
+        Environment env = environmentWithConfig(mixedDisabledServices);
+        Map<String, StyxService> services = loadServices(env.configuration(), env, "multi", StyxService.class);
+
+        assertThat(services.isEmpty(), is(true));
+    }
+
 
     @Test
     public void servicesReturnEmptyWhenFactoryKeyDoesNotExist() {

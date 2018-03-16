@@ -13,15 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.proxy.plugin;
+package testgrp;
 
-import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.spi.config.SpiExtension;
+import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.api.HttpHandler;
 
-/**
- * An interface for loading PluginFactory objects from various sources.
- *
- */
-public interface PluginFactoryLoader {
-    PluginFactory load(SpiExtension spiExtension);
+import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static rx.Observable.just;
+
+final class AdminHandlers {
+    private AdminHandlers() {
+    }
+
+    static ImmutableMap<String, HttpHandler> adminHandlers(String endpoint, String responseContent) {
+        return ImmutableMap.of(endpoint, (request) -> just(response(OK)
+                .body(responseContent)
+                .build()));
+    }
 }

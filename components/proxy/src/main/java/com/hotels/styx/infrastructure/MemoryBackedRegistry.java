@@ -20,6 +20,7 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.service.spi.AbstractRegistry;
 import com.hotels.styx.api.service.spi.Registry;
 
 import java.util.HashMap;
