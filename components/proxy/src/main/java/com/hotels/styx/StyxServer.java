@@ -30,11 +30,14 @@ import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.admin.AdminServerBuilder;
 import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.infrastructure.Registry;
-import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
+import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
+import com.hotels.styx.infrastructure.configuration.ConfigurationSource;
+import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.metrics.reporting.sets.NettyAllocatorMetricSet;
 import com.hotels.styx.proxy.ProxyServerBuilder;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
@@ -77,6 +80,7 @@ import java.util.function.Supplier;
 
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static com.hotels.styx.api.configuration.ConfigurationContextResolver.EMPTY_CONFIGURATION_CONTEXT_RESOLVER;
+import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
 import static com.hotels.styx.serviceproviders.ServiceProvision.loadServices;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
@@ -126,9 +130,14 @@ public final class StyxServer extends AbstractService {
             LOG.info("Styx configFileLocation={}", startupConfig.configFileLocation());
             LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
 
-            YamlConfig yamlConfig = new YamlConfig(startupConfig.configFileLocation(), System.getProperties());
+            Configuration configFromFile =
+                    new ConfigurationParser.Builder<YamlConfiguration>()
+                            .format(YAML)
+                            .overrides(System.getProperties())
+                            .build()
+                            .parse(ConfigurationSource.from(startupConfig.configFileLocation()));
 
-            StyxConfig styxConfig = new StyxConfig(startupConfig, yamlConfig);
+            StyxConfig styxConfig = new StyxConfig(startupConfig, configFromFile);
 
             return new StyxServerBuilder(styxConfig)
                     .logConfigLocationFromEnvironment()

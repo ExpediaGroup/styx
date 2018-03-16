@@ -20,7 +20,8 @@ import java.util
 
 import com.hotels.styx.StyxServerSupport._
 import com.hotels.styx.api.service.spi.StyxService
-import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
+import com.hotels.styx.config.Config
+import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration
 import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.support.ResourcePaths
@@ -151,7 +152,7 @@ case class StyxYamlConfig(yamlConfig: String,
                          ) extends StyxBaseConfig {
 
   override def startServer(backendsRegistry: StyxService): StyxServer = {
-    val config: YamlConfig = new YamlConfig(yamlConfig)
+    val config: YamlConfiguration = Config.config(yamlConfig)
     val styxConfig = new com.hotels.styx.StyxConfig(yamlConfig)
 
     val styxServer = new StyxServerBuilder(styxConfig)
@@ -163,7 +164,7 @@ case class StyxYamlConfig(yamlConfig: String,
   }
 
   override def startServer(): StyxServer = {
-    val config: YamlConfig = new YamlConfig(yamlConfig)
+    val config: YamlConfiguration = Config.config(yamlConfig)
     val styxConfig = new com.hotels.styx.StyxConfig(yamlConfig)
 
     val styxServer = new StyxServerBuilder(styxConfig)

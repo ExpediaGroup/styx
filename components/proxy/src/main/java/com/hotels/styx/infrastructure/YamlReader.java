@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.hotels.styx.api.Resource;
+import com.hotels.styx.infrastructure.configuration.UnresolvedPlaceholder;
 import com.hotels.styx.infrastructure.configuration.yaml.NodePath;
 import com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver;
 
@@ -71,7 +72,7 @@ public final class YamlReader<T> {
         JsonNode rootNode = MAPPER.readTree(content);
         List<String> includePaths = includedPaths(rootNode);
 
-        Collection<PlaceholderResolver.UnresolvedPlaceholder> unresolvedPlaceholders = resolvePlaceholders(rootNode, overrides);
+        Collection<UnresolvedPlaceholder> unresolvedPlaceholders = resolvePlaceholders(rootNode, overrides);
 
         checkState(unresolvedPlaceholders.isEmpty(), "Unresolved placeholders: %s", unresolvedPlaceholders);
 

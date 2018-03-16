@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hotels.styx.infrastructure.configuration.yaml;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.hotels.styx.infrastructure.configuration.UnresolvedPlaceholder;
 import com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.Placeholder;
 import org.testng.annotations.Test;
 
@@ -105,7 +106,7 @@ public class PlaceholderResolverTest {
                 "\"FOO\" : \"foo\"" +
                 " }");
 
-        Collection<PlaceholderResolver.UnresolvedPlaceholder> unresolvedPlaceholders = PlaceholderResolver.resolvePlaceholders(root, NO_EXTERNAL_PROPERTIES);
+        Collection<UnresolvedPlaceholder> unresolvedPlaceholders = PlaceholderResolver.resolvePlaceholders(root, NO_EXTERNAL_PROPERTIES);
 
         assertThat(unresolvedPlaceholders.toString(), is("[${CONFIG_LOCATION} in include=${CONFIG_LOCATION}/conf/environment/default.yaml]"));
     }
