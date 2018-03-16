@@ -24,6 +24,9 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * A load balanced host.
+ */
 public final class RemoteHost {
     private final Origin origin;
     private final HttpClient hostClient;

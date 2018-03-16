@@ -18,6 +18,7 @@ package com.hotels.styx.infrastructure;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
+import com.hotels.styx.api.service.spi.Registry;
 import org.testng.annotations.Test;
 
 import java.util.Objects;

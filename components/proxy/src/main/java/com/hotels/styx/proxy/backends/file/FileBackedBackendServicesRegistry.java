@@ -21,10 +21,10 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.service.spi.AbstractStyxService;
-import com.hotels.styx.client.applications.BackendService;
+import com.hotels.styx.api.service.spi.BackendService;
 import com.hotels.styx.client.applications.BackendServices;
 import com.hotels.styx.infrastructure.FileBackedRegistry;
-import com.hotels.styx.infrastructure.Registry;
+import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.infrastructure.YamlReader;
 import com.hotels.styx.proxy.backends.file.FileChangeMonitor.FileMonitorSettings;
 import org.slf4j.Logger;
@@ -37,12 +37,12 @@ import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
-import static com.hotels.styx.infrastructure.Registry.Outcome.FAILED;
+import static com.hotels.styx.api.service.spi.Registry.Outcome.FAILED;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 /**
- * File backed {@link com.hotels.styx.client.applications.BackendService} registry.
+ * File backed {@link BackendService} registry.
  */
 public class FileBackedBackendServicesRegistry extends AbstractStyxService implements Registry<BackendService>, FileChangeMonitor.Listener {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileBackedBackendServicesRegistry.class);

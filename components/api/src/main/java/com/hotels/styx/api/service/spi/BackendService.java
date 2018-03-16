@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.client.applications;
+package com.hotels.styx.api.service.spi;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -24,11 +24,6 @@ import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.client.RewriteConfig;
-import com.hotels.styx.client.connectionpool.ConnectionPoolSettings;
-import com.hotels.styx.client.healthcheck.HealthCheckConfig;
-import com.hotels.styx.client.ssl.TlsSettings;
-import com.hotels.styx.client.stickysession.StickySessionConfig;
 
 import java.net.URI;
 import java.util.List;
@@ -41,9 +36,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.client.Origin.checkThatOriginsAreDistinct;
-import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultConnectionPoolSettings;
-import static com.hotels.styx.client.healthcheck.HealthCheckConfig.noHealthCheck;
-import static com.hotels.styx.client.stickysession.StickySessionConfig.stickySessionDisabled;
+import static com.hotels.styx.api.service.spi.ConnectionPoolSettings.defaultConnectionPoolSettings;
+import static com.hotels.styx.api.service.spi.HealthCheckConfig.noHealthCheck;
+import static com.hotels.styx.api.service.spi.StickySessionConfig.stickySessionDisabled;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;

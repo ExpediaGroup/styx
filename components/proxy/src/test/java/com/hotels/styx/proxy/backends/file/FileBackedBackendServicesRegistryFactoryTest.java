@@ -22,7 +22,7 @@ import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
-import com.hotels.styx.client.applications.BackendService;
+import com.hotels.styx.api.service.spi.BackendService;
 import com.hotels.styx.common.StyxFutures;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.proxy.backends.file.FileChangeMonitor.FileMonitorSettings;

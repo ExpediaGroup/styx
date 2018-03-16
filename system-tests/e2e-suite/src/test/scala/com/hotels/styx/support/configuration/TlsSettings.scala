@@ -15,17 +15,18 @@
  */
 package com.hotels.styx.support.configuration
 
+import com.hotels.styx.api.service.spi
 import com.hotels.styx.client.ssl
 import com.hotels.styx.support.configuration.TlsSettings.default
 
 import scala.collection.JavaConverters._
 
 case class Certificate(alias: String, certificatePath: String) {
-  def asJava: ssl.Certificate = ssl.Certificate.certificate(alias, certificatePath)
+  def asJava: spi.Certificate = spi.Certificate.certificate(alias, certificatePath)
 }
 
 object Certificate {
-  def fromJava(from: ssl.Certificate): Certificate = Certificate(from.getAlias, from.getCertificatePath)
+  def fromJava(from: spi.Certificate): Certificate = Certificate(from.getAlias, from.getCertificatePath)
 }
 
 case class TlsSettings(authenticate: Boolean = default.authenticate(),
@@ -36,8 +37,8 @@ case class TlsSettings(authenticate: Boolean = default.authenticate(),
                        protocols: Seq[String] = default.protocols.asScala,
                        cipherSuites: Seq[String] = default.cipherSuites.asScala
 ) {
-  def asJava: com.hotels.styx.client.ssl.TlsSettings = {
-    new com.hotels.styx.client.ssl.TlsSettings.Builder()
+  def asJava: spi.TlsSettings = {
+    new spi.TlsSettings.Builder()
       .authenticate(authenticate)
       .sslProvider(sslProvider)
       .additionalCerts(
@@ -51,9 +52,9 @@ case class TlsSettings(authenticate: Boolean = default.authenticate(),
 }
 
 object TlsSettings {
-  private val default = new com.hotels.styx.client.ssl.TlsSettings.Builder().build()
+  private val default = new spi.TlsSettings.Builder().build()
 
-  def fromJava(from: com.hotels.styx.client.ssl.TlsSettings): TlsSettings =
+  def fromJava(from: spi.TlsSettings): TlsSettings =
     apply(
       authenticate = from.authenticate(),
       sslProvider = from.sslProvider(),

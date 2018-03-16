@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package com.hotels.styx.testapi;
 
 import com.eaio.uuid.UUID;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.client.ssl.TlsSettings;
+import com.hotels.styx.api.service.spi.TlsSettings;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.client.applications.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.api.service.spi.BackendService.newBackendServiceBuilder;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 
@@ -101,7 +101,7 @@ public class BackendService {
     }
 
     // for internal use
-    com.hotels.styx.client.applications.BackendService createBackendService(String path) {
+    com.hotels.styx.api.service.spi.BackendService createBackendService(String path) {
         requireNonNull(path, "path must not be null");
         checkArgument(!origins.isEmpty(), "A backend service must have at least one origin");
 
@@ -114,7 +114,7 @@ public class BackendService {
                         .build())
                 .collect(toSet());
 
-        com.hotels.styx.client.applications.BackendService.Builder builder = newBackendServiceBuilder()
+        com.hotels.styx.api.service.spi.BackendService.Builder builder = newBackendServiceBuilder()
                 .id(appId)
                 .responseTimeoutMillis(responseTimeoutMillis)
                 .origins(adaptedOrigins)

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.client.applications.ApplicationsProvider;
-import com.hotels.styx.client.applications.BackendService;
+import com.hotels.styx.api.service.spi.BackendService;
 import com.hotels.styx.client.applications.BackendServices;
 
 import java.io.IOException;

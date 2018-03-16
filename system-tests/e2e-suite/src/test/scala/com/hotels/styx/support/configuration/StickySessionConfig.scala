@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,15 @@ package com.hotels.styx.support.configuration
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.{MILLISECONDS, SECONDS}
 
-import com.hotels.styx.client.stickysession.StickySessionConfig.Builder
+import com.hotels.styx.api.service.spi
+import com.hotels.styx.api.service.spi.StickySessionConfig.Builder
 
 import scala.concurrent.duration.Duration
 
 case class StickySessionConfig(enabled: Boolean = StickySessionConfigDefaults.enabled,
                                timeout: Duration = StickySessionConfigDefaults.timeout
                               ) {
-  def asJava: com.hotels.styx.client.stickysession.StickySessionConfig = new Builder()
+  def asJava: spi.StickySessionConfig = new Builder()
     .enabled(enabled)
     .timeout(timeout.toMillis.toInt, MILLISECONDS)
     .build()
@@ -38,7 +39,7 @@ object StickySessionConfigDefaults {
 }
 
 object StickySessionConfig {
-  def fromJava(from: com.hotels.styx.client.stickysession.StickySessionConfig): StickySessionConfig =
+  def fromJava(from: spi.StickySessionConfig): StickySessionConfig =
     StickySessionConfig(
       enabled = from.stickySessionEnabled(),
       timeout = Duration(from.stickySessionTimeoutSeconds(), TimeUnit.SECONDS)

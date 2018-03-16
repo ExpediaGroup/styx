@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package com.hotels.styx.client.connectionpool;
 
 import com.hotels.styx.api.Id;
-import com.hotels.styx.client.healthcheck.HealthCheckConfig;
+import com.hotels.styx.api.service.spi.HealthCheckConfig;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
 import com.hotels.styx.client.healthcheck.monitors.AnomalyExcludingOriginHealthStatusMonitor;
@@ -24,7 +24,7 @@ import com.hotels.styx.client.healthcheck.monitors.NoOriginHealthStatusMonitor;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.Id.GENERIC_APP;
-import static com.hotels.styx.client.healthcheck.HealthCheckConfig.newHealthCheckConfigBuilder;
+import static com.hotels.styx.api.service.spi.HealthCheckConfig.newHealthCheckConfigBuilder;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;

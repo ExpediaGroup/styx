@@ -20,13 +20,13 @@ import java.util.concurrent.CompletableFuture.completedFuture
 
 import com.hotels.styx.Environment
 import com.hotels.styx.api.client.Origin.newOriginBuilder
+import com.hotels.styx.api.service.spi.{BackendService, Registry}
 import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse}
 import com.hotels.styx.client.{OriginStatsFactory, OriginsInventory}
-import com.hotels.styx.client.applications.BackendService
-import com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded
-import com.hotels.styx.infrastructure.Registry.{Changes, ReloadResult}
+import com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded
+import com.hotels.styx.api.service.spi.Registry.{Changes, ReloadResult}
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
-import com.hotels.styx.infrastructure.{AbstractRegistry, Registry}
+import com.hotels.styx.infrastructure.AbstractRegistry
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.config.RouteHandlerDefinition
 import io.netty.handler.codec.http.HttpResponseStatus

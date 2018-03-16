@@ -15,6 +15,9 @@
  */
 package com.hotels.styx.api.client.loadbalancing.spi;
 
+/**
+ * Provides load balancing metric for the load balanced hosts.
+ */
 public interface LoadBalancingMetricSupplier {
     LoadBalancingMetric loadBalancingMetric();
 }

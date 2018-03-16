@@ -19,8 +19,9 @@ import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.client.applications.BackendService;
-import com.hotels.styx.infrastructure.Registry.ReloadResult;
+import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.service.spi.BackendService;
+import com.hotels.styx.api.service.spi.Registry.ReloadResult;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -31,8 +32,8 @@ import java.util.function.Supplier;
 
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.common.StyxFutures.await;
-import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
-import static com.hotels.styx.infrastructure.Registry.ReloadResult.unchanged;
+import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
+import static com.hotels.styx.api.service.spi.Registry.ReloadResult.unchanged;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;

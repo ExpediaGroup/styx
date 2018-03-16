@@ -23,7 +23,7 @@ import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.HttpRequestOperationFactory;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
-import com.hotels.styx.client.ssl.TlsSettings;
+import com.hotels.styx.api.service.spi.TlsSettings;
 import rx.Observable;
 
 import java.util.function.Function;

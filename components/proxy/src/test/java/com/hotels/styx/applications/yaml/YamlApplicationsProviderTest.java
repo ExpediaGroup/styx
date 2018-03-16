@@ -16,11 +16,11 @@
 package com.hotels.styx.applications.yaml;
 
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.client.RewriteConfig;
+import com.hotels.styx.api.service.spi.BackendService;
+import com.hotels.styx.api.service.spi.RewriteConfig;
+import com.hotels.styx.api.service.spi.TlsSettings;
 import com.hotels.styx.client.applications.ApplicationsProvider;
-import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.applications.BackendServices;
-import com.hotels.styx.client.ssl.TlsSettings;
 import org.hamcrest.CoreMatchers;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -33,13 +33,13 @@ import java.util.stream.StreamSupport;
 
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.service.spi.BackendService.Protocol.HTTP;
+import static com.hotels.styx.api.service.spi.BackendService.Protocol.HTTPS;
+import static com.hotels.styx.api.service.spi.Certificate.certificate;
+import static com.hotels.styx.api.service.spi.HealthCheckConfig.newHealthCheckConfigBuilder;
+import static com.hotels.styx.api.service.spi.StickySessionConfig.newStickySessionConfigBuilder;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadApplicationsFrom;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadFromPath;
-import static com.hotels.styx.client.applications.BackendService.Protocol.HTTP;
-import static com.hotels.styx.client.applications.BackendService.Protocol.HTTPS;
-import static com.hotels.styx.client.healthcheck.HealthCheckConfig.newHealthCheckConfigBuilder;
-import static com.hotels.styx.client.ssl.Certificate.certificate;
-import static com.hotels.styx.client.stickysession.StickySessionConfig.newStickySessionConfigBuilder;
 import static com.hotels.styx.support.ApplicationConfigurationMatcher.anApplication;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

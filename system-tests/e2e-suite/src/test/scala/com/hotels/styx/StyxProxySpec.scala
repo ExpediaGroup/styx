@@ -17,6 +17,7 @@ package com.hotels.styx
 
 import java.nio.file.Paths
 
+import com.hotels.styx.api.service.spi.BackendService
 import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.plugins.PluginPipelineSpec
 import com.hotels.styx.support.configuration.{ImplicitOriginConversions, StyxBackend, StyxBaseConfig}
@@ -34,7 +35,7 @@ trait StyxProxySpec extends StyxClientSupplier
   with SSLSetup {
   this: Suite =>
 
-  var backendsRegistry = new MemoryBackedRegistry[com.hotels.styx.client.applications.BackendService]
+  var backendsRegistry = new MemoryBackedRegistry[BackendService]
   var styxServer: StyxServer = _
 
   implicit class StyxServerOperations(val styxServer: StyxServer) extends StyxServerSupplements

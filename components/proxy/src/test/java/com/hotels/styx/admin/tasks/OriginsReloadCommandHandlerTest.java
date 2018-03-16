@@ -17,9 +17,9 @@ package com.hotels.styx.admin.tasks;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.hotels.styx.api.messages.FullHttpResponse;
-import com.hotels.styx.client.applications.BackendService;
-import com.hotels.styx.infrastructure.Registry;
-import com.hotels.styx.infrastructure.Registry.ReloadResult;
+import com.hotels.styx.api.service.spi.BackendService;
+import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.service.spi.Registry.ReloadResult;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -29,8 +29,8 @@ import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
-import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
-import static com.hotels.styx.infrastructure.Registry.ReloadResult.unchanged;
+import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
+import static com.hotels.styx.api.service.spi.Registry.ReloadResult.unchanged;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.nio.charset.StandardCharsets.UTF_8;

@@ -21,7 +21,8 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.messages.HttpResponseStatus._
-import com.hotels.styx.infrastructure.{RegistryServiceAdapter, MemoryBackedRegistry}
+import com.hotels.styx.api.service.spi
+import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
@@ -38,8 +39,8 @@ class ConditionRoutingSpec extends FunSpec
   with BackendServicesRegistrySupplier {
 
   val logback = fixturesHome(this.getClass, "/conf/logback/logback-debug-stdout.xml")
-  val httpBackendRegistry = new MemoryBackedRegistry[com.hotels.styx.client.applications.BackendService]()
-  val httpsBackendRegistry = new MemoryBackedRegistry[com.hotels.styx.client.applications.BackendService]()
+  val httpBackendRegistry = new MemoryBackedRegistry[spi.BackendService]()
+  val httpsBackendRegistry = new MemoryBackedRegistry[spi.BackendService]()
   val crtFile = fixturesHome(this.getClass, "/ssl/testCredentials.crt").toString
   val keyFile = fixturesHome(this.getClass, "/ssl/testCredentials.key").toString
 

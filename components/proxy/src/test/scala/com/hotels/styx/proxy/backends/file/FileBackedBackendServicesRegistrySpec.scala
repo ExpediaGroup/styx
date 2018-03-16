@@ -23,14 +23,11 @@ import java.util.concurrent.TimeUnit.{MILLISECONDS, SECONDS}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.hotels.styx.api.client.Origin
-import com.hotels.styx.client.applications.BackendService
+import com.hotels.styx.api.service.spi.{BackendService, ConnectionPoolSettings, Registry, StickySessionConfig}
 import com.hotels.styx.client.applications.BackendServices.newBackendServices
-import com.hotels.styx.client.connectionpool.ConnectionPoolSettings
-import com.hotels.styx.client.healthcheck.HealthCheckConfig.newHealthCheckConfigBuilder
-import com.hotels.styx.client.stickysession.StickySessionConfig
+import com.hotels.styx.api.service.spi.HealthCheckConfig.newHealthCheckConfigBuilder
 import com.hotels.styx.common.StyxFutures
-import com.hotels.styx.infrastructure.Registry
-import com.hotels.styx.infrastructure.Registry.Changes
+import com.hotels.styx.api.service.spi.Registry.Changes
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
 import org.mockito.Mockito.{mock, times, verify}
@@ -38,6 +35,7 @@ import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.slf4j.LoggerFactory
+
 import scala.collection.JavaConverters._
 
 

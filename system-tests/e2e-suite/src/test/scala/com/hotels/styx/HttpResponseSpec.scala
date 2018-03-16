@@ -21,6 +21,7 @@ import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.client.ActiveOrigins
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.messages.HttpResponseStatus._
+import com.hotels.styx.api.service.spi
 import com.hotels.styx.client.StyxHttpClient._
 import com.hotels.styx.client.loadbalancing.strategies.{BusyConnectionsStrategy, RoundRobinStrategy}
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
@@ -70,7 +71,7 @@ class HttpResponseSpec extends FunSuite
       .build
   }
 
-  def activeOrigins(backendService: com.hotels.styx.client.applications.BackendService): ActiveOrigins = OriginsInventory.newOriginsInventoryBuilder(backendService).build()
+  def activeOrigins(backendService: spi.BackendService): ActiveOrigins = OriginsInventory.newOriginsInventoryBuilder(backendService).build()
 
   def busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new BusyConnectionsStrategy(activeOrigins)
 

@@ -18,11 +18,11 @@ package com.hotels.styx.client.connectionpool;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.metrics.MetricRegistry;
-import com.hotels.styx.client.applications.BackendService;
+import com.hotels.styx.api.service.spi.BackendService;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
-import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.defaultConnectionPoolSettings;
+import static com.hotels.styx.api.service.spi.ConnectionPoolSettings.defaultConnectionPoolSettings;
 
 /**
  * Helper routines for building connection pools with default settings.

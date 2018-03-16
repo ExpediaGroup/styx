@@ -20,6 +20,7 @@ import com.google.common.collect.MapDifference;
 import com.hotels.styx.api.Announcer;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
+import com.hotels.styx.api.service.spi.Registry;
 import org.slf4j.Logger;
 
 import java.util.Map;

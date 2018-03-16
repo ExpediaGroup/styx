@@ -21,6 +21,7 @@ import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.netty.exceptions.TransportException;
+import com.hotels.styx.api.service.spi.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory.StubConnection;
 import org.testng.annotations.BeforeMethod;
