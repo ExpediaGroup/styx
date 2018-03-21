@@ -34,7 +34,6 @@ import java.util.concurrent.ExecutorService;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_IMPLEMENTED;

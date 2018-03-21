@@ -25,9 +25,9 @@ import org.slf4j.Logger;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.Lists.newArrayListWithExpectedSize;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -67,35 +67,29 @@ public class PluginSuppliers {
     }
 
     private Iterable<NamedPlugin> activePlugins(PluginsMetadata pluginsMetadata) {
-        List<SpiExtension> spiExtensionList = pluginsMetadata.activePlugins();
+        List<NamedPlugin> plugins = pluginsMetadata.activePlugins()
+                .stream()
+                .map(this::loadPlugin)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
 
-        List<NamedPlugin> plugins = plugins(spiExtensionList);
-
-        if (spiExtensionList.size() > plugins.size()) {
-            throw new RuntimeException(format("%s plugins could not be loaded", spiExtensionList.size() - plugins.size()));
+        if (pluginsMetadata.activePlugins().size() > plugins.size()) {
+            throw new RuntimeException(format("%s plugins could not be loaded", pluginsMetadata.activePlugins().size() - plugins.size()));
         }
 
         return plugins;
     }
 
-    private List<NamedPlugin> plugins(List<SpiExtension> spiExtensionList) {
-        List<NamedPlugin> plugins = newArrayListWithExpectedSize(spiExtensionList.size());
-
-        for (SpiExtension spiExtension : spiExtensionList) {
-            try {
-                plugins.add(loadPlugin(spiExtension));
-            } catch (Throwable e) {
-                LOG.error(format("Could not load plugin %s: %s", spiExtension.name(), ObjectFactories.newPluginFactory(spiExtension).getClass().getName()), e);
-            }
+    private Optional<NamedPlugin> loadPlugin(SpiExtension spiExtension) {
+        try {
+            PluginFactory factory = pluginFactoryLoader.load(spiExtension);
+            Plugin plugin = factory.create(new PluginEnvironment(environment, spiExtension, DEFAULT_PLUGINS_METRICS_SCOPE));
+            return Optional.of(namedPlugin(spiExtension.name(), plugin));
+        } catch (Throwable e) {
+            LOG.error(format("Could not load plugin %s: %s", spiExtension.name(), ObjectFactories.newPluginFactory(spiExtension).getClass().getName()), e);
+            return Optional.empty();
         }
-
-        return plugins;
-    }
-
-    private NamedPlugin loadPlugin(SpiExtension spiExtension) {
-        PluginFactory factory = pluginFactoryLoader.load(spiExtension);
-        Plugin plugin = factory.create(new PluginEnvironment(environment, spiExtension, DEFAULT_PLUGINS_METRICS_SCOPE));
-        return namedPlugin(spiExtension.name(), plugin);
     }
 
 }
