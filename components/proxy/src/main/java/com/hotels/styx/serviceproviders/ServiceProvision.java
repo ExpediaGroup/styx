@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.client.ActiveOrigins;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancerFactory;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.configuration.ServiceFactory;
@@ -59,25 +60,14 @@ public final class ServiceProvision {
                                                    Class<? extends E> serviceClass, ActiveOrigins activeOrigins) {
         return configuration
                 .get(key, ServiceFactoryConfig.class)
-                .map(factoryConfig -> loadService(factoryConfig, environment, serviceClass, activeOrigins));
-    }
-
-    /**
-     * Creates the service.
-     *
-     * @param environment       environment
-     * @param serviceSuperclass class that the service must extend
-     * @param activeOrigins  originsInventory instance
-     * @param <T>               service type
-     * @return service
-     */
-    private static <T> T loadService(ServiceFactoryConfig factoryConfig, Environment environment, Class<T> serviceSuperclass, ActiveOrigins activeOrigins) {
-        try {
-            ServiceFactory factory = newInstance(factoryConfig.factory(), ServiceFactory.class);
-            return serviceSuperclass.cast(factory.create(environment, factoryConfig.config(), activeOrigins));
-        } catch (Exception e) {
-            throw new ConfigurationException("Error creating service", e);
-        }
+                .map(factoryConfig -> {
+                    try {
+                        LoadBalancerFactory factory = newInstance(factoryConfig.factory(), LoadBalancerFactory.class);
+                        return serviceClass.cast(factory.create(environment, factoryConfig.config(), activeOrigins));
+                    } catch (Exception e) {
+                        throw new ConfigurationException("Error creating service", e);
+                    }
+                });
     }
 
     /**
