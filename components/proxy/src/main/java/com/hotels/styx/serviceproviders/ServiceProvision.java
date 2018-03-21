@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancerFactory;
+import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicyFactory;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.configuration.ServiceFactory;
@@ -80,11 +81,16 @@ public final class ServiceProvision {
      * @param serviceClass  Service class
      * @return service, if such a configuration key exists
      */
-    public static <E> Optional<E> loadService(Configuration configuration, Environment environment, String key,
-                                              Class<? extends E> serviceClass) {
+    public static <E> Optional<E> loadRetryPolicy(Configuration configuration, Environment environment, String key,
+                                                  Class<? extends E> serviceClass) {
         return configuration
                 .get(key, ServiceFactoryConfig.class)
-                .map(factoryConfig -> loadServiceFactory(factoryConfig, environment, serviceClass));
+                .map(factoryConfig -> {
+                    RetryPolicyFactory factory = newInstance(factoryConfig.factory(), RetryPolicyFactory.class);
+                    JsonNodeConfig config = factoryConfig.config();
+
+                    return serviceClass.cast(factory.create(environment, config));
+                });
     }
 
     /**

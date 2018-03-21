@@ -19,19 +19,22 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.AggregatedConfiguration;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.client.RemoteHost;
+import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicyFactory;
+import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.service.spi.AbstractStyxService;
 import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.support.api.SimpleEnvironment;
-import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.configuration.ServiceFactory;
 import org.testng.annotations.Test;
 
 import java.util.Map;
+import java.util.Optional;
 
-import static com.hotels.styx.serviceproviders.ServiceProvision.loadService;
+import static com.hotels.styx.serviceproviders.ServiceProvision.loadRetryPolicy;
 import static com.hotels.styx.serviceproviders.ServiceProvision.loadServices;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
-import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
 import static java.util.Collections.emptyMap;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -44,6 +47,12 @@ public class ServiceProvisionTest {
             "  factory:\n" +
             "    enabled: true\n" +
             "    class: " + MyFactory.class.getName() + "\n" +
+            "    config:\n" +
+            "      stringValue: expectedValue\n" +
+            "myRetry:\n" +
+            "  factory:\n" +
+            "    enabled: true\n" +
+            "    class: " + MyRetryFactory.class.getName() + "\n" +
             "    config:\n" +
             "      stringValue: expectedValue\n" +
             "not:\n" +
@@ -138,12 +147,12 @@ public class ServiceProvisionTest {
 
     @Test
     public void serviceReturnsCorrectlyFromCall() {
-        assertThat(loadService(environment.configuration(), environment, "my.factory", String.class), isValue("expectedValue"));
+        assertThat(loadRetryPolicy(environment.configuration(), environment, "myRetry.factory", RetryPolicy.class).get(), is(instanceOf(RetryPolicy.class)));
     }
 
     @Test
     public void serviceReturnsEmptyWhenFactoryKeyDoesNotExist() {
-        assertThat(loadService(environment.configuration(), environment, "invalid.key", String.class), isAbsent());
+        assertThat(loadRetryPolicy(environment.configuration(), environment, "invalid.key", String.class), isAbsent());
     }
 
     @Test
@@ -203,7 +212,29 @@ public class ServiceProvisionTest {
 
     @Test(expectedExceptions = Exception.class, expectedExceptionsMessageRegExp = "(?s).*No such class 'my.FakeClass'.*")
     public void throwsExceptionWhenClassDoesNotExist() {
-        loadService(environment.configuration(), environment, "not.real", String.class);
+        loadRetryPolicy(environment.configuration(), environment, "not.real", String.class);
+    }
+
+    public static class MyRetryFactory implements RetryPolicyFactory {
+        @Override
+        public RetryPolicy create(Environment environment, Configuration serviceConfiguration) {
+            return (context, loadBalancer, lbContext) -> new RetryPolicy.Outcome() {
+                @Override
+                public long retryIntervalMillis() {
+                    return 0;
+                }
+
+                @Override
+                public Optional<RemoteHost> nextOrigin() {
+                    return Optional.empty();
+                }
+
+                @Override
+                public boolean shouldRetry() {
+                    return false;
+                }
+            };
+        }
     }
 
     public static class MyFactory implements ServiceFactory<String> {
