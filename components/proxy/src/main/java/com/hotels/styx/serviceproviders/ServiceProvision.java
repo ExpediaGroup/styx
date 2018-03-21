@@ -26,6 +26,7 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
+import com.hotels.styx.proxy.plugin.ObjectFactories;
 import com.hotels.styx.spi.config.ServiceFactoryConfig;
 import com.hotels.styx.spi.config.SpiExtension;
 
@@ -141,10 +142,10 @@ public final class ServiceProvision {
     }
 
     private static <T> T loadSpiExtension(SpiExtension factoryConfig, Environment environment, Class<T> serviceSuperclass) {
-            ServiceFactory factory = newInstance(factoryConfig.factory().factoryClass(), ServiceFactory.class);
-            JsonNodeConfig config = new JsonNodeConfig(factoryConfig.config());
+        ServiceFactory factory = ObjectFactories.newServiceFactory(factoryConfig);
+        JsonNodeConfig config = new JsonNodeConfig(factoryConfig.config());
 
-            return serviceSuperclass.cast(factory.create(environment, config));
+        return serviceSuperclass.cast(factory.create(environment, config));
     }
 
     private static <T> T loadServiceFactory(ServiceFactoryConfig serviceFactoryConfig, Environment environment, Class<T> serviceSuperclass) {

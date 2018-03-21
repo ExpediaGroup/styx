@@ -17,6 +17,7 @@ package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.configuration.ConfigurationException;
+import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.io.FileResource;
 import com.hotels.styx.api.io.FileResourceIndex;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
@@ -56,6 +57,14 @@ public final class ObjectFactories {
         Optional<PluginFactory> factory = ObjectFactories.newInstance(extensionConfig.factory(), PluginFactory.class);
         if (!factory.isPresent()) {
             throw new ConfigurationException(format("Could not load a plugin factory for configuration=%s", extensionConfig));
+        }
+        return factory.get();
+    }
+
+    public static ServiceFactory newServiceFactory(SpiExtension extensionConfig) {
+        Optional<ServiceFactory> factory = ObjectFactories.newInstance(extensionConfig.factory(), ServiceFactory.class);
+        if (!factory.isPresent()) {
+            throw new ConfigurationException(format("Could not load a service factory for configuration=%s", extensionConfig));
         }
         return factory.get();
     }

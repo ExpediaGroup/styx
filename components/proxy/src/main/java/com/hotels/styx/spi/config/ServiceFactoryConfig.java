@@ -29,13 +29,11 @@ public class ServiceFactoryConfig {
     private final boolean enabled;
     private final String factory;
     private final JsonNodeConfig config;
-    private final String info;
 
     ServiceFactoryConfig(@JsonProperty("enabled") Boolean enabled,
                          @JsonProperty("class") String factory,
                          @JsonProperty("config") JsonNode config) {
         this.enabled = enabled == null ? true : enabled;
-        this.info = "factory=" + factory + ", config=" + config;
         this.factory = requireNonNull(factory);
         this.config = new JsonNodeConfig(config);
     }
