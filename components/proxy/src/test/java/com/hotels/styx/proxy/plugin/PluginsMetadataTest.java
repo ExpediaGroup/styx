@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.common.Pair;
 import com.hotels.styx.spi.config.SpiExtensionFactory;
 import com.hotels.styx.spi.config.SpiExtension;
 import org.testng.annotations.Test;
@@ -49,7 +50,7 @@ public class PluginsMetadataTest {
         PluginsMetadata pluginsMetadata = new PluginsMetadata("one,two,three,four", plugins);
 
         List<String> activePlugins = pluginsMetadata.activePlugins().stream()
-                .map(SpiExtension::name)
+                .map(Pair::key)
                 .collect(toList());
 
         assertThat(activePlugins, contains("one", "two", "three", "four"));

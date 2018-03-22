@@ -20,7 +20,6 @@ import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.io.FileResource;
 import com.hotels.styx.api.io.FileResourceIndex;
-import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.spi.config.SpiExtension;
 import com.hotels.styx.spi.config.SpiExtensionFactory;
 import org.slf4j.Logger;
@@ -37,8 +36,8 @@ import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
-import static org.slf4j.LoggerFactory.getLogger;
 import static java.util.stream.StreamSupport.stream;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Loads a plugin from SpiExtensionFactory object.
@@ -49,24 +48,16 @@ public final class ObjectFactories {
     private ObjectFactories() {
     }
 
-    public static <T> Optional<T> newInstance(SpiExtensionFactory classAndPath, Class<T> type) {
-        return newInstance(type, classAndPath.factoryClass(), factoryClassPath(classAndPath.classPath()));
-    }
-
-    public static PluginFactory newPluginFactory(SpiExtension extensionConfig) {
-        Optional<PluginFactory> factory = ObjectFactories.newInstance(extensionConfig.factory(), PluginFactory.class);
-        if (!factory.isPresent()) {
-            throw new ConfigurationException(format("Could not load a plugin factory for configuration=%s", extensionConfig));
-        }
-        return factory.get();
-    }
-
     public static ServiceFactory newServiceFactory(SpiExtension extensionConfig) {
         Optional<ServiceFactory> factory = ObjectFactories.newInstance(extensionConfig.factory(), ServiceFactory.class);
         if (!factory.isPresent()) {
             throw new ConfigurationException(format("Could not load a service factory for configuration=%s", extensionConfig));
         }
         return factory.get();
+    }
+
+    public static <T> Optional<T> newInstance(SpiExtensionFactory classAndPath, Class<T> type) {
+        return newInstance(type, classAndPath.factoryClass(), factoryClassPath(classAndPath.classPath()));
     }
 
     private static Optional<Path> factoryClassPath(String classPath) {
@@ -118,7 +109,7 @@ public final class ObjectFactories {
     }
 
     private static Iterable<Resource> readJarResources(Path path) {
-        return singleton((Resource) new FileResource(path.toFile()));
+        return singleton(new FileResource(path.toFile()));
     }
 
     private static Iterable<Resource> readFileResources(Path path) {

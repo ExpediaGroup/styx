@@ -36,25 +36,17 @@ import static java.util.Objects.requireNonNull;
 public class SpiExtension {
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory()).configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    private final String name;
     private final SpiExtensionFactory factory;
     private final JsonNode config;
-    private boolean enabled;
+    private final boolean enabled;
 
     @JsonCreator
     public SpiExtension(@JsonProperty("factory") SpiExtensionFactory factory,
                         @JsonProperty("config") JsonNode config,
                         @JsonProperty("enabled") Boolean enabled) {
-        this.name = null;
         this.factory = requireNonNull(factory, "Factory attribute missing");
         this.config = requireNonNull(config, "Config attribute missing");
         this.enabled = enabled == null;
-    }
-
-    public SpiExtension(String name, SpiExtensionFactory factory, JsonNode config) {
-        this.name = name;
-        this.factory = factory;
-        this.config = config;
     }
 
     public SpiExtensionFactory factory() {
@@ -69,10 +61,6 @@ public class SpiExtension {
         return enabled;
     }
 
-    public String name() {
-        return name;
-    }
-
     public <T> T config(Class<T> configClass) {
         JsonParser parser = config.traverse();
 
@@ -83,13 +71,9 @@ public class SpiExtension {
         }
     }
 
-    public SpiExtension attachName(String name) {
-        return new SpiExtension(name, factory, config);
-    }
-
     @Override
     public int hashCode() {
-        return Objects.hashCode(name, factory);
+        return Objects.hashCode(factory);
     }
 
     @Override
@@ -101,14 +85,12 @@ public class SpiExtension {
             return false;
         }
         SpiExtension other = (SpiExtension) obj;
-        return Objects.equal(this.name, other.name)
-                && Objects.equal(this.factory, other.factory);
+        return Objects.equal(this.factory, other.factory);
     }
 
     @Override
     public String toString() {
         return toStringHelper(this)
-                .add("name", name)
                 .add("factory", factory)
                 .toString();
     }

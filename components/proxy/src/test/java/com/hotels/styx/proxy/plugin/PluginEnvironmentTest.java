@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.proxy.plugin;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.IntNode;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
@@ -33,6 +35,7 @@ public class PluginEnvironmentTest {
 
     private MetricRegistry styxMetrics;
     private Environment styxEnvironment;
+    private JsonNode config = new IntNode(5);
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -66,13 +69,13 @@ public class PluginEnvironmentTest {
 
 
     private PluginEnvironment pluginEnvironment(String pluginName, String styxScope) {
-        return new PluginEnvironment(styxEnvironment, pluginMetadata(pluginName), styxScope);
+        return new PluginEnvironment(pluginName, styxEnvironment, pluginMetadata(pluginName), styxScope);
     }
 
-    private static SpiExtension pluginMetadata(String pluginName) {
+    private SpiExtension pluginMetadata(String pluginName) {
         SpiExtensionFactory factory = new SpiExtensionFactory("PluginXFactory", "/path");
 
-        return new SpiExtension(pluginName, factory, null);
+        return new SpiExtension(factory, config, null);
     }
 
 }

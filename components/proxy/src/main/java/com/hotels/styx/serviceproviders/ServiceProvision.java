@@ -25,6 +25,7 @@ import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicyFactory;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.configuration.ServiceFactory;
+import com.hotels.styx.common.Pair;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.ObjectFactories;
 import com.hotels.styx.spi.config.ServiceFactoryConfig;
@@ -35,7 +36,7 @@ import java.util.Optional;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.proxy.ClassFactories.newInstance;
-import static com.hotels.styx.serviceproviders.ServiceProvision.Pair.pair;
+import static com.hotels.styx.common.Pair.pair;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
@@ -153,28 +154,6 @@ public final class ServiceProvision {
         JsonNodeConfig config = serviceFactoryConfig.config();
 
         return serviceSuperclass.cast(factory.create(environment, config));
-    }
-
-    static class Pair<K, V> {
-        private final K key;
-        private final V value;
-
-        private Pair(K key, V value) {
-            this.key = requireNonNull(key);
-            this.value = requireNonNull(value);
-        }
-
-        public static <K, V> Pair<K, V> pair(K key, V value) {
-            return new Pair<>(key, value);
-        }
-
-        K key() {
-            return key;
-        }
-
-        V value() {
-            return value;
-        }
     }
 
 }

@@ -30,10 +30,10 @@ class PluginEnvironment implements PluginFactory.Environment {
     private final SpiExtension spiExtension;
     private final MetricRegistry pluginMetricsScope;
 
-    PluginEnvironment(Environment environment, SpiExtension spiExtension, String scope) {
+    PluginEnvironment(String name, Environment environment, SpiExtension spiExtension, String scope) {
         this.spiExtension = requireNonNull(spiExtension);
         this.environment = requireNonNull(environment);
-        this.pluginMetricsScope = environment.metricRegistry().scope(name(scope, spiExtension.name()));
+        this.pluginMetricsScope = environment.metricRegistry().scope(name(scope, name));
     }
 
     @Override

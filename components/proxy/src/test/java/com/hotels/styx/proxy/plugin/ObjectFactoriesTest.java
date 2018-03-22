@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.infrastructure.configuration;
+package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.spi.config.SpiExtensionFactory;

@@ -17,17 +17,19 @@ package com.hotels.styx.proxy.plugin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Splitter;
+import com.hotels.styx.common.Pair;
 import com.hotels.styx.spi.config.SpiExtension;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hotels.styx.common.Pair.pair;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 
 class PluginsMetadata implements Iterable<SpiExtension> {
     private static final Splitter SPLITTER = Splitter.on(",")
@@ -35,7 +37,6 @@ class PluginsMetadata implements Iterable<SpiExtension> {
             .trimResults();
     private final List<String> activePluginsNames;
     private final Map<String, SpiExtension> plugins;
-    private final List<SpiExtension> activePlugins;
 
     PluginsMetadata(@JsonProperty("active") String active,
                     @JsonProperty("all") Map<String, SpiExtension> plugins) {
@@ -52,20 +53,12 @@ class PluginsMetadata implements Iterable<SpiExtension> {
 
         activePluginsNames.forEach(name ->
                 checkArgument(plugins.containsKey(name), "No such plugin '%s' in %s", name, plugins));
-
-        this.activePlugins = activePluginsNames.stream()
-                .map(this::pluginMetadata)
-                .collect(toList());
     }
 
-    public List<SpiExtension> activePlugins() {
-        return activePlugins;
-    }
-
-    private SpiExtension pluginMetadata(String name) {
-        SpiExtension metadata = plugins.get(name);
-
-        return metadata.attachName(name);
+    public List<Pair<String, SpiExtension>> activePlugins() {
+        return activePluginsNames.stream()
+                .map(name -> pair(name, plugins.get(name)))
+                .collect(Collectors.toList());
     }
 
     @Override

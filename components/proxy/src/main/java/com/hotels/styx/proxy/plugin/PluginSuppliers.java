@@ -19,6 +19,7 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.common.Pair;
 import com.hotels.styx.spi.config.SpiExtension;
 import org.slf4j.Logger;
 
@@ -81,13 +82,16 @@ public class PluginSuppliers {
         return plugins;
     }
 
-    private Optional<NamedPlugin> loadPlugin(SpiExtension spiExtension) {
+    private Optional<NamedPlugin> loadPlugin(Pair<String, SpiExtension> pair) {
+        String pluginName = pair.key();
+        SpiExtension spiExtension = pair.value();
+
         try {
             PluginFactory factory = pluginFactoryLoader.load(spiExtension);
-            Plugin plugin = factory.create(new PluginEnvironment(environment, spiExtension, DEFAULT_PLUGINS_METRICS_SCOPE));
-            return Optional.of(namedPlugin(spiExtension.name(), plugin));
+            Plugin plugin = factory.create(new PluginEnvironment(pluginName, environment, spiExtension, DEFAULT_PLUGINS_METRICS_SCOPE));
+            return Optional.of(namedPlugin(pluginName, plugin));
         } catch (Throwable e) {
-            LOG.error(format("Could not load plugin %s: %s", spiExtension.name(), ObjectFactories.newPluginFactory(spiExtension).getClass().getName()), e);
+            LOG.error(format("Could not load plugin %s: %s", pluginName, spiExtension.factory().factoryClass()), e);
             return Optional.empty();
         }
     }
