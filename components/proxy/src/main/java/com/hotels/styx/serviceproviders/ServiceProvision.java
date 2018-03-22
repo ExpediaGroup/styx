@@ -30,6 +30,8 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.spi.ObjectFactories;
 import com.hotels.styx.spi.config.ServiceFactoryConfig;
 import com.hotels.styx.spi.config.SpiExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Optional;
@@ -47,6 +49,8 @@ import static java.util.stream.Collectors.toMap;
 public final class ServiceProvision {
     private ServiceProvision() {
     }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServiceProvision.class);
 
     /**
      * Create a {@link com.hotels.styx.client.StyxHttpClient} related factory configured with a particular key,
@@ -117,24 +121,39 @@ public final class ServiceProvision {
         return newArrayList(factories.fieldNames())
                 .stream()
                 .flatMap(name -> {
-                    try {
+                    if (isType(name, jsonNodeConfig, SpiExtension.class)) {
+                        LOGGER.info("Spi Extension type");
                         return jsonNodeConfig.get(name, SpiExtension.class)
                                 .filter(SpiExtension::enabled)
                                 .map(extension -> loadSpiExtension(extension, environment, serviceClass))
                                 .map(service -> ImmutableList.of(pair(name, service)))
                                 .orElse(ImmutableList.of())
                                 .stream();
-                    } catch (Exception e) {
+                    } else if (isType(name, jsonNodeConfig, ServiceFactoryConfig.class)) {
+                        LOGGER.info("Service Factory Config type");
                         return jsonNodeConfig.get(name, ServiceFactoryConfig.class)
                                 .filter(ServiceFactoryConfig::enabled)
                                 .map(serviceFactoryConfig -> loadServiceFactory(serviceFactoryConfig, environment, serviceClass))
                                 .map(service -> ImmutableList.of(pair(name, service)))
                                 .orElse(ImmutableList.of())
                                 .stream();
+                    } else {
+                        String content = factories.get(name).toString();
+                        String message = format("Unexpected configuration object 'services.factories.%s', Configuration='%s'", name, content);
+                        throw new ConfigurationException(message);
                     }
                 })
                 .collect(toMap(Pair::key, Pair::value));
 
+    }
+
+    private static <T> boolean isType(String name, JsonNodeConfig jsonNodeConfig, Class<T> nodeType) {
+        try {
+            jsonNodeConfig.get(name, nodeType);
+            return true;
+        } catch (Throwable cause) {
+            return false;
+        }
     }
 
     private static <T> T loadSpiExtension(SpiExtension factoryConfig, Environment environment, Class<T> serviceSuperclass) {

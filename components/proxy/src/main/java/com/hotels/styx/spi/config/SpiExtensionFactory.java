@@ -32,7 +32,7 @@ public class SpiExtensionFactory {
     public SpiExtensionFactory(@JsonProperty("class") String factoryClass,
                                @JsonProperty("classPath") String classPath) {
         this.factoryClass = checkNotNull(factoryClass);
-        this.classPath = classPath;
+        this.classPath = checkNotNull(classPath);
     }
 
     public String factoryClass() {

@@ -23,17 +23,20 @@ import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicyFactory;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.service.spi.AbstractStyxService;
 import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.support.api.SimpleEnvironment;
 import org.testng.annotations.Test;
 
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 
 import static com.hotels.styx.serviceproviders.ServiceProvision.loadRetryPolicy;
 import static com.hotels.styx.serviceproviders.ServiceProvision.loadServices;
+import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
 import static java.util.Collections.emptyMap;
@@ -42,6 +45,8 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 public class ServiceProvisionTest {
+    Path FIXTURES_CLASS_PATH = fixturesHome(ServiceProvisionTest.class, "/plugins");
+
     private final String yaml = "" +
             "my:\n" +
             "  factory:\n" +
@@ -105,13 +110,17 @@ public class ServiceProvisionTest {
             "    backendProvider:\n" +
             "      factory:\n" +
             "        class: " + TestBackendServiceProviderFactory.class.getName() + "\n" +
-            "        config:\n" +
-            "          stringValue: valueNumber1\n" +
+            "        classPath: " + FIXTURES_CLASS_PATH.toString() + "\n" +
+            "      config:\n" +
+            "        stringValue: valueNumber1\n" +
             "    routingProvider:\n" +
             "      factory:\n" +
             "        class: " + TestRoutingObjectProviderFactory.class.getName() + "\n" +
-            "        config:\n" +
+            "        classPath: " + FIXTURES_CLASS_PATH.toString() + "\n" +
+            "      config:\n" +
             "          stringValue: valueNumber2\n";
+
+
 
     private final String yamlForMixedServiceFactories = "" +
             "multi:\n" +
@@ -124,8 +133,9 @@ public class ServiceProvisionTest {
             "    routingProvider:\n" +
             "      factory:\n" +
             "        class: " + TestRoutingObjectProviderFactory.class.getName() + "\n" +
-            "        config:\n" +
-            "          stringValue: valueNumber2\n";
+            "        classPath: " + FIXTURES_CLASS_PATH.toString() + "\n" +
+            "      config:\n" +
+            "        stringValue: valueNumber2\n";
 
     private final String mixedDisabledServices = "" +
             "multi:\n" +
@@ -139,8 +149,9 @@ public class ServiceProvisionTest {
             "      enabled: false\n" +
             "      factory:\n" +
             "        class: " + TestRoutingObjectProviderFactory.class.getName() + "\n" +
-            "        config:\n" +
-            "          stringValue: valueNumber2\n";
+            "        classPath: " + FIXTURES_CLASS_PATH.toString() + "\n" +
+            "      config:\n" +
+            "        stringValue: valueNumber2\n";
 
 
     private final Environment environment = environmentWithConfig(yaml);
@@ -213,6 +224,38 @@ public class ServiceProvisionTest {
     @Test(expectedExceptions = Exception.class, expectedExceptionsMessageRegExp = "(?s).*No such class 'my.FakeClass'.*")
     public void throwsExceptionWhenClassDoesNotExist() {
         loadRetryPolicy(environment.configuration(), environment, "not.real", String.class);
+    }
+
+    @Test(expectedExceptions = ConfigurationException.class,
+            expectedExceptionsMessageRegExp = "Unexpected configuration object 'services.factories.backendProvider', Configuration.*'")
+    public void informsAboutServiceFactoryConfig() {
+        String config = "" +
+                "multi:\n" +
+                "  factories:\n" +
+                "    backendProvider:\n" +
+                "      enabled: false\n" +
+                "      config:\n" +
+                "        stringValue: valueNumber1\n";
+
+        Environment env = environmentWithConfig(config);
+        loadServices(env.configuration(), env, "multi", StyxService.class);
+    }
+
+    @Test(expectedExceptions = ConfigurationException.class,
+            expectedExceptionsMessageRegExp = "Unexpected configuration object 'services.factories.backendProvider', Configuration.*'")
+    public void informsAboutSpiExtension() {
+        String config = "" +
+                "multi:\n" +
+                "  factories:\n" +
+                "    backendProvider:\n" +
+                "      enabled: false\n" +
+                "      factory:\n" +
+                "        classPath: /path/to/jar\n" +
+                "      config:\n" +
+                "         attribute: x\n";
+
+        Environment env = environmentWithConfig(config);
+        loadServices(env.configuration(), env, "multi", StyxService.class);
     }
 
     public static class MyRetryFactory implements RetryPolicyFactory {
