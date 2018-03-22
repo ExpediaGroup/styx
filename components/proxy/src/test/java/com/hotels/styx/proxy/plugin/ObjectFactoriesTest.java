@@ -22,7 +22,7 @@ import org.testng.annotations.Test;
 import java.nio.file.Path;
 import java.util.Optional;
 
-import static com.hotels.styx.proxy.plugin.ObjectFactories.newInstance;
+import static com.hotels.styx.spi.ObjectFactories.newInstance;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static org.hamcrest.CoreMatchers.is;

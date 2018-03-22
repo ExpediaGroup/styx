@@ -27,7 +27,7 @@ import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
-import com.hotels.styx.proxy.plugin.ObjectFactories;
+import com.hotels.styx.spi.ObjectFactories;
 import com.hotels.styx.spi.config.ServiceFactoryConfig;
 import com.hotels.styx.spi.config.SpiExtension;
 
@@ -35,10 +35,10 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static com.hotels.styx.proxy.ClassFactories.newInstance;
 import static com.hotels.styx.common.Pair.pair;
+import static com.hotels.styx.proxy.ClassFactories.newInstance;
+import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -111,11 +111,6 @@ public final class ServiceProvision {
     }
 
     private static <U> Map<String, U> servicesMap(JsonNode jsonNode, Environment environment, Class<? extends U> serviceClass) {
-//        Optional<JsonNode> factories = jsonNode.get("factories", JsonNode.class);
-//        if (!jsonNode.has("factories")) {
-//            throw new RuntimeException("Expecting a 'factories' keyword");
-//        }
-
         JsonNode factories = jsonNode.get("factories");
         JsonNodeConfig jsonNodeConfig = new JsonNodeConfig(factories);
 
@@ -143,7 +138,7 @@ public final class ServiceProvision {
     }
 
     private static <T> T loadSpiExtension(SpiExtension factoryConfig, Environment environment, Class<T> serviceSuperclass) {
-        ServiceFactory factory = ObjectFactories.newServiceFactory(factoryConfig);
+        ServiceFactory factory = newServiceFactory(factoryConfig);
         JsonNodeConfig config = new JsonNodeConfig(factoryConfig.config());
 
         return serviceSuperclass.cast(factory.create(environment, config));
@@ -156,4 +151,11 @@ public final class ServiceProvision {
         return serviceSuperclass.cast(factory.create(environment, config));
     }
 
+    private static ServiceFactory newServiceFactory(SpiExtension extensionConfig) {
+        Optional<ServiceFactory> factory = ObjectFactories.newInstance(extensionConfig.factory(), ServiceFactory.class);
+        if (!factory.isPresent()) {
+            throw new ConfigurationException(format("Could not load a service factory for configuration=%s", extensionConfig));
+        }
+        return factory.get();
+    }
 }

@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.proxy.plugin;
+package com.hotels.styx.spi;
 
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.configuration.ConfigurationException;
-import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.io.FileResource;
 import com.hotels.styx.api.io.FileResourceIndex;
-import com.hotels.styx.spi.config.SpiExtension;
 import com.hotels.styx.spi.config.SpiExtensionFactory;
 import org.slf4j.Logger;
 
@@ -33,7 +30,6 @@ import java.util.Optional;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.Lists.newArrayList;
-import static java.lang.String.format;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
@@ -46,14 +42,6 @@ public final class ObjectFactories {
     private static final Logger LOGGER = getLogger(ObjectFactories.class);
 
     private ObjectFactories() {
-    }
-
-    public static ServiceFactory newServiceFactory(SpiExtension extensionConfig) {
-        Optional<ServiceFactory> factory = ObjectFactories.newInstance(extensionConfig.factory(), ServiceFactory.class);
-        if (!factory.isPresent()) {
-            throw new ConfigurationException(format("Could not load a service factory for configuration=%s", extensionConfig));
-        }
-        return factory.get();
     }
 
     public static <T> Optional<T> newInstance(SpiExtensionFactory classAndPath, Class<T> type) {
