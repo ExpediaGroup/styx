@@ -17,7 +17,6 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
 import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.common.StateMachine;
 import io.netty.buffer.ByteBuf;
@@ -88,7 +87,7 @@ class FlowControllingHttpContentProducer {
                 .transition(BUFFERING, ContentChunkEvent.class, this::contentChunkEventWhileBuffering)
                 .transition(BUFFERING, ChannelInactiveEvent.class, this::releaseAndTerminate)
                 .transition(BUFFERING, ChannelExceptionEvent.class, this::releaseAndTerminate)
-                .transition(BUFFERING, ChannelIdleEvent.class, this::releaseAndTerminate)
+                .transition(BUFFERING, DelayedTearDownEvent.class, this::releaseAndTerminate)
                 .transition(BUFFERING, ContentSubscribedEvent.class, this::contentSubscribedEventWhileBuffering)
                 .transition(BUFFERING, ContentEndEvent.class, this::contentEndEventWhileBuffering)
 
@@ -96,7 +95,7 @@ class FlowControllingHttpContentProducer {
                 .transition(BUFFERING_COMPLETED, ContentChunkEvent.class, this::spuriousContentChunkEvent)
                 .transition(BUFFERING_COMPLETED, ChannelInactiveEvent.class, s -> BUFFERING_COMPLETED)
                 .transition(BUFFERING_COMPLETED, ChannelExceptionEvent.class, s -> BUFFERING_COMPLETED)
-                .transition(BUFFERING_COMPLETED, ChannelIdleEvent.class, this::releaseAndTerminate)
+                .transition(BUFFERING_COMPLETED, DelayedTearDownEvent.class, this::releaseAndTerminate)
                 .transition(BUFFERING_COMPLETED, ContentSubscribedEvent.class, this::contentSubscribedEventWhileBufferingCompleted)
                 .transition(BUFFERING_COMPLETED, ContentEndEvent.class, s -> BUFFERING_COMPLETED)
 
@@ -104,7 +103,7 @@ class FlowControllingHttpContentProducer {
                 .transition(STREAMING, ContentChunkEvent.class, this::contentChunkEventWhileStreaming)
                 .transition(STREAMING, ChannelInactiveEvent.class, e -> emitErrorAndTerminate(e.cause()))
                 .transition(STREAMING, ChannelExceptionEvent.class, e -> emitErrorAndTerminate(e.cause()))
-                .transition(STREAMING, ChannelIdleEvent.class, e -> emitErrorAndTerminate(new ResponseTimeoutException(origin)))
+                .transition(STREAMING, DelayedTearDownEvent.class, e -> emitErrorAndTerminate(e.cause()))
                 .transition(STREAMING, ContentSubscribedEvent.class, this::contentSubscribedEventWhileStreaming)
                 .transition(STREAMING, ContentEndEvent.class, this::contentEndEventWhileStreaming)
                 .transition(STREAMING, UnsubscribeEvent.class, this::emitErrorAndTerminateOnPrematureUnsubscription)
@@ -113,7 +112,7 @@ class FlowControllingHttpContentProducer {
                 .transition(EMITTING_BUFFERED_CONTENT, ContentChunkEvent.class, this::spuriousContentChunkEvent)
                 .transition(EMITTING_BUFFERED_CONTENT, ChannelInactiveEvent.class, s -> EMITTING_BUFFERED_CONTENT)
                 .transition(EMITTING_BUFFERED_CONTENT, ChannelExceptionEvent.class, s -> EMITTING_BUFFERED_CONTENT)
-                .transition(EMITTING_BUFFERED_CONTENT, ChannelIdleEvent.class, e -> emitErrorAndTerminate(e.cause()))
+                .transition(EMITTING_BUFFERED_CONTENT, DelayedTearDownEvent.class, e -> emitErrorAndTerminate(e.cause()))
                 .transition(EMITTING_BUFFERED_CONTENT, ContentSubscribedEvent.class, this::contentSubscribedEventWhileEmittingBufferedContent)
                 .transition(EMITTING_BUFFERED_CONTENT, ContentEndEvent.class, this::contentEndEventWhileEmittingBufferedContent)
                 .transition(EMITTING_BUFFERED_CONTENT, UnsubscribeEvent.class, this::emitErrorAndTerminateOnPrematureUnsubscription)
@@ -344,8 +343,8 @@ class FlowControllingHttpContentProducer {
         stateMachine.handle(new ChannelInactiveEvent(cause));
     }
 
-    void idleStateEvent(Throwable cause) {
-        stateMachine.handle(new ChannelIdleEvent(cause));
+    void tearDownResources(Throwable cause) {
+        stateMachine.handle(new DelayedTearDownEvent(cause));
     }
 
     void request(long n) {
@@ -522,10 +521,10 @@ class FlowControllingHttpContentProducer {
         }
     }
 
-    private static final class ChannelIdleEvent implements CausalEvent {
+    private static final class DelayedTearDownEvent implements CausalEvent {
         private final Throwable cause;
 
-        private ChannelIdleEvent(Throwable cause) {
+        private DelayedTearDownEvent(Throwable cause) {
             this.cause = cause;
         }
 

@@ -16,11 +16,10 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.client.netty.ConsumerDisconnectedException;
-import com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer;
-import com.hotels.styx.support.matchers.LoggingTestSupport;
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.netty.exceptions.TransportLostException;
+import com.hotels.styx.client.netty.ConsumerDisconnectedException;
+import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.AfterMethod;
@@ -35,17 +34,26 @@ import java.util.function.Consumer;
 import static ch.qos.logback.classic.Level.WARN;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.BUFFERING;
+import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.BUFFERING_COMPLETED;
+import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.COMPLETED;
+import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.EMITTING_BUFFERED_CONTENT;
+import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.STREAMING;
+import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.TERMINATED;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
-import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.*;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.util.Collections.emptyList;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
 
 public class FlowControllingHttpContentProducerTest {
     private static final Long NO_BACKPRESSURE = Long.MAX_VALUE;
@@ -260,7 +268,7 @@ public class FlowControllingHttpContentProducerTest {
         producer.newChunk(contentChunk1);
         producer.newChunk(contentChunk2);
 
-        producer.idleStateEvent(new ResponseTimeoutException(Origin.newOriginBuilder("localhost", 123).build()));
+        producer.tearDownResources(new ResponseTimeoutException(Origin.newOriginBuilder("localhost", 123).build()));
 
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
@@ -495,7 +503,7 @@ public class FlowControllingHttpContentProducerTest {
         producer.newChunk(contentChunk2);
         assertThat(producer.state(), is(STREAMING));
 
-        producer.idleStateEvent(new ResponseTimeoutException(Origin.newOriginBuilder("localhost", 123).build()));
+        producer.tearDownResources(new ResponseTimeoutException(Origin.newOriginBuilder("localhost", 123).build()));
 
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
@@ -504,7 +512,7 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(contentChunk2.refCnt(), is(0));
         assertException(getCause(downstream),
                 ResponseTimeoutException.class,
-                "No response from origin. origin=generic-app:anonymous-origin:foohost:12345.");
+                "No response from origin. origin=generic-app:anonymous-origin:localhost:123.");
     }
 
     @Test
@@ -609,7 +617,7 @@ public class FlowControllingHttpContentProducerTest {
         producer.lastHttpContent();
         assertThat(producer.state(), is(BUFFERING_COMPLETED));
 
-        producer.idleStateEvent(new ResponseTimeoutException(Origin.newOriginBuilder("localhost", 123).build()));
+        producer.tearDownResources(new ResponseTimeoutException(Origin.newOriginBuilder("localhost", 123).build()));
         producer.channelInactive(transportLostCause);
 
         assertThat(producer.state(), is(TERMINATED));
@@ -803,7 +811,7 @@ public class FlowControllingHttpContentProducerTest {
         producer.onSubscribed(downstream);
         assertThat(producer.state(), is(EMITTING_BUFFERED_CONTENT));
 
-        producer.idleStateEvent(new ResponseTimeoutException(Origin.newOriginBuilder("localhost", 123).build()));
+        producer.tearDownResources(new ResponseTimeoutException(Origin.newOriginBuilder("localhost", 123).build()));
 
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();

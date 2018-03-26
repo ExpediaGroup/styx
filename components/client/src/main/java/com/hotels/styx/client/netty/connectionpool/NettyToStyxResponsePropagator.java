@@ -120,20 +120,16 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         ensureContentProducerIsCreated(ctx);
 
+        TransportLostException cause = new TransportLostException(ctx.channel().remoteAddress(), origin);
+        scheduleResourcesTearDown(ctx, cause);
+        contentProducer.ifPresent(producer -> producer.channelInactive(cause));
+    }
+
+    private void scheduleResourcesTearDown(ChannelHandlerContext ctx, Throwable cause) {
         ctx.channel().eventLoop().schedule(
-                () -> contentProducer.ifPresent(producer -> producer.idleStateEvent(
-                        new ResponseTimeoutException(
-                                origin,
-                                "channelInactive",
-                                producer.receivedBytes(),
-                                producer.receivedChunks(),
-                                producer.emittedBytes(),
-                                producer.emittedChunks()))),
+                () -> contentProducer.ifPresent(producer -> producer.tearDownResources(cause)),
                 idleTimeoutMillis,
                 MILLISECONDS);
-
-        TransportLostException cause = new TransportLostException(ctx.channel().remoteAddress(), origin);
-        contentProducer.ifPresent(producer -> producer.channelInactive(cause));
     }
 
     @Override
