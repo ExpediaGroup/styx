@@ -11,4 +11,17 @@
             <password>${env.SONATYPE_JIRA_PASSWORD}</password>
         </server>
     </servers>
+    <profiles>
+        <profile>
+            <id>sonatype-oss-release</id>
+            <properties>
+                <gpg.executable>gpg2</gpg.executable>
+                <gpg.defaultKeyring>false</gpg.defaultKeyring>
+                <gpg.publicKeyring>${env.GPG_DIR}/pubring.gpg</gpg.publicKeyring>
+                <gpg.secretKeyring>${env.GPG_DIR}/secring.gpg</gpg.secretKeyring>
+                <gpg.keyname>${env.GPG_KEY_NAME}</gpg.keyname>
+                <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
+            </properties>
+        </profile>
+    </profiles>
 </settings>
