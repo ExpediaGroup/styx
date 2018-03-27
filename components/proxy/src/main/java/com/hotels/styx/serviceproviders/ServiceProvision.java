@@ -153,7 +153,8 @@ public final class ServiceProvision {
         }
     }
 
-    private static <U> Stream<Pair<String, ? extends U>> namedExtensionFromSpiExtension(Environment environment, Class<? extends U> serviceClass, JsonNodeConfig jsonNodeConfig, String name) {
+    private static <U> Stream<Pair<String, ? extends U>> namedExtensionFromSpiExtension(
+            Environment environment, Class<? extends U> serviceClass, JsonNodeConfig jsonNodeConfig, String name) {
         LOGGER.info("Spi Extension type");
         return jsonNodeConfig.get(name, SpiExtension.class)
                 .filter(SpiExtension::enabled)
@@ -178,7 +179,8 @@ public final class ServiceProvision {
                 });
     }
 
-    private static <U> Stream<Pair<String, ? extends U>> namedExtensionFromServiceFactoryConfig(Environment environment, Class<? extends U> serviceClass, JsonNodeConfig jsonNodeConfig, String name) {
+    private static <U> Stream<Pair<String, ? extends U>> namedExtensionFromServiceFactoryConfig(
+            Environment environment, Class<? extends U> serviceClass, JsonNodeConfig jsonNodeConfig, String name) {
         LOGGER.info("Service Factory Config type");
         return jsonNodeConfig.get(name, ServiceFactoryConfig.class)
                 .filter(ServiceFactoryConfig::enabled)

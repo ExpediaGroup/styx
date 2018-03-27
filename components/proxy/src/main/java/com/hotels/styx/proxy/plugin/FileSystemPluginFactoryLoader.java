@@ -20,8 +20,6 @@ import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.spi.ObjectFactories;
 import com.hotels.styx.spi.config.SpiExtension;
 
-import java.util.Optional;
-
 import static java.lang.String.format;
 
 /**
