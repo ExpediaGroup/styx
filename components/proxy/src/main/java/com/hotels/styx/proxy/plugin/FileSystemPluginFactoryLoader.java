@@ -35,10 +35,10 @@ public class FileSystemPluginFactoryLoader implements PluginFactoryLoader {
     }
 
     private static PluginFactory newPluginFactory(SpiExtension extensionConfig) {
-        Optional<PluginFactory> factory = ObjectFactories.newInstance(extensionConfig.factory(), PluginFactory.class);
-        if (!factory.isPresent()) {
-            throw new ConfigurationException(format("Could not load a plugin factory for configuration=%s", extensionConfig));
-        }
-        return factory.get();
+        return ObjectFactories.newInstance(extensionConfig.factory(), PluginFactory.class)
+                .orElseThrow(() -> {
+                    String message = format("Could not load a plugin factory for configuration=%s", extensionConfig);
+                    return new ConfigurationException(message);
+                });
     }
 }

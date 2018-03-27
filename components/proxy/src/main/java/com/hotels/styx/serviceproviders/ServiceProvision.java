@@ -20,7 +20,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.client.ActiveOrigins;
+import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancerFactory;
+import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicyFactory;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
@@ -35,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.common.Pair.pair;
@@ -63,8 +66,12 @@ public final class ServiceProvision {
      * @param activeOrigins source of active connections for purpose of load balancing
      * @return service, if such a configuration key exists
      */
-    public static <E> Optional<E> loadLoadBalancer(Configuration configuration, Environment environment, String key,
-                                                   Class<? extends E> serviceClass, ActiveOrigins activeOrigins) {
+    public static <E extends LoadBalancer> Optional<E> loadLoadBalancer(
+            Configuration configuration,
+            Environment environment,
+            String key,
+            Class<? extends E> serviceClass,
+            ActiveOrigins activeOrigins) {
         return configuration
                 .get(key, ServiceFactoryConfig.class)
                 .map(factoryConfig -> {
@@ -87,8 +94,11 @@ public final class ServiceProvision {
      * @param serviceClass  Service class
      * @return service, if such a configuration key exists
      */
-    public static <E> Optional<E> loadRetryPolicy(Configuration configuration, Environment environment, String key,
-                                                  Class<? extends E> serviceClass) {
+    public static <E extends RetryPolicy> Optional<E> loadRetryPolicy(
+            Configuration configuration,
+            Environment environment,
+            String key,
+            Class<? extends E> serviceClass) {
         return configuration
                 .get(key, ServiceFactoryConfig.class)
                 .map(factoryConfig -> {
@@ -122,21 +132,9 @@ public final class ServiceProvision {
                 .stream()
                 .flatMap(name -> {
                     if (isType(name, jsonNodeConfig, SpiExtension.class)) {
-                        LOGGER.info("Spi Extension type");
-                        return jsonNodeConfig.get(name, SpiExtension.class)
-                                .filter(SpiExtension::enabled)
-                                .map(extension -> loadSpiExtension(extension, environment, serviceClass))
-                                .map(service -> ImmutableList.of(pair(name, service)))
-                                .orElse(ImmutableList.of())
-                                .stream();
+                        return namedExtensionFromSpiExtension(environment, serviceClass, jsonNodeConfig, name);
                     } else if (isType(name, jsonNodeConfig, ServiceFactoryConfig.class)) {
-                        LOGGER.info("Service Factory Config type");
-                        return jsonNodeConfig.get(name, ServiceFactoryConfig.class)
-                                .filter(ServiceFactoryConfig::enabled)
-                                .map(serviceFactoryConfig -> loadServiceFactory(serviceFactoryConfig, environment, serviceClass))
-                                .map(service -> ImmutableList.of(pair(name, service)))
-                                .orElse(ImmutableList.of())
-                                .stream();
+                        return namedExtensionFromServiceFactoryConfig(environment, serviceClass, jsonNodeConfig, name);
                     } else {
                         String content = factories.get(name).toString();
                         String message = format("Unexpected configuration object 'services.factories.%s', Configuration='%s'", name, content);
@@ -144,16 +142,25 @@ public final class ServiceProvision {
                     }
                 })
                 .collect(toMap(Pair::key, Pair::value));
-
     }
 
     private static <T> boolean isType(String name, JsonNodeConfig jsonNodeConfig, Class<T> nodeType) {
         try {
             jsonNodeConfig.get(name, nodeType);
             return true;
-        } catch (Throwable cause) {
+        } catch (Exception e) {
             return false;
         }
+    }
+
+    private static <U> Stream<Pair<String, ? extends U>> namedExtensionFromSpiExtension(Environment environment, Class<? extends U> serviceClass, JsonNodeConfig jsonNodeConfig, String name) {
+        LOGGER.info("Spi Extension type");
+        return jsonNodeConfig.get(name, SpiExtension.class)
+                .filter(SpiExtension::enabled)
+                .map(extension -> loadSpiExtension(extension, environment, serviceClass))
+                .map(service -> ImmutableList.<Pair<String, ? extends U>>of(pair(name, service)))
+                .orElse(ImmutableList.of())
+                .stream();
     }
 
     private static <T> T loadSpiExtension(SpiExtension factoryConfig, Environment environment, Class<T> serviceSuperclass) {
@@ -163,18 +170,27 @@ public final class ServiceProvision {
         return serviceSuperclass.cast(factory.create(environment, config));
     }
 
+    private static ServiceFactory newServiceFactory(SpiExtension extensionConfig) {
+        return ObjectFactories.newInstance(extensionConfig.factory(), ServiceFactory.class)
+                .orElseThrow(() -> {
+                    String message = format("Could not load a service factory for configuration=%s", extensionConfig);
+                    return new ConfigurationException(message);
+                });
+    }
+
+    private static <U> Stream<Pair<String, ? extends U>> namedExtensionFromServiceFactoryConfig(Environment environment, Class<? extends U> serviceClass, JsonNodeConfig jsonNodeConfig, String name) {
+        LOGGER.info("Service Factory Config type");
+        return jsonNodeConfig.get(name, ServiceFactoryConfig.class)
+                .filter(ServiceFactoryConfig::enabled)
+                .map(serviceFactoryConfig -> loadServiceFactory(serviceFactoryConfig, environment, serviceClass))
+                .map(service -> ImmutableList.<Pair<String, ? extends U>>of(pair(name, service)))
+                .orElse(ImmutableList.of()).stream();
+    }
+
     private static <T> T loadServiceFactory(ServiceFactoryConfig serviceFactoryConfig, Environment environment, Class<T> serviceSuperclass) {
         ServiceFactory factory = newInstance(serviceFactoryConfig.factory(), ServiceFactory.class);
         JsonNodeConfig config = serviceFactoryConfig.config();
 
         return serviceSuperclass.cast(factory.create(environment, config));
-    }
-
-    private static ServiceFactory newServiceFactory(SpiExtension extensionConfig) {
-        Optional<ServiceFactory> factory = ObjectFactories.newInstance(extensionConfig.factory(), ServiceFactory.class);
-        if (!factory.isPresent()) {
-            throw new ConfigurationException(format("Could not load a service factory for configuration=%s", extensionConfig));
-        }
-        return factory.get();
     }
 }

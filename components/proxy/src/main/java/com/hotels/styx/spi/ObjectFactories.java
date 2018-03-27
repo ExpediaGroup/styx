@@ -64,7 +64,7 @@ public final class ObjectFactories {
                 T instance = type.cast(aClass.newInstance());
                 instances.add(instance);
             } catch (ClassNotFoundException e) {
-                LOGGER.debug("", e);
+                LOGGER.debug(e.getMessage(), e);
             } catch (InstantiationException | IllegalAccessException e) {
                 LOGGER.error("error loading class={}", className);
                 return Optional.empty();

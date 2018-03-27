@@ -163,7 +163,7 @@ public class ServiceProvisionTest {
 
     @Test
     public void serviceReturnsEmptyWhenFactoryKeyDoesNotExist() {
-        assertThat(loadRetryPolicy(environment.configuration(), environment, "invalid.key", String.class), isAbsent());
+        assertThat(loadRetryPolicy(environment.configuration(), environment, "invalid.key", RetryPolicy.class), isAbsent());
     }
 
     @Test
@@ -223,12 +223,12 @@ public class ServiceProvisionTest {
 
     @Test(expectedExceptions = Exception.class, expectedExceptionsMessageRegExp = "(?s).*No such class 'my.FakeClass'.*")
     public void throwsExceptionWhenClassDoesNotExist() {
-        loadRetryPolicy(environment.configuration(), environment, "not.real", String.class);
+        loadRetryPolicy(environment.configuration(), environment, "not.real", RetryPolicy.class);
     }
 
     @Test(expectedExceptions = ConfigurationException.class,
             expectedExceptionsMessageRegExp = "Unexpected configuration object 'services.factories.backendProvider', Configuration.*'")
-    public void informsAboutServiceFactoryConfig() {
+    public void throwsExceptionForInvalidServiceFactoryConfig() {
         String config = "" +
                 "multi:\n" +
                 "  factories:\n" +
@@ -243,7 +243,7 @@ public class ServiceProvisionTest {
 
     @Test(expectedExceptions = ConfigurationException.class,
             expectedExceptionsMessageRegExp = "Unexpected configuration object 'services.factories.backendProvider', Configuration.*'")
-    public void informsAboutSpiExtension() {
+    public void throwsExceptionForInvalidSpiExtensionFactory() {
         String config = "" +
                 "multi:\n" +
                 "  factories:\n" +
