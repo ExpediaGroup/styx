@@ -9,25 +9,25 @@ Each plugin is contained within its own JAR file, located according to the confi
 ## Configuration example
 
     plugins:
-      active: rewrite
+      active: addheaders
       all:
-        - name: rewrite
+        addheaders:
           factory:
-            class: "com.hotels.styx.RewritePluginFactory"
+            class: "com.hotels.styx.ExamplePluginFactory"
             classPath: "<path-to-plugin>/plugin-examples-1.0-SNAPSHOT.jar"
           config:
-            oldUri: "/olduri"
-            newUri: "/newuri"
+            requestHeaderValue: "requestheader"
+            responseHeaderValue: "responseheader"
       
 ### Configuration example explanation
 
 * **active** contains a comma-separated list of plugin names. It is a convenience feature used to switch a plugin on and off without needing to remove its entire set of configuration.
 * **all** contains a list of configuration for all the plugins deployed with the Styx instance. Inside each list item:
-    * **name** is the name of the plugin
+    * **addheaders** is the name of the plugin
     * **factory** configures a factory object that can produce the plugin:
         * **class** contains the name of the factory class, which must extend `com.hotels.styx.api.plugins.spi.PluginFactory`
         * **classPath** provides the location of the JAR file
-    * **config** contains custom configuration for the particular plugin. Its value can be of any type. See below for how to write a custom config java class.
+    * **config** contains custom configuration for the particular plugin. Its value can be of any type. See below how to write a custom config java class.
 
 When Styx starts, it sets up the HTTP interceptor chain as follows:
 
@@ -72,9 +72,9 @@ For details of styx configuration file please refer to [User Guide](user-guide.m
 ## Developing a plugin
 A plugin project can be started by using one of examples in `examples` submodule. All plugins share the same skeleton of a project, containing a:
 
-* main/java/testgrp/RewritePlugin.java - The plugin's main class which extends the Plugin interface, and most notably implements the `intercept(HttpRequest, Chain)` method.
-* main/java/testgrp/RewritePluginConfig.java - A class that represents plugin configuration, as it appears in styx_conf.yml.
-* main/java/testgrp/RewritePluginFactory.java - A class that implements PluginFactory interface, responsible for instantiating the plugin.
+* main/java/com/hotels/styx/ExamplePlugin.java - The plugin's main class which extends the Plugin interface, and most notably implements the `intercept(HttpRequest, Chain)` method.
+* main/java/com/hotels/styx/ExamplePluginConfig.java - A class that represents plugin configuration, as it appears in styx_conf.yml.
+* main/java/com/hotels/styx/ExamplePluginFactory.java - A class that implements PluginFactory interface, responsible for instantiating the plugin.
 
 Some additional examples can be found in `system-tests/example-styx-plugin` directory in a project repository. 
 There are examples of plugins providing simple examples of how to:
@@ -83,8 +83,8 @@ There are examples of plugins providing simple examples of how to:
 
 ### Plugin class
 A Styx plugin must implement a Plugin interface, which extends from HttpInterceptor interface. Thus every Styx plugin
-is an HttpInterceptor. As name suggests, HttpInterceptor have ability to intercept and transform, or perform some other
-action, as HTTP traffic being proxied through. The interceptors are organised linearly in a specific order to form a 
+is an HttpInterceptor. As the name suggests, HttpInterceptor(s) can intercept and transform, or perform some other
+action,  HTTP traffic as it is being proxied through. The interceptors are organised linearly in a specific order to form a 
 pipeline. Styx injects the HTTP request to the head of the pipeline. Each interceptor then processes the request in 
 turn until the request reaches to the tail of the pipeline. After that the request is proxied out to the destination 
 origins. Once the response arrives, Styx injects the HTTP response, conversely, to the tail of the pipeline. The response 
@@ -132,8 +132,6 @@ acceptable to perform blocking operations in `create()` until plugin is ready to
 files or querying remote servers, such as Redis. However use this capability judiciously. Plugins are loaded serially,
 and initialisation time for the full plugin chain will add up. Future versions of Styx may offer proper lifecycle management.
  
-### Tests
-Blank plugin example provides blank integration test that will start up an instance of StyxServer running your plugin.
 
 ### Running a plugin
 To build a single jar with dependencies, please execute maven command `mvn -Pstyx clean package`. 

@@ -8,36 +8,25 @@
   <groupId>com.hotels.styx</groupId>
   <artifactId>plugin-examples</artifactId>
   <name>Styx proxy plugin examples</name>
-  <version>0.0.1-SNAPSHOt</version>
+  <version>0.0.1-SNAPSHOT</version>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <java.source>1.8</java.source>
-    <java.target>1.8</java.target>
-    <java.testSource>1.8</java.testSource>
-    <java.testTarget>1.8</java.testTarget>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
 
     <!-- Styx Version -->
-    <styx.version>0.7.491</styx.version>
-
-    <!-- General Versions -->
-    <guava.version>16.0.1</guava.version>
-    <metrics.version>3.1.0</metrics.version>
-
-    <!-- Testing Versions -->
-    <hamcrest.all.version>1.3</hamcrest.all.version>
+    <styx.version>0.7-SNAPSHOT</styx.version>
+    <rxjava.version>1.1.6</rxjava.version>
+    <!--Testing-->
     <testng.version>6.8</testng.version>
 
     <!-- apache plugin versions and configurations, please sort alphabetically -->
     <maven-compiler-plugin.version>3.0</maven-compiler-plugin.version>
-    <maven-failsafe-plugin.version>2.13</maven-failsafe-plugin.version>
     <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
     <maven-resources-plugin.version>2.6</maven-resources-plugin.version>
     <maven-surefire-plugin.version>2.16</maven-surefire-plugin.version>
-
-    <!-- non apache plugin versions and configurations, please sort alphabetically -->
-    <build-helper-maven-plugin.version>1.9.1</build-helper-maven-plugin.version>
   </properties>
 
 
@@ -45,19 +34,15 @@
     <dependency>
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-api</artifactId>
-      <version>${project.version}</version>
+      <version>${styx.version}</version>
+      <!-- The dependency is explicitlu needed only during compile time, styx is already available in the runtime-->
+      <scope>provided</scope>
     </dependency>
-
-    <!-- RxJava -->
     <dependency>
       <groupId>io.reactivex</groupId>
       <artifactId>rxjava</artifactId>
       <version>${rxjava.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
@@ -78,74 +63,19 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>${build-helper-maven-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>add-it-source</id>
-            <phase>pre-integration-test</phase>
-            <goals>
-              <goal>add-test-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>src/it/java</source>
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
         <version>${maven-resources-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>add-it-resources</id>
-            <phase>pre-integration-test</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/it-classes</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>src/it/resources</directory>
-                  <filtering>true</filtering>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
 
-      <!-- In this case the maven-compiler-plugin must be located after the build-helper-maven-plugin -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven-compiler-plugin.version}</version>
         <configuration>
-          <source>${java.source}</source>
-          <target>${java.target}</target>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
         </configuration>
-
-        <executions>
-          <execution>
-            <id>compile-integration-test</id>
-            <phase>pre-integration-test</phase>
-            <goals>
-              <goal>testCompile</goal>
-            </goals>
-            <configuration>
-              <testIncludes>
-                <testInclude>**/*IT.java</testInclude>
-              </testIncludes>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
 
       <plugin>
@@ -153,7 +83,6 @@
         <artifactId>maven-jar-plugin</artifactId>
         <version>${maven-jar-plugin.version}</version>
       </plugin>
-
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -209,33 +138,13 @@
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <version>${maven-failsafe-plugin.version}</version>
-            <configuration>
-              <testSourceDirectory>src/it/java</testSourceDirectory>
-              <testClassesDirectory>${project.build.directory}/it-classes</testClassesDirectory>
-            </configuration>
-            <executions>
-              <execution>
-                <id>integration-test</id>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-              </execution>
-              <execution>
-                <id>verify</id>
-                <goals>
-                  <goal>verify</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-jar-plugin</artifactId>
           </plugin>
 
+          <!-- We use the Shade plugin to bundle all the plugin dependencies together and ensure classloader-level
+          isolation for different plugins.
+          This sample plugin does not have any external dependencies.
+          -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-shade-plugin</artifactId>
@@ -251,6 +160,8 @@
                   <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
                   <outputDirectory>${pluginsDir}</outputDirectory>
                   <!--
+                  Since we are creating a single shaded JAR, signed JARs will not be valid anymore. To avoid this issue,
+                  we just remove the signature files in the JARs.
                   For filters, see:
                   http://stackoverflow.com/questions/999489/invalid-signature-file-when-attempting-to-run-a-jar
                   -->
