@@ -43,10 +43,10 @@ import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpCon
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.util.Collections.emptyList;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.mockito.Matchers.isA;
@@ -248,27 +248,6 @@ public class FlowControllingHttpContentProducerTest {
         producer.newChunk(contentChunk2);
 
         producer.channelInactive(transportLostCause);
-
-        assertThat(producer.state(), is(TERMINATED));
-        verify(onCompleteAction, never()).run();
-        verify(onTerminateAction).accept(isA(Throwable.class));
-        assertThat(contentChunk1.refCnt(), is(0));
-        assertThat(contentChunk2.refCnt(), is(0));
-    }
-
-    @Test
-    public void IdleStateEventInBufferingState() throws Exception {
-        // Releases buffered chunks and transitions to TERMINATED state.
-        setUpAndRequest(NO_BACKPRESSURE);
-        assertThat(producer.state(), is(BUFFERING));
-
-        assertThat(contentChunk1.refCnt(), is(1));
-        assertThat(contentChunk2.refCnt(), is(1));
-
-        producer.newChunk(contentChunk1);
-        producer.newChunk(contentChunk2);
-
-        producer.tearDownResources(new ResponseTimeoutException(Origin.newOriginBuilder("localhost", 123).build()));
 
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
@@ -494,28 +473,6 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void channelIdleInStreamingState() throws Exception {
-        setUpAndRequest(0);
-        assertThat(producer.state(), is(BUFFERING));
-
-        producer.onSubscribed(downstream);
-        producer.newChunk(contentChunk1);
-        producer.newChunk(contentChunk2);
-        assertThat(producer.state(), is(STREAMING));
-
-        producer.tearDownResources(new ResponseTimeoutException(Origin.newOriginBuilder("localhost", 123).build()));
-
-        assertThat(producer.state(), is(TERMINATED));
-        verify(onCompleteAction, never()).run();
-        verify(onTerminateAction).accept(isA(Throwable.class));
-        assertThat(contentChunk1.refCnt(), is(0));
-        assertThat(contentChunk2.refCnt(), is(0));
-        assertException(getCause(downstream),
-                ResponseTimeoutException.class,
-                "No response from origin. origin=generic-app:anonymous-origin:localhost:123.");
-    }
-
-    @Test
     public void releasesOfferedContentBufferInBufferingCompletedState() throws Exception {
         setUpAndRequest(0);
 
@@ -609,7 +566,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void channelIdleInBufferingCompletedState() throws Exception {
+    public void delayedTearDownInBufferingCompletedState() throws Exception {
         setUpAndRequest(NO_BACKPRESSURE);
 
         producer.newChunk(contentChunk1);
@@ -803,7 +760,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void channelIdleInEmittingBufferedContentState() throws Exception {
+    public void delayedTearDownInEmittingBufferedContentState() throws Exception {
         setUpAndRequest(0);
 
         producer.newChunk(copiedBuffer("blah", UTF_8));

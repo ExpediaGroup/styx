@@ -17,6 +17,7 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
 import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.common.StateMachine;
 import io.netty.buffer.ByteBuf;
@@ -87,7 +88,6 @@ class FlowControllingHttpContentProducer {
                 .transition(BUFFERING, ContentChunkEvent.class, this::contentChunkEventWhileBuffering)
                 .transition(BUFFERING, ChannelInactiveEvent.class, this::releaseAndTerminate)
                 .transition(BUFFERING, ChannelExceptionEvent.class, this::releaseAndTerminate)
-                .transition(BUFFERING, DelayedTearDownEvent.class, this::releaseAndTerminate)
                 .transition(BUFFERING, ContentSubscribedEvent.class, this::contentSubscribedEventWhileBuffering)
                 .transition(BUFFERING, ContentEndEvent.class, this::contentEndEventWhileBuffering)
 
@@ -95,7 +95,7 @@ class FlowControllingHttpContentProducer {
                 .transition(BUFFERING_COMPLETED, ContentChunkEvent.class, this::spuriousContentChunkEvent)
                 .transition(BUFFERING_COMPLETED, ChannelInactiveEvent.class, s -> BUFFERING_COMPLETED)
                 .transition(BUFFERING_COMPLETED, ChannelExceptionEvent.class, s -> BUFFERING_COMPLETED)
-                .transition(BUFFERING_COMPLETED, DelayedTearDownEvent.class, this::releaseAndTerminate)
+                .transition(BUFFERING_COMPLETED, DelayedTearDownEvent.class, this::tearDown)
                 .transition(BUFFERING_COMPLETED, ContentSubscribedEvent.class, this::contentSubscribedEventWhileBufferingCompleted)
                 .transition(BUFFERING_COMPLETED, ContentEndEvent.class, s -> BUFFERING_COMPLETED)
 
@@ -103,7 +103,6 @@ class FlowControllingHttpContentProducer {
                 .transition(STREAMING, ContentChunkEvent.class, this::contentChunkEventWhileStreaming)
                 .transition(STREAMING, ChannelInactiveEvent.class, e -> emitErrorAndTerminate(e.cause()))
                 .transition(STREAMING, ChannelExceptionEvent.class, e -> emitErrorAndTerminate(e.cause()))
-                .transition(STREAMING, DelayedTearDownEvent.class, e -> emitErrorAndTerminate(e.cause()))
                 .transition(STREAMING, ContentSubscribedEvent.class, this::contentSubscribedEventWhileStreaming)
                 .transition(STREAMING, ContentEndEvent.class, this::contentEndEventWhileStreaming)
                 .transition(STREAMING, UnsubscribeEvent.class, this::emitErrorAndTerminateOnPrematureUnsubscription)
@@ -112,7 +111,7 @@ class FlowControllingHttpContentProducer {
                 .transition(EMITTING_BUFFERED_CONTENT, ContentChunkEvent.class, this::spuriousContentChunkEvent)
                 .transition(EMITTING_BUFFERED_CONTENT, ChannelInactiveEvent.class, s -> EMITTING_BUFFERED_CONTENT)
                 .transition(EMITTING_BUFFERED_CONTENT, ChannelExceptionEvent.class, s -> EMITTING_BUFFERED_CONTENT)
-                .transition(EMITTING_BUFFERED_CONTENT, DelayedTearDownEvent.class, e -> emitErrorAndTerminate(e.cause()))
+                .transition(EMITTING_BUFFERED_CONTENT, DelayedTearDownEvent.class, e -> tearDownWithError(origin))
                 .transition(EMITTING_BUFFERED_CONTENT, ContentSubscribedEvent.class, this::contentSubscribedEventWhileEmittingBufferedContent)
                 .transition(EMITTING_BUFFERED_CONTENT, ContentEndEvent.class, this::contentEndEventWhileEmittingBufferedContent)
                 .transition(EMITTING_BUFFERED_CONTENT, UnsubscribeEvent.class, this::emitErrorAndTerminateOnPrematureUnsubscription)
@@ -121,6 +120,7 @@ class FlowControllingHttpContentProducer {
                 .transition(COMPLETED, UnsubscribeEvent.class, ev -> COMPLETED)
                 .transition(COMPLETED, RxBackpressureRequestEvent.class, ev -> COMPLETED)
                 .transition(COMPLETED, ContentSubscribedEvent.class, this::contentSubscribedInCompletedState)
+                .transition(COMPLETED, DelayedTearDownEvent.class, ev -> COMPLETED)
 
                 .transition(TERMINATED, ContentChunkEvent.class, this::spuriousContentChunkEvent)
                 .transition(TERMINATED, ContentSubscribedEvent.class, this::contentSubscribedInTerminatedState)
@@ -322,6 +322,16 @@ class FlowControllingHttpContentProducer {
         // Does not happen, because last HTTP content is already received.
         return EMITTING_BUFFERED_CONTENT;
     }
+
+    private ProducerState tearDownWithError(Origin origin) {
+        return emitErrorAndTerminate(new ResponseTimeoutException(origin));
+    }
+
+    private ProducerState tearDown(CausalEvent event) {
+        return releaseAndTerminate(event);
+    }
+
+
 
 
     /*
