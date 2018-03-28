@@ -1,8 +1,8 @@
 # Plugins
 
 Styx has a plugin-based architecture that allows each Styx instance to be deployed with a suite of independently-developed plugins configured as desired by the deployment process.
-Plugins, implemented in any JVM language, can be used to transform HTTP requests and responses as they are being proxied through. This makes it easy to extend Styx with custom business 
-logic with familiar Java based technologies. In this document we describe how to implement such business logic in Styx plugins.
+Plugins can be used to transform HTTP requests and responses as they are being proxied through. This makes it easy to extend Styx with custom business
+logic with familiar Java-based technologies. In this document we describe how to implement such business logic in Styx plugins.
 
 Each plugin is contained within its own JAR file, located according to the configuration specified in the Styx config files.
 
