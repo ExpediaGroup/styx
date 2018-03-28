@@ -14,5 +14,5 @@ plugins:
         class: "${groupId}.ExamplePluginFactory"
         classPath: "/plugins/${artifactId}-${version}.jar"
       config:
-        requestHeaderValue: "/olduri"
-        responseHeaderValue: "/newuri"
+        myRequestHeader: "requestheader"
+        myResponseHeader: "responseheader"
