@@ -36,38 +36,7 @@ When Styx starts, it sets up the HTTP interceptor chain as follows:
 3. It loads the plugin factory class, specified by factory.class attribute. 
 4. It instantiates the plugin by calling the plugin factory create method, passing in the Styx Environment object.
 
-### Custom config
 
-The custom config can be any type. It could be a simple type such as `java.lang.String` or a custom class developed as part of the plugin. It could also be a list or map of simple of custom classes.
-
-Here is an example of how a custom config class can be written in java. Note the use of `com.fasterxml.jackson.annotation.JsonProperty` to tell the YAML parser how to construct your class.
-The properties of your custom classes can be instances of custom classes themselves. 
-
-    import com.fasterxml.jackson.annotation.JsonProperty;
-    
-        public class RewritePluginConfig {
-        private final String oldUri;
-        private final String newUri;
-
-        public RewritePluginConfig(
-                @JsonProperty("oldUri") String oldUri,
-                @JsonProperty("newUri") String newUri) {
-            this.oldUri = oldUri;
-            this.newUri = newUri;
-        }
-
-        public String oldUri() {
-            return oldUri;
-        }
-
-        public String newUri() {
-            return newUri;
-        }
-    }    
-
-Note that the custom class does not have to be named in the YAML at all. It is simply accessed via the method `com.hotels.styx.api.plugins.spi.PluginFactory.Environment.pluginConfig`
-As long as the class passed to that method has properties matching the YAML, it can be loaded.
-For details of styx configuration file please refer to [User Guide](user-guide.md) section. 
 
 ## Developing a plugin
 A plugin project can be started by using one of examples in `examples` submodule. All plugins share the same skeleton of a project, containing a:
@@ -137,6 +106,39 @@ and initialisation time for the full plugin chain will add up. Future versions o
 To build a single jar with dependencies, please execute maven command `mvn -Pstyx clean package`. 
 This single jar can be referenced in a styx configuration file. All the details regarding running styx server with 
 additional plugins locally can be found in [User Guide](user-guide.md) section. 
+
+### Custom config
+
+The custom config can be any type. It could be a simple type such as `java.lang.String` or a custom class developed as part of the plugin. It could also be a list or map of simple of custom classes.
+
+Here is an example of how a custom config class can be written in java. Note the use of `com.fasterxml.jackson.annotation.JsonProperty` to tell the YAML parser how to construct your class.
+The properties of your custom classes can be instances of custom classes themselves.
+
+    import com.fasterxml.jackson.annotation.JsonProperty;
+
+        public class RewritePluginConfig {
+        private final String oldUri;
+        private final String newUri;
+
+        public RewritePluginConfig(
+                @JsonProperty("oldUri") String oldUri,
+                @JsonProperty("newUri") String newUri) {
+            this.oldUri = oldUri;
+            this.newUri = newUri;
+        }
+
+        public String oldUri() {
+            return oldUri;
+        }
+
+        public String newUri() {
+            return newUri;
+        }
+    }
+
+Note that the custom class does not have to be named in the YAML at all. It is simply accessed via the method `com.hotels.styx.api.plugins.spi.PluginFactory.Environment.pluginConfig`
+As long as the class passed to that method has properties matching the YAML, it can be loaded.
+For details of styx configuration file please refer to [User Guide](user-guide.md) section.
 
 ## Development best practices
 To ensure that plugins are correct, perform well and are maintainable, best practices must be followed. 
