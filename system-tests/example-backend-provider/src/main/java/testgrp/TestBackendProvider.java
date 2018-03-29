@@ -21,7 +21,7 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.service.spi.AbstractRegistry;
 import com.hotels.styx.api.service.spi.AbstractStyxService;
-import com.hotels.styx.api.service.spi.BackendService;
+import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 
 import java.util.Map;

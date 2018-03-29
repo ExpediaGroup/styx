@@ -27,7 +27,7 @@ import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.client.Origin._
 import com.hotels.styx.api.client.{ActiveOrigins, Origin}
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
-import com.hotels.styx.api.service.spi.{BackendService, StickySessionConfig}
+import com.hotels.styx.api.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder

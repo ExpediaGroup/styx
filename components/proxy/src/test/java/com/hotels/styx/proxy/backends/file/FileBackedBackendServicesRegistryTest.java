@@ -17,7 +17,7 @@ package com.hotels.styx.proxy.backends.file;
 
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.service.spi.ServiceFailureException;
-import com.hotels.styx.api.service.spi.BackendService;
+import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.infrastructure.FileBackedRegistry;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.api.service.spi.Registry.ReloadResult;

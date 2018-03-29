@@ -16,7 +16,7 @@
 package com.hotels.styx.client.applications;
 
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.service.spi.BackendService;
+import com.hotels.styx.api.service.BackendService;
 import org.testng.annotations.Test;
 
 import static com.google.common.collect.Iterables.getFirst;

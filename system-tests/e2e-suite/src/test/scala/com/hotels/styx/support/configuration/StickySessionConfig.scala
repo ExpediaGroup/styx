@@ -18,15 +18,15 @@ package com.hotels.styx.support.configuration
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.{MILLISECONDS, SECONDS}
 
-import com.hotels.styx.api.service.spi
-import com.hotels.styx.api.service.spi.StickySessionConfig.Builder
+import com.hotels.styx.api.service
+import com.hotels.styx.api.service.StickySessionConfig.Builder
 
 import scala.concurrent.duration.Duration
 
 case class StickySessionConfig(enabled: Boolean = StickySessionConfigDefaults.enabled,
                                timeout: Duration = StickySessionConfigDefaults.timeout
                               ) {
-  def asJava: spi.StickySessionConfig = new Builder()
+  def asJava: service.StickySessionConfig = new Builder()
     .enabled(enabled)
     .timeout(timeout.toMillis.toInt, MILLISECONDS)
     .build()
@@ -39,7 +39,7 @@ object StickySessionConfigDefaults {
 }
 
 object StickySessionConfig {
-  def fromJava(from: spi.StickySessionConfig): StickySessionConfig =
+  def fromJava(from: service.StickySessionConfig): StickySessionConfig =
     StickySessionConfig(
       enabled = from.stickySessionEnabled(),
       timeout = Duration(from.stickySessionTimeoutSeconds(), TimeUnit.SECONDS)

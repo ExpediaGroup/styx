@@ -20,7 +20,7 @@ import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.service.spi.BackendService;
+import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.client.OriginRestrictionLoadBalancingStrategy;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;

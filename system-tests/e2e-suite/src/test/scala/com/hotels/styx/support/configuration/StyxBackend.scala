@@ -18,6 +18,7 @@ package com.hotels.styx.support.configuration
 import java.util.concurrent.TimeUnit
 
 import com.hotels.styx.api.client.ConnectionPool.Settings
+import com.hotels.styx.api.service
 import com.hotels.styx.api.service.spi
 import com.hotels.styx.server.HttpServer
 import com.hotels.styx.servers.MockOriginServer
@@ -144,8 +145,8 @@ case class BackendService(appId: String = "generic-app",
                           responseTimeout: Duration = 35.seconds,
                           tlsSettings: Option[TlsSettings] = None
                          ) {
-  def asJava: spi.BackendService = {
-    new spi.BackendService.Builder()
+  def asJava: service.BackendService = {
+    new service.BackendService.Builder()
       .id(appId)
       .path(path)
       .origins(origins.origins.map(_.asJava()).toSet.asJava)
@@ -159,7 +160,7 @@ case class BackendService(appId: String = "generic-app",
 }
 
 object BackendService {
-  def fromJava(from: spi.BackendService): BackendService = {
+  def fromJava(from: service.BackendService): BackendService = {
     val config: Settings = from.connectionPoolConfig()
 
     BackendService(

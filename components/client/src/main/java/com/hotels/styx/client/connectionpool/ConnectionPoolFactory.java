@@ -19,7 +19,7 @@ import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.metrics.MetricRegistry;
-import com.hotels.styx.api.service.spi.ConnectionPoolSettings;
+import com.hotels.styx.api.service.ConnectionPoolSettings;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

@@ -23,9 +23,10 @@ import java.util.concurrent.TimeUnit.{MILLISECONDS, SECONDS}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.hotels.styx.api.client.Origin
-import com.hotels.styx.api.service.spi.{BackendService, ConnectionPoolSettings, Registry, StickySessionConfig}
+import com.hotels.styx.api.service.{BackendService, ConnectionPoolSettings, StickySessionConfig}
+import com.hotels.styx.api.service.spi.Registry
 import com.hotels.styx.client.applications.BackendServices.newBackendServices
-import com.hotels.styx.api.service.spi.HealthCheckConfig.newHealthCheckConfigBuilder
+import com.hotels.styx.api.service.HealthCheckConfig.newHealthCheckConfigBuilder
 import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.api.service.spi.Registry.Changes
 import org.hamcrest.MatcherAssert.assertThat

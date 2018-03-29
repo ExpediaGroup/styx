@@ -20,7 +20,7 @@ import com.hotels.styx.api.HttpRequest.Builder._
 import com.hotels.styx.api.client.ActiveOrigins
 import com.hotels.styx.api.client.Origin.newOriginBuilder
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
-import com.hotels.styx.api.service.spi.BackendService
+import com.hotels.styx.api.service.BackendService
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy

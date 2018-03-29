@@ -16,7 +16,7 @@
 package com.hotels.styx.client;
 
 import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.service.spi.TlsSettings;
+import com.hotels.styx.api.service.TlsSettings;
 
 /**
  * Connections settings.

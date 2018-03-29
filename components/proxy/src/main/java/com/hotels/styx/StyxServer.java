@@ -32,7 +32,7 @@ import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.metrics.MetricRegistry;
-import com.hotels.styx.api.service.spi.BackendService;
+import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;

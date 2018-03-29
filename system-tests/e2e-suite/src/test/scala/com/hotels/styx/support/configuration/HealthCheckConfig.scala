@@ -17,12 +17,11 @@ package com.hotels.styx.support.configuration
 
 import java.util.concurrent.TimeUnit
 
-import com.hotels.styx.api.service.spi
-import com.hotels.styx.api.service.spi.HealthCheckConfig.{DEFAULT_HEALTHY_THRESHOLD_VALUE, DEFAULT_HEALTH_CHECK_INTERVAL, DEFAULT_TIMEOUT_VALUE, DEFAULT_UNHEALTHY_THRESHOLD_VALUE}
+import com.hotels.styx.api.service
+import com.hotels.styx.api.service.HealthCheckConfig.{DEFAULT_HEALTHY_THRESHOLD_VALUE, DEFAULT_HEALTH_CHECK_INTERVAL, DEFAULT_TIMEOUT_VALUE, DEFAULT_UNHEALTHY_THRESHOLD_VALUE}
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.duration._
 import scala.compat.java8.OptionConverters._
+import scala.concurrent.duration.{Duration, _}
 
 case class HealthCheckConfig(uri: Option[String],
                              interval: Duration = Duration(DEFAULT_HEALTH_CHECK_INTERVAL, TimeUnit.MILLISECONDS),
@@ -30,7 +29,7 @@ case class HealthCheckConfig(uri: Option[String],
                              healthyThreshold: Int = DEFAULT_HEALTHY_THRESHOLD_VALUE,
                              unhealthyThreshold: Int = DEFAULT_UNHEALTHY_THRESHOLD_VALUE
                             ) {
-  def asJava: spi.HealthCheckConfig = spi.HealthCheckConfig.newHealthCheckConfigBuilder()
+  def asJava: service.HealthCheckConfig = service.HealthCheckConfig.newHealthCheckConfigBuilder()
     .uri(uri.orNull)
     .interval(interval.toMillis)
     .timeout(timeout.toMillis)
@@ -40,7 +39,7 @@ case class HealthCheckConfig(uri: Option[String],
 }
 
 object HealthCheckConfig {
-  def fromJava(from: spi.HealthCheckConfig): HealthCheckConfig =
+  def fromJava(from: service.HealthCheckConfig): HealthCheckConfig =
     HealthCheckConfig(
       uri = from.uri().asScala,
       interval = Duration(from.intervalMillis(), TimeUnit.MILLISECONDS),

@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.service.BackendService;
 import org.testng.annotations.Test;
 
 import java.util.Objects;

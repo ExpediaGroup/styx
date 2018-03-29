@@ -44,7 +44,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.http.handlers.HttpMethodFilteringHandler;
 import com.hotels.styx.api.http.handlers.StaticBodyHttpHandler;
-import com.hotels.styx.api.service.spi.BackendService;
+import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpServer;

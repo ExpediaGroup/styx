@@ -18,7 +18,7 @@ package com.hotels.styx.admin.dashboard;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.Version;
-import com.hotels.styx.api.service.spi.BackendService;
+import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
 import com.hotels.styx.api.service.spi.Registry;
 import org.slf4j.Logger;

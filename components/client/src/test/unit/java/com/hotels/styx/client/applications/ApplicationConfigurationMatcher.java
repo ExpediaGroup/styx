@@ -19,10 +19,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.service.spi.BackendService;
-import com.hotels.styx.api.service.spi.RewriteConfig;
-import com.hotels.styx.api.service.spi.StickySessionConfig;
-import com.hotels.styx.api.service.spi.HealthCheckConfig;
+import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.service.RewriteConfig;
+import com.hotels.styx.api.service.StickySessionConfig;
+import com.hotels.styx.api.service.HealthCheckConfig;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 
@@ -31,12 +31,12 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.service.spi.StickySessionConfig.stickySessionDisabled;
-import static com.hotels.styx.api.service.spi.HealthCheckConfig.noHealthCheck;
-import static com.hotels.styx.api.service.spi.ConnectionPoolSettings.DEFAULT_CONNECT_TIMEOUT_MILLIS;
-import static com.hotels.styx.api.service.spi.ConnectionPoolSettings.DEFAULT_MAX_CONNECTIONS_PER_HOST;
-import static com.hotels.styx.api.service.spi.ConnectionPoolSettings.DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
-import static com.hotels.styx.api.service.spi.ConnectionPoolSettings.DEFAULT_SOCKET_TIMEOUT_MILLIS;
+import static com.hotels.styx.api.service.StickySessionConfig.stickySessionDisabled;
+import static com.hotels.styx.api.service.HealthCheckConfig.noHealthCheck;
+import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_CONNECT_TIMEOUT_MILLIS;
+import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_MAX_CONNECTIONS_PER_HOST;
+import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
+import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_SOCKET_TIMEOUT_MILLIS;
 import static java.util.Collections.emptyList;
 
 public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendService> {

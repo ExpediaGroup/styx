@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.api.service.spi;
+package com.hotels.styx.api.service;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -36,9 +36,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.client.Origin.checkThatOriginsAreDistinct;
-import static com.hotels.styx.api.service.spi.ConnectionPoolSettings.defaultConnectionPoolSettings;
-import static com.hotels.styx.api.service.spi.HealthCheckConfig.noHealthCheck;
-import static com.hotels.styx.api.service.spi.StickySessionConfig.stickySessionDisabled;
+import static com.hotels.styx.api.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
+import static com.hotels.styx.api.service.HealthCheckConfig.noHealthCheck;
+import static com.hotels.styx.api.service.StickySessionConfig.stickySessionDisabled;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;

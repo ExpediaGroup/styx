@@ -16,14 +16,14 @@
 package com.hotels.styx.client.applications;
 
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.service.spi.BackendService;
+import com.hotels.styx.api.service.BackendService;
 import org.testng.annotations.Test;
 
 import java.util.Set;
 
 import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.service.spi.BackendService.DEFAULT_RESPONSE_TIMEOUT_MILLIS;
+import static com.hotels.styx.api.service.BackendService.DEFAULT_RESPONSE_TIMEOUT_MILLIS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 

@@ -28,7 +28,7 @@ import com.hotels.styx.Version;
 import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.OriginsChangeListener;
 import com.hotels.styx.api.metrics.MetricRegistry;
-import com.hotels.styx.api.service.spi.BackendService;
+import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 
 import java.util.Collection;

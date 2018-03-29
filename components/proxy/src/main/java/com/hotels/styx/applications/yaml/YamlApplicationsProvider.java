@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.client.applications.ApplicationsProvider;
-import com.hotels.styx.api.service.spi.BackendService;
+import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.client.applications.BackendServices;
 
 import java.io.IOException;
