@@ -18,9 +18,6 @@ package com.hotels.styx.api.client.loadbalancing.spi;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.configuration.ServiceFactory;
-
-import java.util.Optional;
 
 /**
  * A factory to create {@link LoadBalancer} instances based on the {@link Environment}.
@@ -28,19 +25,7 @@ import java.util.Optional;
  * @see LoadBalancer
  * @see Environment
  */
-public interface LoadBalancerFactory extends ServiceFactory<LoadBalancer> {
-    /**
-     * LoadBalancingStrategy requires {@link ActiveOrigins} to perform ordering of origins, so this method
-     * doesn't make much sense in that context.
-     *
-     * @param environment           Styx application environment
-     * @param strategyConfiguration configuration specific to load balancer
-     * @return strategy that is returning an empty collection.
-     */
-    default LoadBalancer create(Environment environment, Configuration strategyConfiguration) {
-        return context -> Optional.empty();
-    }
-
+public interface LoadBalancerFactory {
     /**
      * Creates a strategy.
      *

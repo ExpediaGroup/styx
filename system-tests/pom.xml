@@ -18,6 +18,7 @@
     <module>example-styx-plugin</module>
     <module>e2e-testsupport</module>
     <module>e2e-suite</module>
+    <module>example-backend-provider</module>
   </modules>
 
   <properties>

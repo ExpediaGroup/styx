@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +20,20 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.spi.config.SpiExtension;
 
 import static com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry.name;
 import static java.util.Objects.requireNonNull;
 
 class PluginEnvironment implements PluginFactory.Environment {
     private final Environment environment;
-    private final PluginMetadata pluginMetadata;
+    private final SpiExtension spiExtension;
     private final MetricRegistry pluginMetricsScope;
 
-    PluginEnvironment(Environment environment, PluginMetadata pluginMetadata, String scope) {
-        this.pluginMetadata = requireNonNull(pluginMetadata);
+    PluginEnvironment(String name, Environment environment, SpiExtension spiExtension, String scope) {
+        this.spiExtension = requireNonNull(spiExtension);
         this.environment = requireNonNull(environment);
-        this.pluginMetricsScope = environment.metricRegistry().scope(name(scope, pluginMetadata.name()));
+        this.pluginMetricsScope = environment.metricRegistry().scope(name(scope, name));
     }
 
     @Override
@@ -52,6 +53,6 @@ class PluginEnvironment implements PluginFactory.Environment {
 
     @Override
     public <T> T pluginConfig(Class<T> clazz) {
-        return pluginMetadata.config(clazz);
+        return spiExtension.config(clazz);
     }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hotels.styx.support.configuration
 import java.util.concurrent.TimeUnit
 
 import com.hotels.styx.api.client.ConnectionPool.Settings
+import com.hotels.styx.api.service
+import com.hotels.styx.api.service.spi
 import com.hotels.styx.server.HttpServer
 import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.configuration.BackendsCommon.toOrigin
@@ -143,8 +145,8 @@ case class BackendService(appId: String = "generic-app",
                           responseTimeout: Duration = 35.seconds,
                           tlsSettings: Option[TlsSettings] = None
                          ) {
-  def asJava: com.hotels.styx.client.applications.BackendService = {
-    new com.hotels.styx.client.applications.BackendService.Builder()
+  def asJava: service.BackendService = {
+    new service.BackendService.Builder()
       .id(appId)
       .path(path)
       .origins(origins.origins.map(_.asJava()).toSet.asJava)
@@ -158,7 +160,7 @@ case class BackendService(appId: String = "generic-app",
 }
 
 object BackendService {
-  def fromJava(from: com.hotels.styx.client.applications.BackendService): BackendService = {
+  def fromJava(from: service.BackendService): BackendService = {
     val config: Settings = from.connectionPoolConfig()
 
     BackendService(

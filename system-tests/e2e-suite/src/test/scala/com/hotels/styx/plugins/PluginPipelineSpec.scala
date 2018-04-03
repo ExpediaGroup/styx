@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,15 +28,16 @@ class PluginPipelineSpec extends FunSpec with StyxProxySpec {
   val pluginsFolder = resourcesPluginsPath
 
   override val styxConfig = StyxConfig(
-    yamlText = "" +
-      "plugins:\n" +
-      "  active: PluginA\n" +
-      "  all:\n" +
-      "    PluginA:\n" +
-      "      factory:\n" +
-      "        class: testgrp.TestPluginModule\n" +
-      "        classPath: \"" + pluginsFolder + "\"\n" +
-      "      config: /my/plugin/config/directory\n"
+    yamlText = s"""
+        |plugins:
+        |  active: PluginA
+        |  all:
+        |     PluginA:
+        |       factory:
+        |          class: testgrp.TestPluginModule
+        |          classPath: "$pluginsFolder"
+        |       config: /my/plugin/config/directory
+        """.stripMargin('|')
   )
 
   override protected def beforeAll(): Unit = {

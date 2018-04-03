@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.client.RewriteConfig;
-import com.hotels.styx.client.applications.BackendService;
-import com.hotels.styx.client.healthcheck.HealthCheckConfig;
-import com.hotels.styx.client.stickysession.StickySessionConfig;
+import com.hotels.styx.api.service.RewriteConfig;
+import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.service.HealthCheckConfig;
+import com.hotels.styx.api.service.StickySessionConfig;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 
@@ -31,12 +31,12 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.DEFAULT_CONNECT_TIMEOUT_MILLIS;
-import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.DEFAULT_MAX_CONNECTIONS_PER_HOST;
-import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
-import static com.hotels.styx.client.connectionpool.ConnectionPoolSettings.DEFAULT_SOCKET_TIMEOUT_MILLIS;
-import static com.hotels.styx.client.healthcheck.HealthCheckConfig.noHealthCheck;
-import static com.hotels.styx.client.stickysession.StickySessionConfig.stickySessionDisabled;
+import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_CONNECT_TIMEOUT_MILLIS;
+import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_MAX_CONNECTIONS_PER_HOST;
+import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
+import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_SOCKET_TIMEOUT_MILLIS;
+import static com.hotels.styx.api.service.HealthCheckConfig.noHealthCheck;
+import static com.hotels.styx.api.service.StickySessionConfig.stickySessionDisabled;
 import static java.util.Collections.emptyList;
 
 public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendService> {

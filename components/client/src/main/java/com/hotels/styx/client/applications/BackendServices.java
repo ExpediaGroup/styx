@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.service.BackendService;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -31,7 +32,7 @@ import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.getFirst;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.client.applications.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 

@@ -57,7 +57,7 @@ public final class StyxServer {
     private StyxServer(Builder builder) {
         acceptAllSslRequests();
 
-        MemoryBackedRegistry<com.hotels.styx.client.applications.BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
+        MemoryBackedRegistry<com.hotels.styx.api.service.BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
 
         this.server = new StyxServerBuilder(styxConfig())
                 .pluginsSupplier(() -> builder.plugins)
@@ -139,7 +139,7 @@ public final class StyxServer {
      * A builder for constructing instances of {@link StyxServer}.
      */
     public static final class Builder {
-        private final Map<String, com.hotels.styx.client.applications.BackendService> routes = new HashMap<>();
+        private final Map<String, com.hotels.styx.api.service.BackendService> routes = new HashMap<>();
         private final List<NamedPlugin> plugins = new ArrayList<>();
 
         /**

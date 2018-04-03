@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,49 +13,51 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.infrastructure.configuration;
+package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.spi.config.SpiExtensionFactory;
 import org.testng.annotations.Test;
 
 import java.nio.file.Path;
 import java.util.Optional;
 
-import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
+import static com.hotels.styx.spi.ObjectFactories.newInstance;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
+import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class ObjectFactoryTest {
-    Path PLUGINS_FIXTURE_PATH = fixturesHome(ObjectFactoryTest.class, "/plugins");
+public class ObjectFactoriesTest {
+    Path PLUGINS_FIXTURE_PATH = fixturesHome(ObjectFactoriesTest.class, "/plugins");
     String SINGLE_PLUGIN = PLUGINS_FIXTURE_PATH.resolve("oneplugin").toString();
     String EMPTY = PLUGINS_FIXTURE_PATH.resolve("empty").toString();
 
-    ObjectFactory factory = new ObjectFactory("testgrp.TestPluginModule", SINGLE_PLUGIN);
+    SpiExtensionFactory factory = new SpiExtensionFactory("testgrp.TestPluginModule", SINGLE_PLUGIN);
 
     @Test
     public void shouldLoadAllPluginsModuleInTheSpecifiedPath() {
-        Optional<PluginFactory> pluginFactory = factory.newInstance(PluginFactory.class);
+        Optional<PluginFactory> pluginFactory = newInstance(factory, PluginFactory.class);
         assertThat(pluginFactory.get().getClass().getCanonicalName(), is("testgrp.TestPluginModule"));
     }
 
     @Test(expectedExceptions = ClassCastException.class)
     public void errorsIfClassLoadedIsNotInstanceOfExpectedType() {
-        factory.newInstance(Runnable.class);
+        newInstance(factory, Runnable.class);
     }
 
     @Test
     public void returnsAbsentIfNoSuchClass() {
-        ObjectFactory factory = new ObjectFactory("testgrp.NonExistent", SINGLE_PLUGIN);
+        SpiExtensionFactory factory = new SpiExtensionFactory("testgrp.NonExistent", SINGLE_PLUGIN);
 
-        assertThat(factory.newInstance(PluginFactory.class), isAbsent());
+        assertThat(newInstance(factory, PluginFactory.class), isAbsent());
     }
 
     @Test
     public void returnsAbsentIfPathDoesNotExist() {
-        ObjectFactory factory = new ObjectFactory("testgrp.TestPluginModule", EMPTY);
+        SpiExtensionFactory factory = new SpiExtensionFactory("testgrp.TestPluginModule", EMPTY);
 
-        Optional<PluginFactory> pluginFactory = factory.newInstance(PluginFactory.class);
+        Optional<PluginFactory> pluginFactory = newInstance(factory, PluginFactory.class);
         assertThat(pluginFactory, isAbsent());
     }
 }

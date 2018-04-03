@@ -157,7 +157,8 @@ case class StyxYamlConfig(yamlConfig: String,
 
     val styxServer = new StyxServerBuilder(styxConfig)
       .additionalServices(services(backendsRegistry).asJava)
-      .logConfigLocation(logbackXmlLocation.toString).build()
+      .logConfigLocation(logbackXmlLocation.toString)
+      .build()
 
     styxServer.startAsync().awaitRunning()
     styxServer

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@ package com.hotels.styx.support.configuration
 
 import java.util.concurrent.TimeUnit
 
-import com.hotels.styx.client.healthcheck.HealthCheckConfig.{DEFAULT_HEALTHY_THRESHOLD_VALUE, DEFAULT_HEALTH_CHECK_INTERVAL, DEFAULT_TIMEOUT_VALUE, DEFAULT_UNHEALTHY_THRESHOLD_VALUE}
+import com.hotels.styx.api.service
+import com.hotels.styx.api.service.HealthCheckConfig.{DEFAULT_HEALTHY_THRESHOLD_VALUE, DEFAULT_HEALTH_CHECK_INTERVAL, DEFAULT_TIMEOUT_VALUE, DEFAULT_UNHEALTHY_THRESHOLD_VALUE}
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.duration._
 import scala.compat.java8.OptionConverters._
+import scala.concurrent.duration.{Duration, _}
 
 case class HealthCheckConfig(uri: Option[String],
                              interval: Duration = Duration(DEFAULT_HEALTH_CHECK_INTERVAL, TimeUnit.MILLISECONDS),
@@ -29,7 +29,7 @@ case class HealthCheckConfig(uri: Option[String],
                              healthyThreshold: Int = DEFAULT_HEALTHY_THRESHOLD_VALUE,
                              unhealthyThreshold: Int = DEFAULT_UNHEALTHY_THRESHOLD_VALUE
                             ) {
-  def asJava: com.hotels.styx.client.healthcheck.HealthCheckConfig = com.hotels.styx.client.healthcheck.HealthCheckConfig.newHealthCheckConfigBuilder()
+  def asJava: service.HealthCheckConfig = service.HealthCheckConfig.newHealthCheckConfigBuilder()
     .uri(uri.orNull)
     .interval(interval.toMillis)
     .timeout(timeout.toMillis)
@@ -39,7 +39,7 @@ case class HealthCheckConfig(uri: Option[String],
 }
 
 object HealthCheckConfig {
-  def fromJava(from: com.hotels.styx.client.healthcheck.HealthCheckConfig): HealthCheckConfig =
+  def fromJava(from: service.HealthCheckConfig): HealthCheckConfig =
     HealthCheckConfig(
       uri = from.uri().asScala,
       interval = Duration(from.intervalMillis(), TimeUnit.MILLISECONDS),

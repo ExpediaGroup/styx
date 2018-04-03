@@ -28,8 +28,8 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
+import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.proxy.ProxyServerBuilder;
 import com.hotels.styx.proxy.ProxyServerConfig;
@@ -43,6 +43,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -52,6 +53,7 @@ import static com.google.common.util.concurrent.Service.State.FAILED;
 import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATION;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
+import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.System.currentTimeMillis;
@@ -62,6 +64,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 public class StyxServerTest {
+    Path FIXTURES_CLASS_PATH = fixturesHome(StyxServerTest.class, "/plugins");
+
     private LoggingTestSupport log;
 
     @BeforeMethod
@@ -162,6 +166,7 @@ public class StyxServerTest {
                 "    myPlugin:\n" +
                 "      factory:\n" +
                 "        class: com.hotels.styx.server.StyxServerTest$FailPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "";
 
         buildStyxServerAndExpectException(yaml, log ->
@@ -177,15 +182,19 @@ public class StyxServerTest {
                 "    plug1:\n" +
                 "      factory:\n" +
                 "        class: com.hotels.styx.server.StyxServerTest$FailPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "    plug2:\n" +
                 "      factory:\n" +
                 "        class: com.hotels.styx.server.StyxServerTest$OkPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "    plug3:\n" +
                 "      factory:\n" +
                 "        class: com.hotels.styx.server.StyxServerTest$FailPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "    plug4:\n" +
                 "      factory:\n" +
                 "        class: com.hotels.styx.server.StyxServerTest$OkPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "";
 
         buildStyxServerAndExpectException(yaml, log -> {

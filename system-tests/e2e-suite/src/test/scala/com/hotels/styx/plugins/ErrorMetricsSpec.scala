@@ -26,7 +26,8 @@ import com.hotels.styx.api.HttpResponse.Builder.response
 import io.netty.handler.codec.http.HttpResponseStatus
 import com.hotels.styx.api._
 import com.hotels.styx.api.messages.HttpResponseStatus.{BAD_GATEWAY, INTERNAL_SERVER_ERROR, OK}
-import com.hotels.styx.infrastructure.{RegistryServiceAdapter, MemoryBackedRegistry}
+import com.hotels.styx.api.service.BackendService
+import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.support.ImplicitStyxConversions
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.ProxyConfig
@@ -61,7 +62,7 @@ class ErrorMetricsSpec extends FunSpec
     .stub(urlMatching("/.*"), aResponse.withStatus(200))
     .stub(urlMatching("/fail"), aResponse.withStatus(500))
 
-  var backendsRegistry: MemoryBackedRegistry[com.hotels.styx.client.applications.BackendService] = _
+  var backendsRegistry: MemoryBackedRegistry[BackendService] = _
   var styxServer: StyxServer = _
 
   override val styxConfig = StyxConfig(ProxyConfig(), plugins = List(
@@ -76,7 +77,7 @@ class ErrorMetricsSpec extends FunSpec
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
-    backendsRegistry = new MemoryBackedRegistry[com.hotels.styx.client.applications.BackendService]
+    backendsRegistry = new MemoryBackedRegistry[BackendService]
     styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
         setBackends(
           backendsRegistry,

@@ -20,17 +20,18 @@ import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.client.OriginRestrictionLoadBalancingStrategy;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxHttpClient;
-import com.hotels.styx.client.applications.BackendService;
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
 import org.slf4j.Logger;
 
-import static com.hotels.styx.serviceproviders.ServiceProvision.loadService;
+import static com.hotels.styx.serviceproviders.ServiceProvision.loadLoadBalancer;
+import static com.hotels.styx.serviceproviders.ServiceProvision.loadRetryPolicy;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -52,10 +53,10 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
         String originRestrictionCookie = styxConfig.get("originRestrictionCookie").orElse(null);
         boolean stickySessionEnabled = backendService.stickySessionConfig().stickySessionEnabled();
 
-        RetryPolicy retryPolicy = loadService(styxConfig, environment, "retrypolicy.policy.factory", RetryPolicy.class)
+        RetryPolicy retryPolicy = loadRetryPolicy(styxConfig, environment, "retrypolicy.policy.factory", RetryPolicy.class)
                 .orElseGet(() -> defaultRetryPolicy(environment));
 
-        LoadBalancer configuredLbStrategy = loadService(
+        LoadBalancer configuredLbStrategy = loadLoadBalancer(
                 styxConfig, environment, "loadBalancing.strategy.factory", LoadBalancer.class, originsInventory)
                 .orElseGet(() -> new BusyConnectionsStrategy(originsInventory));
 

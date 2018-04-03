@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.infrastructure.configuration.ObjectFactory;
+import com.hotels.styx.common.Pair;
+import com.hotels.styx.spi.config.SpiExtensionFactory;
+import com.hotels.styx.spi.config.SpiExtension;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -40,7 +42,7 @@ public class PluginsMetadataTest {
     @Test
     public void pluginsAreProvidedInOrderSpecifiedByActivePluginsCommaSeparatedList() {
         // LinkedHashMap preserves insertion order
-        Map<String, PluginMetadata> plugins = new LinkedHashMap<>();
+        Map<String, SpiExtension> plugins = new LinkedHashMap<>();
 
         Stream.of("two", "four", "three", "one")
                 .forEach(key -> plugins.put(key, pluginMetadata()));
@@ -48,7 +50,7 @@ public class PluginsMetadataTest {
         PluginsMetadata pluginsMetadata = new PluginsMetadata("one,two,three,four", plugins);
 
         List<String> activePlugins = pluginsMetadata.activePlugins().stream()
-                .map(PluginMetadata::name)
+                .map(Pair::key)
                 .collect(toList());
 
         assertThat(activePlugins, contains("one", "two", "three", "four"));
@@ -56,7 +58,7 @@ public class PluginsMetadataTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void throwsExceptionIfActivePluginDoesNotExist() throws IOException {
-        Map<String, PluginMetadata> plugins = ImmutableMap.of(
+        Map<String, SpiExtension> plugins = ImmutableMap.of(
                 "one", pluginMetadata(),
                 "two", pluginMetadata()
         );
@@ -64,28 +66,12 @@ public class PluginsMetadataTest {
         new PluginsMetadata("one,monkey,two", plugins);
     }
 
-    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Factory missing for plugin 'one'")
-    public void throwsExceptionIfPluginIsMissingFactory() throws IOException {
-        new PluginsMetadata("one,two", ImmutableMap.of(
-                "one", new PluginMetadata(null, config()),
-                "two", new PluginMetadata(factory(), config())
-        ));
+    private SpiExtension pluginMetadata() {
+        return new SpiExtension(factory(), config(), true);
     }
 
-    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Config missing for plugin 'one'")
-    public void throwsExceptionIfPluginIsMissingConfig() throws IOException {
-        new PluginsMetadata("one,two", ImmutableMap.of(
-                "one", new PluginMetadata(factory(), null),
-                "two", new PluginMetadata(factory(), config())
-        ));
-    }
-
-    private PluginMetadata pluginMetadata() {
-        return new PluginMetadata(factory(), config());
-    }
-
-    private ObjectFactory factory() {
-        return new ObjectFactory("fakeclass.FakeClass" + fakeClassNumber++, "/some/class/path");
+    private SpiExtensionFactory factory() {
+        return new SpiExtensionFactory("fakeclass.FakeClass" + fakeClassNumber++, "/some/class/path");
     }
 
     private static JsonNode config() {

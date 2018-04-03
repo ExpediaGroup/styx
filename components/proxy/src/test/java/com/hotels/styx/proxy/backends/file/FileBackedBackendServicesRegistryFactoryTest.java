@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.proxy.backends.file;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.AggregatedConfiguration;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Environment;
@@ -22,8 +23,9 @@ import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
-import com.hotels.styx.client.applications.BackendService;
-import com.hotels.styx.common.StyxFutures;
+import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.proxy.backends.file.FileChangeMonitor.FileMonitorSettings;
 import org.testng.annotations.AfterMethod;
@@ -39,7 +41,6 @@ import java.util.Optional;
 
 import static com.google.common.io.Files.createTempDir;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
-import static com.hotels.styx.serviceproviders.ServiceProvision.loadService;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.delete;
@@ -47,7 +48,6 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.eq;
@@ -77,17 +77,16 @@ public class FileBackedBackendServicesRegistryFactoryTest {
 
     @Test
     public void instantiatesFromYaml() {
-        environment = environment("classpath:conf/environment/backend-factory-config.yml");
 
-        FileBackedBackendServicesRegistry registry = loadService(environment.configuration(), environment, "services.factories.backendServiceRegistry", FileBackedBackendServicesRegistry.class).get();
+        environment = new com.hotels.styx.Environment.Builder()
+                .configuration(StyxConfig.fromYaml("config: {originsFile: '${CONFIG_LOCATION:classpath:}/conf/origins/backend-factory-origins.yml'}"))
+                .build();
 
-        StyxFutures.await(registry.start());
+        JsonNodeConfig factoryConfig = new JsonNodeConfig(environment.configuration().get("config", JsonNode.class).get());
 
-        Iterable<BackendService> backendServices = registry.get();
+        Registry registry = new FileBackedBackendServicesRegistry.Factory().create(environment, factoryConfig);
 
-        List<String> backendIds = ids(backendServices);
-
-        assertThat(backendIds, containsInAnyOrder("backend-factory-test-origin1", "backend-factory-test-origin2"));
+        assertThat(registry != null, is(true));
     }
 
     @Test(expectedExceptions = ConfigurationException.class, expectedExceptionsMessageRegExp = "empty .services.registry.factory.config.originsFile. config value for factory class FileBackedBackendServicesRegistry.Factory")

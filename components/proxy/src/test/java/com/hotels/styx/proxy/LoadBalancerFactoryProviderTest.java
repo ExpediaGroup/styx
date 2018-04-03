@@ -87,11 +87,6 @@ public class LoadBalancerFactoryProviderTest {
     public static class NewAwesomeStrategy implements LoadBalancerFactory, LoadBalancer {
 
         @Override
-        public LoadBalancer create(Environment environment, Configuration strategyConfiguration) {
-            return null;
-        }
-
-        @Override
         public LoadBalancer create(Environment environment, Configuration strategyConfiguration, ActiveOrigins activeOrigins) {
             return null;
         }

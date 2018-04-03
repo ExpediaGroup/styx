@@ -16,11 +16,10 @@
 package com.hotels.styx.infrastructure;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.client.applications.BackendService;
-import com.hotels.styx.infrastructure.Registry.ReloadResult;
+import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.service.spi.Registry.ReloadResult;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -31,10 +30,9 @@ import java.util.function.Supplier;
 
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.common.StyxFutures.await;
-import static com.hotels.styx.infrastructure.Registry.ReloadResult.reloaded;
-import static com.hotels.styx.infrastructure.Registry.ReloadResult.unchanged;
+import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
+import static com.hotels.styx.api.service.spi.Registry.ReloadResult.unchanged;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -60,19 +58,6 @@ public class FileBackedRegistryTest {
         backendService = new BackendService.Builder().build();
         listener = mock(Registry.ChangeListener.class, withSettings().verboseLogging());
         timeSupplier = () -> FileTime.fromMillis(1520857740000L);
-    }
-
-    @Test
-    public void calculatesTheDifferenceBetweenCurrentAndNewResources() {
-        Iterable<BackendService> newResources = singletonList(backendService("one", 9090));
-        Iterable<BackendService> currentResources = singletonList(backendService("two", 9091));
-        Registry.Changes<Identifiable> expected = new Registry.Changes.Builder<>()
-                .added(backendService("one", 9090))
-                .removed(backendService("two", 9091))
-                .build();
-
-        Registry.Changes<BackendService> changes = FileBackedRegistry.changes(newResources, currentResources);
-        assertThat(changes.toString(), is(expected.toString()));
     }
 
     @Test
@@ -224,14 +209,4 @@ public class FileBackedRegistryTest {
         return configuration;
     }
 
-    private BackendService backendService(String id, int port) {
-        return new BackendService.Builder()
-                .id(id)
-                .origins(newOrigin(port))
-                .build();
-    }
-
-    private Origin newOrigin(int port) {
-        return newOriginBuilder("localhost", port).build();
-    }
 }

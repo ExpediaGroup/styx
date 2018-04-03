@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.infrastructure;
+package com.hotels.styx.api.service.spi;
 
 import com.google.common.collect.Iterables;
 import com.hotels.styx.api.Environment;
@@ -27,13 +27,12 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hotels.styx.infrastructure.Registry.Outcome.FAILED;
-import static com.hotels.styx.infrastructure.Registry.Outcome.RELOADED;
-import static com.hotels.styx.infrastructure.Registry.Outcome.UNCHANGED;
+import static com.hotels.styx.api.service.spi.Registry.Outcome.FAILED;
+import static com.hotels.styx.api.service.spi.Registry.Outcome.RELOADED;
+import static com.hotels.styx.api.service.spi.Registry.Outcome.UNCHANGED;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Registry for resources of type {@code T}.
@@ -43,16 +42,16 @@ import static java.util.Collections.emptyList;
 public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> {
 
     /**
-     * Register a {@link com.hotels.styx.infrastructure.Registry.ChangeListener} to be notified when registry changes.
+     * Register a {@link Registry.ChangeListener} to be notified when registry changes.
      *
-     * @param changeListener {@link com.hotels.styx.infrastructure.Registry.ChangeListener} to register.
+     * @param changeListener {@link Registry.ChangeListener} to register.
      */
     Registry<T> addListener(ChangeListener<T> changeListener);
 
     /**
-     * Remove a {@link com.hotels.styx.infrastructure.Registry.ChangeListener}.
+     * Remove a {@link Registry.ChangeListener}.
      *
-     * @param changeListener {@link com.hotels.styx.infrastructure.Registry.ChangeListener} to remove.
+     * @param changeListener {@link Registry.ChangeListener} to remove.
      */
     Registry<T> removeListener(ChangeListener<T> changeListener);
 
@@ -144,11 +143,14 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
 
         @Override
         public String toString() {
-            return toStringHelper(this)
-                    .add("added", added)
-                    .add("removed", removed)
-                    .add("updated", updated)
-                    .toString();
+            return "Changes{"
+                    + "added="
+                    + added
+                    + ", removed="
+                    + removed
+                    + ", updated="
+                    + updated
+                    + '}';
         }
 
         public Iterable<T> addedAndUpdated() {
@@ -169,7 +171,7 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
             }
 
             public Builder<T> added(Iterable<T> added) {
-                this.added = checkNotNull(added);
+                this.added = requireNonNull(added);
                 return this;
             }
 
@@ -178,7 +180,7 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
             }
 
             public Builder<T> removed(Iterable<T> removed) {
-                this.removed = checkNotNull(removed);
+                this.removed = requireNonNull(removed);
                 return this;
             }
 
@@ -187,7 +189,7 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
             }
 
             public Builder<T> updated(Iterable<T> updated) {
-                this.updated = checkNotNull(updated);
+                this.updated = requireNonNull(updated);
                 return this;
             }
 
@@ -265,7 +267,9 @@ public interface Registry<T extends Identifiable> extends Supplier<Iterable<T>> 
 
         @Override
         public String toString() {
-            return "ReloadResult{" + "outcome=" + outcome
+            return "ReloadResult{"
+                    + "outcome="
+                    + outcome
                     + ", message='" + message + '\''
                     + ", cause='" + cause + "\'"
                     + '}';

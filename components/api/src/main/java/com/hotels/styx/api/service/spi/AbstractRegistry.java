@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.infrastructure;
+package com.hotels.styx.api.service.spi;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapDifference;
@@ -82,7 +82,7 @@ public abstract class AbstractRegistry<T extends Identifiable> implements Regist
         return this;
     }
 
-    static <T extends Identifiable> Changes<T> changes(Iterable<T> newResources, Iterable<T> currentResources) {
+    protected static <T extends Identifiable> Changes<T> changes(Iterable<T> newResources, Iterable<T> currentResources) {
         Map<Id, T> newIdsToResource = mapById(newResources);
         Map<Id, T> currentIdsToResource = mapById(currentResources);
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,14 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static com.google.common.collect.Iterables.getFirst;
+import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
@@ -46,6 +48,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 public class PluginSuppliersTest {
+    Path FIXTURES_CLASS_PATH = fixturesHome(PluginSuppliersTest.class, "/plugins");
 
     private MetricRegistry styxMetricsRegistry;
 
@@ -63,6 +66,7 @@ public class PluginSuppliersTest {
                 "    myPlugin:\n" +
                 "      factory:\n" +
                 "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: test-foo-bar\n";
 
@@ -85,16 +89,19 @@ public class PluginSuppliersTest {
                 "    myPlugin0:\n" +
                 "      factory:\n" +
                 "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: instance1\n" +
                 "    myPlugin1:\n" +
                 "      factory:\n" +
                 "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: instance2\n" +
                 "    myPlugin2:\n" +
                 "      factory:\n" +
                 "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: instance3\n";
 
@@ -118,6 +125,7 @@ public class PluginSuppliersTest {
                 "    otherPlugin:\n" +
                 "      factory:\n" +
                 "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: test-foo-bar\n";
 
@@ -135,6 +143,7 @@ public class PluginSuppliersTest {
                 "  - name: myPlugin\n" +
                 "    factory:\n" +
                 "      class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactoryDoesNotExist\n" +
+                "      classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "    config:\n" +
                 "      testConfiguration: test-foo-bar\n";
 
@@ -151,6 +160,7 @@ public class PluginSuppliersTest {
                 "    myPlugin:\n" +
                 "      factory:\n" +
                 "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: test-foo-bar\n";
 
@@ -178,7 +188,8 @@ public class PluginSuppliersTest {
                 "  all:\n" +
                 "    myPlugin:\n" +
                 "      factory:\n" +
-                "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$FailingPluginFactory\n";
+                "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$FailingPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n";
 
         PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
 
@@ -197,12 +208,15 @@ public class PluginSuppliersTest {
                     "    myPlugin1:\n" +
                     "      factory:\n" +
                     "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$FailingPluginFactory\n" +
+                    "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                     "    myPlugin2:\n" +
                     "      factory:\n" +
                     "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$FailingPluginFactory\n" +
+                    "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                     "    myPlugin3:\n" +
                     "      factory:\n" +
-                    "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$FailingPluginFactory\n";
+                    "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$FailingPluginFactory\n" +
+                    "        classPath: " + FIXTURES_CLASS_PATH + "\n";
 
             PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
 
@@ -224,11 +238,13 @@ public class PluginSuppliersTest {
                 "    myPlugin:\n" +
                 "      factory:\n" +
                 "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: test-foo-bar\n" +
                 "    myAnotherPlugin:\n" +
                 "      factory:\n" +
                 "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: test-foo-bar\n";
 

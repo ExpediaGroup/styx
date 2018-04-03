@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,16 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.common.Pair;
+import com.hotels.styx.spi.config.SpiExtension;
 import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.Lists.newArrayListWithExpectedSize;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -66,35 +68,32 @@ public class PluginSuppliers {
     }
 
     private Iterable<NamedPlugin> activePlugins(PluginsMetadata pluginsMetadata) {
-        List<PluginMetadata> pluginMetadataList = pluginsMetadata.activePlugins();
+        List<NamedPlugin> plugins = pluginsMetadata.activePlugins()
+                .stream()
+                .map(this::loadPlugin)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
 
-        List<NamedPlugin> plugins = plugins(pluginMetadataList);
-
-        if (pluginMetadataList.size() > plugins.size()) {
-            throw new RuntimeException(format("%s plugins could not be loaded", pluginMetadataList.size() - plugins.size()));
+        if (pluginsMetadata.activePlugins().size() > plugins.size()) {
+            throw new RuntimeException(format("%s plugins could not be loaded", pluginsMetadata.activePlugins().size() - plugins.size()));
         }
 
         return plugins;
     }
 
-    private List<NamedPlugin> plugins(List<PluginMetadata> pluginMetadataList) {
-        List<NamedPlugin> plugins = newArrayListWithExpectedSize(pluginMetadataList.size());
+    private Optional<NamedPlugin> loadPlugin(Pair<String, SpiExtension> pair) {
+        String pluginName = pair.key();
+        SpiExtension spiExtension = pair.value();
 
-        for (PluginMetadata pluginMetadata : pluginMetadataList) {
-            try {
-                plugins.add(loadPlugin(pluginMetadata));
-            } catch (Throwable e) {
-                LOG.error(format("Could not load plugin %s: %s", pluginMetadata.name(), pluginMetadata.newPluginFactory().getClass().getName()), e);
-            }
+        try {
+            PluginFactory factory = pluginFactoryLoader.load(spiExtension);
+            Plugin plugin = factory.create(new PluginEnvironment(pluginName, environment, spiExtension, DEFAULT_PLUGINS_METRICS_SCOPE));
+            return Optional.of(namedPlugin(pluginName, plugin));
+        } catch (Throwable e) {
+            LOG.error(format("Could not load plugin %s: %s", pluginName, spiExtension.factory().factoryClass()), e);
+            return Optional.empty();
         }
-
-        return plugins;
-    }
-
-    private NamedPlugin loadPlugin(PluginMetadata pluginMetadata) {
-        PluginFactory factory = pluginFactoryLoader.load(pluginMetadata);
-        Plugin plugin = factory.create(new PluginEnvironment(environment, pluginMetadata, DEFAULT_PLUGINS_METRICS_SCOPE));
-        return namedPlugin(pluginMetadata.name(), plugin);
     }
 
 }

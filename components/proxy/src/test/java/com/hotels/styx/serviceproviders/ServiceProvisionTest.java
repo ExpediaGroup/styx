@@ -19,31 +19,45 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.AggregatedConfiguration;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.client.RemoteHost;
+import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicyFactory;
+import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.configuration.ConfigurationException;
+import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.service.spi.AbstractStyxService;
 import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.support.api.SimpleEnvironment;
-import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.configuration.ServiceFactory;
-import org.hamcrest.Matchers;
 import org.testng.annotations.Test;
 
+import java.nio.file.Path;
 import java.util.Map;
+import java.util.Optional;
 
-import static com.hotels.styx.serviceproviders.ServiceProvision.loadService;
+import static com.hotels.styx.serviceproviders.ServiceProvision.loadRetryPolicy;
 import static com.hotels.styx.serviceproviders.ServiceProvision.loadServices;
+import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
-import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
 import static java.util.Collections.emptyMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 
 public class ServiceProvisionTest {
+    Path FIXTURES_CLASS_PATH = fixturesHome(ServiceProvisionTest.class, "/plugins");
+
     private final String yaml = "" +
             "my:\n" +
             "  factory:\n" +
             "    enabled: true\n" +
             "    class: " + MyFactory.class.getName() + "\n" +
+            "    config:\n" +
+            "      stringValue: expectedValue\n" +
+            "myRetry:\n" +
+            "  factory:\n" +
+            "    enabled: true\n" +
+            "    class: " + MyRetryFactory.class.getName() + "\n" +
             "    config:\n" +
             "      stringValue: expectedValue\n" +
             "not:\n" +
@@ -90,16 +104,66 @@ public class ServiceProvisionTest {
             "      config:\n" +
             "        stringValue: valueNumber2\n";
 
+    private final String yamlForServiceFactories = "" +
+            "multi:\n" +
+            "  factories:\n" +
+            "    backendProvider:\n" +
+            "      factory:\n" +
+            "        class: " + TestBackendServiceProviderFactory.class.getName() + "\n" +
+            "        classPath: " + FIXTURES_CLASS_PATH.toString() + "\n" +
+            "      config:\n" +
+            "        stringValue: valueNumber1\n" +
+            "    routingProvider:\n" +
+            "      factory:\n" +
+            "        class: " + TestRoutingObjectProviderFactory.class.getName() + "\n" +
+            "        classPath: " + FIXTURES_CLASS_PATH.toString() + "\n" +
+            "      config:\n" +
+            "          stringValue: valueNumber2\n";
+
+
+
+    private final String yamlForMixedServiceFactories = "" +
+            "multi:\n" +
+            "  factories:\n" +
+            "    backendProvider:\n" +
+            "      enabled: true\n" +
+            "      class: " + TestBackendServiceProviderFactory.class.getName() + "\n" +
+            "      config:\n" +
+            "        stringValue: valueNumber1\n" +
+            "    routingProvider:\n" +
+            "      factory:\n" +
+            "        class: " + TestRoutingObjectProviderFactory.class.getName() + "\n" +
+            "        classPath: " + FIXTURES_CLASS_PATH.toString() + "\n" +
+            "      config:\n" +
+            "        stringValue: valueNumber2\n";
+
+    private final String mixedDisabledServices = "" +
+            "multi:\n" +
+            "  factories:\n" +
+            "    backendProvider:\n" +
+            "      enabled: false\n" +
+            "      class: " + TestBackendServiceProviderFactory.class.getName() + "\n" +
+            "      config:\n" +
+            "        stringValue: valueNumber1\n" +
+            "    routingProvider:\n" +
+            "      enabled: false\n" +
+            "      factory:\n" +
+            "        class: " + TestRoutingObjectProviderFactory.class.getName() + "\n" +
+            "        classPath: " + FIXTURES_CLASS_PATH.toString() + "\n" +
+            "      config:\n" +
+            "        stringValue: valueNumber2\n";
+
+
     private final Environment environment = environmentWithConfig(yaml);
 
     @Test
     public void serviceReturnsCorrectlyFromCall() {
-        assertThat(loadService(environment.configuration(), environment, "my.factory", String.class), isValue("expectedValue"));
+        assertThat(loadRetryPolicy(environment.configuration(), environment, "myRetry.factory", RetryPolicy.class).get(), is(instanceOf(RetryPolicy.class)));
     }
 
     @Test
     public void serviceReturnsEmptyWhenFactoryKeyDoesNotExist() {
-        assertThat(loadService(environment.configuration(), environment, "invalid.key", String.class), isAbsent());
+        assertThat(loadRetryPolicy(environment.configuration(), environment, "invalid.key", RetryPolicy.class), isAbsent());
     }
 
     @Test
@@ -123,6 +187,34 @@ public class ServiceProvisionTest {
     }
 
     @Test
+    public void loadsNewConfigurationFormat() {
+        Environment env = environmentWithConfig(yamlForServiceFactories);
+        Map<String, StyxService> services = loadServices(env.configuration(), env, "multi", StyxService.class);
+
+        assertThat(services.get("backendProvider"), instanceOf(BackendServiceProvider.class));
+        assertThat(services.get("routingProvider"), instanceOf(RoutingObjectProvider.class));
+    }
+
+
+    @Test
+    public void loadsFromMixedConfigFormat() {
+        Environment env = environmentWithConfig(yamlForMixedServiceFactories);
+        Map<String, StyxService> services = loadServices(env.configuration(), env, "multi", StyxService.class);
+
+        assertThat(services.get("backendProvider"), instanceOf(BackendServiceProvider.class));
+        assertThat(services.get("routingProvider"), instanceOf(RoutingObjectProvider.class));
+    }
+
+    @Test
+    public void ignoresDisabledServices() {
+        Environment env = environmentWithConfig(mixedDisabledServices);
+        Map<String, StyxService> services = loadServices(env.configuration(), env, "multi", StyxService.class);
+
+        assertThat(services.isEmpty(), is(true));
+    }
+
+
+    @Test
     public void servicesReturnEmptyWhenFactoryKeyDoesNotExist() {
         Map<String, String> services = loadServices(environment.configuration(), environment, "invalid.key", String.class);
 
@@ -131,7 +223,61 @@ public class ServiceProvisionTest {
 
     @Test(expectedExceptions = Exception.class, expectedExceptionsMessageRegExp = "(?s).*No such class 'my.FakeClass'.*")
     public void throwsExceptionWhenClassDoesNotExist() {
-        loadService(environment.configuration(), environment, "not.real", String.class);
+        loadRetryPolicy(environment.configuration(), environment, "not.real", RetryPolicy.class);
+    }
+
+    @Test(expectedExceptions = ConfigurationException.class,
+            expectedExceptionsMessageRegExp = "Unexpected configuration object 'services.factories.backendProvider', Configuration.*'")
+    public void throwsExceptionForInvalidServiceFactoryConfig() {
+        String config = "" +
+                "multi:\n" +
+                "  factories:\n" +
+                "    backendProvider:\n" +
+                "      enabled: false\n" +
+                "      config:\n" +
+                "        stringValue: valueNumber1\n";
+
+        Environment env = environmentWithConfig(config);
+        loadServices(env.configuration(), env, "multi", StyxService.class);
+    }
+
+    @Test(expectedExceptions = ConfigurationException.class,
+            expectedExceptionsMessageRegExp = "Unexpected configuration object 'services.factories.backendProvider', Configuration.*'")
+    public void throwsExceptionForInvalidSpiExtensionFactory() {
+        String config = "" +
+                "multi:\n" +
+                "  factories:\n" +
+                "    backendProvider:\n" +
+                "      enabled: false\n" +
+                "      factory:\n" +
+                "        classPath: /path/to/jar\n" +
+                "      config:\n" +
+                "         attribute: x\n";
+
+        Environment env = environmentWithConfig(config);
+        loadServices(env.configuration(), env, "multi", StyxService.class);
+    }
+
+    public static class MyRetryFactory implements RetryPolicyFactory {
+        @Override
+        public RetryPolicy create(Environment environment, Configuration serviceConfiguration) {
+            return (context, loadBalancer, lbContext) -> new RetryPolicy.Outcome() {
+                @Override
+                public long retryIntervalMillis() {
+                    return 0;
+                }
+
+                @Override
+                public Optional<RemoteHost> nextOrigin() {
+                    return Optional.empty();
+                }
+
+                @Override
+                public boolean shouldRetry() {
+                    return false;
+                }
+            };
+        }
     }
 
     public static class MyFactory implements ServiceFactory<String> {

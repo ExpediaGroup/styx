@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,29 @@ package com.hotels.styx.proxy.plugin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Splitter;
+import com.hotels.styx.common.Pair;
+import com.hotels.styx.spi.config.SpiExtension;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hotels.styx.common.Pair.pair;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 
-class PluginsMetadata implements Iterable<PluginMetadata> {
+class PluginsMetadata implements Iterable<SpiExtension> {
     private static final Splitter SPLITTER = Splitter.on(",")
             .omitEmptyStrings()
             .trimResults();
     private final List<String> activePluginsNames;
-    private final Map<String, PluginMetadata> plugins;
-    private final List<PluginMetadata> activePlugins;
+    private final Map<String, SpiExtension> plugins;
 
     PluginsMetadata(@JsonProperty("active") String active,
-                    @JsonProperty("all") Map<String, PluginMetadata> plugins) {
+                    @JsonProperty("all") Map<String, SpiExtension> plugins) {
         checkNotNull(active, "No active plugin specified");
         checkNotNull(plugins, "No list of all plugins specified");
 
@@ -51,20 +53,12 @@ class PluginsMetadata implements Iterable<PluginMetadata> {
 
         activePluginsNames.forEach(name ->
                 checkArgument(plugins.containsKey(name), "No such plugin '%s' in %s", name, plugins));
-
-        this.activePlugins = activePluginsNames.stream()
-                .map(this::pluginMetadata)
-                .collect(toList());
     }
 
-    public List<PluginMetadata> activePlugins() {
-        return activePlugins;
-    }
-
-    private PluginMetadata pluginMetadata(String name) {
-        PluginMetadata metadata = plugins.get(name);
-
-        return metadata.attachName(name);
+    public List<Pair<String, SpiExtension>> activePlugins() {
+        return activePluginsNames.stream()
+                .map(name -> pair(name, plugins.get(name)))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -76,7 +70,7 @@ class PluginsMetadata implements Iterable<PluginMetadata> {
     }
 
     @Override
-    public Iterator<PluginMetadata> iterator() {
+    public Iterator<SpiExtension> iterator() {
         return plugins.values().iterator();
     }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.spi.config.SpiExtension;
 
 /**
  * An interface for loading PluginFactory objects from various sources.
  *
  */
 public interface PluginFactoryLoader {
-    PluginFactory load(PluginMetadata pluginMetadata);
+    PluginFactory load(SpiExtension spiExtension);
 }
