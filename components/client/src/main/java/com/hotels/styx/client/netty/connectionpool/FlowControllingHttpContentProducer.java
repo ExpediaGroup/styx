@@ -47,12 +47,13 @@ import static rx.internal.operators.BackpressureUtils.getAndAddRequest;
 class FlowControllingHttpContentProducer {
     private static final Logger LOGGER = LoggerFactory.getLogger(FlowControllingHttpContentProducer.class);
 
-    private final StateMachine<ProducerState> stateMachine;
+     private final StateMachine<ProducerState> stateMachine;
     private final String loggingPrefix;
 
     private final Runnable askForMore;
     private final Runnable onCompleteAction;
     private final Consumer<Throwable> onTerminateAction;
+    private Runnable delayedTearDownAction;
 
     private final Queue<ByteBuf> readQueue = new ConcurrentLinkedDeque<>();
     private final AtomicLong requested = new AtomicLong(Long.MAX_VALUE);
@@ -60,6 +61,8 @@ class FlowControllingHttpContentProducer {
     private final AtomicLong receivedBytes = new AtomicLong(0);
     private final AtomicLong emittedChunks = new AtomicLong(0);
     private final AtomicLong emittedBytes = new AtomicLong(0);
+
+    private final Origin origin;
 
     private volatile Subscriber<? super ByteBuf> contentSubscriber;
 
@@ -76,11 +79,14 @@ class FlowControllingHttpContentProducer {
             Runnable askForMore,
             Runnable onCompleteAction,
             Consumer<Throwable> onTerminateAction,
+            Runnable delayedTearDownAction,
             String loggingPrefix,
             Origin origin) {
         this.askForMore = requireNonNull(askForMore);
         this.onCompleteAction = requireNonNull(onCompleteAction);
         this.onTerminateAction = requireNonNull(onTerminateAction);
+        this.delayedTearDownAction = requireNonNull(delayedTearDownAction);
+        this.origin = requireNonNull(origin);
 
         this.stateMachine = new StateMachine.Builder<ProducerState>()
                 .initialState(BUFFERING)
@@ -93,7 +99,7 @@ class FlowControllingHttpContentProducer {
 
                 .transition(BUFFERING_COMPLETED, RxBackpressureRequestEvent.class, this::rxBackpressureRequestBeforeSubscription)
                 .transition(BUFFERING_COMPLETED, ContentChunkEvent.class, this::spuriousContentChunkEvent)
-                .transition(BUFFERING_COMPLETED, ChannelInactiveEvent.class, s -> BUFFERING_COMPLETED)
+                .transition(BUFFERING_COMPLETED, ChannelInactiveEvent.class, s-> scheduleTearDown(BUFFERING_COMPLETED))
                 .transition(BUFFERING_COMPLETED, ChannelExceptionEvent.class, s -> BUFFERING_COMPLETED)
                 .transition(BUFFERING_COMPLETED, DelayedTearDownEvent.class, this::tearDown)
                 .transition(BUFFERING_COMPLETED, ContentSubscribedEvent.class, this::contentSubscribedEventWhileBufferingCompleted)
@@ -109,9 +115,9 @@ class FlowControllingHttpContentProducer {
 
                 .transition(EMITTING_BUFFERED_CONTENT, RxBackpressureRequestEvent.class, this::rxBackpressureRequestEventWhileEmittingBufferedContent)
                 .transition(EMITTING_BUFFERED_CONTENT, ContentChunkEvent.class, this::spuriousContentChunkEvent)
-                .transition(EMITTING_BUFFERED_CONTENT, ChannelInactiveEvent.class, s -> EMITTING_BUFFERED_CONTENT)
+                .transition(EMITTING_BUFFERED_CONTENT, ChannelInactiveEvent.class, s -> scheduleTearDown(EMITTING_BUFFERED_CONTENT))
                 .transition(EMITTING_BUFFERED_CONTENT, ChannelExceptionEvent.class, s -> EMITTING_BUFFERED_CONTENT)
-                .transition(EMITTING_BUFFERED_CONTENT, DelayedTearDownEvent.class, e -> tearDownWithError(origin))
+                .transition(EMITTING_BUFFERED_CONTENT, DelayedTearDownEvent.class, this::tearDownWithError)
                 .transition(EMITTING_BUFFERED_CONTENT, ContentSubscribedEvent.class, this::contentSubscribedEventWhileEmittingBufferedContent)
                 .transition(EMITTING_BUFFERED_CONTENT, ContentEndEvent.class, this::contentEndEventWhileEmittingBufferedContent)
                 .transition(EMITTING_BUFFERED_CONTENT, UnsubscribeEvent.class, this::emitErrorAndTerminateOnPrematureUnsubscription)
@@ -323,16 +329,18 @@ class FlowControllingHttpContentProducer {
         return EMITTING_BUFFERED_CONTENT;
     }
 
-    private ProducerState tearDownWithError(Origin origin) {
-        return emitErrorAndTerminate(new ResponseTimeoutException(origin));
+    private ProducerState tearDownWithError(CausalEvent event) {
+        return emitErrorAndTerminate(event.cause());
     }
 
     private ProducerState tearDown(CausalEvent event) {
         return releaseAndTerminate(event);
     }
 
-
-
+    private ProducerState scheduleTearDown(ProducerState state) {
+        delayedTearDownAction.run();
+        return state;
+    }
 
     /*
      * Event injector methods:
@@ -353,8 +361,8 @@ class FlowControllingHttpContentProducer {
         stateMachine.handle(new ChannelInactiveEvent(cause));
     }
 
-    void tearDownResources(Throwable cause) {
-        stateMachine.handle(new DelayedTearDownEvent(cause));
+    void tearDownResources() {
+        stateMachine.handle(new DelayedTearDownEvent(new ResponseTimeoutException(origin)));
     }
 
     void request(long n) {

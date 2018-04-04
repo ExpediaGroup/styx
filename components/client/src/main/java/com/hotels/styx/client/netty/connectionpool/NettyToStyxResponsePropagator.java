@@ -103,7 +103,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         ensureContentProducerIsCreated(ctx);
         contentProducer.ifPresent(producer -> producer.channelException(toStyxException(cause)));
     }
@@ -117,17 +117,16 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    public void channelInactive(ChannelHandlerContext ctx) {
         ensureContentProducerIsCreated(ctx);
 
         TransportLostException cause = new TransportLostException(ctx.channel().remoteAddress(), origin);
-        scheduleResourcesTearDown(ctx, cause);
         contentProducer.ifPresent(producer -> producer.channelInactive(cause));
     }
 
-    private void scheduleResourcesTearDown(ChannelHandlerContext ctx, Throwable cause) {
+    private void scheduleResourcesTearDown(ChannelHandlerContext ctx) {
         ctx.channel().eventLoop().schedule(
-                () -> contentProducer.ifPresent(producer -> producer.tearDownResources(cause)),
+                () -> contentProducer.ifPresent(FlowControllingHttpContentProducer::tearDownResources),
                 idleTimeoutMillis,
                 MILLISECONDS);
     }
@@ -206,9 +205,9 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
                     emitResponseCompleted();
                 },
                 this::emitResponseError,
+                () -> scheduleResourcesTearDown(ctx),
                 format("%s, %s", loggingPrefix, requestPrefix),
-                origin
-        );
+                origin);
     }
 
     private void emitResponseCompleted() {
