@@ -47,7 +47,7 @@ import static rx.internal.operators.BackpressureUtils.getAndAddRequest;
 class FlowControllingHttpContentProducer {
     private static final Logger LOGGER = LoggerFactory.getLogger(FlowControllingHttpContentProducer.class);
 
-     private final StateMachine<ProducerState> stateMachine;
+    private final StateMachine<ProducerState> stateMachine;
     private final String loggingPrefix;
 
     private final Runnable askForMore;
