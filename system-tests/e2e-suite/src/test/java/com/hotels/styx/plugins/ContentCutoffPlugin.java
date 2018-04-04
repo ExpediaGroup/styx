@@ -16,7 +16,7 @@
 package com.hotels.styx.plugins;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.ResponseStream;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +28,7 @@ public class ContentCutoffPlugin implements Plugin {
     private static Logger LOGGER = LoggerFactory.getLogger(ContentCutoffPlugin.class);
 
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public ResponseStream intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request)
                 .flatMap(response -> {
                     Observable<String> body = response.body()

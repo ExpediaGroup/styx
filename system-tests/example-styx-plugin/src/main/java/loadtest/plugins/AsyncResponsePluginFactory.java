@@ -17,6 +17,7 @@ package loadtest.plugins;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.ResponseStream;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import rx.Observable;
@@ -39,7 +40,7 @@ public class AsyncResponsePluginFactory implements PluginFactory {
         }
 
         @Override
-        public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        public ResponseStream intercept(HttpRequest request, Chain chain) {
             return chain.proceed(request)
                     .flatMap(response -> processAsynchronously(response, config.delayMillis()));
         }

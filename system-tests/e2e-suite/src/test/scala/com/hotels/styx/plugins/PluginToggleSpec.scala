@@ -112,7 +112,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
   }
 
   private class PluginUnderTest extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): Observable[HttpResponse] =
+    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): ResponseStream =
       just(response().body("response-from-plugin").build())
   }
 }

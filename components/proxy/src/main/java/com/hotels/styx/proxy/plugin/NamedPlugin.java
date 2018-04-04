@@ -17,9 +17,8 @@ package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.ResponseStream;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import rx.Observable;
 
 import java.util.Map;
 
@@ -88,7 +87,7 @@ public final class NamedPlugin implements Plugin {
     }
 
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public ResponseStream intercept(HttpRequest request, Chain chain) {
         if (enabled) {
             return plugin.intercept(request, chain);
         }

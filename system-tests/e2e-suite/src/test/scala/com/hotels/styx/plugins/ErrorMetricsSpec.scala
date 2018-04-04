@@ -303,7 +303,7 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   private class Return500Interceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): Observable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
       if (request.header("Generate_error_status").asScala.contains("true"))
         just(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
       else
@@ -312,7 +312,7 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   private class MapTo500Interceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): Observable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
       if (request.header("Map_to_error_status").asScala.contains("true"))
         chain.proceed(request).flatMap(new Func1[HttpResponse, Observable[HttpResponse]]() {
           override def call(t: HttpResponse) = just(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
@@ -323,7 +323,7 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   private class Return502Interceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): Observable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
       if (request.header("Generate_bad_gateway_status").asScala.contains("true"))
         just(response(HttpResponseStatus.BAD_GATEWAY).build())
       else
@@ -332,7 +332,7 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   private class MapTo502Interceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): Observable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
       if (request.header("Map_to_bad_gateway_status").asScala.contains("true"))
         chain.proceed(request).flatMap(new Func1[HttpResponse, Observable[HttpResponse]]() {
           override def call(t: HttpResponse) = just(response(HttpResponseStatus.BAD_GATEWAY).build())
@@ -343,7 +343,7 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   private class ThrowExceptionInterceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): Observable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
       if (request.header("Throw_an_exception").asScala.contains("true"))
         throw new TestException()
       else
@@ -353,7 +353,7 @@ class ErrorMetricsSpec extends FunSpec
 
   private class MapToExceptionInterceptor extends PluginAdapter {
 
-    override def intercept(request: HttpRequest, chain: Chain): Observable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
       if (request.header("Map_to_exception").asScala.contains("true"))
         chain.proceed(request).flatMap(new Func1[HttpResponse, Observable[HttpResponse]]() {
           override def call(t: HttpResponse) = error(new TestException())

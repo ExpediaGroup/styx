@@ -17,9 +17,8 @@ package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.ResponseStream;
 import com.hotels.styx.client.StyxHeaderConfig;
-import rx.Observable;
 
 import static com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_FOR;
 import static com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_PROTO;
@@ -36,7 +35,7 @@ public class RequestEnrichingInterceptor implements HttpInterceptor {
     }
 
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public ResponseStream intercept(HttpRequest request, Chain chain) {
         return chain.proceed(enrich(request));
     }
 

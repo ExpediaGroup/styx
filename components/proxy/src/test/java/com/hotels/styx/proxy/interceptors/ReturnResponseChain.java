@@ -18,7 +18,7 @@ package com.hotels.styx.proxy.interceptors;
 import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import rx.Observable;
+import com.hotels.styx.api.ResponseStream;
 
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static rx.Observable.just;
@@ -47,7 +47,7 @@ public final class ReturnResponseChain implements Chain {
     }
 
     @Override
-    public Observable<HttpResponse> proceed(HttpRequest request) {
+    public ResponseStream proceed(HttpRequest request) {
         return just(response);
     }
 }

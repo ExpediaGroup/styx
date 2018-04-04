@@ -113,7 +113,7 @@ class PluginAdminInterfaceSpec extends FunSpec with StyxProxySpec with StyxClien
   }
 
   private class PluginX extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): Observable[HttpResponse] = chain.proceed(request)
+    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): ResponseStream = chain.proceed(request)
 
     override def adminInterfaceHandlers(): util.Map[String, HttpHandler] = Map[String, HttpHandler](
       "/path/one" -> new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "X: Response from first admin interface"),
@@ -122,7 +122,7 @@ class PluginAdminInterfaceSpec extends FunSpec with StyxProxySpec with StyxClien
   }
 
   private class PluginY extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): Observable[HttpResponse] = chain.proceed(request)
+    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): ResponseStream = chain.proceed(request)
 
     override def adminInterfaceHandlers(): util.Map[String, HttpHandler] = Map[String, HttpHandler](
       "/path/one" -> new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Y: Response from first admin interface"),
@@ -131,7 +131,7 @@ class PluginAdminInterfaceSpec extends FunSpec with StyxProxySpec with StyxClien
   }
 
   private class PluginZ extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): Observable[HttpResponse] = chain.proceed(request)
+    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): ResponseStream = chain.proceed(request)
 
     override def adminInterfaceHandlers(): util.Map[String, HttpHandler] = Map[String, HttpHandler](
       "path/one" -> new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Z: Response from first admin interface"),
@@ -140,7 +140,7 @@ class PluginAdminInterfaceSpec extends FunSpec with StyxProxySpec with StyxClien
   }
 
   private class PluginWithNoAdminFeatures extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): Observable[HttpResponse] = chain.proceed(request)
+    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): ResponseStream = chain.proceed(request)
 
     override def adminInterfaceHandlers(): util.Map[String, HttpHandler] = Map[String, HttpHandler](
 

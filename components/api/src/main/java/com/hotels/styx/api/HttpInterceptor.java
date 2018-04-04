@@ -17,8 +17,6 @@ package com.hotels.styx.api;
 
 import java.util.Optional;
 
-import rx.Observable;
-
 /**
  * An interceptor can interact with a request before it is passed to the handler and/or the response from the handler
  * before it is returned.
@@ -86,7 +84,7 @@ public interface HttpInterceptor {
          * @param request request to propagate
          * @return observable that will provide the response
          */
-        Observable<HttpResponse> proceed(HttpRequest request);
+        ResponseStream proceed(HttpRequest request);
     }
 
     /**
@@ -97,6 +95,6 @@ public interface HttpInterceptor {
      * @param chain   chain
      * @return observable that will provide the response
      */
-    Observable<HttpResponse> intercept(HttpRequest request, Chain chain);
+    ResponseStream intercept(HttpRequest request, Chain chain);
 
 }

@@ -21,7 +21,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.{HttpRequest, HttpResponse}
+import com.hotels.styx.api.{HttpRequest, HttpResponse, ResponseStream}
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -79,7 +79,7 @@ class AsyncPluginResponseSpec extends FunSpec
 import rx.lang.scala.ImplicitFunctionConversions._
 
 class AsyncContentDelayPlugin extends PluginAdapter {
-  override def intercept(request: HttpRequest, chain: Chain): rx.Observable[HttpResponse] = {
+  override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
     chain.proceed(request)
       .observeOn(Schedulers.computation())
       .flatMap((response: HttpResponse) => {

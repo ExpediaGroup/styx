@@ -39,7 +39,7 @@ object ImplicitScalaRxConversions {
 }
 
 class PluginAdapter(scalaInterceptor: (HttpRequest, ChainAdapter) => Observable[HttpResponse]) extends Plugin {
-  def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): JavaObservable[HttpResponse] =
+  def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): ResponseStream =
     toJavaObservable(scalaInterceptor(request, new ChainAdapter(chain)))
 }
 

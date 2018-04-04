@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.ResponseStream;
 import com.hotels.styx.api.configuration.ConfigurationContextResolver;
 import com.hotels.styx.api.configuration.Configuration;
 import org.testng.annotations.Test;
@@ -78,7 +79,7 @@ public class ConfigurationContextResolverInterceptorTest {
         }
 
         @Override
-        public Observable<HttpResponse> proceed(HttpRequest request) {
+        public ResponseStream proceed(HttpRequest request) {
             proceedWasCalled = true;
 
             return just(response(OK).build());

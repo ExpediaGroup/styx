@@ -20,12 +20,12 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.ResponseStream;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.common.SimpleCache;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
-import rx.Observable;
 
 import java.util.Map;
 
@@ -82,7 +82,7 @@ public class InstrumentedPlugin implements Plugin {
     }
 
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain originalChain) {
+    public ResponseStream intercept(HttpRequest request, Chain originalChain) {
         StatusRecordingChain chain = new StatusRecordingChain(originalChain);
         try {
             return plugin.intercept(request, chain)
@@ -137,7 +137,7 @@ public class InstrumentedPlugin implements Plugin {
         }
 
         @Override
-        public Observable<HttpResponse> proceed(HttpRequest request) {
+        public ResponseStream proceed(HttpRequest request) {
             try {
                 return chain.proceed(request)
                         .doOnNext(response -> upstreamStatus = response.status())

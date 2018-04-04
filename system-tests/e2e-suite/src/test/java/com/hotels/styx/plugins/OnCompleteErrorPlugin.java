@@ -16,14 +16,13 @@
 package com.hotels.styx.plugins;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.ResponseStream;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import rx.Observable;
 
 public class OnCompleteErrorPlugin implements Plugin {
 
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public ResponseStream intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request)
                 .doOnCompleted(() -> {
                     if (request.header("Fail_at_onCompleted").isPresent()) {

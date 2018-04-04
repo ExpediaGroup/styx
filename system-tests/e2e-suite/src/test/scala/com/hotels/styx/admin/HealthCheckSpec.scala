@@ -83,7 +83,7 @@ class HealthCheckSpec extends FunSpec
   }
 
   class FaultyPlugin extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): Observable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
       Observable.error(new RuntimeException)
     }
   }

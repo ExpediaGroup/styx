@@ -17,10 +17,18 @@ package loadtest.plugins;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.ResponseStream;
+import com.hotels.styx.api.ResponseStreamImpl;
+import com.hotels.styx.api.messages.FullHttpRequest;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import rx.Observable;
+import com.hotels.styx.common.CompletableFutures;
 
+import java.util.Observable;
+import java.util.concurrent.CompletableFuture;
+
+import static com.hotels.styx.api.ResponseStreamImpl.responseStream;
+import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static rx.Observable.timer;
@@ -41,12 +49,30 @@ public class AsyncRequestContentDecoderPluginFactory implements PluginFactory {
         }
 
         @Override
-        public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-            return request.decode(buf -> buf.toString(UTF_8), config.maxContentLength())
-                    .map(decodedRequest -> decodedRequest.requestBuilder().body(decodedRequest.body()).build())
-                    .flatMap(newRequest -> timer(config.delayMillis(), MILLISECONDS)
-                            .map(x -> newRequest))
-                    .flatMap(chain::proceed);
+        public ResponseStream intercept(HttpRequest request, Chain chain) {
+
+            ResponseStream responseStream = responseStream(
+                    fromSingleObservable(request.toFullRequest(config.maxContentLength()))
+                            .thenCompose(fullRequest -> {
+                                rx.Observable<HttpRequest> delayedRequest = rx.Observable.timer(config.delayMillis(), MILLISECONDS)
+                                        .map(x -> fullRequest.toStreamingRequest());
+                                return fromSingleObservable(delayedRequest);
+                            }));
+
+            return responseStream;
+
+//
+//
+//            request.toFullRequest(config.maxContentLength())
+//
+//
+//                    .(fullRequest -> timer(config.delayMillis(), MILLISECONDS))
+
+//            return request.decode(buf -> buf.toString(UTF_8), config.maxContentLength())
+//                    .map(decodedRequest -> decodedRequest.requestBuilder().body(decodedRequest.body()).build())
+//                    .flatMap(newRequest -> timer(config.delayMillis(), MILLISECONDS)
+//                            .map(x -> newRequest))
+//                    .flatMap(chain::proceed);
         }
     }
 

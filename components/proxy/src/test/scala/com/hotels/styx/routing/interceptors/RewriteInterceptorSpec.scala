@@ -16,7 +16,7 @@
 package com.hotels.styx.routing.interceptors
 
 import com.hotels.styx.api.HttpResponse.Builder.response
-import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse}
+import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse, ResponseStream}
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition
 import io.netty.handler.codec.http.HttpResponseStatus.OK
@@ -71,7 +71,7 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
   class CapturingChain extends HttpInterceptor.Chain {
     var storedRequest: HttpRequest = _
 
-    override def proceed(request: HttpRequest): Observable[HttpResponse] = {
+    override def proceed(request: HttpRequest): ResponseStream = {
       storedRequest = request
       Observable.just(response(OK).build())
     }

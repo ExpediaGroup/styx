@@ -19,8 +19,8 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpMessage;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.ResponseStream;
 import io.netty.handler.codec.http.HttpVersion;
-import rx.Observable;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.netty.handler.codec.http.HttpHeaders.Names.VIA;
@@ -36,7 +36,7 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
     private static final CharSequence VIA_STYX_1_1 = newEntity("1.1 styx");
 
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public ResponseStream intercept(HttpRequest request, Chain chain) {
         HttpRequest newRequest = requestWithAppendedViaHeader(request);
 
         return chain.proceed(newRequest)

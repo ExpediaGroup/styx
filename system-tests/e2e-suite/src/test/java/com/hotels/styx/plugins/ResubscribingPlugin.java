@@ -17,12 +17,13 @@ package com.hotels.styx.plugins;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.ResponseStream;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import rx.Observable;
 
 public class ResubscribingPlugin implements Plugin {
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public ResponseStream intercept(HttpRequest request, Chain chain) {
         return Observable.just(request)
                 .map(chain::proceed)
                 .flatMap(ResubscribingPlugin::resubscribe);

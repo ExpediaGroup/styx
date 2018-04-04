@@ -28,6 +28,12 @@
       <artifactId>styx-test-plugin-dependencies</artifactId>
       <version>${project.version}</version>
     </dependency>
+
+    <dependency>
+      <groupId>com.hotels.styx</groupId>
+      <artifactId>styx-common</artifactId>
+    </dependency>
+
   </dependencies>
 
 </project>

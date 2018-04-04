@@ -18,9 +18,8 @@ package com.hotels.styx;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Service;
 import com.hotels.styx.admin.AdminServerConfig;
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.ResponseStream;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -39,7 +38,6 @@ import io.netty.util.ResourceLeakDetector;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -253,7 +251,7 @@ public class StyxServerTest {
         }
 
         @Override
-        public Observable<HttpResponse> intercept(HttpRequest request, HttpInterceptor.Chain chain) {
+        public ResponseStream intercept(HttpRequest request, Chain chain) {
             return null;
         }
 

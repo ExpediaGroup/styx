@@ -16,12 +16,11 @@
 package loadtest.plugins;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.ResponseStream;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -49,7 +48,7 @@ public class AsyncResponseContentDecoderPluginFactory implements PluginFactory {
         }
 
         @Override
-        public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        public ResponseStream intercept(HttpRequest request, Chain chain) {
             return chain.proceed(request)
                     .flatMap(response ->
                             response.decode(buf -> buf.toString(UTF_8), this.maxContentLength)

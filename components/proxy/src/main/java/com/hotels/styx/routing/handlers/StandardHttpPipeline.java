@@ -19,6 +19,7 @@ import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.ResponseStream;
 import rx.Observable;
 
 import java.util.List;
@@ -74,7 +75,7 @@ class StandardHttpPipeline implements HttpHandler2 {
         }
 
         @Override
-        public Observable<HttpResponse> proceed(HttpRequest request) {
+        public ResponseStream proceed(HttpRequest request) {
             if (index < interceptors.size()) {
                 HttpInterceptor.Chain chain = new HttpInterceptorChain(this, index + 1);
                 HttpInterceptor interceptor = interceptors.get(index);

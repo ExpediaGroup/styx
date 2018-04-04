@@ -102,14 +102,14 @@ class PluginErrorHandlingSpec extends FunSpec
   }
 
   private class FailBeforeHandleInterceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): rx.Observable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): ResponseStream = {
       failIfHeaderPresent(request)
       chain.proceed(request)
     }
   }
 
   private class FailAfterHandleInterceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): rx.Observable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): ResponseStream = {
       toJavaObservable(toScalaObservable(chain.proceed(request)).map(
         (response: HttpResponse) => {
           val fail: Optional[String] = request.header("Fail_after_handle")
