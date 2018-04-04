@@ -15,9 +15,7 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.eaio.uuid.UUID;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Objects;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Announcer;
 import com.hotels.styx.api.HttpRequest;
@@ -25,6 +23,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.client.HttpRequestOperationFactory;
+
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
 import rx.Observable;
@@ -41,12 +40,12 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
     private static final AttributeKey<Object> CLOSED_BY_STYX = AttributeKey.newInstance("CLOSED_BY_STYX");
 
     private final Origin origin;
-    private final Object id;
     private final Channel channel;
     private final HttpRequestOperationFactory requestOperationFactory;
 
     private volatile long timeToFirstByteMs;
     private final Announcer<Listener> listeners = Announcer.to(Listener.class);
+
 
     /**
      * Constructs an instance with an arbitrary UUID.
@@ -57,7 +56,6 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
      */
     @VisibleForTesting
     public NettyConnection(Origin origin, Channel channel, HttpRequestOperationFactory requestOperationFactory) {
-        this.id = new UUID();
         this.origin = checkNotNull(origin);
         this.channel = checkNotNull(channel);
         this.requestOperationFactory = requestOperationFactory;
@@ -116,23 +114,6 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
     @Override
     public void notifyTimeToFirstByte(long timeToFirstByte, TimeUnit timeUnit) {
         this.timeToFirstByteMs = timeUnit.toMillis(timeToFirstByte);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(id);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        NettyConnection other = (NettyConnection) obj;
-        return Objects.equal(this.id, other.id);
     }
 
     @Override

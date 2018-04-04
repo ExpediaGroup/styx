@@ -16,7 +16,6 @@
 package com.hotels.styx.api.client.retrypolicy.spi;
 
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.configuration.Configuration;
 
 /**

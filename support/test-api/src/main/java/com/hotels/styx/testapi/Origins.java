@@ -12,11 +12,13 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- */
+*/
+
 package com.hotels.styx.testapi;
 
-import com.eaio.uuid.UUID;
 import com.hotels.styx.api.client.Origin;
+
+import static java.util.UUID.randomUUID;
 
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 
@@ -46,8 +48,8 @@ public final class Origins {
      */
     public static Origin origin(String host, int port) {
         return newOriginBuilder(host, port)
-                .applicationId(new UUID().toString())
-                .id(new UUID().toString())
+                .applicationId(randomUUID().toString())
+                .id(randomUUID().toString())
                 .build();
     }
 }
