@@ -15,20 +15,21 @@
  */
 package com.hotels.styx.testapi;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.StyxConfig;
-import com.hotels.styx.StyxServerBuilder;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
+import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
+import com.hotels.styx.startup.StyxServerComponents;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,16 +54,22 @@ import static java.util.stream.Collectors.toSet;
  */
 public final class StyxServer {
     private final com.hotels.styx.StyxServer server;
+    private final MetricRegistry metricRegistry;
 
     private StyxServer(Builder builder) {
         acceptAllSslRequests();
 
         MemoryBackedRegistry<com.hotels.styx.api.service.BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
 
-        this.server = new StyxServerBuilder(styxConfig())
-                .pluginsSupplier(() -> builder.plugins)
-                .additionalServices("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry))
+        StyxServerComponents config = new StyxServerComponents.Builder()
+                .styxConfig(styxConfig())
+                .plugins(builder.plugins)
+                .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))
                 .build();
+
+        metricRegistry = config.environment().metricRegistry();
+
+        this.server = new com.hotels.styx.StyxServer(config);
 
         builder.routes.forEach((path, backendService) ->
                 backendServicesRegistry.add(backendService));
@@ -132,7 +139,7 @@ public final class StyxServer {
      * @return metric registry
      */
     public MetricRegistry metrics() {
-        return server.metricRegistry();
+        return metricRegistry;
     }
 
     /**

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,10 @@ import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.function.Supplier;
-
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
+import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -44,15 +42,15 @@ import static rx.Observable.just;
 
 public class InterceptorPipelineBuilderTest {
     private Environment environment;
-    private Supplier<Iterable<NamedPlugin>> pluginSupplier;
+    private Iterable<NamedPlugin> plugins;
     private HttpHandler2 handler;
 
     @BeforeMethod
-    public void setUp() throws Exception {
+    public void setUp() {
         environment = new Environment.Builder()
                 .aggregatedConfiguration(new AggregatedConfiguration(StyxConfig.defaultConfig()))
                 .build();
-        pluginSupplier = () -> ImmutableList.of(
+        plugins = ImmutableList.of(
                 namedPlugin("plug1",
                         (request, chain) ->
                                 chain.proceed(request)
@@ -72,8 +70,8 @@ public class InterceptorPipelineBuilderTest {
     }
 
     @Test
-    public void buildsPipelineWithInterceptors() throws Exception {
-        HttpHandler2 pipeline = new InterceptorPipelineBuilder(environment, pluginSupplier, handler).build();
+    public void buildsPipelineWithInterceptors() {
+        HttpHandler2 pipeline = new InterceptorPipelineBuilder(environment, plugins, handler).build();
         HttpResponse response = pipeline.handle(get("/foo").build(), HttpInterceptorContext.create()).toBlocking().first();
 
         assertThat(response.header("plug1"), isValue("1"));

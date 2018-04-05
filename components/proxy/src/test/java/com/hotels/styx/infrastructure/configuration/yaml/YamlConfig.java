@@ -19,11 +19,11 @@ import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConversionException;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
-import com.hotels.styx.infrastructure.configuration.ConfigurationSource;
 
 import java.util.Map;
 import java.util.Optional;
 
+import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static java.util.Collections.emptyMap;
 
@@ -39,7 +39,7 @@ public class YamlConfig implements Configuration {
                .format(YAML)
                .overrides(overrides)
                .build()
-               .parse(ConfigurationSource.from(yaml));
+               .parse(configSource(yaml));
     }
 
     public YamlConfig(Resource resource) {
@@ -51,7 +51,7 @@ public class YamlConfig implements Configuration {
                 .format(YAML)
                 .overrides((Map<String, String>) overrides)
                 .build()
-                .parse(ConfigurationSource.from(resource));
+                .parse(configSource(resource));
     }
 
     @Override

@@ -15,18 +15,17 @@
  */
 package com.hotels.styx.infrastructure.configuration;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.infrastructure.configuration.ExtensibleConfiguration.PlaceholderResolutionResult;
 import org.slf4j.Logger;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.common.Logging.sanitise;
+import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -41,20 +40,16 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
 
     private final ConfigurationFormat<C> format;
     private final Map<String, String> overrides;
-    private final Function<String, ConfigurationSource> sourceFromIncludeFunction;
 
     private ConfigurationParser(Builder<C> builder) {
         this.format = requireNonNull(builder.format);
         this.overrides = requireNonNull(builder.overrides);
-        this.sourceFromIncludeFunction = builder.sourceFromIncludeFunction != null
-                ? builder.sourceFromIncludeFunction
-                : ConfigurationParser::sourceFromInclude;
     }
 
     public C parse(ConfigurationSource provider) {
         LOGGER.debug("Parsing configuration in format={} from source={}", format, provider);
 
-        C configuration = doParse(provider);
+        C configuration = doParse(provider).withOverrides(overrides);
 
         PlaceholderResolutionResult<C> resolved = configuration.resolvePlaceholders(overrides);
 
@@ -66,23 +61,21 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
     private C doParse(ConfigurationSource provider) {
         C main = provider.deserialise(format);
 
-        C withInclude = includedParentConfig(main)
+        return includedParentConfig(main)
                 .map(main::withParent)
                 .orElse(main);
-
-        return withInclude.withOverrides(overrides);
     }
 
     private Optional<C> includedParentConfig(C main) {
         return main.get("include")
                 .map(include -> format.resolvePlaceholdersInText(include, overrides))
-                .map(sourceFromIncludeFunction)
+                .map(ConfigurationParser::configurationSource)
                 .map(this::doParse);
     }
 
-    private static ConfigurationSource sourceFromInclude(String includePath) {
-        LOGGER.info("Including config file: path={}", sanitise(includePath));
-        return ConfigurationSource.from(newResource(includePath));
+    private static ConfigurationSource configurationSource(String path) {
+        LOGGER.info("Including config file: path={}", sanitise(path));
+        return configSource(newResource(path));
     }
 
     /**
@@ -93,7 +86,6 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
     public static final class Builder<C extends ExtensibleConfiguration<C>> {
         private ConfigurationFormat<C> format;
         private Map<String, String> overrides = emptyMap();
-        private Function<String, ConfigurationSource> sourceFromIncludeFunction;
 
         public Builder<C> format(ConfigurationFormat<C> format) {
             this.format = requireNonNull(format);
@@ -107,12 +99,6 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
 
         public Builder<C> overrides(Properties properties) {
             return overrides((Map) properties);
-        }
-
-        @VisibleForTesting
-        Builder<C> sourceFromIncludeFunction(Function<String, ConfigurationSource> sourceFromIncludeFunction) {
-            this.sourceFromIncludeFunction = requireNonNull(sourceFromIncludeFunction);
-            return this;
         }
 
         public ConfigurationParser<C> build() {

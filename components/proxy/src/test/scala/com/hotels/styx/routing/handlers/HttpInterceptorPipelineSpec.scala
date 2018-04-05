@@ -16,9 +16,6 @@
 
 package com.hotels.styx.routing.handlers
 
-import java.lang
-import java.util.function.Supplier
-
 import com.google.common.collect.ImmutableList.{of => list}
 import io.netty.handler.codec.http.HttpResponseStatus.OK
 import com.hotels.styx.api._
@@ -204,9 +201,7 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
 
   private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RouteHandlerDefinition]).get()
 
-  def interceptors(plugins: NamedPlugin*): Supplier[java.lang.Iterable[NamedPlugin]] = new Supplier[lang.Iterable[NamedPlugin]] {
-    override def get(): lang.Iterable[NamedPlugin] = plugins.toList.asJava
-  }
+  def interceptors(plugins: NamedPlugin*): java.lang.Iterable[NamedPlugin] =  plugins.toList.asJava
 
   def mockHandlerFactory(): HttpHandlerFactory = {
     val handlerFactory = mock[HttpHandlerFactory]

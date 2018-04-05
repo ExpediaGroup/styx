@@ -25,7 +25,8 @@ import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration
 import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.support.ResourcePaths
-import com.hotels.styx.{StyxServer, StyxServerBuilder}
+import com.hotels.styx.StyxServer
+import com.hotels.styx.startup.StyxServerComponents
 
 import scala.collection.JavaConverters._
 import scala.collection.Map
@@ -96,11 +97,11 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
 
     val java: util.Map[String, StyxService] = services(backendsRegistry).asJava
 
-    val styxServerBuilder = newStyxServerBuilder(styxConfig, backendsRegistry, this.plugins)
+    val styxServerBuilder = newCoreConfig(styxConfig, backendsRegistry, this.plugins)
       .additionalServices(java)
-      .logConfigLocation(this.logbackXmlLocation.toString)
+      .loggingSetUp(this.logbackXmlLocation.toString)
 
-    val styxServer = styxServerBuilder.build()
+    val styxServer = new StyxServer(styxServerBuilder.build())
     styxServer.startAsync().awaitRunning()
     styxServer
   }
@@ -131,11 +132,10 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
       newAdminServerConfigBuilder(newHttpConnConfig(adminPort))
     )
 
+    val coreConfig = newCoreConfig(styxConfig, this.plugins)
+      .loggingSetUp(this.logbackXmlLocation.toString)
 
-    val styxServerBuilder = newStyxServerBuilder(styxConfig, this.plugins)
-      .logConfigLocation(this.logbackXmlLocation.toString)
-
-    val styxServer = styxServerBuilder.build()
+    val styxServer = new StyxServer(coreConfig.build())
     styxServer.startAsync().awaitRunning()
     styxServer
   }
@@ -155,10 +155,11 @@ case class StyxYamlConfig(yamlConfig: String,
     val config: YamlConfiguration = Config.config(yamlConfig)
     val styxConfig = new com.hotels.styx.StyxConfig(yamlConfig)
 
-    val styxServer = new StyxServerBuilder(styxConfig)
+    val styxServer = new StyxServer(new StyxServerComponents.Builder()
+      .styxConfig(styxConfig)
       .additionalServices(services(backendsRegistry).asJava)
-      .logConfigLocation(logbackXmlLocation.toString)
-      .build()
+      .loggingSetUp(logbackXmlLocation.toString)
+      .build())
 
     styxServer.startAsync().awaitRunning()
     styxServer
@@ -168,8 +169,10 @@ case class StyxYamlConfig(yamlConfig: String,
     val config: YamlConfiguration = Config.config(yamlConfig)
     val styxConfig = new com.hotels.styx.StyxConfig(yamlConfig)
 
-    val styxServer = new StyxServerBuilder(styxConfig)
-      .logConfigLocation(logbackXmlLocation.toString).build()
+    val styxServer = new StyxServer(new StyxServerComponents.Builder()
+      .styxConfig(styxConfig)
+      .loggingSetUp(logbackXmlLocation.toString)
+      .build())
 
     styxServer.startAsync().awaitRunning()
     styxServer

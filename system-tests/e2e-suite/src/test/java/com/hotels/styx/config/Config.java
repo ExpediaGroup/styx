@@ -16,11 +16,11 @@
 package com.hotels.styx.config;
 
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
-import com.hotels.styx.infrastructure.configuration.ConfigurationSource;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 
 import java.util.Map;
 
+import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static java.util.Collections.emptyMap;
 
@@ -30,7 +30,7 @@ public final class Config {
 
     public static YamlConfiguration config(String string) {
         return parser(emptyMap())
-                .parse(ConfigurationSource.from(string));
+                .parse(configSource(string));
     }
 
     private static ConfigurationParser<YamlConfiguration> parser(Map overrides) {

@@ -15,81 +15,39 @@
  */
 package com.hotels.styx;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.jvm.BufferPoolMetricSet;
-import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
-import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
-import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
-import com.hotels.styx.admin.AdminServerBuilder;
-import com.hotels.styx.api.HttpHandler2;
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.metrics.MetricRegistry;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
-import com.hotels.styx.infrastructure.configuration.ConfigurationSource;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
-import com.hotels.styx.metrics.reporting.sets.NettyAllocatorMetricSet;
-import com.hotels.styx.proxy.ProxyServerBuilder;
-import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
-import com.hotels.styx.proxy.interceptors.ConfigurationContextResolverInterceptor;
-import com.hotels.styx.proxy.interceptors.HopByHopHeadersRemovingInterceptor;
-import com.hotels.styx.proxy.interceptors.HttpMessageLoggingInterceptor;
-import com.hotels.styx.proxy.interceptors.RequestEnrichingInterceptor;
-import com.hotels.styx.proxy.interceptors.UnexpectedRequestContentLengthRemover;
-import com.hotels.styx.proxy.interceptors.ViaHeaderAppendingInterceptor;
-import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.routing.HttpPipelineFactory;
-import com.hotels.styx.routing.StaticPipelineFactory;
-import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
-import com.hotels.styx.routing.config.HttpHandlerFactory;
-import com.hotels.styx.routing.config.RouteHandlerDefinition;
-import com.hotels.styx.routing.config.RouteHandlerFactory;
-import com.hotels.styx.routing.handlers.BackendServiceProxy;
-import com.hotels.styx.routing.handlers.ConditionRouter;
-import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
-import com.hotels.styx.routing.handlers.ProxyToBackend;
-import com.hotels.styx.routing.handlers.StaticResponseHandler;
-import com.hotels.styx.routing.interceptors.RewriteInterceptor;
 import com.hotels.styx.server.HttpServer;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.UnpooledByteBufAllocator;
+import com.hotels.styx.startup.ProxyServerSetUp;
+import com.hotels.styx.startup.StyxPipelineFactory;
+import com.hotels.styx.startup.StyxServerComponents;
 import io.netty.util.ResourceLeakDetector;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.lang.management.RuntimeMXBean;
 import java.net.InetSocketAddress;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 
-import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
-import static com.hotels.styx.api.configuration.ConfigurationContextResolver.EMPTY_CONFIGURATION_CONTEXT_RESOLVER;
+import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
-import static com.hotels.styx.serviceproviders.ServiceProvision.loadServices;
+import static com.hotels.styx.startup.AdminServerSetUp.createAdminServer;
+import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
+import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.FROM_CONFIG;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.Runtime.getRuntime;
 import static java.lang.String.format;
-import static java.lang.management.ManagementFactory.getPlatformMBeanServer;
-import static java.lang.management.ManagementFactory.getRuntimeMXBean;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.stream.Collectors.toMap;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -97,7 +55,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public final class StyxServer extends AbstractService {
     private static final Logger LOG = getLogger(StyxServer.class);
-    private static final String BACKEND_SERVICE_REGISTRY_ID = "backendServiceRegistry";
 
     static {
         // Disable resource leak detection if no system property supplied
@@ -130,18 +87,18 @@ public final class StyxServer extends AbstractService {
             LOG.info("Styx configFileLocation={}", startupConfig.configFileLocation());
             LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
 
-            Configuration configFromFile =
-                    new ConfigurationParser.Builder<YamlConfiguration>()
-                            .format(YAML)
-                            .overrides(System.getProperties())
-                            .build()
-                            .parse(ConfigurationSource.from(startupConfig.configFileLocation()));
+            Configuration configFromFile = new ConfigurationParser.Builder<YamlConfiguration>()
+                    .format(YAML)
+                    .overrides(System.getProperties())
+                    .build()
+                    .parse(configSource(startupConfig.configFileLocation()));
 
-            StyxConfig styxConfig = new StyxConfig(startupConfig, configFromFile);
-
-            return new StyxServerBuilder(styxConfig)
-                    .logConfigLocationFromEnvironment()
+            StyxServerComponents components = new StyxServerComponents.Builder()
+                    .styxConfig(new StyxConfig(startupConfig, configFromFile))
+                    .loggingSetUp(FROM_CONFIG)
                     .build();
+
+            return new StyxServer(components);
 
         } catch (Throwable cause) {
             LOG.error("Error in Styx instance creation.", cause);
@@ -154,54 +111,15 @@ public final class StyxServer extends AbstractService {
 
     private final ServiceManager serviceManager;
 
-    private final MetricRegistry metricRegistry;
+    public StyxServer(StyxServerComponents config) {
+        registerCoreMetrics(config.environment().buildInfo(), config.environment().metricRegistry());
 
-    StyxServer(StyxServerBuilder builder) {
-        Environment environment = builder.getEnvironment();
-        this.metricRegistry = environment.metricRegistry();
+        Map<String, StyxService> servicesFromConfig = config.services();
 
-        registerVersionMetric(environment);
-        registerJvmMetrics(environment.metricRegistry());
+        ProxyServerSetUp proxyServerSetUp = new ProxyServerSetUp(new StyxPipelineFactory());
 
-        Map<String, StyxService> servicesFromConfig = mergeServices(
-                loadServices(
-                        environment.configuration(),
-                        environment,
-                        "services",
-                        StyxService.class),
-                builder.additionalServices());
-
-        Supplier<Iterable<NamedPlugin>> pluginsSupplier = builder.getPluginsSupplier();
-
-        BuiltinInterceptorsFactory builtinInterceptorsFactory = new BuiltinInterceptorsFactory(
-                ImmutableMap.of("Rewrite", new RewriteInterceptor.ConfigFactory()));
-
-        Map<String, HttpHandlerFactory> objectFactories = createBuiltinRoutingObjectFactories(
-                environment,
-                servicesFromConfig,
-                pluginsSupplier,
-                builtinInterceptorsFactory);
-
-        RouteHandlerFactory routeHandlerFactory = new RouteHandlerFactory(objectFactories, new ConcurrentHashMap<>());
-
-        HttpHandler2 pipeline = styxHttpPipeline(
-                environment.styxConfig(),
-                configuredPipeline(environment, servicesFromConfig, pluginsSupplier, routeHandlerFactory));
-
-        this.proxyServer = new ProxyServerBuilder(environment)
-                .httpHandler(pipeline)
-                .onStartup(() -> initialisePlugins(pluginsSupplier))
-                .build();
-
-        this.proxyServer.addListener(new PluginsNotifierOfProxyState(pluginsSupplier), sameThreadExecutor());
-
-        // TODO: Pass all backend Service Registries to AdminServerBuilder:
-        // - only one backendServicesRegistry is passed in to the admin interface. Instead we
-        //   should pass all of them:
-        this.adminServer = new AdminServerBuilder(environment)
-                .backendServicesRegistry((Registry<BackendService>) servicesFromConfig.get(BACKEND_SERVICE_REGISTRY_ID))
-                .pluginsSupplier(pluginsSupplier)
-                .build();
+        this.proxyServer = proxyServerSetUp.createProxyServer(config);
+        this.adminServer = createAdminServer(config);
 
         this.serviceManager = new ServiceManager(new ArrayList<Service>() {
             {
@@ -213,135 +131,6 @@ public final class StyxServer extends AbstractService {
                         .forEach(this::add);
             }
         });
-    }
-
-    private ImmutableMap<String, HttpHandlerFactory> createBuiltinRoutingObjectFactories(
-            Environment environment,
-            Map<String, StyxService> servicesFromConfig,
-            Supplier<Iterable<NamedPlugin>> pluginsSupplier,
-            BuiltinInterceptorsFactory builtinInterceptorsFactory) {
-        return ImmutableMap.of(
-                "StaticResponseHandler", new StaticResponseHandler.ConfigFactory(),
-                "ConditionRouter", new ConditionRouter.ConfigFactory(),
-                "BackendServiceProxy", new BackendServiceProxy.ConfigFactory(environment, backendRegistries(servicesFromConfig)),
-                "InterceptorPipeline", new HttpInterceptorPipeline.ConfigFactory(pluginsSupplier, builtinInterceptorsFactory),
-                "ProxyToBackend", new ProxyToBackend.ConfigFactory(environment, new StyxBackendServiceClientFactory(environment))
-        );
-    }
-
-    private Map<String, Registry<BackendService>> backendRegistries(Map<String, StyxService> servicesFromConfig) {
-        return servicesFromConfig.entrySet()
-                .stream()
-                .filter(entry -> entry.getValue() instanceof Registry)
-                .collect(toMap(Map.Entry::getKey, entry -> (Registry<BackendService>) entry.getValue()));
-    }
-
-    private HttpHandler2 styxHttpPipeline(StyxConfig config, HttpHandler2 interceptorsPipeline) {
-        ImmutableList.Builder<HttpInterceptor> builder = ImmutableList.builder();
-
-        boolean loggingEnabled = config.get("request-logging.inbound.enabled", Boolean.class)
-                .map(isEnabled -> isEnabled || config.get("request-logging.enabled", Boolean.class).orElse(false))
-                .orElse(false);
-
-        boolean longFormatEnabled = config.get("request-logging.inbound.longFormat", Boolean.class)
-                .orElse(false);
-
-        if (loggingEnabled) {
-            builder.add(new HttpMessageLoggingInterceptor(longFormatEnabled));
-        }
-
-        builder.add(new ConfigurationContextResolverInterceptor(EMPTY_CONFIGURATION_CONTEXT_RESOLVER));
-        builder.add(new UnexpectedRequestContentLengthRemover());
-        builder.add(new ViaHeaderAppendingInterceptor());
-        builder.add(new HopByHopHeadersRemovingInterceptor());
-        builder.add(new RequestEnrichingInterceptor(config.styxHeaderConfig()));
-
-        return new HttpInterceptorPipeline(builder.build(), interceptorsPipeline);
-    }
-
-    private HttpHandler2 configuredPipeline(
-            Environment environment,
-            Map<String, StyxService> servicesFromConfig,
-            Supplier<Iterable<NamedPlugin>> pluginsSupplier,
-            RouteHandlerFactory routeHandlerFactory) {
-        HttpPipelineFactory pipelineBuilder;
-
-        if (environment.configuration().get("httpPipeline", RouteHandlerDefinition.class).isPresent()) {
-            pipelineBuilder = () -> {
-                RouteHandlerDefinition pipelineConfig = environment.configuration().get("httpPipeline", RouteHandlerDefinition.class).get();
-                return routeHandlerFactory.build(ImmutableList.of("httpPipeline"), pipelineConfig);
-            };
-        } else {
-            Registry<BackendService> backendServicesRegistry = (Registry<BackendService>) servicesFromConfig.get(BACKEND_SERVICE_REGISTRY_ID);
-            pipelineBuilder = new StaticPipelineFactory(environment, backendServicesRegistry, pluginsSupplier);
-        }
-
-        return pipelineBuilder.build();
-    }
-
-    private Map<String, StyxService> mergeServices(Map<String, StyxService> configServices, Map<String, StyxService> additionalServices) {
-        return new ImmutableMap.Builder<String, StyxService>()
-                .putAll(configServices)
-                .putAll(additionalServices)
-                .build();
-    }
-
-    private static void initialisePlugins(Supplier<Iterable<NamedPlugin>> pluginsSupplier) {
-        int exceptions = 0;
-
-        for (NamedPlugin plugin : pluginsSupplier.get()) {
-            try {
-                plugin.styxStarting();
-            } catch (Exception e) {
-                exceptions++;
-                LOG.error("Error starting plugin '{}'", plugin.name(), e);
-            }
-        }
-
-        if (exceptions > 0) {
-            throw new RuntimeException(format("%s plugins failed to start", exceptions));
-        }
-    }
-
-    public MetricRegistry metricRegistry() {
-        return metricRegistry;
-    }
-
-    private static void registerVersionMetric(Environment environment) {
-        Optional<Gauge<Integer>> versionGauge = environment.buildInfo().buildNumber()
-                .map(buildNumber -> () -> buildNumber);
-
-        if (versionGauge.isPresent()) {
-            environment.metricRegistry()
-                    .scope("styx")
-                    .register("version.buildnumber", versionGauge.get());
-        } else {
-            LOG.warn("Could not acquire build number from release version: {}", environment.buildInfo());
-        }
-    }
-
-    private static void registerJvmMetrics(MetricRegistry metricRegistry) {
-        RuntimeMXBean runtimeMxBean = getRuntimeMXBean();
-
-        MetricRegistry scoped = metricRegistry.scope("jvm");
-        scoped.register("bufferpool", new BufferPoolMetricSet(getPlatformMBeanServer()));
-        scoped.register("memory", new MemoryUsageGaugeSet());
-        scoped.register("thread", new ThreadStatesGaugeSet());
-        scoped.register("gc", new GarbageCollectorMetricSet());
-        scoped.register("uptime", (Gauge<Long>) runtimeMxBean::getUptime);
-        scoped.register("uptime.formatted", (Gauge<String>) () -> formatTime(runtimeMxBean.getUptime()));
-        scoped.register("netty", new NettyAllocatorMetricSet("pooled-allocator", PooledByteBufAllocator.DEFAULT.metric()));
-        scoped.register("netty", new NettyAllocatorMetricSet("unpooled-allocator", UnpooledByteBufAllocator.DEFAULT.metric()));
-    }
-
-    private static String formatTime(long timeInMilliseconds) {
-        Duration duration = Duration.ofMillis(timeInMilliseconds);
-
-        long days = duration.toDays();
-        long hours = duration.minusDays(days).toHours();
-        long minutes = duration.minusHours(duration.toHours()).toMinutes();
-
-        return format("%dd %dh %dm", days, hours, minutes);
     }
 
     public InetSocketAddress proxyHttpAddress() {
@@ -399,6 +188,30 @@ public final class StyxServer extends AbstractService {
         shutdownLogging(true);
     }
 
+    private static Service toGuavaService(StyxService styxService) {
+        return new AbstractService() {
+            @Override
+            protected void doStart() {
+                styxService.start()
+                        .thenAccept(x -> notifyStarted())
+                        .exceptionally(e -> {
+                            notifyFailed(e);
+                            return null;
+                        });
+            }
+
+            @Override
+            protected void doStop() {
+                styxService.stop()
+                        .thenAccept(x -> notifyStopped())
+                        .exceptionally(e -> {
+                            notifyFailed(e);
+                            return null;
+                        });
+            }
+        };
+    }
+
     private static class ServerStartListener extends ServiceManager.Listener {
         private final StyxServer styxServer;
 
@@ -423,52 +236,4 @@ public final class StyxServer extends AbstractService {
             styxServer.notifyStopped();
         }
     }
-
-    private static Service toGuavaService(StyxService styxService) {
-        return new AbstractService() {
-            @Override
-            protected void doStart() {
-                styxService.start()
-                        .thenAccept((x) -> {
-                            notifyStarted();
-                        })
-                        .exceptionally((e) -> {
-                            notifyFailed(e);
-                            return null;
-                        });
-            }
-
-            @Override
-            protected void doStop() {
-                styxService.stop()
-                        .thenAccept((x) -> {
-                            notifyStopped();
-                        })
-                        .exceptionally((e) -> {
-                            notifyFailed(e);
-                            return null;
-                        });
-            }
-        };
-    }
-
-    private static class PluginsNotifierOfProxyState extends Service.Listener {
-        private final Supplier<Iterable<NamedPlugin>> pluginsSupplier;
-
-        PluginsNotifierOfProxyState(Supplier<Iterable<NamedPlugin>> pluginsSupplier) {
-            this.pluginsSupplier = pluginsSupplier;
-        }
-
-        @Override
-        public void stopping(Service.State from) {
-            for (NamedPlugin plugin : pluginsSupplier.get()) {
-                try {
-                    plugin.styxStopping();
-                } catch (Exception e) {
-                    LOG.error("Error stopping plugin '{}'", plugin.name(), e);
-                }
-            }
-        }
-    }
-
 }
