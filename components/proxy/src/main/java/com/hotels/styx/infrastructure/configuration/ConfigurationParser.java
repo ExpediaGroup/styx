@@ -40,10 +40,12 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
 
     private final ConfigurationFormat<C> format;
     private final Map<String, String> overrides;
+    private final Optional<ConfigurationSource> fallbackConfigSource;
 
     private ConfigurationParser(Builder<C> builder) {
         this.format = requireNonNull(builder.format);
         this.overrides = requireNonNull(builder.overrides);
+        this.fallbackConfigSource = requireNonNull(builder.fallbackConfigSource);
     }
 
     public C parse(ConfigurationSource provider) {
@@ -61,9 +63,15 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
     private C doParse(ConfigurationSource provider) {
         C main = provider.deserialise(format);
 
-        return includedParentConfig(main)
-                .map(main::withParent)
+        Optional<C> include = includedParentConfig(main);
+        Optional<C> parent = include.isPresent() ? include : fallbackConfig();
+
+        return parent.map(main::withParent)
                 .orElse(main);
+    }
+
+    private Optional<C> fallbackConfig() {
+        return fallbackConfigSource.map(source -> source.deserialise(format));
     }
 
     private Optional<C> includedParentConfig(C main) {
@@ -86,6 +94,12 @@ public final class ConfigurationParser<C extends ExtensibleConfiguration<C>> {
     public static final class Builder<C extends ExtensibleConfiguration<C>> {
         private ConfigurationFormat<C> format;
         private Map<String, String> overrides = emptyMap();
+        private Optional<ConfigurationSource> fallbackConfigSource = Optional.empty();
+
+        public Builder<C> fallbackConfigSource(ConfigurationSource fallbackConfig) {
+            this.fallbackConfigSource = Optional.ofNullable(fallbackConfig);
+            return this;
+        }
 
         public Builder<C> format(ConfigurationFormat<C> format) {
             this.format = requireNonNull(format);

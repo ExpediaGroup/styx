@@ -1,5 +1,3 @@
-include: ${STYX_HOME:classpath:}/conf/default.yml
-
 jvmRouteName: styx-perf-local
 
 proxy:

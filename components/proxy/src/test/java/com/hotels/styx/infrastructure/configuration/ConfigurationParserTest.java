@@ -17,6 +17,7 @@ package com.hotels.styx.infrastructure.configuration;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.Resource;
+import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -28,6 +29,7 @@ import java.util.TreeMap;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.replacePlaceholder;
+import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
@@ -172,6 +174,69 @@ public class ConfigurationParserTest {
         StubConfiguration parsedConfiguration = parser.parse(configSource(newResource("/test/base-config.yml")));
 
         assertThat(parsedConfiguration.get("parentString"), isValue("abc"));
+    }
+
+    @Test
+    public void canHaveFallbackConfig() {
+        createStubConfig("/fake/simple-config.yml", ImmutableMap.of(
+                "foo", 123,
+                "bar", "abc"));
+
+        createStubConfig("/fake/fallback-config.yml", ImmutableMap.of(
+                "fallbackOnly", "zyx"));
+
+        ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
+                .format(format)
+                .fallbackConfigSource(configSource(newResource("/fake/fallback-config.yml")))
+                .build();
+
+        StubConfiguration parsedConfiguration = parser.parse(configSource(newResource("/fake/simple-config.yml")));
+
+        assertThat(parsedConfiguration.get("bar"), isValue("abc"));
+        assertThat(parsedConfiguration.get("foo", Integer.class), isValue(123));
+        assertThat(parsedConfiguration.get("fallbackOnly"), isValue("zyx"));
+    }
+
+    @Test
+    public void canFillPlaceholdersInFallbackConfig() {
+        createStubConfig("/fake/simple-config.yml", ImmutableMap.of(
+                "foo", 123,
+                "bar", "abc"));
+
+        createStubConfig("/fake/fallback-config.yml", ImmutableMap.of(
+                "completeMe", "${bar}"));
+
+        ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
+                .format(format)
+                .fallbackConfigSource(configSource(newResource("/fake/fallback-config.yml")))
+                .build();
+
+        StubConfiguration parsedConfiguration = parser.parse(configSource(newResource("/fake/simple-config.yml")));
+
+        assertThat(parsedConfiguration.get("bar"), isValue("abc"));
+        assertThat(parsedConfiguration.get("foo", Integer.class), isValue(123));
+        assertThat(parsedConfiguration.get("completeMe"), isValue("abc"));
+    }
+
+    @Test
+    public void canFillPlaceholdersInFallbackConfigWithRealYaml() {
+        String yaml = "" +
+                "foo: 123\n" +
+                "bar: abc\n";
+
+        String fallbackYaml = "" +
+                "completeMe: ${bar}\n";
+
+        ConfigurationParser<YamlConfiguration> parser = new ConfigurationParser.Builder<YamlConfiguration>()
+                .format(YAML)
+                .fallbackConfigSource(configSource(fallbackYaml))
+                .build();
+
+        YamlConfiguration parsedConfiguration = parser.parse(configSource(yaml));
+
+        assertThat(parsedConfiguration.get("bar"), isValue("abc"));
+        assertThat(parsedConfiguration.get("foo", Integer.class), isValue(123));
+        assertThat(parsedConfiguration.get("completeMe"), isValue("abc"));
     }
 
     private void createStubConfig(String path, Map<String, Object> config) {
