@@ -15,7 +15,6 @@
  */
 package com.hotels.styx;
 
-import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Service;
 import com.hotels.styx.admin.AdminServerConfig;
@@ -24,30 +23,22 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
-import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.RegistryServiceAdapter;
-import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
-import com.hotels.styx.proxy.ProxyServerBuilder;
 import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.proxy.plugin.PluginSuppliers;
 import com.hotels.styx.server.HttpConnectorConfig;
-import com.hotels.styx.startup.StyxServerComponents;
 import com.hotels.styx.startup.ProxyServerSetUp;
+import com.hotels.styx.startup.StyxServerComponents;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.util.ResourceLeakDetector;
-import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 
-import java.nio.file.Path;
 import java.util.List;
-import java.util.function.Consumer;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static com.google.common.collect.Lists.newArrayList;
@@ -55,7 +46,6 @@ import static com.google.common.util.concurrent.Service.State.FAILED;
 import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATION;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
-import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.System.currentTimeMillis;
@@ -66,8 +56,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 public class StyxServerTest {
-    Path FIXTURES_CLASS_PATH = fixturesHome(StyxServerTest.class, "/plugins");
-
     private LoggingTestSupport log;
     private LoggingTestSupport pssLog;
 
@@ -165,80 +153,6 @@ public class StyxServerTest {
         }
     }
 
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "1 plugins could not be loaded", enabled = false)
-    public void stopsTheServerWhenPluginCannotBeLoaded() {
-        String yaml = "" +
-                "plugins:\n" +
-                "  active: myPlugin\n" +
-                "  all:\n" +
-                "    myPlugin:\n" +
-                "      factory:\n" +
-                "        class: com.hotels.styx.server.StyxServerTest$FailPluginFactory\n" +
-                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
-                "";
-
-        buildStyxServerAndExpectException(yaml, log ->
-                assertThat(log, hasItem(loggingEvent(ERROR, "Could not load plugin myPlugin: com.hotels.styx.server.StyxServerTest\\$FailPluginFactory", RuntimeException.class, "PluginFactory test exception thrown"))));
-    }
-
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "2 plugins could not be loaded", enabled = false)
-    public void allPluginsAreStartedEvenIfSomeCannotBeLoaded() {
-        String yaml = "" +
-                "plugins:\n" +
-                "  active: plug1,plug2,plug3,plug4\n" +
-                "  all:\n" +
-                "    plug1:\n" +
-                "      factory:\n" +
-                "        class: com.hotels.styx.server.StyxServerTest$FailPluginFactory\n" +
-                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
-                "    plug2:\n" +
-                "      factory:\n" +
-                "        class: com.hotels.styx.server.StyxServerTest$OkPluginFactory\n" +
-                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
-                "    plug3:\n" +
-                "      factory:\n" +
-                "        class: com.hotels.styx.server.StyxServerTest$FailPluginFactory\n" +
-                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
-                "    plug4:\n" +
-                "      factory:\n" +
-                "        class: com.hotels.styx.server.StyxServerTest$OkPluginFactory\n" +
-                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
-                "";
-
-        buildStyxServerAndExpectException(yaml, log -> {
-            assertThat(log, hasItem(loggingEvent(ERROR, "Could not load plugin plug1: com.hotels.styx.server.StyxServerTest\\$FailPluginFactory", ConfigurationException.class, ".*")));
-            assertThat(log, hasItem(loggingEvent(ERROR, "Could not load plugin plug3: com.hotels.styx.server.StyxServerTest\\$FailPluginFactory", ConfigurationException.class, ".*")));
-        });
-    }
-
-    private static void buildStyxServerAndExpectException(String yaml, Consumer<List<ILoggingEvent>> assertions) {
-        LoggingTestSupport pluginSuppliersLog = new LoggingTestSupport(PluginSuppliers.class);
-
-        try {
-            styxServerWithYaml(yaml);
-        } catch (RuntimeException e) {
-            assertions.accept(pluginSuppliersLog.log());
-            throw e;
-        } finally {
-            pluginSuppliersLog.stop();
-        }
-    }
-
-    // Instantiated reflexively.
-    public static class FailPluginFactory implements PluginFactory {
-        @Override
-        public Plugin create(Environment environment) {
-            throw new RuntimeException("PluginFactory test exception thrown");
-        }
-    }
-
-    public static class OkPluginFactory implements PluginFactory {
-        @Override
-        public Plugin create(Environment environment) {
-            return new OkPlugin();
-        }
-    }
-
     private static StyxServer styxServerWithPlugins(NamedPlugin... plugins) {
         return styxServerWithPlugins(newArrayList(plugins));
     }
@@ -251,14 +165,6 @@ public class StyxServerTest {
                 .build();
 
         return new StyxServer(config);
-    }
-
-    private static void styxServerWithYaml(String yaml) {
-        StyxServerComponents config = new StyxServerComponents.Builder()
-                .styxConfig(styxConfig(new YamlConfig(yaml)))
-                .build();
-
-        new StyxServer(config);
     }
 
     private static StyxConfig styxConfig(Configuration baseConfiguration) {
@@ -302,18 +208,6 @@ public class StyxServerTest {
         @Override
         public void styxStarting() {
             throw new RuntimeException("Plugin start test error: " + id);
-        }
-    }
-
-    static class OkPlugin implements Plugin {
-        @Override
-        public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-            return chain.proceed(request);
-        }
-
-        @Override
-        public void styxStarting() {
-            LoggerFactory.getLogger(ProxyServerBuilder.class).info("Plugin started");
         }
     }
 
