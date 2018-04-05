@@ -20,6 +20,7 @@ import java.util
 import java.util.Collections._
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
+import com.google.common.collect.ImmutableMap
 import com.hotels.styx.admin.AdminServerConfig
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration
@@ -32,6 +33,7 @@ import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.server.netty.NettyServerConfig.Connectors
 import com.hotels.styx.server.{HttpConnectorConfig, HttpsConnectorConfig}
+import com.hotels.styx.startup.StyxServerComponents
 import com.hotels.styx.support.CodaHaleMetricsFacade
 import rx.Observable
 
@@ -78,32 +80,28 @@ object StyxServerSupport {
       .set("admin", adminServerConfigBuilder.build()))
   }
 
-  def newStyxServerBuilder(styxConfig: StyxConfig, styxService: StyxService, plugins: List[NamedPlugin] = Nil) = {
+  def newCoreConfig(styxConfig: StyxConfig, styxService: StyxService, plugins: List[NamedPlugin] = Nil) = {
     val plugins1 = plugins.asInstanceOf[Iterable[NamedPlugin]].asJava
-    val pluginSupplier = new java.util.function.Supplier[java.lang.Iterable[NamedPlugin]] {
-      override def get() = plugins1
-    }
 
-    val builder = new StyxServerBuilder(styxConfig)
-      .additionalServices("backendServiceRegistry", styxService)
+    val builder = new StyxServerComponents.Builder()
+      .styxConfig(styxConfig)
+      .additionalServices(ImmutableMap.of("backendServiceRegistry", styxService))
 
     if (plugins.nonEmpty) {
-      builder.pluginsSupplier(pluginSupplier)
+      builder.plugins(plugins1)
     } else {
       builder
     }
   }
 
-  def newStyxServerBuilder(styxConfig: StyxConfig, plugins: List[NamedPlugin]) = {
+  def newCoreConfig(styxConfig: StyxConfig, plugins: List[NamedPlugin]) = {
     val plugins1 = plugins.asInstanceOf[Iterable[NamedPlugin]].asJava
-    val pluginSupplier = new java.util.function.Supplier[java.lang.Iterable[NamedPlugin]] {
-      override def get() = plugins1
-    }
 
-    val builder = new StyxServerBuilder(styxConfig)
+    val builder = new StyxServerComponents.Builder()
+      .styxConfig(styxConfig)
 
     if (plugins.nonEmpty) {
-      builder.pluginsSupplier(pluginSupplier)
+      builder.plugins(plugins1)
     } else {
       builder
     }

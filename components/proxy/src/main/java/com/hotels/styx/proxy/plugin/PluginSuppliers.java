@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -59,12 +58,12 @@ public class PluginSuppliers {
         return configuration.get("plugins", PluginsMetadata.class);
     }
 
-    public Supplier<Iterable<NamedPlugin>> fromConfigurations() {
+    public Iterable<NamedPlugin> fromConfigurations() {
         Iterable<NamedPlugin> plugins = readPluginsConfig()
                 .map(this::activePlugins)
                 .orElse(emptyList());
 
-        return () -> plugins;
+        return plugins;
     }
 
     private Iterable<NamedPlugin> activePlugins(PluginsMetadata pluginsMetadata) {

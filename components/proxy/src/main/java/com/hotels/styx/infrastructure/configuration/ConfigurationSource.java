@@ -36,7 +36,7 @@ public interface ConfigurationSource {
      * @param string a string
      * @return configuration provider
      */
-    static ConfigurationSource from(String string) {
+    static ConfigurationSource configSource(String string) {
         return new ConfigurationSource() {
             @Override
             public <C extends ExtensibleConfiguration<C>> C deserialise(ConfigurationFormat<C> format) {
@@ -56,7 +56,7 @@ public interface ConfigurationSource {
      * @param resource resource
      * @return configuration provider
      */
-    static ConfigurationSource from(Resource resource) {
+    static ConfigurationSource configSource(Resource resource) {
         return new ConfigurationSource() {
             @Override
             public <C extends ExtensibleConfiguration<C>> C deserialise(ConfigurationFormat<C> format) {

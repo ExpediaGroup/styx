@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
@@ -35,17 +34,17 @@ import static java.util.stream.StreamSupport.stream;
  */
 public class InterceptorPipelineBuilder {
     private final Environment environment;
-    private final Supplier<Iterable<NamedPlugin>> pluginSupplier;
+    private final Iterable<NamedPlugin> plugins;
     private final HttpHandler2 handler;
 
-    public InterceptorPipelineBuilder(Environment environment, Supplier<Iterable<NamedPlugin>> pluginSupplier, HttpHandler2 handler) {
+    public InterceptorPipelineBuilder(Environment environment, Iterable<NamedPlugin> plugins, HttpHandler2 handler) {
         this.environment = checkNotNull(environment);
-        this.pluginSupplier = checkNotNull(pluginSupplier);
+        this.plugins = checkNotNull(plugins);
         this.handler = checkNotNull(handler);
     }
 
     public HttpHandler2 build() {
-        List<HttpInterceptor> interceptors = ImmutableList.copyOf(instrument(pluginSupplier.get(), environment));
+        List<HttpInterceptor> interceptors = ImmutableList.copyOf(instrument(plugins, environment));
         return new HttpInterceptorPipeline(interceptors, handler);
     }
 

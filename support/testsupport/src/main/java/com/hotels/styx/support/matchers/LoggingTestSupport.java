@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,10 @@ import ch.qos.logback.core.read.ListAppender;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class LoggingTestSupport {
@@ -80,5 +82,10 @@ public class LoggingTestSupport {
 
         int lastIndex = log().size() - 1;
         return this.log().get(lastIndex);
+    }
+
+    @Override
+    public String toString() {
+        return log().stream().map(Object::toString).collect(joining("\n"));
     }
 }

@@ -27,8 +27,6 @@ import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 
-import java.util.function.Supplier;
-
 /**
  * Builds a static "backwards compatibility" pipeline which is just a sequence of plugins
  * followed by backend service proxy.
@@ -37,18 +35,18 @@ public class StaticPipelineFactory implements HttpPipelineFactory {
     private final BackendServiceClientFactory clientFactory;
     private final Environment environment;
     private final Registry<BackendService> registry;
-    private final Supplier<Iterable<NamedPlugin>> pluginsSupplier;
+    private final Iterable<NamedPlugin> plugins;
 
     @VisibleForTesting
-    StaticPipelineFactory(BackendServiceClientFactory clientFactory, Environment environment, Registry<BackendService> registry, Supplier<Iterable<NamedPlugin>> pluginsSupplier) {
+    StaticPipelineFactory(BackendServiceClientFactory clientFactory, Environment environment, Registry<BackendService> registry, Iterable<NamedPlugin> plugins) {
         this.clientFactory = clientFactory;
         this.environment = environment;
         this.registry = registry;
-        this.pluginsSupplier = pluginsSupplier;
+        this.plugins = plugins;
     }
 
-    public StaticPipelineFactory(Environment environment, Registry<BackendService> registry, Supplier<Iterable<NamedPlugin>> pluginsSupplier) {
-        this(createClientFactory(environment), environment, registry, pluginsSupplier);
+    public StaticPipelineFactory(Environment environment, Registry<BackendService> registry, Iterable<NamedPlugin> plugins) {
+        this(createClientFactory(environment), environment, registry, plugins);
     }
 
     private static BackendServiceClientFactory createClientFactory(Environment environment) {
@@ -61,6 +59,6 @@ public class StaticPipelineFactory implements HttpPipelineFactory {
         registry.addListener(backendServicesRouter);
         RouteHandlerAdapter router = new RouteHandlerAdapter(backendServicesRouter);
 
-        return new InterceptorPipelineBuilder(environment, pluginsSupplier, router).build();
+        return new InterceptorPipelineBuilder(environment, plugins, router).build();
     }
 }

@@ -60,7 +60,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.HTML_UTF_8;
@@ -83,7 +82,7 @@ public class AdminServerBuilder {
     private final Environment environment;
     private final Configuration configuration;
 
-    private Supplier<Iterable<NamedPlugin>> pluginsSupplier;
+    private Iterable<NamedPlugin> plugins;
     private Registry<BackendService> backendServicesRegistry;
 
     public AdminServerBuilder(Environment environment) {
@@ -91,8 +90,8 @@ public class AdminServerBuilder {
         this.configuration = environment.configuration();
     }
 
-    public AdminServerBuilder pluginsSupplier(Supplier<Iterable<NamedPlugin>> pluginSupplier) {
-        this.pluginsSupplier = checkNotNull(pluginSupplier);
+    public AdminServerBuilder plugins(Iterable<NamedPlugin> plugins) {
+        this.plugins = checkNotNull(plugins);
         return this;
     }
 
@@ -132,12 +131,12 @@ public class AdminServerBuilder {
         // Tasks
         httpRouter.add("/admin/tasks/origins/reload", new HttpMethodFilteringHandler(POST, new OriginsReloadCommandHandler(backendServicesRegistry)));
         httpRouter.add("/admin/tasks/origins", new HttpMethodFilteringHandler(POST, new OriginsCommandHandler(environment.eventBus())));
-        httpRouter.add("/admin/tasks/plugin/", new PluginToggleHandler(pluginsSupplier.get()));
+        httpRouter.add("/admin/tasks/plugin/", new PluginToggleHandler(plugins));
 
         // Plugins Handler
         routesForPlugins().forEach(route -> httpRouter.add(route.path(), route.handler()));
 
-        httpRouter.add("/admin/plugins", new PluginListHandler(pluginsSupplier.get()));
+        httpRouter.add("/admin/plugins", new PluginListHandler(plugins));
 
         return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
                 .toNettyServerBuilder(adminServerConfig)
@@ -176,9 +175,7 @@ public class AdminServerBuilder {
     }
 
     private List<Route> routesForPlugins() {
-        Iterable<NamedPlugin> namedPlugins = pluginsSupplier.get();
-
-        return stream(namedPlugins.spliterator(), true)
+        return stream(plugins.spliterator(), true)
                 .flatMap(namedPlugin -> routesForPlugin(namedPlugin).stream())
                 .collect(toList());
     }
@@ -200,7 +197,7 @@ public class AdminServerBuilder {
     }
 
     private static <T> List<T> concatenate(T item, List<? extends T> items) {
-        List<T> list = new ArrayList<T>(items.size() + 1);
+        List<T> list = new ArrayList<>(items.size() + 1);
         list.add(item);
         list.addAll(items);
         return list;

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2017 Expedia Inc.
+ * Copyright (C) 2013-2018 Expedia Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,13 +109,14 @@ final class NettyServer extends AbstractService implements HttpServer {
     protected void doStart() {
         LOGGER.info("starting services");
 
-        startupActions.forEach(action -> {
+        for (Runnable action : startupActions) {
             try {
                 action.run();
             } catch (Exception e) {
                 notifyFailed(e);
+                return;
             }
-        });
+        }
 
         ServiceManager serviceManager = new ServiceManager(
                 Stream.of(httpServerSocketBinder, httpsServerSocketBinder)

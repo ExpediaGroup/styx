@@ -30,7 +30,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
@@ -62,22 +61,22 @@ public class StaticPipelineBuilderTest {
     }
 
     @Test
-    public void buildsInterceptorPipelineForBackendServices() throws Exception {
+    public void buildsInterceptorPipelineForBackendServices() {
 
-        HttpHandler2 handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList::of).build();
+        HttpHandler2 handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of()).build();
 
         HttpResponse response = handler.handle(get("/foo").build(), HttpInterceptor.Context.EMPTY).toBlocking().first();
         assertThat(response.status(), is(OK));
     }
 
     @Test
-    public void appliesPluginsInOrderTheyAreConfigured() throws Exception {
-        Supplier<Iterable<NamedPlugin>> pluginsSupplier = () -> ImmutableList.of(
+    public void appliesPluginsInOrderTheyAreConfigured() {
+        Iterable<NamedPlugin> plugins = ImmutableList.of(
                 interceptor("Test-A", appendResponseHeader("X-From-Plugin", "A")),
                 interceptor("Test-B", appendResponseHeader("X-From-Plugin", "B"))
         );
 
-        HttpHandler2 handler = new StaticPipelineFactory(clientFactory, environment, registry, pluginsSupplier).build();
+        HttpHandler2 handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins).build();
 
         HttpResponse response = handler.handle(get("/foo").build(), HttpInterceptor.Context.EMPTY).toBlocking().first();
         assertThat(response.status(), is(OK));

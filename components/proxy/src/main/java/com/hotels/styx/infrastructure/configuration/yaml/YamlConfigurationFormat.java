@@ -105,4 +105,9 @@ public class YamlConfigurationFormat implements ConfigurationFormat<YamlConfigur
 
         throw new IllegalStateException("Cannot resolve placeholder '" + placeholder + "' in include:" + textValue);
     }
+
+    @Override
+    public String toString() {
+        return "YAML";
+    }
 }

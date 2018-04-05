@@ -22,7 +22,6 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.io.ResourceFactory;
 import com.hotels.styx.client.StyxHeaderConfig;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
-import com.hotels.styx.infrastructure.configuration.ConfigurationSource;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.proxy.ProxyServerConfig;
 
@@ -32,6 +31,7 @@ import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.StartupConfig.defaultStartupConfig;
+import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
@@ -74,7 +74,7 @@ public final class StyxConfig implements Configuration {
         return new ConfigurationParser.Builder<YamlConfiguration>()
                 .format(YAML)
                 .build()
-                .parse(ConfigurationSource.from(yaml));
+                .parse(configSource(yaml));
     }
 
     @Override

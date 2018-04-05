@@ -17,50 +17,55 @@ package com.hotels.styx.infrastructure.configuration;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.Resource;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.function.Function;
 
+import static com.hotels.styx.api.io.ResourceFactory.newResource;
+import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
+import static com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.replacePlaceholder;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.testng.Assert.fail;
 
 public class ConfigurationParserTest {
-    private final StubConfigSources config = new StubConfigSources()
-            .plus("test-config", ImmutableMap.of(
-                    "include", "parent-config-source",
-                    "number", 123,
-                    "string", "abc",
-                    "numberFromParent", 999,
-                    "hasPlaceholder", "${string}"
-            ))
+    private final StubFormat format = new StubFormat();
+    private Map<String, StubConfiguration> fakeFileSystem;
 
-            .plus("test-parent-config", ImmutableMap.of(
-                    "numberFromParent", 111,
-                    "stringFromParent", "DEF"));
+    @BeforeMethod
+    public void setUp() {
+        fakeFileSystem = new HashMap<>();
+
+        createStubConfig("/fake/base-config.yml", ImmutableMap.of(
+                "include", "/fake/parent-config.yml",
+                "number", 123,
+                "string", "abc",
+                "numberFromParent", 999,
+                "hasPlaceholder", "${string}"
+        ));
+
+        createStubConfig("/fake/parent-config.yml", ImmutableMap.of(
+                "numberFromParent", 111,
+                "stringFromParent", "DEF"));
+    }
 
     @Test
     public void providesConfig() {
-        StubConfigSources configWithoutIncludes = new StubConfigSources()
-                .plus("test-config", ImmutableMap.of(
-                        "foo", 123,
-                        "bar", "abc"));
+        createStubConfig("/fake/simple-config.yml", ImmutableMap.of(
+                "foo", 123,
+                "bar", "abc"));
 
         ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
-                .format(format(configWithoutIncludes))
-                .overrides(emptyMap())
+                .format(format)
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationSource.from("test-config"));
+        StubConfiguration parsedConfiguration = parser.parse(configSource(newResource("/fake/simple-config.yml")));
 
         assertThat(parsedConfiguration.get("bar"), isValue("abc"));
         assertThat(parsedConfiguration.get("foo", Integer.class), isValue(123));
@@ -69,12 +74,28 @@ public class ConfigurationParserTest {
     @Test
     public void includesParent() {
         ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
-                .format(format(config))
-                .sourceFromIncludeFunction(sourceFromIncludeFunction("parent-config-source", "test-parent-config"))
-                .overrides(emptyMap())
+                .format(format)
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationSource.from("test-config"));
+        StubConfiguration parsedConfiguration = parser.parse(configSource(newResource("/fake/base-config.yml")));
+
+        // Present in child only
+        assertThat(parsedConfiguration.get("string"), isValue("abc"));
+
+        // Present in parent, not present in child
+        assertThat(parsedConfiguration.get("stringFromParent"), isValue("DEF"));
+
+        // Present in parent, overridden by child
+        assertThat(parsedConfiguration.get("numberFromParent", Integer.class), isValue(999));
+    }
+
+    @Test
+    public void includedValuesCanBeOverridden() {
+        ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
+                .format(format)
+                .build();
+
+        StubConfiguration parsedConfiguration = parser.parse(configSource(newResource("/fake/base-config.yml")));
 
         // Present in child only
         assertThat(parsedConfiguration.get("string"), isValue("abc"));
@@ -89,12 +110,10 @@ public class ConfigurationParserTest {
     @Test
     public void resolvesPlaceholdersInConfig() {
         ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
-                .format(format(config))
-                .sourceFromIncludeFunction(sourceFromIncludeFunction("parent-config-source", "test-parent-config"))
-                .overrides(emptyMap())
+                .format(format)
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationSource.from("test-config"));
+        StubConfiguration parsedConfiguration = parser.parse(configSource(newResource("/fake/base-config.yml")));
 
         assertThat(parsedConfiguration.get("hasPlaceholder"), isValue("abc"));
     }
@@ -102,51 +121,61 @@ public class ConfigurationParserTest {
     @Test
     public void appliesOverrides() {
         ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
-                .format(format(config))
-                .sourceFromIncludeFunction(sourceFromIncludeFunction("parent-config-source", "test-parent-config"))
-                .overrides(ImmutableMap.of(
-                        "not-present-in-original", "foo-bar",
-                        "string", "overridden"
-                ))
+                .format(format)
+                .overrides(ImmutableMap.of("string", "overridden"))
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationSource.from("test-config"));
+        StubConfiguration parsedConfiguration = parser.parse(configSource(newResource("/fake/base-config.yml")));
 
-        assertThat(parsedConfiguration.get("not-present-in-original"), isValue("foo-bar"));
         assertThat(parsedConfiguration.get("string"), isValue("overridden"));
     }
 
     @Test
     public void includeValueCanContainPlaceholder() {
-        StubConfigSources config = new StubConfigSources()
-                .plus("test-config", ImmutableMap.of(
-                        "include", "${include-placeholder}",
-                        "number", 123,
-                        "string", "abc",
-                        "numberFromParent", 999,
-                        "hasPlaceholder", "${string}"
-                ))
+        createStubConfig("/test/base-config.yml", ImmutableMap.of(
+                "include", "${include-placeholder}",
+                "number", 123,
+                "string", "abc",
+                "numberFromParent", 999,
+                "hasPlaceholder", "${string}"
+        ));
 
-                .plus("test-parent-config", ImmutableMap.of(
-                        "numberFromParent", 111,
-                        "stringFromParent", "DEF"));
+        createStubConfig("/test/parent-config.yml", ImmutableMap.of(
+                "numberFromParent", 111,
+                "stringFromParent", "DEF"));
 
         ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
-                .format(format(config))
-                .sourceFromIncludeFunction(sourceFromIncludeFunction("parent-config-source", "test-parent-config"))
-                .overrides(ImmutableMap.of("include-placeholder", "parent-config-source"))
+                .format(format)
+                .overrides(ImmutableMap.of("include-placeholder", "/test/parent-config.yml"))
                 .build();
 
-        StubConfiguration parsedConfiguration = parser.parse(ConfigurationSource.from("test-config"));
+        StubConfiguration parsedConfiguration = parser.parse(configSource(newResource("/test/base-config.yml")));
 
         assertThat(parsedConfiguration.get("stringFromParent"), isValue("DEF"));
     }
 
-    private static Function<String, ConfigurationSource> sourceFromIncludeFunction(String source, String providedString) {
-        return actualSource -> {
-            assertThat(actualSource, is(source));
-            return ConfigurationSource.from(providedString);
-        };
+    @Test
+    public void childCanReplaceParentPlaceholders() {
+        createStubConfig("/test/base-config.yml", ImmutableMap.of(
+                "include", "/test/parent-config.yml",
+                "childString", "abc"
+        ));
+
+        createStubConfig("/test/parent-config.yml", ImmutableMap.of(
+                "parentString", "${childString}"
+        ));
+
+        ConfigurationParser<StubConfiguration> parser = new ConfigurationParser.Builder<StubConfiguration>()
+                .format(format)
+                .build();
+
+        StubConfiguration parsedConfiguration = parser.parse(configSource(newResource("/test/base-config.yml")));
+
+        assertThat(parsedConfiguration.get("parentString"), isValue("abc"));
+    }
+
+    private void createStubConfig(String path, Map<String, Object> config) {
+        fakeFileSystem.put(path, new StubConfiguration(config));
     }
 
     private static class StubConfiguration implements ExtensibleConfiguration<StubConfiguration> {
@@ -181,11 +210,22 @@ public class ConfigurationParserTest {
         }
 
         private Object resolve(Object original) {
-            if (Objects.equals(original, "${string}")) {
-                return values.get("string");
+            if (!(original instanceof String)) {
+                return original;
             }
 
-            return original;
+            String os = String.valueOf(original);
+
+            for (Map.Entry<String, Object> entry : values.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+
+                if (value != null) {
+                    os = replacePlaceholder(os, key, value.toString());
+                }
+            }
+
+            return os;
         }
 
         @Override
@@ -199,46 +239,32 @@ public class ConfigurationParserTest {
         }
     }
 
-    private static ConfigurationFormat<StubConfiguration> format(StubConfigSources configurations) {
-        return new ConfigurationFormat<StubConfiguration>() {
-            @Override
-            public StubConfiguration deserialise(String string) {
-                return configurations.config(string);
-            }
-
-            @Override
-            public StubConfiguration deserialise(Resource resource) {
-                fail("Unexpected method call with arg " + resource);
-                return null;
-            }
-
-            @Override
-            public String resolvePlaceholdersInText(String text, Map<String, String> overrides) {
-                String resolved = text;
-
-                for (Map.Entry<String, String> entry : overrides.entrySet()) {
-                    resolved = resolved.replace("${" + entry.getKey() + "}", entry.getValue());
-                }
-
-                return resolved;
-            }
-        };
-    }
-
-    private static class StubConfigSources {
-        private final Map<String, StubConfiguration> configurations;
-
-        StubConfigSources() {
-            this.configurations = new HashMap<>();
+    private class StubFormat implements ConfigurationFormat<StubConfiguration> {
+        @Override
+        public StubConfiguration deserialise(String string) {
+            // Not used in test
+            throw new UnsupportedOperationException();
         }
 
-        StubConfigSources plus(String source, Map<String, Object> values) {
-            configurations.put(source, new StubConfiguration(values));
-            return this;
+        @Override
+        public StubConfiguration deserialise(Resource resource) {
+            return requireNonNull(fakeFileSystem.get(resource.path()));
         }
 
-        StubConfiguration config(String source) {
-            return configurations.get(source);
+        @Override
+        public String resolvePlaceholdersInText(String text, Map<String, String> overrides) {
+            String resolved = text;
+
+            for (Map.Entry<String, String> entry : overrides.entrySet()) {
+                resolved = resolved.replace("${" + entry.getKey() + "}", entry.getValue());
+            }
+
+            return resolved;
+        }
+
+        @Override
+        public String toString() {
+            return "Stub";
         }
     }
 }

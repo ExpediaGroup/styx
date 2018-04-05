@@ -33,7 +33,6 @@ import rx.Observable;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static com.google.common.collect.Iterables.getFirst;
@@ -107,7 +106,7 @@ public class PluginSuppliersTest {
 
         PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
 
-        Iterable<NamedPlugin> plugins = pluginSuppliers.fromConfigurations().get();
+        Iterable<NamedPlugin> plugins = pluginSuppliers.fromConfigurations();
 
         List<String> pluginNames = stream(plugins.spliterator(), false)
                 .map(NamedPlugin::name)
@@ -131,7 +130,7 @@ public class PluginSuppliersTest {
 
         PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
 
-        plugins(pluginSuppliers);
+        pluginSuppliers.fromConfigurations();
     }
 
     @Test(expectedExceptions = RuntimeException.class)
@@ -149,7 +148,7 @@ public class PluginSuppliersTest {
 
         PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
 
-        pluginSuppliers.fromConfigurations().get();
+        pluginSuppliers.fromConfigurations();
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "(?s).*No active plugin specified.*")
@@ -166,7 +165,7 @@ public class PluginSuppliersTest {
 
         PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
 
-        pluginSuppliers.fromConfigurations().get();
+        pluginSuppliers.fromConfigurations();
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "(?s).*No list of all plugins specified.*")
@@ -177,7 +176,7 @@ public class PluginSuppliersTest {
 
         PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
 
-        pluginSuppliers.fromConfigurations().get();
+        pluginSuppliers.fromConfigurations();
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "1 plugins could not be loaded")
@@ -193,7 +192,7 @@ public class PluginSuppliersTest {
 
         PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
 
-        pluginSuppliers.fromConfigurations().get();
+        pluginSuppliers.fromConfigurations();
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "3 plugins could not be loaded")
@@ -220,7 +219,7 @@ public class PluginSuppliersTest {
 
             PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
 
-            pluginSuppliers.fromConfigurations().get();
+            pluginSuppliers.fromConfigurations();
         } catch (RuntimeException e) {
             assertThat(log.log(), hasItem(loggingEvent(ERROR, "Could not load plugin myPlugin1.*", RuntimeException.class, "plugin factory error")));
             throw e;
@@ -264,13 +263,7 @@ public class PluginSuppliersTest {
     }
 
     private static NamedPlugin firstPlugin(PluginSuppliers pluginSuppliers) {
-        return getFirst(plugins(pluginSuppliers), null);
-    }
-
-    private static Iterable<NamedPlugin> plugins(PluginSuppliers pluginSuppliers) {
-        Supplier<Iterable<NamedPlugin>> supplier = pluginSuppliers.fromConfigurations();
-
-        return supplier.get();
+        return getFirst(pluginSuppliers.fromConfigurations(), null);
     }
 
     public static class MyConfiguration extends YamlConfig {
