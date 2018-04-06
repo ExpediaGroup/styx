@@ -51,6 +51,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Entry point for styx proxy server.
  */
 public final class StyxServer extends AbstractService {
+    private static final String FALLBACK_CONFIGURATION = "classpath:/configuration/default.yml";
+
     private static final Logger LOG = getLogger(StyxServer.class);
 
     static {
@@ -84,7 +86,7 @@ public final class StyxServer extends AbstractService {
             LOG.info("Styx configFileLocation={}", startupConfig.configFileLocation());
             LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
 
-            Configuration configFromFile = configurationFromFile(startupConfig, "classpath:/configuration/default.yml");
+            Configuration configFromFile = configurationFromFile(startupConfig, FALLBACK_CONFIGURATION);
 
             StyxServerComponents components = new StyxServerComponents.Builder()
                     .styxConfig(new StyxConfig(startupConfig, configFromFile))
