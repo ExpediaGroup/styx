@@ -21,6 +21,7 @@ import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.mockito.ArgumentCaptor;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -44,6 +45,7 @@ import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.core.Is.is;
@@ -444,6 +446,7 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
         verify(onTerminateAction).accept(isA(Throwable.class));
+        verify(onTerminateAction).accept(isA(Throwable.class));
 
         assertThat(contentChunk1.refCnt(), is(0));
         assertThat(contentChunk2.refCnt(), is(0));
@@ -581,7 +584,10 @@ public class FlowControllingHttpContentProducerTest {
         verify(tearDownAction).run();
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
-        verify(onTerminateAction).accept(isA(Throwable.class));
+        ArgumentCaptor<ResponseTimeoutException> argumentCaptor = ArgumentCaptor.forClass(ResponseTimeoutException.class);
+        verify(onTerminateAction).accept(argumentCaptor.capture());
+        assertThat(argumentCaptor.getValue().getMessage(), containsString("bytesReceived=6"));
+
         assertThat(contentChunk1.refCnt(), is(0));
         assertThat(contentChunk2.refCnt(), is(0));
     }

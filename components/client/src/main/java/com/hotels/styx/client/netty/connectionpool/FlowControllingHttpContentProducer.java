@@ -53,7 +53,7 @@ class FlowControllingHttpContentProducer {
     private final Runnable askForMore;
     private final Runnable onCompleteAction;
     private final Consumer<Throwable> onTerminateAction;
-    private Runnable delayedTearDownAction;
+    private final Runnable delayedTearDownAction;
 
     private final Queue<ByteBuf> readQueue = new ConcurrentLinkedDeque<>();
     private final AtomicLong requested = new AtomicLong(Long.MAX_VALUE);
@@ -101,7 +101,7 @@ class FlowControllingHttpContentProducer {
                 .transition(BUFFERING_COMPLETED, ContentChunkEvent.class, this::spuriousContentChunkEvent)
                 .transition(BUFFERING_COMPLETED, ChannelInactiveEvent.class, s-> scheduleTearDown(BUFFERING_COMPLETED))
                 .transition(BUFFERING_COMPLETED, ChannelExceptionEvent.class, s -> BUFFERING_COMPLETED)
-                .transition(BUFFERING_COMPLETED, DelayedTearDownEvent.class, this::tearDown)
+                .transition(BUFFERING_COMPLETED, DelayedTearDownEvent.class, this::releaseAndTerminate)
                 .transition(BUFFERING_COMPLETED, ContentSubscribedEvent.class, this::contentSubscribedEventWhileBufferingCompleted)
                 .transition(BUFFERING_COMPLETED, ContentEndEvent.class, s -> BUFFERING_COMPLETED)
 
@@ -117,7 +117,7 @@ class FlowControllingHttpContentProducer {
                 .transition(EMITTING_BUFFERED_CONTENT, ContentChunkEvent.class, this::spuriousContentChunkEvent)
                 .transition(EMITTING_BUFFERED_CONTENT, ChannelInactiveEvent.class, s -> scheduleTearDown(EMITTING_BUFFERED_CONTENT))
                 .transition(EMITTING_BUFFERED_CONTENT, ChannelExceptionEvent.class, s -> EMITTING_BUFFERED_CONTENT)
-                .transition(EMITTING_BUFFERED_CONTENT, DelayedTearDownEvent.class, this::tearDownWithError)
+                .transition(EMITTING_BUFFERED_CONTENT, DelayedTearDownEvent.class, s -> emitErrorAndTerminate(s.cause()))
                 .transition(EMITTING_BUFFERED_CONTENT, ContentSubscribedEvent.class, this::contentSubscribedEventWhileEmittingBufferedContent)
                 .transition(EMITTING_BUFFERED_CONTENT, ContentEndEvent.class, this::contentEndEventWhileEmittingBufferedContent)
                 .transition(EMITTING_BUFFERED_CONTENT, UnsubscribeEvent.class, this::emitErrorAndTerminateOnPrematureUnsubscription)
@@ -329,14 +329,6 @@ class FlowControllingHttpContentProducer {
         return EMITTING_BUFFERED_CONTENT;
     }
 
-    private ProducerState tearDownWithError(CausalEvent event) {
-        return emitErrorAndTerminate(event.cause());
-    }
-
-    private ProducerState tearDown(CausalEvent event) {
-        return releaseAndTerminate(event);
-    }
-
     private ProducerState scheduleTearDown(ProducerState state) {
         delayedTearDownAction.run();
         return state;
@@ -362,7 +354,12 @@ class FlowControllingHttpContentProducer {
     }
 
     void tearDownResources() {
-        stateMachine.handle(new DelayedTearDownEvent(new ResponseTimeoutException(origin)));
+        stateMachine.handle(new DelayedTearDownEvent(new ResponseTimeoutException(origin,
+                "channelClosed",
+                receivedBytes(),
+                receivedChunks(),
+                emittedBytes(),
+                emittedChunks())));
     }
 
     void request(long n) {
