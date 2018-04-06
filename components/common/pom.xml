@@ -39,6 +39,11 @@
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-testsupport</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
