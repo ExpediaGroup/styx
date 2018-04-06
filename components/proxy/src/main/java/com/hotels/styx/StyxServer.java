@@ -20,7 +20,6 @@ import com.google.common.io.CharStreams;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
-import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
@@ -38,6 +37,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Map;
 
+import static com.hotels.styx.ServerConfigSchema.validateServerConfiguration;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
@@ -47,6 +47,7 @@ import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.FROM_CON
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.Runtime.getRuntime;
 import static java.lang.String.format;
+import static java.lang.System.getProperty;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -54,13 +55,14 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Entry point for styx proxy server.
  */
 public final class StyxServer extends AbstractService {
+    private static final String VALIDATE_SERVER_CONFIG_PROPERTY = "validateServerConfig";
     private static final Logger LOG = getLogger(StyxServer.class);
 
     static {
         // Disable resource leak detection if no system property supplied
-        LOG.debug("Real -Dio.netty.leakDetectionLevel = " + System.getProperty("io.netty.leakDetectionLevel"));
+        LOG.debug("Real -Dio.netty.leakDetectionLevel = " + getProperty("io.netty.leakDetectionLevel"));
 
-        if (System.getProperty("io.netty.leakDetectionLevel") == null) {
+        if (getProperty("io.netty.leakDetectionLevel") == null) {
             ResourceLeakDetector.setLevel(DISABLED);
         }
 
@@ -87,14 +89,27 @@ public final class StyxServer extends AbstractService {
             LOG.info("Styx configFileLocation={}", startupConfig.configFileLocation());
             LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
 
-            Configuration configFromFile = new ConfigurationParser.Builder<YamlConfiguration>()
+            YamlConfiguration yamlConfiguration = new ConfigurationParser.Builder<YamlConfiguration>()
                     .format(YAML)
                     .overrides(System.getProperties())
                     .build()
                     .parse(configSource(startupConfig.configFileLocation()));
 
+            if (skipServerConfigValidation()) {
+                LOG.warn("Server configuration validation disabled. The Styx server configuration will not be validated.");
+            } else {
+                validateServerConfiguration(yamlConfiguration)
+                        .ifPresent(message -> {
+                            LOG.info("Styx server failed to start due to configuration error.");
+                            LOG.info("The configuration was sourced from " + startupConfig.configFileLocation());
+                            LOG.info(message);
+                            System.exit(-1);
+                        });
+                LOG.info("Configuration validated successfully.");
+            }
+
             StyxServerComponents components = new StyxServerComponents.Builder()
-                    .styxConfig(new StyxConfig(startupConfig, configFromFile))
+                    .styxConfig(new StyxConfig(startupConfig, yamlConfiguration))
                     .loggingSetUp(FROM_CONFIG)
                     .build();
 
@@ -104,6 +119,11 @@ public final class StyxServer extends AbstractService {
             LOG.error("Error in Styx instance creation.", cause);
             throw cause;
         }
+    }
+
+    private static boolean skipServerConfigValidation() {
+        String validate = getProperty(VALIDATE_SERVER_CONFIG_PROPERTY, "yes");
+        return "n".equals(validate) || "no".equals(validate);
     }
 
     private final HttpServer proxyServer;

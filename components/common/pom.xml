@@ -58,10 +58,7 @@
     </resources>
     <testResources>
       <testResource>
-        <directory>src/test/unit/resources</directory>
-      </testResource>
-      <testResource>
-        <directory>src/test/integration/resources</directory>
+        <directory>src/test/resources</directory>
       </testResource>
     </testResources>
 

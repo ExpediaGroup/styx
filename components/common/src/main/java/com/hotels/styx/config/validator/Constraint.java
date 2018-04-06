@@ -15,15 +15,9 @@
  */
 package com.hotels.styx.config.validator;
 
-/**
- * Thrown during schema object construction to indicate an inconsistent schema.
- *
- * May be thrown when the schema object is being built to indicate an internal inconsistency
- * within a schema object. Such inconsistency may be a named reference to a non-existing schema,
- * duplicate field names, and so on.
- */
-public class InvalidSchemaException extends RuntimeException {
-    public InvalidSchemaException(String message) {
-        super(message);
-    }
+import com.fasterxml.jackson.databind.JsonNode;
+
+interface Constraint {
+    boolean evaluate(Schema schema, JsonNode node);
+    String message();
 }
