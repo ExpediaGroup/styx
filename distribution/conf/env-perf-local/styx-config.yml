@@ -11,9 +11,4 @@ proxy:
       cipherSuites:
         - TLS_RSA_WITH_AES_128_GCM_SHA256
 
-services:
-  factories:
-    graphite:
-      enabled: false
-
 originsFile: ${STYX_HOME:classpath:}/conf/env-perf-local/origins.yml
