@@ -15,14 +15,13 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.client.netty.ConsumerDisconnectedException;
-import com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer;
-import com.hotels.styx.support.matchers.LoggingTestSupport;
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.netty.exceptions.TransportLostException;
+import com.hotels.styx.client.netty.ConsumerDisconnectedException;
+import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.mockito.ArgumentCaptor;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -35,17 +34,27 @@ import java.util.function.Consumer;
 import static ch.qos.logback.classic.Level.WARN;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.BUFFERING;
+import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.BUFFERING_COMPLETED;
+import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.COMPLETED;
+import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.EMITTING_BUFFERED_CONTENT;
+import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.STREAMING;
+import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.TERMINATED;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
-import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.*;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
 
 public class FlowControllingHttpContentProducerTest {
     private static final Long NO_BACKPRESSURE = Long.MAX_VALUE;
@@ -55,6 +64,7 @@ public class FlowControllingHttpContentProducerTest {
     private Runnable askForMore;
     private Runnable onCompleteAction;
     private Consumer<Throwable> onTerminateAction;
+    private Runnable tearDownAction;
     private ByteBuf contentChunk1;
     private ByteBuf contentChunk2;
     private TransportLostException transportLostCause = new TransportLostException(new InetSocketAddress(8080), newOriginBuilder("localhost", 8080).build());
@@ -66,14 +76,15 @@ public class FlowControllingHttpContentProducerTest {
         askForMore = mock(Runnable.class);
         onCompleteAction = mock(Runnable.class);
         onTerminateAction = mock(Consumer.class);
+        tearDownAction = mock(Runnable.class);
 
         producer = new FlowControllingHttpContentProducer(
                 askForMore,
                 onCompleteAction,
                 onTerminateAction,
+                tearDownAction,
                 "foobar",
-                newOriginBuilder("foohost", 12345).build()
-        );
+                newOriginBuilder("foohost", 12345).build());
 
         producer.request(initialCount);
     }
@@ -240,27 +251,6 @@ public class FlowControllingHttpContentProducerTest {
         producer.newChunk(contentChunk2);
 
         producer.channelInactive(transportLostCause);
-
-        assertThat(producer.state(), is(TERMINATED));
-        verify(onCompleteAction, never()).run();
-        verify(onTerminateAction).accept(isA(Throwable.class));
-        assertThat(contentChunk1.refCnt(), is(0));
-        assertThat(contentChunk2.refCnt(), is(0));
-    }
-
-    @Test
-    public void IdleStateEventInBufferingState() throws Exception {
-        // Releases buffered chunks and transitions to TERMINATED state.
-        setUpAndRequest(NO_BACKPRESSURE);
-        assertThat(producer.state(), is(BUFFERING));
-
-        assertThat(contentChunk1.refCnt(), is(1));
-        assertThat(contentChunk2.refCnt(), is(1));
-
-        producer.newChunk(contentChunk1);
-        producer.newChunk(contentChunk2);
-
-        producer.idleStateEvent(new ResponseTimeoutException(Origin.newOriginBuilder("localhost", 123).build()));
 
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
@@ -456,6 +446,7 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
         verify(onTerminateAction).accept(isA(Throwable.class));
+        verify(onTerminateAction).accept(isA(Throwable.class));
 
         assertThat(contentChunk1.refCnt(), is(0));
         assertThat(contentChunk2.refCnt(), is(0));
@@ -483,28 +474,6 @@ public class FlowControllingHttpContentProducerTest {
         assertThat(contentChunk2.refCnt(), is(0));
         assertException(getCause(downstream), TransportLostException.class,
                 "Connection to origin lost. origin=\"generic-app:anonymous-origin:localhost:8080\", remoteAddress=\"0.0.0.0/0.0.0.0:8080\".");
-    }
-
-    @Test
-    public void channelIdleInStreamingState() throws Exception {
-        setUpAndRequest(0);
-        assertThat(producer.state(), is(BUFFERING));
-
-        producer.onSubscribed(downstream);
-        producer.newChunk(contentChunk1);
-        producer.newChunk(contentChunk2);
-        assertThat(producer.state(), is(STREAMING));
-
-        producer.idleStateEvent(new ResponseTimeoutException(Origin.newOriginBuilder("localhost", 123).build()));
-
-        assertThat(producer.state(), is(TERMINATED));
-        verify(onCompleteAction, never()).run();
-        verify(onTerminateAction).accept(isA(Throwable.class));
-        assertThat(contentChunk1.refCnt(), is(0));
-        assertThat(contentChunk2.refCnt(), is(0));
-        assertException(getCause(downstream),
-                ResponseTimeoutException.class,
-                "No response from origin. origin=generic-app:anonymous-origin:foohost:12345.");
     }
 
     @Test
@@ -601,7 +570,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void channelIdleInBufferingCompletedState() throws Exception {
+    public void delayedTearDownInBufferingCompletedState() throws Exception {
         setUpAndRequest(NO_BACKPRESSURE);
 
         producer.newChunk(contentChunk1);
@@ -609,12 +578,16 @@ public class FlowControllingHttpContentProducerTest {
         producer.lastHttpContent();
         assertThat(producer.state(), is(BUFFERING_COMPLETED));
 
-        producer.idleStateEvent(new ResponseTimeoutException(Origin.newOriginBuilder("localhost", 123).build()));
         producer.channelInactive(transportLostCause);
+        producer.tearDownResources();
 
+        verify(tearDownAction).run();
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
-        verify(onTerminateAction).accept(isA(Throwable.class));
+        ArgumentCaptor<ResponseTimeoutException> argumentCaptor = ArgumentCaptor.forClass(ResponseTimeoutException.class);
+        verify(onTerminateAction).accept(argumentCaptor.capture());
+        assertThat(argumentCaptor.getValue().getMessage(), containsString("bytesReceived=6"));
+
         assertThat(contentChunk1.refCnt(), is(0));
         assertThat(contentChunk2.refCnt(), is(0));
     }
@@ -795,7 +768,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void channelIdleInEmittingBufferedContentState() throws Exception {
+    public void delayedTearDownInEmittingBufferedContentState() throws Exception {
         setUpAndRequest(0);
 
         producer.newChunk(copiedBuffer("blah", UTF_8));
@@ -803,7 +776,8 @@ public class FlowControllingHttpContentProducerTest {
         producer.onSubscribed(downstream);
         assertThat(producer.state(), is(EMITTING_BUFFERED_CONTENT));
 
-        producer.idleStateEvent(new ResponseTimeoutException(Origin.newOriginBuilder("localhost", 123).build()));
+
+        producer.tearDownResources();
 
         assertThat(producer.state(), is(TERMINATED));
         verify(onCompleteAction, never()).run();
