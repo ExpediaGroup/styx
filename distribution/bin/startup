@@ -59,7 +59,7 @@ do
       STYX_ENV_FILE=$2
       shift
       ;;
-    -*)
+    *)
       echo "Unknown option: $1 ($@)"
       echo
       usage
