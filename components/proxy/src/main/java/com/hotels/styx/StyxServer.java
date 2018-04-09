@@ -22,8 +22,6 @@ import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.service.spi.StyxService;
-import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
-import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.startup.ProxyServerSetUp;
 import com.hotels.styx.startup.StyxPipelineFactory;
@@ -38,10 +36,9 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Map;
 
-import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
-import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
 import static com.hotels.styx.startup.AdminServerSetUp.createAdminServer;
+import static com.hotels.styx.startup.ConfigFileLoading.configurationFromFile;
 import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.FROM_CONFIG;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
@@ -54,6 +51,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Entry point for styx proxy server.
  */
 public final class StyxServer extends AbstractService {
+    private static final String FALLBACK_CONFIGURATION = "classpath:/configuration/default.yml";
+
     private static final Logger LOG = getLogger(StyxServer.class);
 
     static {
@@ -87,11 +86,7 @@ public final class StyxServer extends AbstractService {
             LOG.info("Styx configFileLocation={}", startupConfig.configFileLocation());
             LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
 
-            Configuration configFromFile = new ConfigurationParser.Builder<YamlConfiguration>()
-                    .format(YAML)
-                    .overrides(System.getProperties())
-                    .build()
-                    .parse(configSource(startupConfig.configFileLocation()));
+            Configuration configFromFile = configurationFromFile(startupConfig, FALLBACK_CONFIGURATION);
 
             StyxServerComponents components = new StyxServerComponents.Builder()
                     .styxConfig(new StyxConfig(startupConfig, configFromFile))

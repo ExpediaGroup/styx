@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.hotels.styx.api.configuration.ConversionException;
 import com.hotels.styx.infrastructure.configuration.ExtensibleConfiguration;
 import com.hotels.styx.infrastructure.configuration.UnresolvedPlaceholder;
-import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -33,14 +32,11 @@ import java.util.Optional;
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML_MAPPER;
 import static java.util.Objects.requireNonNull;
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Configuration using YAML format.
  */
 public class YamlConfiguration implements ExtensibleConfiguration<YamlConfiguration> {
-    private static final Logger LOGGER = getLogger(YamlConfigurationFormat.class);
-
     private final JsonNode rootNode;
 
     public YamlConfiguration(JsonNode rootNode) {
