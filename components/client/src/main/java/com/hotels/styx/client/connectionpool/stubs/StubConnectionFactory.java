@@ -15,15 +15,12 @@
  */
 package com.hotels.styx.client.connectionpool.stubs;
 
-import com.eaio.uuid.UUID;
 import com.hotels.styx.api.Announcer;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
 import rx.Observable;
-
-import java.util.Objects;
 
 import static com.google.common.base.Objects.toStringHelper;
 
@@ -46,7 +43,6 @@ public class StubConnectionFactory implements Connection.Factory {
         private final Origin origin;
         private boolean connected = true;
         private final Announcer<Listener> listeners = Announcer.to(Connection.Listener.class);
-        private final UUID uuid = new UUID();
 
         public StubConnection(Origin origin) {
             this.origin = origin;
@@ -87,29 +83,10 @@ public class StubConnectionFactory implements Connection.Factory {
         }
 
         @Override
-        public int hashCode() {
-            return Objects.hash(uuid, origin);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null || getClass() != obj.getClass()) {
-                return false;
-            }
-            StubConnection other = (StubConnection) obj;
-            return Objects.equals(this.origin, other.origin)
-                    && Objects.equals(this.uuid, other.uuid);
-        }
-
-        @Override
         public String toString() {
             return toStringHelper(this)
                     .add("origin", origin)
                     .add("connected", connected)
-                    .add("uuid", uuid)
                     .toString();
         }
     }

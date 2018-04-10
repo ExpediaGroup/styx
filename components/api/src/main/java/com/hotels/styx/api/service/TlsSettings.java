@@ -159,12 +159,12 @@ public class TlsSettings {
         private List<String> cipherSuites = Collections.emptyList();
 
         /**
-         * @deprecated
          * Skips origin authentication.
          *
          * When true, styx will not attempt to authenticate backend servers.
          * It will accept any certificate presented by the origins.
          *
+         * @deprecated
          * @param trustAllCerts
          * @return
          */

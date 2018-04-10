@@ -15,16 +15,20 @@
  */
 package com.hotels.styx.api;
 
-import com.eaio.uuid.UUID;
+import com.fasterxml.uuid.EthernetAddress;
+import com.fasterxml.uuid.Generators;
+import com.fasterxml.uuid.NoArgGenerator;
 
 /**
  * Useful unique id suppliers.
  */
 public final class UniqueIdSuppliers {
+    private static final NoArgGenerator TIME_BASED_GENERATOR = Generators.timeBasedGenerator(EthernetAddress.fromInterface());
+
     /**
      * A unique ID supplier which uses a UUID Version One implementation.
      */
-    public static final UniqueIdSupplier UUID_VERSION_ONE_SUPPLIER = () -> new UUID().toString();
+    public static final UniqueIdSupplier UUID_VERSION_ONE_SUPPLIER = () -> TIME_BASED_GENERATOR.generate().toString();
 
     /**
      * Returns a supplier whose {@code get()} method returns the {@code uniqueId} passed in.

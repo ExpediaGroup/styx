@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.testapi;
 
-import com.eaio.uuid.UUID;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.service.TlsSettings;
 
@@ -27,7 +26,9 @@ import java.util.concurrent.TimeUnit;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
+
 import static java.util.Objects.requireNonNull;
+import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -131,6 +132,6 @@ public class BackendService {
     }
 
     private static String newId() {
-        return new UUID().toString();
+        return randomUUID().toString();
     }
 }
