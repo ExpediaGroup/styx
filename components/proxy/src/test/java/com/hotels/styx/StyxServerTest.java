@@ -159,7 +159,6 @@ public class StyxServerTest {
             Runtime originalRuntime = Runtime.getRuntime();
             Field runtimeField = Runtime.class.getDeclaredField("currentRuntime");
             Runtime mockRuntime = mock(Runtime.class);
-
             try {
                 runtimeField.setAccessible(true);
                 runtimeField.set(Runtime.class, mockRuntime);
@@ -179,7 +178,6 @@ public class StyxServerTest {
     public void systemExitIsCalledWhenCreateStyxServerFails() {
         Runtime runtime = captureSystemExit(() -> StyxServer.main(new String[0]));
         verify(runtime).exit(1);
-
     }
 
     private static StyxServer styxServerWithPlugins(NamedPlugin... plugins) {
