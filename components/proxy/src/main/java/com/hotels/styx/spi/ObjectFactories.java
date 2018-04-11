@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.spi;
 
+import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.io.FileResource;
 import com.hotels.styx.api.io.FileResourceIndex;
@@ -25,14 +26,11 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.singleton;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.StreamSupport.stream;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -53,42 +51,25 @@ public final class ObjectFactories {
     }
 
     private static <T> Optional<T> newInstance(Class<T> type, String className, Optional<Path> pathOptional) {
-        Iterable<ClassLoader> classLoaders = pathOptional
-                .map(path -> makeClassLoadersFor(readResourcesFrom(path)))
-                .orElseGet(() -> singleton(ObjectFactories.class.getClassLoader()));
+        ClassLoader classLoader = pathOptional
+                .map(path -> classLoader(readResourcesFrom(path)))
+                .map(ClassLoader.class::cast)
+                .orElseGet(ObjectFactories.class::getClassLoader);
 
-        List<T> instances = newArrayList();
-        for (ClassLoader classLoader : classLoaders) {
-            try {
-                Class<?> aClass = Class.forName(className, false, classLoader);
-                T instance = type.cast(aClass.newInstance());
-                instances.add(instance);
-            } catch (ClassNotFoundException e) {
-                LOGGER.debug(e.getMessage(), e);
-            } catch (InstantiationException | IllegalAccessException e) {
-                LOGGER.error("error loading class={}", className);
-                return Optional.empty();
-            }
-        }
-
-        int size = instances.size();
-        if (size == 0) {
+        try {
+            Class<?> aClass = Class.forName(className, false, classLoader);
+            T instance = type.cast(aClass.newInstance());
+            return Optional.of(instance);
+        } catch (ClassNotFoundException e) {
             LOGGER.error("no class={} is found in the specified classpath={}", className, pathOptional.orElse(Paths.get("")));
             return Optional.empty();
+        } catch (InstantiationException | IllegalAccessException e) {
+            LOGGER.error("error loading class={}", className);
+            return Optional.empty();
         }
-        if (size > 1) {
-            LOGGER.warn("expecting only one implementation but found={}", size);
-        }
-        return Optional.of(instances.get(0));
     }
 
-    private static Iterable<ClassLoader> makeClassLoadersFor(Iterable<Resource> resources) {
-        return stream(resources.spliterator(), false)
-                .map(ObjectFactories::classLoader)
-                .collect(toList());
-    }
-
-    private static Iterable<Resource> readResourcesFrom(Path path) {
+    private static Collection<Resource> readResourcesFrom(Path path) {
         return isJarResource(path) ? readJarResources(path) : readFileResources(path);
     }
 
@@ -96,17 +77,18 @@ public final class ObjectFactories {
         return path.toFile().getName().endsWith(".jar");
     }
 
-    private static Iterable<Resource> readJarResources(Path path) {
+    private static Collection<Resource> readJarResources(Path path) {
         return singleton(new FileResource(path.toFile()));
     }
 
-    private static Iterable<Resource> readFileResources(Path path) {
+    private static Collection<Resource> readFileResources(Path path) {
         FileResourceIndex resourceIndex = new FileResourceIndex();
-        return resourceIndex.list(path.toString(), ".jar");
+        return ImmutableList.copyOf(resourceIndex.list(path.toString(), ".jar"));
     }
 
-    private static URLClassLoader classLoader(Resource resource) {
-        return new URLClassLoader(new URL[]{resource.url()}, ObjectFactories.class.getClassLoader());
-    }
+    private static URLClassLoader classLoader(Collection<Resource> resource) {
+        URL[] urls = resource.stream().map(Resource::url).toArray(URL[]::new);
 
+        return new URLClassLoader(urls, ObjectFactories.class.getClassLoader());
+    }
 }

@@ -35,7 +35,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * A {@cod Plugin.Factory} supplier that loads the plugins from a file system.
- *
+ * TODO is this class not used any more?
  */
 public class FileSystemPluginsSupplier implements Supplier<Iterable<PluginFactory>> {
     private static final Logger LOG = getLogger(FileSystemPluginsSupplier.class);
