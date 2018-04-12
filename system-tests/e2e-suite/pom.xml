@@ -42,7 +42,7 @@
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-test-plugin</artifactId>
       <version>${project.version}</version>
-      <scope>runtime</scope>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
