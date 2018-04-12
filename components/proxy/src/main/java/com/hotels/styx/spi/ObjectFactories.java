@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static java.lang.ClassLoader.getSystemClassLoader;
 import static java.util.Collections.singleton;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -89,6 +90,6 @@ public final class ObjectFactories {
     private static URLClassLoader classLoader(Collection<Resource> resource) {
         URL[] urls = resource.stream().map(Resource::url).toArray(URL[]::new);
 
-        return new URLClassLoader(urls, ObjectFactories.class.getClassLoader());
+        return new URLClassLoader(urls, getSystemClassLoader());
     }
 }
