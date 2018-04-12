@@ -68,10 +68,10 @@ public final class StyxServer extends AbstractService {
     }
 
     public static void main(String[] args) {
-        StyxServer styxServer = createStyxServer(args);
-        getRuntime().addShutdownHook(new Thread(() -> styxServer.stopAsync().awaitTerminated()));
-
         try {
+            StyxServer styxServer = createStyxServer(args);
+            getRuntime().addShutdownHook(new Thread(() -> styxServer.stopAsync().awaitTerminated()));
+
             styxServer.startAsync().awaitRunning();
         } catch (Throwable cause) {
             LOG.error("Error in Styx server startup.", cause);

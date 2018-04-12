@@ -38,6 +38,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
 import static ch.qos.logback.classic.Level.ERROR;
@@ -151,6 +152,32 @@ public class StyxServerTest {
         } finally {
             stopIfRunning(styxServer);
         }
+    }
+
+    private Runtime captureSystemExit(Runnable block) {
+        try {
+            Runtime originalRuntime = Runtime.getRuntime();
+            Field runtimeField = Runtime.class.getDeclaredField("currentRuntime");
+            Runtime mockRuntime = mock(Runtime.class);
+            try {
+                runtimeField.setAccessible(true);
+                runtimeField.set(Runtime.class, mockRuntime);
+                block.run();
+            } finally {
+                runtimeField.set(Runtime.class, originalRuntime);
+                runtimeField.setAccessible(false);
+            }
+
+            return mockRuntime;
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void systemExitIsCalledWhenCreateStyxServerFails() {
+        Runtime runtime = captureSystemExit(() -> StyxServer.main(new String[0]));
+        verify(runtime).exit(1);
     }
 
     private static StyxServer styxServerWithPlugins(NamedPlugin... plugins) {
