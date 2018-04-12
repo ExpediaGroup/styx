@@ -138,6 +138,7 @@ class ServerConfigSchema {
                     .optional("responseInfoHeaderFormat", string())
                     .optional("httpPipeline", object(pass()))
                     .optional("logFormat", string())
+                    .optional("userDefined", object(pass()))
             )
             .build();
 

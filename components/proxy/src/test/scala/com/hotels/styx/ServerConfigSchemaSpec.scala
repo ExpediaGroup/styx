@@ -261,6 +261,19 @@ class ServerConfigSchemaSpec extends FunSpec with ShouldMatchers {
           """.stripMargin
       )) should be(Optional.empty())
     }
+
+    it("Provides 'userDefined' as an opaque configuration block for custom attributes.") {
+      validateServerConfiguration(yamlConfig(
+        minimalConfig
+          +
+          """
+            |userDefined:
+            |  websiteName: hyper-super.com
+            |  threadCount: 7
+            |  pluginVersion: 3.5.1-134
+          """.stripMargin
+      )) should be(Optional.empty())
+    }
   }
 
 
