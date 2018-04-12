@@ -7,10 +7,10 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>styx-test-plugin</artifactId>
-  <name>Styx - System Tests - Test Plugin</name>
+  <artifactId>styx-test-plugin-dependencies</artifactId>
+  <name>Styx - System Tests - Test Plugin - Dependencies</name>
 
-  <description>An example Styx interceptor plugin implementation.</description>
+  <description>Some dependencies for the example Styx interceptor plugin.</description>
 
   <properties>
     <checkstyle.skip>true</checkstyle.skip>
@@ -21,12 +21,6 @@
     <dependency>
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-api</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.hotels.styx</groupId>
-      <artifactId>styx-test-plugin-dependencies</artifactId>
-      <version>${project.version}</version>
     </dependency>
   </dependencies>
 

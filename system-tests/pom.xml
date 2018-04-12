@@ -15,6 +15,7 @@
   <name>Styx - System Tests</name>
 
   <modules>
+    <module>example-styx-plugin-dependencies</module>
     <module>example-styx-plugin</module>
     <module>e2e-testsupport</module>
     <module>e2e-suite</module>
