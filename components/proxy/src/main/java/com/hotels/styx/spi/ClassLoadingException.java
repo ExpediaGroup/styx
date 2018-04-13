@@ -13,15 +13,24 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package depend;
+package com.hotels.styx.spi;
 
 /**
- * A project can attempt to reference this to prove the dependency relationship is in effect.
+ * Exception during class-loading.
  */
-public final class ExampleDependency {
-    // This is intentionally left non-final to prevent the compiler from inlining it.
-    public static String exampleDependencyProperty = "Example-Dependency-Available";
+public class ClassLoadingException extends RuntimeException {
+    public ClassLoadingException() {
+    }
 
-    private ExampleDependency() {
+    public ClassLoadingException(String message) {
+        super(message);
+    }
+
+    public ClassLoadingException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public ClassLoadingException(Throwable cause) {
+        super(cause);
     }
 }

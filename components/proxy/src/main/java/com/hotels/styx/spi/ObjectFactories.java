@@ -20,7 +20,6 @@ import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.io.FileResource;
 import com.hotels.styx.api.io.FileResourceIndex;
 import com.hotels.styx.spi.config.SpiExtensionFactory;
-import org.slf4j.Logger;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -31,19 +30,17 @@ import java.util.Optional;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.ClassLoader.getSystemClassLoader;
+import static java.lang.String.format;
 import static java.util.Collections.singleton;
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Loads a plugin from SpiExtensionFactory object.
  */
 public final class ObjectFactories {
-    private static final Logger LOGGER = getLogger(ObjectFactories.class);
-
     private ObjectFactories() {
     }
 
-    public static <T> Optional<T> newInstance(SpiExtensionFactory classAndPath, Class<T> type) {
+    public static <T> T newInstance(SpiExtensionFactory classAndPath, Class<T> type) {
         return newInstance(type, classAndPath.factoryClass(), factoryClassPath(classAndPath.classPath()));
     }
 
@@ -51,23 +48,29 @@ public final class ObjectFactories {
         return isNullOrEmpty(classPath) ? Optional.empty() : Optional.of(Paths.get(classPath));
     }
 
-    private static <T> Optional<T> newInstance(Class<T> type, String className, Optional<Path> pathOptional) {
-        ClassLoader classLoader = pathOptional
-                .map(path -> classLoader(readResourcesFrom(path)))
-                .map(ClassLoader.class::cast)
-                .orElseGet(ObjectFactories.class::getClassLoader);
+    private static <T> T newInstance(Class<T> type, String className, Optional<Path> pathOptional) {
+        ClassLoader classLoader = classLoader(pathOptional);
 
         try {
             Class<?> aClass = Class.forName(className, false, classLoader);
-            T instance = type.cast(aClass.newInstance());
-            return Optional.of(instance);
+
+            return type.cast(aClass.newInstance());
         } catch (ClassNotFoundException e) {
-            LOGGER.error("no class={} is found in the specified classpath={}", className, pathOptional.orElse(Paths.get("")));
-            return Optional.empty();
+            String exceptionMessage = pathOptional
+                    .map(classPath ->
+                            format("no class=%s is found in the specified classpath=%s", className, classPath))
+                    .orElse(format("no class=%s is found (no classpath specified)", className));
+
+            throw new ClassLoadingException(exceptionMessage, e);
         } catch (InstantiationException | IllegalAccessException e) {
-            LOGGER.error("error loading class={}", className);
-            return Optional.empty();
+            throw new ClassLoadingException("error loading class=" + className, e);
         }
+    }
+
+    private static ClassLoader classLoader(Optional<Path> pathOptional) {
+        return pathOptional
+                .map(path -> classLoader(readResourcesFrom(path)))
+                .orElseGet(ObjectFactories.class::getClassLoader);
     }
 
     private static Collection<Resource> readResourcesFrom(Path path) {
@@ -87,7 +90,7 @@ public final class ObjectFactories {
         return ImmutableList.copyOf(resourceIndex.list(path.toString(), ".jar"));
     }
 
-    private static URLClassLoader classLoader(Collection<Resource> resource) {
+    private static ClassLoader classLoader(Collection<Resource> resource) {
         URL[] urls = resource.stream().map(Resource::url).toArray(URL[]::new);
 
         return new URLClassLoader(urls, getSystemClassLoader());

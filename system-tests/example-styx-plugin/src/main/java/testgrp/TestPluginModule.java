@@ -19,7 +19,7 @@ import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import org.slf4j.Logger;
 
-import static depend.ExampleDependency.EXAMPLE_DEPENDENCY_PROPERTY;
+import static depend.ExampleDependency.exampleDependencyProperty;
 import static org.slf4j.LoggerFactory.getLogger;
 
 @SuppressWarnings("unused")
@@ -29,7 +29,7 @@ public class TestPluginModule implements PluginFactory {
     @Override
     public Plugin create(PluginFactory.Environment environment) {
         // If this line executes without error then the dependency-relationship is intact.
-        LOGGER.info(EXAMPLE_DEPENDENCY_PROPERTY);
+        LOGGER.info(exampleDependencyProperty);
 
         return new TestPlugin(environment);
     }
