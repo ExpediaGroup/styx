@@ -1,8 +1,8 @@
 # Styx Response Codes
 
-Styx may return an HTTP error status code if it is unable to proxy a request. These responses are generated 
-by Styx itself, not responses being proxied from downstream.
-This section describes those responses and the specific conditions under which Styx responds with them.
+tyx responds with an HTTP error status code if it is unable to proxy a request. These responses are generated 
+by Styx itself, not proxied from downstream.
+This section describes those responses and the specific conditions in which they are sent.
 Note that interceptor plugins can also be programmed to modify response codes, so they may introduce 4xx or 
 5xx statuses for other reasons not listed here.
 
@@ -21,11 +21,17 @@ there is an unrecognised HTTP verb or multiple `Host` headers.
 
 ### 408 Request Timeout
 
-While the client a HTTP Request, it must send something within `proxy.requestTimeoutMillis`.
-Any inactivity exceeding this will trigger a 408 response code. The timer applies only while the 
-HTTP request is being transmitted "over the wire". The timer is stopped when styx has fully 
-received request, so any delay or inactivity introduced by origin responding slowly will not 
-trigger this timeout.
+Styx responds with 408 Request Timeout error when the underlying TCP connection has been inactive for longer 
+than a configurable threshold while receiving an HTTP request.
+
+When a remote client is sending an HTTP Request, it must demonstrate its presence by continuously sending bytes 
+over the network. If the client stops sending the request part way through, or slows down too much, Styx will 
+observe a period of inactivity on the underlying TCP connection and reject the request with a 408 Request Timeout.
+
+The `proxy.requestTimeoutMillis` server configuration parameter controls the amount of inactivity is tolerated.
+
+The timer only applies while the HTTP request is being transmitted "over the wire". The timer is stopped when the 
+request is fully received, so any delay or inactivity introduced by the origins will not trigger this timeout.
 
 
 ## Server Errors (5xx codes)
