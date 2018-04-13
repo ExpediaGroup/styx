@@ -16,21 +16,19 @@
 package com.hotels.styx.spi;
 
 /**
- * Exception during class-loading.
+ * Class loader wrapper for mocking.
  */
-public class ClassLoadingException extends RuntimeException {
-    public ClassLoadingException() {
+public interface ClassSource {
+    static ClassSource fromClassLoader(ClassLoader classLoader) {
+        return name -> Class.forName(name, false, classLoader);
     }
 
-    public ClassLoadingException(String message) {
-        super(message);
-    }
-
-    public ClassLoadingException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public ClassLoadingException(Throwable cause) {
-        super(cause);
-    }
+    /**
+     * Attempts to load a class with a specified name.
+     *
+     * @param name class name
+     * @return the class with that name
+     * @throws ClassNotFoundException if no class exists with such a name
+     */
+    Class<?> load(String name) throws ClassNotFoundException;
 }

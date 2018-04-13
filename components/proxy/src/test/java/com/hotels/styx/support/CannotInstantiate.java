@@ -13,13 +13,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.spi;
-
-import com.hotels.styx.spi.config.SpiExtensionFactory;
+package com.hotels.styx.support;
 
 /**
- * Loads extension classes.
+ * This class cannot be instantiated as it has a private constructor (for error handling tests).
  */
-public interface ExtensionClassLoader {
-    Class<?> loadClass(SpiExtensionFactory extensionFactory) throws ClassLoadingException;
+public final class CannotInstantiate {
+    private CannotInstantiate() {
+    }
 }

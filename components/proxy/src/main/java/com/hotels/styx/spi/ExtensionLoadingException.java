@@ -13,15 +13,24 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.spi.newstuff;
+package com.hotels.styx.spi;
 
 /**
- * Class loader wrapper for mocking.
+ * Exception that is thrown if something goes wrong while attempting to load and instantiate an extension object.
  */
-public interface ClassSource {
-    static ClassSource fromClassLoader(ClassLoader classLoader) {
-        return name -> Class.forName(name, false, classLoader);
+public class ExtensionLoadingException extends RuntimeException {
+    public ExtensionLoadingException() {
     }
 
-    Class<?> load(String name) throws ClassNotFoundException;
+    public ExtensionLoadingException(String message) {
+        super(message);
+    }
+
+    public ExtensionLoadingException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public ExtensionLoadingException(Throwable cause) {
+        super(cause);
+    }
 }

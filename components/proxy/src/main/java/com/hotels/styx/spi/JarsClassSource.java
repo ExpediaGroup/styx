@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.spi.newstuff;
+package com.hotels.styx.spi;
 
 import com.hotels.styx.api.Resource;
 
@@ -21,16 +21,16 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
 
-import static com.hotels.styx.spi.newstuff.ClassSource.fromClassLoader;
+import static com.hotels.styx.spi.ClassSource.fromClassLoader;
 import static java.lang.ClassLoader.getSystemClassLoader;
 
 /**
- * Class source that looks in JARs.
+ * A class source that looks into resources for JAR files.
  */
-public class JarsClassSource implements ClassSource {
+class JarsClassSource implements ClassSource {
     private final ClassSource classSource;
 
-    public JarsClassSource(Collection<Resource> jars) {
+    JarsClassSource(Collection<Resource> jars) {
         URL[] urls = jars.stream().map(Resource::url).toArray(URL[]::new);
 
         ClassLoader classLoader = new URLClassLoader(urls, getSystemClassLoader());

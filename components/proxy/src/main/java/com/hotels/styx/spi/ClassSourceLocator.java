@@ -13,11 +13,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.spi.newstuff;
+package com.hotels.styx.spi;
 
 import java.nio.file.Path;
 
-import static com.hotels.styx.spi.newstuff.JarResources.jars;
+import static com.hotels.styx.spi.JarResources.jars;
 
 /**
  * Allows file-system to be mocked in the context of locating class sources (such as one or more JAR files).
@@ -25,5 +25,11 @@ import static com.hotels.styx.spi.newstuff.JarResources.jars;
 public interface ClassSourceLocator {
     ClassSourceLocator JARS = classPath -> new JarsClassSource(jars(classPath));
 
+    /**
+     * Provides a class source representing the specified class-path.
+     *
+     * @param classPath class path
+     * @return class source
+     */
     ClassSource classSource(Path classPath);
 }

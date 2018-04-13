@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.spi.newstuff;
+package com.hotels.styx.spi;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Resource;
@@ -26,13 +26,19 @@ import java.util.Collection;
 import static java.util.Collections.singleton;
 
 /**
- * Provides resource.
+ * Provides resources representing JARs located at a given path.
  */
-public final class JarResources {
+final class JarResources {
     private JarResources() {
     }
 
-    public static Collection<Resource> jars(Path path) {
+    /**
+     * Provides resources representing JARs located at the given path.
+     *
+     * @param path a JAR or a directory containing JARs
+     * @return JAR resources
+     */
+    static Collection<Resource> jars(Path path) {
         return isJarResource(path)
                 ? singleton(singleResource(path))
                 : multipleResources(path);
