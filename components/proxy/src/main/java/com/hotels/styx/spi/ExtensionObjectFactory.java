@@ -30,9 +30,11 @@ import static java.util.Objects.requireNonNull;
  * Instantiates objects defined in SPI extensions.
  */
 public class ExtensionObjectFactory {
+    public static final ExtensionObjectFactory EXTENSION_OBJECT_FACTORY = new ExtensionObjectFactory();
+
     private final Function<SpiExtensionFactory, ClassSource> extensionLocator;
 
-    public ExtensionObjectFactory() {
+    private ExtensionObjectFactory() {
         this(ExtensionObjectFactory::locateExtension);
     }
 

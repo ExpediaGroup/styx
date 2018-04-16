@@ -17,9 +17,9 @@ package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.spi.ExtensionObjectFactory;
 import com.hotels.styx.spi.config.SpiExtension;
 
+import static com.hotels.styx.spi.ExtensionObjectFactory.EXTENSION_OBJECT_FACTORY;
 import static java.lang.String.format;
 
 /**
@@ -34,9 +34,7 @@ public class FileSystemPluginFactoryLoader implements PluginFactoryLoader {
 
     private static PluginFactory newPluginFactory(SpiExtension extensionConfig) {
         try {
-            ExtensionObjectFactory factory = new ExtensionObjectFactory();
-
-            return factory.newInstance(extensionConfig.factory(), PluginFactory.class);
+            return EXTENSION_OBJECT_FACTORY.newInstance(extensionConfig.factory(), PluginFactory.class);
         } catch (Exception e) {
             throw new ConfigurationException(format("Could not load a plugin factory for configuration=%s", extensionConfig), e);
         }

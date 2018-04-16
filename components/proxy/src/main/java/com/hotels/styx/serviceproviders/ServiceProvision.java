@@ -29,7 +29,6 @@ import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
-import com.hotels.styx.spi.ExtensionObjectFactory;
 import com.hotels.styx.spi.config.ServiceFactoryConfig;
 import com.hotels.styx.spi.config.SpiExtension;
 import org.slf4j.Logger;
@@ -42,6 +41,7 @@ import java.util.stream.Stream;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.common.Pair.pair;
 import static com.hotels.styx.proxy.ClassFactories.newInstance;
+import static com.hotels.styx.spi.ExtensionObjectFactory.EXTENSION_OBJECT_FACTORY;
 import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toMap;
@@ -173,9 +173,7 @@ public final class ServiceProvision {
 
     private static ServiceFactory newServiceFactory(SpiExtension extensionConfig) {
         try {
-            ExtensionObjectFactory factory = new ExtensionObjectFactory();
-
-            return factory.newInstance(extensionConfig.factory(), ServiceFactory.class);
+            return EXTENSION_OBJECT_FACTORY.newInstance(extensionConfig.factory(), ServiceFactory.class);
         } catch (Exception e) {
             throw new ConfigurationException(format("Could not load a service factory for configuration=%s", extensionConfig), e);
         }
