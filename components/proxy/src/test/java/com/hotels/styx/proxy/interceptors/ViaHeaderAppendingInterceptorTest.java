@@ -18,11 +18,14 @@ package com.hotels.styx.proxy.interceptors;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.support.api.BlockingObservables;
 import org.testng.annotations.Test;
+import sun.security.provider.NativePRNG;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpRequest.Builder.post;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.support.api.BlockingObservables.toRxObservable;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
 import static com.hotels.styx.proxy.interceptors.ReturnResponseChain.returnsResponse;
@@ -74,7 +77,7 @@ public class ViaHeaderAppendingInterceptorTest {
 
     @Test
     public void appendsHttp10RequestVersionInResponseViaHeader() throws Exception {
-        HttpResponse response = interceptor.intercept(get("/foo").build(), ANY_RESPONSE_HANDLER).toBlocking().first();
+        HttpResponse response = toRxObservable(interceptor.intercept(get("/foo").build(), ANY_RESPONSE_HANDLER)).toBlocking().first();
         assertThat(response.headers().get(VIA), isValue("1.1 styx"));
     }
 
@@ -90,10 +93,10 @@ public class ViaHeaderAppendingInterceptorTest {
 
     @Test
     public void appendsViaHeaderValueAtEndOfListInResponse() throws Exception {
-        HttpResponse response = interceptor.intercept(get("/foo").build(), returnsResponse(response()
+        HttpResponse response = toRxObservable(interceptor.intercept(get("/foo").build(), returnsResponse(response()
                         .header(VIA, "1.0 ricky, 1.1 mertz, 1.0 lucy")
                         .build())
-        ).toBlocking().first();
+        )).toBlocking().first();
 
         assertThat(response.headers().get(VIA), isValue("1.0 ricky, 1.1 mertz, 1.0 lucy, 1.1 styx"));
     }

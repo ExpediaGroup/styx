@@ -20,17 +20,17 @@ import java.util.concurrent.{BlockingQueue, ConcurrentHashMap, LinkedBlockingQue
 import java.util.function.Supplier
 
 import com.google.common.util.concurrent.AbstractIdleService
+import com.hotels.styx.api._
 import com.hotels.styx.api.client.Origin.newOriginBuilder
 import com.hotels.styx.api.http.handlers.NotFoundHandler
 import com.hotels.styx.api.support.HostAndPorts._
-import com.hotels.styx.api._
+import com.hotels.styx.api.v2.StyxObservable
 import com.hotels.styx.server.handlers.ReturnResponseHandler.returnsResponse
 import com.hotels.styx.server.netty.{NettyServerBuilder, ServerConnector, WebServerConnectorFactory}
-import com.hotels.styx.server.{HttpConnectorConfig, HttpRouter, HttpServer}
-import rx.Observable
+import com.hotels.styx.server.{HttpConnectorConfig, HttpServer}
 
 class RequestRecordingHandler(val requestQueue: BlockingQueue[HttpRequest], val delegate: HttpHandler) extends HttpHandler {
-  override def handle(request: HttpRequest): Observable[HttpResponse] = {
+  override def handle(request: HttpRequest): StyxObservable[HttpResponse] = {
     requestQueue.add(request)
     delegate.handle(request)
   }
@@ -48,7 +48,7 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
   val router = new HttpHandler2 {
     val routes = new ConcurrentHashMap[String, HttpHandler]()
 
-    override def handle(request: HttpRequest, context: HttpInterceptor.Context): Observable[HttpResponse] = {
+    override def handle(request: HttpRequest, context: HttpInterceptor.Context): StyxObservable[HttpResponse] = {
       val handler: HttpHandler = routes.getOrDefault(request.path(), new NotFoundHandler)
       handler.handle(request)
     }

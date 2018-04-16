@@ -24,6 +24,8 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.HttpErrorStatusListener;
 import com.hotels.styx.api.metrics.RequestStatsCollector;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.RequestTimeoutException;
@@ -94,8 +96,8 @@ import static org.mockito.Mockito.when;
 import static rx.Observable.just;
 
 public class HttpPipelineHandlerTest {
-    private final HttpHandler2 respondingHandler = (request, context) -> just(response(OK).build());
-    private final HttpHandler2 doNotRespondHandler = (request, context) -> Observable.never();
+    private final HttpHandler2 respondingHandler = (request, context) -> StyxObservable.of(response(OK).build());
+    private final HttpHandler2 doNotRespondHandler = (request, context) -> new StyxCoreObservable<>(Observable.never());
 
     private HttpErrorStatusListener errorListener;
     private CodaHaleMetricRegistry metrics;
@@ -103,7 +105,7 @@ public class HttpPipelineHandlerTest {
     // Cannot use lambda expression below, because spy() does not understand them.
     private final HttpHandler2 respondingPipeline = spy(new HttpHandler2() {
         @Override
-        public Observable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
             return respondingHandler.handle(request, context);
         }
     });
@@ -144,7 +146,7 @@ public class HttpPipelineHandlerTest {
                 .thenReturn(responseWriter);
 
         pipeline = mock(HttpHandler2.class);
-        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true)));
+        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(new StyxCoreObservable<>(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true))));
 
         request = get("/foo").id("REQUEST-1-ID").build();
         response = response().build();
@@ -172,8 +174,8 @@ public class HttpPipelineHandlerTest {
 
         pipeline = mock(HttpHandler2.class);
         when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class)))
-                .thenReturn(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true)))
-                .thenReturn(responseObservable2.doOnUnsubscribe(() -> responseUnsubscribed2.set(true)));
+                .thenReturn(new StyxCoreObservable<HttpResponse>(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true))))
+                .thenReturn(new StyxCoreObservable<>(responseObservable2.doOnUnsubscribe(() -> responseUnsubscribed2.set(true))));
 
         request2 = get("/bar").id("REQUEST-2-ID").build();
 
@@ -462,7 +464,7 @@ public class HttpPipelineHandlerTest {
 
     private void setupIdleHandlerWithPluginResponse() throws Exception {
         pipeline = mock(HttpHandler2.class);
-        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(just(response));
+        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(new StyxCoreObservable<>(just(response)));
         handler = createHandler(pipeline);
     }
 

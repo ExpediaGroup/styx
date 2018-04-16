@@ -13,12 +13,28 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+/**
+  * Copyright (C) 2013-2018 Expedia Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  * http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
 package com.hotels.styx.plugins
 
 import java.lang.Thread.sleep
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, urlMatching}
 import com.hotels.styx._
+import com.hotels.styx.{BackendServicesRegistrySupplier, StyxClientSupplier, StyxConfiguration, StyxServerSupport}
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.Builder.get
@@ -27,20 +43,14 @@ import io.netty.handler.codec.http.HttpResponseStatus
 import com.hotels.styx.api._
 import com.hotels.styx.api.messages.HttpResponseStatus.{BAD_GATEWAY, INTERNAL_SERVER_ERROR, OK}
 import com.hotels.styx.api.service.BackendService
+import com.hotels.styx.api.v2.StyxObservable
 import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.support.ImplicitStyxConversions
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.support.configuration.ProxyConfig
-import com.hotels.styx.support.configuration.HttpBackend
-import com.hotels.styx.support.configuration.Origins
-import com.hotels.styx.support.configuration.ConnectionPoolSettings
-import com.hotels.styx.support.configuration.StyxConfig
-import com.hotels.styx.support.configuration.ImplicitOriginConversions
+import com.hotels.styx.support.configuration
+import com.hotels.styx.support.configuration._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSpec, ShouldMatchers}
-import rx.Observable
-import rx.Observable.{error, just}
-import rx.functions.Func1
 
 import scala.compat.java8.OptionConverters.RichOptionalGeneric
 import scala.concurrent.duration._
@@ -65,7 +75,7 @@ class ErrorMetricsSpec extends FunSpec
   var backendsRegistry: MemoryBackedRegistry[BackendService] = _
   var styxServer: StyxServer = _
 
-  override val styxConfig = StyxConfig(ProxyConfig(), plugins = List(
+  override val styxConfig = configuration.StyxConfig(ProxyConfig(), plugins = List(
     "failAtOnCompletedPlugin" -> new OnCompleteErrorPlugin(),
     "generateErrorStatusPlugin" -> new Return500Interceptor(),
     "mapToErrorStatusPlugin" -> new MapTo500Interceptor(),
@@ -79,14 +89,14 @@ class ErrorMetricsSpec extends FunSpec
     super.beforeEach()
     backendsRegistry = new MemoryBackedRegistry[BackendService]
     styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
-        setBackends(
-          backendsRegistry,
-          "/" -> HttpBackend(
-            "appOne",
-            Origins(normalBackend),
-            responseTimeout = 5.seconds,
-            connectionPoolConfig = ConnectionPoolSettings(maxConnectionsPerHost = 2)
-          ))
+    setBackends(
+      backendsRegistry,
+      "/" -> HttpBackend(
+        "appOne",
+        Origins(normalBackend),
+        responseTimeout = 5.seconds,
+        connectionPoolConfig = ConnectionPoolSettings(maxConnectionsPerHost = 2)
+      ))
   }
 
   override protected def afterEach(): Unit = {
@@ -275,7 +285,7 @@ class ErrorMetricsSpec extends FunSpec
     styxServer.metricsSnapshot.count("styx.exception.com.hotels.styx.plugins.ErrorMetricsSpec$TestException").getOrElse(0)
   }
 
-  def pluginExceptionMetric(pluginName : String) : Int = {
+  def pluginExceptionMetric(pluginName: String): Int = {
     styxServer.metricsSnapshot.meter("plugins." + pluginName + ".exception.com_hotels_styx_plugins_ErrorMetricsSpec$TestException").map(meter => meter.count).getOrElse(0)
   }
 
@@ -290,11 +300,11 @@ class ErrorMetricsSpec extends FunSpec
     metrics.count("styx.response.status.500").getOrElse(0)
   }
 
-  def pluginInternalServerErrorMetric(pluginName : String): Int = {
+  def pluginInternalServerErrorMetric(pluginName: String): Int = {
     styxServer.metricsSnapshot.meter("plugins." + pluginName + ".response.status.500").map(meter => meter.count).getOrElse(0)
   }
 
-  def pluginUnexpectedErrorMetric(pluginName : String): Int = {
+  def pluginUnexpectedErrorMetric(pluginName: String): Int = {
     styxServer.metricsSnapshot.meter("plugins." + pluginName + ".errors").map(meter => meter.count).getOrElse(0)
   }
 
@@ -303,47 +313,49 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   private class Return500Interceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
+    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       if (request.header("Generate_error_status").asScala.contains("true"))
-        just(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
+        StyxObservable.of(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
       else
         chain.proceed(request)
     }
   }
 
+  import scala.compat.java8.FunctionConverters.asJavaFunction
+
   private class MapTo500Interceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
+    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       if (request.header("Map_to_error_status").asScala.contains("true"))
-        chain.proceed(request).flatMap(new Func1[HttpResponse, Observable[HttpResponse]]() {
-          override def call(t: HttpResponse) = just(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
-        })
+        chain.proceed(request).transformAsync(
+          asJavaFunction((t: HttpResponse) => StyxObservable.of(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
+          ))
       else
         chain.proceed(request)
     }
   }
 
   private class Return502Interceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
+    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       if (request.header("Generate_bad_gateway_status").asScala.contains("true"))
-        just(response(HttpResponseStatus.BAD_GATEWAY).build())
+        StyxObservable.of(response(HttpResponseStatus.BAD_GATEWAY).build())
       else
         chain.proceed(request)
     }
   }
 
   private class MapTo502Interceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
+    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       if (request.header("Map_to_bad_gateway_status").asScala.contains("true"))
-        chain.proceed(request).flatMap(new Func1[HttpResponse, Observable[HttpResponse]]() {
-          override def call(t: HttpResponse) = just(response(HttpResponseStatus.BAD_GATEWAY).build())
-        })
+        chain.proceed(request).transformAsync(
+          asJavaFunction((t: HttpResponse) => StyxObservable.of(response(HttpResponseStatus.BAD_GATEWAY).build())
+          ))
       else
         chain.proceed(request)
     }
   }
 
   private class ThrowExceptionInterceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
+    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       if (request.header("Throw_an_exception").asScala.contains("true"))
         throw new TestException()
       else
@@ -353,11 +365,9 @@ class ErrorMetricsSpec extends FunSpec
 
   private class MapToExceptionInterceptor extends PluginAdapter {
 
-    override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
+    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       if (request.header("Map_to_exception").asScala.contains("true"))
-        chain.proceed(request).flatMap(new Func1[HttpResponse, Observable[HttpResponse]]() {
-          override def call(t: HttpResponse) = error(new TestException())
-        })
+        chain.proceed(request).transformAsync(asJavaFunction((t: HttpResponse) => StyxObservable.error(new TestException())))
       else
         chain.proceed(request)
     }
@@ -366,4 +376,5 @@ class ErrorMetricsSpec extends FunSpec
   private class TestException extends RuntimeException {
 
   }
+
 }

@@ -17,19 +17,13 @@ package loadtest.plugins;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.ResponseStream;
-import com.hotels.styx.api.ResponseStreamImpl;
-import com.hotels.styx.api.messages.FullHttpRequest;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.common.CompletableFutures;
+import com.hotels.styx.api.v2.StyxObservable;
 
-import java.util.Observable;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.api.ResponseStreamImpl.responseStream;
 import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static rx.Observable.timer;
 
@@ -49,30 +43,21 @@ public class AsyncRequestContentDecoderPluginFactory implements PluginFactory {
         }
 
         @Override
-        public ResponseStream intercept(HttpRequest request, Chain chain) {
+        public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+            return request.toFullRequest(config.maxContentLength())
+                            .transformAsync(fullHttpRequest -> StyxObservable.from(asyncOperation(config.delayMillis())))
+                            .transform(outcome -> request.newBuilder().header("X-Outcome", outcome.result()))
+                            .transformAsync(x -> chain.proceed(request));
+        }
+    }
 
-            ResponseStream responseStream = responseStream(
-                    fromSingleObservable(request.toFullRequest(config.maxContentLength()))
-                            .thenCompose(fullRequest -> {
-                                rx.Observable<HttpRequest> delayedRequest = rx.Observable.timer(config.delayMillis(), MILLISECONDS)
-                                        .map(x -> fullRequest.toStreamingRequest());
-                                return fromSingleObservable(delayedRequest);
-                            }));
+    private static CompletableFuture<Outcome> asyncOperation(long delay) {
+        return fromSingleObservable(timer(delay, MILLISECONDS)).thenApply(x -> new Outcome());
+    }
 
-            return responseStream;
-
-//
-//
-//            request.toFullRequest(config.maxContentLength())
-//
-//
-//                    .(fullRequest -> timer(config.delayMillis(), MILLISECONDS))
-
-//            return request.decode(buf -> buf.toString(UTF_8), config.maxContentLength())
-//                    .map(decodedRequest -> decodedRequest.requestBuilder().body(decodedRequest.body()).build())
-//                    .flatMap(newRequest -> timer(config.delayMillis(), MILLISECONDS)
-//                            .map(x -> newRequest))
-//                    .flatMap(chain::proceed);
+    private static class Outcome {
+        int result() {
+            return 1;
         }
     }
 

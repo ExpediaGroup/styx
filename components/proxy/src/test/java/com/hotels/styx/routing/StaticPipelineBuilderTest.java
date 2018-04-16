@@ -26,6 +26,7 @@ import com.hotels.styx.api.service.spi.AbstractRegistry;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.support.api.BlockingObservables;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -36,6 +37,7 @@ import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
+import static com.hotels.styx.support.api.BlockingObservables.toRxObservable;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -65,7 +67,7 @@ public class StaticPipelineBuilderTest {
 
         HttpHandler2 handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of()).build();
 
-        HttpResponse response = handler.handle(get("/foo").build(), HttpInterceptor.Context.EMPTY).toBlocking().first();
+        HttpResponse response = toRxObservable(handler.handle(get("/foo").build(), HttpInterceptor.Context.EMPTY)).toBlocking().first();
         assertThat(response.status(), is(OK));
     }
 
@@ -78,7 +80,7 @@ public class StaticPipelineBuilderTest {
 
         HttpHandler2 handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins).build();
 
-        HttpResponse response = handler.handle(get("/foo").build(), HttpInterceptor.Context.EMPTY).toBlocking().first();
+        HttpResponse response = BlockingObservables.toRxObservable(handler.handle(get("/foo").build(), HttpInterceptor.Context.EMPTY)).toBlocking().first();
         assertThat(response.status(), is(OK));
         assertThat(response.headers("X-From-Plugin"), hasItems("B", "A"));
     }
@@ -105,7 +107,7 @@ public class StaticPipelineBuilderTest {
     }
 
     private static Plugin appendResponseHeader(String header, String value) {
-        return (request, chain) -> chain.proceed(request).map(response -> response.newBuilder().addHeader(header, value).build());
+        return (request, chain) -> chain.proceed(request).transform(response -> response.newBuilder().addHeader(header, value).build());
     }
 
 }

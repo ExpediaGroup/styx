@@ -16,10 +16,9 @@
 package com.hotels.styx.plugins;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.ResponseStream;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
-
-import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 
 public class AggregationTesterPlugin implements Plugin {
     private final int maxContentBytes;
@@ -29,16 +28,16 @@ public class AggregationTesterPlugin implements Plugin {
     }
 
     @Override
-    public ResponseStream intercept(HttpRequest request, Chain chain) {
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request)
-                .transformAsync(response -> fromSingleObservable(
+                .transformAsync(response ->
                         response.toFullResponse(maxContentBytes)
-                        .map(fullHttpResponse ->
+                        .transform(fullHttpResponse ->
                                 fullHttpResponse.newBuilder()
                                         .addHeader("test_plugin", "yes")
                                         .addHeader("bytes_aggregated", fullHttpResponse.body().length)
                                         .build()
                                         .toStreamingResponse()
-                        )));
+                        ));
     }
 }

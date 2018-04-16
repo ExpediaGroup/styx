@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
@@ -73,9 +75,9 @@ public class PluginToggleHandler implements HttpHandler {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
-        return getCurrentOrPutNewState(request)
-                .onErrorResumeNext(this::handleErrors);
+    public StyxObservable<HttpResponse> handle(HttpRequest request) {
+        return new StyxCoreObservable<>(getCurrentOrPutNewState(request)
+                .onErrorResumeNext(this::handleErrors));
     }
 
     private Observable<HttpResponse> getCurrentOrPutNewState(HttpRequest request) {

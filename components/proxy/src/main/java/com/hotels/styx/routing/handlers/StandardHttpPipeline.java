@@ -19,7 +19,8 @@ import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.ResponseStream;
+import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 import rx.Observable;
 
 import java.util.List;
@@ -46,7 +47,7 @@ class StandardHttpPipeline implements HttpHandler2 {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         HttpInterceptorChain interceptorsChain = new HttpInterceptorChain(interceptors, 0, handler, context);
 
         return interceptorsChain.proceed(request);
@@ -75,7 +76,7 @@ class StandardHttpPipeline implements HttpHandler2 {
         }
 
         @Override
-        public ResponseStream proceed(HttpRequest request) {
+        public StyxObservable<HttpResponse> proceed(HttpRequest request) {
             if (index < interceptors.size()) {
                 HttpInterceptor.Chain chain = new HttpInterceptorChain(this, index + 1);
                 HttpInterceptor interceptor = interceptors.get(index);
@@ -83,11 +84,12 @@ class StandardHttpPipeline implements HttpHandler2 {
                 try {
                     return interceptor.intercept(request, chain);
                 } catch (Throwable e) {
-                    return Observable.error(e);
+                    return StyxObservable.error(e);
                 }
             }
-            return client.handle(request, this.context)
-                    .compose(StandardHttpPipeline::sendErrorOnDoubleSubscription);
+            return new StyxCoreObservable<>(((StyxCoreObservable<HttpResponse>) client.handle(request, this.context))
+                    .delegate()
+                    .compose(StandardHttpPipeline::sendErrorOnDoubleSubscription));
         }
     }
 

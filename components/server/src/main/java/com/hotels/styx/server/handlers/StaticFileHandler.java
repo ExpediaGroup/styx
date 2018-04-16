@@ -20,8 +20,8 @@ import com.google.common.net.MediaType;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.v2.StyxObservable;
 import org.slf4j.Logger;
-import rx.Observable;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +35,6 @@ import static com.hotels.styx.api.http.handlers.NotFoundHandler.NOT_FOUND_HANDLE
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.Observable.just;
 
 /**
  * HTTP handler that provides a static file.
@@ -54,7 +53,7 @@ public class StaticFileHandler implements HttpHandler {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request) {
         try {
             return resolveFile(request.path())
                     .map(ResolvedFile::new)
@@ -62,10 +61,10 @@ public class StaticFileHandler implements HttpHandler {
                             .addHeader(CONTENT_TYPE, resolvedFile.mediaType)
                             .body(resolvedFile.content)
                             .build())
-                    .map(Observable::just)
+                    .map(StyxObservable::of)
                     .orElseGet(() -> NOT_FOUND_HANDLER.handle(request));
         } catch (IOException e) {
-            return just(response(INTERNAL_SERVER_ERROR).build());
+            return StyxObservable.of(response(INTERNAL_SERVER_ERROR).build());
         }
     }
 

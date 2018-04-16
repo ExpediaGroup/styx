@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.api;
 
+import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 import rx.Observable;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -27,8 +29,8 @@ public class TestSupport {
                 .single();
     }
 
-    public static <T> T getFirst(Observable<T> observable) {
-        return observable.toBlocking().single();
+    public static <T> T getFirst(StyxObservable<T> observable) {
+        return ((StyxCoreObservable<T>)observable).delegate().toBlocking().single();
     }
 
 }

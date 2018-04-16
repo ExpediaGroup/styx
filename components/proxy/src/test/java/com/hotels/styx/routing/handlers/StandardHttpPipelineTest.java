@@ -18,7 +18,9 @@ package com.hotels.styx.routing.handlers;
 import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.server.HttpInterceptorContext;
+import com.hotels.styx.support.api.BlockingObservables;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import rx.Observable;
@@ -30,6 +32,7 @@ import java.util.function.Consumer;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.support.api.BlockingObservables.toRxObservable;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -85,13 +88,19 @@ public class StandardHttpPipelineTest {
     public void interceptorsCanPassInformationThroughContextAfterRequest() {
         HttpInterceptor addsToContext = (request, chain) ->
                 chain.proceed(request)
-                        .doOnNext(response -> chain.context().add("contextValue", "expected"));
+                        .transform(response -> {
+                            chain.context().add("contextValue", "expected");
+                            return response;
+                        });
 
         AtomicReference<String> foundInContext = new AtomicReference<>();
 
         HttpInterceptor takesFromContext = (request, chain) -> chain.proceed(request)
-                .doOnNext(response -> foundInContext.set(
-                        chain.context().get("contextValue", String.class)));
+                .transform(response -> {
+                    foundInContext.set(
+                            chain.context().get("contextValue", String.class));
+                    return response;
+                });
 
         // add + take happens on the way back, so order must be reserved
         StandardHttpPipeline pipeline = pipeline(takesFromContext, addsToContext);
@@ -112,8 +121,11 @@ public class StandardHttpPipelineTest {
         AtomicReference<String> foundInContext = new AtomicReference<>();
 
         HttpInterceptor takesFromContext = (request, chain) -> chain.proceed(request)
-                .doOnNext(response -> foundInContext.set(
-                        chain.context().get("contextValue", String.class)));
+                .transform(response -> {
+                    foundInContext.set(
+                            chain.context().get("contextValue", String.class));
+                    return response;
+                });
 
         StandardHttpPipeline pipeline = pipeline(addsToContext, takesFromContext);
 
@@ -141,78 +153,84 @@ public class StandardHttpPipelineTest {
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void sendsExceptionUponMultipleSubscription() {
-        HttpHandler2 handler = (request, context)-> just(response(OK).build());
+        HttpHandler2 handler = (request, context) -> StyxObservable.of(response(OK).build());
 
         StandardHttpPipeline pipeline = new StandardHttpPipeline(handler);
 
-        Observable<HttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
-        HttpResponse response = responseObservable.toBlocking().single();
+        StyxObservable<HttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
+        HttpResponse response = toRxObservable(responseObservable).toBlocking().single();
         assertThat(response.status(), is(OK));
 
-        responseObservable.toBlocking().single();
+        toRxObservable(responseObservable).toBlocking().single();
     }
 
     @Test(expectedExceptions = IllegalStateException.class, dataProvider = "multipleSubscriptionInterceptors")
     public void sendsExceptionUponExtraSubscriptionInsideInterceptor(HttpInterceptor interceptor) {
-        HttpHandler2 handler = (request, context) -> just(response(OK).build());
+        HttpHandler2 handler = (request, context) -> StyxObservable.of(response(OK).build());
 
         List<HttpInterceptor> interceptors = singletonList(interceptor);
         StandardHttpPipeline pipeline = new StandardHttpPipeline(interceptors, handler);
 
-        Observable<HttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
-        responseObservable.toBlocking().single();
+        StyxObservable<HttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
+        toRxObservable(responseObservable).toBlocking().single();
     }
 
     @DataProvider(name = "multipleSubscriptionInterceptors")
     private Object[][] multipleSubscriptionInterceptors() {
         return new Object[][]{
-                {subscribeInPluginBeforeSubscription()},
-                {reSubscribeDuringSubscription()},
-                {reSubscribeDuringSubscriptionOriginalErrorCause()},
+                {subscribeInPluginBeforeSubscription()}
+//                , {reSubscribeDuringSubscription()}
+//                , {reSubscribeDuringSubscriptionOriginalErrorCause()},
         };
     }
 
     private HttpInterceptor subscribeInPluginBeforeSubscription() {
         return (request, chain) -> {
-            Observable<HttpResponse> responseObservable = chain.proceed(request);
+            StyxObservable<HttpResponse> responseObservable = chain.proceed(request);
 
-            responseObservable.toBlocking().single();
+            toRxObservable(responseObservable).toBlocking().single();
 
             return responseObservable;
         };
     }
 
-    private HttpInterceptor reSubscribeDuringSubscriptionOriginalErrorCause() {
-        return (request, chain) ->
-                just(request).map(chain::proceed)
-                        .flatMap(responseObservable -> responseObservable
-                                .filter(response -> false)
-                                .switchIfEmpty(responseObservable));
-    }
+    // TOOD: Mikko: Styx 2.0 API: Probably can be removed because the
+    // Rx Observables are not available for for API consumers.
+//    private HttpInterceptor reSubscribeDuringSubscriptionOriginalErrorCause() {
+//        return (request, chain) ->
+//                just(request)
+//                        .map(chain::proceed)
+//                        .flatMap(responseObservable -> responseObservable
+//                                .filter(response -> false)
+//                                .switchIfEmpty(responseObservable));
+//    }
 
-    private HttpInterceptor reSubscribeDuringSubscription() {
-        return (request, chain) ->
-                just(request).map(chain::proceed)
-                        .flatMap(responseObservable -> {
-                            responseObservable.toBlocking().single();
-
-                            return responseObservable;
-                        });
-    }
+//    private HttpInterceptor reSubscribeDuringSubscription() {
+//        return (request, chain) ->
+//                just(request).map(chain::proceed)
+//                        .flatMap(responseObservable -> {
+//                            responseObservable.toBlocking().single();
+//
+//                            return responseObservable;
+//                        });
+//    }
 
     private HttpInterceptor recordingInterceptor(String name, Consumer<String> onInterceptRequest, Consumer<String> onInterceptResponse) {
         return (request, chain) -> {
             onInterceptRequest.accept(name);
             return chain.proceed(request)
-                    .doOnNext(response -> onInterceptResponse.accept(name));
+                    .transform(response -> {
+                        onInterceptResponse.accept(name);
+                        return response;
+                    });
         };
     }
 
     private HttpResponse sendRequestTo(StandardHttpPipeline pipeline) {
-        return pipeline.handle(get("/").build(), HttpInterceptorContext.create()).toBlocking().first();
+        return BlockingObservables.toRxObservable(pipeline.handle(get("/").build(), HttpInterceptorContext.create())).toBlocking().first();
     }
 
     private StandardHttpPipeline pipeline(HttpInterceptor... interceptors) {
-        return new StandardHttpPipeline(asList(interceptors), (request, context) -> just(response(OK).build()));
+        return new StandardHttpPipeline(asList(interceptors), (request, context) -> StyxObservable.of(response(OK).build()));
     }
 }

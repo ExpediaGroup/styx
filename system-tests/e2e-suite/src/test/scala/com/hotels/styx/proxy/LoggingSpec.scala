@@ -25,7 +25,8 @@ import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.metrics.HttpErrorStatusCauseLogger
 import com.hotels.styx.api.plugins.spi.PluginException
-import com.hotels.styx.api.{HttpRequest, HttpResponse, ResponseStream}
+import com.hotels.styx.api.v2.StyxObservable
+import com.hotels.styx.api.{HttpRequest, HttpResponse}
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -135,18 +136,19 @@ class LoggingSpec extends FunSpec
 
   import com.hotels.styx.support.ImplicitScalaRxConversions.toJavaObservable
   import rx.lang.scala.JavaConversions.toScalaObservable
+  import scala.compat.java8.FunctionConverters.asJavaFunction
 
 
   class BadPlugin extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
+    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       Option(request.header(X_THROW_AT).orElse(null)) match {
         case Some(AT_REQUEST) =>
           throw new RuntimeException("Throw exception at Request")
         case Some(AT_RESPONSE) =>
-          toScalaObservable(chain.proceed(request))
-            .doOnNext((response: HttpResponse) => throw new RuntimeException("Throw exception at Response"))
+          chain.proceed(request)
+            .transform(asJavaFunction((response: HttpResponse) => throw new RuntimeException("Throw exception at Response")))
         case _ =>
-          toScalaObservable(chain.proceed(request))
+          chain.proceed(request)
       }
     }
   }

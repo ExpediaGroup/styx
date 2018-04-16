@@ -19,6 +19,7 @@ import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
@@ -37,7 +38,6 @@ import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static java.util.Arrays.asList;
-import static rx.Observable.just;
 
 /**
  * A builder of {@link NettyServer} instances.
@@ -53,7 +53,7 @@ public final class NettyServerBuilder {
     private Optional<ServerConnector> httpConnector = Optional.empty();
     private Optional<ServerConnector> httpsConnector = Optional.empty();
     private final List<Runnable> startupActions = newCopyOnWriteArrayList();
-    private HttpHandler2 httpHandler = (request, context) -> just(response(NOT_FOUND).build());
+    private HttpHandler2 httpHandler = (request, context) -> StyxObservable.of(response(NOT_FOUND).build());
 
     public static NettyServerBuilder newBuilder() {
         return new NettyServerBuilder();

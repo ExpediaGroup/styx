@@ -17,9 +17,10 @@ package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.ResponseStream;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.configuration.ConfigurationContextResolver;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.v2.StyxObservable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -34,7 +35,7 @@ public class ConfigurationContextResolverInterceptor implements HttpInterceptor 
     }
 
     @Override
-    public ResponseStream intercept(HttpRequest request, Chain chain) {
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         Configuration.Context context = configurationContextResolver.resolve(request);
         chain.context().add("config.context", context);
         return chain.proceed(request);

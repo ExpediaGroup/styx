@@ -18,11 +18,12 @@ package com.hotels.styx.proxy.plugin;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.ResponseStream;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.support.api.SimpleEnvironment;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
@@ -317,7 +318,7 @@ public class PluginSuppliersTest {
         }
 
         @Override
-        public ResponseStream intercept(HttpRequest request, Chain chain) {
+        public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
             return null;
         }
     }

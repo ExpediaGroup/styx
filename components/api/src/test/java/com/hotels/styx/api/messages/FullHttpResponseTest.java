@@ -18,6 +18,8 @@ package com.hotels.styx.api.messages;
 import com.google.common.collect.Iterables;
 import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -475,7 +477,7 @@ public class FullHttpResponseTest {
                 .body(content)
                 .build();
 
-        FullHttpResponse fullResponse = original.toFullResponse(100)
+        FullHttpResponse fullResponse = toRxObservable(original.toFullResponse(100))
                 .toBlocking()
                 .first();
 
@@ -492,7 +494,7 @@ public class FullHttpResponseTest {
                 .body(Observable.just(content))
                 .build();
 
-        FullHttpResponse fullResponse = original.toFullResponse(100)
+        FullHttpResponse fullResponse = toRxObservable(original.toFullResponse(100))
                 .toBlocking()
                 .first();
 
@@ -513,5 +515,10 @@ public class FullHttpResponseTest {
 
         assertThat(request.bodyAs(UTF_8), is("Original body"));
         assertThat(newRequest.bodyAs(UTF_8), is("New body"));
+    }
+
+
+    static <T> Observable<T> toRxObservable(StyxObservable<T> observable) {
+        return ((StyxCoreObservable<T>) observable).delegate();
     }
 }

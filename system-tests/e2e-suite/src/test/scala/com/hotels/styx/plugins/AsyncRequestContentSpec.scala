@@ -21,7 +21,8 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.{HttpRequest, HttpResponse, ResponseStream}
+import com.hotels.styx.api.v2.StyxObservable
+import com.hotels.styx.api.{HttpRequest, HttpResponse}
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -31,6 +32,7 @@ import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import org.scalatest.{BeforeAndAfterAll, FunSpec}
 
+import scala.compat.java8.functionConverterImpls.AsJavaFunction
 import scala.concurrent.duration._
 
 class AsyncRequestContentSpec extends FunSpec
@@ -79,9 +81,10 @@ import com.hotels.styx.support.ImplicitScalaRxConversions.toJavaObservable
 import rx.lang.scala.JavaConversions.toScalaObservable
 import rx.lang.scala.Observable
 import rx.lang.scala.schedulers._
+import scala.compat.java8.FunctionConverters.asJavaFunction
 
 class AsyncRequestContentDelayPlugin extends PluginAdapter {
-  override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
+  override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
     val contentTransformation: rx.Observable[ByteBuf] =
       request.body().content()
         .observeOn(ComputationScheduler())
@@ -89,9 +92,8 @@ class AsyncRequestContentDelayPlugin extends PluginAdapter {
           Thread.sleep(1000)
           Observable.just(byteBuf)
         })
-
-    Observable.just(request)
-      .map(request => request.newBuilder().body(contentTransformation).build())
-      .flatMap(request => chain.proceed(request))
+    StyxObservable.of(request)
+      .transform(asJavaFunction((request: HttpRequest) => request.newBuilder().body(contentTransformation).build()))
+      .transformAsync(asJavaFunction((request: HttpRequest) => chain.proceed(request)))
   }
 }

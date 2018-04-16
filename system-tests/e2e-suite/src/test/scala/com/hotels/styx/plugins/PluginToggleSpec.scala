@@ -21,12 +21,11 @@ import com.hotels.styx.api.HttpRequest.Builder.{get, put}
 import com.hotels.styx.api.HttpResponse.Builder.response
 import com.hotels.styx.api._
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.v2.StyxObservable
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec
-import rx.Observable
-import rx.Observable.just
 
 class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplier {
   val normalBackend = FakeHttpServer.HttpStartupConfig().start()
@@ -112,7 +111,8 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
   }
 
   private class PluginUnderTest extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): ResponseStream =
-      just(response().body("response-from-plugin").build())
+    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): StyxObservable[HttpResponse] =
+      StyxObservable.of(response().body("response-from-plugin").build())
   }
 }
+

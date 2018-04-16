@@ -19,13 +19,15 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Service;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.ResponseStream;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.api.service.spi.StyxService;
+import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.proxy.ProxyServerConfig;
@@ -251,7 +253,7 @@ public class StyxServerTest {
         }
 
         @Override
-        public ResponseStream intercept(HttpRequest request, Chain chain) {
+        public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
             return null;
         }
 

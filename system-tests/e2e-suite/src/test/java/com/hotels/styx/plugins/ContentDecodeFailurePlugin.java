@@ -16,8 +16,10 @@
 package com.hotels.styx.plugins;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.ResponseStream;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
+import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.buffer.ByteBuf;
 
 import java.util.function.Function;
@@ -32,16 +34,19 @@ public class ContentDecodeFailurePlugin implements Plugin {
     }
 
     @Override
-    public ResponseStream intercept(HttpRequest request, Chain chain) {
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request)
-                .flatMap(response -> response.decode(decodeOrFailOperation(request), maxContentBytes))
-                .map(decodedResponse -> decodedResponse.responseBuilder()
+                .transformAsync(response -> response.toFullResponse(maxContentBytes))
+                .transform(fullResponse -> fullResponse.newBuilder()
                         .header("ContentDecodeFailurePlugin", "yes")
-                        .header("bytes_aggregated", decodedResponse.body().getBytes(UTF_8).length)
-                        .body(decodedResponse.body())
-                        .build());
+                        .header("bytes_aggregated", fullResponse.body().length)
+                        .body(fullResponse.body(), true)
+                        .build())
+                .transform(FullHttpResponse::toStreamingResponse);
     }
 
+    // TODO: Mikko: Styx 2.0 Api:
+    // Can we still test these types of scenarios?
     private Function<ByteBuf, String> decodeOrFailOperation(HttpRequest request) {
         return (byteBuf) -> {
             if (request.header("Fail_during_decoder").isPresent()) {

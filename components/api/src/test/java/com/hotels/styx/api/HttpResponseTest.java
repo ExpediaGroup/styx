@@ -20,6 +20,8 @@ import com.google.common.collect.Iterables;
 import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.messages.HttpVersion;
+import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
@@ -401,7 +403,7 @@ public class HttpResponseTest {
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpResponse full = request.toFullResponse(0x100000)
+        FullHttpResponse full = toRxObservable(request.toFullResponse(0x100000))
                 .toBlocking()
                 .single();
 
@@ -418,7 +420,7 @@ public class HttpResponseTest {
                 .body(empty())
                 .build();
 
-        FullHttpResponse full = request.toFullResponse(0x100000)
+        FullHttpResponse full = toRxObservable(request.toFullResponse(0x100000))
                 .toBlocking()
                 .single();
 
@@ -432,7 +434,7 @@ public class HttpResponseTest {
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpResponse full = request.toFullResponse(0x100000)
+        FullHttpResponse full = toRxObservable(request.toFullResponse(0x100000))
                 .toBlocking()
                 .single();
 
@@ -462,5 +464,10 @@ public class HttpResponseTest {
 
     private static int contentLength(String content) {
         return content.getBytes().length;
+    }
+
+
+    static <T> Observable<T> toRxObservable(StyxObservable<T> observable) {
+        return ((StyxCoreObservable<T>) observable).delegate();
     }
 }

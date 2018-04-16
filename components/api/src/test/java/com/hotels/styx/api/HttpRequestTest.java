@@ -20,6 +20,8 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.messages.FullHttpRequest;
 import com.hotels.styx.api.messages.HttpMethod;
 import com.hotels.styx.api.messages.HttpVersion;
+import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
@@ -530,7 +532,7 @@ public class HttpRequestTest {
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpRequest full = request.toFullRequest(0x100000)
+        FullHttpRequest full = toRxObservable(request.toFullRequest(0x100000))
                 .toBlocking()
                 .single();
 
@@ -549,7 +551,7 @@ public class HttpRequestTest {
                 .body(empty())
                 .build();
 
-        FullHttpRequest full = request.toFullRequest(0x100000)
+        FullHttpRequest full = toRxObservable(request.toFullRequest(0x100000))
                 .toBlocking()
                 .single();
 
@@ -563,7 +565,7 @@ public class HttpRequestTest {
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpRequest full = request.toFullRequest(0x100000)
+        FullHttpRequest full = toRxObservable(request.toFullRequest(0x100000))
                 .toBlocking()
                 .single();
 
@@ -578,8 +580,8 @@ public class HttpRequestTest {
                 .clientAddress(address)
                 .build();
 
-        FullHttpRequest fullRequest = original
-                .toFullRequest(100)
+        FullHttpRequest fullRequest = toRxObservable(original
+                .toFullRequest(100))
                 .toBlocking()
                 .first();
 
@@ -594,4 +596,9 @@ public class HttpRequestTest {
                 .map(string -> Unpooled.copiedBuffer(string, UTF_8))
                 .collect(toList()));
     }
+
+    public static <T> Observable<T> toRxObservable(StyxObservable<T> observable) {
+        return ((StyxCoreObservable<T>)observable).delegate();
+    }
+
 }

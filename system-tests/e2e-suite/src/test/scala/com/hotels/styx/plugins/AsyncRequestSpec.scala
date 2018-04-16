@@ -12,16 +12,20 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
  */
 package com.hotels.styx.plugins
 
 import java.nio.charset.StandardCharsets.UTF_8
+import java.util.concurrent.CompletableFuture
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.{HttpRequest, HttpResponse, ResponseStream}
+import com.hotels.styx.api.v2.StyxObservable
+import com.hotels.styx.api.{HttpRequest, HttpResponse}
+import com.hotels.styx.common.CompletableFutures
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -31,6 +35,8 @@ import io.netty.handler.codec.http.HttpHeaders.Values._
 import org.scalatest.FunSpec
 import rx.lang.scala.Observable
 
+import scala.compat.java8.functionConverterImpls.AsJavaFunction
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class AsyncRequestSpec extends FunSpec
@@ -75,15 +81,24 @@ class AsyncRequestSpec extends FunSpec
 import rx.lang.scala.JavaConversions._
 import rx.lang.scala.schedulers._
 import com.hotels.styx.support.ImplicitScalaRxConversions.toJavaObservable
+import scala.compat.java8.FutureConverters.FutureOps
+import scala.compat.java8.FunctionConverters.asJavaFunction
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class AsyncRequestDelayPlugin extends PluginAdapter {
-  override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
-    Observable.just(request)
-      .observeOn(ComputationScheduler())
-      .flatMap(request => {
+  override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
+    StyxObservable.of(request)
+      .transformAsync(asJavaFunction(x => asyncRequest(request)))
+      .transformAsync(asJavaFunction(y => chain.proceed(y)))
+  }
+
+
+  private def asyncRequest(request: HttpRequest): StyxObservable[HttpRequest] = {
+    StyxObservable.from(
+      Future {
         Thread.sleep(1000)
-        Observable.just(request)
-      })
-      .flatMap(request => chain.proceed(request))
+      }.map(_ => request)
+        .toJava
+    )
   }
 }

@@ -16,10 +16,12 @@
 package loadtest.plugins;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.ResponseStream;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.api.v2.StyxObservable;
 
+import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static rx.Observable.timer;
 
@@ -39,9 +41,10 @@ public class AsyncRequestPluginFactory implements PluginFactory {
         }
 
         @Override
-        public ResponseStream intercept(HttpRequest request, Chain chain) {
-            return timer(config.delayMillis(), MILLISECONDS)
-                    .flatMap(x -> chain.proceed(request));
+        public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+            return StyxObservable.from(fromSingleObservable(timer(config.delayMillis(), MILLISECONDS)))
+                    .transformAsync(x -> chain.proceed(request));
         }
     }
+
 }

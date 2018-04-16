@@ -21,7 +21,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.http.handlers.StaticBodyHttpHandler;
-import rx.Observable;
+import com.hotels.styx.api.v2.StyxObservable;
 
 import java.util.Map;
 
@@ -49,10 +49,10 @@ public class StyxConfigurationHandler implements HttpHandler {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request) {
         return configHandler(request.queryParam("pretty").isPresent())
                 .handle(request)
-                .map(StyxConfigurationHandler::disableCaching);
+                .transform(StyxConfigurationHandler::disableCaching);
     }
 
     private StaticBodyHttpHandler configHandler(boolean pretty) {

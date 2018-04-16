@@ -17,6 +17,8 @@ package com.hotels.styx.support.api;
 
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 import rx.Observable;
 
 public final class BlockingObservables {
@@ -25,9 +27,20 @@ public final class BlockingObservables {
         return observable.toBlocking().single();
     }
 
+    public static <T> T getFirst(StyxObservable<T> observable) {
+        return toRxObservable(observable).toBlocking().single();
+    }
+
+    public static FullHttpResponse waitForResponse(StyxObservable<HttpResponse> responseObs) {
+        return toRxObservable(responseObs
+                .transformAsync(response -> response.toFullResponse(120*1024)))
+                .toBlocking()
+                .single();
+    }
+
     public static FullHttpResponse waitForResponse(Observable<HttpResponse> responseObs) {
         return responseObs
-                .flatMap(response -> response.toFullResponse(120*1024))
+                .flatMap(response -> toRxObservable(response.toFullResponse(120*1024)))
                 .toBlocking()
                 .single();
     }
@@ -39,5 +52,10 @@ public final class BlockingObservables {
     }
 
     private BlockingObservables() {
+    }
+
+
+    public static <T> Observable<T> toRxObservable(StyxObservable<T> observable) {
+        return ((StyxCoreObservable<T>)observable).delegate();
     }
 }

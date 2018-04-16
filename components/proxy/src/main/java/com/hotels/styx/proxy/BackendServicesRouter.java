@@ -25,27 +25,28 @@ import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.service.HealthCheckConfig;
+import com.hotels.styx.api.service.TlsSettings;
+import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.SimpleNettyHttpClient;
 import com.hotels.styx.client.StyxHeaderConfig;
 import com.hotels.styx.client.StyxHostHttpClient;
-import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
-import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
 import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
-import com.hotels.styx.api.service.HealthCheckConfig;
+import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
 import com.hotels.styx.client.healthcheck.UrlRequestHealthCheck;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
-import com.hotels.styx.api.service.TlsSettings;
-import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.server.HttpRouter;
 import org.slf4j.Logger;
-import rx.Observable;
 
 import java.util.Map;
 import java.util.Optional;
@@ -233,9 +234,10 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         }
 
         @Override
-        public Observable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-            return client.sendRequest(request)
-                    .doOnError(throwable -> handleError(request, throwable));
+        public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+            return new StyxCoreObservable<>(
+                    client.sendRequest(request)
+                        .doOnError(throwable -> handleError(request, throwable)));
         }
 
         public void close() {

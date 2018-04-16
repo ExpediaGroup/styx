@@ -20,8 +20,8 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Resource;
+import com.hotels.styx.api.v2.StyxObservable;
 import org.slf4j.Logger;
-import rx.Observable;
 
 import java.io.IOException;
 import java.util.function.Supplier;
@@ -36,7 +36,6 @@ import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.Observable.just;
 
 /**
  * Displays contents of logging configuration file.
@@ -53,8 +52,8 @@ public class LoggingConfigurationHandler implements HttpHandler {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
-        return just(generateResponse());
+    public StyxObservable<HttpResponse> handle(HttpRequest request) {
+        return StyxObservable.of(generateResponse());
     }
 
     private HttpResponse generateResponse() {

@@ -22,10 +22,11 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.client.OriginStatsFactory;
-import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.client.OriginStatsFactory;
+import com.hotels.styx.client.OriginsInventory;
+import com.hotels.styx.support.api.BlockingObservables;
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -36,8 +37,8 @@ import java.util.Optional;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
 import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -210,7 +211,7 @@ public class BackendServicesRouterTest {
     }
 
     private HttpResponse proxyTo(Optional<HttpHandler2> pipeline, HttpRequest request) {
-        return pipeline.get().handle(request, context).toBlocking().first();
+        return BlockingObservables.toRxObservable(pipeline.get().handle(request, context)).toBlocking().first();
     }
 
     @Test

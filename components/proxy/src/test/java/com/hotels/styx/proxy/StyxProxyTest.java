@@ -20,6 +20,7 @@ import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.client.SimpleNettyHttpClient;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
@@ -33,7 +34,6 @@ import com.hotels.styx.server.netty.NettyServerConfig;
 import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import java.io.IOException;
 
@@ -45,7 +45,6 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.nio.charset.Charset.defaultCharset;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static rx.Observable.just;
 
 public class StyxProxyTest extends SSLSetup {
     final HttpClient client = new SimpleNettyHttpClient.Builder()
@@ -99,8 +98,8 @@ public class StyxProxyTest extends SSLSetup {
         assertThat("Server should not be running", !server.isRunning());
     }
 
-    private Observable<HttpResponse> textResponse(String body) {
-        return just(response(OK)
+    private StyxObservable<HttpResponse> textResponse(String body) {
+        return StyxObservable.of(response(OK)
                 .body("Response from http connector")
                 .build());
     }

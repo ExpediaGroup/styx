@@ -18,8 +18,8 @@ package com.hotels.styx.api.http.handlers;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.handler.codec.http.HttpMethod;
-import rx.Observable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
@@ -42,9 +42,9 @@ public class HttpMethodFilteringHandler implements HttpHandler {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request) {
         if (!method.equals(request.method())) {
-            return Observable.just(
+            return StyxObservable.of(
                     response(METHOD_NOT_ALLOWED)
                             .body(errorBody)
                             .build());

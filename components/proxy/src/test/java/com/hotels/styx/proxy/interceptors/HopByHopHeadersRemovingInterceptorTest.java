@@ -18,6 +18,7 @@ package com.hotels.styx.proxy.interceptors;
 import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.support.api.BlockingObservables;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
@@ -25,6 +26,7 @@ import static com.hotels.styx.api.HttpRequest.Builder.delete;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpRequest.Builder.post;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.support.api.BlockingObservables.toRxObservable;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
 import static com.hotels.styx.proxy.interceptors.ReturnResponseChain.returnsResponse;
@@ -60,12 +62,12 @@ public class HopByHopHeadersRemovingInterceptorTest {
 
     @Test
     public void removesHopByHopHeadersFromResponse() throws Exception {
-        HttpResponse response = interceptor.intercept(get("/foo").build(), returnsResponse(response()
+        HttpResponse response = toRxObservable(interceptor.intercept(get("/foo").build(), returnsResponse(response()
                         .header(TE, "foo")
                         .header(PROXY_AUTHENTICATE, "foo")
                         .header(PROXY_AUTHORIZATION, "bar")
                         .build())
-        ).toBlocking().first();
+        )).toBlocking().first();
 
         assertThat(response.header(TE), isAbsent());
         assertThat(response.header(PROXY_AUTHENTICATE), isAbsent());
@@ -117,13 +119,13 @@ public class HopByHopHeadersRemovingInterceptorTest {
 
     @Test
     public void removesConnectionHeadersFromResponse() throws Exception {
-        HttpResponse response = interceptor.intercept(get("/foo").build(), returnsResponse(response()
+        HttpResponse response = toRxObservable(interceptor.intercept(get("/foo").build(), returnsResponse(response()
                         .header(CONNECTION, "Foo, Bar, Baz")
                         .header("Foo", "abc")
                         .header("Foo", "def")
                         .header("Bar", "one, two, three")
                         .build())
-        ).toBlocking().first();
+        )).toBlocking().first();
 
         assertThat(response.header(CONNECTION), isAbsent());
         assertThat(response.header("Foo"), isAbsent());

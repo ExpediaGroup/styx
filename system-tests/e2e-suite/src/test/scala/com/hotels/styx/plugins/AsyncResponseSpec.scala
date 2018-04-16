@@ -21,7 +21,8 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.{HttpRequest, HttpResponse, ResponseStream}
+import com.hotels.styx.api.v2.StyxObservable
+import com.hotels.styx.api.{HttpRequest, HttpResponse}
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -31,7 +32,10 @@ import io.netty.handler.codec.http.HttpHeaders.Values._
 import org.scalatest.{FunSpec, ShouldMatchers}
 import rx.Observable
 import rx.schedulers.Schedulers
+import scala.concurrent.ExecutionContext.Implicits.global
 
+
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class AsyncPluginResponseSpec extends FunSpec
@@ -71,21 +75,25 @@ class AsyncPluginResponseSpec extends FunSpec
       val response = waitForResponse(client.sendRequest(request))
 
       mockServer.verify(1, getRequestedFor(urlStartingWith("/foobar")))
-      response.bodyAs(UTF_8) should be ("I should be here!")
+      response.bodyAs(UTF_8) should be("I should be here!")
     }
   }
 }
 
 import rx.lang.scala.ImplicitFunctionConversions._
+import scala.compat.java8.FutureConverters.FutureOps
+import scala.compat.java8.FunctionConverters.asJavaFunction
+
 
 class AsyncContentDelayPlugin extends PluginAdapter {
-  override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
+  override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
     chain.proceed(request)
-      .observeOn(Schedulers.computation())
-      .flatMap((response: HttpResponse) => {
-        Thread.sleep(1000)
-        Observable.just(response)
-      })
-
+      .transformAsync(asJavaFunction((response: HttpResponse) => {
+        StyxObservable.from(
+          Future {
+            Thread.sleep(1000)
+            response
+          }.toJava)
+      }))
   }
 }

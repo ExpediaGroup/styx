@@ -22,6 +22,7 @@ import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api._
 import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
+import com.hotels.styx.api.v2.StyxObservable
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -83,8 +84,8 @@ class HealthCheckSpec extends FunSpec
   }
 
   class FaultyPlugin extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): ResponseStream = {
-      Observable.error(new RuntimeException)
+    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
+      StyxObservable.error(new RuntimeException)
     }
   }
 

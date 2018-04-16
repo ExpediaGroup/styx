@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.plugins
 
+import java.nio.charset.StandardCharsets.UTF_8
 import java.util
 
 import com.google.common.net.HostAndPort
@@ -22,12 +23,11 @@ import com.google.common.net.HostAndPort._
 import com.google.common.net.MediaType.PLAIN_TEXT_UTF_8
 import com.hotels.styx.api._
 import com.hotels.styx.api.http.handlers.StaticBodyHttpHandler
+import com.hotels.styx.api.v2.StyxObservable
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec
-import rx.Observable
-import java.nio.charset.StandardCharsets.UTF_8
 
 import scala.collection.JavaConverters._
 
@@ -113,7 +113,7 @@ class PluginAdminInterfaceSpec extends FunSpec with StyxProxySpec with StyxClien
   }
 
   private class PluginX extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): ResponseStream = chain.proceed(request)
+    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): StyxObservable[HttpResponse] = chain.proceed(request)
 
     override def adminInterfaceHandlers(): util.Map[String, HttpHandler] = Map[String, HttpHandler](
       "/path/one" -> new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "X: Response from first admin interface"),
@@ -122,7 +122,7 @@ class PluginAdminInterfaceSpec extends FunSpec with StyxProxySpec with StyxClien
   }
 
   private class PluginY extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): ResponseStream = chain.proceed(request)
+    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): StyxObservable[HttpResponse] = chain.proceed(request)
 
     override def adminInterfaceHandlers(): util.Map[String, HttpHandler] = Map[String, HttpHandler](
       "/path/one" -> new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Y: Response from first admin interface"),
@@ -131,7 +131,7 @@ class PluginAdminInterfaceSpec extends FunSpec with StyxProxySpec with StyxClien
   }
 
   private class PluginZ extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): ResponseStream = chain.proceed(request)
+    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): StyxObservable[HttpResponse] = chain.proceed(request)
 
     override def adminInterfaceHandlers(): util.Map[String, HttpHandler] = Map[String, HttpHandler](
       "path/one" -> new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Z: Response from first admin interface"),
@@ -140,7 +140,7 @@ class PluginAdminInterfaceSpec extends FunSpec with StyxProxySpec with StyxClien
   }
 
   private class PluginWithNoAdminFeatures extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): ResponseStream = chain.proceed(request)
+    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): StyxObservable[HttpResponse] = chain.proceed(request)
 
     override def adminInterfaceHandlers(): util.Map[String, HttpHandler] = Map[String, HttpHandler](
 

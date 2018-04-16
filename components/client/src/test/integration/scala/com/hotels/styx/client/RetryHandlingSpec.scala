@@ -29,6 +29,7 @@ import com.hotels.styx.api.client.{ActiveOrigins, Origin}
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort
+import com.hotels.styx.api.v2.StyxCoreObservable
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
@@ -161,7 +162,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
 
     val request: HttpRequest = get("/version.txt").build
 
-    val response = waitForResponse(client.sendRequest(request))
+    val response = waitForResponse(new StyxCoreObservable(client.sendRequest(request)))
 
     response.cookie("styx_origin_generic-app").get().toString should fullyMatch regex "styx_origin_generic-app=HEALTHY_ORIGIN_TWO; Max-Age=.*; Path=/; HttpOnly"
   }

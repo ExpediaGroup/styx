@@ -18,17 +18,17 @@ package com.hotels.styx.api.http.handlers;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import rx.Observable;
+import com.hotels.styx.api.v2.StyxObservable;
 
 /**
  * This class provides a skeleton implementation of the {@link HttpHandler} interface, that can be used when no
- * complex {@link Observable} mechanism is required.
+ * complex {@link StyxObservable} mechanism is required.
  */
 public abstract class BaseHttpHandler implements HttpHandler {
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
-        return Observable.just(doHandle(request));
+    public StyxObservable<HttpResponse> handle(HttpRequest request) {
+        return StyxObservable.of(doHandle(request));
     }
 
     /**

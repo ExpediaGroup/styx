@@ -18,10 +18,9 @@ package com.hotels.styx.proxy.interceptors;
 import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.ResponseStream;
+import com.hotels.styx.api.v2.StyxObservable;
 
 import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static rx.Observable.just;
 
 /**
  * A handler that return whatever response returned from the passed in handler.
@@ -47,7 +46,7 @@ public final class ReturnResponseChain implements Chain {
     }
 
     @Override
-    public ResponseStream proceed(HttpRequest request) {
-        return just(response);
+    public StyxObservable<HttpResponse> proceed(HttpRequest request) {
+        return StyxObservable.of(response);
     }
 }

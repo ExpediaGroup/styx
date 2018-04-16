@@ -17,7 +17,10 @@ package com.hotels.styx.api.service.spi;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 import org.testng.annotations.Test;
+import rx.Observable;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -39,13 +42,19 @@ public class AbstractStyxServiceTest {
     public void exposesNameAndStatusViaAdminInterface() {
         DerivedStyxService service = new DerivedStyxService("derived-service", new CompletableFuture<>());
 
-        FullHttpResponse response = service.adminInterfaceHandlers().get("status").handle(get)
-                .flatMap(r -> r.toFullResponse(1024))
+        FullHttpResponse response = toRxObservable(
+                service.adminInterfaceHandlers().get("status").handle(get)
+                        .transformAsync(r -> r.toFullResponse(1024)))
                 .toBlocking()
                 .first();
 
         assertThat(response.bodyAs(UTF_8), is("{ name: \"derived-service\" status: \"CREATED\" }"));
     }
+
+    static <T> Observable<T> toRxObservable(StyxObservable<T> observable) {
+        return ((StyxCoreObservable<T>) observable).delegate();
+    }
+
 
     @Test
     public void inStartingStateWhenStartIsCalled() {
@@ -74,7 +83,7 @@ public class AbstractStyxServiceTest {
     }
 
     @Test(expectedExceptions = IllegalStateException.class,
-    expectedExceptionsMessageRegExp = "Start called in STARTING state")
+            expectedExceptionsMessageRegExp = "Start called in STARTING state")
     public void throwsExceptionFor2ndCallToStart() {
         CompletableFuture<Void> subclassStarted = new CompletableFuture<>();
         DerivedStyxService service = new DerivedStyxService("derived-service", subclassStarted);

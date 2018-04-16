@@ -21,6 +21,8 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import rx.Observable;
@@ -57,9 +59,9 @@ public class OriginsReloadCommandHandler implements HttpHandler {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
-        return Observable.<HttpResponse>create(this::reload)
-                .subscribeOn(Schedulers.from(executor));
+    public StyxObservable<HttpResponse> handle(HttpRequest request) {
+        return new StyxCoreObservable<>(Observable.<HttpResponse>create(this::reload)
+                .subscribeOn(Schedulers.from(executor)));
     }
 
     private void reload(Subscriber<? super HttpResponse> subscriber) {

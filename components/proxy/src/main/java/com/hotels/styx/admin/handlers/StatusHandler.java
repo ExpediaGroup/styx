@@ -18,8 +18,8 @@ package com.hotels.styx.admin.handlers;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import rx.Observable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
@@ -41,8 +41,8 @@ public class StatusHandler implements HttpHandler {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
-        return handler.handle(request).map(response ->
+    public StyxObservable<HttpResponse> handle(HttpRequest request) {
+        return handler.handle(request).transform(response ->
                 response.newBuilder()
                         .contentType(PLAIN_TEXT_UTF_8)
                         .body(statusContent(response.status()))

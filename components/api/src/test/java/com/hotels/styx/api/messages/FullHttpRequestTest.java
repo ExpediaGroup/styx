@@ -17,6 +17,8 @@ package com.hotels.styx.api.messages;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpMethod;
@@ -261,7 +263,7 @@ public class FullHttpRequestTest {
                 .body(content)
                 .build();
 
-        FullHttpRequest fullRequest = original.toFullRequest(100)
+        FullHttpRequest fullRequest = toRxObservable(original.toFullRequest(100))
                 .toBlocking()
                 .first();
 
@@ -278,7 +280,7 @@ public class FullHttpRequestTest {
                 .body(Observable.just(content))
                 .build();
 
-        FullHttpRequest fullRequest = original.toFullRequest(100)
+        FullHttpRequest fullRequest = toRxObservable(original.toFullRequest(100))
                 .toBlocking()
                 .first();
 
@@ -552,4 +554,7 @@ public class FullHttpRequestTest {
         assertThat(newRequest.version(), is(HTTP_1_0));
     }
 
+    static <T> Observable<T> toRxObservable(StyxObservable<T> observable) {
+        return ((StyxCoreObservable<T>) observable).delegate();
+    }
 }

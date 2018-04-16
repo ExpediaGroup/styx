@@ -16,9 +16,12 @@
 package com.hotels.styx.routing.interceptors
 
 import com.hotels.styx.api.HttpResponse.Builder.response
-import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse, ResponseStream}
+import com.hotels.styx.api.v2.StyxObservable
+import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse}
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition
+import com.hotels.styx.support.api.BlockingObservables
+import com.hotels.styx.support.api.BlockingObservables.toRxObservable
 import io.netty.handler.codec.http.HttpResponseStatus.OK
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, ShouldMatchers}
@@ -43,7 +46,7 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
     val interceptor = new RewriteInterceptor.ConfigFactory().build(config)
     val capturingChain = new CapturingChain
 
-    val response = interceptor.intercept(HttpRequest.Builder.get("/foo").build(), capturingChain).toBlocking.first()
+    val response = toRxObservable(interceptor.intercept(HttpRequest.Builder.get("/foo").build(), capturingChain)).toBlocking.first()
     capturingChain.request().path() should be ("/app/foo")
   }
 
@@ -60,7 +63,7 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
     val interceptor = new RewriteInterceptor.ConfigFactory().build(config)
     val capturingChain = new CapturingChain
 
-    val response = interceptor.intercept(HttpRequest.Builder.get("/foo").build(), capturingChain).toBlocking.first()
+    val response = toRxObservable(interceptor.intercept(HttpRequest.Builder.get("/foo").build(), capturingChain)).toBlocking.first()
     capturingChain.request().path() should be ("/foo")
   }
 
@@ -71,9 +74,9 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
   class CapturingChain extends HttpInterceptor.Chain {
     var storedRequest: HttpRequest = _
 
-    override def proceed(request: HttpRequest): ResponseStream = {
+    override def proceed(request: HttpRequest): StyxObservable[HttpResponse] = {
       storedRequest = request
-      Observable.just(response(OK).build())
+      StyxObservable.of(response(OK).build())
     }
 
     def request() = storedRequest

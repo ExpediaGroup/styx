@@ -23,6 +23,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.client.UrlConnectionHttpClient;
 import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
+import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.client.SimpleNettyHttpClient;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
 import org.testng.annotations.AfterMethod;
@@ -56,7 +57,6 @@ import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static rx.Observable.just;
 
 public class StyxServerTest {
     private final HttpClient client = new SimpleNettyHttpClient.Builder()
@@ -204,7 +204,7 @@ public class StyxServerTest {
     @Test
     public void executesPluginsWhenProxying() {
         Plugin responseDecorator = (request, chain) -> chain.proceed(request)
-                .map(response -> response.newBuilder()
+                .transform(response -> response.newBuilder()
                         .header("plugin-executed", "yes")
                         .build());
 
@@ -249,8 +249,8 @@ public class StyxServerTest {
     @Test
     public void addsEndpointLinksToPluginPage() {
         setUpStyxAndPluginWithAdminPages(ImmutableMap.of(
-                "adminPage1", request -> just(response().build()),
-                "adminPage2", request -> just(response().build())
+                "adminPage1", request -> StyxObservable.of(response().build()),
+                "adminPage2", request -> StyxObservable.of(response().build())
         ));
 
         FullHttpResponse response = doAdminRequest("/admin/plugins/plugin-with-admin-pages");
@@ -263,8 +263,8 @@ public class StyxServerTest {
     @Test
     public void exposesAdminEndpoints() {
         setUpStyxAndPluginWithAdminPages(ImmutableMap.of(
-                "adminPage1", request -> just(response().header("AdminPage1", "yes").build()),
-                "adminPage2", request -> just(response().header("AdminPage2", "yes").build())
+                "adminPage1", request -> StyxObservable.of(response().header("AdminPage1", "yes").build()),
+                "adminPage2", request -> StyxObservable.of(response().header("AdminPage2", "yes").build())
         ));
 
         FullHttpResponse response = doAdminRequest("/admin/plugins/plugin-with-admin-pages/adminPage1");

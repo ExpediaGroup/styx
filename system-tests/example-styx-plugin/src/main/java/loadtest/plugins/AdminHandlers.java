@@ -17,17 +17,17 @@ package loadtest.plugins;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.v2.StyxObservable;
 
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static rx.Observable.just;
 
 final class AdminHandlers {
     private AdminHandlers() {
     }
 
     static ImmutableMap<String, HttpHandler> adminHandlers(String endpoint, String responseContent) {
-        return ImmutableMap.of(endpoint, (request) -> just(response(OK)
+        return ImmutableMap.of(endpoint, (request) -> StyxObservable.of(response(OK)
                 .body(responseContent)
                 .build()));
     }

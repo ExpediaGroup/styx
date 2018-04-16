@@ -16,8 +16,10 @@
 package com.hotels.styx.plugins;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.ResponseStream;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
+import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 
 import static com.google.common.base.Charsets.UTF_8;
 
@@ -29,10 +31,13 @@ public class DecodedContentFailurePlugin implements Plugin {
     }
 
     @Override
-    public ResponseStream intercept(HttpRequest request, Chain chain) {
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request)
-                .flatMap(response -> response.decode((byteBuf) -> byteBuf.toString(UTF_8), maxContentBytes))
-                .map(decodedResponse -> {
+                // TODO: Mikko: Styx 2.0 Api:
+                // Ugly hack. As the response.decode() is being deprecated, we may not
+                // be able to integration-test this kind of scenarios.
+                .transformAsync(response -> new StyxCoreObservable<>(response.decode((byteBuf) -> byteBuf.toString(UTF_8), maxContentBytes)))
+                .transform(decodedResponse -> {
                     if (request.header("Fail_after_content").isPresent()) {
                         throw new RuntimeException("Simulated failure after content aggregation");
                     }

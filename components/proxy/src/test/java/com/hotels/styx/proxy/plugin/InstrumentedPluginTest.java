@@ -19,22 +19,25 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.support.api.SimpleEnvironment;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
+import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.support.api.BlockingObservables;
+import com.hotels.styx.support.api.SimpleEnvironment;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import rx.Observable;
 import rx.observers.TestSubscriber;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.plugins.spi.Plugin.PASS_THROUGH;
+import static com.hotels.styx.api.v2.StyxObservable.error;
 import static com.hotels.styx.proxy.plugin.InstrumentedPlugin.formattedExceptionName;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
+import static com.hotels.styx.support.api.BlockingObservables.toRxObservable;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -45,8 +48,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static rx.Observable.error;
-import static rx.Observable.just;
 
 public class InstrumentedPluginTest {
     private static final String SOME_EXCEPTION = formattedExceptionName(SomeException.class);
@@ -74,9 +75,9 @@ public class InstrumentedPluginTest {
 
         InstrumentedPlugin plugin = instrumentedPlugin("replaceStatusCode", (request, aChain) ->
                 aChain.proceed(request)
-                        .map(response -> responseWithNewStatusCode(response, INTERNAL_SERVER_ERROR)));
+                        .transform(response -> responseWithNewStatusCode(response, INTERNAL_SERVER_ERROR)));
 
-        HttpResponse response = plugin.intercept(someRequest, chain).toBlocking().single();
+        HttpResponse response = toRxObservable(plugin.intercept(someRequest, chain)).toBlocking().single();
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
         assertThat(metricRegistry.meter("plugins.replaceStatusCode.response.status.500").getCount(), is(1L));
@@ -88,7 +89,7 @@ public class InstrumentedPluginTest {
         InstrumentedPlugin plugin = instrumentedPlugin("returnEarly",
                 (request, chain) -> aResponse(INTERNAL_SERVER_ERROR));
 
-        HttpResponse response = plugin.intercept(someRequest, chain).toBlocking().single();
+        HttpResponse response = toRxObservable(plugin.intercept(someRequest, chain)).toBlocking().single();
 
         verify(chain, never()).proceed(any(HttpRequest.class));
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
@@ -102,7 +103,7 @@ public class InstrumentedPluginTest {
 
         InstrumentedPlugin plugin = instrumentedPlugin("doNotRecordMe", PASS_THROUGH);
 
-        HttpResponse response = plugin.intercept(someRequest, chain).toBlocking().single();
+        HttpResponse response = toRxObservable(plugin.intercept(someRequest, chain)).toBlocking().single();
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
         assertThat(metricRegistry.meter("plugins.doNotRecordMe.response.status.500").getCount(), is(0L));
@@ -115,9 +116,9 @@ public class InstrumentedPluginTest {
 
         InstrumentedPlugin plugin = instrumentedPlugin("replaceStatusCode", (request, aChain) ->
                 aChain.proceed(request)
-                        .map(response -> responseWithNewStatusCode(response, BAD_GATEWAY)));
+                        .transform(response -> responseWithNewStatusCode(response, BAD_GATEWAY)));
 
-        HttpResponse response = plugin.intercept(someRequest, chain).toBlocking().single();
+        HttpResponse response = toRxObservable(plugin.intercept(someRequest, chain)).toBlocking().single();
 
         assertThat(response.status(), is(BAD_GATEWAY));
         assertThat(metricRegistry.meter("plugins.replaceStatusCode.response.status.502").getCount(), is(1L));
@@ -129,7 +130,7 @@ public class InstrumentedPluginTest {
         InstrumentedPlugin plugin = instrumentedPlugin("returnEarly",
                 (request, chain) -> aResponse(BAD_GATEWAY));
 
-        HttpResponse response = plugin.intercept(someRequest, chain).toBlocking().single();
+        HttpResponse response = BlockingObservables.<HttpResponse>toRxObservable(plugin.intercept(someRequest, chain)).toBlocking().single();
 
         verify(chain, never()).proceed(any(HttpRequest.class));
         assertThat(response.status(), is(BAD_GATEWAY));
@@ -172,7 +173,7 @@ public class InstrumentedPluginTest {
     public void metricsAreRecordedWhenPluginMapsToException() {
         InstrumentedPlugin plugin = instrumentedPlugin("observableError", (request, chain) ->
                 chain.proceed(request)
-                        .flatMap(response -> error(new SomeException())));
+                        .transformAsync(response -> error(new SomeException())));
 
         assertThatObservableHasErrorOnly(PluginException.class,
                 plugin.intercept(someRequest, request -> aResponse(OK)));
@@ -195,14 +196,14 @@ public class InstrumentedPluginTest {
         assertThat(metricRegistry.meter("plugins.passThrough.errors").getCount(), is(0L));
     }
 
-    private static Observable<HttpResponse> aResponse(HttpResponseStatus status) {
-        return just(response(status).build());
+    private static StyxObservable<HttpResponse> aResponse(HttpResponseStatus status) {
+        return StyxObservable.of(response(status).build());
     }
 
-    private static <T> void assertThatObservableHasErrorOnly(Class<? extends Throwable> type, Observable<T> observable) {
+    private static <T> void assertThatObservableHasErrorOnly(Class<? extends Throwable> type, StyxObservable<T> observable) {
         TestSubscriber<T> testSubscriber = new TestSubscriber<>();
 
-        observable.subscribe(testSubscriber);
+        toRxObservable(observable).subscribe(testSubscriber);
 
         testSubscriber.awaitTerminalEvent();
         testSubscriber.assertNoValues();

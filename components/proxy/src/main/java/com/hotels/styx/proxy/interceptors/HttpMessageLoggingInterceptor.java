@@ -18,7 +18,7 @@ package com.hotels.styx.proxy.interceptors;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.ResponseStream;
+import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
 
 /**
@@ -33,13 +33,14 @@ public class HttpMessageLoggingInterceptor implements HttpInterceptor {
     }
 
     @Override
-    public ResponseStream intercept(HttpRequest request, Chain chain) {
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         log(request);
-        return chain.proceed(request).doOnNext(this::log);
+        return chain.proceed(request).transform(this::log);
     }
 
-    private void log(HttpResponse response) {
+    private HttpResponse log(HttpResponse response) {
         logger.logResponse(response.request(), response);
+        return response;
     }
 
     private void log(HttpRequest request) {

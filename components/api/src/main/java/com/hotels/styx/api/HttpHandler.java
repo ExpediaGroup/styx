@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.api;
 
-import rx.Observable;
+import com.hotels.styx.api.v2.StyxObservable;
 
 /**
- * Handles an {@link HttpRequest}, returning an {@link Observable} that is expected to publish a single {@link HttpResponse} value.
+ * Handles an {@link HttpRequest}, returning an {@link StyxObservable} that is expected to publish a single {@link HttpResponse} value.
  */
 @FunctionalInterface
 public interface HttpHandler extends HttpHandler2 {
@@ -26,12 +26,12 @@ public interface HttpHandler extends HttpHandler2 {
      * Processes an incoming request.
      *
      * @param request the current incoming request
-     * @return an {@link Observable} that is expected to publish a single response
+     * @return an {@link StyxObservable} that is expected to publish a single response
      */
-    Observable<HttpResponse> handle(HttpRequest request);
+    StyxObservable<HttpResponse> handle(HttpRequest request);
 
     @Override
-    default Observable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    default StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return handle(request);
     }
 

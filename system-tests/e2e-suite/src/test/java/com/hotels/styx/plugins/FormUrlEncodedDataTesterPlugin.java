@@ -21,9 +21,10 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpRequest.DecodedRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.ResponseStream;
 import com.hotels.styx.api.http.handlers.HttpMethodFilteringHandler;
 import com.hotels.styx.api.plugins.spi.Plugin;
+import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 import rx.Observable;
 
 import java.util.List;
@@ -40,7 +41,7 @@ import static java.util.stream.Collectors.toList;
 public class FormUrlEncodedDataTesterPlugin implements Plugin {
 
     @Override
-    public ResponseStream intercept(HttpRequest request, Chain chain) {
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request);
     }
 
@@ -49,14 +50,16 @@ public class FormUrlEncodedDataTesterPlugin implements Plugin {
         return singletonMap("foo", new HttpMethodFilteringHandler(POST, this::buildResponse));
     }
 
-    private Observable<HttpResponse> buildResponse(HttpRequest req) {
-        return req.decodePostParams(100).map(request ->
-                        response(OK)
-                                .body(paramsFrom(request)
-                                        .stream()
-                                        .collect(joining("\n")))
-                                .build()
-        );
+    // TODO: Mikko: Styx 2.0 API: Uses deprecated APIs and we may not be able to test this in the intended way.
+    private StyxObservable<HttpResponse> buildResponse(HttpRequest req) {
+        return new StyxCoreObservable<>(req
+                .decodePostParams(100)
+                .map(request -> response(OK)
+                        .body(paramsFrom(request)
+                                .stream()
+                                .collect(joining("\n")))
+                        .build()
+                ));
     }
 
     private List<String> paramsFrom(DecodedRequest<FormData> dataRequest) {

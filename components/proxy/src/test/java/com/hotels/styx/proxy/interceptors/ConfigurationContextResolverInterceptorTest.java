@@ -19,9 +19,10 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.ResponseStream;
 import com.hotels.styx.api.configuration.ConfigurationContextResolver;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.support.api.BlockingObservables;
 import org.testng.annotations.Test;
 import rx.Observable;
 
@@ -50,9 +51,9 @@ public class ConfigurationContextResolverInterceptorTest {
 
         TestChain chain = new TestChain();
 
-        Observable<HttpResponse> responseObservable = interceptor.intercept(request, chain);
+        StyxObservable<HttpResponse> responseObservable = interceptor.intercept(request, chain);
 
-        assertThat(responseObservable.toBlocking().first(), hasStatus(OK));
+        assertThat(BlockingObservables.toRxObservable(responseObservable).toBlocking().first(), hasStatus(OK));
         assertThat(chain.proceedWasCalled, is(true));
         assertThat(chain.context.get("config.context", Configuration.Context.class), is(context));
     }
@@ -79,10 +80,10 @@ public class ConfigurationContextResolverInterceptorTest {
         }
 
         @Override
-        public ResponseStream proceed(HttpRequest request) {
+        public StyxObservable<HttpResponse> proceed(HttpRequest request) {
             proceedWasCalled = true;
 
-            return just(response(OK).build());
+            return StyxObservable.of(response(OK).build());
         }
 
         private class TestChainContext implements HttpInterceptor.Context {

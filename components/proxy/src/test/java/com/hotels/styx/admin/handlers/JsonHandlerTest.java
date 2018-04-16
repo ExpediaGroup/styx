@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.support.api.BlockingObservables.toRxObservable;
 import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
@@ -100,11 +101,11 @@ public class JsonHandlerTest {
     }
 
     private String response(JsonHandler<?> handler) {
-        return bodyAsString(handler.handle(get("/").build()).toBlocking().first());
+        return bodyAsString(toRxObservable(handler.handle(get("/").build())).toBlocking().first());
     }
 
     private String responseFor(JsonHandler<?> handler, HttpRequest request) {
-        return bodyAsString(handler.handle(request).toBlocking().first());
+        return bodyAsString(toRxObservable(handler.handle(request)).toBlocking().first());
     }
 
     private static class Convertible {

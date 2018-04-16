@@ -33,6 +33,7 @@ import com.github.tomakehurst.wiremock.http.StubResponseRenderer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.HttpServers;
@@ -49,7 +50,6 @@ import static com.google.common.base.Optional.absent;
 import static com.hotels.styx.servers.WiremockResponseConverter.toStyxResponse;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyMap;
-import static rx.Observable.just;
 
 public final class MockOriginServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(MockOriginServer.class);
@@ -122,11 +122,14 @@ public final class MockOriginServer {
     private static HttpHandler2 newHandler(String originId, RequestHandler wireMockHandler) {
         return (httpRequest, ctx) ->
                 httpRequest.toFullRequest(MAX_CONTENT_LENGTH)
-                        .doOnNext(fullRequest -> LOGGER.info("{} received: {}\n{}", new Object[]{originId, fullRequest.url(), fullRequest.body()}))
-                        .flatMap(fullRequest -> {
+                        .transform(fullRequest -> {
+                            LOGGER.info("{} received: {}\n{}", new Object[]{originId, fullRequest.url(), fullRequest.body()});
+                            return fullRequest;
+                        })
+                        .transformAsync(fullRequest -> {
                             Request wmRequest = new WiremockStyxRequestAdapter(fullRequest);
                             com.github.tomakehurst.wiremock.http.Response wmResponse = wireMockHandler.handle(wmRequest);
-                            return just(toStyxResponse(wmResponse).toStreamingResponse());
+                            return StyxObservable.of(toStyxResponse(wmResponse).toStreamingResponse());
                         });
     }
 
@@ -229,11 +232,14 @@ public final class MockOriginServer {
     private static HttpHandler2 newHandler(RequestHandler wireMockHandler) {
         return (httpRequest, ctx) ->
                 httpRequest.toFullRequest(MAX_CONTENT_LENGTH)
-                        .doOnNext(fullRequest -> LOGGER.info("Received: {}\n{}", new Object[]{fullRequest.url(), fullRequest.body()}))
-                        .flatMap(fullRequest -> {
+                        .transform(fullRequest -> {
+                            LOGGER.info("Received: {}\n{}", new Object[]{fullRequest.url(), fullRequest.body()});
+                            return fullRequest;
+                        })
+                        .transformAsync(fullRequest -> {
                             Request wmRequest = new WiremockStyxRequestAdapter(fullRequest);
                             com.github.tomakehurst.wiremock.http.Response wmResponse = wireMockHandler.handle(wmRequest);
-                            return just(toStyxResponse(wmResponse).toStreamingResponse());
+                            return StyxObservable.of(toStyxResponse(wmResponse).toStreamingResponse());
                         });
     }
 }
