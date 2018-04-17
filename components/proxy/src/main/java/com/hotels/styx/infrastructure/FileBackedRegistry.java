@@ -16,6 +16,7 @@
 package com.hotels.styx.infrastructure;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.google.common.hash.HashCode;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.Resource;
@@ -26,8 +27,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -55,17 +58,28 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     private final Resource configurationFile;
     private final Reader<T> reader;
     private final Supplier<FileTime> modifyTimeSupplier;
+    private final Predicate<Collection<T>> resourceConstraint;
     private HashCode fileHash = fromLong(0);
 
     @VisibleForTesting
-    FileBackedRegistry(Resource configurationFile, Reader<T> reader, Supplier<FileTime> modifyTimeSupplier) {
+    FileBackedRegistry(Resource configurationFile, Reader<T> reader, Supplier<FileTime> modifyTimeSupplier, Predicate<Collection<T>> resourceConstraint) {
         this.configurationFile = requireNonNull(configurationFile);
         this.reader = checkNotNull(reader);
         this.modifyTimeSupplier = modifyTimeSupplier;
+        this.resourceConstraint = requireNonNull(resourceConstraint);
+    }
+
+    @VisibleForTesting
+    FileBackedRegistry(Resource configurationFile, Reader<T> reader, Supplier<FileTime> modifyTimeSupplier) {
+        this(configurationFile, reader, modifyTimeSupplier, any -> true);
+    }
+
+    public FileBackedRegistry(Resource configurationFile, Reader<T> reader, Predicate<Collection<T>> resourceConstraint) {
+        this(configurationFile, reader, fileModificationTimeProvider(configurationFile), resourceConstraint);
     }
 
     public FileBackedRegistry(Resource configurationFile, Reader<T> reader) {
-        this(configurationFile, reader, fileModificationTimeProvider(configurationFile));
+        this(configurationFile, reader, any -> true);
     }
 
     public String fileName() {
@@ -122,11 +136,12 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     }
 
     private boolean updateResources(byte[] content, HashCode hashCode) {
-
-        Iterable<T> resources = reader.read(content);
+        Collection<T> resources = reader.read(content);
         Changes<T> changes = changes(resources, get());
 
         if (!changes.isEmpty()) {
+            Preconditions.checkState(resourceConstraint.test(resources));
+
             set(resources);
         }
 
@@ -148,6 +163,6 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
      * @param <T>
      */
     public interface Reader<T> {
-        Iterable<T> read(byte[] content);
+        Collection<T> read(byte[] content);
     }
 }

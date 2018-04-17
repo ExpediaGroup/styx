@@ -20,24 +20,28 @@ import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
-import com.hotels.styx.api.service.spi.AbstractStyxService;
 import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.service.spi.AbstractStyxService;
+import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.client.applications.BackendServices;
 import com.hotels.styx.infrastructure.FileBackedRegistry;
-import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.infrastructure.YamlReader;
 import com.hotels.styx.proxy.backends.file.FileChangeMonitor.FileMonitorSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
-import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
 import static com.hotels.styx.api.service.spi.Registry.Outcome.FAILED;
+import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -68,7 +72,8 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
     static FileBackedBackendServicesRegistry create(String originsFile, FileMonitor fileChangeMonitor) {
         FileBackedRegistry<BackendService> fileBackedRegistry = new FileBackedRegistry<>(
                 newResource(originsFile),
-                new YAMLBackendServicesReader());
+                new YAMLBackendServicesReader(),
+                new BackendServicesConstraint());
         return new FileBackedBackendServicesRegistry(fileBackedRegistry, fileChangeMonitor);
     }
 
@@ -181,9 +186,9 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         private final YamlReader<List<BackendService>> delegate = new YamlReader<>();
 
         @Override
-        public Iterable<BackendService> read(byte[] content) {
+        public Collection<BackendService> read(byte[] content) {
             try {
-                return readBackendServices(content);
+                return readBackendServices(content).collection();
             } catch (Exception e) {
                 throw propagate(e);
             }
@@ -192,6 +197,21 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         private BackendServices readBackendServices(byte[] content) throws Exception {
             return newBackendServices(delegate.read(content, new TypeReference<List<BackendService>>() {
             }));
+        }
+    }
+
+    @VisibleForTesting
+    static class BackendServicesConstraint implements Predicate<Collection<BackendService>> {
+        @Override
+        public boolean test(Collection<BackendService> backendServices) {
+            Map<String, Integer> pathCounts = new HashMap<>();
+
+            backendServices.forEach(backendService ->
+                    pathCounts.merge(backendService.path(), 1, (v1, v2) -> v1 + v2));
+
+            LOGGER.debug("pathCounts={}", pathCounts);
+
+            return pathCounts.values().stream().noneMatch(count -> count != 1);
         }
     }
 

@@ -16,34 +16,41 @@
 package com.hotels.styx.proxy.backends.file;
 
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.service.spi.ServiceFailureException;
 import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.infrastructure.FileBackedRegistry;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.api.service.spi.Registry.ReloadResult;
+import com.hotels.styx.api.service.spi.ServiceFailureException;
+import com.hotels.styx.infrastructure.FileBackedRegistry;
+import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry.BackendServicesConstraint;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry.YAMLBackendServicesReader;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static ch.qos.logback.classic.Level.INFO;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.io.ByteStreams.toByteArray;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
-import static com.hotels.styx.common.StyxFutures.await;
+import static com.hotels.styx.api.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.api.service.spi.Registry.ReloadResult.failed;
 import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
 import static com.hotels.styx.api.service.spi.Registry.ReloadResult.unchanged;
+import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
@@ -335,6 +342,39 @@ public class FileBackedBackendServicesRegistryTest {
         assertThat(log.lastMessage(), is(
                 loggingEvent(INFO, "Backend services reloaded. reason='File Monitor', md5-hash: 3428432789453897, Successfully reloaded, file='/monitored/origins.yml'")
         ));
+    }
+
+    @Test
+    public void duplicatePathPrefixesCausesReloadFailure() throws ExecutionException, InterruptedException, TimeoutException, IOException {
+        String configWithDupe = "" +
+                "---\n" +
+                "- id: \"first\"\n" +
+                "  path: \"/testpath/\"\n" +
+                "  origins:\n" +
+                "  - id: \"l1\"\n" +
+                "    host: \"localhost:60000\"\n" +
+                "- id: \"second\"\n" +
+                "  path: \"/testpath/\"\n" +
+                "  origins:\n" +
+                "  - id: \"l2\"\n" +
+                "    host: \"localhost:60001\"";
+
+        Resource stubResource = mock(Resource.class);
+        when(stubResource.inputStream()).thenReturn(toInputStream(configWithDupe));
+
+        // TODO want to use defaults here, not manually specify (may need to switch to builder)
+        FileBackedRegistry<BackendService> delegate = new FileBackedRegistry<>(stubResource, new YAMLBackendServicesReader(), new BackendServicesConstraint());
+        FileBackedBackendServicesRegistry registry = new FileBackedBackendServicesRegistry(delegate);
+
+        ReloadResult result = registry.reload().get(10, SECONDS);
+
+        Registry.Outcome outcome = result.outcome();
+
+        assertThat(outcome, is(FAILED));
+    }
+
+    private static InputStream toInputStream(String string) {
+        return new ByteArrayInputStream(string.getBytes(UTF_8));
     }
 
     private CompletableFuture<ReloadResult> failedFuture(Throwable cause) {
