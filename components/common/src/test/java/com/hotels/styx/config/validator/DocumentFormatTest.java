@@ -18,31 +18,28 @@ package com.hotels.styx.config.validator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.common.Joiners;
+import com.hotels.styx.config.schema.InvalidSchemaException;
+import com.hotels.styx.config.schema.SchemaValidationException;
 import org.testng.annotations.Test;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static com.hotels.styx.config.validator.ObjectValidator.newDocument;
-import static com.hotels.styx.config.validator.ObjectValidator.pass;
-import static com.hotels.styx.config.validator.ObjectValidator.schema;
-import static com.hotels.styx.config.validator.Schema.Field.bool;
-import static com.hotels.styx.config.validator.Schema.Field.field;
-import static com.hotels.styx.config.validator.Schema.Field.integer;
-import static com.hotels.styx.config.validator.Schema.Field.list;
-import static com.hotels.styx.config.validator.Schema.Field.object;
-import static com.hotels.styx.config.validator.Schema.Field.string;
-import static com.hotels.styx.config.validator.Schema.Field.union;
+import static com.hotels.styx.config.schema.SchemaDsl.atLeastOne;
+import static com.hotels.styx.config.schema.SchemaDsl.bool;
+import static com.hotels.styx.config.schema.SchemaDsl.field;
+import static com.hotels.styx.config.schema.SchemaDsl.integer;
+import static com.hotels.styx.config.schema.SchemaDsl.list;
+import static com.hotels.styx.config.schema.SchemaDsl.object;
+import static com.hotels.styx.config.schema.SchemaDsl.optional;
+import static com.hotels.styx.config.schema.SchemaDsl.pass;
+import static com.hotels.styx.config.schema.SchemaDsl.string;
+import static com.hotels.styx.config.schema.SchemaDsl.union;
+import static com.hotels.styx.config.schema.SchemaDsl.schema;
+import static com.hotels.styx.config.validator.DocumentFormat.newDocument;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class ObjectValidatorTest {
+public class DocumentFormatTest {
     private final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
             .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(AUTO_CLOSE_SOURCE, true);
@@ -51,13 +48,15 @@ public class ObjectValidatorTest {
     public void validatesElementaryTypes() throws Exception {
 
         boolean result = newDocument()
-                .rootSchema(schema("")
-                        .field("root", object(
-                                schema()
-                                        .field("myInt", integer())
-                                        .field("myBool", bool())
-                                        .field("myString", string())
-                        )))
+                .rootSchema(
+                        schema(
+                                field("root", object(
+                                        field("myInt", integer()),
+                                        field("myBool", bool()),
+                                        field("myString", string())
+                                ))
+                        )
+                )
                 .build()
                 .validateObject(YAML_MAPPER.readTree(
                         "root: \n"
@@ -76,13 +75,14 @@ public class ObjectValidatorTest {
                         + "  age: 5\n");
 
         boolean result = newDocument()
-                .rootSchema(schema("")
-                        .field("root", object(
-                                schema("root")
-                                        .field("name", string())
-                                        .field("surname", string())
-                                        .field("age", integer())
-                        )))
+                .rootSchema(
+                        schema(
+                                field("root", object(
+                                        field("name", string()),
+                                        field("surname", string()),
+                                        field("age", integer())
+                                ))
+                        ))
                 .build()
                 .validateObject(rootObject);
         assertThat(result, is(true));
@@ -96,13 +96,13 @@ public class ObjectValidatorTest {
                         + "  age: 5\n");
 
         boolean result = newDocument()
-                .rootSchema(schema("")
-                        .field("root", object(
-                                schema("root")
-                                        .field("name", string())
-                                        .optional("favouriteFood", string())
-                                        .field("age", integer())
-                        )))
+                .rootSchema(schema(
+                        field("root", object(
+                                field("name", string()),
+                                optional("favouriteFood", string()),
+                                field("age", integer())
+                        ))
+                ))
                 .build()
                 .validateObject(rootObject);
         assertThat(result, is(true));
@@ -118,13 +118,13 @@ public class ObjectValidatorTest {
                         + "  age: 5\n");
 
         boolean result = newDocument()
-                .rootSchema(schema("")
-                        .field("root", object(
-                                schema("root")
-                                        .field("name", string())
-                                        .optional("favouriteFood", string())
-                                        .field("age", integer())
-                        )))
+                .rootSchema(schema(
+                        field("root", object(
+                                field("name", string()),
+                                optional("favouriteFood", string()),
+                                field("age", integer())
+                        ))
+                ))
                 .build()
                 .validateObject(rootObject);
         assertThat(result, is(true));
@@ -141,13 +141,13 @@ public class ObjectValidatorTest {
                         + "  xyxz: 'not supposed to be here'\n");
 
         boolean result = newDocument()
-                .rootSchema(schema("")
-                        .field("root", object(
-                                schema("foo")
-                                        .field("name", string())
-                                        .field("surname", string())
-                                        .field("age", integer())
-                        )))
+                .rootSchema(schema(
+                        field("root", object(
+                                field("name", string()),
+                                field("surname", string()),
+                                field("age", integer())
+                        ))
+                ))
                 .build()
                 .validateObject(rootObject);
         assertThat(result, is(true));
@@ -161,11 +161,11 @@ public class ObjectValidatorTest {
                         + "  myInt: 'y' \n");
 
         boolean result = newDocument()
-                .rootSchema(schema("")
-                        .field("root", object(
-                                schema("root")
-                                        .field("myInt", integer())
-                        )))
+                .rootSchema(schema(
+                        field("root", object(
+                                field("myInt", integer())
+                        ))
+                ))
                 .build()
                 .validateObject(rootObject);
         assertThat(result, is(true));
@@ -179,11 +179,11 @@ public class ObjectValidatorTest {
                         + "  myString: 5.0 \n");
 
         boolean result = newDocument()
-                .rootSchema(schema("")
-                        .field("root", object(
-                                schema("foo")
-                                        .field("myString", string())
-                        )))
+                .rootSchema(schema(
+                        field("root", object(
+                                field("myString", string())
+                        ))
+                ))
                 .build()
                 .validateObject(rootObject);
         assertThat(result, is(true));
@@ -197,11 +197,11 @@ public class ObjectValidatorTest {
                         + "  myBool: 5.0 \n");
 
         boolean result = newDocument()
-                .rootSchema(schema("")
-                        .field("root", object(
-                                schema("foo")
-                                        .field("myBool", bool())
-                        )))
+                .rootSchema(schema(
+                        field("root", object(
+                                field("myBool", bool())
+                        ))
+                ))
                 .build()
                 .validateObject(rootObject);
         assertThat(result, is(true));
@@ -218,11 +218,11 @@ public class ObjectValidatorTest {
         );
 
         boolean result = newDocument()
-                .rootSchema(schema("")
-                        .field("parent", object(
-                                schema("child")
-                                        .field("myList", list(string()))
-                        )))
+                .rootSchema(schema(
+                        field("parent", object(
+                                field("myList", list(string()))
+                        ))
+                ))
                 .build()
                 .validateObject(rootObject);
         assertThat(result, is(true));
@@ -239,11 +239,11 @@ public class ObjectValidatorTest {
         );
 
         boolean result = newDocument()
-                .rootSchema(schema("")
-                        .field("parent", object(
-                                schema("child")
-                                        .field("myList", list(integer()))
-                        )))
+                .rootSchema(schema(
+                        field("parent", object(
+                                field("myList", list(integer()))
+                        ))
+                ))
                 .build()
                 .validateObject(rootObject);
         assertThat(result, is(true));
@@ -263,14 +263,15 @@ public class ObjectValidatorTest {
 
         boolean result = newDocument()
                 .subSchema("SubObjectSchema",
-                        schema("SubObjectSchema")
-                                .field("x", integer())
-                                .field("y", integer()))
-                .rootSchema(schema("")
-                        .field("parent", object(
-                                schema("child")
-                                        .field("myList", list(object("SubObjectSchema")))
-                        )))
+                        schema(
+                                field("x", integer()),
+                                field("y", integer())
+                        ))
+                .rootSchema(schema(
+                        field("parent", object(
+                                field("myList", list(object("SubObjectSchema")))
+                        ))
+                ))
                 .build()
                 .validateObject(rootObject);
         assertThat(result, is(true));
@@ -289,14 +290,15 @@ public class ObjectValidatorTest {
 
         boolean result = newDocument()
                 .subSchema("SubObjectSchema",
-                        schema("SubObjectSchema")
-                                .field("x", integer())
-                                .field("y", integer()))
-                .rootSchema(schema("")
-                        .field("parent", object(
-                                schema("child")
-                                        .field("myList", list(object("SubObjectSchema")))
-                        )))
+                        schema(
+                                field("x", integer()),
+                                field("y", integer())
+                        ))
+                .rootSchema(schema(
+                        field("parent", object(
+                                field("myList", list(object("SubObjectSchema")))
+                        ))
+                ))
                 .build()
                 .validateObject(rootObject);
         assertThat(result, is(true));
@@ -304,21 +306,20 @@ public class ObjectValidatorTest {
 
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.myChild' should be OBJECT \\('child'\\), but it is INTEGER")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.myChild' should be OBJECT \\('age'\\), but it is INTEGER")
     public void checksSubObjectFieldTypes() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(
                 "parent: \n"
                         + "  myChild: 5.0 \n");
 
         boolean result = newDocument()
-                .rootSchema(schema("")
-                        .field("parent", object(
-                                schema("child")
-                                        .field("myChild", object(
-                                                schema("child")
-                                                        .field("age", integer())
-                                        ))
-                        )))
+                .rootSchema(schema(
+                        field("parent", object(
+                                field("myChild", object(
+                                        field("age", integer())
+                                ))
+                        ))
+                ))
                 .build()
                 .validateObject(rootObject);
         assertThat(result, is(true));
@@ -336,14 +337,14 @@ public class ObjectValidatorTest {
                 .get("person");
 
         boolean result = newDocument()
-                .rootSchema(schema("person")
-                        .field("id", string())
-                        .field("details", object(
-                                schema("personalDetails")
-                                        .field("name", string())
-                                        .field("surname", string())
-                                        .field("age", integer())
-                        )))
+                .rootSchema(schema(
+                        field("id", string()),
+                        field("details", object(
+                                field("name", string()),
+                                field("surname", string()),
+                                field("age", integer())
+                        ))
+                ))
                 .build()
                 .validateObject(rootObject);
         assertThat(result, is(true));
@@ -358,17 +359,18 @@ public class ObjectValidatorTest {
                         + "plugins:\n"
                         + "  all: 'x, y z'\n");
 
-        ObjectValidator validator = newDocument()
-                .subSchema("HttpPipeline", schema()
-                        .field("pipeline", string())
-                        .field("handler", string())
-                )
-                .subSchema("PluginsList", schema()
-                        .field("all", string())
-                )
-                .rootSchema(schema("")
-                        .field("httpPipeline", object("HttpPipeline"))
-                        .field("plugins", object("PluginsList")))
+        DocumentFormat validator = newDocument()
+                .subSchema("HttpPipeline", schema(
+                        field("pipeline", string()),
+                        field("handler", string())
+                ))
+                .subSchema("PluginsList", schema(
+                        field("all", string())
+                ))
+                .rootSchema(schema(
+                        field("httpPipeline", object("HttpPipeline")),
+                        field("plugins", object("PluginsList"))
+                ))
                 .build();
 
         assertThat(validator.validateObject(rootObject), is(true));
@@ -378,12 +380,11 @@ public class ObjectValidatorTest {
             expectedExceptionsMessageRegExp = "No schema configured for lazy object reference 'notExists'")
     public void documentBuilderEnsuresNamedSchemaReferences() throws Exception {
         newDocument()
-                .subSchema("PluginsList", schema()
-                        .field("all", string())
-                )
-                .rootSchema(schema("")
-                        .field("httpPipeline", object("notExists"))
-                        .field("plugins", object("PluginsList")))
+                .subSchema("PluginsList", schema(field("all", string())))
+                .rootSchema(schema(
+                        field("httpPipeline", object("notExists")),
+                        field("plugins", object("PluginsList"))
+                ))
                 .build();
     }
 
@@ -391,14 +392,13 @@ public class ObjectValidatorTest {
             expectedExceptionsMessageRegExp = "No schema configured for lazy object reference 'notExists'")
     public void documentBuilderEnsuresNamedSchemaReferencesAreValidFromSubobjects() throws Exception {
         newDocument()
-                .subSchema("PluginsList", schema()
-                        .field("all", string()))
-                .rootSchema(schema("")
-                        .field("parent", object(
-                                schema("subobject")
-                                        .field("httpPipeline", object("notExists"))
-                        ))
-                        .field("plugins", object("PluginsList")))
+                .subSchema("PluginsList", schema(field("all", string())))
+                .rootSchema(schema(
+                        field("parent", object(
+                                field("httpPipeline", object("notExists"))
+                        )),
+                        field("plugins", object("PluginsList"))
+                ))
                 .build();
     }
 
@@ -406,36 +406,36 @@ public class ObjectValidatorTest {
             expectedExceptionsMessageRegExp = "No schema configured for lazy object reference 'non-existing-HandlerConfig'")
     public void documentBuilderEnsuresNamedSchemaReferencesAreValidFromSubSchemas() throws Exception {
         newDocument()
-                .subSchema("HttpPipeline", schema()
-                        .field("handlers", object("non-existing-HandlerConfig"))
-
-                )
-                .subSchema("PluginsList", schema()
-                        .field("all", string())
-                )
-                .rootSchema(schema("")
-                        .field("plugins", object("PluginsList"))
-                        .field("httpPipeline", object("HttpPipeline")))
+                .subSchema("HttpPipeline", schema(
+                        field("handlers", object("non-existing-HandlerConfig"))
+                ))
+                .subSchema("PluginsList", schema(field("all", string())
+                ))
+                .rootSchema(schema(
+                        field("plugins", object("PluginsList")),
+                        field("httpPipeline", object("HttpPipeline"))
+                ))
                 .build();
     }
 
     @Test
     public void validatesDiscriminatedUnions() throws Exception {
 
-        ObjectValidator validator = newDocument()
-                .subSchema("ProxyTo", schema()
-                        .field("id", string())
-                        .field("destination", string())
-                )
-                .subSchema("Redirection", schema()
-                        .field("status", integer())
-                        .field("location", string())
-                )
-                .rootSchema(schema("")
-                        .field("httpPipeline", object(schema()
-                                .field("type", string())
-                                .field("config", union("type"))
-                        )))
+        DocumentFormat validator = newDocument()
+                .subSchema("ProxyTo", schema(
+                        field("id", string()),
+                        field("destination", string())
+                ))
+                .subSchema("Redirection", schema(
+                        field("status", integer()),
+                        field("location", string())
+                ))
+                .rootSchema(schema(
+                        field("httpPipeline", object(
+                                field("type", string()),
+                                field("config", union("type"))
+                        ))
+                ))
                 .build();
 
 
@@ -470,11 +470,12 @@ public class ObjectValidatorTest {
                         + "    y: 6\n"
         );
 
-        ObjectValidator validator = newDocument()
-                .rootSchema(schema()
-                        .field("parent", object(schema()
-                                .field("pass", object(pass()))
-                        )))
+        DocumentFormat validator = newDocument()
+                .rootSchema(schema(
+                        field("parent", object(
+                                field("pass", object(pass()))
+                        ))
+                ))
                 .build();
 
         boolean outcome = validator.validateObject(node2);
@@ -506,28 +507,20 @@ public class ObjectValidatorTest {
                         + "  x: 8080\n"
         );
 
-        ObjectValidator validator = newDocument()
-                .rootSchema(schema()
-                        .field("connectors", object(schema()
-                                .optional("x", integer())
-                                .atLeastOne(
-                                        field("http", integer()),
-                                        field("https", integer())
-                                )
-                        )))
-                .build();
-
+        DocumentFormat validator = newDocument()
+                .rootSchema(schema(
+                        field("connectors", object(
+                                optional("x", integer()),
+                                optional("http", integer()),
+                                optional("https", integer()),
+                                atLeastOne("http", "https")
+                        ))))
+                .build()
+                ;
 
         assertThat(validator.validateObject(first), is(true));
         assertThat(validator.validateObject(second), is(true));
         assertThat(validator.validateObject(both), is(true));
         validator.validateObject(neither);
-    }
-
-    private JsonNode yamlFrom(Resource resource) throws IOException {
-        List<String> lines = Files.readAllLines(Paths.get(resource.absolutePath()));
-        String yaml = Joiners.JOINER_ON_NEW_LINE.join(lines);
-
-        return YAML_MAPPER.readTree(yaml);
     }
 }

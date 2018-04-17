@@ -13,13 +13,17 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.config.validator;
+package com.hotels.styx.config.schema;
 
 /**
- * Thrown during yaml/json object validation to indicate a non-conforming object.
+ * Thrown during schema object construction to indicate an inconsistent schema.
+ *
+ * May be thrown when the schema object is being built to indicate an internal inconsistency
+ * within a schema object. Such inconsistency may be a named reference to a non-existing schema,
+ * duplicate field names, and so on.
  */
-public class SchemaValidationException extends RuntimeException {
-    public SchemaValidationException(String message) {
+public class InvalidSchemaException extends RuntimeException {
+    public InvalidSchemaException(String message) {
         super(message);
     }
 }

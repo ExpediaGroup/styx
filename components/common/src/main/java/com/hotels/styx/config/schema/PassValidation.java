@@ -13,17 +13,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.config.validator;
+package com.hotels.styx.config.schema;
 
 /**
- * Thrown during schema object construction to indicate an inconsistent schema.
- *
- * May be thrown when the schema object is being built to indicate an internal inconsistency
- * within a schema object. Such inconsistency may be a named reference to a non-existing schema,
- * duplicate field names, and so on.
+ * A directive that marks the object as opaque.
  */
-public class InvalidSchemaException extends RuntimeException {
-    public InvalidSchemaException(String message) {
-        super(message);
-    }
+class PassValidation implements SchemaElement {
 }

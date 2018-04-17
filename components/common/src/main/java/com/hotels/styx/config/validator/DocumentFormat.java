@@ -20,6 +20,9 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.hotels.styx.config.schema.InvalidSchemaException;
+import com.hotels.styx.config.schema.Schema;
+import com.hotels.styx.config.schema.SchemaValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,37 +36,23 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Object validator provides an end-user interface for the schema based object validation.
- *
- * An ObjectValidator instance is created with a call to `newDocument`. This returns an
+ * <p>
+ * An DocumentFormat instance is created with a call to `newDocument`. This returns an
  * a builder object that is used to customise the validator. Specifically to:
- *
+ * <p>
  * - add named sub-schemas that can be referred to from other schema objects.
- *
+ * <p>
  * - to specify a `root schema` that declares the layout of the top level configuration object.
- *
- *
  */
-public class ObjectValidator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ObjectValidator.class);
+public class DocumentFormat {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DocumentFormat.class);
 
     private final Schema rootSchema;
     private final Map<String, Schema> schemas;
 
-    private ObjectValidator(Builder builder) {
+    private DocumentFormat(Builder builder) {
         this.rootSchema = builder.schema;
         this.schemas = ImmutableMap.copyOf(builder.schemas);
-    }
-
-    public static Schema.Builder schema(String name) {
-        return new Schema.Builder(name);
-    }
-
-    public static Schema.Builder schema() {
-        return schema("");
-    }
-
-    public static Schema.Builder pass() {
-        return new Schema.Builder("").pass(true);
     }
 
     public boolean validateObject(JsonNode tree) {
@@ -88,9 +77,8 @@ public class ObjectValidator {
         if (fieldValue instanceof Schema.ObjectField) {
             Schema.ObjectField configField = (Schema.ObjectField) fieldValue;
             validateObject(prefix + name + ".", configField.schema(), tree.get(name));
-        }
 
-        if (fieldValue instanceof Schema.ObjectFieldLazy) {
+        } else if (fieldValue instanceof Schema.ObjectFieldLazy) {
             Schema.ObjectFieldLazy configField = (Schema.ObjectFieldLazy) fieldValue;
             Schema subSchema = schemas.get(configField.schemaName());
 
@@ -98,9 +86,8 @@ public class ObjectValidator {
                     new Object[]{name, subSchema.name()});
 
             validateObject(prefix + name + ".", subSchema, tree.get(name));
-        }
 
-        if (fieldValue instanceof Schema.DiscriminatedUnionObject) {
+        } else if (fieldValue instanceof Schema.DiscriminatedUnionObject) {
             Schema.DiscriminatedUnionObject unionField = (Schema.DiscriminatedUnionObject) fieldValue;
 
             String discriminatorField = unionField.discriminatorFieldName();
@@ -112,9 +99,8 @@ public class ObjectValidator {
                     new Object[]{name, discriminatorField, subObjectType, subObjectSchema.name()});
 
             validateObject(prefix + name + ".", subObjectSchema, tree.get(name));
-        }
 
-        if (fieldValue instanceof Schema.ListField) {
+        } else if (fieldValue instanceof Schema.ListField) {
             Schema.ListField listField = (Schema.ListField) fieldValue;
 
             // ALT1: Check that all elements are of desirede (elementary) type
@@ -145,29 +131,31 @@ public class ObjectValidator {
 
         LOGGER.info("validate object('{}', schema='{}')", prefix, schema.name());
 
-        if (schema.isPass()) {
+        if (schema.ignore()) {
             return;
         }
 
         List<String> fieldNames = ImmutableList.copyOf(tree.fieldNames());
 
-        assertNoUnknownFields(prefix, schema, fieldNames);
+        for (Schema.Field field : schema.fields()) {
+            Schema.Field namedField = (Schema.Field) field;
+
+            if (isMandatory(schema, namedField) && tree.get(namedField.name()) == null) {
+                throw new SchemaValidationException(format("Missing a mandatory field '%s'", prefix + namedField.name()));
+            }
+
+            if (tree.get(namedField.name()) != null) {
+                validateField(prefix, namedField, tree);
+            }
+        }
 
         schema.constraints().forEach(constraint -> {
             if (!constraint.evaluate(schema, tree)) {
-                throw new SchemaValidationException("Schema constraint failed. " + constraint.message());
+                throw new SchemaValidationException("Schema constraint failed. " + constraint.describe());
             }
         });
 
-        schema.fields().forEach(field -> {
-            if (isMandatory(schema, field) && tree.get(field.name()) == null) {
-                throw new SchemaValidationException(format("Missing a mandatory field '%s'", prefix + field.name()));
-            }
-
-            if (tree.get(field.name()) != null) {
-                validateField(prefix, field, tree);
-            }
-        });
+        assertNoUnknownFields(prefix, schema, fieldNames);
     }
 
     private boolean isMandatory(Schema schema, Schema.Field field) {
@@ -258,21 +246,21 @@ public class ObjectValidator {
         public Builder() {
         }
 
-        public Builder subSchema(String name, Schema.Builder schema) {
-            this.schemas.put(requireNonNull(name), requireNonNull(schema.name(name).build()));
+        public Builder subSchema(String name, Schema schema) {
+            this.schemas.put(requireNonNull(name), requireNonNull(schema.newBuilder().name(name).build()));
             return this;
         }
 
-        public Builder rootSchema(Schema.Builder schema) {
-            this.schema = requireNonNull(schema.build());
+        public Builder rootSchema(Schema schema) {
+            this.schema = requireNonNull(schema);
             return this;
         }
 
-        public ObjectValidator build() {
+        public DocumentFormat build() {
             assertRootSchemaExists(schema);
             assertSchemaReferences(schema);
             schemas.values().forEach(this::assertSchemaReferences);
-            return new ObjectValidator(this);
+            return new DocumentFormat(this);
         }
 
         private static void assertRootSchemaExists(Schema schema) {
@@ -283,20 +271,18 @@ public class ObjectValidator {
 
         private void assertSchemaReferences(Schema schema) {
             schema.fields().forEach(field -> {
-                if (field.value() instanceof Schema.ObjectFieldLazy) {
-                    Schema.ObjectFieldLazy objectField = (Schema.ObjectFieldLazy) field.value();
-                    if (!schemas.containsKey(objectField.schemaName())) {
-                        throw new InvalidSchemaException(format("No schema configured for lazy object reference '%s'", objectField.schemaName()));
+                    if (field.value() instanceof Schema.ObjectFieldLazy) {
+                        Schema.ObjectFieldLazy objectField = (Schema.ObjectFieldLazy) field.value();
+                        if (!schemas.containsKey(objectField.schemaName())) {
+                            throw new InvalidSchemaException(format("No schema configured for lazy object reference '%s'", objectField.schemaName()));
+                        }
                     }
-                }
-                if (field.value() instanceof Schema.ObjectField) {
-                    Schema.ObjectField objectField = (Schema.ObjectField) field.value();
-                    assertSchemaReferences(objectField.schema());
-                }
+                    if (field.value() instanceof Schema.ObjectField) {
+                        Schema.ObjectField objectField = (Schema.ObjectField) field.value();
+                        assertSchemaReferences(objectField.schema());
+                    }
             });
         }
-
     }
-
 
 }

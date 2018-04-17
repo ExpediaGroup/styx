@@ -13,11 +13,17 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.config.validator;
+package com.hotels.styx.config.schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-interface Constraint {
+/**
+ * An additional requirement, or constraint, for the JSON document.
+ *
+ * A constraint could describe a particular relationship between object's
+ * fields.
+ */
+public interface Constraint extends SchemaElement {
     /**
      * Evaluates a constraint associated with `schema` against the JSON `node`
      *
@@ -30,5 +36,10 @@ interface Constraint {
      * @return
      */
     boolean evaluate(Schema schema, JsonNode node);
-    String message();
+
+    /**
+     * An informational description of the constraint.
+     * @return
+     */
+    String describe();
 }
