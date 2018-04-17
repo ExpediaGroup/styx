@@ -29,10 +29,9 @@ import java.util.List;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.config.validator.ObjectValidator.newDocument;
-import static com.hotels.styx.config.validator.ObjectValidator.schema;
 import static com.hotels.styx.config.validator.ObjectValidator.pass;
+import static com.hotels.styx.config.validator.ObjectValidator.schema;
 import static com.hotels.styx.config.validator.Schema.Field.bool;
 import static com.hotels.styx.config.validator.Schema.Field.field;
 import static com.hotels.styx.config.validator.Schema.Field.integer;
@@ -422,81 +421,44 @@ public class ObjectValidatorTest {
 
     @Test
     public void validatesDiscriminatedUnions() throws Exception {
-        JsonNode node2 = YAML_MAPPER.readTree(
-                "httpPipeline: \n"
-                        + "  name: 'myPipeline'\n"
-                        + "  type: 'ConditionRouter'\n"
-                        + "  config:\n"
-                        + "    route:\n"
-                        + "      condition: 'protocol() == https'\n"
-                        + "      destination: \n"
-                        + "        name: https-backend\n"
-                        + "        type: ProxyToBackend\n"
-                        + "        config:\n"
-                        + "          backend:\n"
-                        + "            id: '01'\n"
-                        + "            connectionPool:\n"
-                        + "              maxConnectionsPerHost:        1\n"
-                        + "              maxPendingConnectionsPerHost: 4\n"
-                        + "    fallback:\n"
-                        + "      name: fallback-backend\n"
-                        + "      type: ProxyToBackend\n"
-                        + "      config:\n"
-                        + "        backend:\n"
-                        + "          id: 'app-01'\n"
-                        + "          connectionPool:\n"
-                        + "            maxConnectionsPerHost:        3\n"
-                        + "            maxPendingConnectionsPerHost: 4\n"
-        );
 
         ObjectValidator validator = newDocument()
-                .subSchema("RoutingObject", schema()
-                        .field("name", string())
-                        .field("type", string())
-                        .field("config", union("type"))
+                .subSchema("ProxyTo", schema()
+                        .field("id", string())
+                        .field("destination", string())
                 )
-                .subSchema("ConnectionPool", schema()
-                        .field("maxConnectionsPerHost", integer())
-                        .field("maxPendingConnectionsPerHost", integer())
-                )
-                .subSchema("ProxyToBackend", schema()
-                        .field("backend", object(
-                                schema("")
-                                        .field("id", string())
-                                        .field("connectionPool", object("ConnectionPool"))
-                        ))
-                )
-                .subSchema("ConditionDestination", schema()
-                        .field("condition", string())
-                        .field("destination", object("RoutingObject"))
-                )
-                .subSchema("ConditionRouter", schema()
-                        .field("route", object("ConditionDestination"))
-                        .field("fallback", object("RoutingObject"))
+                .subSchema("Redirection", schema()
+                        .field("status", integer())
+                        .field("location", string())
                 )
                 .rootSchema(schema("")
-                        .field("httpPipeline", object("RoutingObject")))
+                        .field("httpPipeline", object(schema()
+                                .field("type", string())
+                                .field("config", union("type"))
+                        )))
                 .build();
 
 
-        boolean outcome2 = validator.validateObject(node2);
+        boolean outcome1 = validator.validateObject(
+                YAML_MAPPER.readTree(
+                        "httpPipeline: \n"
+                                + "  type: 'ProxyTo'\n"
+                                + "  config:\n"
+                                + "    id: 'local-01'\n"
+                                + "    destination: 'localhost:8080'\n"
+                ));
+        assertThat(outcome1, is(true));
+
+        boolean outcome2 = validator.validateObject(
+                YAML_MAPPER.readTree(
+                        "httpPipeline: \n"
+                                + "  type: 'Redirection'\n"
+                                + "  config:\n"
+                                + "    status: 301\n"
+                                + "    location: /new/location\n"
+                ));
         assertThat(outcome2, is(true));
 
-
-        JsonNode node = YAML_MAPPER.readTree(
-                "httpPipeline: \n"
-                        + "  name: 'myPipeline'\n"
-                        + "  type: 'ProxyToBackend'\n"
-                        + "  config:\n"
-                        + "    backend:\n"
-                        + "      id: 'app-01'\n"
-                        + "      connectionPool:\n"
-                        + "        maxConnectionsPerHost:        5\n"
-                        + "        maxPendingConnectionsPerHost: 5\n"
-        );
-
-        boolean outcome = validator.validateObject(node);
-        assertThat(outcome, is(true));
     }
 
     @Test
@@ -567,89 +529,5 @@ public class ObjectValidatorTest {
         String yaml = Joiners.JOINER_ON_NEW_LINE.join(lines);
 
         return YAML_MAPPER.readTree(yaml);
-    }
-
-    @Test
-    public void styxConfigurationSchema() throws IOException {
-        JsonNode jsonNode = yamlFrom(newResource("classpath:/validator/default.yml"));
-
-        ObjectValidator validator = newDocument()
-                .subSchema("HttpConnectorConfig", schema()
-                        .field("port", integer())
-                )
-                .subSchema("HttpsConnectorConfig", schema()
-                        .field("port", integer())
-                        .field("sslProvider", string())
-                        .field("certificateFile", string())
-                        .field("certificateKeyFile", string())
-                        .field("sessionTimeoutMillis", integer())
-                        .field("sessionCacheSize", integer())
-                )
-                .subSchema("ServerConnectors", schema()
-                        .atLeastOne(
-                                field("http", object("HttpConnectorConfig")),
-                                field("https", object("HttpsConnectorConfig"))
-                        )
-                )
-                .subSchema("ProxyConnectorConfig", schema()
-                        .field("connectors", object("ServerConnectors"))
-                        .field("bossThreadsCount", integer())
-                        .field("clientWorkerThreadsCount", integer())
-                        .field("workerThreadsCount", integer())
-                        .field("tcpNoDelay", bool())
-                        .field("nioReuseAddress", bool())
-                        .field("nioKeepAlive", bool())
-                        .field("maxInitialLength", integer())
-                        .field("maxHeaderSize", integer())
-                        .field("maxChunkSize", integer())
-                        .field("maxContentLength", integer())
-                        .field("requestTimeoutMillis", integer())
-                        .field("keepAliveTimeoutMillis", integer())
-                        .field("maxConnectionsCount", integer())
-                )
-                .subSchema("AdminConnectorConfig", schema()
-                        .field("connectors", object("ServerConnectors"))
-                        .field("bossThreadsCount", integer())
-                        .field("workerThreadsCount", integer())
-                        .field("tcpNoDelay", bool())
-                        .field("nioReuseAddress", bool())
-                        .field("nioKeepAlive", bool())
-                        .field("maxInitialLength", integer())
-                        .field("maxHeaderSize", integer())
-                        .field("maxChunkSize", integer())
-                        .field("maxContentLength", integer())
-                        .field("metricsCache", object(schema()
-                                .field("enabled", bool())
-                                .field("expirationMillis", integer())
-                        ))
-                )
-                .rootSchema(schema("")
-                        .field("jvmRouteName", string())
-                        .field("proxy", object("ProxyConnectorConfig"))
-                        .field("admin", object("AdminConnectorConfig"))
-                        .field("services", object(pass()))
-                        .field("retrypolicy", object(schema()
-                                .field("policy", object(schema()
-                                        .field("factory", object(schema()
-                                                .field("class", string())
-                                                .field("config", object(schema()
-                                                        .field("count", integer())
-                                                ))
-                                        ))
-
-                                ))
-                        ))
-                        .field("loadBalancing", object(
-                                pass()
-                        ))
-                        .field("url", object(schema()
-                                .field("encoding", object(schema()
-                                        .field("unwiseCharactersToEncode", string())
-                                ))
-                        )))
-                .build();
-
-        boolean outcome = validator.validateObject(jsonNode);
-        assertThat(outcome, is(true));
     }
 }

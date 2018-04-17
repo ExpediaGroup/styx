@@ -29,20 +29,19 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.lang.String.format;
-import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.requireNonNull;
 
 /**
  * Object validator provides an end-user interface for the schema based object validation.
  *
  * An ObjectValidator instance is created with a call to `newDocument`. This returns an
- * a builder object that is used to customise the validator. Namely to
+ * a builder object that is used to customise the validator. Specifically to:
  *
- * - add named sub schemas that can be referred to from other schema objects.
+ * - add named sub-schemas that can be referred to from other schema objects.
  *
  * - to specify a `root schema` that declares the layout of the top level configuration object.
  *
- * *
+ *
  */
 public class ObjectValidator {
     private static final Logger LOGGER = LoggerFactory.getLogger(ObjectValidator.class);
@@ -52,7 +51,7 @@ public class ObjectValidator {
 
     private ObjectValidator(Builder builder) {
         this.rootSchema = builder.schema;
-        this.schemas = unmodifiableMap(builder.schemas);
+        this.schemas = ImmutableMap.copyOf(builder.schemas);
     }
 
     public static Schema.Builder schema(String name) {
@@ -60,7 +59,7 @@ public class ObjectValidator {
     }
 
     public static Schema.Builder schema() {
-        return new Schema.Builder("");
+        return schema("");
     }
 
     public static Schema.Builder pass() {

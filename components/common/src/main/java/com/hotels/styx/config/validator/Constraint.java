@@ -18,6 +18,17 @@ package com.hotels.styx.config.validator;
 import com.fasterxml.jackson.databind.JsonNode;
 
 interface Constraint {
+    /**
+     * Evaluates a constraint associated with `schema` against the JSON `node`
+     *
+     * A constraint specifies a rule which the parsed Json/Yaml object must
+     * satisfy in order to be considered conformant. An example rule might be
+     * "At least one of (a, b, c) fields must be present."
+     *
+     * @param schema Json object schema
+     * @param node   Parsed JSON object
+     * @return
+     */
     boolean evaluate(Schema schema, JsonNode node);
     String message();
 }

@@ -42,7 +42,7 @@ class ServerConfigSchema {
     private static final String STYX_HEADERS_CONFIG = "StyxHeadersConfig";
 
     private static final String URL_ENCODING_CONFIG = "UrlEncodingConfig";
-    private static ObjectValidator validator = newDocument()
+    private static final ObjectValidator validator = newDocument()
             .subSchema(HTTP_CONNECTOR, schema()
                     .field("port", integer())
             )

@@ -37,20 +37,25 @@ public final class Constraints {
      * A constraint to ensure at least one of many specified must be present in the validated object.
      */
     public static class AtLeastOneFieldPresenceConstraint implements Constraint {
-        private Set<String> fieldNames;
+        private final Set<String> fieldNames;
+        private final String displayNames;
 
         public AtLeastOneFieldPresenceConstraint(Schema.Field... fields) {
             this.fieldNames = ImmutableList.copyOf(fields)
                     .stream()
                     .map(Schema.Field::name)
                     .collect(toSet());
+            this.displayNames = Joiner.on(", ").join(
+                    fieldNames.stream()
+                            .map(name -> format("'%s'", name))
+                            .collect(toList()));
         }
 
         @Override
         public boolean evaluate(Schema schema, JsonNode node) {
             long fieldsPresent = ImmutableList.copyOf(node.fieldNames())
                     .stream()
-                    .filter(name -> fieldNames.contains(name))
+                    .filter(fieldNames::contains)
                     .count();
 
             return fieldsPresent >= 1;
@@ -58,10 +63,6 @@ public final class Constraints {
 
         @Override
         public String message() {
-            String displayNames = Joiner.on(", ").join(
-                    fieldNames.stream()
-                            .map(name -> format("'%s'", name))
-                            .collect(toList()));
             return format("At least one of (%s) must be present.", displayNames);
         }
     }

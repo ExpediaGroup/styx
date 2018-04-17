@@ -420,8 +420,7 @@ public class Schema {
         }
 
         public Builder() {
-            this.fields = new ArrayList<>();
-            this.name = "";
+            this("");
         }
 
         public Builder name(String name) {
