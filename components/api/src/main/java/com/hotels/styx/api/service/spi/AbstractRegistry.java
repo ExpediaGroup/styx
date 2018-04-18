@@ -49,10 +49,19 @@ public abstract class AbstractRegistry<T extends Identifiable> implements Regist
     private final AtomicReference<Iterable<T>> snapshot = new AtomicReference<>(emptyList());
     private final Predicate<Collection<T>> resourceConstraint;
 
+    /**
+     * Constructs an abstract registry with no resource constraint.
+     */
     public AbstractRegistry() {
         this(any -> true);
     }
 
+    /**
+     * Constructs an abstract registry that will not allow resources to be set if they do not
+     * satisfy a particular constraint.
+     *
+     * @param resourceConstraint a constraint to be satisfied
+     */
     public AbstractRegistry(Predicate<Collection<T>> resourceConstraint) {
         this.resourceConstraint = requireNonNull(resourceConstraint);
     }
@@ -74,7 +83,13 @@ public abstract class AbstractRegistry<T extends Identifiable> implements Regist
         return this;
     }
 
-    public void set(Iterable<T> newObjects) {
+    /**
+     * Sets the contents of this registry to the supplied resources.
+     *
+     * @param newObjects new contents
+     * @throws IllegalStateException if the resource constraint is not satisfied
+     */
+    public void set(Iterable<T> newObjects) throws IllegalStateException {
         ImmutableList<T> newSnapshot = ImmutableList.copyOf(newObjects);
 
         checkState(resourceConstraint.test(newSnapshot));
