@@ -33,7 +33,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.hash.HashCode.fromLong;
 import static com.google.common.hash.Hashing.md5;
@@ -58,14 +57,13 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     private final Resource configurationFile;
     private final Reader<T> reader;
     private final Supplier<FileTime> modifyTimeSupplier;
-    private final Predicate<Collection<T>> resourceConstraint;
     private HashCode fileHash = fromLong(0);
 
     private FileBackedRegistry(Resource configurationFile, Reader<T> reader, Supplier<FileTime> modifyTimeSupplier, Predicate<Collection<T>> resourceConstraint) {
+        super(resourceConstraint);
         this.configurationFile = requireNonNull(configurationFile);
         this.reader = checkNotNull(reader);
         this.modifyTimeSupplier = modifyTimeSupplier;
-        this.resourceConstraint = requireNonNull(resourceConstraint);
     }
 
     @VisibleForTesting
@@ -131,12 +129,10 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     }
 
     private boolean updateResources(byte[] content, HashCode hashCode) {
-        Collection<T> resources = reader.read(content);
+        Iterable<T> resources = reader.read(content);
         Changes<T> changes = changes(resources, get());
 
         if (!changes.isEmpty()) {
-            checkState(resourceConstraint.test(resources));
-
             set(resources);
         }
 
@@ -158,6 +154,6 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
      * @param <T>
      */
     public interface Reader<T> {
-        Collection<T> read(byte[] content);
+        Iterable<T> read(byte[] content);
     }
 }

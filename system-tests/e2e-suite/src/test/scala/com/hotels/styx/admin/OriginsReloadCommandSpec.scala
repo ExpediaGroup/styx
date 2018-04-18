@@ -48,8 +48,6 @@ class OriginsReloadCommandSpec extends FunSpec
     val fileBasedBackendsRegistry = FileBackedBackendServicesRegistry.create(styxOriginsFile.toString)
     styxServer = StyxConfig().startServer(fileBasedBackendsRegistry)
 
-    styxServer.isRunning should be(true)
-
     Files.copy(originsNok, styxOriginsFile, REPLACE_EXISTING)
 
     val resp = decodedRequest(post(styxServer.adminURL("/admin/tasks/origins/reload")).build())

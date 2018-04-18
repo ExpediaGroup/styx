@@ -106,10 +106,6 @@ public final class BackendServices implements Iterable<BackendService> {
                 .collect(toList());
     }
 
-    public Collection<BackendService> collection() {
-        return backendServices;
-    }
-
     @JsonProperty("applications")
     Collection<BackendService> applications() {
         return backendServices;

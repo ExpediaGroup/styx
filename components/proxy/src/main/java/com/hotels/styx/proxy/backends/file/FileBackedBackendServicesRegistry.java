@@ -182,9 +182,9 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         private final YamlReader<List<BackendService>> delegate = new YamlReader<>();
 
         @Override
-        public Collection<BackendService> read(byte[] content) {
+        public Iterable<BackendService> read(byte[] content) {
             try {
-                return readBackendServices(content).collection();
+                return readBackendServices(content);
             } catch (Exception e) {
                 throw propagate(e);
             }
