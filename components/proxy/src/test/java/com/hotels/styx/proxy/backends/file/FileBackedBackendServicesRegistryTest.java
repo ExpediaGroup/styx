@@ -368,6 +368,40 @@ public class FileBackedBackendServicesRegistryTest {
         assertThat(result.outcome(), is(FAILED));
     }
 
+    @Test
+    public void duplicatePathPrefixesCausesStartUpFailure() throws InterruptedException, TimeoutException, IOException {
+        String configWithDupe = "" +
+                "---\n" +
+                "- id: \"first\"\n" +
+                "  path: \"/testpath/\"\n" +
+                "  origins:\n" +
+                "  - id: \"l1\"\n" +
+                "    host: \"localhost:60000\"\n" +
+                "- id: \"second\"\n" +
+                "  path: \"/testpath/\"\n" +
+                "  origins:\n" +
+                "  - id: \"l2\"\n" +
+                "    host: \"localhost:60001\"";
+
+        Resource stubResource = mock(Resource.class);
+        when(stubResource.inputStream()).thenReturn(toInputStream(configWithDupe));
+
+        FileBackedBackendServicesRegistry registry = new FileBackedBackendServicesRegistry(stubResource, FileMonitor.DISABLED);
+
+        CompletableFuture<Void> status = registry.start();
+
+        assertThat(failureCause(status), is(instanceOf(ServiceFailureException.class)));
+    }
+
+    private static Throwable failureCause(CompletableFuture<?> future) throws TimeoutException, InterruptedException {
+        try {
+            future.get(1, SECONDS);
+            throw new IllegalStateException("Expected failure not present");
+        } catch (ExecutionException e) {
+            return e.getCause();
+        }
+    }
+
     private static InputStream toInputStream(String string) {
         return new ByteArrayInputStream(string.getBytes(UTF_8));
     }
