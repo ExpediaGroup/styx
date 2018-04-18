@@ -21,6 +21,7 @@ import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.api.service.spi.StyxService;
+import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.server.HttpServer;
@@ -75,6 +76,8 @@ public final class StyxServer extends AbstractService {
             getRuntime().addShutdownHook(new Thread(() -> styxServer.stopAsync().awaitTerminated()));
 
             styxServer.startAsync().awaitRunning();
+        } catch (SchemaValidationException cause) {
+            System.exit(2);
         } catch (Throwable cause) {
             LOG.error("Error in Styx server startup.", cause);
             System.exit(1);
@@ -82,42 +85,40 @@ public final class StyxServer extends AbstractService {
     }
 
     private static StyxServer createStyxServer(String[] args) {
-        try {
-            StartupConfig startupConfig = parseStartupConfig(args);
+        StartupConfig startupConfig = parseStartupConfig(args);
 
-            LOG.info("Styx home={}", startupConfig.styxHome());
-            LOG.info("Styx configFileLocation={}", startupConfig.configFileLocation());
-            LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
+        LOG.info("Styx home={}", startupConfig.styxHome());
+        LOG.info("Styx configFileLocation={}", startupConfig.configFileLocation());
+        LOG.info("Styx logConfigLocation={}", startupConfig.logConfigLocation());
 
-            YamlConfiguration yamlConfiguration = new ConfigurationParser.Builder<YamlConfiguration>()
-                    .format(YAML)
-                    .overrides(System.getProperties())
-                    .build()
-                    .parse(configSource(startupConfig.configFileLocation()));
+        YamlConfiguration yamlConfiguration = new ConfigurationParser.Builder<YamlConfiguration>()
+                .format(YAML)
+                .overrides(System.getProperties())
+                .build()
+                .parse(configSource(startupConfig.configFileLocation()));
 
-            if (skipServerConfigValidation()) {
-                LOG.warn("Server configuration validation disabled. The Styx server configuration will not be validated.");
-            } else {
-                validateServerConfiguration(yamlConfiguration)
-                        .ifPresent(message -> {
-                            LOG.info("Styx server failed to start due to configuration error.");
-                            LOG.info("The configuration was sourced from " + startupConfig.configFileLocation());
-                            LOG.info(message);
-                            System.exit(-1);
-                        });
-                LOG.info("Configuration validated successfully.");
-            }
+        validateConfiguration(startupConfig, yamlConfiguration);
 
-            StyxServerComponents components = new StyxServerComponents.Builder()
-                    .styxConfig(new StyxConfig(startupConfig, yamlConfiguration))
-                    .loggingSetUp(FROM_CONFIG)
-                    .build();
+        StyxServerComponents components = new StyxServerComponents.Builder()
+                .styxConfig(new StyxConfig(startupConfig, yamlConfiguration))
+                .loggingSetUp(FROM_CONFIG)
+                .build();
 
-            return new StyxServer(components);
+        return new StyxServer(components);
+    }
 
-        } catch (Throwable cause) {
-            LOG.error("Error in Styx instance creation.", cause);
-            throw cause;
+    private static void validateConfiguration(StartupConfig startupConfig, YamlConfiguration yamlConfiguration) {
+        if (skipServerConfigValidation()) {
+            LOG.warn("Server configuration validation disabled. The Styx server configuration will not be validated.");
+        } else {
+            validateServerConfiguration(yamlConfiguration)
+                    .ifPresent(message -> {
+                        LOG.info("Styx server failed to start due to configuration error.");
+                        LOG.info("The configuration was sourced from " + startupConfig.configFileLocation());
+                        LOG.info(message);
+                        throw new SchemaValidationException(message);
+                    });
+            LOG.info("Configuration validated successfully.");
         }
     }
 
