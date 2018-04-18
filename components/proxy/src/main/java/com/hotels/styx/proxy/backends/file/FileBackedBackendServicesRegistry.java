@@ -18,6 +18,7 @@ package com.hotels.styx.proxy.backends.file;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.service.BackendService;
@@ -65,11 +66,19 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         this.fileChangeMonitor = requireNonNull(fileChangeMonitor);
     }
 
+    @VisibleForTesting
+    FileBackedBackendServicesRegistry(Resource originsFile) {
+        this(new FileBackedRegistry<>(
+                        originsFile,
+                        new YAMLBackendServicesReader(),
+                        new BackendServicesConstraint()));
+    }
+
     public static FileBackedBackendServicesRegistry create(String originsFile) {
         return create(originsFile, FileMonitor.DISABLED);
     }
 
-    static FileBackedBackendServicesRegistry create(String originsFile, FileMonitor fileChangeMonitor) {
+    private static FileBackedBackendServicesRegistry create(String originsFile, FileMonitor fileChangeMonitor) {
         FileBackedRegistry<BackendService> fileBackedRegistry = new FileBackedRegistry<>(
                 newResource(originsFile),
                 new YAMLBackendServicesReader(),

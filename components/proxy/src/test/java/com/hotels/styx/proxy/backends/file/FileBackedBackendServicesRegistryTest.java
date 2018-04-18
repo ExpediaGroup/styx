@@ -21,7 +21,6 @@ import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.api.service.spi.Registry.ReloadResult;
 import com.hotels.styx.api.service.spi.ServiceFailureException;
 import com.hotels.styx.infrastructure.FileBackedRegistry;
-import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry.BackendServicesConstraint;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry.YAMLBackendServicesReader;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.AfterMethod;
@@ -362,22 +361,18 @@ public class FileBackedBackendServicesRegistryTest {
         Resource stubResource = mock(Resource.class);
         when(stubResource.inputStream()).thenReturn(toInputStream(configWithDupe));
 
-        // TODO want to use defaults here, not manually specify (may need to switch to builder)
-        FileBackedRegistry<BackendService> delegate = new FileBackedRegistry<>(stubResource, new YAMLBackendServicesReader(), new BackendServicesConstraint());
-        FileBackedBackendServicesRegistry registry = new FileBackedBackendServicesRegistry(delegate);
+        FileBackedBackendServicesRegistry registry = new FileBackedBackendServicesRegistry(stubResource);
 
         ReloadResult result = registry.reload().get(10, SECONDS);
 
-        Registry.Outcome outcome = result.outcome();
-
-        assertThat(outcome, is(FAILED));
+        assertThat(result.outcome(), is(FAILED));
     }
 
     private static InputStream toInputStream(String string) {
         return new ByteArrayInputStream(string.getBytes(UTF_8));
     }
 
-    private CompletableFuture<ReloadResult> failedFuture(Throwable cause) {
+    private static CompletableFuture<ReloadResult> failedFuture(Throwable cause) {
         CompletableFuture<ReloadResult> future = new CompletableFuture<>();
         future.completeExceptionally(cause);
         return future;
