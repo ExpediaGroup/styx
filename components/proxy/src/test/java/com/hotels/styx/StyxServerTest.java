@@ -24,6 +24,9 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.plugins.spi.Plugin;
+import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.service.spi.StyxService;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.proxy.ProxyServerConfig;
@@ -40,6 +43,7 @@ import rx.Observable;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static com.google.common.collect.Lists.newArrayList;
@@ -50,11 +54,13 @@ import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
 import static java.lang.System.currentTimeMillis;
+import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class StyxServerTest {
     private LoggingTestSupport log;
@@ -154,30 +160,40 @@ public class StyxServerTest {
         }
     }
 
-    private Runtime captureSystemExit(Runnable block) {
-        try {
-            Runtime originalRuntime = Runtime.getRuntime();
-            Field runtimeField = Runtime.class.getDeclaredField("currentRuntime");
-            Runtime mockRuntime = mock(Runtime.class);
-            try {
-                runtimeField.setAccessible(true);
-                runtimeField.set(Runtime.class, mockRuntime);
-                block.run();
-            } finally {
-                runtimeField.set(Runtime.class, originalRuntime);
-                runtimeField.setAccessible(false);
-            }
-
-            return mockRuntime;
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @Test
     public void systemExitIsCalledWhenCreateStyxServerFails() {
         Runtime runtime = captureSystemExit(() -> StyxServer.main(new String[0]));
         verify(runtime).exit(1);
+    }
+
+    @Test
+    public void serverDoesNotStartIfServiceFails() {
+        StyxServer styxServer = null;
+        try {
+            StyxService testService = registryThatFailsToStart();
+            styxServer = styxServerWithBackendServiceRegistry(testService);
+
+            Service serverService = styxServer.startAsync();
+            eventually(() -> assertThat(serverService.state(), is(FAILED)));
+
+            assertThat(styxServer.state(), is(FAILED));
+        } finally {
+            stopIfRunning(styxServer);
+        }
+    }
+
+    private static StyxService registryThatFailsToStart() {
+        Registry<BackendService> registry = mock(Registry.class);
+        when(registry.get()).thenReturn(emptyList());
+
+        return new RegistryServiceAdapter(registry) {
+            @Override
+            protected CompletableFuture<Void> startService() {
+                CompletableFuture<Void> future = new CompletableFuture<>();
+                future.completeExceptionally(new IllegalStateException("Just a test"));
+                return future;
+            }
+        };
     }
 
     private static StyxServer styxServerWithPlugins(NamedPlugin... plugins) {
@@ -189,6 +205,15 @@ public class StyxServerTest {
                 .configuration(styxConfig(EMPTY_CONFIGURATION))
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
                 .plugins(pluginsList)
+                .build();
+
+        return new StyxServer(config);
+    }
+
+    private static StyxServer styxServerWithBackendServiceRegistry(StyxService backendServiceRegistry) {
+        StyxServerComponents config = new StyxServerComponents.Builder()
+                .configuration(styxConfig(EMPTY_CONFIGURATION))
+                .additionalServices(ImmutableMap.of("backendServiceRegistry", backendServiceRegistry))
                 .build();
 
         return new StyxServer(config);
@@ -249,5 +274,25 @@ public class StyxServerTest {
             }
         }
         throw new AssertionError("Eventually block did not complete in 3 seconds.");
+    }
+
+    private static Runtime captureSystemExit(Runnable block) {
+        try {
+            Runtime originalRuntime = Runtime.getRuntime();
+            Field runtimeField = Runtime.class.getDeclaredField("currentRuntime");
+            Runtime mockRuntime = mock(Runtime.class);
+            try {
+                runtimeField.setAccessible(true);
+                runtimeField.set(Runtime.class, mockRuntime);
+                block.run();
+            } finally {
+                runtimeField.set(Runtime.class, originalRuntime);
+                runtimeField.setAccessible(false);
+            }
+
+            return mockRuntime;
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
