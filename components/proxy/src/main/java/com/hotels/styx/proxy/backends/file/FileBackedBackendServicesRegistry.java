@@ -32,9 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
@@ -45,6 +43,8 @@ import static com.hotels.styx.api.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * File backed {@link BackendService} registry.
@@ -200,12 +200,11 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
     static class RejectDuplicatePaths implements Predicate<Collection<BackendService>> {
         @Override
         public boolean test(Collection<BackendService> backendServices) {
-            Map<String, Integer> pathCounts = new HashMap<>();
-
-            backendServices.stream().map(BackendService::path).forEach(path ->
-                    pathCounts.merge(path, 1, (v1, v2) -> v1 + v2));
-
-            return pathCounts.values().stream().noneMatch(count -> count != 1);
+            return backendServices.stream()
+                    .collect(groupingBy(BackendService::path, counting()))
+                    .values()
+                    .stream()
+                    .noneMatch(count -> count > 1);
         }
     }
 
