@@ -15,12 +15,14 @@
  */
 package com.hotels.styx.proxy.backends.file;
 
+import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.api.service.spi.Registry.ReloadResult;
 import com.hotels.styx.api.service.spi.ServiceFailureException;
 import com.hotels.styx.infrastructure.FileBackedRegistry;
+import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry.RejectDuplicatePaths;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry.YAMLBackendServicesReader;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.AfterMethod;
@@ -30,6 +32,7 @@ import org.testng.annotations.Test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -391,6 +394,34 @@ public class FileBackedBackendServicesRegistryTest {
         CompletableFuture<Void> status = registry.start();
 
         assertThat(failureCause(status), is(instanceOf(ServiceFailureException.class)));
+    }
+
+    @Test
+    public void constraintAcceptsDistinctPaths() {
+        Collection<BackendService> backendServices = ImmutableList.of(
+                new BackendService.Builder()
+                        .path("/foo")
+                        .build(),
+                new BackendService.Builder()
+                        .path("/bar")
+                        .build()
+        );
+
+        assertThat(new RejectDuplicatePaths().test(backendServices), is(true));
+    }
+
+    @Test
+    public void constraintRejectsDuplicatePaths() {
+        Collection<BackendService> backendServices = ImmutableList.of(
+                new BackendService.Builder()
+                        .path("/foo")
+                        .build(),
+                new BackendService.Builder()
+                        .path("/foo")
+                        .build()
+        );
+
+        assertThat(new RejectDuplicatePaths().test(backendServices), is(false));
     }
 
     private static Throwable failureCause(CompletableFuture<?> future) throws TimeoutException, InterruptedException {

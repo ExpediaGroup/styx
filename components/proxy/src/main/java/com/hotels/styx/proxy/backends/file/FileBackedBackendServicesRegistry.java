@@ -17,6 +17,8 @@ package com.hotels.styx.proxy.backends.file;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.configuration.Configuration;
@@ -37,6 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Throwables.propagate;
@@ -45,6 +49,7 @@ import static com.hotels.styx.api.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 /**
  * File backed {@link BackendService} registry.
@@ -66,7 +71,7 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         this(new FileBackedRegistry<>(
                 originsFile,
                 new YAMLBackendServicesReader(),
-                new BackendServicesConstraint()),
+                new RejectDuplicatePaths()),
                 fileChangeMonitor);
     }
 
@@ -197,15 +202,13 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
     }
 
     @VisibleForTesting
-    static class BackendServicesConstraint implements Predicate<Collection<BackendService>> {
+    static class RejectDuplicatePaths implements Predicate<Collection<BackendService>> {
         @Override
         public boolean test(Collection<BackendService> backendServices) {
             Map<String, Integer> pathCounts = new HashMap<>();
 
-            backendServices.forEach(backendService ->
-                    pathCounts.merge(backendService.path(), 1, (v1, v2) -> v1 + v2));
-
-            LOGGER.debug("pathCounts={}", pathCounts);
+            backendServices.stream().map(BackendService::path).forEach(path ->
+                    pathCounts.merge(path, 1, (v1, v2) -> v1 + v2));
 
             return pathCounts.values().stream().noneMatch(count -> count != 1);
         }

@@ -16,7 +16,6 @@
 package com.hotels.styx.infrastructure;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import com.google.common.hash.HashCode;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.Resource;
@@ -34,6 +33,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.hash.HashCode.fromLong;
 import static com.google.common.hash.Hashing.md5;
@@ -61,8 +61,7 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     private final Predicate<Collection<T>> resourceConstraint;
     private HashCode fileHash = fromLong(0);
 
-    @VisibleForTesting
-    FileBackedRegistry(Resource configurationFile, Reader<T> reader, Supplier<FileTime> modifyTimeSupplier, Predicate<Collection<T>> resourceConstraint) {
+    private FileBackedRegistry(Resource configurationFile, Reader<T> reader, Supplier<FileTime> modifyTimeSupplier, Predicate<Collection<T>> resourceConstraint) {
         this.configurationFile = requireNonNull(configurationFile);
         this.reader = checkNotNull(reader);
         this.modifyTimeSupplier = modifyTimeSupplier;
@@ -76,10 +75,6 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
 
     public FileBackedRegistry(Resource configurationFile, Reader<T> reader, Predicate<Collection<T>> resourceConstraint) {
         this(configurationFile, reader, fileModificationTimeProvider(configurationFile), resourceConstraint);
-    }
-
-    public FileBackedRegistry(Resource configurationFile, Reader<T> reader) {
-        this(configurationFile, reader, any -> true);
     }
 
     public String fileName() {
@@ -140,7 +135,7 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
         Changes<T> changes = changes(resources, get());
 
         if (!changes.isEmpty()) {
-            Preconditions.checkState(resourceConstraint.test(resources));
+            checkState(resourceConstraint.test(resources));
 
             set(resources);
         }
