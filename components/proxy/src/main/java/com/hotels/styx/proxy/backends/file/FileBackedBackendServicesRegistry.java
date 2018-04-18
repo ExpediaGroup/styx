@@ -17,8 +17,6 @@ package com.hotels.styx.proxy.backends.file;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.HashMultiset;
-import com.google.common.collect.Multiset;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.configuration.Configuration;
@@ -39,8 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Throwables.propagate;
@@ -49,7 +45,6 @@ import static com.hotels.styx.api.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 
 /**
  * File backed {@link BackendService} registry.
