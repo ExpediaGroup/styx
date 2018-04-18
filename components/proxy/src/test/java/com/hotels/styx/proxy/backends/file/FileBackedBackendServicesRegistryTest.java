@@ -79,7 +79,7 @@ public class FileBackedBackendServicesRegistryTest {
         FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
         when(delegate.reload()).thenReturn(CompletableFuture.completedFuture(ReloadResult.reloaded("relaod ok")));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.reload();
 
         verify(delegate).reload();
@@ -90,7 +90,7 @@ public class FileBackedBackendServicesRegistryTest {
         FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
         Registry.ChangeListener<BackendService> listener = mock(Registry.ChangeListener.class);
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.addListener(listener);
 
         verify(delegate).addListener(eq(listener));
@@ -101,7 +101,7 @@ public class FileBackedBackendServicesRegistryTest {
         FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
         Registry.ChangeListener<BackendService> listener = mock(Registry.ChangeListener.class);
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.addListener(listener);
         registry.removeListener(listener);
 
@@ -112,7 +112,7 @@ public class FileBackedBackendServicesRegistryTest {
     public void relaysGetToRegistryDelegate() {
         FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.get();
 
         verify(delegate).get();
@@ -123,7 +123,7 @@ public class FileBackedBackendServicesRegistryTest {
         FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
         when(delegate.reload()).thenReturn(completedFuture(reloaded("Changes applied!")));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         await(registry.start());
 
         verify(delegate).reload();
@@ -135,7 +135,7 @@ public class FileBackedBackendServicesRegistryTest {
         RuntimeException cause = new RuntimeException("Failed to read file, etc.");
         when(delegate.reload()).thenReturn(failedFuture(cause));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         CompletableFuture<Void> future = registry.start();
 
         Optional<Throwable> result = await(future
@@ -191,7 +191,7 @@ public class FileBackedBackendServicesRegistryTest {
         when(delegate.fileName()).thenReturn("/monitored/origins.yml");
         when(delegate.reload()).thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
 
         assertThat(log.log(), hasItem(
@@ -209,7 +209,7 @@ public class FileBackedBackendServicesRegistryTest {
                         "md5-hash: 9034890345289043, Failed to load file",
                         new RuntimeException("something went wrong"))));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
     }
 
@@ -222,7 +222,7 @@ public class FileBackedBackendServicesRegistryTest {
                         "md5-hash: 9034890345289043, Failed to load file",
                         new RuntimeException("something went wrong"))));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
 
         try {
             registry.startService().get();
@@ -247,7 +247,7 @@ public class FileBackedBackendServicesRegistryTest {
                 .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
                 .thenReturn(completedFuture(unchanged("md5-hash: 9034890345289043, No changes detected")));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
 
         registry.reload().get();
@@ -264,7 +264,7 @@ public class FileBackedBackendServicesRegistryTest {
                 .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
                 .thenReturn(completedFuture(failed("md5-hash: 9034890345289043, Failed to load file", new RuntimeException("error occurred"))));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
 
         registry.reload().get();
@@ -282,7 +282,7 @@ public class FileBackedBackendServicesRegistryTest {
                 .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
                 .thenReturn(completedFuture(reloaded("md5-hash: 3428432789453897, Successfully reloaded")));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
 
         registry.reload().get();
@@ -299,7 +299,7 @@ public class FileBackedBackendServicesRegistryTest {
                 .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
                 .thenReturn(completedFuture(unchanged("md5-hash: 9034890345289043, Unchanged")));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
 
         registry.fileChanged();
@@ -316,7 +316,7 @@ public class FileBackedBackendServicesRegistryTest {
                 .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
                 .thenReturn(completedFuture(failed("md5-hash: 9034890345289043, Failed to reload", new RuntimeException("something went wrong"))));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
 
         registry.fileChanged();
@@ -334,7 +334,7 @@ public class FileBackedBackendServicesRegistryTest {
                 .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
                 .thenReturn(completedFuture(reloaded("md5-hash: 3428432789453897, Successfully reloaded")));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
 
         registry.fileChanged();
@@ -361,7 +361,7 @@ public class FileBackedBackendServicesRegistryTest {
         Resource stubResource = mock(Resource.class);
         when(stubResource.inputStream()).thenReturn(toInputStream(configWithDupe));
 
-        FileBackedBackendServicesRegistry registry = new FileBackedBackendServicesRegistry(stubResource);
+        FileBackedBackendServicesRegistry registry = new FileBackedBackendServicesRegistry(stubResource, FileMonitor.DISABLED);
 
         ReloadResult result = registry.reload().get(10, SECONDS);
 

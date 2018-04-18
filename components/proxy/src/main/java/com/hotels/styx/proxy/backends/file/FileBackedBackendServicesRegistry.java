@@ -55,11 +55,6 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
     private final FileMonitor fileChangeMonitor;
 
     @VisibleForTesting
-    FileBackedBackendServicesRegistry(FileBackedRegistry<BackendService> fileBackedRegistry) {
-        this(fileBackedRegistry, FileMonitor.DISABLED);
-    }
-
-    @VisibleForTesting
     FileBackedBackendServicesRegistry(FileBackedRegistry<BackendService> fileBackedRegistry, FileMonitor fileChangeMonitor) {
         super(format("FileBackedBackendServiceRegistry(%s)", fileBackedRegistry.fileName()));
         this.fileBackedRegistry = requireNonNull(fileBackedRegistry);
@@ -67,23 +62,17 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
     }
 
     @VisibleForTesting
-    FileBackedBackendServicesRegistry(Resource originsFile) {
+    FileBackedBackendServicesRegistry(Resource originsFile, FileMonitor fileChangeMonitor) {
         this(new FileBackedRegistry<>(
-                        originsFile,
-                        new YAMLBackendServicesReader(),
-                        new BackendServicesConstraint()));
-    }
-
-    public static FileBackedBackendServicesRegistry create(String originsFile) {
-        return create(originsFile, FileMonitor.DISABLED);
-    }
-
-    private static FileBackedBackendServicesRegistry create(String originsFile, FileMonitor fileChangeMonitor) {
-        FileBackedRegistry<BackendService> fileBackedRegistry = new FileBackedRegistry<>(
-                newResource(originsFile),
+                originsFile,
                 new YAMLBackendServicesReader(),
-                new BackendServicesConstraint());
-        return new FileBackedBackendServicesRegistry(fileBackedRegistry, fileChangeMonitor);
+                new BackendServicesConstraint()),
+                fileChangeMonitor);
+    }
+
+    // Only used in OriginsHandlerTest, we need to refactor that test, since it should mock the registry instead
+    public static FileBackedBackendServicesRegistry create(String originsFile) {
+        return new FileBackedBackendServicesRegistry(newResource(originsFile), FileMonitor.DISABLED);
     }
 
     @Override
@@ -173,12 +162,10 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         private static Registry<BackendService> registry(String originsFile, FileMonitorSettings monitorSettings) {
             requireNonEmpty(originsFile);
 
-            FileBackedRegistry<BackendService> fileBackedRegistry = new FileBackedRegistry<>(
-                    newResource(originsFile),
-                    new YAMLBackendServicesReader());
-
             FileMonitor monitor = monitorSettings.enabled() ? new FileChangeMonitor(originsFile) : FileMonitor.DISABLED;
-            return new FileBackedBackendServicesRegistry(fileBackedRegistry, monitor);
+            Resource resource = newResource(originsFile);
+
+            return new FileBackedBackendServicesRegistry(resource, monitor);
         }
 
         private static String requireNonEmpty(String originsFile) {
