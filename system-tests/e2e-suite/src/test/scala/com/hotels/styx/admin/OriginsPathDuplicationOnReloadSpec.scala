@@ -31,7 +31,7 @@ import org.scalatest.{BeforeAndAfterAll, FunSpec, ShouldMatchers}
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
-class OriginsReloadCommandSpec extends FunSpec
+class OriginsPathDuplicationOnReloadSpec extends FunSpec
   with StyxServerSupport
   with StyxClientSupplier
   with ShouldMatchers
@@ -39,16 +39,18 @@ class OriginsReloadCommandSpec extends FunSpec
   with Eventually {
 
   val tempDir = createTempDir()
-  val originsOk = fixturesHome(classOf[OriginsReloadCommandSpec], "/conf/origins/origins-correct.yml")
-  val originsNok = fixturesHome(classOf[OriginsReloadCommandSpec], "/conf/origins/origins-incorrect.yml")
+  val originsOk = fixturesHome(classOf[OriginsPathDuplicationOnReloadSpec], "/conf/origins/origins-correct.yml")
+  val originsDuplicatePath = fixturesHome(classOf[OriginsPathDuplicationOnReloadSpec], "/conf/origins/origins-duplicate-path.yml")
   val styxOriginsFile = Paths.get(tempDir.toString, "origins.yml")
   var styxServer: StyxServer = _
 
-  it("Responds with INTERNAL_SERVER_ERROR when the origins cannot be read") {
+  it("Responds with INTERNAL_SERVER_ERROR when the backend-services have a duplicate path") {
     val fileBasedBackendsRegistry = FileBackedBackendServicesRegistry.create(styxOriginsFile.toString)
     styxServer = StyxConfig().startServer(fileBasedBackendsRegistry)
 
-    Files.copy(originsNok, styxOriginsFile, REPLACE_EXISTING)
+    styxServer.isRunning should be(true)
+
+    Files.copy(originsDuplicatePath, styxOriginsFile, REPLACE_EXISTING)
 
     val resp = decodedRequest(post(styxServer.adminURL("/admin/tasks/origins/reload")).build())
     resp.status() should be(INTERNAL_SERVER_ERROR)
@@ -74,7 +76,7 @@ class OriginsReloadCommandSpec extends FunSpec
           Origin("localhost", 9091, appId = "app", id = "app2")
         )
       ))
-  }
+    }
 
     override protected def beforeAll(): Unit = {
       Files.copy(originsOk, styxOriginsFile)

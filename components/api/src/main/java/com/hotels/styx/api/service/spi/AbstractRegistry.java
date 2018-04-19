@@ -22,12 +22,16 @@ import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
 import org.slf4j.Logger;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.difference;
 import static com.google.common.collect.Maps.filterKeys;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.StreamSupport.stream;
@@ -43,6 +47,24 @@ public abstract class AbstractRegistry<T extends Identifiable> implements Regist
 
     private final Announcer<Registry.ChangeListener> announcer = Announcer.to(ChangeListener.class);
     private final AtomicReference<Iterable<T>> snapshot = new AtomicReference<>(emptyList());
+    private final Predicate<Collection<T>> resourceConstraint;
+
+    /**
+     * Constructs an abstract registry with no resource constraint.
+     */
+    public AbstractRegistry() {
+        this(any -> true);
+    }
+
+    /**
+     * Constructs an abstract registry that will not allow resources to be set if they do not
+     * satisfy a particular constraint.
+     *
+     * @param resourceConstraint a constraint to be satisfied
+     */
+    public AbstractRegistry(Predicate<Collection<T>> resourceConstraint) {
+        this.resourceConstraint = requireNonNull(resourceConstraint);
+    }
 
     @Override
     public Iterable<T> get() {
@@ -61,8 +83,17 @@ public abstract class AbstractRegistry<T extends Identifiable> implements Regist
         return this;
     }
 
-    public void set(Iterable<T> newObjects) {
+    /**
+     * Sets the contents of this registry to the supplied resources.
+     *
+     * @param newObjects new contents
+     * @throws IllegalStateException if the resource constraint is not satisfied
+     */
+    public void set(Iterable<T> newObjects) throws IllegalStateException {
         ImmutableList<T> newSnapshot = ImmutableList.copyOf(newObjects);
+
+        checkState(resourceConstraint.test(newSnapshot));
+
         Iterable<T> oldSnapshot = snapshot.get();
         snapshot.set(newSnapshot);
 

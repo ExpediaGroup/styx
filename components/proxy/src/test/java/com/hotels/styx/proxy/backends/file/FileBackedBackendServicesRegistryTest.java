@@ -15,35 +15,44 @@
  */
 package com.hotels.styx.proxy.backends.file;
 
+import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.service.spi.ServiceFailureException;
 import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.infrastructure.FileBackedRegistry;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.api.service.spi.Registry.ReloadResult;
+import com.hotels.styx.api.service.spi.ServiceFailureException;
+import com.hotels.styx.infrastructure.FileBackedRegistry;
+import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry.RejectDuplicatePaths;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry.YAMLBackendServicesReader;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static ch.qos.logback.classic.Level.INFO;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.io.ByteStreams.toByteArray;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
-import static com.hotels.styx.common.StyxFutures.await;
+import static com.hotels.styx.api.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.api.service.spi.Registry.ReloadResult.failed;
 import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
 import static com.hotels.styx.api.service.spi.Registry.ReloadResult.unchanged;
+import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
@@ -73,7 +82,7 @@ public class FileBackedBackendServicesRegistryTest {
         FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
         when(delegate.reload()).thenReturn(CompletableFuture.completedFuture(ReloadResult.reloaded("relaod ok")));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.reload();
 
         verify(delegate).reload();
@@ -84,7 +93,7 @@ public class FileBackedBackendServicesRegistryTest {
         FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
         Registry.ChangeListener<BackendService> listener = mock(Registry.ChangeListener.class);
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.addListener(listener);
 
         verify(delegate).addListener(eq(listener));
@@ -95,7 +104,7 @@ public class FileBackedBackendServicesRegistryTest {
         FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
         Registry.ChangeListener<BackendService> listener = mock(Registry.ChangeListener.class);
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.addListener(listener);
         registry.removeListener(listener);
 
@@ -106,7 +115,7 @@ public class FileBackedBackendServicesRegistryTest {
     public void relaysGetToRegistryDelegate() {
         FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.get();
 
         verify(delegate).get();
@@ -117,7 +126,7 @@ public class FileBackedBackendServicesRegistryTest {
         FileBackedRegistry<BackendService> delegate = mock(FileBackedRegistry.class);
         when(delegate.reload()).thenReturn(completedFuture(reloaded("Changes applied!")));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         await(registry.start());
 
         verify(delegate).reload();
@@ -129,7 +138,7 @@ public class FileBackedBackendServicesRegistryTest {
         RuntimeException cause = new RuntimeException("Failed to read file, etc.");
         when(delegate.reload()).thenReturn(failedFuture(cause));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         CompletableFuture<Void> future = registry.start();
 
         Optional<Throwable> result = await(future
@@ -185,7 +194,7 @@ public class FileBackedBackendServicesRegistryTest {
         when(delegate.fileName()).thenReturn("/monitored/origins.yml");
         when(delegate.reload()).thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
 
         assertThat(log.log(), hasItem(
@@ -203,7 +212,7 @@ public class FileBackedBackendServicesRegistryTest {
                         "md5-hash: 9034890345289043, Failed to load file",
                         new RuntimeException("something went wrong"))));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
     }
 
@@ -216,7 +225,7 @@ public class FileBackedBackendServicesRegistryTest {
                         "md5-hash: 9034890345289043, Failed to load file",
                         new RuntimeException("something went wrong"))));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
 
         try {
             registry.startService().get();
@@ -241,7 +250,7 @@ public class FileBackedBackendServicesRegistryTest {
                 .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
                 .thenReturn(completedFuture(unchanged("md5-hash: 9034890345289043, No changes detected")));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
 
         registry.reload().get();
@@ -258,7 +267,7 @@ public class FileBackedBackendServicesRegistryTest {
                 .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
                 .thenReturn(completedFuture(failed("md5-hash: 9034890345289043, Failed to load file", new RuntimeException("error occurred"))));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
 
         registry.reload().get();
@@ -276,7 +285,7 @@ public class FileBackedBackendServicesRegistryTest {
                 .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
                 .thenReturn(completedFuture(reloaded("md5-hash: 3428432789453897, Successfully reloaded")));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
 
         registry.reload().get();
@@ -293,7 +302,7 @@ public class FileBackedBackendServicesRegistryTest {
                 .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
                 .thenReturn(completedFuture(unchanged("md5-hash: 9034890345289043, Unchanged")));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
 
         registry.fileChanged();
@@ -310,7 +319,7 @@ public class FileBackedBackendServicesRegistryTest {
                 .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
                 .thenReturn(completedFuture(failed("md5-hash: 9034890345289043, Failed to reload", new RuntimeException("something went wrong"))));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
 
         registry.fileChanged();
@@ -328,7 +337,7 @@ public class FileBackedBackendServicesRegistryTest {
                 .thenReturn(completedFuture(reloaded("md5-hash: 9034890345289043, Successfully reloaded")))
                 .thenReturn(completedFuture(reloaded("md5-hash: 3428432789453897, Successfully reloaded")));
 
-        registry = new FileBackedBackendServicesRegistry(delegate);
+        registry = new FileBackedBackendServicesRegistry(delegate, FileMonitor.DISABLED);
         registry.startService().get();
 
         registry.fileChanged();
@@ -337,7 +346,98 @@ public class FileBackedBackendServicesRegistryTest {
         ));
     }
 
-    private CompletableFuture<ReloadResult> failedFuture(Throwable cause) {
+    @Test
+    public void duplicatePathPrefixesCausesReloadFailure() throws ExecutionException, InterruptedException, TimeoutException, IOException {
+        String configWithDupe = "" +
+                "---\n" +
+                "- id: \"first\"\n" +
+                "  path: \"/testpath/\"\n" +
+                "  origins:\n" +
+                "  - id: \"l1\"\n" +
+                "    host: \"localhost:60000\"\n" +
+                "- id: \"second\"\n" +
+                "  path: \"/testpath/\"\n" +
+                "  origins:\n" +
+                "  - id: \"l2\"\n" +
+                "    host: \"localhost:60001\"";
+
+        Resource stubResource = mock(Resource.class);
+        when(stubResource.inputStream()).thenReturn(toInputStream(configWithDupe));
+
+        FileBackedBackendServicesRegistry registry = new FileBackedBackendServicesRegistry(stubResource, FileMonitor.DISABLED);
+
+        ReloadResult result = registry.reload().get(10, SECONDS);
+
+        assertThat(result.outcome(), is(FAILED));
+    }
+
+    @Test
+    public void duplicatePathPrefixesCausesStartUpFailure() throws InterruptedException, TimeoutException, IOException {
+        String configWithDupe = "" +
+                "---\n" +
+                "- id: \"first\"\n" +
+                "  path: \"/testpath/\"\n" +
+                "  origins:\n" +
+                "  - id: \"l1\"\n" +
+                "    host: \"localhost:60000\"\n" +
+                "- id: \"second\"\n" +
+                "  path: \"/testpath/\"\n" +
+                "  origins:\n" +
+                "  - id: \"l2\"\n" +
+                "    host: \"localhost:60001\"";
+
+        Resource stubResource = mock(Resource.class);
+        when(stubResource.inputStream()).thenReturn(toInputStream(configWithDupe));
+
+        FileBackedBackendServicesRegistry registry = new FileBackedBackendServicesRegistry(stubResource, FileMonitor.DISABLED);
+
+        CompletableFuture<Void> status = registry.start();
+
+        assertThat(failureCause(status), is(instanceOf(ServiceFailureException.class)));
+    }
+
+    @Test
+    public void constraintAcceptsDistinctPaths() {
+        Collection<BackendService> backendServices = ImmutableList.of(
+                new BackendService.Builder()
+                        .path("/foo")
+                        .build(),
+                new BackendService.Builder()
+                        .path("/bar")
+                        .build()
+        );
+
+        assertThat(new RejectDuplicatePaths().test(backendServices), is(true));
+    }
+
+    @Test
+    public void constraintRejectsDuplicatePaths() {
+        Collection<BackendService> backendServices = ImmutableList.of(
+                new BackendService.Builder()
+                        .path("/foo")
+                        .build(),
+                new BackendService.Builder()
+                        .path("/foo")
+                        .build()
+        );
+
+        assertThat(new RejectDuplicatePaths().test(backendServices), is(false));
+    }
+
+    private static Throwable failureCause(CompletableFuture<?> future) throws TimeoutException, InterruptedException {
+        try {
+            future.get(1, SECONDS);
+            throw new IllegalStateException("Expected failure not present");
+        } catch (ExecutionException e) {
+            return e.getCause();
+        }
+    }
+
+    private static InputStream toInputStream(String string) {
+        return new ByteArrayInputStream(string.getBytes(UTF_8));
+    }
+
+    private static CompletableFuture<ReloadResult> failedFuture(Throwable cause) {
         CompletableFuture<ReloadResult> future = new CompletableFuture<>();
         future.completeExceptionally(cause);
         return future;

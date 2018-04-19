@@ -18,28 +18,33 @@ package com.hotels.styx.proxy.backends.file;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
-import com.hotels.styx.api.service.spi.AbstractStyxService;
 import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.service.spi.AbstractStyxService;
+import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.client.applications.BackendServices;
 import com.hotels.styx.infrastructure.FileBackedRegistry;
-import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.infrastructure.YamlReader;
 import com.hotels.styx.proxy.backends.file.FileChangeMonitor.FileMonitorSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
-import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
 import static com.hotels.styx.api.service.spi.Registry.Outcome.FAILED;
+import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * File backed {@link BackendService} registry.
@@ -50,26 +55,24 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
     private final FileMonitor fileChangeMonitor;
 
     @VisibleForTesting
-    FileBackedBackendServicesRegistry(FileBackedRegistry<BackendService> fileBackedRegistry) {
-        this(fileBackedRegistry, FileMonitor.DISABLED);
-    }
-
-    @VisibleForTesting
     FileBackedBackendServicesRegistry(FileBackedRegistry<BackendService> fileBackedRegistry, FileMonitor fileChangeMonitor) {
         super(format("FileBackedBackendServiceRegistry(%s)", fileBackedRegistry.fileName()));
         this.fileBackedRegistry = requireNonNull(fileBackedRegistry);
         this.fileChangeMonitor = requireNonNull(fileChangeMonitor);
     }
 
-    public static FileBackedBackendServicesRegistry create(String originsFile) {
-        return create(originsFile, FileMonitor.DISABLED);
+    @VisibleForTesting
+    FileBackedBackendServicesRegistry(Resource originsFile, FileMonitor fileChangeMonitor) {
+        this(new FileBackedRegistry<>(
+                originsFile,
+                new YAMLBackendServicesReader(),
+                new RejectDuplicatePaths()),
+                fileChangeMonitor);
     }
 
-    static FileBackedBackendServicesRegistry create(String originsFile, FileMonitor fileChangeMonitor) {
-        FileBackedRegistry<BackendService> fileBackedRegistry = new FileBackedRegistry<>(
-                newResource(originsFile),
-                new YAMLBackendServicesReader());
-        return new FileBackedBackendServicesRegistry(fileBackedRegistry, fileChangeMonitor);
+    // Only used in OriginsHandlerTest, we need to refactor that test, since it should mock the registry instead
+    public static FileBackedBackendServicesRegistry create(String originsFile) {
+        return new FileBackedBackendServicesRegistry(newResource(originsFile), FileMonitor.DISABLED);
     }
 
     @Override
@@ -159,12 +162,10 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         private static Registry<BackendService> registry(String originsFile, FileMonitorSettings monitorSettings) {
             requireNonEmpty(originsFile);
 
-            FileBackedRegistry<BackendService> fileBackedRegistry = new FileBackedRegistry<>(
-                    newResource(originsFile),
-                    new YAMLBackendServicesReader());
-
             FileMonitor monitor = monitorSettings.enabled() ? new FileChangeMonitor(originsFile) : FileMonitor.DISABLED;
-            return new FileBackedBackendServicesRegistry(fileBackedRegistry, monitor);
+            Resource resource = newResource(originsFile);
+
+            return new FileBackedBackendServicesRegistry(resource, monitor);
         }
 
         private static String requireNonEmpty(String originsFile) {
@@ -192,6 +193,18 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         private BackendServices readBackendServices(byte[] content) throws Exception {
             return newBackendServices(delegate.read(content, new TypeReference<List<BackendService>>() {
             }));
+        }
+    }
+
+    @VisibleForTesting
+    static class RejectDuplicatePaths implements Predicate<Collection<BackendService>> {
+        @Override
+        public boolean test(Collection<BackendService> backendServices) {
+            return backendServices.stream()
+                    .collect(groupingBy(BackendService::path, counting()))
+                    .values()
+                    .stream()
+                    .noneMatch(count -> count > 1);
         }
     }
 

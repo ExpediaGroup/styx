@@ -26,8 +26,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -57,15 +59,20 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     private final Supplier<FileTime> modifyTimeSupplier;
     private HashCode fileHash = fromLong(0);
 
-    @VisibleForTesting
-    FileBackedRegistry(Resource configurationFile, Reader<T> reader, Supplier<FileTime> modifyTimeSupplier) {
+    private FileBackedRegistry(Resource configurationFile, Reader<T> reader, Supplier<FileTime> modifyTimeSupplier, Predicate<Collection<T>> resourceConstraint) {
+        super(resourceConstraint);
         this.configurationFile = requireNonNull(configurationFile);
         this.reader = checkNotNull(reader);
         this.modifyTimeSupplier = modifyTimeSupplier;
     }
 
-    public FileBackedRegistry(Resource configurationFile, Reader<T> reader) {
-        this(configurationFile, reader, fileModificationTimeProvider(configurationFile));
+    @VisibleForTesting
+    FileBackedRegistry(Resource configurationFile, Reader<T> reader, Supplier<FileTime> modifyTimeSupplier) {
+        this(configurationFile, reader, modifyTimeSupplier, any -> true);
+    }
+
+    public FileBackedRegistry(Resource configurationFile, Reader<T> reader, Predicate<Collection<T>> resourceConstraint) {
+        this(configurationFile, reader, fileModificationTimeProvider(configurationFile), resourceConstraint);
     }
 
     public String fileName() {
@@ -122,7 +129,6 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     }
 
     private boolean updateResources(byte[] content, HashCode hashCode) {
-
         Iterable<T> resources = reader.read(content);
         Changes<T> changes = changes(resources, get());
 
