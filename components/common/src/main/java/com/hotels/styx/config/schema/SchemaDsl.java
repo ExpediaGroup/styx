@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.config.schema;
 
-import java.util.Arrays;
+import java.util.stream.Stream;
 
 /**
  * SchemaDsl class provides a domain specific language for constructing Schema declarations.
@@ -30,12 +30,12 @@ public final class SchemaDsl {
     /**
      * Declares a schema.
      *
-     * @param schemaElements Such as fields, constraints, and other directives.
-     * @return
+     * @param schemaDirectives Such as fields, constraints, and other directives.
+     * @return a schema object
      */
-    public static Schema schema(SchemaElement... schemaElements) {
+    public static Schema schema(SchemaDirective... schemaDirectives) {
         Schema.Builder builder = new Schema.Builder();
-        Arrays.asList(schemaElements).forEach(builder::add);
+        Stream.of(schemaDirectives).forEach(builder::add);
         return builder.build();
     }
 
@@ -127,11 +127,9 @@ public final class SchemaDsl {
      *
      * @return A FieldValue instance.
      */
-    public static Schema.FieldValue object(SchemaElement... schemaElements) {
-        Schema.Builder builder = new Schema.Builder("");
-        Arrays.asList(schemaElements).forEach(
-                builder::add
-        );
+    public static Schema.FieldValue object(SchemaDirective... schemaDirectives) {
+        Schema.Builder builder = new Schema.Builder();
+        Stream.of(schemaDirectives).forEach(builder::add);
         return new Schema.ObjectField(builder.build());
     }
 
@@ -143,7 +141,7 @@ public final class SchemaDsl {
      * objects against its document schema specification.
      *
      * @param schemaName  Schema name
-     * @return
+     * @return An object field value type
      */
     public static Schema.FieldValue object(String schemaName) {
         return new Schema.ObjectFieldLazy(schemaName);
@@ -182,7 +180,7 @@ public final class SchemaDsl {
      * `type` attribute, either `ProxyTo` or `Redirection` object types.
      *
      * @param discriminator - the discriminator field name
-     * @return
+     * @return an union field value
      */
     public static Schema.FieldValue union(String discriminator) {
         return new Schema.DiscriminatedUnionObject(discriminator);
@@ -199,8 +197,8 @@ public final class SchemaDsl {
      * The `Schema` implementation doesn't currently support lists of mixed element
      * types.
      *
-     * @param elementType
-     * @return
+     * @param elementType A type of list entries.
+     * @return a list field value type
      */
     public static Schema.FieldValue list(Schema.FieldValue elementType) {
         return new Schema.ListField(elementType);
@@ -209,10 +207,10 @@ public final class SchemaDsl {
     /**
      * A directive to mark the object layout as `opaque`.
      *
-     * @return
+     * @return an OpaqueSchema directive
      */
-    public static PassValidation pass() {
-        return new PassValidation();
+    public static OpaqueSchema opaque() {
+        return new OpaqueSchema();
     }
 
     /**
@@ -230,8 +228,8 @@ public final class SchemaDsl {
      * `atLeastOne` constraint is not particularly useful for mandatory fields.  This
      * is because the mandatory fields are supposed to always be present.
      *
-     * @param fieldNames
-     * @return
+     * @param fieldNames List of field names.
+     * @return An "at least one" constraint.
      */
     public static Constraint atLeastOne(String... fieldNames) {
         return new AtLeastOneFieldPresenceConstraint(fieldNames);

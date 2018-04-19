@@ -35,7 +35,7 @@ import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Object validator provides an end-user interface for the schema based object validation.
+ * Provides an end-user interface for the schema based object validation.
  * <p>
  * An DocumentFormat instance is created with a call to `newDocument`. This returns an
  * a builder object that is used to customise the validator. Specifically to:
@@ -82,8 +82,7 @@ public class DocumentFormat {
             Schema.ObjectFieldLazy configField = (Schema.ObjectFieldLazy) fieldValue;
             Schema subSchema = schemas.get(configField.schemaName());
 
-            LOGGER.info("lazy object reference field='{}', subObjectSchema='{}'",
-                    new Object[]{name, subSchema.name()});
+            LOGGER.debug("lazy object reference field='{}', subObjectSchema='{}'", name, subSchema.name());
 
             validateObject(prefix + name + ".", subSchema, tree.get(name));
 
@@ -95,7 +94,7 @@ public class DocumentFormat {
 
             Schema subObjectSchema = this.schemas.get(subObjectType);
 
-            LOGGER.info("discriminated union field='{}', discriminatorField='{}', subObjectType='{}', subObjectSchema='{}'",
+            LOGGER.debug("discriminated union field='{}', discriminatorField='{}', subObjectType='{}', subObjectSchema='{}'",
                     new Object[]{name, discriminatorField, subObjectType, subObjectSchema.name()});
 
             validateObject(prefix + name + ".", subObjectSchema, tree.get(name));
@@ -108,7 +107,7 @@ public class DocumentFormat {
                 JsonNode list = tree.get(name);
                 for (int i = 0; i < list.size(); i++) {
                     JsonNode entry = list.get(i);
-                    assertCorrectType("Unexpected list element type.", prefix + format("%s[%d]", name, i), entry, listField.elementType());
+                    assertCorrectType("Unexpected list element type.", format("%s%s[%d]", prefix, name, i), entry, listField.elementType());
                 }
             }
 
@@ -118,7 +117,7 @@ public class DocumentFormat {
                 for (int i = 0; i < list.size(); i++) {
                     JsonNode entry = list.get(i);
                     Schema subSchema = getSchema(listField.elementType());
-                    assertCorrectType("Unexpected list element type.", prefix + format("%s[%d]", name, i), entry, listField.elementType());
+                    assertCorrectType("Unexpected list element type.", format("%s%s[%d]", prefix, name, i), entry, listField.elementType());
                     validateObject(prefix + format("%s[%d].", name, i), subSchema, entry);
                 }
             }
@@ -135,17 +134,13 @@ public class DocumentFormat {
             return;
         }
 
-        List<String> fieldNames = ImmutableList.copyOf(tree.fieldNames());
-
         for (Schema.Field field : schema.fields()) {
-            Schema.Field namedField = (Schema.Field) field;
-
-            if (isMandatory(schema, namedField) && tree.get(namedField.name()) == null) {
-                throw new SchemaValidationException(format("Missing a mandatory field '%s'", prefix + namedField.name()));
+            if (isMandatory(schema, field) && tree.get(field.name()) == null) {
+                throw new SchemaValidationException(format("Missing a mandatory field '%s%s'", prefix, field.name()));
             }
 
-            if (tree.get(namedField.name()) != null) {
-                validateField(prefix, namedField, tree);
+            if (tree.get(field.name()) != null) {
+                validateField(prefix, field, tree);
             }
         }
 
@@ -155,11 +150,11 @@ public class DocumentFormat {
             }
         });
 
-        assertNoUnknownFields(prefix, schema, fieldNames);
+        assertNoUnknownFields(prefix, schema, ImmutableList.copyOf(tree.fieldNames()));
     }
 
-    private boolean isMandatory(Schema schema, Schema.Field field) {
-        return !schema.optionals().contains(field.name());
+    private static boolean isMandatory(Schema schema, Schema.Field field) {
+        return !schema.optionalFields().contains(field.name());
     }
 
     private static void assertNoUnknownFields(String prefix, Schema schema, List<String> fieldsPresent) {
@@ -182,18 +177,18 @@ public class DocumentFormat {
         throw new InvalidSchemaException("Not an object");
     }
 
-    private boolean isObject(Schema.FieldValue fieldValue) {
+    private static boolean isObject(Schema.FieldValue fieldValue) {
         return (fieldValue instanceof Schema.ObjectField)
                 || (fieldValue instanceof Schema.ObjectFieldLazy);
     }
 
-    private boolean isBasicType(Schema.FieldValue fieldValue) {
+    private static boolean isBasicType(Schema.FieldValue fieldValue) {
         return !(fieldValue instanceof Schema.ObjectField)
                 && !(fieldValue instanceof Schema.ObjectFieldLazy)
                 && !(fieldValue instanceof Schema.ListField);
     }
 
-    private Schema.FieldType toFieldType(JsonNode value) {
+    private static Schema.FieldType toFieldType(JsonNode value) {
         // JsonNodeType.BINARY, Schema.FieldType.
         // JsonNodeType.MISSING,
         // JsonNodeType.NULL,
@@ -226,7 +221,7 @@ public class DocumentFormat {
         return expectedType.toString();
     }
 
-    private void assertCorrectType(String message, String fieldName, JsonNode value, Schema.FieldValue field) {
+    private static void assertCorrectType(String message, String fieldName, JsonNode value, Schema.FieldValue field) {
         Schema.FieldType expectedType = field.type();
         Schema.FieldType actualType = toFieldType(value);
 
@@ -242,9 +237,6 @@ public class DocumentFormat {
     public static class Builder {
         private Schema schema;
         private final Map<String, Schema> schemas = new HashMap<>();
-
-        public Builder() {
-        }
 
         public Builder subSchema(String name, Schema schema) {
             this.schemas.put(requireNonNull(name), requireNonNull(schema.newBuilder().name(name).build()));

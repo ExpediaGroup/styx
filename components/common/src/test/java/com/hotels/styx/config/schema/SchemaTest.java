@@ -22,7 +22,7 @@ import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.integer;
 import static com.hotels.styx.config.schema.SchemaDsl.list;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
-import static com.hotels.styx.config.schema.SchemaDsl.pass;
+import static com.hotels.styx.config.schema.SchemaDsl.opaque;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.schema.SchemaDsl.union;
 import static com.hotels.styx.config.schema.SchemaDsl.schema;
@@ -61,7 +61,7 @@ public class SchemaTest {
     public void passSchema() {
         // This will skip the verification of the subobject
         Schema co = schema(
-                field("myIgnoredObject", object(pass())
+                field("myIgnoredObject", object(opaque())
                 ));
     }
 
@@ -123,7 +123,7 @@ public class SchemaTest {
         assertThat(integer().type(), is(Schema.FieldType.INTEGER));
         assertThat(bool().type(), is(Schema.FieldType.BOOLEAN));
         assertThat(object("Foo").type(), is(Schema.FieldType.OBJECT));
-        assertThat(object(pass()).type(), is(Schema.FieldType.OBJECT));
+        assertThat(object(opaque()).type(), is(Schema.FieldType.OBJECT));
         assertThat(list(integer()).type(), is(Schema.FieldType.LIST));
     }
 }

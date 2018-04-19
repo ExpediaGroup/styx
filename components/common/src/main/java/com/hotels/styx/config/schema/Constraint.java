@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  * A constraint could describe a particular relationship between object's
  * fields.
  */
-public interface Constraint extends SchemaElement {
+public interface Constraint extends SchemaDirective {
     /**
      * Evaluates a constraint associated with `schema` against the JSON `node`
      *
@@ -33,13 +33,16 @@ public interface Constraint extends SchemaElement {
      *
      * @param schema Json object schema
      * @param node   Parsed JSON object
-     * @return
+     * @return       true if `node` conforms to the constraint, false otherwise
      */
     boolean evaluate(Schema schema, JsonNode node);
 
     /**
-     * An informational description of the constraint.
-     * @return
+     * An informational description of the constraint. This can be used
+     * for example in the error messages to provide more information about
+     * validation failures, or perhaps to generate end-user documentation.
+     *
+     * @return  An contraint description.
      */
     String describe();
 }

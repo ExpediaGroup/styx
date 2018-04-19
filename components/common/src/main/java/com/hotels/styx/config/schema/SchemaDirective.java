@@ -16,9 +16,9 @@
 package com.hotels.styx.config.schema;
 
 /**
- * A SchemaElement is a marker interface for object fields,
+ * A SchemaDirective is a marker interface for object fields,
  * additional constraints, or other schema directives.
  */
-public interface SchemaElement {
+public interface SchemaDirective {
 
 }

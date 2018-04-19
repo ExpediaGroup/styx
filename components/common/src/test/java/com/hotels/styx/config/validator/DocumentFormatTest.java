@@ -30,11 +30,11 @@ import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.integer;
 import static com.hotels.styx.config.schema.SchemaDsl.list;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
+import static com.hotels.styx.config.schema.SchemaDsl.opaque;
 import static com.hotels.styx.config.schema.SchemaDsl.optional;
-import static com.hotels.styx.config.schema.SchemaDsl.pass;
+import static com.hotels.styx.config.schema.SchemaDsl.schema;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.schema.SchemaDsl.union;
-import static com.hotels.styx.config.schema.SchemaDsl.schema;
 import static com.hotels.styx.config.validator.DocumentFormat.newDocument;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -465,7 +465,7 @@ public class DocumentFormatTest {
     public void ignoresSubobjects() throws Exception {
         JsonNode node2 = YAML_MAPPER.readTree(
                 "parent: \n"
-                        + "  pass: \n"
+                        + "  opaque: \n"
                         + "    x: 5\n"
                         + "    y: 6\n"
         );
@@ -473,7 +473,7 @@ public class DocumentFormatTest {
         DocumentFormat validator = newDocument()
                 .rootSchema(schema(
                         field("parent", object(
-                                field("pass", object(pass()))
+                                field("opaque", object(opaque()))
                         ))
                 ))
                 .build();

@@ -61,6 +61,39 @@ public class Schema {
     private final Set<String> optionalFields;
     private final boolean ignore;
 
+    private Schema(Builder builder) {
+        this.fieldNames = builder.fields.stream().map(Field::name).collect(toList());
+        this.fields = ImmutableList.copyOf(builder.fields);
+        this.optionalFields = ImmutableSet.copyOf(builder.optionalFields);
+        this.constraints = ImmutableList.copyOf(builder.constraints);
+        this.ignore = builder.pass;
+        this.name = builder.name.length() > 0 ? builder.name : Joiner.on(", ").join(this.fieldNames);
+    }
+
+    public Schema.Builder newBuilder() {
+        return new Schema.Builder(this);
+    }
+
+    public Set<String> optionalFields() {
+        return optionalFields;
+    }
+
+    public List<String> fieldNames() {
+        return fieldNames;
+    }
+
+    public List<Field> fields() {
+        return fields;
+    }
+
+    public List<Constraint> constraints() {
+        return constraints;
+    }
+
+    public String name() {
+        return name;
+    }
+
     public boolean ignore() {
         return ignore;
     }
@@ -76,43 +109,10 @@ public class Schema {
         LIST
     }
 
-    private Schema(Builder builder) {
-        this.name = builder.name;
-        this.fieldNames = builder.fields.stream().map(Field::name).collect(toList());
-        this.fields = new ArrayList<>(builder.fields);
-        this.optionalFields = ImmutableSet.copyOf(builder.optionalFields);
-        this.constraints = ImmutableList.copyOf(builder.constraints);
-        this.ignore = builder.pass;
-    }
-
-    public Schema.Builder newBuilder() {
-        return new Schema.Builder(this);
-    }
-
-    public Set<String> optionals() {
-        return optionalFields;
-    }
-
-    public List<String> fieldNames() {
-        return ImmutableList.copyOf(fieldNames);
-    }
-
-    public List<Field> fields() {
-        return ImmutableList.copyOf(fields);
-    }
-
-    public List<Constraint> constraints() {
-        return ImmutableList.copyOf(constraints);
-    }
-
-    public String name() {
-        return name.length() > 0 ? name : Joiner.on(", ").join(fieldNames);
-    }
-
     /**
      * Represents a named schema field type.
      */
-    public static class Field implements SchemaElement {
+    public static class Field implements SchemaDirective {
         private final String name;
         private final boolean optional;
         private final FieldValue value;
@@ -169,45 +169,18 @@ public class Schema {
      * Integer schema field type.
      */
     public static class IntegerField extends FieldValue {
-        @Override
-        public int hashCode() {
-            return super.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return super.equals(obj);
-        }
     }
 
     /**
      * String schema field type.
      */
     public static class StringField extends FieldValue {
-        @Override
-        public int hashCode() {
-            return super.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return super.equals(obj);
-        }
     }
 
     /**
      * Boolean schema field type.
      */
     public static class BoolField extends FieldValue {
-        @Override
-        public int hashCode() {
-            return super.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return super.equals(obj);
-        }
     }
 
     /**
@@ -287,15 +260,10 @@ public class Schema {
         private final Set<String> optionalFields = new HashSet<>();
         private final List<Constraint> constraints = new ArrayList<>();
 
-        private String name;
+        private String name = "";
         private boolean pass;
 
-        public Builder(String name) {
-            this.name = name;
-        }
-
         public Builder() {
-            this("");
         }
 
         public Builder(Schema schema) {
@@ -319,10 +287,10 @@ public class Schema {
             }
         }
 
-        public Builder add(SchemaElement element) {
+        public Builder add(SchemaDirective element) {
             if (element instanceof Field) {
                 addField((Field) element);
-            } else if (element instanceof PassValidation) {
+            } else if (element instanceof OpaqueSchema) {
                 this.pass = true;
             } else if (element instanceof Constraint) {
                 this.constraints.add((Constraint) element);

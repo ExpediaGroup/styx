@@ -16,7 +16,6 @@
 package com.hotels.styx.config.schema;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
@@ -24,21 +23,25 @@ import java.util.Set;
 
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.joining;
 
 /**
  * A constraint to ensure at least one of many specified fields is mandatory.
  */
 class AtLeastOneFieldPresenceConstraint implements Constraint {
     private final Set<String> fieldNames;
-    private final String displayNames;
+    private final String description;
 
-    public AtLeastOneFieldPresenceConstraint(String... fieldNames) {
+    AtLeastOneFieldPresenceConstraint(String... fieldNames) {
         this.fieldNames = ImmutableSet.copyOf(fieldNames);
-        this.displayNames = Joiner.on(", ")
-                .join(stream(fieldNames)
-                        .map(name -> format("'%s'", name))
-                        .collect(toList()));
+        this.description = description(fieldNames);
+    }
+
+    private static String description(String[] fieldNames) {
+        String displayNames = stream(fieldNames)
+                .map(name -> format("'%s'", name))
+                .collect(joining(", "));
+        return format("At least one of (%s) must be present.", displayNames);
     }
 
     @Override
@@ -53,6 +56,6 @@ class AtLeastOneFieldPresenceConstraint implements Constraint {
 
     @Override
     public String describe() {
-        return format("At least one of (%s) must be present.", displayNames);
+        return description;
     }
 }

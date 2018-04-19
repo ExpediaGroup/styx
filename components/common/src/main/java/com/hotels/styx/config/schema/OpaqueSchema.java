@@ -16,7 +16,7 @@
 package com.hotels.styx.config.schema;
 
 /**
- * A directive that marks the object as opaque.
+ * A schema directive to mark the object as opaque, making its internal layout unknown.
  */
-class PassValidation implements SchemaElement {
+final class OpaqueSchema implements SchemaDirective {
 }
