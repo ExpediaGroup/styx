@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy;
 
 import com.codahale.metrics.Histogram;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.metrics.HttpErrorStatusListener;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.RequestStatsCollector;
@@ -132,7 +132,7 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
         }
 
         @Override
-        public void configure(Channel channel, HttpHandler2 httpPipeline) {
+        public void configure(Channel channel, HttpHandler httpPipeline) {
             sslContext.ifPresent(ssl -> {
                 SslHandler sslHandler = ssl.newHandler(channel.alloc());
                 channel.pipeline().addLast(sslHandler);

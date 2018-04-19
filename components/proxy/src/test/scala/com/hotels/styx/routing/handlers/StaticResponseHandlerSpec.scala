@@ -18,7 +18,7 @@ package com.hotels.styx.routing.handlers
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition
-import com.hotels.styx.support.api.BlockingObservables
+import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.support.api.BlockingObservables.toRxObservable
 import io.netty.handler.codec.http.HttpResponseStatus.CREATED
 import org.scalatest.{FunSpec, ShouldMatchers}
@@ -40,7 +40,7 @@ class StaticResponseHandlerSpec extends FunSpec with ShouldMatchers {
 
   it("builds static response handler") {
     val handler = new StaticResponseHandler.ConfigFactory().build(List(), null, config)
-    val response = toRxObservable(handler.handle(HttpRequest.Builder.get("/foo").build(), null)).toBlocking.first()
+    val response = toRxObservable(handler.handle(HttpRequest.Builder.get("/foo").build(), HttpInterceptorContext.create)).toBlocking.first()
 
     response.status should be (CREATED)
   }

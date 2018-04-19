@@ -18,7 +18,7 @@ package com.hotels.styx.routing.handlers;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
@@ -48,7 +48,7 @@ import static java.lang.String.join;
 /**
  * Routing object that proxies a request to a configured backend.
  */
-public class ProxyToBackend implements HttpHandler2 {
+public class ProxyToBackend implements HttpHandler {
     private final HttpClient client;
 
     private ProxyToBackend(HttpClient client) {
@@ -73,7 +73,7 @@ public class ProxyToBackend implements HttpHandler2 {
         }
 
         @Override
-        public HttpHandler2 build(List<String> parents, RouteHandlerFactory builder, RouteHandlerDefinition configBlock) {
+        public HttpHandler build(List<String> parents, RouteHandlerFactory builder, RouteHandlerDefinition configBlock) {
             JsonNodeConfig jsConfig = new JsonNodeConfig(configBlock.config());
 
             BackendService backendService = jsConfig

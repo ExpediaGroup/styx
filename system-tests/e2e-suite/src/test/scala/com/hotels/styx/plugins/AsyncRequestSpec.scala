@@ -23,7 +23,8 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.v2.StyxObservable
+import com.hotels.styx.api.v2.StyxCoreObservable.toObservable
+import com.hotels.styx.api.v2.{StyxCoreObservable, StyxObservable}
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
 import com.hotels.styx.common.CompletableFutures
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
@@ -87,18 +88,18 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class AsyncRequestDelayPlugin extends PluginAdapter {
   override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
-    StyxObservable.of(request)
-      .transformAsync(asJavaFunction(x => asyncRequest(request)))
-      .transformAsync(asJavaFunction(y => chain.proceed(y)))
+    def asyncRequest(request: HttpRequest): StyxObservable[HttpRequest] = {
+      chain.context.async.fromCompletionStage(
+        Future {
+          Thread.sleep(1000)
+        }.map(_ => request)
+          .toJava
+      )
+    }
+
+    chain.context.async.observable(request)
+      .flatMap(asJavaFunction(x => asyncRequest(request)))
+      .flatMap(asJavaFunction(y => chain.proceed(y)))
   }
 
-
-  private def asyncRequest(request: HttpRequest): StyxObservable[HttpRequest] = {
-    StyxObservable.from(
-      Future {
-        Thread.sleep(1000)
-      }.map(_ => request)
-        .toJava
-    )
-  }
 }

@@ -16,7 +16,7 @@
 package com.hotels.styx.startup;
 
 import com.google.common.util.concurrent.Service;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.proxy.ProxyServerBuilder;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpServer;
@@ -40,7 +40,7 @@ public final class ProxyServerSetUp {
     }
 
     public HttpServer createProxyServer(StyxServerComponents config) {
-        HttpHandler2 pipeline = pipelineFactory.create(config);
+        HttpHandler pipeline = pipelineFactory.create(config);
 
         HttpServer proxyServer = new ProxyServerBuilder(config.environment())
                 .httpHandler(pipeline)

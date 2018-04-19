@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.api;
 
+import com.hotels.styx.api.MockContext.MockObservable;
 import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import rx.Observable;
@@ -30,7 +31,7 @@ public class TestSupport {
     }
 
     public static <T> T getFirst(StyxObservable<T> observable) {
-        return ((StyxCoreObservable<T>)observable).delegate().toBlocking().single();
+        return ((MockObservable<T>)observable).value();
     }
 
 }

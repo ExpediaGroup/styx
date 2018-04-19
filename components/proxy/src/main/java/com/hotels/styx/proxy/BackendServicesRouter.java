@@ -17,7 +17,7 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
@@ -61,7 +61,7 @@ import static java.util.Comparator.naturalOrder;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * A {@link HttpHandler2} implementation.
+ * A {@link HttpHandler} implementation.
  */
 public class BackendServicesRouter implements HttpRouter, Registry.ChangeListener<BackendService> {
     private static final Logger LOG = getLogger(BackendServicesRouter.class);
@@ -85,7 +85,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     }
 
     @Override
-    public Optional<HttpHandler2> route(HttpRequest request) {
+    public Optional<HttpHandler> route(HttpRequest request) {
         String path = request.path();
 
         return routes.entrySet().stream()
@@ -224,7 +224,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         return new UrlRequestHealthCheck(healthCheckUri, client, metricRegistry);
     }
 
-    private static class ProxyToClientPipeline implements HttpHandler2 {
+    private static class ProxyToClientPipeline implements HttpHandler {
         private final HttpClient client;
         private final OriginsInventory originsInventory;
 

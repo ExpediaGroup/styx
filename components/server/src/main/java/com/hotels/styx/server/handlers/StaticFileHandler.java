@@ -18,6 +18,7 @@ package com.hotels.styx.server.handlers;
 import com.google.common.io.Files;
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.v2.StyxObservable;
@@ -53,7 +54,7 @@ public class StaticFileHandler implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         try {
             return resolveFile(request.path())
                     .map(ResolvedFile::new)
@@ -61,10 +62,10 @@ public class StaticFileHandler implements HttpHandler {
                             .addHeader(CONTENT_TYPE, resolvedFile.mediaType)
                             .body(resolvedFile.content)
                             .build())
-                    .map(StyxObservable::of)
-                    .orElseGet(() -> NOT_FOUND_HANDLER.handle(request));
+                    .map(response -> context.async().observable(response))
+                    .orElseGet(() -> NOT_FOUND_HANDLER.handle(request, context));
         } catch (IOException e) {
-            return StyxObservable.of(response(INTERNAL_SERVER_ERROR).build());
+            return context.async().observable(response(INTERNAL_SERVER_ERROR).build());
         }
     }
 

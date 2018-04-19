@@ -17,6 +17,7 @@ package com.hotels.styx.admin.tasks;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.service.BackendService;
@@ -59,7 +60,7 @@ public class OriginsReloadCommandHandler implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return new StyxCoreObservable<>(Observable.<HttpResponse>create(this::reload)
                 .subscribeOn(Schedulers.from(executor)));
     }

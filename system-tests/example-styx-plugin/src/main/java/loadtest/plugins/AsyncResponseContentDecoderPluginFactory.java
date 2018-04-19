@@ -52,7 +52,7 @@ public class AsyncResponseContentDecoderPluginFactory implements PluginFactory {
         @Override
         public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
             return chain.proceed(request)
-                    .transformAsync(response ->
+                    .flatMap(response ->
                             new StyxCoreObservable<>(response.decode(buf -> buf.toString(UTF_8), this.maxContentLength)
                                     .flatMap(decodedResponse -> timer(this.delayMillis, MILLISECONDS)
                                             .map(x -> decodedResponse.responseBuilder()

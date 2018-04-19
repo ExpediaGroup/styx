@@ -22,6 +22,7 @@ import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -53,7 +54,7 @@ public class OriginsHandlerTest {
         Iterable<BackendService> expected = loadFromPath(originsFile).get();
 
         withOriginsHandler(originsFile, handler -> {
-            FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
+            FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create()));
 
             assertThat(response.status(), is(OK));
             assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
@@ -69,7 +70,7 @@ public class OriginsHandlerTest {
         Registry<BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
         OriginsHandler handler = new OriginsHandler(backendServicesRegistry);
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(OK));
         assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
@@ -84,7 +85,7 @@ public class OriginsHandlerTest {
         Iterable<BackendService> expected = loadFromPath(originsFile).get();
 
         withOriginsHandler(originsFile, handler -> {
-            FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
+            FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create()));
 
             assertThat(response.status(), is(OK));
             assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));

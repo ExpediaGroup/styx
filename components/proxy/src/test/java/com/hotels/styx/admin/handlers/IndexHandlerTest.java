@@ -21,10 +21,10 @@ import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;
+import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,6 +47,6 @@ public class IndexHandlerTest {
     }
 
     private HttpResponse handle(HttpRequest request) {
-        return getFirst(handler.handle(request));
+        return getFirst(handler.handle(request, HttpInterceptorContext.create()));
     }
 }

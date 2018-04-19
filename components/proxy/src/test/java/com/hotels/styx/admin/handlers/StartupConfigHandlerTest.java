@@ -17,6 +17,7 @@ package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
@@ -39,7 +40,7 @@ public class StartupConfigHandlerTest {
 
         StartupConfigHandler handler = new StartupConfigHandler(startupConfig);
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), matchesRegex("<html><body>" +

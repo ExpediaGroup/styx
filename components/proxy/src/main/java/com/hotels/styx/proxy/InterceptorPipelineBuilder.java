@@ -17,7 +17,7 @@ package com.hotels.styx.proxy;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.proxy.plugin.InstrumentedPlugin;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
@@ -35,15 +35,15 @@ import static java.util.stream.StreamSupport.stream;
 public class InterceptorPipelineBuilder {
     private final Environment environment;
     private final Iterable<NamedPlugin> plugins;
-    private final HttpHandler2 handler;
+    private final HttpHandler handler;
 
-    public InterceptorPipelineBuilder(Environment environment, Iterable<NamedPlugin> plugins, HttpHandler2 handler) {
+    public InterceptorPipelineBuilder(Environment environment, Iterable<NamedPlugin> plugins, HttpHandler handler) {
         this.environment = checkNotNull(environment);
         this.plugins = checkNotNull(plugins);
         this.handler = checkNotNull(handler);
     }
 
-    public HttpHandler2 build() {
+    public HttpHandler build() {
         List<HttpInterceptor> interceptors = ImmutableList.copyOf(instrument(plugins, environment));
         return new HttpInterceptorPipeline(interceptors, handler);
     }

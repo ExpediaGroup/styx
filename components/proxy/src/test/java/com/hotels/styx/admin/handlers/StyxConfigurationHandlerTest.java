@@ -20,6 +20,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -88,7 +89,7 @@ public class StyxConfigurationHandlerTest {
     }
 
     private static StyxObservable<HttpResponse> browseForCurrentConfiguration(String yaml, boolean pretty) {
-        return configurationBrowserHandler(yaml).handle(adminRequest(pretty));
+        return configurationBrowserHandler(yaml).handle(adminRequest(pretty), HttpInterceptorContext.create());
     }
 
     private static HttpRequest adminRequest(boolean pretty) {

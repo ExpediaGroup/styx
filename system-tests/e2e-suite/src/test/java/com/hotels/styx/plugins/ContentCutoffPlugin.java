@@ -31,16 +31,16 @@ public class ContentCutoffPlugin implements Plugin {
     @Override
     public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request)
-                .transformAsync(response -> {
+                .flatMap(response -> {
                     Observable<String> body = response.body()
                             .decode(utf8String(), 1024);
 
-                    return StyxObservable.of(body)
-                            .transform(content -> {
+                    return chain.context().async().observable(body)
+                            .map(content -> {
                                 LOGGER.info("Throw away response body={}", content);
                                 return content;
                             })
-                            .transform(content -> response);
+                            .map(content -> response);
                 });
     }
 }

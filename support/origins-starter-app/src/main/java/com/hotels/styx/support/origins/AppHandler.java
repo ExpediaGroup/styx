@@ -16,6 +16,7 @@
 package com.hotels.styx.support.origins;
 
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Origin;
@@ -42,9 +43,9 @@ public class AppHandler implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request) {
-        return handler.handle(request)
-                .transform(response -> {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return handler.handle(request, context)
+                .map(response -> {
                     HttpResponse.Builder responseBuilder = response.newBuilder()
                             .headers(request.headers())
                             .header(STUB_ORIGIN_INFO, origin.applicationInfo());

@@ -16,6 +16,7 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.v2.StyxObservable;
@@ -43,14 +44,14 @@ public class PluginListHandler implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         Stream<NamedPlugin> enabled = plugins.stream().filter(NamedPlugin::enabled);
         Stream<NamedPlugin> disabled = plugins.stream().filter(plugin -> !plugin.enabled());
 
         String output = section("Enabled", enabled)
                 + section("Disabled", disabled);
 
-        return StyxObservable.of(response(OK)
+        return context.async().observable(response(OK)
                 .body(output)
                 .contentType(HTML_UTF_8)
                 .build());

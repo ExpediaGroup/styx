@@ -111,7 +111,7 @@ class PluginErrorHandlingSpec extends FunSpec
 
   private class FailAfterHandleInterceptor extends PluginAdapter {
     override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): StyxObservable[HttpResponse] = {
-      chain.proceed(request).transform(
+      chain.proceed(request).map(
         asJavaFunction((response: HttpResponse) => {
           val fail: Optional[String] = request.header("Fail_after_handle")
           if (isTrue(fail)) {

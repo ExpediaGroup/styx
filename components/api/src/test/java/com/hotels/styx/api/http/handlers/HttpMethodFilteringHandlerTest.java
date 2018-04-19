@@ -19,8 +19,11 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.MockContext;
+import org.mockito.Mockito;
 import org.testng.annotations.Test;
 
+import static com.hotels.styx.api.MockContext.MOCK_CONTEXT;
 import static com.hotels.styx.api.TestSupport.getFirst;
 import static com.hotels.styx.api.HttpRequest.Builder.post;
 import static io.netty.handler.codec.http.HttpMethod.GET;
@@ -28,6 +31,8 @@ import static io.netty.handler.codec.http.HttpMethod.POST;
 import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -38,9 +43,9 @@ public class HttpMethodFilteringHandlerTest {
         HttpMethodFilteringHandler post = new HttpMethodFilteringHandler(POST, handler);
 
         HttpRequest request = post("/some-uri").build();
-        post.handle(request);
+        post.handle(request, mock(HttpInterceptor.Context.class));
 
-        verify(handler).handle(request);
+        verify(handler).handle(eq(request), any(HttpInterceptor.Context.class));
     }
 
     @Test
@@ -49,7 +54,7 @@ public class HttpMethodFilteringHandlerTest {
         HttpMethodFilteringHandler post = new HttpMethodFilteringHandler(GET, handler);
 
         HttpRequest request = post("/some-uri").build();
-        HttpResponse response = getFirst(post.handle(request));
+        HttpResponse response = getFirst(post.handle(request, MOCK_CONTEXT));
 
         assertThat(response.status(), is(METHOD_NOT_ALLOWED));
     }

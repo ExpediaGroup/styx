@@ -17,7 +17,9 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Clock;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import java.time.Duration;
@@ -31,6 +33,7 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
 
 public class JsonHandlerTest {
     long time = currentTimeMillis();
@@ -101,11 +104,11 @@ public class JsonHandlerTest {
     }
 
     private String response(JsonHandler<?> handler) {
-        return bodyAsString(toRxObservable(handler.handle(get("/").build())).toBlocking().first());
+        return bodyAsString(toRxObservable(handler.handle(get("/").build(), HttpInterceptorContext.create())).toBlocking().first());
     }
 
     private String responseFor(JsonHandler<?> handler, HttpRequest request) {
-        return bodyAsString(toRxObservable(handler.handle(request)).toBlocking().first());
+        return bodyAsString(toRxObservable(handler.handle(request, HttpInterceptorContext.create())).toBlocking().first());
     }
 
     private static class Convertible {

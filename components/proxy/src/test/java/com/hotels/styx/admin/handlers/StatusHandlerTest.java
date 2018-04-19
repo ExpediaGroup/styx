@@ -20,6 +20,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.http.handlers.BaseHttpHandler;
 import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.server.HttpInterceptorContext;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.testng.annotations.Test;
 
@@ -37,14 +38,14 @@ public class StatusHandlerTest {
     @Test
     public void returnsOKForHealthyHealthcheck() {
         StatusHandler statusHandler = new StatusHandler(underlyingHealthCheckIs(OK));
-        FullHttpResponse response = waitForResponse(statusHandler.handle(get("/status").build()));
+        FullHttpResponse response = waitForResponse(statusHandler.handle(get("/status").build(), HttpInterceptorContext.create()));
         assertThat(response.bodyAs(UTF_8), is("OK"));
     }
 
     @Test
     public void returnsNOT_OKForFaultyHealthcheck() {
         StatusHandler statusHandler = new StatusHandler(underlyingHealthCheckIs(INTERNAL_SERVER_ERROR));
-        FullHttpResponse response = waitForResponse(statusHandler.handle(get("/status").build()));
+        FullHttpResponse response = waitForResponse(statusHandler.handle(get("/status").build(), HttpInterceptorContext.create()));
         assertThat(response.bodyAs(UTF_8), is("NOT_OK"));
     }
 

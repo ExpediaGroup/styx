@@ -20,6 +20,7 @@ import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.client.SimpleNettyHttpClient;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
@@ -99,7 +100,7 @@ public class StyxProxyTest extends SSLSetup {
     }
 
     private StyxObservable<HttpResponse> textResponse(String body) {
-        return StyxObservable.of(response(OK)
+        return StyxCoreObservable.of(response(OK)
                 .body("Response from http connector")
                 .build());
     }

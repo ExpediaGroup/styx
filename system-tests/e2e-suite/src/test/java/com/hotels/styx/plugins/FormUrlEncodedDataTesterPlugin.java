@@ -51,7 +51,7 @@ public class FormUrlEncodedDataTesterPlugin implements Plugin {
     }
 
     // TODO: Mikko: Styx 2.0 API: Uses deprecated APIs and we may not be able to test this in the intended way.
-    private StyxObservable<HttpResponse> buildResponse(HttpRequest req) {
+    private StyxObservable<HttpResponse> buildResponse(HttpRequest req, Context context) {
         return new StyxCoreObservable<>(req
                 .decodePostParams(100)
                 .map(request -> response(OK)

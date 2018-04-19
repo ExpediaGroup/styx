@@ -27,6 +27,7 @@ import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.common.SimpleCache;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
+import rx.Observable;
 
 import java.util.Map;
 
@@ -94,7 +95,8 @@ public class InstrumentedPlugin implements Plugin {
                     .onErrorResumeNext(error -> error(recordAndWrapError(chain, error))));
         } catch (Throwable e) {
             recordException(e);
-            return StyxObservable.error(new PluginException(e, plugin.name()));
+            return new StyxCoreObservable<HttpResponse>(Observable.error(new PluginException(e, plugin.name()))) {
+            };
         }
     }
 

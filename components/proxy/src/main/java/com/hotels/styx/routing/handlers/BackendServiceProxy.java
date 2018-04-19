@@ -17,7 +17,7 @@ package com.hotels.styx.routing.handlers;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
@@ -44,7 +44,7 @@ import static java.lang.String.join;
 /**
  * A HTTP handler that proxies requests to backend services based on the path prefix.
  */
-public class BackendServiceProxy implements HttpHandler2 {
+public class BackendServiceProxy implements HttpHandler {
 
     private final RouteHandlerAdapter handler;
 
@@ -85,7 +85,7 @@ public class BackendServiceProxy implements HttpHandler2 {
         }
 
         @Override
-        public HttpHandler2 build(List<String> parents, RouteHandlerFactory x, RouteHandlerDefinition configBlock) {
+        public HttpHandler build(List<String> parents, RouteHandlerFactory x, RouteHandlerDefinition configBlock) {
             JsonNodeConfig config = new JsonNodeConfig(configBlock.config());
             String provider = config.get("backendProvider")
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "backendProvider"));

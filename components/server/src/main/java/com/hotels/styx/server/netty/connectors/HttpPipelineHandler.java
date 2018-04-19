@@ -18,7 +18,7 @@ package com.hotels.styx.server.netty.connectors;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.ContentOverflowException;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.NoServiceConfiguredException;
@@ -99,7 +99,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
             .add(INTERNAL_SERVER_ERROR, StyxClientException.class)
             .build();
 
-    private final HttpHandler2 httpPipeline;
+    private final HttpHandler httpPipeline;
     private final HttpErrorStatusListener httpErrorStatusListener;
     private final HttpResponseWriterFactory responseWriterFactory;
 
@@ -559,7 +559,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
      * Builds instances of HttpPipelineHandler.
      */
     public static class Builder {
-        private final HttpHandler2 httpPipeline;
+        private final HttpHandler httpPipeline;
 
         private ResponseEnhancer responseEnhancer = DO_NOT_MODIFY_RESPONSE;
         private HttpErrorStatusListener httpErrorStatusListener = IGNORE_ERROR_STATUS;
@@ -572,7 +572,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
          *
          * @param httpPipeline the HTTP pipeline
          */
-        public Builder(HttpHandler2 httpPipeline) {
+        public Builder(HttpHandler httpPipeline) {
             this.httpPipeline = requireNonNull(httpPipeline);
         }
 

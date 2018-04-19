@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.routing.handlers;
 
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
@@ -33,15 +33,15 @@ import static rx.Observable.create;
 /**
  * The pipeline consists of a chain of interceptors followed by a handler.
  */
-class StandardHttpPipeline implements HttpHandler2 {
+class StandardHttpPipeline implements HttpHandler {
     private final List<HttpInterceptor> interceptors;
-    private final HttpHandler2 handler;
+    private final HttpHandler handler;
 
-    public StandardHttpPipeline(HttpHandler2 handler) {
+    public StandardHttpPipeline(HttpHandler handler) {
         this(emptyList(), handler);
     }
 
-    public StandardHttpPipeline(List<HttpInterceptor> interceptors, HttpHandler2 handler) {
+    public StandardHttpPipeline(List<HttpInterceptor> interceptors, HttpHandler handler) {
         this.interceptors = checkNotNull(interceptors);
         this.handler = checkNotNull(handler);
     }
@@ -56,10 +56,10 @@ class StandardHttpPipeline implements HttpHandler2 {
     static final class HttpInterceptorChain implements HttpInterceptor.Chain {
         private final List<HttpInterceptor> interceptors;
         private final int index;
-        private final HttpHandler2 client;
+        private final HttpHandler client;
         private final HttpInterceptor.Context context;
 
-        HttpInterceptorChain(List<HttpInterceptor> interceptors, int index, HttpHandler2 client, HttpInterceptor.Context context) {
+        HttpInterceptorChain(List<HttpInterceptor> interceptors, int index, HttpHandler client, HttpInterceptor.Context context) {
             this.interceptors = interceptors;
             this.index = index;
             this.client = client;
@@ -84,7 +84,7 @@ class StandardHttpPipeline implements HttpHandler2 {
                 try {
                     return interceptor.intercept(request, chain);
                 } catch (Throwable e) {
-                    return StyxObservable.error(e);
+                    return chain.context().async().error(e);
                 }
             }
             return new StyxCoreObservable<>(((StyxCoreObservable<HttpResponse>) client.handle(request, this.context))

@@ -15,15 +15,15 @@
  */
 package com.hotels.styx.routing.handlers;
 
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.support.api.BlockingObservables;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +40,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static rx.Observable.just;
 
 public class StandardHttpPipelineTest {
     @Test
@@ -88,7 +87,7 @@ public class StandardHttpPipelineTest {
     public void interceptorsCanPassInformationThroughContextAfterRequest() {
         HttpInterceptor addsToContext = (request, chain) ->
                 chain.proceed(request)
-                        .transform(response -> {
+                        .map(response -> {
                             chain.context().add("contextValue", "expected");
                             return response;
                         });
@@ -96,7 +95,7 @@ public class StandardHttpPipelineTest {
         AtomicReference<String> foundInContext = new AtomicReference<>();
 
         HttpInterceptor takesFromContext = (request, chain) -> chain.proceed(request)
-                .transform(response -> {
+                .map(response -> {
                     foundInContext.set(
                             chain.context().get("contextValue", String.class));
                     return response;
@@ -121,7 +120,7 @@ public class StandardHttpPipelineTest {
         AtomicReference<String> foundInContext = new AtomicReference<>();
 
         HttpInterceptor takesFromContext = (request, chain) -> chain.proceed(request)
-                .transform(response -> {
+                .map(response -> {
                     foundInContext.set(
                             chain.context().get("contextValue", String.class));
                     return response;
@@ -153,7 +152,7 @@ public class StandardHttpPipelineTest {
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void sendsExceptionUponMultipleSubscription() {
-        HttpHandler2 handler = (request, context) -> StyxObservable.of(response(OK).build());
+        HttpHandler handler = (request, context) -> StyxCoreObservable.of(response(OK).build());
 
         StandardHttpPipeline pipeline = new StandardHttpPipeline(handler);
 
@@ -166,7 +165,7 @@ public class StandardHttpPipelineTest {
 
     @Test(expectedExceptions = IllegalStateException.class, dataProvider = "multipleSubscriptionInterceptors")
     public void sendsExceptionUponExtraSubscriptionInsideInterceptor(HttpInterceptor interceptor) {
-        HttpHandler2 handler = (request, context) -> StyxObservable.of(response(OK).build());
+        HttpHandler handler = (request, context) -> StyxCoreObservable.of(response(OK).build());
 
         List<HttpInterceptor> interceptors = singletonList(interceptor);
         StandardHttpPipeline pipeline = new StandardHttpPipeline(interceptors, handler);
@@ -219,7 +218,7 @@ public class StandardHttpPipelineTest {
         return (request, chain) -> {
             onInterceptRequest.accept(name);
             return chain.proceed(request)
-                    .transform(response -> {
+                    .map(response -> {
                         onInterceptResponse.accept(name);
                         return response;
                     });
@@ -231,6 +230,6 @@ public class StandardHttpPipelineTest {
     }
 
     private StandardHttpPipeline pipeline(HttpInterceptor... interceptors) {
-        return new StandardHttpPipeline(asList(interceptors), (request, context) -> StyxObservable.of(response(OK).build()));
+        return new StandardHttpPipeline(asList(interceptors), (request, context) -> StyxCoreObservable.of(response(OK).build()));
     }
 }

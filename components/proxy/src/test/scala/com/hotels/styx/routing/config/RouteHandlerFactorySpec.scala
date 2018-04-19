@@ -16,7 +16,7 @@
 package com.hotels.styx.routing.config
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.hotels.styx.api.HttpHandler2
+import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import org.mockito.Matchers.any
 import org.mockito.Mockito.{verify, when}
@@ -28,10 +28,10 @@ import scala.collection.JavaConverters._
 
 class RouteHandlerFactorySpec extends FunSpec with ShouldMatchers with MockitoSugar {
 
-  private val mockHandler = mock[HttpHandler2]
-  private val aHandlerInstance = mock[HttpHandler2]
+  private val mockHandler = mock[HttpHandler]
+  private val aHandlerInstance = mock[HttpHandler]
 
-  val handlers = Map[String, HttpHandler2](
+  val handlers = Map[String, HttpHandler](
     "aHandler" -> aHandlerInstance
   )
 

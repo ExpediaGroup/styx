@@ -36,8 +36,8 @@ public class DecodedContentFailurePlugin implements Plugin {
                 // TODO: Mikko: Styx 2.0 Api:
                 // Ugly hack. As the response.decode() is being deprecated, we may not
                 // be able to integration-test this kind of scenarios.
-                .transformAsync(response -> new StyxCoreObservable<>(response.decode((byteBuf) -> byteBuf.toString(UTF_8), maxContentBytes)))
-                .transform(decodedResponse -> {
+                .flatMap(response -> new StyxCoreObservable<>(response.decode((byteBuf) -> byteBuf.toString(UTF_8), maxContentBytes)))
+                .map(decodedResponse -> {
                     if (request.header("Fail_after_content").isPresent()) {
                         throw new RuntimeException("Simulated failure after content aggregation");
                     }

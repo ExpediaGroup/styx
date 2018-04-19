@@ -18,6 +18,7 @@ package com.hotels.styx.proxy.interceptors;
 import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 
 import static com.hotels.styx.api.HttpResponse.Builder.response;
@@ -47,6 +48,6 @@ public final class ReturnResponseChain implements Chain {
 
     @Override
     public StyxObservable<HttpResponse> proceed(HttpRequest request) {
-        return StyxObservable.of(response);
+        return StyxCoreObservable.of(response);
     }
 }

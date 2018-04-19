@@ -44,10 +44,10 @@ public class AsyncResponsePluginFactory implements PluginFactory {
         @Override
         public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
             return chain.proceed(request)
-                    .transformAsync(response -> StyxObservable.from(processAsynchronously(response, config.delayMillis())));
+                    .flatMap(response -> chain.context().async().fromCompletionStage(processAsynchronously(response, config.delayMillis())));
         }
 
-        private CompletableFuture<HttpResponse> processAsynchronously(HttpResponse response, int delayMillis) {
+        private static CompletableFuture<HttpResponse> processAsynchronously(HttpResponse response, int delayMillis) {
             return CompletableFutures.fromSingleObservable(timer(delayMillis, MILLISECONDS)
                     .map(x -> response));
         }

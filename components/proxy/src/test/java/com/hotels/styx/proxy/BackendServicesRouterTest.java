@@ -17,7 +17,7 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
@@ -91,7 +91,7 @@ public class BackendServicesRouterTest {
         router.onChange(changes);
 
         HttpRequest request = get("/appB/hotel/details.html").build();
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
 
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
     }
@@ -106,7 +106,7 @@ public class BackendServicesRouterTest {
         router.onChange(changes);
 
         HttpRequest request = get("/appB/hotel/details.html").build();
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
 
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
     }
@@ -122,7 +122,7 @@ public class BackendServicesRouterTest {
         router.onChange(changes);
 
         HttpRequest request = get("/").build();
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
 
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_A));
     }
@@ -137,7 +137,7 @@ public class BackendServicesRouterTest {
         router.onChange(changes);
 
         HttpRequest request = get("/").build();
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
 
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_A));
     }
@@ -152,7 +152,7 @@ public class BackendServicesRouterTest {
         router.onChange(changes);
 
         HttpRequest request = get("/appB/").build();
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
 
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
     }
@@ -163,7 +163,7 @@ public class BackendServicesRouterTest {
         router.onChange(added(appB().newCopy().path("/appB/hotel/details.html").build()));
 
         HttpRequest request = get("/ba/").build();
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
         System.out.println("route: " + route);
 
         assertThat(route, is(Optional.empty()));
@@ -189,7 +189,7 @@ public class BackendServicesRouterTest {
                 .build());
 
         HttpRequest request = get("/appB/").build();
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue("X"));
     }
 
@@ -201,16 +201,16 @@ public class BackendServicesRouterTest {
 
         router.onChange(added(appB()));
 
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
 
         router.onChange(new Registry.Changes.Builder<BackendService>().build());
 
-        Optional<HttpHandler2> route2 = router.route(request);
+        Optional<HttpHandler> route2 = router.route(request);
         assertThat(proxyTo(route2, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
     }
 
-    private HttpResponse proxyTo(Optional<HttpHandler2> pipeline, HttpRequest request) {
+    private HttpResponse proxyTo(Optional<HttpHandler> pipeline, HttpRequest request) {
         return BlockingObservables.toRxObservable(pipeline.get().handle(request, context)).toBlocking().first();
     }
 

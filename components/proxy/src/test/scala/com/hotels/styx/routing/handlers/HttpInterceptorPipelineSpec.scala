@@ -18,7 +18,7 @@ package com.hotels.styx.routing.handlers
 import com.google.common.collect.ImmutableList.{of => list}
 import io.netty.handler.codec.http.HttpResponseStatus.OK
 import com.hotels.styx.api._
-import com.hotels.styx.api.v2.StyxObservable
+import com.hotels.styx.api.v2.{StyxCoreObservable, StyxObservable}
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin
@@ -59,8 +59,8 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
 //      new HttpInterceptorPipeline.ConfigFactory(
 //              interceptors(
 //                // Does not accept a scala function literal in place of Java Function1:
-//                namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).transform(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
-//                namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).transform(response => response.newBuilder().addHeader("X-Test-Header", "A").build())))
+//                namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
+//                namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build())))
 //              ),
 //              new BuiltinInterceptorsFactory(Map.empty[String, HttpInterceptorFactory].asJava)
 //            ).build(list("config"), null, config)
@@ -83,8 +83,8 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
 //    val e = intercept[IllegalArgumentException] {
 //      new HttpInterceptorPipeline.ConfigFactory(
 //              interceptors(
-//                namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).transform(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
-//                namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).transform(response => response.newBuilder().addHeader("X-Test-Header", "A").build())))
+//                namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
+//                namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build())))
 //              ),
 //              new BuiltinInterceptorsFactory(Map.empty[String, HttpInterceptorFactory].asJava)
 //            ).build(list("config"), null, config)
@@ -112,8 +112,8 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
 //
 //    val handler = new HttpInterceptorPipeline.ConfigFactory(
 //          interceptors(
-//            namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).transform(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
-//            namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).transform(response => response.newBuilder().addHeader("X-Test-Header", "B").build())))
+//            namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
+//            namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "B").build())))
 //          ),
 //          new BuiltinInterceptorsFactory(Map.empty[String, HttpInterceptorFactory].asJava)
 //        ).build(list("config"), routingObjectFactory(), config)
@@ -165,8 +165,8 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
 //
 //    val handler = new HttpInterceptorPipeline.ConfigFactory(
 //          interceptors(
-//            namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).transform(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
-//            namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).transform(response => response.newBuilder().addHeader("X-Test-Header", "B").build())))
+//            namedPlugin("interceptor1", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "A").build()))),
+//            namedPlugin("interceptor2", new PluginAdapter((request, chain) => chain.proceed(request).map(response => response.newBuilder().addHeader("X-Test-Header", "B").build())))
 //          ),
 //          new BuiltinInterceptorsFactory(
 //            Map[String, HttpInterceptorFactory]("Rewrite" -> new RewriteInterceptor.ConfigFactory()).asJava
@@ -209,11 +209,11 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
   def mockHandlerFactory(): HttpHandlerFactory = {
     val handlerFactory = mock[HttpHandlerFactory]
     when(handlerFactory.build(any[java.util.List[String]], any[RouteHandlerFactory], any[RouteHandlerDefinition]))
-      .thenReturn(new HttpHandlerAdapter(_ => StyxObservable.of(HttpResponse.Builder.response(OK).build())))
+      .thenReturn(new HttpHandlerAdapter((_, _) => StyxCoreObservable.of(HttpResponse.Builder.response(OK).build())))
     handlerFactory
   }
 
   def routingObjectFactory(): RouteHandlerFactory = {
-    new RouteHandlerFactory(Map("BackendServiceProxy" -> mockHandlerFactory()).asJava, Map[String, HttpHandler2]())
+    new RouteHandlerFactory(Map("BackendServiceProxy" -> mockHandlerFactory()).asJava, Map[String, HttpHandler]())
   }
 }

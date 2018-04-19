@@ -31,9 +31,9 @@ import java.util.Optional;
 
 import static com.google.common.collect.Iterables.all;
 import static com.hotels.styx.admin.handlers.JVMMetricsHandlerTest.StringsContains.containsStrings;
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
 import static com.hotels.styx.support.api.matchers.HttpResponseStatusMatcher.hasStatus;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -90,7 +90,7 @@ public class JVMMetricsHandlerTest {
     }
 
     private HttpResponse call(HttpRequest request) {
-        return getFirst(handler.handle(request));
+        return getFirst(handler.handle(request, HttpInterceptorContext.create()));
     }
 
     static class StringsContains extends TypeSafeMatcher<String> {

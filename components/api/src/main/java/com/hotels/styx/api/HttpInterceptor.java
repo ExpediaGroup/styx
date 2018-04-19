@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.api;
 
+import com.hotels.styx.api.v2.Async;
 import com.hotels.styx.api.v2.StyxObservable;
 
 import java.util.Optional;
@@ -54,6 +55,9 @@ public interface HttpInterceptor {
             return Optional.ofNullable(get(key, clazz));
         }
 
+
+        Async async();
+
         Context EMPTY = new Context() {
             @Override
             public void add(String key, Object value) {
@@ -62,6 +66,11 @@ public interface HttpInterceptor {
 
             @Override
             public <T> T get(String key, Class<T> clazz) {
+                return null;
+            }
+
+            @Override
+            public Async async() {
                 return null;
             }
         };
@@ -87,6 +96,7 @@ public interface HttpInterceptor {
          * @return observable that will provide the response
          */
         StyxObservable<HttpResponse> proceed(HttpRequest request);
+
     }
 
     /**

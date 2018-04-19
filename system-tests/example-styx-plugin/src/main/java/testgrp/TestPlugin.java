@@ -61,8 +61,8 @@ public class TestPlugin implements Plugin {
         Function<ByteBuf, String> byteBufStringFunction = byteBuf -> byteBuf.toString(Charsets.UTF_8);
 
         return chain.proceed(newRequest)
-                .transformAsync(response -> response.toFullResponse(1 * 1024 * 1024))
-                .transform(response ->
+                .flatMap(response -> response.toFullResponse(1 * 1024 * 1024))
+                .map(response ->
                         response.newBuilder()
                                 .header(X_HCOM_PLUGINS_HEADER, header)
                                 .header(X_HCOM_PLUGINS_CONFIGURATION_PATH, configPath)
@@ -70,7 +70,7 @@ public class TestPlugin implements Plugin {
                                 .header("X-Hcom-Styx-Started", styxStarted)
                                 .header("X-Hcom-Styx-Stopped", styxStopped)
                                 .build())
-                .transform(FullHttpResponse::toStreamingResponse);
+                .map(FullHttpResponse::toStreamingResponse);
     }
 
     private String xHcomPluginsHeader(HttpMessage message) {

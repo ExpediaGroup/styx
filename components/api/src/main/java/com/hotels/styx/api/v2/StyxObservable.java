@@ -15,34 +15,16 @@
  */
 package com.hotels.styx.api.v2;
 
-import rx.Observable;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
-
 
 /**
  * Exposes a transformation API for HTTP interceptors.
  *
  * This interface provides a is *not* intended for plugins to extend.
  *
- *
  * @param <T>
  */
 public interface StyxObservable<T> {
-    <U> StyxObservable<U> transform(Function<T, U> transformation);
-    <U> StyxObservable<U> transformAsync(Function<T, StyxObservable<U>> transformation);
-
-    static <T> StyxObservable<T> of(T value) {
-        return new StyxCoreObservable<>(Observable.just(value));
-    }
-
-    static <T> StyxObservable<T> error(Throwable error) {
-        return new StyxCoreObservable<>(Observable.error(error));
-    }
-
-    static <T> StyxObservable<T> from(CompletionStage<T> completableFuture) {
-        return new StyxCoreObservable<>(completableFuture);
-    }
+    <U> StyxObservable<U> map(Function<T, U> transformation);
+    <U> StyxObservable<U> flatMap(Function<T, StyxObservable<U>> transformation);
 }

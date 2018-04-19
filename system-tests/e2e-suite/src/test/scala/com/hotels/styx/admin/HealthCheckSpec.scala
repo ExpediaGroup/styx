@@ -30,7 +30,6 @@ import com.hotels.styx.support.configuration._
 import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-import rx.Observable
 
 import scala.concurrent.duration._
 
@@ -85,7 +84,7 @@ class HealthCheckSpec extends FunSpec
 
   class FaultyPlugin extends PluginAdapter {
     override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
-      StyxObservable.error(new RuntimeException)
+      chain.context.async.error(new RuntimeException)
     }
   }
 

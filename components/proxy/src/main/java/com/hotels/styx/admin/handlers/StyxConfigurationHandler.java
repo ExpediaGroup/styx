@@ -17,6 +17,7 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.configuration.Configuration;
@@ -49,10 +50,10 @@ public class StyxConfigurationHandler implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return configHandler(request.queryParam("pretty").isPresent())
-                .handle(request)
-                .transform(StyxConfigurationHandler::disableCaching);
+                .handle(request, context)
+                .map(StyxConfigurationHandler::disableCaching);
     }
 
     private StaticBodyHttpHandler configHandler(boolean pretty) {

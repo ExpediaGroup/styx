@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.server.netty;
 
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
 import com.hotels.styx.server.netty.codec.NettyToStyxRequestDecoder;
@@ -60,7 +60,7 @@ public class WebServerConnectorFactory implements ServerConnectorFactory {
         }
 
         @Override
-        public void configure(Channel channel, HttpHandler2 httpHandler) {
+        public void configure(Channel channel, HttpHandler httpHandler) {
             if (isHttps()) {
                 channel.pipeline().addLast(sslHandler(channel));
             }

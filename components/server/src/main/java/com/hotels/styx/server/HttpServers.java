@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.server;
 
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.server.netty.NettyServerBuilder;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 
@@ -30,7 +30,7 @@ public class HttpServers {
      * @return {@link com.hotels.styx.server.HttpServer} object
      * @see com.hotels.styx.server.netty.NettyServer
      */
-    public static HttpServer createHttpServer(int port, HttpHandler2 handler) {
+    public static HttpServer createHttpServer(int port, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
                 .name("NettyServer")
                 .setHttpConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(port)))
@@ -48,7 +48,7 @@ public class HttpServers {
      * @return {@link com.hotels.styx.server.HttpServer} object
      * @see com.hotels.styx.server.netty.NettyServer
      */
-    public static HttpServer createHttpServer(String name, HttpConnectorConfig httpConnectorConfig, HttpHandler2 handler) {
+    public static HttpServer createHttpServer(String name, HttpConnectorConfig httpConnectorConfig, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
                 .name(name)
                 .setHttpConnector(new WebServerConnectorFactory().create(httpConnectorConfig))
@@ -66,7 +66,7 @@ public class HttpServers {
      * @return {@link com.hotels.styx.server.HttpServer} object
      * @see com.hotels.styx.server.netty.NettyServer
      */
-    public static HttpServer createHttpsServer(String name, HttpsConnectorConfig httpsConnectorConfig, HttpHandler2 handler) {
+    public static HttpServer createHttpsServer(String name, HttpsConnectorConfig httpsConnectorConfig, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
                 .name(name)
                 .setHttpsConnector(new WebServerConnectorFactory().create(httpsConnectorConfig))

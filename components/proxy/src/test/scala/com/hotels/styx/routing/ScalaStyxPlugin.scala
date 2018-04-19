@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.routing
 
+import com.hotels.styx.api.HttpInterceptor.Context
 import com.hotels.styx.api._
 import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.api.v2.StyxObservable
@@ -48,6 +49,6 @@ class HttpClientAdapter(sendRequest: HttpRequest => Observable[HttpResponse]) ex
     toJavaObservable(sendRequest(request))
 }
 
-class HttpHandlerAdapter(handler: HttpRequest => StyxObservable[HttpResponse]) extends HttpHandler {
-  override def handle(request: HttpRequest): StyxObservable[HttpResponse] = handler(request)
+class HttpHandlerAdapter(handler: (HttpRequest, Context) => StyxObservable[HttpResponse]) extends HttpHandler {
+  override def handle(request: HttpRequest, context: Context): StyxObservable[HttpResponse] = handler(request, context)
 }

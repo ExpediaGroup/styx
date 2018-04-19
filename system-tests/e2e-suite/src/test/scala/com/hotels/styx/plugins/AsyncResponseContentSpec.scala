@@ -86,7 +86,7 @@ import scala.compat.java8.FunctionConverters.asJavaFunction
 class AsyncDelayPlugin extends PluginAdapter {
   override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
     chain.proceed(request)
-      .transformAsync(asJavaFunction((response: HttpResponse) => {
+      .flatMap(asJavaFunction((response: HttpResponse) => {
 
         val transformedContent: Observable[ByteBuf] = response.body().content()
           .observeOn(Schedulers.computation())
@@ -95,7 +95,7 @@ class AsyncDelayPlugin extends PluginAdapter {
             Observable.just(byteBuf)
           })
 
-        StyxObservable.of(response.newBuilder().body(transformedContent).build())
+        chain.context.async.observable(response.newBuilder().body(transformedContent).build())
       }))
   }
 }

@@ -16,6 +16,7 @@
 package com.hotels.styx.api.http.handlers;
 
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.v2.StyxObservable;
@@ -42,14 +43,14 @@ public class HttpMethodFilteringHandler implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         if (!method.equals(request.method())) {
-            return StyxObservable.of(
+            return context.async().observable(
                     response(METHOD_NOT_ALLOWED)
                             .body(errorBody)
                             .build());
         }
 
-        return httpHandler.handle(request);
+        return httpHandler.handle(request, context);
     }
 }

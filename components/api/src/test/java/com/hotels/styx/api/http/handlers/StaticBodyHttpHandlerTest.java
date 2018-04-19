@@ -16,6 +16,7 @@
 package com.hotels.styx.api.http.handlers;
 
 
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import org.testng.annotations.Test;
 
@@ -24,18 +25,20 @@ import java.nio.charset.StandardCharsets;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.MockContext.MOCK_CONTEXT;
 import static com.hotels.styx.api.TestSupport.getFirst;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
 
 public class StaticBodyHttpHandlerTest {
     @Test
     public void respondsWithStaticBody() {
         StaticBodyHttpHandler handler = new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "foo", UTF_8);
 
-        HttpResponse response = getFirst(handler.handle(get("/").build()));
+        HttpResponse response = getFirst(handler.handle(get("/").build(), MOCK_CONTEXT));
         HttpResponse.DecodedResponse<String> decodedResponse = response.decode(
                 buf -> buf.toString(StandardCharsets.UTF_8), 1024).toBlocking().first();
 

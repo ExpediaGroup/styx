@@ -16,7 +16,7 @@
 package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
@@ -35,7 +35,7 @@ import static com.hotels.styx.api.HttpResponse.Builder.response;
 /**
  * A HTTP handler for returning a static response.
  */
-public class StaticResponseHandler implements HttpHandler2 {
+public class StaticResponseHandler implements HttpHandler {
     private final int status;
     private final String text;
 
@@ -46,7 +46,7 @@ public class StaticResponseHandler implements HttpHandler2 {
 
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return StyxObservable.of(response(HttpResponseStatus.valueOf(status)).body(text).build());
+        return context.async().observable(response(HttpResponseStatus.valueOf(status)).body(text).build());
     }
 
     private static class StaticResponseConfig {
@@ -64,7 +64,7 @@ public class StaticResponseHandler implements HttpHandler2 {
      * Builds a static response handler from Yaml configuration.
      */
     public static class ConfigFactory implements HttpHandlerFactory {
-        public HttpHandler2 build(List<String> parents, RouteHandlerFactory builders, RouteHandlerDefinition configBlock) {
+        public HttpHandler build(List<String> parents, RouteHandlerFactory builders, RouteHandlerDefinition configBlock) {
             checkNotNull(configBlock.config());
 
             StaticResponseConfig config = new JsonNodeConfig(configBlock.config())

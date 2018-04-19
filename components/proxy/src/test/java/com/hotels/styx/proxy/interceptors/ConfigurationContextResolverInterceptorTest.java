@@ -21,6 +21,8 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.configuration.ConfigurationContextResolver;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.v2.Async;
+import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.support.api.BlockingObservables;
 import org.testng.annotations.Test;
@@ -83,7 +85,7 @@ public class ConfigurationContextResolverInterceptorTest {
         public StyxObservable<HttpResponse> proceed(HttpRequest request) {
             proceedWasCalled = true;
 
-            return StyxObservable.of(response(OK).build());
+            return StyxCoreObservable.of(response(OK).build());
         }
 
         private class TestChainContext implements HttpInterceptor.Context {
@@ -97,6 +99,11 @@ public class ConfigurationContextResolverInterceptorTest {
             @Override
             public <T> T get(String key, Class<T> type) {
                 return type.cast(map.get(key));
+            }
+
+            @Override
+            public Async async() {
+                return null;
             }
         }
     }

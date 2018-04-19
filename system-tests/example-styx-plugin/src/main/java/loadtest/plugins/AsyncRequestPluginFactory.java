@@ -20,8 +20,14 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.api.v2.StyxObservable;
+import io.netty.handler.codec.http.HttpResponseStatus;
 
+import java.util.concurrent.CompletableFuture;
+
+import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static io.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static rx.Observable.timer;
 
@@ -42,8 +48,30 @@ public class AsyncRequestPluginFactory implements PluginFactory {
 
         @Override
         public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-            return StyxObservable.from(fromSingleObservable(timer(config.delayMillis(), MILLISECONDS)))
-                    .transformAsync(x -> chain.proceed(request));
+
+
+//            resp1 = chain.context().styxObservable(1)
+//                    .transformAsync(x -> asyncService1());
+//
+//            resp2 = chain.context().styxObservable(2)
+//                    .transformAsync(x -> asyncService2());
+//
+//            zip(resp1, resp2)
+//                    .transformAsync(responseTuple -> ...)
+//
+//            chain.context().endpoints("redis-01")
+//                    .send(redisRequest)
+//                    .
+//
+//
+//            StyxObservable.from(CompletableFuture.completedFuture(1))
+//                    .transform(i -> response(OK).header("X-Int", i).build());
+//
+//            return chain.styxObservable(response(TEMPORARY_REDIRECT).build())
+//                    .transformAsync(x -> chain.proceed(request));
+//
+            return chain.context().async().observable(fromSingleObservable(timer(config.delayMillis(), MILLISECONDS)))
+                    .flatMap(x -> chain.proceed(request));
         }
     }
 

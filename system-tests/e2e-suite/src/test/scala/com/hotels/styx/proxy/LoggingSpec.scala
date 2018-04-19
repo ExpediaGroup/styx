@@ -146,7 +146,7 @@ class LoggingSpec extends FunSpec
           throw new RuntimeException("Throw exception at Request")
         case Some(AT_RESPONSE) =>
           chain.proceed(request)
-            .transform(asJavaFunction((response: HttpResponse) => throw new RuntimeException("Throw exception at Response")))
+            .map(asJavaFunction((response: HttpResponse) => throw new RuntimeException("Throw exception at Response")))
         case _ =>
           chain.proceed(request)
       }

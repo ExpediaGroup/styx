@@ -28,6 +28,7 @@ import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.client.StyxHostHttpClient;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -67,7 +68,7 @@ public class OriginsInventoryHandlerTest {
 
         eventBus.post(new OriginsSnapshot(APP_ID, pool(activeOrigins), pool(inactiveOrigins), pool(disabledOrigins)));
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
         assertThat(response.bodyAs(UTF_8).split("\n").length, is(1));
 
         Map<Id, OriginsSnapshot> output = deserialiseJson(response.bodyAs(UTF_8));
@@ -91,7 +92,7 @@ public class OriginsInventoryHandlerTest {
 
         eventBus.post(new OriginsSnapshot(APP_ID, pool(emptySet()), pool(emptySet()), pool(disabledOrigins)));
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/?pretty=1").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/?pretty=1").build(), HttpInterceptorContext.create()));
         assertThat(body(response).replace("\r\n", "\n"),
                 matchesRegex("\\{\n" +
                         "  \"" + APP_ID + "\" : \\{\n" +
@@ -113,7 +114,7 @@ public class OriginsInventoryHandlerTest {
     public void returnsEmptyObjectWhenNoOrigins() {
         OriginsInventoryHandler handler = new OriginsInventoryHandler(new EventBus());
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
 
         assertThat(response.bodyAs(UTF_8), is("{}"));
     }

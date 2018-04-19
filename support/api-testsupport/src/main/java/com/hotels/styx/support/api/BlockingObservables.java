@@ -33,7 +33,7 @@ public final class BlockingObservables {
 
     public static FullHttpResponse waitForResponse(StyxObservable<HttpResponse> responseObs) {
         return toRxObservable(responseObs
-                .transformAsync(response -> response.toFullResponse(120*1024)))
+                .flatMap(response -> response.toFullResponse(120*1024)))
                 .toBlocking()
                 .single();
     }

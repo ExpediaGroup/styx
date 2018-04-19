@@ -18,6 +18,7 @@ package com.hotels.styx.proxy.interceptors;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.support.api.HttpMessageBodies;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
@@ -111,10 +112,10 @@ public class HttpMessageLoggingInterceptorTest {
     }
 
     private static HttpInterceptor.Chain respondWith(HttpResponse.Builder resp) {
-        return request -> StyxObservable.of(resp.request(request).build());
+        return request -> StyxCoreObservable.of(resp.request(request).build());
     }
 
     private static void consume(StyxObservable<HttpResponse> resp) {
-        toRxObservable(resp.transform(HttpMessageBodies::bodyAsString)).toBlocking().single();
+        toRxObservable(resp.map(HttpMessageBodies::bodyAsString)).toBlocking().single();
     }
 }

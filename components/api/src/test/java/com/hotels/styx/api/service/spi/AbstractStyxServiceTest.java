@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.api.service.spi;
 
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.v2.StyxCoreObservable;
@@ -24,6 +25,7 @@ import rx.Observable;
 
 import java.util.concurrent.CompletableFuture;
 
+import static com.hotels.styx.api.MockContext.MOCK_CONTEXT;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.FAILED;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.RUNNING;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.STARTING;
@@ -33,6 +35,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
 
 public class AbstractStyxServiceTest {
 
@@ -43,8 +46,8 @@ public class AbstractStyxServiceTest {
         DerivedStyxService service = new DerivedStyxService("derived-service", new CompletableFuture<>());
 
         FullHttpResponse response = toRxObservable(
-                service.adminInterfaceHandlers().get("status").handle(get)
-                        .transformAsync(r -> r.toFullResponse(1024)))
+                service.adminInterfaceHandlers().get("status").handle(get, MOCK_CONTEXT)
+                        .flatMap(r -> r.toFullResponse(1024)))
                 .toBlocking()
                 .first();
 

@@ -16,6 +16,7 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.v2.StyxObservable;
@@ -41,8 +42,8 @@ public class StatusHandler implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request) {
-        return handler.handle(request).transform(response ->
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return handler.handle(request, context).map(response ->
                 response.newBuilder()
                         .contentType(PLAIN_TEXT_UTF_8)
                         .body(statusContent(response.status()))

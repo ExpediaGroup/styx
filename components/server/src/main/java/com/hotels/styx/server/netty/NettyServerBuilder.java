@@ -17,15 +17,16 @@ package com.hotels.styx.server.netty;
 
 import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.metrics.MetricRegistry;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.ImmediateEventExecutor;
+import rx.Observable;
 
 import java.util.List;
 import java.util.Optional;
@@ -53,7 +54,7 @@ public final class NettyServerBuilder {
     private Optional<ServerConnector> httpConnector = Optional.empty();
     private Optional<ServerConnector> httpsConnector = Optional.empty();
     private final List<Runnable> startupActions = newCopyOnWriteArrayList();
-    private HttpHandler2 httpHandler = (request, context) -> StyxObservable.of(response(NOT_FOUND).build());
+    private HttpHandler httpHandler = (request, context) -> new StyxCoreObservable<>(Observable.just(response(NOT_FOUND).build()));
 
     public static NettyServerBuilder newBuilder() {
         return new NettyServerBuilder();
@@ -109,12 +110,12 @@ public final class NettyServerBuilder {
         return this.channelGroup;
     }
 
-    public NettyServerBuilder httpHandler(HttpHandler2 httpHandler) {
+    public NettyServerBuilder httpHandler(HttpHandler httpHandler) {
         this.httpHandler = httpHandler;
         return this;
     }
 
-    HttpHandler2 httpHandler() {
+    HttpHandler httpHandler() {
         return this.httpHandler;
     }
 

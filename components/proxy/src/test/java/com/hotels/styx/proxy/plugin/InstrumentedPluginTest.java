@@ -23,6 +23,7 @@ import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
+import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.support.api.BlockingObservables;
 import com.hotels.styx.support.api.SimpleEnvironment;
@@ -34,7 +35,7 @@ import rx.observers.TestSubscriber;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.plugins.spi.Plugin.PASS_THROUGH;
-import static com.hotels.styx.api.v2.StyxObservable.error;
+import static com.hotels.styx.api.v2.StyxCoreObservable.error;
 import static com.hotels.styx.proxy.plugin.InstrumentedPlugin.formattedExceptionName;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.api.BlockingObservables.toRxObservable;
@@ -75,7 +76,7 @@ public class InstrumentedPluginTest {
 
         InstrumentedPlugin plugin = instrumentedPlugin("replaceStatusCode", (request, aChain) ->
                 aChain.proceed(request)
-                        .transform(response -> responseWithNewStatusCode(response, INTERNAL_SERVER_ERROR)));
+                        .map(response -> responseWithNewStatusCode(response, INTERNAL_SERVER_ERROR)));
 
         HttpResponse response = toRxObservable(plugin.intercept(someRequest, chain)).toBlocking().single();
 
@@ -116,7 +117,7 @@ public class InstrumentedPluginTest {
 
         InstrumentedPlugin plugin = instrumentedPlugin("replaceStatusCode", (request, aChain) ->
                 aChain.proceed(request)
-                        .transform(response -> responseWithNewStatusCode(response, BAD_GATEWAY)));
+                        .map(response -> responseWithNewStatusCode(response, BAD_GATEWAY)));
 
         HttpResponse response = toRxObservable(plugin.intercept(someRequest, chain)).toBlocking().single();
 
@@ -173,7 +174,7 @@ public class InstrumentedPluginTest {
     public void metricsAreRecordedWhenPluginMapsToException() {
         InstrumentedPlugin plugin = instrumentedPlugin("observableError", (request, chain) ->
                 chain.proceed(request)
-                        .transformAsync(response -> error(new SomeException())));
+                        .flatMap(response -> error(new SomeException())));
 
         assertThatObservableHasErrorOnly(PluginException.class,
                 plugin.intercept(someRequest, request -> aResponse(OK)));
@@ -197,7 +198,7 @@ public class InstrumentedPluginTest {
     }
 
     private static StyxObservable<HttpResponse> aResponse(HttpResponseStatus status) {
-        return StyxObservable.of(response(status).build());
+        return StyxCoreObservable.of(response(status).build());
     }
 
     private static <T> void assertThatObservableHasErrorOnly(Class<? extends Throwable> type, StyxObservable<T> observable) {

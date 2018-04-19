@@ -17,7 +17,7 @@ package com.hotels.styx.routing;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -26,6 +26,7 @@ import com.hotels.styx.api.service.spi.AbstractRegistry;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.support.api.BlockingObservables;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -65,9 +66,8 @@ public class StaticPipelineBuilderTest {
     @Test
     public void buildsInterceptorPipelineForBackendServices() {
 
-        HttpHandler2 handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of()).build();
-
-        HttpResponse response = toRxObservable(handler.handle(get("/foo").build(), HttpInterceptor.Context.EMPTY)).toBlocking().first();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of()).build();
+        HttpResponse response = toRxObservable(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).toBlocking().first();
         assertThat(response.status(), is(OK));
     }
 
@@ -78,9 +78,9 @@ public class StaticPipelineBuilderTest {
                 interceptor("Test-B", appendResponseHeader("X-From-Plugin", "B"))
         );
 
-        HttpHandler2 handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins).build();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins).build();
 
-        HttpResponse response = BlockingObservables.toRxObservable(handler.handle(get("/foo").build(), HttpInterceptor.Context.EMPTY)).toBlocking().first();
+        HttpResponse response = toRxObservable(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).toBlocking().first();
         assertThat(response.status(), is(OK));
         assertThat(response.headers("X-From-Plugin"), hasItems("B", "A"));
     }
@@ -107,7 +107,7 @@ public class StaticPipelineBuilderTest {
     }
 
     private static Plugin appendResponseHeader(String header, String value) {
-        return (request, chain) -> chain.proceed(request).transform(response -> response.newBuilder().addHeader(header, value).build());
+        return (request, chain) -> chain.proceed(request).map(response -> response.newBuilder().addHeader(header, value).build());
     }
 
 }

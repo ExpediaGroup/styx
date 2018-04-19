@@ -36,11 +36,31 @@ public class StyxCoreObservable<T> implements StyxObservable<T> {
         this.delegate = toObservable(future);
     }
 
-    public <U> StyxObservable<U> transform(Function<T, U> transformation) {
+    public static <T> Observable<T> toObservable(CompletionStage<T> future) {
+        return Observable.create(subscriber ->
+                future.whenComplete((result, error) -> {
+                    if (error != null) {
+                        subscriber.onError(error);
+                    } else {
+                        subscriber.onNext(result);
+                        subscriber.onCompleted();
+                    }
+                }));
+    }
+
+    public static <T> StyxObservable<T> of(T item) {
+        return new StyxCoreObservable<T>(Observable.just(item));
+    }
+
+    public static <T> StyxObservable<T> error(Throwable cause) {
+        return new StyxCoreObservable<T>(Observable.error(cause));
+    }
+
+    public <U> StyxObservable<U> map(Function<T, U> transformation) {
         return new StyxCoreObservable<>(delegate.map(toFunc1(transformation)));
     }
 
-    public <U> StyxObservable<U> transformAsync(Function<T, StyxObservable<U>> transformation) {
+    public <U> StyxObservable<U> flatMap(Function<T, StyxObservable<U>> transformation) {
         return new StyxCoreObservable<>(delegate.flatMap(response -> {
             // TODO: Mikko: Dangerous cast.
             // Because StyxObservable is an interface, nothing prevents plugins from
@@ -59,7 +79,6 @@ public class StyxCoreObservable<T> implements StyxObservable<T> {
         return fromSingleObservable(delegate);
     }
 
-
     private static <T> CompletableFuture<T> fromSingleObservable(Observable<T> observable) {
         final CompletableFuture<T> future = new CompletableFuture<>();
         observable
@@ -73,15 +92,4 @@ public class StyxCoreObservable<T> implements StyxObservable<T> {
         return transformation::apply;
     }
 
-    public static <T> Observable<T> toObservable(CompletionStage<T> future) {
-        return Observable.create(subscriber ->
-                future.whenComplete((result, error) -> {
-                    if (error != null) {
-                        subscriber.onError(error);
-                    } else {
-                        subscriber.onNext(result);
-                        subscriber.onCompleted();
-                    }
-                }));
-    }
 }

@@ -36,7 +36,7 @@ public class HopByHopHeadersRemovingInterceptor implements HttpInterceptor {
     @Override
     public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(removeHopByHopHeaders(request))
-                .transform(HopByHopHeadersRemovingInterceptor::removeHopByHopHeaders);
+                .map(HopByHopHeadersRemovingInterceptor::removeHopByHopHeaders);
     }
 
     private static HttpResponse removeHopByHopHeaders(HttpResponse response) {

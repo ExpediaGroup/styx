@@ -29,6 +29,7 @@ import com.hotels.styx.api.service.spi.Registry.{Changes, ReloadResult}
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.config.RouteHandlerDefinition
+import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.support.api.BlockingObservables
 import com.hotels.styx.support.api.BlockingObservables.toRxObservable
 import io.netty.handler.codec.http.HttpResponseStatus
@@ -65,13 +66,13 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
     val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), services).build(List(), null, config)
     backendRegistry.reload()
 
-    val hwaResponse = toRxObservable(handler.handle(hwaRequest, null)).toBlocking.first()
+    val hwaResponse = toRxObservable(handler.handle(hwaRequest, HttpInterceptorContext.create)).toBlocking.first()
     hwaResponse.header("X-Backend-Service").get() should be("hwa")
 
-    val laResponse = toRxObservable(handler.handle(laRequest, null)).toBlocking.first()
+    val laResponse = toRxObservable(handler.handle(laRequest, HttpInterceptorContext.create)).toBlocking.first()
     laResponse.header("X-Backend-Service").get() should be("la")
 
-    val baResponse = toRxObservable(handler.handle(baRequest, null)).toBlocking.first()
+    val baResponse = toRxObservable(handler.handle(baRequest, HttpInterceptorContext.create)).toBlocking.first()
     baResponse.header("X-Backend-Service").get() should be("ba")
   }
 

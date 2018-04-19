@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.server;
 
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.support.PathTrie;
 
@@ -25,14 +25,14 @@ import java.util.Optional;
  * Makes a routing decision based on longest matching URL path prefix.
  */
 public class PathPrefixRouter implements HttpRouter {
-    private final PathTrie<HttpHandler2> routes = new PathTrie<>();
+    private final PathTrie<HttpHandler> routes = new PathTrie<>();
 
     @Override
-    public Optional<HttpHandler2> route(HttpRequest request) {
+    public Optional<HttpHandler> route(HttpRequest request) {
         return routes.get(request.path());
     }
 
-    public PathPrefixRouter add(String path, HttpHandler2 httpHandler) {
+    public PathPrefixRouter add(String path, HttpHandler httpHandler) {
         routes.put(path, httpHandler);
         return this;
     }

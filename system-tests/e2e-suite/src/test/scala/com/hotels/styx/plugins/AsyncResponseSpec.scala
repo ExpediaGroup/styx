@@ -88,8 +88,8 @@ import scala.compat.java8.FunctionConverters.asJavaFunction
 class AsyncContentDelayPlugin extends PluginAdapter {
   override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
     chain.proceed(request)
-      .transformAsync(asJavaFunction((response: HttpResponse) => {
-        StyxObservable.from(
+      .flatMap(asJavaFunction((response: HttpResponse) => {
+        chain.context.async.fromCompletionStage(
           Future {
             Thread.sleep(1000)
             response

@@ -30,9 +30,9 @@ public class AggregationTesterPlugin implements Plugin {
     @Override
     public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request)
-                .transformAsync(response ->
+                .flatMap(response ->
                         response.toFullResponse(maxContentBytes)
-                        .transform(fullHttpResponse ->
+                        .map(fullHttpResponse ->
                                 fullHttpResponse.newBuilder()
                                         .addHeader("test_plugin", "yes")
                                         .addHeader("bytes_aggregated", fullHttpResponse.body().length)

@@ -40,7 +40,7 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
         HttpRequest newRequest = requestWithAppendedViaHeader(request);
 
         return chain.proceed(newRequest)
-                .transform(this::responseWithAppendedViaHeader);
+                .map(this::responseWithAppendedViaHeader);
     }
 
     private HttpResponse responseWithAppendedViaHeader(HttpResponse response) {

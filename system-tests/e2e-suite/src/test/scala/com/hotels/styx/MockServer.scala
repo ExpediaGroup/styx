@@ -30,9 +30,9 @@ import com.hotels.styx.server.netty.{NettyServerBuilder, ServerConnector, WebSer
 import com.hotels.styx.server.{HttpConnectorConfig, HttpServer}
 
 class RequestRecordingHandler(val requestQueue: BlockingQueue[HttpRequest], val delegate: HttpHandler) extends HttpHandler {
-  override def handle(request: HttpRequest): StyxObservable[HttpResponse] = {
+  override def handle(request: HttpRequest, context: HttpInterceptor.Context): StyxObservable[HttpResponse] = {
     requestQueue.add(request)
-    delegate.handle(request)
+    delegate.handle(request, context)
   }
 }
 
@@ -45,12 +45,12 @@ object MockServer {
 class MockServer(id: String, val port: Int) extends AbstractIdleService with HttpServer with Logging {
   def this(port: Int) = this("origin-" + port.toString, port)
 
-  val router = new HttpHandler2 {
+  val router = new HttpHandler {
     val routes = new ConcurrentHashMap[String, HttpHandler]()
 
     override def handle(request: HttpRequest, context: HttpInterceptor.Context): StyxObservable[HttpResponse] = {
       val handler: HttpHandler = routes.getOrDefault(request.path(), new NotFoundHandler)
-      handler.handle(request)
+      handler.handle(request, context)
     }
 
     def addRoute(path: String, httpHandler: HttpHandler) = routes.put(path, httpHandler)

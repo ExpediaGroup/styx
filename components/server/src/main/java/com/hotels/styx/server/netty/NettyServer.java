@@ -18,7 +18,7 @@ package com.hotels.styx.server.netty;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import io.netty.bootstrap.ServerBootstrap;
@@ -66,7 +66,7 @@ final class NettyServer extends AbstractService implements HttpServer {
     private final Optional<ServerConnector> httpsConnector;
 
     private final Iterable<Runnable> startupActions;
-    private final HttpHandler2 httpHandler;
+    private final HttpHandler httpHandler;
     private final ServerSocketBinder httpServerSocketBinder;
     private final ServerSocketBinder httpsServerSocketBinder;
 

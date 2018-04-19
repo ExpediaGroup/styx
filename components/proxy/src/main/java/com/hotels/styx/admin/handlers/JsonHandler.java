@@ -41,7 +41,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Handler for returning JSON. If a cache expiration value is present, the JSON is not regenerated on every call, unless
  * the specified duration has passed since the last generation.
  *
- * @param <E> type of object to transform into JSON
+ * @param <E> type of object to map into JSON
  */
 public class JsonHandler<E> extends BaseHttpHandler {
     private static final Logger LOG = getLogger(JsonHandler.class);

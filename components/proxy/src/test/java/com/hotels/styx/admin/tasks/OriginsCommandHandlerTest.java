@@ -28,6 +28,7 @@ import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -124,7 +125,7 @@ public class OriginsCommandHandlerTest {
 
     private HttpResponse post(String path) {
         HttpRequest request = HttpRequest.Builder.post(path).build();
-        return getFirst(originsCommand.handle(request));
+        return getFirst(originsCommand.handle(request, HttpInterceptorContext.create()));
     }
 
     static class RecordingOriginsCommandsListener implements OriginsCommandsListener {

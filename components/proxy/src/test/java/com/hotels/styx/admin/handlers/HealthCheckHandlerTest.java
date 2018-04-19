@@ -17,8 +17,10 @@ package com.hotels.styx.admin.handlers;
 
 import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -35,6 +37,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.NOT_IMPLEMENTED;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class HealthCheckHandlerTest {
 
@@ -96,6 +99,6 @@ public class HealthCheckHandlerTest {
     }
 
     private HttpResponse handle(HttpRequest request) {
-        return getFirst(handler.handle(request));
+        return getFirst(handler.handle(request, HttpInterceptorContext.create()));
     }
 }

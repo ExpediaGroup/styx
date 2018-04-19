@@ -17,7 +17,7 @@ package com.hotels.styx.server.netty.connectors;
 
 import com.google.common.collect.ObjectArrays;
 import com.hotels.styx.api.ContentOverflowException;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
@@ -96,14 +96,14 @@ import static org.mockito.Mockito.when;
 import static rx.Observable.just;
 
 public class HttpPipelineHandlerTest {
-    private final HttpHandler2 respondingHandler = (request, context) -> StyxObservable.of(response(OK).build());
-    private final HttpHandler2 doNotRespondHandler = (request, context) -> new StyxCoreObservable<>(Observable.never());
+    private final HttpHandler respondingHandler = (request, context) -> context.async().observable(response(OK).build());
+    private final HttpHandler doNotRespondHandler = (request, context) -> new StyxCoreObservable<>(Observable.never());
 
     private HttpErrorStatusListener errorListener;
     private CodaHaleMetricRegistry metrics;
 
     // Cannot use lambda expression below, because spy() does not understand them.
-    private final HttpHandler2 respondingPipeline = spy(new HttpHandler2() {
+    private final HttpHandler respondingPipeline = spy(new HttpHandler() {
         @Override
         public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
             return respondingHandler.handle(request, context);
@@ -116,7 +116,7 @@ public class HttpPipelineHandlerTest {
     private CompletableFuture<Void> writerFuture;
     private HttpResponseWriter responseWriter;
     private HttpPipelineHandler handler;
-    private HttpHandler2 pipeline;
+    private HttpHandler pipeline;
     private HttpResponseWriterFactory responseWriterFactory;
     private RequestStatsCollector statsCollector;
     private HttpRequest request;
@@ -145,7 +145,7 @@ public class HttpPipelineHandlerTest {
         when(responseWriterFactory.create(anyObject()))
                 .thenReturn(responseWriter);
 
-        pipeline = mock(HttpHandler2.class);
+        pipeline = mock(HttpHandler.class);
         when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(new StyxCoreObservable<>(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true))));
 
         request = get("/foo").id("REQUEST-1-ID").build();
@@ -172,7 +172,7 @@ public class HttpPipelineHandlerTest {
                 .thenReturn(responseWriter)
                 .thenReturn(responseWriter2);
 
-        pipeline = mock(HttpHandler2.class);
+        pipeline = mock(HttpHandler.class);
         when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class)))
                 .thenReturn(new StyxCoreObservable<HttpResponse>(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true))))
                 .thenReturn(new StyxCoreObservable<>(responseObservable2.doOnUnsubscribe(() -> responseUnsubscribed2.set(true))));
@@ -182,7 +182,7 @@ public class HttpPipelineHandlerTest {
         setupHandlerTo(ACCEPTING_REQUESTS);
     }
 
-    private HttpPipelineHandler createHandler(HttpHandler2 pipeline) throws Exception {
+    private HttpPipelineHandler createHandler(HttpHandler pipeline) throws Exception {
         metrics = new CodaHaleMetricRegistry();
         HttpPipelineHandler handler = handlerWithMocks(pipeline)
                 .responseWriterFactory(responseWriterFactory)
@@ -223,7 +223,7 @@ public class HttpPipelineHandlerTest {
 
     @Test
     public void mapsUnrecoverableInternalErrorsToInternalServerError500ResponseCode() {
-        HttpHandler2 handler = (request, context) -> {
+        HttpHandler handler = (request, context) -> {
             throw new RuntimeException("Forced exception for testing");
         };
         EmbeddedChannel channel = buildEmbeddedChannel(handlerWithMocks(handler));
@@ -371,7 +371,7 @@ public class HttpPipelineHandlerTest {
         requestProxiedOnlyOnce(pipeline, request);
     }
 
-    private static void requestProxiedOnlyOnce(HttpHandler2 pipeline, HttpRequest request) {
+    private static void requestProxiedOnlyOnce(HttpHandler pipeline, HttpRequest request) {
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(pipeline).handle(captor.capture(), any(HttpInterceptor.Context.class));
         assertThat(captor.getValue().id(), is(request.id()));
@@ -403,7 +403,7 @@ public class HttpPipelineHandlerTest {
         requestProxiedTwice(pipeline, request, request2);
     }
 
-    private static void requestProxiedTwice(HttpHandler2 pipeline, HttpRequest request1, HttpRequest request2) {
+    private static void requestProxiedTwice(HttpHandler pipeline, HttpRequest request1, HttpRequest request2) {
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(pipeline, times(2)).handle(captor.capture(), any(HttpInterceptor.Context.class));
         assertThat(captor.getAllValues().get(0).id(), is(request1.id()));
@@ -463,7 +463,7 @@ public class HttpPipelineHandlerTest {
     }
 
     private void setupIdleHandlerWithPluginResponse() throws Exception {
-        pipeline = mock(HttpHandler2.class);
+        pipeline = mock(HttpHandler.class);
         when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(new StyxCoreObservable<>(just(response)));
         handler = createHandler(pipeline);
     }
@@ -525,7 +525,7 @@ public class HttpPipelineHandlerTest {
     public void pluginPipelineThrowsAnExceptionInAcceptingRequestsState() throws Exception {
         Throwable cause = new RuntimeException("Simulated Styx plugin exception");
 
-        pipeline = mock(HttpHandler2.class);
+        pipeline = mock(HttpHandler.class);
         when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenThrow(cause);
         handler = createHandler(pipeline);
         assertThat(handler.state(), is(ACCEPTING_REQUESTS));
@@ -898,7 +898,7 @@ public class HttpPipelineHandlerTest {
         return handlerWithMocks(pipeline);
     }
 
-    private HttpPipelineHandler.Builder handlerWithMocks(HttpHandler2 pipeline) {
+    private HttpPipelineHandler.Builder handlerWithMocks(HttpHandler pipeline) {
         return new HttpPipelineHandler.Builder(pipeline)
                 .errorStatusListener(errorListener)
                 .responseEnhancer(responseEnhancer)
