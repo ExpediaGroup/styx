@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
-import com.hotels.styx.api.HttpInterceptor.Chain
+import com.hotels.styx.api.HttpInterceptor.{Chain, observable}
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.v2.StyxObservable
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
@@ -32,7 +32,6 @@ import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import org.scalatest.{BeforeAndAfterAll, FunSpec}
 
-import scala.compat.java8.functionConverterImpls.AsJavaFunction
 import scala.concurrent.duration._
 
 class AsyncRequestContentSpec extends FunSpec
@@ -81,6 +80,7 @@ import com.hotels.styx.support.ImplicitScalaRxConversions.toJavaObservable
 import rx.lang.scala.JavaConversions.toScalaObservable
 import rx.lang.scala.Observable
 import rx.lang.scala.schedulers._
+
 import scala.compat.java8.FunctionConverters.asJavaFunction
 
 class AsyncRequestContentDelayPlugin extends PluginAdapter {
@@ -92,7 +92,7 @@ class AsyncRequestContentDelayPlugin extends PluginAdapter {
           Thread.sleep(1000)
           Observable.just(byteBuf)
         })
-    chain.context.async.observable(request)
+    observable(chain).observable(request)
       .map(asJavaFunction((request: HttpRequest) => request.newBuilder().body(contentTransformation).build()))
       .flatMap(asJavaFunction((request: HttpRequest) => chain.proceed(request)))
   }

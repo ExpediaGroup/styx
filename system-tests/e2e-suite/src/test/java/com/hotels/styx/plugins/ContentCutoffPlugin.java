@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 
+import static com.hotels.styx.api.HttpInterceptor.observable;
 import static com.hotels.styx.api.HttpMessageBody.utf8String;
 
 public class ContentCutoffPlugin implements Plugin {
@@ -35,7 +36,7 @@ public class ContentCutoffPlugin implements Plugin {
                     Observable<String> body = response.body()
                             .decode(utf8String(), 1024);
 
-                    return chain.context().async().observable(body)
+                    return observable(chain).observable(body)
                             .map(content -> {
                                 LOGGER.info("Throw away response body={}", content);
                                 return content;

@@ -60,6 +60,7 @@ import static com.google.common.collect.Iterables.toArray;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderValues.CLOSE;
+import static com.hotels.styx.api.HttpInterceptor.observable;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
@@ -96,7 +97,7 @@ import static org.mockito.Mockito.when;
 import static rx.Observable.just;
 
 public class HttpPipelineHandlerTest {
-    private final HttpHandler respondingHandler = (request, context) -> context.async().observable(response(OK).build());
+    private final HttpHandler respondingHandler = (request, context) -> observable(context).observable(response(OK).build());
     private final HttpHandler doNotRespondHandler = (request, context) -> new StyxCoreObservable<>(Observable.never());
 
     private HttpErrorStatusListener errorListener;

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static com.google.common.net.MediaType.HTML_UTF_8;
+import static com.hotels.styx.api.HttpInterceptor.observable;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;
@@ -51,7 +52,7 @@ public class PluginListHandler implements HttpHandler {
         String output = section("Enabled", enabled)
                 + section("Disabled", disabled);
 
-        return context.async().observable(response(OK)
+        return observable(context).observable(response(OK)
                 .body(output)
                 .contentType(HTML_UTF_8)
                 .build());

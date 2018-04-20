@@ -19,10 +19,10 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
-import com.hotels.styx.api.HttpInterceptor.Chain
+import com.hotels.styx.api.HttpInterceptor.{Chain, observable}
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.v2.StyxObservable
-import com.hotels.styx.api.{HttpRequest, HttpResponse}
+import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse}
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -32,9 +32,8 @@ import io.netty.handler.codec.http.HttpHeaders.Values._
 import org.scalatest.{FunSpec, ShouldMatchers}
 import rx.Observable
 import rx.schedulers.Schedulers
+
 import scala.concurrent.ExecutionContext.Implicits.global
-
-
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -89,7 +88,7 @@ class AsyncContentDelayPlugin extends PluginAdapter {
   override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
     chain.proceed(request)
       .flatMap(asJavaFunction((response: HttpResponse) => {
-        chain.context.async.fromCompletionStage(
+        observable(chain).fromCompletionStage(
           Future {
             Thread.sleep(1000)
             response

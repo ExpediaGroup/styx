@@ -30,6 +30,7 @@ import java.util.Optional;
 
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpInterceptor.observable;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.MediaTypes.mediaTypeOf;
 import static com.hotels.styx.api.http.handlers.NotFoundHandler.NOT_FOUND_HANDLER;
@@ -62,10 +63,10 @@ public class StaticFileHandler implements HttpHandler {
                             .addHeader(CONTENT_TYPE, resolvedFile.mediaType)
                             .body(resolvedFile.content)
                             .build())
-                    .map(response -> context.async().observable(response))
+                    .map(response -> observable(context).observable(response))
                     .orElseGet(() -> NOT_FOUND_HANDLER.handle(request, context));
         } catch (IOException e) {
-            return context.async().observable(response(INTERNAL_SERVER_ERROR).build());
+            return observable(context).observable(response(INTERNAL_SERVER_ERROR).build());
         }
     }
 

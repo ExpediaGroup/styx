@@ -109,4 +109,12 @@ public interface HttpInterceptor {
      */
     StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain);
 
+    static Async observable(Chain chain) {
+        return observable(chain.context());
+    }
+
+    static Async observable(HttpInterceptor.Context context) {
+        return context.async();
+    }
+
 }

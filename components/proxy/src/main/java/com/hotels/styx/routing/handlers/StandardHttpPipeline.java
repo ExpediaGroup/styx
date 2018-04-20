@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hotels.styx.api.HttpInterceptor.observable;
 import static java.util.Collections.emptyList;
 import static rx.Observable.create;
 
@@ -84,7 +85,7 @@ class StandardHttpPipeline implements HttpHandler {
                 try {
                     return interceptor.intercept(request, chain);
                 } catch (Throwable e) {
-                    return chain.context().async().error(e);
+                    return observable(chain).error(e);
                 }
             }
             return new StyxCoreObservable<>(((StyxCoreObservable<HttpResponse>) client.handle(request, this.context))

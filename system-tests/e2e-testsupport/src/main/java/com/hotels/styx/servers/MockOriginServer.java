@@ -33,7 +33,6 @@ import com.github.tomakehurst.wiremock.http.StubResponseRenderer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.HttpServers;
@@ -47,6 +46,7 @@ import static com.github.tomakehurst.wiremock.WireMockServer.FILES_ROOT;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.google.common.base.Optional.absent;
+import static com.hotels.styx.api.HttpInterceptor.observable;
 import static com.hotels.styx.servers.WiremockResponseConverter.toStyxResponse;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyMap;
@@ -129,7 +129,7 @@ public final class MockOriginServer {
                         .flatMap(fullRequest -> {
                             Request wmRequest = new WiremockStyxRequestAdapter(fullRequest);
                             com.github.tomakehurst.wiremock.http.Response wmResponse = wireMockHandler.handle(wmRequest);
-                            return ctx.async().observable(toStyxResponse(wmResponse).toStreamingResponse());
+                            return observable(ctx).observable(toStyxResponse(wmResponse).toStreamingResponse());
                         });
     }
 
@@ -239,7 +239,7 @@ public final class MockOriginServer {
                         .flatMap(fullRequest -> {
                             Request wmRequest = new WiremockStyxRequestAdapter(fullRequest);
                             com.github.tomakehurst.wiremock.http.Response wmResponse = wireMockHandler.handle(wmRequest);
-                            return ctx.async().observable(toStyxResponse(wmResponse).toStreamingResponse());
+                            return observable(ctx).observable(toStyxResponse(wmResponse).toStreamingResponse());
                         });
     }
 }

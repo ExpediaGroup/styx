@@ -23,6 +23,8 @@ import com.hotels.styx.api.NoServiceConfiguredException;
 import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.server.HttpRouter;
 
+import static com.hotels.styx.api.HttpInterceptor.observable;
+
 /**
  * A {@link HttpHandler} implementation.
  */
@@ -40,6 +42,6 @@ public class RouteHandlerAdapter implements HttpHandler {
                 // TODO: NoServiceConfiguredException happens *after* routing. Therefore it doesn't contain
                 // any helpful information about the state of the router as to why service was not configured.
                 // It might be useful to think if there is a better way of addressing this issue.
-                .orElse(context.async().error(new NoServiceConfiguredException(request.path())));
+                .orElse(observable(context).error(new NoServiceConfiguredException(request.path())));
     }
 }

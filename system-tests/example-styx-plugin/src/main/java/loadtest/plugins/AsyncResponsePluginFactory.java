@@ -24,6 +24,7 @@ import com.hotels.styx.common.CompletableFutures;
 
 import java.util.concurrent.CompletableFuture;
 
+import static com.hotels.styx.api.HttpInterceptor.observable;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static rx.Observable.timer;
 
@@ -44,7 +45,7 @@ public class AsyncResponsePluginFactory implements PluginFactory {
         @Override
         public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
             return chain.proceed(request)
-                    .flatMap(response -> chain.context().async().fromCompletionStage(processAsynchronously(response, config.delayMillis())));
+                    .flatMap(response -> observable(chain).fromCompletionStage(processAsynchronously(response, config.delayMillis())));
         }
 
         private static CompletableFuture<HttpResponse> processAsynchronously(HttpResponse response, int delayMillis) {
