@@ -29,6 +29,8 @@ import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.StreamSupport.stream;
 
 /**
  * Provides origins configuration in the form of JSON.
@@ -43,8 +45,8 @@ public class OriginsHandler extends BaseHttpHandler {
 
     @Override
     protected HttpResponse doHandle(HttpRequest request) {
-        Iterable<BackendService> backendServices = backendServicesRegistry.get();
-
+        Iterable<BackendServiceSerializer> backendServices = stream(backendServicesRegistry.get().spliterator(), false)
+                .map(BackendServiceSerializer::new).collect(toSet());
         return jsonResponse(backendServices, isPrettyPrint(request));
     }
 

@@ -23,6 +23,7 @@ import com.hotels.styx.api.Resource;
 import com.hotels.styx.client.applications.ApplicationsProvider;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.client.applications.BackendServices;
+import com.hotels.styx.proxy.backends.file.BackendServiceDeserializer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +33,8 @@ import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
 
 /**
  * Provides applications by reading from a YAML file.
@@ -39,7 +42,7 @@ import static java.lang.String.format;
  */
 public class YamlApplicationsProvider implements ApplicationsProvider {
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
-    private static final CollectionType TYPE = MAPPER.getTypeFactory().constructCollectionType(List.class, BackendService.class);
+    private static final CollectionType TYPE = MAPPER.getTypeFactory().constructCollectionType(List.class, BackendServiceDeserializer.class);
 
     private final BackendServices backendServices;
 
@@ -61,7 +64,10 @@ public class YamlApplicationsProvider implements ApplicationsProvider {
 
     private static Iterable<BackendService> readApplicationsFromResource(Resource resource) {
         try (InputStream stream = resource.inputStream()) {
-            return MAPPER.readValue(stream, TYPE);
+            Iterable<BackendServiceDeserializer> backendServices = MAPPER.readValue(stream, TYPE);
+            return stream(backendServices.spliterator(), false)
+                    .map(BackendServiceDeserializer::backendService)
+                    .collect(toList());
         } catch (JsonMappingException e) {
             throw new RuntimeException(format("Invalid YAML from %s: %s", resource, e.getLocalizedMessage()), e);
         } catch (IOException e) {

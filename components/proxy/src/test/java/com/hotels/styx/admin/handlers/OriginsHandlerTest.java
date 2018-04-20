@@ -21,12 +21,15 @@ import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
+import com.hotels.styx.proxy.backends.file.BackendServiceDeserializer;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.google.common.net.MediaType.JSON_UTF_8;
@@ -87,6 +90,10 @@ public class OriginsHandlerTest {
     }
 
     private static Iterable<BackendService> unmarshalApplications(String content) throws IOException {
-        return MAPPER.readValue(content, new TypeReference<Iterable<BackendService>>(){});
+        Iterable<BackendServiceDeserializer> backendServices = MAPPER.readValue(content, new TypeReference<Iterable<BackendServiceDeserializer>>() {
+        });
+        return StreamSupport.stream(backendServices.spliterator(), false)
+                .map(BackendServiceDeserializer::backendService)
+                .collect(Collectors.toSet());
     }
 }
