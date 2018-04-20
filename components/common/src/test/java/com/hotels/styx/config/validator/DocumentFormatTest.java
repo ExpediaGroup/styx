@@ -483,9 +483,18 @@ public class DocumentFormatTest {
     }
 
 
+    /*
+     * Validates related aspects of `atLeastOne` constraint:
+     *
+     *  1) One required field is present.
+     *  2) Another required field is present.
+     *  3) Both required fields are present
+     *  4) Neither of the required fields are present.
+     *
+     */
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Schema constraint failed. At least one of \\('http', 'https'\\) must be present.")
-    public void validatesCorrectlyAtLeastOneDirective() throws Exception {
+    public void validatesAtLeastOneConstraintCorrectly() throws Exception {
         JsonNode first = YAML_MAPPER.readTree(
                 "connectors: \n"
                         + "  http: 8080\n"
