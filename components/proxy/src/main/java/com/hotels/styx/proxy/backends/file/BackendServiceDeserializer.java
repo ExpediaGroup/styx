@@ -13,26 +13,31 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.service;
+package com.hotels.styx.proxy.backends.file;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.service.ConnectionPoolSettings;
+import com.hotels.styx.api.service.HealthCheckConfig;
+import com.hotels.styx.api.service.RewriteConfig;
+import com.hotels.styx.api.service.StickySessionConfig;
+import com.hotels.styx.api.service.TlsSettings;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.Id.GENERIC_APP;
-import static com.hotels.styx.api.client.Origin.checkThatOriginsAreDistinct;
+import static com.hotels.styx.api.service.BackendService.DEFAULT_RESPONSE_TIMEOUT_MILLIS;
 import static com.hotels.styx.api.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.api.service.HealthCheckConfig.noHealthCheck;
 import static com.hotels.styx.api.service.StickySessionConfig.stickySessionDisabled;
@@ -42,174 +47,27 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 
 /**
- * Represents the configuration of an application (i.e. a backend service) that Styx can proxy to.
+ * Used to provide annotated properties for fields of {@link BackendService} object, required to keep naming of fields
+ * used in configuration on deserialization.
  */
-public final class BackendService implements Identifiable {
-    public static final int DEFAULT_RESPONSE_TIMEOUT_MILLIS = 1000;
+@JsonDeserialize(builder = BackendServiceDeserializer.Builder.class)
+public final class BackendServiceDeserializer {
 
-    /**
-     * A protocol used for the backend service. This can be either HTTP or HTTPS.
-     */
-    public enum Protocol {
-        HTTP,
-        HTTPS
+
+    private final BackendService backendService;
+
+    private BackendServiceDeserializer(BackendService.Builder backendServiceBuilder) {
+        this.backendService = backendServiceBuilder.build();
     }
 
-    private final Id id;
-    private final String path;
-    private final ConnectionPool.Settings connectionPoolSettings;
-    private final Set<Origin> origins;
-    private final HealthCheckConfig healthCheckConfig;
-    private final StickySessionConfig stickySessionConfig;
-    private final List<RewriteConfig> rewrites;
-    private final int responseTimeoutMillis;
-    private final TlsSettings tlsSettings;
-
-    /**
-     * Creates an Application builder.
-     *
-     * @return a new builder
-     */
-    public static Builder newBackendServiceBuilder() {
-        return new Builder();
-    }
-
-    /**
-     * Creates an Application builder that inherits from an existing Application.
-     *
-     * @param backendService application
-     * @return a new builder
-     */
-    public static Builder newBackendServiceBuilder(BackendService backendService) {
-        return new Builder(backendService);
-    }
-
-    private BackendService(Builder builder) {
-        this.id = checkNotNull(builder.id, "id");
-        this.path = checkNotNull(builder.path, "path");
-        this.connectionPoolSettings = checkNotNull(builder.connectionPoolSettings);
-        this.origins = ImmutableSet.copyOf(builder.origins);
-        this.healthCheckConfig = checkNotNull(builder.healthCheckConfig);
-        this.stickySessionConfig = checkNotNull(builder.stickySessionConfig);
-        this.rewrites = checkNotNull(builder.rewrites);
-        this.responseTimeoutMillis = builder.responseTimeoutMillis == 0
-                ? DEFAULT_RESPONSE_TIMEOUT_MILLIS
-                : builder.responseTimeoutMillis;
-        this.tlsSettings = builder.tlsSettings;
-
-        checkThatOriginsAreDistinct(origins);
-        checkArgument(responseTimeoutMillis >= 0, "Request timeout must be greater than or equal to zero");
-    }
-
-    @Override
-    public Id id() {
-        return this.id;
-    }
-
-
-    String idAsString() {
-        return this.id.toString();
-    }
-
-
-    public String path() {
-        return this.path;
-    }
-
-
-    public Set<Origin> origins() {
-        return this.origins;
-    }
-
-
-    public ConnectionPool.Settings connectionPoolConfig() {
-        return this.connectionPoolSettings;
-    }
-
-
-    public HealthCheckConfig healthCheckConfig() {
-        return healthCheckConfig;
-    }
-
-
-    public StickySessionConfig stickySessionConfig() {
-        return this.stickySessionConfig;
-    }
-
-
-    public List<RewriteConfig> rewrites() {
-        return this.rewrites;
-    }
-
-
-    public int responseTimeoutMillis() {
-        return this.responseTimeoutMillis;
-    }
-
-    public Optional<TlsSettings> tlsSettings() {
-        return Optional.ofNullable(this.tlsSettings);
-    }
-
-
-    private TlsSettings getTlsSettings() {
-        return this.tlsSettings().orElse(null);
-    }
-
-    public Protocol protocol() {
-        if (tlsSettings == null) {
-            return Protocol.HTTP;
-        } else {
-            return Protocol.HTTPS;
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, path, connectionPoolSettings, origins,
-                healthCheckConfig, stickySessionConfig, rewrites, responseTimeoutMillis);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        BackendService other = (BackendService) obj;
-        return Objects.equals(this.id, other.id)
-                && Objects.equals(this.path, other.path)
-                && Objects.equals(this.connectionPoolSettings, other.connectionPoolSettings)
-                && Objects.equals(this.origins, other.origins)
-                && Objects.equals(this.healthCheckConfig, other.healthCheckConfig)
-                && Objects.equals(this.stickySessionConfig, other.stickySessionConfig)
-                && Objects.equals(this.rewrites, other.rewrites)
-                && Objects.equals(this.tlsSettings, other.tlsSettings)
-                && Objects.equals(this.responseTimeoutMillis, other.responseTimeoutMillis);
-    }
-
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("id", this.id)
-                .add("path", this.path)
-                .add("origins", this.origins)
-                .add("connectionPoolSettings", this.connectionPoolSettings)
-                .add("healthCheckConfig", this.healthCheckConfig)
-                .add("stickySessionConfig", this.stickySessionConfig)
-                .add("rewrites", this.rewrites)
-                .add("tlsSettings", this.tlsSettings)
-                .toString();
-    }
-
-    public Builder newCopy() {
-        return new Builder(this);
+    public BackendService backendService() {
+        return backendService;
     }
 
     /**
      * Application builder.
      */
+    @JsonPOJOBuilder(buildMethodName = "build", withPrefix = "")
     public static final class Builder {
         private Id id = GENERIC_APP;
         private String path = "/";
@@ -225,14 +83,14 @@ public final class BackendService implements Identifiable {
         }
 
         private Builder(BackendService backendService) {
-            this.id = backendService.id;
-            this.path = backendService.path;
-            this.origins = backendService.origins;
-            this.connectionPoolSettings = backendService.connectionPoolSettings;
-            this.stickySessionConfig = backendService.stickySessionConfig;
-            this.healthCheckConfig = backendService.healthCheckConfig;
-            this.rewrites = backendService.rewrites;
-            this.responseTimeoutMillis = backendService.responseTimeoutMillis;
+            this.id = backendService.id();
+            this.path = backendService.path();
+            this.origins = backendService.origins();
+            this.connectionPoolSettings = backendService.connectionPoolConfig();
+            this.stickySessionConfig = backendService.stickySessionConfig();
+            this.healthCheckConfig = backendService.healthCheckConfig();
+            this.rewrites = backendService.rewrites();
+            this.responseTimeoutMillis = backendService.responseTimeoutMillis();
             this.tlsSettings = backendService.tlsSettings().orElse(null);
         }
 
@@ -253,7 +111,7 @@ public final class BackendService implements Identifiable {
          * @param id an ID
          * @return this builder
          */
-
+        @JsonProperty("id")
         public Builder id(String id) {
             return id(Id.id(id));
         }
@@ -264,7 +122,7 @@ public final class BackendService implements Identifiable {
          * @param path a path
          * @return this builder
          */
-
+        @JsonProperty("path")
         public Builder path(String path) {
             this.path = checkValidPath(checkNotNull(path));
             return this;
@@ -286,7 +144,7 @@ public final class BackendService implements Identifiable {
          * @param timeout a response timeout in milliseconds.
          * @return this builder
          */
-
+        @JsonProperty("responseTimeoutMillis")
         public Builder responseTimeoutMillis(int timeout) {
             this.responseTimeoutMillis = timeout;
             return this;
@@ -298,7 +156,7 @@ public final class BackendService implements Identifiable {
          * @param origins origins
          * @return this builder
          */
-
+        @JsonProperty("origins")
         public Builder origins(Set<Origin> origins) {
             this.origins = checkNotNull(origins);
             return this;
@@ -317,7 +175,7 @@ public final class BackendService implements Identifiable {
          * Sets the https settings.
          * For programmatic use
          */
-
+        @JsonProperty("sslSettings")
         public Builder httpsOld(TlsSettings tlsSettings) {
             this.tlsSettings = tlsSettings;
             return this;
@@ -327,7 +185,7 @@ public final class BackendService implements Identifiable {
          * Sets the https settings.
          * For programmatic use
          */
-
+        @JsonProperty("tlsSettings")
         public Builder https(TlsSettings tlsSettings) {
             this.tlsSettings = tlsSettings;
             return this;
@@ -359,7 +217,7 @@ public final class BackendService implements Identifiable {
          * @param rewriteConfigs rewrite configuration
          * @return this builder
          */
-
+        @JsonProperty("rewrites")
         public Builder rewrites(List<RewriteConfig> rewriteConfigs) {
             this.rewrites = ImmutableList.copyOf(rewriteConfigs);
             return this;
@@ -371,7 +229,7 @@ public final class BackendService implements Identifiable {
          * @param connectionPoolSettings connection pool configuration
          * @return this builder
          */
-
+        @JsonProperty("connectionPool")
         public Builder connectionPoolConfig(ConnectionPoolSettings connectionPoolSettings) {
             this.connectionPoolSettings = checkNotNull(connectionPoolSettings);
             return this;
@@ -394,7 +252,7 @@ public final class BackendService implements Identifiable {
          * @param stickySessionConfig sticky-session configuration.
          * @return this builder
          */
-
+        @JsonProperty("stickySession")
         public Builder stickySessionConfig(StickySessionConfig stickySessionConfig) {
             this.stickySessionConfig = checkNotNull(stickySessionConfig);
             return this;
@@ -406,7 +264,7 @@ public final class BackendService implements Identifiable {
          * @param healthCheckConfig health-check configuration
          * @return this builder
          */
-
+        @JsonProperty("healthCheck")
         public Builder healthCheckConfig(HealthCheckConfig healthCheckConfig) {
             this.healthCheckConfig = checkNotNull(healthCheckConfig);
             return this;
@@ -417,8 +275,21 @@ public final class BackendService implements Identifiable {
          *
          * @return the application
          */
-        public BackendService build() {
-            return new BackendService(this);
+        public BackendServiceDeserializer build() {
+            BackendService.Builder builder = BackendService.newBackendServiceBuilder();
+            builder.id(this.id);
+            builder.path(this.path);
+            builder.origins(this.origins);
+            builder.connectionPoolConfig(this.connectionPoolSettings);
+            builder.healthCheckConfig(this.healthCheckConfig);
+            builder.stickySessionConfig(this.stickySessionConfig);
+            builder.rewrites(this.rewrites);
+            builder.responseTimeoutMillis(this.responseTimeoutMillis);
+            builder.https(this.tlsSettings);
+            builder.httpsOld(this.tlsSettings);
+            return new BackendServiceDeserializer(builder);
         }
     }
 }
+
+

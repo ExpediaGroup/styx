@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit.{MILLISECONDS, SECONDS}
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.hotels.styx.admin.handlers.BackendServiceSerializer
 import com.hotels.styx.api.client.Origin
 import com.hotels.styx.api.service.{BackendService, ConnectionPoolSettings, StickySessionConfig}
 import com.hotels.styx.api.service.spi.Registry
@@ -101,7 +102,7 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
           .origins(origin("shopping", "shopping-01", "localhost", 9094))
           .build()
 
-        var generatedBackendServices = writeToFile(asList(genBackendOne), "backends/generated/single.yaml")
+        var generatedBackendServices = writeToFile(asList(new BackendServiceSerializer(genBackendOne)), "backends/generated/single.yaml")
 
         val registry = FileBackedBackendServicesRegistry.create(generatedBackendServices.toString)
         StyxFutures.await(registry.start())
@@ -114,7 +115,7 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
           .origins(origin("landing", "landing-01", "localhost", 9091))
           .build()
 
-        generatedBackendServices = writeToFile(asList(genBackendOne, genBackendTwo), "backends/generated/single.yaml")
+        generatedBackendServices = writeToFile(asList(new BackendServiceSerializer(genBackendOne), new BackendServiceSerializer(genBackendTwo)), "backends/generated/single.yaml")
 
         StyxFutures.await(registry.reload())
 
@@ -132,7 +133,7 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
           .build()
 
 
-        var generatedBackedServices = writeToFile(asList(genBackendOne), "backends/generated/single.yaml")
+        var generatedBackedServices = writeToFile(asList(new BackendServiceSerializer(genBackendOne)), "backends/generated/single.yaml")
 
         val registry = FileBackedBackendServicesRegistry.create(generatedBackedServices.toString)
         StyxFutures.await(registry.start())
@@ -147,13 +148,13 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
           .origins(origin("landing", "landing-01", "localhost", 9091))
           .build()
 
-        generatedBackedServices = writeToFile(asList(genBackendOne, genBackendTwo), "backends/generated/single.yaml")
+        generatedBackedServices = writeToFile(asList(new BackendServiceSerializer(genBackendOne), new BackendServiceSerializer(genBackendTwo)), "backends/generated/single.yaml")
 
         StyxFutures.await(registry.reload())
 
         assertThat(registry.get(), contains(genBackendOne, genBackendTwo))
 
-        generatedBackedServices = writeToFile(asList(genBackendOne), "backends/generated/single.yaml")
+        generatedBackedServices = writeToFile(asList(new BackendServiceSerializer(genBackendOne)), "backends/generated/single.yaml")
         StyxFutures.await(registry.reload())
 
         assertThat(registry.get(), contains(genBackendOne))
@@ -169,7 +170,7 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
           .origins(origin("shopping", "shop-01", "localhost", 9094))
           .build()
 
-        var generatedBackedServices = writeToFile(asList(genBackendOne), "backends/generated/single.yaml")
+        var generatedBackedServices = writeToFile(asList(new BackendServiceSerializer(genBackendOne)), "backends/generated/single.yaml")
 
         val listener = mock(classOf[Registry.ChangeListener[BackendService]])
 
@@ -187,7 +188,7 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
         assertThat(registry.get(), contains(genBackendOne))
 
         // update "last modified time" but don't change actual data
-        generatedBackedServices = writeToFile(asList(genBackendOne), "backends/generated/single.yaml")
+        generatedBackedServices = writeToFile(asList(new BackendServiceSerializer(genBackendOne)), "backends/generated/single.yaml")
 
         registry.reload()
 
@@ -199,7 +200,7 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
     }
   }
 
-  def writeToFile(applications: java.util.List[BackendService], path: String): File = {
+  def writeToFile(applications: java.util.List[BackendServiceSerializer], path: String): File = {
     val output: File = new File(createOnMissing(path))
     Mapper.writer().writeValue(output, applications)
     output
