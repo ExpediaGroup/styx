@@ -462,7 +462,7 @@ public class DocumentFormatTest {
     }
 
     @Test
-    public void ignoresSubobjects() throws Exception {
+    public void ignoresOpaqueSubobjectValidation() throws Exception {
         JsonNode node2 = YAML_MAPPER.readTree(
                 "parent: \n"
                         + "  opaque: \n"

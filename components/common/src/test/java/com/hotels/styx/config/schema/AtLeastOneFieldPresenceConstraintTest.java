@@ -44,8 +44,7 @@ public class AtLeastOneFieldPresenceConstraintTest {
     }
 
     @Test
-    public void ensuresThatOneRequiredFieldIsPresent() throws IOException {
-
+    public void passesWhenOneRequiredFieldIsPresent() throws IOException {
         AtLeastOneFieldPresenceConstraint constraint = new AtLeastOneFieldPresenceConstraint("http", "https");
         boolean result = constraint.evaluate(
                 schema(
@@ -62,7 +61,6 @@ public class AtLeastOneFieldPresenceConstraintTest {
 
     @Test
     public void allowsSeveralFieldsToBePresent() throws IOException {
-
         AtLeastOneFieldPresenceConstraint constraint = new AtLeastOneFieldPresenceConstraint("http", "https");
         boolean result = constraint.evaluate(
                 schema(
@@ -80,7 +78,6 @@ public class AtLeastOneFieldPresenceConstraintTest {
 
     @Test
     public void throwsExceptionWhenNoneRequiredFieldsArePresent() throws IOException {
-
         AtLeastOneFieldPresenceConstraint constraint = new AtLeastOneFieldPresenceConstraint("http", "https");
         boolean result = constraint.evaluate(
                 schema(

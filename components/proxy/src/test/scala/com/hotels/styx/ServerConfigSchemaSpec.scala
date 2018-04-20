@@ -27,7 +27,7 @@ import org.scalatest.{FunSpec, ShouldMatchers}
 class ServerConfigSchemaSpec extends FunSpec with ShouldMatchers {
 
   describe("Styx Server Configuration") {
-    it("Minimal configuration") {
+    it("Validates a minimal server configuration") {
       validateServerConfiguration(yamlConfig(
         """
           |proxy:
@@ -48,7 +48,7 @@ class ServerConfigSchemaSpec extends FunSpec with ShouldMatchers {
         """.stripMargin)) should be(Optional.empty())
     }
 
-    it("Proxy configuration is mandatory") {
+    it("Detects a missing mandatory 'proxy' configuration.") {
       validateServerConfiguration(yamlConfig(
         """
           |admin:
@@ -64,7 +64,7 @@ class ServerConfigSchemaSpec extends FunSpec with ShouldMatchers {
         """.stripMargin)) should be(Optional.of("Missing a mandatory field 'proxy'"))
     }
 
-    it("Admin configuration is mandatory") {
+    it("Detects a missing mandatory `admin' configuration.") {
       validateServerConfiguration(yamlConfig(
         """
           |proxy:
@@ -80,7 +80,7 @@ class ServerConfigSchemaSpec extends FunSpec with ShouldMatchers {
         """.stripMargin)) should be(Optional.of("Missing a mandatory field 'admin'"))
     }
 
-    it("Services configuration is mandatory") {
+    it("Detects a missing mandatory 'services` configuration.") {
       validateServerConfiguration(yamlConfig(
         """
           |proxy:
@@ -250,7 +250,7 @@ class ServerConfigSchemaSpec extends FunSpec with ShouldMatchers {
       )) should be(Optional.of("Unexpected field: 'styxHeaders.requestId.format'"))
     }
 
-    it("'format' field is optional for 'styxInfo'") {
+    it("Accepts a missing optional 'format' in 'styxInfo' configuration") {
       validateServerConfiguration(yamlConfig(
         minimalConfig
           +
