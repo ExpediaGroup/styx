@@ -17,6 +17,7 @@ package loadtest.plugins;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.api.v2.StyxCoreObservable;
@@ -24,7 +25,6 @@ import com.hotels.styx.api.v2.StyxObservable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static rx.Observable.timer;
 
@@ -52,14 +52,11 @@ public class AsyncResponseContentDecoderPluginFactory implements PluginFactory {
         @Override
         public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
             return chain.proceed(request)
-                    .flatMap(response ->
-                            new StyxCoreObservable<>(response.decode(buf -> buf.toString(UTF_8), this.maxContentLength)
-                                    .flatMap(decodedResponse -> timer(this.delayMillis, MILLISECONDS)
-                                            .map(x -> decodedResponse.responseBuilder()
-                                                    .body(decodedResponse.body())
-                                                    .build())
-                                    ))
-                    );
+                    .flatMap(response ->  response.toFullResponse(this.maxContentLength))
+                    .flatMap(fullResponse ->
+                            new StyxCoreObservable<>(timer(this.delayMillis, MILLISECONDS)
+                            .map(x -> fullResponse)))
+                    .map(FullHttpResponse::toStreamingResponse);
         }
     }
 }

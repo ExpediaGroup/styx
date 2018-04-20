@@ -51,8 +51,6 @@ import static com.hotels.styx.api.HttpResponse.Builder.newBuilder;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.TestSupport.bodyAsString;
 import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
-import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
-import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
@@ -354,42 +352,6 @@ public class HttpResponseTest {
                 .validateContentLength()
                 .build();
 
-    }
-
-    @Test
-    public void allowsModificationOfHeadersBasedOnBody() {
-        HttpResponse response = response()
-                .body(just(buf("foo"), buf("bar")))
-                .build();
-
-        assertThat(response.header(CONTENT_LENGTH), isAbsent());
-
-        Observable<HttpResponse> newResponseObservable = response.decode(utf8Decoder, 100)
-                .map(aggregatedResponse -> aggregatedResponse.responseBuilder()
-                        .header(CONTENT_LENGTH, aggregatedResponse.body().length())
-                        .body(aggregatedResponse.body())
-                        .build());
-
-        HttpResponse newResponse = newResponseObservable.toBlocking().first();
-
-        assertThat(newResponse.header(CONTENT_LENGTH), isValue("6"));
-        assertThat(bodyAsString(newResponse.body()), is("foobar"));
-    }
-
-    @Test
-    public void allowsModificationOfBodyBasedOnExistingBody() {
-        HttpResponse response = response()
-                .body(just(buf("foo"), buf("bar")))
-                .build();
-
-        Observable<HttpResponse> newResponseObservable = response.decode(utf8Decoder, 100)
-                .map(aggregatedResponse -> aggregatedResponse.responseBuilder()
-                        .body(aggregatedResponse.body() + "x")
-                        .build());
-
-        HttpResponse newResponse = newResponseObservable.toBlocking().first();
-
-        assertThat(bodyAsString(newResponse.body()), is("foobarx"));
     }
 
 

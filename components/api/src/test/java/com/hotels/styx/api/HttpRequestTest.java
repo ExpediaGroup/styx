@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.messages.FullHttpRequest;
 import com.hotels.styx.api.messages.HttpMethod;
@@ -29,7 +28,6 @@ import org.testng.annotations.Test;
 import rx.Observable;
 
 import java.net.InetSocketAddress;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpCookie.cookie;
@@ -49,7 +47,6 @@ import static io.netty.handler.codec.http.HttpMethod.DELETE;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-import static io.netty.handler.codec.http.multipart.HttpPostRequestDecoder.ErrorDataDecoderException;
 import static java.lang.String.valueOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
@@ -145,77 +142,6 @@ public class HttpRequestTest {
         HttpRequest request = get("http://example.com/?foo=a%2Bb%3Dc")
                 .build();
         assertThat(request.queryParam("foo").get(), is("a+b=c"));
-    }
-
-    @Test
-    public void decodesPostParams() {
-        HttpRequest request = post("http://example.com/")
-                .body("foo=bar")
-                .build();
-        HttpRequest.DecodedRequest<FormData> formData = request.decodePostParams(100).toBlocking().first();
-        assertThat(formData.body().postParam("foo"), is(Optional.of("bar")));
-    }
-
-    @Test
-    public void decodesMultipleParameters() {
-        HttpRequest request = post("http://example.com/")
-                .body("foo=bar&baz=qux")
-                .build();
-        HttpRequest.DecodedRequest<FormData> decodedFormData = request.decodePostParams(100).toBlocking().first();
-        assertThat(decodedFormData.body().postParam("foo"), is(Optional.of("bar")));
-        assertThat(decodedFormData.body().postParam("baz"), is(Optional.of("qux")));
-    }
-
-    @Test
-    public void decodesPostParamsWithOnlyKey() {
-        HttpRequest request = post("http://example.com/")
-                .body("foo")
-                .build();
-        HttpRequest.DecodedRequest<FormData> decodedFormData = request.decodePostParams(100).toBlocking().first();
-        assertThat(decodedFormData.body().postParam("foo"), is(Optional.empty()));
-    }
-
-    @Test
-    public void decodesApplicationJsonData() {
-        String jsonObject = "{ \"foo\": \"bar\" }";
-        HttpRequest request = post("http://example.com/")
-                .body(jsonObject)
-                .build();
-        HttpRequest.DecodedRequest<String> decodedRequest = request.decode((bb) -> bb.toString(Charsets.UTF_8), 100).toBlocking().first();
-        assertThat(decodedRequest.body(), is(jsonObject));
-    }
-
-    @Test(expectedExceptions = ErrorDataDecoderException.class)
-    public void handlesIncompletePostParamsWithNoKey() {
-        HttpRequest request = post("http://example.com/")
-                .body("=bar")
-                .build();
-        request.decodePostParams(100).toBlocking().first();
-    }
-
-    @Test(expectedExceptions = ErrorDataDecoderException.class)
-    public void handlesIncompletePostParamsWithNoKeyAndNoValue() {
-        HttpRequest request = post("http://example.com/")
-                .body("=")
-                .build();
-        request.decodePostParams(100).toBlocking().first();
-    }
-
-    @Test
-    public void handlesIncompletePostParamsWithExtraDelimiter() {
-        HttpRequest request = post("http://example.com/")
-                .body("foo=bar&")
-                .build();
-        HttpRequest.DecodedRequest<FormData> decodedFormData = request.decodePostParams(100).toBlocking().first();
-        assertThat(decodedFormData.body().postParam("foo"), is(Optional.of("bar")));
-    }
-
-    @Test(expectedExceptions = ContentOverflowException.class)
-    public void raiseExceptionWhenContentOverflows() {
-        HttpRequest request = post("http://example.com/")
-                .body("foo=bar")
-                .build();
-        request.decodePostParams(1).toBlocking().first();
     }
 
     @Test

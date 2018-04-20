@@ -19,23 +19,15 @@ import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.messages.FullHttpRequest;
 import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.DefaultHttpRequest;
-import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
-import rx.Observable;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -205,62 +197,6 @@ public final class HttpRequest implements HttpMessage {
     }
 
     /**
-     * Decodes HTTP content into a business object of type T, using the provided decoder function.
-     * <p>
-     * The method aggregates HTTP request content fully into a composed byte buffer, and applies the provided
-     * decoder function to the composed buffer. Finally, the composed buffer is released. The
-     * decoded business domain object is returned within DecodedRequest instance.
-     * <p>
-     * Along with decoded business domain object, the DecodedRequest instance contains a request
-     * builder object which allows further transformations on the HTTP request object using the decoded
-     * representation as a body. The decoded representation would have to be re-encoded into a byte buffer
-     * or a string prior to using it as a body.
-     * <p>
-     * Note that the builder object is initialised with an empty HTTP body object. In order to turn
-     * DecodedBody back into an HttpRequest, you must add a new HTTP body content by call the
-     * body() method on the request builder, and finally build the request by calling the build()
-     * method on the request builder provided therein.
-     * For example:
-     * <pre>
-     * {@code
-     *
-     * request.decode(r -> r.toString(UTF_8), 12000)
-     *        .map(x -> x.requestBuilder().body("custom enhanced body").build())
-     *        .flatMap(chain::proceed);
-     * </pre>
-     * <p>
-     * NOTE: Please be aware that aggregating the body of the request could be an expensive operation and can cause
-     * performance degradation. It has to be used carefully only in case there is an absolute requirement to change the request body.
-     *
-     * @param decoder         decoder function that decodes the aggregated HTTP request content into desired
-     *                        business domain object
-     *                        <p>
-     * @param maxContentBytes maximum allowed size for the aggregated content. If the content exceeds
-     *                        this amount, an exception is raised
-     * @return an observable that provides an object representing an aggregated request
-     */
-    public <T> Observable<DecodedRequest<T>> decode(Function<ByteBuf, T> decoder, int maxContentBytes) {
-        return body.aggregate(maxContentBytes)
-                .map(bytes -> decoder.apply(Unpooled.copiedBuffer(bytes)))
-                .map(DecodedRequest::new);
-    }
-
-    /**
-     * Decodes HTTP content of a form-urlencoded data and returns a helper class to consume POST params.
-     * <p>
-     * It aggregates HTTP request content into a composed byte buffer and applies a decoder function
-     * to create {@link FormData} within a {@link com.hotels.styx.api.HttpRequest.DecodedRequest} instance.
-     * </p>
-     *
-     * @param maxContentBytes maximum allowed size for the aggregated content. If the content exceeds
-     *                        this amount, a {@link ContentOverflowException} is raised.
-     * @return an observable that provides an object representing the HTTP POST parameters.
-     */
-    public Observable<DecodedRequest<FormData>> decodePostParams(int maxContentBytes) {
-        return this.decode(this::toFormData, maxContentBytes);
-    }
-
-    /**
      * Aggregates and converts this streaming request FullHttpRequest.
      * <p>
      * Aggregates up to maxContentLength bytes of HTTP request content stream. Once content is
@@ -281,13 +217,6 @@ public final class HttpRequest implements HttpMessage {
         return new StyxCoreObservable<>(body.aggregate(maxContentLength)
                 .map(decoded -> new FullHttpRequest.Builder(this, decoded.copy().array()))
                 .map(FullHttpRequest.Builder::build));
-    }
-
-    private FormData toFormData(ByteBuf byteBuf) {
-        HttpPostRequestDecoder postRequestDecoder = new HttpPostRequestDecoder(new DefaultHttpDataFactory(false), new DefaultHttpRequest(version, method, url.toString()));
-        postRequestDecoder.offer(new DefaultHttpContent(byteBuf));
-        postRequestDecoder.offer(new DefaultLastHttpContent());
-        return new FormData(postRequestDecoder);
     }
 
     /**
@@ -396,55 +325,6 @@ public final class HttpRequest implements HttpMessage {
 
     public boolean chunked() {
         return HttpMessageSupport.chunked(headers);
-    }
-
-    /**
-     * The class exists as a helper for decoding HTTP request bodies to business domain objects in asynchronous way.
-     * It is only available via the {@link #decode(Function, int)} method.
-     * <p>
-     * The class provides:
-     * <ul>
-     * <li>the aggregated body.</li>
-     * <li>a request builder that may be used to create a new new request based on the original.</li>
-     * </ul>
-     * <p>
-     * NOTE: The request builder will hold the existing request as part of the body.
-     * However is necessary that the representation of the body implements a proper {@link T#toString} that can replicate
-     * the original request in full.
-     * </p>
-     * <p>
-     * The documentation for the {@link #decode(Function, int)} method contains a code example.
-     * <p>
-     * Type parameters:
-     *
-     * @param <T> Type of the decoded content type.
-     */
-    public final class DecodedRequest<T> {
-        private final Builder requestBuilder;
-        private final T content;
-
-        private DecodedRequest(T content) {
-            this.requestBuilder = newBuilder().body(content.toString());
-            this.content = content;
-        }
-
-        /**
-         * A builder that inherits properties from the original response.
-         *
-         * @return response builder
-         */
-        public Builder requestBuilder() {
-            return requestBuilder;
-        }
-
-        /**
-         * The aggregated body of the original response.
-         *
-         * @return aggregated body
-         */
-        public T body() {
-            return content;
-        }
     }
 
     /**

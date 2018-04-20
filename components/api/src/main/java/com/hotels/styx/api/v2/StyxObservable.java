@@ -27,4 +27,8 @@ import java.util.function.Function;
 public interface StyxObservable<T> {
     <U> StyxObservable<U> map(Function<T, U> transformation);
     <U> StyxObservable<U> flatMap(Function<T, StyxObservable<U>> transformation);
+
+    // TODO: Mikko: Styx 2.0 Api: `onError`: is more flexible type signature possible? Such as:
+    //       <U> StyxObservable<U> onError(Function<Throwable, StyxObservable<U>> errorHandler);
+    StyxObservable<T> onError(Function<Throwable, StyxObservable<T>> errorHandler);
 }

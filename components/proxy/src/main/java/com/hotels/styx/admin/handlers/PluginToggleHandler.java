@@ -22,12 +22,10 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
-import rx.Observable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,6 +35,7 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
+import static com.hotels.styx.api.HttpInterceptor.observable;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpMethod.PUT;
@@ -49,7 +48,6 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Comparator.naturalOrder;
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.Observable.just;
 
 /**
  * Handler that will enable and disable plugins.
@@ -77,22 +75,22 @@ public class PluginToggleHandler implements HttpHandler {
 
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return new StyxCoreObservable<>(getCurrentOrPutNewState(request)
-                .onErrorResumeNext(this::handleErrors));
+        return getCurrentOrPutNewState(request, context)
+                .onError(cause -> handleErrors(cause, context));
     }
 
-    private Observable<HttpResponse> getCurrentOrPutNewState(HttpRequest request) {
+    private StyxObservable<HttpResponse> getCurrentOrPutNewState(HttpRequest request, HttpInterceptor.Context context) {
         if (GET.equals(request.method())) {
-            return getCurrentState(request);
+            return getCurrentState(request, context);
         } else if (PUT.equals(request.method())) {
-            return putNewState(request);
+            return putNewState(request, context);
         } else {
-            return just(response(METHOD_NOT_ALLOWED).build());
+            return observable(context).just(response(METHOD_NOT_ALLOWED).build());
         }
     }
 
-    private Observable<HttpResponse> getCurrentState(HttpRequest request) {
-        return just(request)
+    private StyxObservable<HttpResponse> getCurrentState(HttpRequest request, HttpInterceptor.Context context) {
+        return observable(context).just(request)
                 .map(this::plugin)
                 .map(this::currentState)
                 .map(state -> responseWith(OK, state.toString()));
@@ -102,13 +100,13 @@ public class PluginToggleHandler implements HttpHandler {
         return plugin.enabled() ? PluginEnabledState.ENABLED : PluginEnabledState.DISABLED;
     }
 
-    private Observable<HttpResponse> putNewState(HttpRequest request) {
-        return just(request)
+    private StyxObservable<HttpResponse> putNewState(HttpRequest request, HttpInterceptor.Context context) {
+        return observable(context).just(request)
                 .flatMap(this::requestedUpdate)
                 .map(this::applyUpdate);
     }
 
-    private Observable<RequestedUpdate> requestedUpdate(HttpRequest request) {
+    private StyxObservable<RequestedUpdate> requestedUpdate(HttpRequest request) {
         return requestedNewState(request)
                 .map(state -> {
                     NamedPlugin plugin = plugin(request);
@@ -167,9 +165,9 @@ public class PluginToggleHandler implements HttpHandler {
         return matcher;
     }
 
-    private Observable<PluginEnabledState> requestedNewState(HttpRequest request) {
-        return request.decode(byteBuf -> byteBuf.toString(UTF_8), MAX_CONTENT_SIZE)
-                .map(HttpRequest.DecodedRequest::body)
+    private static StyxObservable<PluginEnabledState> requestedNewState(HttpRequest request) {
+        return request.toFullRequest(MAX_CONTENT_SIZE)
+                .map(fullRequest -> fullRequest.bodyAs(UTF_8))
                 .map(PluginToggleHandler::parseToBoolean)
                 .map(PluginEnabledState::fromBoolean);
     }
@@ -193,17 +191,17 @@ public class PluginToggleHandler implements HttpHandler {
         }
     }
 
-    private Observable<? extends HttpResponse> handleErrors(Throwable e) {
+    private StyxObservable<HttpResponse> handleErrors(Throwable e, HttpInterceptor.Context context) {
         if (e instanceof PluginNotFoundException) {
-            return just(responseWith(NOT_FOUND, e.getMessage()));
+            return observable(context).just(responseWith(NOT_FOUND, e.getMessage()));
         }
 
         if (e instanceof BadPluginToggleRequestException) {
-            return just(responseWith(BAD_REQUEST, e.getMessage()));
+            return observable(context).just(responseWith(BAD_REQUEST, e.getMessage()));
         }
 
         LOGGER.error("Plugin toggle error", e);
-        return just(responseWith(INTERNAL_SERVER_ERROR, ""));
+        return observable(context).just(responseWith(INTERNAL_SERVER_ERROR, ""));
     }
 
     private enum PluginEnabledState {

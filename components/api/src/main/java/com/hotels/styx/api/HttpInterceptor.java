@@ -57,23 +57,6 @@ public interface HttpInterceptor {
 
 
         Async async();
-
-        Context EMPTY = new Context() {
-            @Override
-            public void add(String key, Object value) {
-
-            }
-
-            @Override
-            public <T> T get(String key, Class<T> clazz) {
-                return null;
-            }
-
-            @Override
-            public Async async() {
-                return null;
-            }
-        };
     }
 
     /**
@@ -109,6 +92,8 @@ public interface HttpInterceptor {
      */
     StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain);
 
+    // TODO: Mikko: Styx 2.0 API: A problem: The chain must be passed in the call stack to return observables!!
+    //              See PluginToggleHandler as an example.
     static Async observable(Chain chain) {
         return observable(chain.context());
     }

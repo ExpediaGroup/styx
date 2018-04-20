@@ -56,6 +56,7 @@ public class MockContext implements HttpInterceptor.Context {
         };
     }
 
+    // TODO: Mikko: Styx 2.0 API: MockObservable support for `onError`.
     static class MockObservable<T> implements StyxObservable<T> {
         private final T value;
 
@@ -73,26 +74,13 @@ public class MockContext implements HttpInterceptor.Context {
             return transformation.apply(value);
         }
 
+        @Override
+        public StyxObservable<T> onError(Function<Throwable, StyxObservable<T>> errorHandler) {
+            return new MockObservable<>(value);
+        }
+
         public T value() {
             return value;
         }
     }
-//
-//    private static class MockFailedObservable<T> implements StyxObservable<T> {
-//        private final Throwable cause;
-//
-//        <U> MockFailedObservable(Throwable cause) {
-//            this.cause = cause;
-//        }
-//
-//        @Override
-//        public <U> StyxObservable<U> map(Function<T, U> transformation) {
-//            return new MockFailedObservable<>(transformation.apply(value));
-//        }
-//
-//        @Override
-//        public <U> StyxObservable<U> flatMap(Function<T, StyxObservable<U>> transformation) {
-//            return transformation.apply(value);
-//        }
-//    }
 }

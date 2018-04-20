@@ -31,15 +31,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static com.hotels.styx.api.HttpMessageBody.NO_BODY;
-import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpResponseStatus.FOUND;
 import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
 import static io.netty.handler.codec.http.HttpResponseStatus.MULTIPLE_CHOICES;
@@ -215,78 +212,6 @@ public final class HttpResponse implements HttpMessage {
     }
 
     /**
-     * Decodes HTTP content into a business object of type T, using the provided decoder function.
-     * <p>
-     * The method aggregates HTTP response content fully into a composed byte buffer, and applies the provided
-     * decoder function to the composed buffer. Finally, the composed buffer is released. The
-     * decoded business domain object is returned within DecodedResponse instance.
-     * <p>
-     * Along with decoded business domain object, the DecodedResponse instance contains a response
-     * builder object which allows further transformations on the HTTP response object using the decoded
-     * representation as a body. The decoded representation would have to be re-encoded into a byte buffer
-     * or a string prior to using it as a body.
-     * <p>
-     * Note that the builder object is initialised with an empty HTTP body object. In order to turn
-     * DecodedBody back into an HttpResponse, you must add a new HTTP body content by call the
-     * body() method on the response builder, and finally build the response by calling the build()
-     * method on the response builder provided therein.
-     * For example:
-     * <pre>
-     * {@code
-     *
-     * chain.proceed(request)
-     *   .flatMap(request -> decode((bytebuf) -> byteBuf.toString(UTF_8), 10000))
-     *   .map(decode -> decode.responseBuilder()
-     *     .header("bytes_aggregated", decode.body().readableBytes())
-     *     .body("Newly encoded body")
-     *     .build());
-     * }
-     * </pre>
-     * NOTE: It is important to realise the composed buffer given to the decoder function will
-     * be released by styx after decoding completes.
-     * Therefore it is important to copy the composed buffer, either by directly decoding it to another
-     * object, or by other means. Specifically, it is not possible to modify the aggregated buffer in-place.
-     * For example consider the following invalid decoder function:
-     * <p>
-     * <pre>
-     *     {@code (byteBuf) -> byteBuf}
-     * </pre>
-     * <p>
-     * This is supposed to return the full HTTP response content aggregated into a single byteBuf.
-     * However this implementation is seriously flawed because the byteBuf will be released when the
-     * decoder returns.
-     * <p>
-     * However, consider another decoder function:
-     * <pre>
-     *     {@code (byteBuf) -> byteBuf.toString(UTF_8)}
-     * </pre>
-     * <p>
-     * This version returns a string representation of the byteBuf. In doing so the byteBuf is effectively
-     * copied into a String object in heap. Since the heap copy is retained as a decoded
-     * representation, Styx can safely release the original direct memory byteBuf.
-     * <p>
-     * If in-place modification is absolutely necessary for the performance reasons, the decoder function
-     * must retain the contents manually.z Like so:
-     *
-     * <pre>
-     *     {@code (byteBuf) -> { byteBuf.retain(); return byteBuf }}
-     * </pre>
-     *
-     * @param decoder decoder function that decodes the aggregated HTTP response content into desired
-     * business domain object
-     * <p>
-     * @param maxContentBytes maximum allowed size for the aggregated content. If the content exceeds
-     *  this amount, an exception is raised
-     *
-     * @return an observable that provides an object representing an aggregated response
-     */
-    public <T> Observable<DecodedResponse<T>> decode(Function<ByteBuf, T> decoder, int maxContentBytes) {
-        return body.aggregate(maxContentBytes)
-                .map(bytes -> decoder.apply(copiedBuffer(bytes)))
-                .map(content -> new DecodedResponse<>(this, content));
-    }
-
-    /**
      * Aggregates and converts this streaming request FullHttpResponse.
      * <p>
      * Aggregates up to maxContentLength bytes of HTTP response content stream. Once content is
@@ -341,51 +266,6 @@ public final class HttpResponse implements HttpMessage {
                 && Objects.equal(this.status, other.status)
                 && Objects.equal(this.headers, other.headers)
                 && Objects.equal(this.cookies, other.cookies);
-    }
-
-    /**
-     * The class exists as a helper for aggregating response bodies and modifying the response
-     * based on the result in an asynchronous way. It is only available via the
-     * {@link #decode(Function, int)} method.
-     * <p>
-     * The class provides:
-     * <ul>
-     * <li>the aggregated body.</li>
-     * <li>a response builder that may be used to create a new response based on the original.</li>
-     * </ul>
-     * <p>
-     * The documentation for the {@link #decode(Function, int)} method contains a code example.
-     * <p>
-     * Type parameters:
-     *
-     * @param <T> Type of the decoded content type.
-     */
-    public static final class DecodedResponse<T> {
-        private final Builder responseBuilder;
-        private final T content;
-
-        private DecodedResponse(HttpResponse response, T content) {
-            this.responseBuilder = response.newBuilder().body(NO_BODY);
-            this.content = content;
-        }
-
-        /**
-         * A builder that inherits properties from the original response.
-         *
-         * @return response builder
-         */
-        public Builder responseBuilder() {
-            return responseBuilder;
-        }
-
-        /**
-         * The aggregated body of the original response.
-         *
-         * @return aggregated body
-         */
-        public T body() {
-            return content;
-        }
     }
 
     /**

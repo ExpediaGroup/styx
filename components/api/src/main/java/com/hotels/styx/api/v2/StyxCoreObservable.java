@@ -16,7 +16,6 @@
 package com.hotels.styx.api.v2;
 
 import rx.Observable;
-import rx.functions.Func1;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -57,7 +56,7 @@ public class StyxCoreObservable<T> implements StyxObservable<T> {
     }
 
     public <U> StyxObservable<U> map(Function<T, U> transformation) {
-        return new StyxCoreObservable<>(delegate.map(toFunc1(transformation)));
+        return new StyxCoreObservable<>(delegate.map(transformation::apply));
     }
 
     public <U> StyxObservable<U> flatMap(Function<T, StyxObservable<U>> transformation) {
@@ -68,6 +67,14 @@ public class StyxCoreObservable<T> implements StyxObservable<T> {
             // function. This would obviously break the cast.
             StyxCoreObservable<U> result = (StyxCoreObservable<U>) transformation.apply(response);
             return result.delegate;
+        }));
+    }
+
+    @Override
+    public StyxObservable<T> onError(Function<Throwable, StyxObservable<T>> errorHandler) {
+        return new StyxCoreObservable<>(delegate.onErrorResumeNext(cause -> {
+            StyxCoreObservable<T> result = (StyxCoreObservable<T>)errorHandler.apply(cause);
+            return result.delegate();
         }));
     }
 
@@ -86,10 +93,6 @@ public class StyxCoreObservable<T> implements StyxObservable<T> {
                 .single()
                 .forEach(future::complete);
         return future;
-    }
-
-    private <U> Func1<T, U> toFunc1(Function<T, U> transformation) {
-        return transformation::apply;
     }
 
 }
