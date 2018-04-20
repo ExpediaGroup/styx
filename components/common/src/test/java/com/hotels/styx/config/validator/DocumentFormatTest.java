@@ -485,7 +485,7 @@ public class DocumentFormatTest {
 
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Schema constraint failed. At least one of \\('http', 'https'\\) must be present.")
-    public void requiresAtLeastOneOf() throws Exception {
+    public void validatesCorrectlyAtLeastOneDirective() throws Exception {
         JsonNode first = YAML_MAPPER.readTree(
                 "connectors: \n"
                         + "  http: 8080\n"
