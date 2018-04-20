@@ -52,7 +52,7 @@ public class PluginListHandler implements HttpHandler {
         String output = section("Enabled", enabled)
                 + section("Disabled", disabled);
 
-        return observable(context).observable(response(OK)
+        return observable(context).just(response(OK)
                 .body(output)
                 .contentType(HTML_UTF_8)
                 .build());

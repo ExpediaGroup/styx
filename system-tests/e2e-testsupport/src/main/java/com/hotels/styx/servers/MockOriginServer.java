@@ -129,7 +129,7 @@ public final class MockOriginServer {
                         .flatMap(fullRequest -> {
                             Request wmRequest = new WiremockStyxRequestAdapter(fullRequest);
                             com.github.tomakehurst.wiremock.http.Response wmResponse = wireMockHandler.handle(wmRequest);
-                            return observable(ctx).observable(toStyxResponse(wmResponse).toStreamingResponse());
+                            return observable(ctx).just(toStyxResponse(wmResponse).toStreamingResponse());
                         });
     }
 
@@ -239,7 +239,7 @@ public final class MockOriginServer {
                         .flatMap(fullRequest -> {
                             Request wmRequest = new WiremockStyxRequestAdapter(fullRequest);
                             com.github.tomakehurst.wiremock.http.Response wmResponse = wireMockHandler.handle(wmRequest);
-                            return observable(ctx).observable(toStyxResponse(wmResponse).toStreamingResponse());
+                            return observable(ctx).just(toStyxResponse(wmResponse).toStreamingResponse());
                         });
     }
 }

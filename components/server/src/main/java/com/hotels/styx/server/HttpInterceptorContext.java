@@ -48,7 +48,7 @@ public final class HttpInterceptorContext implements HttpInterceptor.Context {
 
         return new Async() {
             @Override
-            public <T> StyxObservable<T> observable(T item) {
+            public <T> StyxObservable<T> just(T item) {
                 return new StyxCoreObservable<T>(Observable.just(item));
             }
 

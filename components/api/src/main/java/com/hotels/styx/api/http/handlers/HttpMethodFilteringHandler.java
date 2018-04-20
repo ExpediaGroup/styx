@@ -46,7 +46,7 @@ public class HttpMethodFilteringHandler implements HttpHandler {
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         if (!method.equals(request.method())) {
-            return observable(context).observable(
+            return observable(context).just(
                     response(METHOD_NOT_ALLOWED)
                             .body(errorBody)
                             .build());

@@ -97,7 +97,7 @@ import static org.mockito.Mockito.when;
 import static rx.Observable.just;
 
 public class HttpPipelineHandlerTest {
-    private final HttpHandler respondingHandler = (request, context) -> observable(context).observable(response(OK).build());
+    private final HttpHandler respondingHandler = (request, context) -> observable(context).just(response(OK).build());
     private final HttpHandler doNotRespondHandler = (request, context) -> new StyxCoreObservable<>(Observable.never());
 
     private HttpErrorStatusListener errorListener;

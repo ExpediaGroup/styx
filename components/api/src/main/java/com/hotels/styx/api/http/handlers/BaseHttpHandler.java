@@ -31,7 +31,7 @@ public abstract class BaseHttpHandler implements HttpHandler {
 
     @Override
     public  StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return observable(context).observable(doHandle(request));
+        return observable(context).just(doHandle(request));
     }
 
     /**

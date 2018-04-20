@@ -249,8 +249,8 @@ public class StyxServerTest {
     @Test
     public void addsEndpointLinksToPluginPage() {
         setUpStyxAndPluginWithAdminPages(ImmutableMap.of(
-                "adminPage1", (request, ctx)-> observable(ctx).observable(response().build()),
-                "adminPage2", (request, ctx) -> observable(ctx).observable(response().build())
+                "adminPage1", (request, ctx)-> observable(ctx).just(response().build()),
+                "adminPage2", (request, ctx) -> observable(ctx).just(response().build())
         ));
 
         FullHttpResponse response = doAdminRequest("/admin/plugins/plugin-with-admin-pages");
@@ -263,8 +263,8 @@ public class StyxServerTest {
     @Test
     public void exposesAdminEndpoints() {
         setUpStyxAndPluginWithAdminPages(ImmutableMap.of(
-                "adminPage1", (request, ctx) -> observable(ctx).observable(response().header("AdminPage1", "yes").build()),
-                "adminPage2", (request, ctx) -> observable(ctx).observable(response().header("AdminPage2", "yes").build())
+                "adminPage1", (request, ctx) -> observable(ctx).just(response().header("AdminPage1", "yes").build()),
+                "adminPage2", (request, ctx) -> observable(ctx).just(response().header("AdminPage2", "yes").build())
         ));
 
         FullHttpResponse response = doAdminRequest("/admin/plugins/plugin-with-admin-pages/adminPage1");

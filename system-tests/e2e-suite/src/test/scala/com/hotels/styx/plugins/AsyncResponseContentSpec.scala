@@ -95,7 +95,7 @@ class AsyncDelayPlugin extends PluginAdapter {
             Observable.just(byteBuf)
           })
 
-        observable(chain).observable(response.newBuilder().body(transformedContent).build())
+        observable(chain).just(response.newBuilder().body(transformedContent).build())
       }))
   }
 }

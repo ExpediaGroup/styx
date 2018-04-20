@@ -27,7 +27,7 @@ final class AdminHandlers {
     }
 
     static ImmutableMap<String, HttpHandler> adminHandlers(String endpoint, String responseContent) {
-        return ImmutableMap.of(endpoint, (request, context) -> observable(context).observable(response(OK)
+        return ImmutableMap.of(endpoint, (request, context) -> observable(context).just(response(OK)
                 .body(responseContent)
                 .build()));
     }

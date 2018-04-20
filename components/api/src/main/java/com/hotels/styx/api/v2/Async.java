@@ -27,7 +27,7 @@ public interface Async {
      * @param <T> Item to be emitted via styx observable.
      * @return A Styx observable returning an item.
      */
-    <T> StyxObservable<T> observable(T item);
+    <T> StyxObservable<T> just(T item);
 
     /**
      * Returns a new StyxObservable instance that always returns an error.

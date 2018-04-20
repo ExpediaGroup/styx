@@ -65,7 +65,7 @@ public class AsyncRequestPluginFactory implements PluginFactory {
 //            return chain.styxObservable(response(TEMPORARY_REDIRECT).build())
 //                    .transformAsync(x -> chain.proceed(request));
 //
-            return observable(chain).observable(fromSingleObservable(timer(config.delayMillis(), MILLISECONDS)))
+            return observable(chain).just(fromSingleObservable(timer(config.delayMillis(), MILLISECONDS)))
                     .flatMap(x -> chain.proceed(request));
         }
     }

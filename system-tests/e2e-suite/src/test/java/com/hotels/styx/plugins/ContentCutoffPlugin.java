@@ -36,7 +36,7 @@ public class ContentCutoffPlugin implements Plugin {
                     Observable<String> body = response.body()
                             .decode(utf8String(), 1024);
 
-                    return observable(chain).observable(body)
+                    return observable(chain).just(body)
                             .map(content -> {
                                 LOGGER.info("Throw away response body={}", content);
                                 return content;

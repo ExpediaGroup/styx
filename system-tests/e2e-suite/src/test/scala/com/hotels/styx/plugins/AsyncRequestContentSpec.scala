@@ -92,7 +92,7 @@ class AsyncRequestContentDelayPlugin extends PluginAdapter {
           Thread.sleep(1000)
           Observable.just(byteBuf)
         })
-    observable(chain).observable(request)
+    observable(chain).just(request)
       .map(asJavaFunction((request: HttpRequest) => request.newBuilder().body(contentTransformation).build()))
       .flatMap(asJavaFunction((request: HttpRequest) => chain.proceed(request)))
   }

@@ -55,7 +55,7 @@ public class LoggingConfigurationHandler implements HttpHandler {
 
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return observable(context).observable(generateResponse());
+        return observable(context).just(generateResponse());
     }
 
     private HttpResponse generateResponse() {

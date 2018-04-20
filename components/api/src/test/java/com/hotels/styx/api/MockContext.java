@@ -40,7 +40,7 @@ public class MockContext implements HttpInterceptor.Context {
     public Async async() {
         return new Async() {
             @Override
-            public <T> StyxObservable<T> observable(T item) {
+            public <T> StyxObservable<T> just(T item) {
                 return new MockObservable<>(item);
             }
 

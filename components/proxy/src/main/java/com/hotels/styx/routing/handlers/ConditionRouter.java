@@ -128,7 +128,7 @@ public class ConditionRouter implements HttpRouter {
 
         private static HttpHandler buildFallbackHandler(List<String> parents, RouteHandlerFactory routeHandlerFactory, ConditionRouterConfig config) {
             if (config.fallback == null) {
-                return (request, context) -> observable(context).observable(response(BAD_GATEWAY).build());
+                return (request, context) -> observable(context).just(response(BAD_GATEWAY).build());
             } else {
                 return routeHandlerFactory.build(append(parents, "fallback"), config.fallback);
             }

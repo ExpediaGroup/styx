@@ -63,10 +63,10 @@ public class StaticFileHandler implements HttpHandler {
                             .addHeader(CONTENT_TYPE, resolvedFile.mediaType)
                             .body(resolvedFile.content)
                             .build())
-                    .map(response -> observable(context).observable(response))
+                    .map(response -> observable(context).just(response))
                     .orElseGet(() -> NOT_FOUND_HANDLER.handle(request, context));
         } catch (IOException e) {
-            return observable(context).observable(response(INTERNAL_SERVER_ERROR).build());
+            return observable(context).just(response(INTERNAL_SERVER_ERROR).build());
         }
     }
 

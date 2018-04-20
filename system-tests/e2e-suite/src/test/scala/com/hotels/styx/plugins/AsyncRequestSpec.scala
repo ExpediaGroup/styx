@@ -97,7 +97,7 @@ class AsyncRequestDelayPlugin extends PluginAdapter {
       )
     }
 
-    observable(chain).observable(request)
+    observable(chain).just(request)
       .flatMap(asJavaFunction(x => asyncRequest(request)))
       .flatMap(asJavaFunction(y => chain.proceed(y)))
   }

@@ -315,7 +315,7 @@ class ErrorMetricsSpec extends FunSpec
   private class Return500Interceptor extends PluginAdapter {
     override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       if (request.header("Generate_error_status").asScala.contains("true"))
-        observable(chain).observable(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
+        observable(chain).just(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
       else
         chain.proceed(request)
     }
@@ -327,7 +327,7 @@ class ErrorMetricsSpec extends FunSpec
     override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       if (request.header("Map_to_error_status").asScala.contains("true"))
         chain.proceed(request).flatMap(
-          asJavaFunction((t: HttpResponse) => observable(chain).observable(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
+          asJavaFunction((t: HttpResponse) => observable(chain).just(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
           ))
       else
         chain.proceed(request)
@@ -337,7 +337,7 @@ class ErrorMetricsSpec extends FunSpec
   private class Return502Interceptor extends PluginAdapter {
     override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       if (request.header("Generate_bad_gateway_status").asScala.contains("true"))
-        observable(chain).observable(response(HttpResponseStatus.BAD_GATEWAY).build())
+        observable(chain).just(response(HttpResponseStatus.BAD_GATEWAY).build())
       else
         chain.proceed(request)
     }
@@ -347,7 +347,7 @@ class ErrorMetricsSpec extends FunSpec
     override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       if (request.header("Map_to_bad_gateway_status").asScala.contains("true"))
         chain.proceed(request).flatMap(
-          asJavaFunction((t: HttpResponse) => observable(chain).observable(response(HttpResponseStatus.BAD_GATEWAY).build())
+          asJavaFunction((t: HttpResponse) => observable(chain).just(response(HttpResponseStatus.BAD_GATEWAY).build())
           ))
       else
         chain.proceed(request)
