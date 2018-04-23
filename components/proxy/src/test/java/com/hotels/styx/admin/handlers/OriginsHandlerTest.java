@@ -42,6 +42,7 @@ import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.StreamSupport.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -92,7 +93,7 @@ public class OriginsHandlerTest {
     private static Iterable<BackendService> unmarshalApplications(String content) throws IOException {
         Iterable<BackendServiceDeserializer> backendServices = MAPPER.readValue(content, new TypeReference<Iterable<BackendServiceDeserializer>>() {
         });
-        return StreamSupport.stream(backendServices.spliterator(), false)
+        return stream(backendServices.spliterator(), false)
                 .map(BackendServiceDeserializer::backendService)
                 .collect(Collectors.toSet());
     }
