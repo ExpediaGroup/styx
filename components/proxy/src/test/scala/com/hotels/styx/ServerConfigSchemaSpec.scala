@@ -326,6 +326,30 @@ class ServerConfigSchemaSpec extends FunSpec with ShouldMatchers {
           |      config: {originsFile: "${originsFile:classpath:conf/origins.yml}"}
         """.stripMargin)) should be(Optional.empty())
     }
+    it("Accepts https.protocols as a list of STRINGs") {
+      validateServerConfiguration(yamlConfig(
+        """
+          |proxy:
+          |  connectors:
+          |    http:
+          |      port: 8080
+          |    https:
+          |      port: 8443
+          |      protocols:
+          |       - TLSv1.2
+          |
+          |admin:
+          |  connectors:
+          |    http:
+          |      port: 9000
+          |
+          |services:
+          |  factories:
+          |    backendServiceRegistry:
+          |      class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry$Factory"
+          |      config: {originsFile: "${originsFile:classpath:conf/origins.yml}"}
+        """.stripMargin)) should be(Optional.empty())
+    }
   }
 
   private def minimalConfig =

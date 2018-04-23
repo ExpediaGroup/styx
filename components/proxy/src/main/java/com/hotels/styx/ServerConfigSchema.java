@@ -55,7 +55,8 @@ final class ServerConfigSchema {
                     optional("certificateKeyFile", string()),
                     optional("sessionTimeoutMillis", integer()),
                     optional("sessionCacheSize", integer()),
-                    optional("cipherSuites", list(string()))
+                    optional("cipherSuites", list(string())),
+                    optional("protocols", list(string()))
             ))
             .subSchema(SERVER_CONNECTORS, schema(
                     optional("http", object(HTTP_CONNECTOR)),
