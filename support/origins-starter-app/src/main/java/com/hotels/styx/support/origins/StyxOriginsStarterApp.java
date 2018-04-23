@@ -21,7 +21,7 @@ import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.client.applications.BackendServices;
+import com.hotels.styx.applications.BackendServices;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.server.HttpConnectorConfig;

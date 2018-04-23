@@ -29,14 +29,13 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadFromPath;
-import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
+import static com.hotels.styx.applications.BackendServices.newBackendServices;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;

@@ -26,7 +26,7 @@ import com.hotels.styx.admin.handlers.BackendServiceSerializer
 import com.hotels.styx.api.client.Origin
 import com.hotels.styx.api.service.{BackendService, ConnectionPoolSettings, StickySessionConfig}
 import com.hotels.styx.api.service.spi.Registry
-import com.hotels.styx.client.applications.BackendServices.newBackendServices
+import com.hotels.styx.applications.BackendServices.newBackendServices
 import com.hotels.styx.api.service.HealthCheckConfig.newHealthCheckConfigBuilder
 import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.api.service.spi.Registry.Changes

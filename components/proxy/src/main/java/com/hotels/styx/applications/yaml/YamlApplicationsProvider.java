@@ -20,9 +20,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.client.applications.ApplicationsProvider;
 import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.client.applications.BackendServices;
+import com.hotels.styx.applications.ApplicationsProvider;
+import com.hotels.styx.applications.BackendServices;
 import com.hotels.styx.proxy.backends.file.BackendServiceDeserializer;
 
 import java.io.IOException;
@@ -31,7 +31,7 @@ import java.util.List;
 
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
-import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
+import static com.hotels.styx.applications.BackendServices.newBackendServices;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
