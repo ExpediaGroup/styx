@@ -82,18 +82,6 @@ public final class BackendServiceDeserializer {
         public Builder() {
         }
 
-        private Builder(BackendService backendService) {
-            this.id = backendService.id();
-            this.path = backendService.path();
-            this.origins = backendService.origins();
-            this.connectionPoolSettings = backendService.connectionPoolConfig();
-            this.stickySessionConfig = backendService.stickySessionConfig();
-            this.healthCheckConfig = backendService.healthCheckConfig();
-            this.rewrites = backendService.rewrites();
-            this.responseTimeoutMillis = backendService.responseTimeoutMillis();
-            this.tlsSettings = backendService.tlsSettings().orElse(null);
-        }
-
         /**
          * Adds an ID.
          *
@@ -276,17 +264,17 @@ public final class BackendServiceDeserializer {
          * @return the application
          */
         public BackendServiceDeserializer build() {
-            BackendService.Builder builder = BackendService.newBackendServiceBuilder();
-            builder.id(this.id);
-            builder.path(this.path);
-            builder.origins(this.origins);
-            builder.connectionPoolConfig(this.connectionPoolSettings);
-            builder.healthCheckConfig(this.healthCheckConfig);
-            builder.stickySessionConfig(this.stickySessionConfig);
-            builder.rewrites(this.rewrites);
-            builder.responseTimeoutMillis(this.responseTimeoutMillis);
-            builder.https(this.tlsSettings);
-            builder.httpsOld(this.tlsSettings);
+            BackendService.Builder builder = BackendService.newBackendServiceBuilder()
+                .id(this.id)
+                .path(this.path)
+                .origins(this.origins)
+                .connectionPoolConfig(this.connectionPoolSettings)
+                .healthCheckConfig(this.healthCheckConfig)
+                .stickySessionConfig(this.stickySessionConfig)
+                .rewrites(this.rewrites)
+                .responseTimeoutMillis(this.responseTimeoutMillis)
+                .https(this.tlsSettings)
+                .httpsOld(this.tlsSettings);
             return new BackendServiceDeserializer(builder);
         }
     }

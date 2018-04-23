@@ -33,6 +33,9 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.base.Objects.toStringHelper;
+import static com.hotels.styx.api.service.BackendService.Protocol.HTTP;
+import static com.hotels.styx.api.service.BackendService.Protocol.HTTPS;
+
 /**
  * Used to provide annotated properties for fields of {@link BackendService} object, required to keep naming of fields
  * used in configuration.
@@ -116,37 +119,7 @@ public final class BackendServiceSerializer implements Identifiable {
     }
 
     public BackendService.Protocol protocol() {
-        if (tlsSettings == null) {
-            return BackendService.Protocol.HTTP;
-        } else {
-            return BackendService.Protocol.HTTPS;
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, path, connectionPoolSettings, origins,
-                healthCheckConfig, stickySessionConfig, rewrites, responseTimeoutMillis);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        BackendServiceSerializer other = (BackendServiceSerializer) obj;
-        return Objects.equals(this.id, other.id)
-                && Objects.equals(this.path, other.path)
-                && Objects.equals(this.connectionPoolSettings, other.connectionPoolSettings)
-                && Objects.equals(this.origins, other.origins)
-                && Objects.equals(this.healthCheckConfig, other.healthCheckConfig)
-                && Objects.equals(this.stickySessionConfig, other.stickySessionConfig)
-                && Objects.equals(this.rewrites, other.rewrites)
-                && Objects.equals(this.tlsSettings, other.tlsSettings)
-                && Objects.equals(this.responseTimeoutMillis, other.responseTimeoutMillis);
+        return tlsSettings == null ? HTTP : HTTPS;
     }
 
     @Override
