@@ -24,7 +24,6 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.HttpErrorStatusListener;
 import com.hotels.styx.api.metrics.RequestStatsCollector;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.server.BadRequestException;
@@ -60,9 +59,9 @@ import static com.google.common.collect.Iterables.toArray;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderValues.CLOSE;
-import static com.hotels.styx.api.HttpInterceptor.observable;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.v2.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.TERMINATED;
@@ -94,11 +93,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
-import static rx.Observable.just;
 
 public class HttpPipelineHandlerTest {
-    private final HttpHandler respondingHandler = (request, context) -> observable(context).just(response(OK).build());
-    private final HttpHandler doNotRespondHandler = (request, context) -> new StyxCoreObservable<>(Observable.never());
+    private final HttpHandler respondingHandler = (request, context) -> StyxObservable.of(response(OK).build());
+    private final HttpHandler doNotRespondHandler = (request, context) -> fromRxObservable(Observable.never());
 
     private HttpErrorStatusListener errorListener;
     private CodaHaleMetricRegistry metrics;
@@ -147,7 +145,7 @@ public class HttpPipelineHandlerTest {
                 .thenReturn(responseWriter);
 
         pipeline = mock(HttpHandler.class);
-        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(new StyxCoreObservable<>(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true))));
+        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(fromRxObservable(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true))));
 
         request = get("/foo").id("REQUEST-1-ID").build();
         response = response().build();
@@ -175,8 +173,8 @@ public class HttpPipelineHandlerTest {
 
         pipeline = mock(HttpHandler.class);
         when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class)))
-                .thenReturn(new StyxCoreObservable<HttpResponse>(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true))))
-                .thenReturn(new StyxCoreObservable<>(responseObservable2.doOnUnsubscribe(() -> responseUnsubscribed2.set(true))));
+                .thenReturn(fromRxObservable(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true))))
+                .thenReturn(fromRxObservable(responseObservable2.doOnUnsubscribe(() -> responseUnsubscribed2.set(true))));
 
         request2 = get("/bar").id("REQUEST-2-ID").build();
 
@@ -465,7 +463,7 @@ public class HttpPipelineHandlerTest {
 
     private void setupIdleHandlerWithPluginResponse() throws Exception {
         pipeline = mock(HttpHandler.class);
-        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(new StyxCoreObservable<>(just(response)));
+        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(StyxObservable.of(response));
         handler = createHandler(pipeline);
     }
 

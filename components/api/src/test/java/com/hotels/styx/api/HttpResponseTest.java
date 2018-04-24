@@ -20,8 +20,6 @@ import com.google.common.collect.Iterables;
 import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.messages.HttpVersion;
-import com.hotels.styx.api.v2.StyxCoreObservable;
-import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
@@ -33,6 +31,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -365,9 +364,9 @@ public class HttpResponseTest {
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpResponse full = toRxObservable(request.toFullResponse(0x100000))
-                .toBlocking()
-                .single();
+        FullHttpResponse full = request.toFullResponse(0x100000)
+                .asCompletableFuture()
+                .get();
 
         assertThat(full.version(), is(HttpVersion.HTTP_1_0));
         assertThat(full.status(), is(HttpResponseStatus.CREATED));
@@ -377,28 +376,28 @@ public class HttpResponseTest {
     }
 
     @Test
-    public void decodesToFullHttpResponseWithEmptyBody() {
+    public void decodesToFullHttpResponseWithEmptyBody() throws ExecutionException, InterruptedException {
         HttpResponse request = response(CREATED)
                 .body(empty())
                 .build();
 
-        FullHttpResponse full = toRxObservable(request.toFullResponse(0x100000))
-                .toBlocking()
-                .single();
+        FullHttpResponse full = request.toFullResponse(0x100000)
+                .asCompletableFuture()
+                .get();
 
         assertThat(full.status(), is(HttpResponseStatus.CREATED));
         assertThat(full.bodyAs(UTF_8), is(""));
     }
 
     @Test
-    public void decodingToFullHttpResponseDefaultsToUTF8() {
+    public void decodingToFullHttpResponseDefaultsToUTF8() throws ExecutionException, InterruptedException {
         HttpResponse request = response(CREATED)
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpResponse full = toRxObservable(request.toFullResponse(0x100000))
-                .toBlocking()
-                .single();
+        FullHttpResponse full = request.toFullResponse(0x100000)
+                .asCompletableFuture()
+                .get();
 
         assertThat(full.status(), is(HttpResponseStatus.CREATED));
         assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
@@ -426,10 +425,5 @@ public class HttpResponseTest {
 
     private static int contentLength(String content) {
         return content.getBytes().length;
-    }
-
-
-    static <T> Observable<T> toRxObservable(StyxObservable<T> observable) {
-        return ((StyxCoreObservable<T>) observable).delegate();
     }
 }

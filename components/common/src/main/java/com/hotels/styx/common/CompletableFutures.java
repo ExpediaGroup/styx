@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.common;
 
-import com.hotels.styx.api.v2.StyxCoreObservable;
-import com.hotels.styx.api.v2.StyxObservable;
 import rx.Observable;
 
 import java.util.concurrent.CompletableFuture;
@@ -38,10 +36,6 @@ public final class CompletableFutures {
                 .single()
                 .forEach(future::complete);
         return future;
-    }
-
-    public static <T> Observable<T> toRxObservable(StyxObservable<T> observable) {
-        return ((StyxCoreObservable<T>) observable).delegate();
     }
 
 }

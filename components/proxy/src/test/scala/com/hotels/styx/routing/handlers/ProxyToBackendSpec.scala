@@ -21,10 +21,11 @@ import com.hotels.styx.api.Id.id
 import com.hotels.styx.api._
 import com.hotels.styx.api.service.BackendService
 import com.hotels.styx.client.{OriginStatsFactory, OriginsInventory}
+import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.config.RouteHandlerDefinition
-import com.hotels.styx.support.api.BlockingObservables
+import com.hotels.styx.server.HttpInterceptorContext
 import org.scalatest.{FunSpec, ShouldMatchers}
 import rx.Observable
 
@@ -54,8 +55,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
   it("builds ProxyToBackend handler") {
     val handler = new ProxyToBackend.ConfigFactory(environment, clientFactory()).build(List(), null, config)
 
-    val response = BlockingObservables.toRxObservable(handler.handle(HttpRequest.Builder.get("/foo")
-      .build(), null)).toBlocking.first()
+    val response = StyxFutures.await(handler.handle(HttpRequest.Builder.get("/foo").build(), HttpInterceptorContext.create).asCompletableFuture())
     response.status should be (OK)
   }
 

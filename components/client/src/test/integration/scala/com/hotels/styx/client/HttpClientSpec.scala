@@ -25,7 +25,6 @@ import com.hotels.styx.api.client.{ActiveOrigins, Origin}
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException
 import com.hotels.styx.api.service.BackendService
-import com.hotels.styx.api.v2.{StyxCoreObservable, StyxObservable}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient._
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
@@ -89,7 +88,7 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
 
   test("Emits an HTTP response even when content observable remains un-subscribed.") {
     originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
-    val response = waitForResponse(new StyxCoreObservable(client.sendRequest(get("/foo/1").build())))
+    val response = waitForResponse(client.sendRequest(get("/foo/1").build()))
     assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
   }
 
@@ -97,7 +96,7 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
   test("Emits an HTTP response containing Content-Length from persistent connection that stays open.") {
     originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
 
-    val response = waitForResponse(new StyxCoreObservable(client.sendRequest(get("/foo/2").build())))
+    val response = waitForResponse(client.sendRequest(get("/foo/2").build()))
 
     assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
     assert(response.bodyAs(UTF_8) == "Test message body.", s"\nReceived wrong/unexpected response body.")
@@ -107,7 +106,7 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
   ignore("Determines response content length from server closing the connection.") {
     // originRespondingWith(response200OkFollowedFollowedByServerConnectionClose("Test message body."))
 
-    val response = waitForResponse(new StyxCoreObservable(client.sendRequest(get("/foo/3").build())))
+    val response = waitForResponse(client.sendRequest(get("/foo/3").build()))
     assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
 
     assert(response.body().nonEmpty, s"\nResponse body is absent.")

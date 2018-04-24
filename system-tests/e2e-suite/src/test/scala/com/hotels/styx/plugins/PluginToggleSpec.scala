@@ -17,7 +17,6 @@ package com.hotels.styx.plugins
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import com.hotels.styx.api.HttpInterceptor.observable
 import com.hotels.styx.api.HttpRequest.Builder.{get, put}
 import com.hotels.styx.api.HttpResponse.Builder.response
 import com.hotels.styx.api._
@@ -113,7 +112,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
 
   private class PluginUnderTest extends PluginAdapter {
     override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): StyxObservable[HttpResponse] =
-      observable(chain).just(response().body("response-from-plugin").build())
+      StyxObservable.of(response().body("response-from-plugin").build())
   }
 }
 

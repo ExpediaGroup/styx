@@ -30,7 +30,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hotels.styx.api.HttpInterceptor.observable;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 
 /**
@@ -47,7 +46,7 @@ public class StaticResponseHandler implements HttpHandler {
 
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return observable(context).just(response(HttpResponseStatus.valueOf(status)).body(text).build());
+        return StyxObservable.of(response(HttpResponseStatus.valueOf(status)).body(text).build());
     }
 
     private static class StaticResponseConfig {

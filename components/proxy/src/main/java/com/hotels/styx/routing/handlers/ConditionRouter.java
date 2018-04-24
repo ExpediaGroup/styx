@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
@@ -35,7 +36,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static com.hotels.styx.api.HttpInterceptor.observable;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode;
 import static com.hotels.styx.routing.config.RoutingSupport.append;
@@ -128,7 +128,7 @@ public class ConditionRouter implements HttpRouter {
 
         private static HttpHandler buildFallbackHandler(List<String> parents, RouteHandlerFactory routeHandlerFactory, ConditionRouterConfig config) {
             if (config.fallback == null) {
-                return (request, context) -> observable(context).just(response(BAD_GATEWAY).build());
+                return (request, context) -> StyxObservable.of(response(BAD_GATEWAY).build());
             } else {
                 return routeHandlerFactory.build(append(parents, "fallback"), config.fallback);
             }

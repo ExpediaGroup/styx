@@ -26,13 +26,13 @@ import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.support.api.BlockingObservables;
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
@@ -82,7 +82,7 @@ public class BackendServicesRouterTest {
     }
 
     @Test
-    public void selectsServiceBasedOnPath() {
+    public void selectsServiceBasedOnPath() throws Exception {
         Registry.Changes<BackendService> changes = added(
                 appA().newCopy().path("/").build(),
                 appB().newCopy().path("/appB/hotel/details.html").build());
@@ -97,7 +97,7 @@ public class BackendServicesRouterTest {
     }
 
     @Test
-    public void selectsApplicationBasedOnPathIfAppsAreProvidedInOppositeOrder() {
+    public void selectsApplicationBasedOnPathIfAppsAreProvidedInOppositeOrder() throws Exception {
         Registry.Changes<BackendService> changes = added(
                 appB().newCopy().path("/appB/hotel/details.html").build(),
                 appA().newCopy().path("/").build());
@@ -113,7 +113,7 @@ public class BackendServicesRouterTest {
 
 
     @Test
-    public void selectsUsingSingleSlashPath() {
+    public void selectsUsingSingleSlashPath() throws Exception {
         Registry.Changes<BackendService> changes = added(
                 appA().newCopy().path("/").build(),
                 appB().newCopy().path("/appB/hotel/details.html").build());
@@ -128,7 +128,7 @@ public class BackendServicesRouterTest {
     }
 
     @Test
-    public void selectsUsingSingleSlashPathIfAppsAreProvidedInOppositeOrder() {
+    public void selectsUsingSingleSlashPathIfAppsAreProvidedInOppositeOrder() throws Exception {
         Registry.Changes<BackendService> changes = added(
                 appB().newCopy().path("/appB/hotel/details.html").build(),
                 appA().newCopy().path("/").build());
@@ -143,7 +143,7 @@ public class BackendServicesRouterTest {
     }
 
     @Test
-    public void selectsUsingPathWithNoSubsequentCharacters() {
+    public void selectsUsingPathWithNoSubsequentCharacters() throws Exception {
         Registry.Changes<BackendService> changes = added(
                 appA().newCopy().path("/").build(),
                 appB().newCopy().path("/appB/").build());
@@ -179,7 +179,7 @@ public class BackendServicesRouterTest {
     }
 
     @Test
-    public void removesExistingServicesBeforeAddingNewOnes() {
+    public void removesExistingServicesBeforeAddingNewOnes() throws Exception {
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(added(appB()));
 
@@ -194,7 +194,7 @@ public class BackendServicesRouterTest {
     }
 
     @Test
-    public void updatesRoutesOnBackendServicesChange() {
+    public void updatesRoutesOnBackendServicesChange() throws Exception {
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
 
         HttpRequest request = get("/appB/").build();
@@ -210,8 +210,8 @@ public class BackendServicesRouterTest {
         assertThat(proxyTo(route2, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
     }
 
-    private HttpResponse proxyTo(Optional<HttpHandler> pipeline, HttpRequest request) {
-        return BlockingObservables.toRxObservable(pipeline.get().handle(request, context)).toBlocking().first();
+    private HttpResponse proxyTo(Optional<HttpHandler> pipeline, HttpRequest request) throws ExecutionException, InterruptedException {
+        return pipeline.get().handle(request, context).asCompletableFuture().get();
     }
 
     @Test

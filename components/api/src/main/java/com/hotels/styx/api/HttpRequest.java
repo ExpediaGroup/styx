@@ -17,7 +17,6 @@ package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.messages.FullHttpRequest;
-import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
@@ -214,7 +213,7 @@ public final class HttpRequest implements HttpMessage {
      * @return An {Observable} that emits the FullHttpRequest once it is available.
      */
     public <T> StyxObservable<FullHttpRequest> toFullRequest(int maxContentLength) {
-        return new StyxCoreObservable<>(body.aggregate(maxContentLength)
+        return StyxObservable.from(body.aggregate(maxContentLength)
                 .map(decoded -> new FullHttpRequest.Builder(this, decoded.copy().array()))
                 .map(FullHttpRequest.Builder::build));
     }

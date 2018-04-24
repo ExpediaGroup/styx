@@ -15,6 +15,10 @@
  */
 package com.hotels.styx.api.v2;
 
+import rx.Observable;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 /**
@@ -31,4 +35,26 @@ public interface StyxObservable<T> {
     // TODO: Mikko: Styx 2.0 Api: `onError`: is more flexible type signature possible? Such as:
     //       <U> StyxObservable<U> onError(Function<Throwable, StyxObservable<U>> errorHandler);
     StyxObservable<T> onError(Function<Throwable, StyxObservable<T>> errorHandler);
+
+    CompletableFuture<T> asCompletableFuture();
+
+    // Static Factory Methods
+
+    static <T> StyxObservable<T> of(T value) {
+        return new StyxCoreObservable<>(Observable.just(value));
+    }
+
+    static <T> StyxObservable<T> error(Throwable error) {
+        return new StyxCoreObservable<>(Observable.error(error));
+    }
+
+    static <T> StyxObservable<T> from(CompletionStage<T> completableFuture) {
+        return new StyxCoreObservable<>(completableFuture);
+    }
+
+    // TODO: Mikko: Remove this:
+    static <T> StyxObservable<T> from(Observable<T> observable) {
+        return new StyxCoreObservable<>(observable);
+    }
+
 }

@@ -37,7 +37,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
-import static com.hotels.styx.support.api.BlockingObservables.toRxObservable;
+import static com.hotels.styx.api.v2.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.net.ssl.HttpsURLConnection.getDefaultHostnameVerifier;
@@ -117,11 +118,9 @@ public class MockOriginServerTest {
 
 
     private FullHttpResponse send(HttpClient client, HttpRequest request) {
-        return client.sendRequest(request)
-                .flatMap(req -> toRxObservable(req.toFullResponse(10*1024)))
-                .toBlocking()
-                .first();
-
+        return await(fromRxObservable(client.sendRequest(request))
+                .flatMap(req -> req.toFullResponse(10*1024))
+                .asCompletableFuture());
     }
 
     private ValueMatchingStrategy valueMatchingStrategy(String matches) {

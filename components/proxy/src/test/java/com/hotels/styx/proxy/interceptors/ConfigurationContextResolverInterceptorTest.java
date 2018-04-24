@@ -19,27 +19,23 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.configuration.ConfigurationContextResolver;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.v2.Async;
-import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.configuration.ConfigurationContextResolver;
 import com.hotels.styx.api.v2.StyxObservable;
-import com.hotels.styx.support.api.BlockingObservables;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static rx.Observable.just;
 
 public class ConfigurationContextResolverInterceptorTest {
     @Test
@@ -55,7 +51,7 @@ public class ConfigurationContextResolverInterceptorTest {
 
         StyxObservable<HttpResponse> responseObservable = interceptor.intercept(request, chain);
 
-        assertThat(BlockingObservables.toRxObservable(responseObservable).toBlocking().first(), hasStatus(OK));
+        assertThat(await(responseObservable.asCompletableFuture()), hasStatus(OK));
         assertThat(chain.proceedWasCalled, is(true));
         assertThat(chain.context.get("config.context", Configuration.Context.class), is(context));
     }
@@ -85,7 +81,7 @@ public class ConfigurationContextResolverInterceptorTest {
         public StyxObservable<HttpResponse> proceed(HttpRequest request) {
             proceedWasCalled = true;
 
-            return StyxCoreObservable.of(response(OK).build());
+            return StyxObservable.of(response(OK).build());
         }
 
         private class TestChainContext implements HttpInterceptor.Context {
@@ -99,11 +95,6 @@ public class ConfigurationContextResolverInterceptorTest {
             @Override
             public <T> T get(String key, Class<T> type) {
                 return type.cast(map.get(key));
-            }
-
-            @Override
-            public Async async() {
-                return null;
             }
         }
     }

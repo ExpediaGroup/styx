@@ -23,7 +23,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
@@ -32,7 +32,6 @@ import org.testng.annotations.Test;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
-import static com.hotels.styx.support.api.BlockingObservables.toRxObservable;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -67,13 +66,13 @@ public class InterceptorPipelineBuilderTest {
         );
 
         handler = mock(HttpHandler.class);
-        when(handler.handle(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(StyxCoreObservable.of(response(OK).build()));
+        when(handler.handle(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(StyxObservable.of(response(OK).build()));
     }
 
     @Test
     public void buildsPipelineWithInterceptors() throws Exception {
         HttpHandler pipeline = new InterceptorPipelineBuilder(environment, plugins, handler).build();
-        HttpResponse response = toRxObservable(pipeline.handle(get("/foo").build(), HttpInterceptorContext.create())).toBlocking().first();
+        HttpResponse response = pipeline.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
 
         assertThat(response.header("plug1"), isValue("1"));
         assertThat(response.header("plug2"), isValue("1"));

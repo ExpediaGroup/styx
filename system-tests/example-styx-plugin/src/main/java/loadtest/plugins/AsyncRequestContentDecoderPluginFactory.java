@@ -23,7 +23,6 @@ import com.hotels.styx.api.v2.StyxObservable;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.api.HttpInterceptor.observable;
 import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static rx.Observable.timer;
@@ -46,7 +45,7 @@ public class AsyncRequestContentDecoderPluginFactory implements PluginFactory {
         @Override
         public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
             return request.toFullRequest(config.maxContentLength())
-                            .flatMap(fullHttpRequest -> observable(chain).fromCompletionStage(asyncOperation(config.delayMillis())))
+                            .flatMap(fullHttpRequest -> StyxObservable.from(asyncOperation(config.delayMillis())))
                             .map(outcome -> request.newBuilder().header("X-Outcome", outcome.result()))
                             .flatMap(x -> chain.proceed(request));
         }

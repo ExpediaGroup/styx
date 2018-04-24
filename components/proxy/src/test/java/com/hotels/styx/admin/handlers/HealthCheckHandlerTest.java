@@ -17,27 +17,26 @@ package com.hotels.styx.admin.handlers;
 
 import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.ExecutionException;
+
 import static com.codahale.metrics.health.HealthCheck.Result.healthy;
 import static com.codahale.metrics.health.HealthCheck.Result.unhealthy;
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
+import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.support.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_IMPLEMENTED;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.mock;
 
 public class HealthCheckHandlerTest {
 
@@ -99,6 +98,15 @@ public class HealthCheckHandlerTest {
     }
 
     private HttpResponse handle(HttpRequest request) {
-        return getFirst(handler.handle(request, HttpInterceptorContext.create()));
+        try {
+            return handler.handle(request, HttpInterceptorContext.create())
+                    .asCompletableFuture()
+                    .get();
+        } catch (InterruptedException cause) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(cause);
+        } catch (ExecutionException cause) {
+            throw new RuntimeException(cause);
+        }
     }
 }

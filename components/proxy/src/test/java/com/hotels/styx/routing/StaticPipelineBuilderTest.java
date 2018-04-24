@@ -18,7 +18,6 @@ package com.hotels.styx.routing;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.service.BackendService;
@@ -27,18 +26,17 @@ import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
-import com.hotels.styx.support.api.BlockingObservables;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
-import static com.hotels.styx.support.api.BlockingObservables.toRxObservable;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -64,15 +62,15 @@ public class StaticPipelineBuilderTest {
     }
 
     @Test
-    public void buildsInterceptorPipelineForBackendServices() {
+    public void buildsInterceptorPipelineForBackendServices() throws Exception {
 
         HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of()).build();
-        HttpResponse response = toRxObservable(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).toBlocking().first();
+        HttpResponse response = handler.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
         assertThat(response.status(), is(OK));
     }
 
     @Test
-    public void appliesPluginsInOrderTheyAreConfigured() {
+    public void appliesPluginsInOrderTheyAreConfigured()  {
         Iterable<NamedPlugin> plugins = ImmutableList.of(
                 interceptor("Test-A", appendResponseHeader("X-From-Plugin", "A")),
                 interceptor("Test-B", appendResponseHeader("X-From-Plugin", "B"))
@@ -80,7 +78,7 @@ public class StaticPipelineBuilderTest {
 
         HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins).build();
 
-        HttpResponse response = toRxObservable(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).toBlocking().first();
+        HttpResponse response = handler.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
         assertThat(response.status(), is(OK));
         assertThat(response.headers("X-From-Plugin"), hasItems("B", "A"));
     }

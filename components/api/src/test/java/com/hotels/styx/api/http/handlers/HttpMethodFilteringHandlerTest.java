@@ -19,13 +19,10 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.MockContext;
-import org.mockito.Mockito;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.MockContext.MOCK_CONTEXT;
-import static com.hotels.styx.api.TestSupport.getFirst;
 import static com.hotels.styx.api.HttpRequest.Builder.post;
+import static com.hotels.styx.api.MockContext.MOCK_CONTEXT;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpMethod.POST;
 import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
@@ -49,12 +46,12 @@ public class HttpMethodFilteringHandlerTest {
     }
 
     @Test
-    public void failsIfRequestMethodIsNotSupported() {
+    public void failsIfRequestMethodIsNotSupported() throws Exception {
         HttpHandler handler = mock(HttpHandler.class);
         HttpMethodFilteringHandler post = new HttpMethodFilteringHandler(GET, handler);
 
         HttpRequest request = post("/some-uri").build();
-        HttpResponse response = getFirst(post.handle(request, MOCK_CONTEXT));
+        HttpResponse response = post.handle(request, MOCK_CONTEXT).asCompletableFuture().get();
 
         assertThat(response.status(), is(METHOD_NOT_ALLOWED));
     }

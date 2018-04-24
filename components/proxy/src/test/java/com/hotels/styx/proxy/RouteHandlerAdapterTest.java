@@ -19,10 +19,9 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.v2.StyxCoreObservable;
+import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.HttpRouter;
-import com.hotels.styx.support.api.BlockingObservables;
 import org.testng.annotations.Test;
 
 import java.util.Optional;
@@ -44,12 +43,12 @@ public class RouteHandlerAdapterTest {
     @Test
     public void injectsToPipelineWhenRouteFound() throws Exception {
         HttpHandler pipeline = mock(HttpHandler.class);
-        when(pipeline.handle(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(StyxCoreObservable.of(respOk));
+        when(pipeline.handle(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(StyxObservable.of(respOk));
 
         HttpRouter router = mock(HttpRouter.class);
         when(router.route(any(HttpRequest.class))).thenReturn(Optional.of(pipeline));
 
-        HttpResponse response = BlockingObservables.toRxObservable(new RouteHandlerAdapter(router).handle(request, HttpInterceptorContext.create())).toBlocking().first();
+        HttpResponse response = new RouteHandlerAdapter(router).handle(request, HttpInterceptorContext.create()).asCompletableFuture().get();
 
         assertThat(response.status(), is(OK));
     }

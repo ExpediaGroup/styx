@@ -18,7 +18,7 @@ package com.hotels.styx.plugins
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.api.HttpInterceptor.{Chain, observable}
+import com.hotels.styx.api.HttpInterceptor.{Chain}
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.v2.StyxObservable
 import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse}
@@ -95,7 +95,7 @@ class AsyncDelayPlugin extends PluginAdapter {
             Observable.just(byteBuf)
           })
 
-        observable(chain).just(response.newBuilder().body(transformedContent).build())
+        StyxObservable.of(response.newBuilder().body(transformedContent).build())
       }))
   }
 }

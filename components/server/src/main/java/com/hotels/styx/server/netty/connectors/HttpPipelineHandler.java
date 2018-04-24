@@ -31,7 +31,6 @@ import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.netty.exceptions.TransportLostException;
 import com.hotels.styx.api.plugins.spi.PluginException;
-import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.client.connectionpool.ResourceExhaustedException;
@@ -48,6 +47,7 @@ import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
+import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
 
@@ -58,6 +58,7 @@ import java.util.function.Supplier;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.metrics.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.api.metrics.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
+import static com.hotels.styx.api.v2.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.TERMINATED;
@@ -237,9 +238,8 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         // the same call stack as "onLegitimateRequest" handler. This happens when a plugin
         // generates a response.
         try {
-            StyxCoreObservable<HttpResponse> responseObservable = (StyxCoreObservable<HttpResponse>) httpPipeline.handle(v11Request, HttpInterceptorContext.create());
+            Observable<HttpResponse> responseObservable = toRxObservable(httpPipeline.handle(v11Request, HttpInterceptorContext.create()));
             subscription = responseObservable
-                    .delegate()
                     .subscribe(new Subscriber<HttpResponse>() {
                                    @Override
                                    public void onCompleted() {

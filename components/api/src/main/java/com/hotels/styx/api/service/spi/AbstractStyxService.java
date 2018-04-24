@@ -17,6 +17,7 @@ package com.hotels.styx.api.service.spi;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.v2.StyxObservable;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -25,7 +26,6 @@ import java.util.function.Function;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
-import static com.hotels.styx.api.HttpInterceptor.observable;
 import static com.hotels.styx.api.messages.FullHttpResponse.response;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.CREATED;
@@ -99,7 +99,7 @@ public abstract class AbstractStyxService implements StyxService {
 
     @Override
     public Map<String, HttpHandler> adminInterfaceHandlers() {
-        return ImmutableMap.of("status", (request, context) -> observable(context).just(
+        return ImmutableMap.of("status", (request, context) -> StyxObservable.of(
                 response(OK)
                         .addHeader(CONTENT_TYPE, APPLICATION_JSON)
                         .body(format("{ name: \"%s\" status: \"%s\" }", name, status), UTF_8)

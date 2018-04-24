@@ -19,8 +19,6 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.messages.FullHttpRequest;
 import com.hotels.styx.api.messages.HttpMethod;
 import com.hotels.styx.api.messages.HttpVersion;
-import com.hotels.styx.api.v2.StyxCoreObservable;
-import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
@@ -28,6 +26,7 @@ import org.testng.annotations.Test;
 import rx.Observable;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpCookie.cookie;
@@ -458,9 +457,9 @@ public class HttpRequestTest {
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpRequest full = toRxObservable(request.toFullRequest(0x100000))
-                .toBlocking()
-                .single();
+        FullHttpRequest full = request.toFullRequest(0x100000)
+                .asCompletableFuture()
+                .get();
 
         assertThat(full.method(), is(HttpMethod.POST));
         assertThat(full.isSecure(), is(true));
@@ -477,9 +476,9 @@ public class HttpRequestTest {
                 .body(empty())
                 .build();
 
-        FullHttpRequest full = toRxObservable(request.toFullRequest(0x100000))
-                .toBlocking()
-                .single();
+        FullHttpRequest full = request.toFullRequest(0x100000)
+                .asCompletableFuture()
+                .get();
 
         assertThat(full.url().toString(), is("/foo/bar"));
         assertThat(full.bodyAs(UTF_8), is(""));
@@ -491,25 +490,25 @@ public class HttpRequestTest {
                 .body(stream("foo", "bar", "baz"))
                 .build();
 
-        FullHttpRequest full = toRxObservable(request.toFullRequest(0x100000))
-                .toBlocking()
-                .single();
+        FullHttpRequest full = request.toFullRequest(0x100000)
+                .asCompletableFuture()
+                .get();
 
         assertThat(full.url().toString(), is("/foo/bar"));
         assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
     }
 
     @Test
-    public void retainsClientAddressAfterConversionToFullHttpMessage() {
+    public void retainsClientAddressAfterConversionToFullHttpMessage() throws ExecutionException, InterruptedException {
         InetSocketAddress address = InetSocketAddress.createUnresolved("styx.io", 8080);
         HttpRequest original = HttpRequest.Builder.get("/")
                 .clientAddress(address)
                 .build();
 
-        FullHttpRequest fullRequest = toRxObservable(original
-                .toFullRequest(100))
-                .toBlocking()
-                .first();
+        FullHttpRequest fullRequest = original
+                .toFullRequest(100)
+                .asCompletableFuture()
+                .get();
 
         HttpRequest streaming = fullRequest.toStreamingRequest();
 
@@ -521,10 +520,6 @@ public class HttpRequestTest {
         return Observable.from(Stream.of(strings)
                 .map(string -> Unpooled.copiedBuffer(string, UTF_8))
                 .collect(toList()));
-    }
-
-    public static <T> Observable<T> toRxObservable(StyxObservable<T> observable) {
-        return ((StyxCoreObservable<T>)observable).delegate();
     }
 
 }

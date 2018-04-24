@@ -19,7 +19,6 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.messages.FullHttpResponse;
-import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -231,7 +230,7 @@ public final class HttpResponse implements HttpMessage {
     public StyxObservable<FullHttpResponse> toFullResponse(int maxContentLength) {
         // TODO: Mikko: Styx 2.0 API:
         // Fix this:
-        return new StyxCoreObservable<>(body.aggregate(maxContentLength)
+        return StyxObservable.from(body.aggregate(maxContentLength)
                 .map(decoded -> new FullHttpResponse.Builder(this, decoded.copy().array()))
                 .map(FullHttpResponse.Builder::build));
     }

@@ -26,7 +26,6 @@ import com.hotels.styx.routing.config._
 import com.hotels.styx.routing.interceptors.RewriteInterceptor
 import com.hotels.styx.routing.{HttpHandlerAdapter, PluginAdapter}
 import com.hotels.styx.support.api.BlockingObservables
-import com.hotels.styx.support.api.BlockingObservables.toRxObservable
 import org.mockito.Matchers.{any, eq => meq}
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.mock.MockitoSugar
@@ -209,7 +208,7 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
   def mockHandlerFactory(): HttpHandlerFactory = {
     val handlerFactory = mock[HttpHandlerFactory]
     when(handlerFactory.build(any[java.util.List[String]], any[RouteHandlerFactory], any[RouteHandlerDefinition]))
-      .thenReturn(new HttpHandlerAdapter((_, _) => StyxCoreObservable.of(HttpResponse.Builder.response(OK).build())))
+      .thenReturn(new HttpHandlerAdapter((_, _) => StyxObservable.of(HttpResponse.Builder.response(OK).build())))
     handlerFactory
   }
 

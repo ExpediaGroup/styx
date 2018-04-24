@@ -22,16 +22,16 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
-import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.common.SimpleCache;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
-import rx.Observable;
 
 import java.util.Map;
 
 import static com.google.common.base.Throwables.propagate;
+import static com.hotels.styx.api.v2.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.api.v2.StyxInternalObservables.toRxObservable;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static java.util.Objects.requireNonNull;
@@ -89,14 +89,13 @@ public class InstrumentedPlugin implements Plugin {
         try {
             // TODO: Mikko: Styx 2.0 API:
             // Check this:
-            return new StyxCoreObservable<>(((StyxCoreObservable<HttpResponse>) plugin.intercept(request, chain))
-                    .delegate()
-                    .doOnNext(response -> recordStatusCode(chain, response))
-                    .onErrorResumeNext(error -> error(recordAndWrapError(chain, error))));
+            return fromRxObservable(
+                    toRxObservable(plugin.intercept(request, chain))
+                            .doOnNext(response -> recordStatusCode(chain, response))
+                            .onErrorResumeNext(error -> error(recordAndWrapError(chain, error))));
         } catch (Throwable e) {
             recordException(e);
-            return new StyxCoreObservable<HttpResponse>(Observable.error(new PluginException(e, plugin.name()))) {
-            };
+            return StyxObservable.error(new PluginException(e, plugin.name()));
         }
     }
 
@@ -145,8 +144,7 @@ public class InstrumentedPlugin implements Plugin {
         @Override
         public StyxObservable<HttpResponse> proceed(HttpRequest request) {
             try {
-                return new StyxCoreObservable<>(((StyxCoreObservable<HttpResponse>) chain.proceed(request))
-                        .delegate()
+                return fromRxObservable(toRxObservable(chain.proceed(request))
                         .doOnNext(response -> upstreamStatus = response.status())
                         .doOnError(error -> upstreamException = true));
             } catch (Throwable e) {

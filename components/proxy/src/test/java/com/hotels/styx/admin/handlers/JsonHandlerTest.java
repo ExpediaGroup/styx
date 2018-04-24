@@ -17,7 +17,6 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Clock;
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
@@ -27,13 +26,12 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.support.api.BlockingObservables.toRxObservable;
+import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.mock;
 
 public class JsonHandlerTest {
     long time = currentTimeMillis();
@@ -104,11 +102,11 @@ public class JsonHandlerTest {
     }
 
     private String response(JsonHandler<?> handler) {
-        return bodyAsString(toRxObservable(handler.handle(get("/").build(), HttpInterceptorContext.create())).toBlocking().first());
+        return bodyAsString(await(handler.handle(get("/").build(), HttpInterceptorContext.create()).asCompletableFuture()));
     }
 
     private String responseFor(JsonHandler<?> handler, HttpRequest request) {
-        return bodyAsString(toRxObservable(handler.handle(request, HttpInterceptorContext.create())).toBlocking().first());
+        return bodyAsString(await(handler.handle(request, HttpInterceptorContext.create()).asCompletableFuture()));
     }
 
     private static class Convertible {

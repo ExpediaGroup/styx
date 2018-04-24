@@ -16,13 +16,8 @@
 package com.hotels.styx.server;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.v2.Async;
-import com.hotels.styx.api.v2.StyxCoreObservable;
-import com.hotels.styx.api.v2.StyxObservable;
-import rx.Observable;
 
 import java.util.Map;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -39,29 +34,6 @@ public final class HttpInterceptorContext implements HttpInterceptor.Context {
     @Override
     public <T> T get(String key, Class<T> clazz) {
         return (T) context.get(key);
-    }
-
-    @Override
-    public Async async() {
-
-        // TODO: Mikko: Styx 2.0 API: Move to common package!
-
-        return new Async() {
-            @Override
-            public <T> StyxObservable<T> just(T item) {
-                return new StyxCoreObservable<T>(Observable.just(item));
-            }
-
-            @Override
-            public <T> StyxObservable<T> error(Throwable item) {
-                return new StyxCoreObservable<T>(Observable.error(item));
-            }
-
-            @Override
-            public <T> StyxObservable<T> fromCompletionStage(CompletionStage<T> item) {
-                return new StyxCoreObservable<T>(item);
-            }
-        };
     }
 
     public static HttpInterceptorContext create() {

@@ -17,13 +17,13 @@ package com.hotels.styx
 
 import com.hotels.styx.api.client.UrlConnectionHttpClient
 import com.hotels.styx.api.messages.FullHttpResponse
+import com.hotels.styx.api.v2.StyxInternalObservables.toRxObservable
 import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse}
 import com.hotels.styx.client.HttpConfig.newHttpConfigBuilder
 import com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination.Factory
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory
 import com.hotels.styx.client.{ConnectionSettings, SimpleNettyHttpClient}
-import com.hotels.styx.support.api.BlockingObservables.toRxObservable
 import rx.lang.scala.JavaConversions.toScalaObservable
 import rx.lang.scala.Observable
 

@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
-import com.hotels.styx.api.HttpInterceptor.{Chain, observable}
+import com.hotels.styx.api.HttpInterceptor.{Chain}
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.v2.StyxObservable
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
@@ -92,7 +92,7 @@ class AsyncRequestContentDelayPlugin extends PluginAdapter {
           Thread.sleep(1000)
           Observable.just(byteBuf)
         })
-    observable(chain).just(request)
+    StyxObservable.of(request)
       .map(asJavaFunction((request: HttpRequest) => request.newBuilder().body(contentTransformation).build()))
       .flatMap(asJavaFunction((request: HttpRequest) => chain.proceed(request)))
   }

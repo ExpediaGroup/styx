@@ -18,7 +18,6 @@ package com.hotels.styx.proxy.interceptors;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.support.api.HttpMessageBodies;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
@@ -29,7 +28,7 @@ import org.testng.annotations.Test;
 import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.support.api.BlockingObservables.toRxObservable;
+import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -112,10 +111,10 @@ public class HttpMessageLoggingInterceptorTest {
     }
 
     private static HttpInterceptor.Chain respondWith(HttpResponse.Builder resp) {
-        return request -> StyxCoreObservable.of(resp.request(request).build());
+        return request -> StyxObservable.of(resp.request(request).build());
     }
 
     private static void consume(StyxObservable<HttpResponse> resp) {
-        toRxObservable(resp.map(HttpMessageBodies::bodyAsString)).toBlocking().single();
+        await(resp.map(HttpMessageBodies::bodyAsString).asCompletableFuture());
     }
 }

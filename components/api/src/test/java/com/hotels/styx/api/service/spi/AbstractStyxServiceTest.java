@@ -15,15 +15,12 @@
  */
 package com.hotels.styx.api.service.spi;
 
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.messages.FullHttpResponse;
-import com.hotels.styx.api.v2.StyxCoreObservable;
-import com.hotels.styx.api.v2.StyxObservable;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static com.hotels.styx.api.MockContext.MOCK_CONTEXT;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.FAILED;
@@ -35,29 +32,23 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.mock;
 
 public class AbstractStyxServiceTest {
 
     private final HttpRequest get = HttpRequest.Builder.get("/").build();
 
     @Test
-    public void exposesNameAndStatusViaAdminInterface() {
+    public void exposesNameAndStatusViaAdminInterface() throws ExecutionException, InterruptedException {
         DerivedStyxService service = new DerivedStyxService("derived-service", new CompletableFuture<>());
 
-        FullHttpResponse response = toRxObservable(
+        FullHttpResponse response =
                 service.adminInterfaceHandlers().get("status").handle(get, MOCK_CONTEXT)
-                        .flatMap(r -> r.toFullResponse(1024)))
-                .toBlocking()
-                .first();
+                        .flatMap(r -> r.toFullResponse(1024))
+                .asCompletableFuture()
+                .get();
 
         assertThat(response.bodyAs(UTF_8), is("{ name: \"derived-service\" status: \"CREATED\" }"));
     }
-
-    static <T> Observable<T> toRxObservable(StyxObservable<T> observable) {
-        return ((StyxCoreObservable<T>) observable).delegate();
-    }
-
 
     @Test
     public void inStartingStateWhenStartIsCalled() {

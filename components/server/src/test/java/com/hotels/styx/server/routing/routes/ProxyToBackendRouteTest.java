@@ -19,13 +19,11 @@ import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
-import com.hotels.styx.support.api.BlockingObservables;
 import org.testng.annotations.Test;
 import rx.Observable;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.support.api.BlockingObservables.toRxObservable;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,7 +39,7 @@ public class ProxyToBackendRouteTest {
 
         ProxyToBackendRoute proxy = ProxyToBackendRoute.proxyToBackend(client);
 
-        HttpResponse response = toRxObservable(proxy.handle(get("/foo").build(), HttpInterceptorContext.create())).toBlocking().first();
+        HttpResponse response = proxy.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
         assertThat(response.status(), is(OK));
     }
 }

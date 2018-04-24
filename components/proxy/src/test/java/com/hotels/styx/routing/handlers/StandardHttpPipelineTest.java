@@ -18,10 +18,8 @@ package com.hotels.styx.routing.handlers;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.server.HttpInterceptorContext;
-import com.hotels.styx.support.api.BlockingObservables;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -32,7 +30,8 @@ import java.util.function.Consumer;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.support.api.BlockingObservables.toRxObservable;
+import static com.hotels.styx.api.v2.StyxInternalObservables.toRxObservable;
+import static com.hotels.styx.common.StyxFutures.await;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -151,27 +150,27 @@ public class StandardHttpPipelineTest {
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
-    public void sendsExceptionUponMultipleSubscription() {
-        HttpHandler handler = (request, context) -> StyxCoreObservable.of(response(OK).build());
+    public void sendsExceptionUponMultipleSubscription() throws Exception {
+        HttpHandler handler = (request, context) -> StyxObservable.of(response(OK).build());
 
         StandardHttpPipeline pipeline = new StandardHttpPipeline(handler);
 
         StyxObservable<HttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
-        HttpResponse response = toRxObservable(responseObservable).toBlocking().single();
+        HttpResponse response = responseObservable.asCompletableFuture().get();
         assertThat(response.status(), is(OK));
 
-        toRxObservable(responseObservable).toBlocking().single();
+        toRxObservable(responseObservable).toBlocking().first();
     }
 
     @Test(expectedExceptions = IllegalStateException.class, dataProvider = "multipleSubscriptionInterceptors")
-    public void sendsExceptionUponExtraSubscriptionInsideInterceptor(HttpInterceptor interceptor) {
-        HttpHandler handler = (request, context) -> StyxCoreObservable.of(response(OK).build());
+    public void sendsExceptionUponExtraSubscriptionInsideInterceptor(HttpInterceptor interceptor) throws Exception {
+        HttpHandler handler = (request, context) -> StyxObservable.of(response(OK).build());
 
         List<HttpInterceptor> interceptors = singletonList(interceptor);
         StandardHttpPipeline pipeline = new StandardHttpPipeline(interceptors, handler);
 
         StyxObservable<HttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
-        toRxObservable(responseObservable).toBlocking().single();
+        toRxObservable(responseObservable).toBlocking().first();
     }
 
     @DataProvider(name = "multipleSubscriptionInterceptors")
@@ -187,7 +186,7 @@ public class StandardHttpPipelineTest {
         return (request, chain) -> {
             StyxObservable<HttpResponse> responseObservable = chain.proceed(request);
 
-            toRxObservable(responseObservable).toBlocking().single();
+            await(responseObservable.asCompletableFuture());
 
             return responseObservable;
         };
@@ -226,10 +225,10 @@ public class StandardHttpPipelineTest {
     }
 
     private HttpResponse sendRequestTo(StandardHttpPipeline pipeline) {
-        return BlockingObservables.toRxObservable(pipeline.handle(get("/").build(), HttpInterceptorContext.create())).toBlocking().first();
+        return await(pipeline.handle(get("/").build(), HttpInterceptorContext.create()).asCompletableFuture());
     }
 
     private StandardHttpPipeline pipeline(HttpInterceptor... interceptors) {
-        return new StandardHttpPipeline(asList(interceptors), (request, context) -> StyxCoreObservable.of(response(OK).build()));
+        return new StandardHttpPipeline(asList(interceptors), (request, context) -> StyxObservable.of(response(OK).build()));
     }
 }

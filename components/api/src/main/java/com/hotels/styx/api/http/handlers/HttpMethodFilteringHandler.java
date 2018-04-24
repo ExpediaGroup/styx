@@ -23,7 +23,6 @@ import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.handler.codec.http.HttpMethod;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hotels.styx.api.HttpInterceptor.observable;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static java.lang.String.format;
@@ -46,7 +45,7 @@ public class HttpMethodFilteringHandler implements HttpHandler {
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         if (!method.equals(request.method())) {
-            return observable(context).just(
+            return StyxObservable.of(
                     response(METHOD_NOT_ALLOWED)
                             .body(errorBody)
                             .build());

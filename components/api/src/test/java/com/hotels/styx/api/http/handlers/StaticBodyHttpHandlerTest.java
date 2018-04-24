@@ -18,15 +18,11 @@ package com.hotels.styx.api.http.handlers;
 
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.messages.FullHttpResponse;
-import com.hotels.styx.api.v2.StyxCoreObservable;
 import org.testng.annotations.Test;
-
-import java.util.concurrent.ExecutionException;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.MockContext.MOCK_CONTEXT;
-import static com.hotels.styx.api.TestSupport.getFirst;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -35,11 +31,11 @@ import static org.hamcrest.Matchers.is;
 
 public class StaticBodyHttpHandlerTest {
     @Test
-    public void respondsWithStaticBody() throws ExecutionException, InterruptedException {
+    public void respondsWithStaticBody() throws Exception {
         StaticBodyHttpHandler handler = new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "foo", UTF_8);
 
-        HttpResponse response = getFirst(handler.handle(get("/").build(), MOCK_CONTEXT));
-        FullHttpResponse fullResponse = ((StyxCoreObservable<FullHttpResponse>) response.toFullResponse(1024))
+        HttpResponse response = handler.handle(get("/").build(), MOCK_CONTEXT).asCompletableFuture().get();
+        FullHttpResponse fullResponse = response.toFullResponse(1024)
                 .asCompletableFuture()
                 .get();
 

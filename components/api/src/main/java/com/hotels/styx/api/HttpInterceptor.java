@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.api.v2.Async;
 import com.hotels.styx.api.v2.StyxObservable;
 
 import java.util.Optional;
@@ -54,9 +53,6 @@ public interface HttpInterceptor {
         default <T> Optional<T> getIfAvailable(String key, Class<T> clazz) {
             return Optional.ofNullable(get(key, clazz));
         }
-
-
-        Async async();
     }
 
     /**
@@ -91,15 +87,5 @@ public interface HttpInterceptor {
      * @return observable that will provide the response
      */
     StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain);
-
-    // TODO: Mikko: Styx 2.0 API: A problem: The chain must be passed in the call stack to return observables!!
-    //              See PluginToggleHandler as an example.
-    static Async observable(Chain chain) {
-        return observable(chain.context());
-    }
-
-    static Async observable(HttpInterceptor.Context context) {
-        return context.async();
-    }
 
 }

@@ -20,10 +20,10 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hotels.styx.api.v2.StyxInternalObservables.fromRxObservable;
 
 /**
  * A HTTP router route which proxies to Styx backend application.
@@ -42,6 +42,6 @@ public final class ProxyToBackendRoute implements HttpHandler {
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         // TODO: Mikko: Styx 2.0 API:
-        return new StyxCoreObservable<>(client.sendRequest(request));
+        return fromRxObservable(client.sendRequest(request));
     }
 }

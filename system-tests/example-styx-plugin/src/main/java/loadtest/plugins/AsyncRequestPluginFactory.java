@@ -21,7 +21,6 @@ import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.api.v2.StyxObservable;
 
-import static com.hotels.styx.api.HttpInterceptor.observable;
 import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static rx.Observable.timer;
@@ -65,7 +64,7 @@ public class AsyncRequestPluginFactory implements PluginFactory {
 //            return chain.styxObservable(response(TEMPORARY_REDIRECT).build())
 //                    .transformAsync(x -> chain.proceed(request));
 //
-            return observable(chain).just(fromSingleObservable(timer(config.delayMillis(), MILLISECONDS)))
+            return StyxObservable.of(fromSingleObservable(timer(config.delayMillis(), MILLISECONDS)))
                     .flatMap(x -> chain.proceed(request));
         }
     }

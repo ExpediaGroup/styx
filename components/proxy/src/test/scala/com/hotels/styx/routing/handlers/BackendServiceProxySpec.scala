@@ -26,12 +26,12 @@ import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse}
 import com.hotels.styx.client.{OriginStatsFactory, OriginsInventory}
 import com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded
 import com.hotels.styx.api.service.spi.Registry.{Changes, ReloadResult}
+import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.config.RouteHandlerDefinition
 import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.support.api.BlockingObservables
-import com.hotels.styx.support.api.BlockingObservables.toRxObservable
 import io.netty.handler.codec.http.HttpResponseStatus
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, ShouldMatchers}
@@ -66,13 +66,13 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
     val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), services).build(List(), null, config)
     backendRegistry.reload()
 
-    val hwaResponse = toRxObservable(handler.handle(hwaRequest, HttpInterceptorContext.create)).toBlocking.first()
+    val hwaResponse = StyxFutures.await(handler.handle(hwaRequest, HttpInterceptorContext.create).asCompletableFuture())
     hwaResponse.header("X-Backend-Service").get() should be("hwa")
 
-    val laResponse = toRxObservable(handler.handle(laRequest, HttpInterceptorContext.create)).toBlocking.first()
+    val laResponse = StyxFutures.await(handler.handle(laRequest, HttpInterceptorContext.create).asCompletableFuture())
     laResponse.header("X-Backend-Service").get() should be("la")
 
-    val baResponse = toRxObservable(handler.handle(baRequest, HttpInterceptorContext.create)).toBlocking.first()
+    val baResponse = StyxFutures.await(handler.handle(baRequest, HttpInterceptorContext.create).asCompletableFuture())
     baResponse.header("X-Backend-Service").get() should be("ba")
   }
 

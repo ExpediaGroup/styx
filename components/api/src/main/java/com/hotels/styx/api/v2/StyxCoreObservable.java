@@ -25,7 +25,7 @@ import java.util.function.Function;
  * An observable that underpins the StyxObservable interface.
  * @param <T>
  */
-public class StyxCoreObservable<T> implements StyxObservable<T> {
+class StyxCoreObservable<T> implements StyxObservable<T> {
     private final Observable<T> delegate;
 
     public StyxCoreObservable(Observable<T> delegate) {

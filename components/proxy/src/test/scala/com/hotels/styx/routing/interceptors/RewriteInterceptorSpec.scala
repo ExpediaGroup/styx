@@ -16,16 +16,14 @@
 package com.hotels.styx.routing.interceptors
 
 import com.hotels.styx.api.HttpResponse.Builder.response
-import com.hotels.styx.api.v2.{StyxCoreObservable, StyxObservable}
+import com.hotels.styx.api.v2.StyxObservable
 import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse}
+import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition
-import com.hotels.styx.support.api.BlockingObservables
-import com.hotels.styx.support.api.BlockingObservables.toRxObservable
 import io.netty.handler.codec.http.HttpResponseStatus.OK
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, ShouldMatchers}
-import rx.Observable
 
 class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSugar {
 
@@ -46,7 +44,7 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
     val interceptor = new RewriteInterceptor.ConfigFactory().build(config)
     val capturingChain = new CapturingChain
 
-    val response = toRxObservable(interceptor.intercept(HttpRequest.Builder.get("/foo").build(), capturingChain)).toBlocking.first()
+    val response = StyxFutures.await(interceptor.intercept(HttpRequest.Builder.get("/foo").build(), capturingChain).asCompletableFuture())
     capturingChain.request().path() should be ("/app/foo")
   }
 
@@ -63,7 +61,7 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
     val interceptor = new RewriteInterceptor.ConfigFactory().build(config)
     val capturingChain = new CapturingChain
 
-    val response = toRxObservable(interceptor.intercept(HttpRequest.Builder.get("/foo").build(), capturingChain)).toBlocking.first()
+    val response = StyxFutures.await(interceptor.intercept(HttpRequest.Builder.get("/foo").build(), capturingChain).asCompletableFuture())
     capturingChain.request().path() should be ("/foo")
   }
 
@@ -76,7 +74,7 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
 
     override def proceed(request: HttpRequest): StyxObservable[HttpResponse] = {
       storedRequest = request
-      StyxCoreObservable.of(response(OK).build())
+      StyxObservable.of(response(OK).build())
     }
 
     def request() = storedRequest

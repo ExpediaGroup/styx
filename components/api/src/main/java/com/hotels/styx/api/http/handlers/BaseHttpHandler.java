@@ -21,8 +21,6 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.v2.StyxObservable;
 
-import static com.hotels.styx.api.HttpInterceptor.observable;
-
 /**
  * This class provides a skeleton implementation of the {@link HttpHandler} interface, that can be used when no
  * complex {@link StyxObservable} mechanism is required.
@@ -31,7 +29,7 @@ public abstract class BaseHttpHandler implements HttpHandler {
 
     @Override
     public  StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return observable(context).just(doHandle(request));
+        return StyxObservable.of(doHandle(request));
     }
 
     /**

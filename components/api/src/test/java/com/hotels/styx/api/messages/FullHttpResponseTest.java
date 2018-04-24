@@ -18,8 +18,6 @@ package com.hotels.styx.api.messages;
 import com.google.common.collect.Iterables;
 import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.v2.StyxCoreObservable;
-import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -29,6 +27,7 @@ import rx.Observable;
 import rx.observers.TestSubscriber;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.api.HttpCookieAttribute.domain;
@@ -470,16 +469,16 @@ public class FullHttpResponseTest {
     }
 
     @Test
-    public void responseBodyCannotBeChangedViaStreamingMessage2() {
+    public void responseBodyCannotBeChangedViaStreamingMessage2() throws ExecutionException, InterruptedException {
         ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
 
         HttpResponse original = response(HttpResponseStatus.OK)
                 .body(content)
                 .build();
 
-        FullHttpResponse fullResponse = toRxObservable(original.toFullResponse(100))
-                .toBlocking()
-                .first();
+        FullHttpResponse fullResponse = original.toFullResponse(100)
+                .asCompletableFuture()
+                .get();
 
         content.array()[0] = 'A';
 
@@ -487,16 +486,16 @@ public class FullHttpResponseTest {
     }
 
     @Test
-    public void requestBodyCannotBeChangedViaStreamingRequest3() {
+    public void requestBodyCannotBeChangedViaStreamingRequest3() throws ExecutionException, InterruptedException {
         ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
 
         HttpResponse original = response(HttpResponseStatus.OK)
                 .body(Observable.just(content))
                 .build();
 
-        FullHttpResponse fullResponse = toRxObservable(original.toFullResponse(100))
-                .toBlocking()
-                .first();
+        FullHttpResponse fullResponse = original.toFullResponse(100)
+                .asCompletableFuture()
+                .get();
 
         content.array()[0] = 'A';
 
@@ -517,8 +516,4 @@ public class FullHttpResponseTest {
         assertThat(newRequest.bodyAs(UTF_8), is("New body"));
     }
 
-
-    static <T> Observable<T> toRxObservable(StyxObservable<T> observable) {
-        return ((StyxCoreObservable<T>) observable).delegate();
-    }
 }

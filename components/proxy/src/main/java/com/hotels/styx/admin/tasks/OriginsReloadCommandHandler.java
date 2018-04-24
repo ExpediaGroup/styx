@@ -22,7 +22,6 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
-import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
@@ -37,6 +36,7 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.service.spi.Registry.Outcome.RELOADED;
 import static com.hotels.styx.api.service.spi.Registry.Outcome.UNCHANGED;
+import static com.hotels.styx.api.v2.StyxInternalObservables.fromRxObservable;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -61,7 +61,7 @@ public class OriginsReloadCommandHandler implements HttpHandler {
 
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return new StyxCoreObservable<>(Observable.<HttpResponse>create(this::reload)
+        return fromRxObservable(Observable.<HttpResponse>create(this::reload)
                 .subscribeOn(Schedulers.from(executor)));
     }
 

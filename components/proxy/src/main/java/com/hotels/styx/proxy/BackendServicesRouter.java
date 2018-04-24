@@ -29,7 +29,6 @@ import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.HealthCheckConfig;
 import com.hotels.styx.api.service.TlsSettings;
 import com.hotels.styx.api.service.spi.Registry;
-import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.OriginStatsFactory;
@@ -55,6 +54,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.concat;
+import static com.hotels.styx.api.v2.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
@@ -235,7 +235,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
         @Override
         public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-            return new StyxCoreObservable<>(
+            return fromRxObservable(
                     client.sendRequest(request)
                         .doOnError(throwable -> handleError(request, throwable)));
         }

@@ -18,7 +18,7 @@ package com.hotels.styx.admin
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.api.HttpHeaderNames.HOST
-import com.hotels.styx.api.HttpInterceptor.{Chain, observable}
+import com.hotels.styx.api.HttpInterceptor.{Chain}
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api._
 import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
@@ -84,7 +84,7 @@ class HealthCheckSpec extends FunSpec
 
   class FaultyPlugin extends PluginAdapter {
     override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
-      observable(chain).error(new RuntimeException)
+      StyxObservable.error(new RuntimeException)
     }
   }
 

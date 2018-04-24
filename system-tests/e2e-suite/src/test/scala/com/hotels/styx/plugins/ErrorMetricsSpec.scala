@@ -36,7 +36,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, urlMatching}
 import com.hotels.styx._
 import com.hotels.styx.{BackendServicesRegistrySupplier, StyxClientSupplier, StyxConfiguration, StyxServerSupport}
 import com.hotels.styx.api.HttpHeaderNames.HOST
-import com.hotels.styx.api.HttpInterceptor.{Chain, observable}
+import com.hotels.styx.api.HttpInterceptor.{Chain}
 import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.HttpResponse.Builder.response
 import io.netty.handler.codec.http.HttpResponseStatus
@@ -315,7 +315,7 @@ class ErrorMetricsSpec extends FunSpec
   private class Return500Interceptor extends PluginAdapter {
     override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       if (request.header("Generate_error_status").asScala.contains("true"))
-        observable(chain).just(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
+        StyxObservable.of(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
       else
         chain.proceed(request)
     }
@@ -327,7 +327,7 @@ class ErrorMetricsSpec extends FunSpec
     override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       if (request.header("Map_to_error_status").asScala.contains("true"))
         chain.proceed(request).flatMap(
-          asJavaFunction((t: HttpResponse) => observable(chain).just(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
+          asJavaFunction((t: HttpResponse) => StyxObservable.of(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
           ))
       else
         chain.proceed(request)
@@ -337,7 +337,7 @@ class ErrorMetricsSpec extends FunSpec
   private class Return502Interceptor extends PluginAdapter {
     override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       if (request.header("Generate_bad_gateway_status").asScala.contains("true"))
-        observable(chain).just(response(HttpResponseStatus.BAD_GATEWAY).build())
+        StyxObservable.of(response(HttpResponseStatus.BAD_GATEWAY).build())
       else
         chain.proceed(request)
     }
@@ -347,7 +347,7 @@ class ErrorMetricsSpec extends FunSpec
     override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       if (request.header("Map_to_bad_gateway_status").asScala.contains("true"))
         chain.proceed(request).flatMap(
-          asJavaFunction((t: HttpResponse) => observable(chain).just(response(HttpResponseStatus.BAD_GATEWAY).build())
+          asJavaFunction((t: HttpResponse) => StyxObservable.of(response(HttpResponseStatus.BAD_GATEWAY).build())
           ))
       else
         chain.proceed(request)
@@ -367,7 +367,7 @@ class ErrorMetricsSpec extends FunSpec
 
     override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       if (request.header("Map_to_exception").asScala.contains("true"))
-        chain.proceed(request).flatMap(asJavaFunction((t: HttpResponse) => observable(chain).error(new TestException())))
+        chain.proceed(request).flatMap(asJavaFunction((t: HttpResponse) => StyxObservable.error(new TestException())))
       else
         chain.proceed(request)
     }

@@ -22,11 +22,10 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionDestination;
 import com.hotels.styx.api.messages.FullHttpResponse;
-import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
 import com.hotels.styx.api.service.ConnectionPoolSettings;
-import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
 import com.hotels.styx.api.service.TlsSettings;
-import com.hotels.styx.support.api.BlockingObservables;
+import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
+import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -42,9 +41,11 @@ import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.v2.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.api.v2.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.client.Protocol.HTTP;
 import static com.hotels.styx.client.Protocol.HTTPS;
-import static com.hotels.styx.support.api.BlockingObservables.toRxObservable;
+import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith;
@@ -67,10 +68,10 @@ public class SimpleNettyHttpClientTest {
     @Test
     public void sendsHttp() throws IOException {
         withOrigin(HTTP, port -> {
-            FullHttpResponse response = httpClient().sendRequest(httpRequest(port))
-                    .flatMap(r -> toRxObservable(r.toFullResponse(MAX_LENGTH)))
-                    .toBlocking()
-                    .single();
+            FullHttpResponse response =
+                    await(fromRxObservable(httpClient().sendRequest(httpRequest(port)))
+                            .flatMap(r -> r.toFullResponse(MAX_LENGTH))
+                            .asCompletableFuture());
 
             assertThat(response.status(), is(OK));
         });

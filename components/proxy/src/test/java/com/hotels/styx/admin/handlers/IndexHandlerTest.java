@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
@@ -35,7 +34,7 @@ public class IndexHandlerTest {
 
     @Test
     public void printsTheRegisteredPaths() {
-        HttpResponse response = handle(get("/admin").build());
+        HttpResponse response = getFirst(handler.handle(get("/admin").build(), HttpInterceptorContext.create()));
         assertThat(response, hasStatus(OK));
         assertThat(response.contentType().get(), is("text/html; charset=utf-8"));
         assertThat(response, hasBody(
@@ -46,7 +45,4 @@ public class IndexHandlerTest {
         ));
     }
 
-    private HttpResponse handle(HttpRequest request) {
-        return getFirst(handler.handle(request, HttpInterceptorContext.create()));
-    }
 }

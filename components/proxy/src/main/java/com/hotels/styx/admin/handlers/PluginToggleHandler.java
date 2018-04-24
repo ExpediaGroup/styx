@@ -35,7 +35,6 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.hotels.styx.api.HttpInterceptor.observable;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpMethod.PUT;
@@ -85,12 +84,12 @@ public class PluginToggleHandler implements HttpHandler {
         } else if (PUT.equals(request.method())) {
             return putNewState(request, context);
         } else {
-            return observable(context).just(response(METHOD_NOT_ALLOWED).build());
+            return StyxObservable.of(response(METHOD_NOT_ALLOWED).build());
         }
     }
 
     private StyxObservable<HttpResponse> getCurrentState(HttpRequest request, HttpInterceptor.Context context) {
-        return observable(context).just(request)
+        return StyxObservable.of(request)
                 .map(this::plugin)
                 .map(this::currentState)
                 .map(state -> responseWith(OK, state.toString()));
@@ -101,7 +100,7 @@ public class PluginToggleHandler implements HttpHandler {
     }
 
     private StyxObservable<HttpResponse> putNewState(HttpRequest request, HttpInterceptor.Context context) {
-        return observable(context).just(request)
+        return StyxObservable.of(request)
                 .flatMap(this::requestedUpdate)
                 .map(this::applyUpdate);
     }
@@ -193,15 +192,15 @@ public class PluginToggleHandler implements HttpHandler {
 
     private StyxObservable<HttpResponse> handleErrors(Throwable e, HttpInterceptor.Context context) {
         if (e instanceof PluginNotFoundException) {
-            return observable(context).just(responseWith(NOT_FOUND, e.getMessage()));
+            return StyxObservable.of(responseWith(NOT_FOUND, e.getMessage()));
         }
 
         if (e instanceof BadPluginToggleRequestException) {
-            return observable(context).just(responseWith(BAD_REQUEST, e.getMessage()));
+            return StyxObservable.of(responseWith(BAD_REQUEST, e.getMessage()));
         }
 
         LOGGER.error("Plugin toggle error", e);
-        return observable(context).just(responseWith(INTERNAL_SERVER_ERROR, ""));
+        return StyxObservable.of(responseWith(INTERNAL_SERVER_ERROR, ""));
     }
 
     private enum PluginEnabledState {

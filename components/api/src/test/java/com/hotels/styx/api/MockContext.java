@@ -15,11 +15,9 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.api.v2.Async;
 import com.hotels.styx.api.v2.StyxObservable;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 public class MockContext implements HttpInterceptor.Context {
@@ -34,26 +32,6 @@ public class MockContext implements HttpInterceptor.Context {
     @Override
     public <T> T get(String key, Class<T> clazz) {
         return null;
-    }
-
-    @Override
-    public Async async() {
-        return new Async() {
-            @Override
-            public <T> StyxObservable<T> just(T item) {
-                return new MockObservable<>(item);
-            }
-
-            @Override
-            public <T> StyxObservable<T> error(Throwable item) {
-                throw new UnsupportedOperationException("StyxObservable.error()");
-            }
-
-            @Override
-            public <T> StyxObservable<T> fromCompletionStage(CompletionStage<T> stage) {
-                throw  new UnsupportedOperationException("StyxObservable.fromCompletionStage()");
-            }
-        };
     }
 
     // TODO: Mikko: Styx 2.0 API: MockObservable support for `onError`.
@@ -77,6 +55,11 @@ public class MockContext implements HttpInterceptor.Context {
         @Override
         public StyxObservable<T> onError(Function<Throwable, StyxObservable<T>> errorHandler) {
             return new MockObservable<>(value);
+        }
+
+        @Override
+        public CompletableFuture<T> asCompletableFuture() {
+            return CompletableFuture.completedFuture(this.value);
         }
 
         public T value() {

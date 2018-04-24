@@ -19,7 +19,6 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.v2.StyxCoreObservable;
 import com.hotels.styx.api.v2.StyxObservable;
 import rx.Observable;
 
@@ -27,7 +26,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hotels.styx.api.HttpInterceptor.observable;
+import static com.hotels.styx.api.v2.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.api.v2.StyxInternalObservables.toRxObservable;
 import static java.util.Collections.emptyList;
 import static rx.Observable.create;
 
@@ -85,11 +85,10 @@ class StandardHttpPipeline implements HttpHandler {
                 try {
                     return interceptor.intercept(request, chain);
                 } catch (Throwable e) {
-                    return observable(chain).error(e);
+                    return StyxObservable.error(e);
                 }
             }
-            return new StyxCoreObservable<>(((StyxCoreObservable<HttpResponse>) client.handle(request, this.context))
-                    .delegate()
+            return fromRxObservable(toRxObservable(client.handle(request, this.context))
                     .compose(StandardHttpPipeline::sendErrorOnDoubleSubscription));
         }
     }
