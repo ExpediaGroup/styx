@@ -50,16 +50,9 @@ class BackendServiceProviderSpec extends FunSpec with StyxProxySpec {
         |        backendService:
         |            id: "app"
         |            path: "/"
-        |            connectionPool:
-        |              maxConnectionsPerHost: 45
-        |              maxPendingConnectionsPerHost: 15
-        |              socketTimeoutMillis: 120000
-        |              connectTimeoutMillis: 8000
-        |              pendingConnectionTimeoutMillis: 8000
         |            origins:
         |              - id: "app-01"
         |                host: "localhost:${normalBackend.port()}"
-        |                responseTimeoutMillis: 60000
         """.stripMargin('|')
   )
 

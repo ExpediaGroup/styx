@@ -24,7 +24,7 @@ import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.AbstractStyxService;
 import com.hotels.styx.api.service.spi.Registry;
-import com.hotels.styx.client.applications.BackendServices;
+import com.hotels.styx.applications.BackendServices;
 import com.hotels.styx.infrastructure.FileBackedRegistry;
 import com.hotels.styx.infrastructure.YamlReader;
 import com.hotels.styx.proxy.backends.file.FileChangeMonitor.FileMonitorSettings;
@@ -40,11 +40,12 @@ import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.api.service.spi.Registry.Outcome.FAILED;
-import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
+import static com.hotels.styx.applications.BackendServices.newBackendServices;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 
 /**
  * File backed {@link BackendService} registry.
@@ -179,7 +180,7 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
 
     @VisibleForTesting
     static class YAMLBackendServicesReader implements FileBackedRegistry.Reader<BackendService> {
-        private final YamlReader<List<BackendService>> delegate = new YamlReader<>();
+        private final YamlReader<List<BackendServiceDeserializer>> delegate = new YamlReader<>();
 
         @Override
         public Iterable<BackendService> read(byte[] content) {
@@ -191,8 +192,9 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         }
 
         private BackendServices readBackendServices(byte[] content) throws Exception {
-            return newBackendServices(delegate.read(content, new TypeReference<List<BackendService>>() {
-            }));
+            List<BackendServiceDeserializer> read = delegate.read(content, new TypeReference<List<BackendServiceDeserializer>>() {
+            });
+            return newBackendServices(read.stream().map(BackendServiceDeserializer::backendService).collect(toList()));
         }
     }
 
