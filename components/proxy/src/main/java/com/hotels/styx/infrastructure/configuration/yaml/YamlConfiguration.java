@@ -92,6 +92,10 @@ public class YamlConfiguration implements ExtensibleConfiguration<YamlConfigurat
         return rootNode.toString();
     }
 
+    public JsonNode root() {
+        return this.rootNode;
+    }
+
     private static JsonNode merge(JsonNode baseNode, JsonNode overrideNode) {
         Iterable<String> fieldNames = overrideNode::fieldNames;
 
