@@ -32,11 +32,10 @@ import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.config.RouteHandlerDefinition
 import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.support.api.BlockingObservables
-import io.netty.handler.codec.http.HttpResponseStatus
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, ShouldMatchers}
 import rx.Observable
-
+import com.hotels.styx.api.messages.HttpResponseStatus
 import scala.collection.JavaConversions._
 
 class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSugar {
@@ -114,7 +113,7 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
   private def clientFactory() = new BackendServiceClientFactory() {
     override def createClient(backendService: BackendService, originsInventory: OriginsInventory, originStatsFactory: OriginStatsFactory): HttpClient = new HttpClient {
       override def sendRequest(request: HttpRequest): Observable[HttpResponse] = Observable
-        .just(HttpResponse.Builder
+        .just(HttpResponse
           .response(HttpResponseStatus.OK)
           .addHeader("X-Backend-Service", backendService.id())
           .build()

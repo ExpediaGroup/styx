@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.support.api;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import rx.Observable;
 
@@ -50,13 +50,13 @@ public final class BlockingObservables {
 
     public static FullHttpResponse waitForResponse(StyxObservable<HttpResponse> responseObs) {
         return futureGetAndPropagate(responseObs
-                .flatMap(response -> response.toFullResponse(120*1024))
+                .flatMap(response -> response.toFullHttpResponse(120*1024))
                 .asCompletableFuture());
     }
 
     public static FullHttpResponse waitForResponse(Observable<HttpResponse> responseObs) {
         return responseObs
-                .flatMap(response -> toRxObservable(response.toFullResponse(120*1024)))
+                .flatMap(response -> toRxObservable(response.toFullHttpResponse(120*1024)))
                 .toBlocking()
                 .single();
     }

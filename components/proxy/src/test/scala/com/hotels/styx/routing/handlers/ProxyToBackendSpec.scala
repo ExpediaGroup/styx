@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.routing.handlers
 
-import _root_.io.netty.handler.codec.http.HttpResponseStatus.OK
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.Environment
 import com.hotels.styx.api.Id.id
 import com.hotels.styx.api._
@@ -112,7 +112,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
         backendService.origins().head.id() should be(id("ba1"))
         backendService.origins().head.host().getPort should be(9094)
         Observable
-          .just(HttpResponse.Builder
+          .just(HttpResponse
             .response(OK)
             .addHeader("X-Backend-Service", backendService.id())
             .build()

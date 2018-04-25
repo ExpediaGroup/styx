@@ -87,7 +87,7 @@ class AsyncDelayPlugin extends PluginAdapter {
     chain.proceed(request)
       .flatMap(asJavaFunction((response: HttpResponse) => {
 
-        val transformedContent: Observable[ByteBuf] = response.body().content()
+        val transformedContent: Observable[ByteBuf] = response.body()
           .observeOn(Schedulers.computation())
           .flatMap((byteBuf: ByteBuf) => {
             Thread.sleep(1000)

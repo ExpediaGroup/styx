@@ -33,8 +33,8 @@ import java.util.Optional;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.Id.id;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -58,7 +58,7 @@ public class TransportTest {
     @BeforeMethod
     public void setUp() {
         request = get("/").build();
-        response = HttpResponse.Builder.response(OK).build();
+        response = HttpResponse.response(OK).build();
         transport = new Transport(id("x"), X_STYX_ORIGIN_ID);
         responseProvider = PublishSubject.create();
         subscriber = new TestSubscriber<>();

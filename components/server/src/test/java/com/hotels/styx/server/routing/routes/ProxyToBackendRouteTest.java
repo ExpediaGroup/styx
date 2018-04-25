@@ -23,8 +23,8 @@ import org.testng.annotations.Test;
 import rx.Observable;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Matchers.any;

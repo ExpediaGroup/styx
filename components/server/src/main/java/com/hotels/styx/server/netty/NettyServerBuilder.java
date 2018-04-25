@@ -18,8 +18,9 @@ package com.hotels.styx.server.netty;
 import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
@@ -34,9 +35,8 @@ import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Lists.newCopyOnWriteArrayList;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static java.util.Arrays.asList;
 
 /**
@@ -53,7 +53,7 @@ public final class NettyServerBuilder {
     private Optional<ServerConnector> httpConnector = Optional.empty();
     private Optional<ServerConnector> httpsConnector = Optional.empty();
     private final List<Runnable> startupActions = newCopyOnWriteArrayList();
-    private HttpHandler httpHandler = (request, context) -> StyxObservable.of(response(NOT_FOUND).build());
+    private HttpHandler httpHandler = (request, context) -> StyxObservable.of(HttpResponse.response(NOT_FOUND).build());
 
     public static NettyServerBuilder newBuilder() {
         return new NettyServerBuilder();

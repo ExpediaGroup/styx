@@ -18,22 +18,22 @@ package com.hotels.styx.client.healthcheck;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 
 import java.io.IOException;
 
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static rx.Observable.just;

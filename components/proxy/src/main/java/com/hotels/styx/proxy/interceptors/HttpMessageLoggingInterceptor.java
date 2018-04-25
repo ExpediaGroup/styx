@@ -35,11 +35,11 @@ public class HttpMessageLoggingInterceptor implements HttpInterceptor {
     @Override
     public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         log(request);
-        return chain.proceed(request).map(this::log);
+        return chain.proceed(request).map(response -> log(request, response));
     }
 
-    private HttpResponse log(HttpResponse response) {
-        logger.logResponse(response.request(), response);
+    private HttpResponse log(HttpRequest request, HttpResponse response) {
+        logger.logResponse(request, response);
         return response;
     }
 

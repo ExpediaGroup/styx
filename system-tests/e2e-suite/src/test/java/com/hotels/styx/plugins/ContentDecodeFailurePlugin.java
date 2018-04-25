@@ -15,11 +15,11 @@
  */
 package com.hotels.styx.plugins;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.messages.FullHttpResponse;
-import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.plugins.spi.Plugin;
 import io.netty.buffer.ByteBuf;
 
 import java.util.function.Function;
@@ -36,7 +36,7 @@ public class ContentDecodeFailurePlugin implements Plugin {
     @Override
     public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request)
-                .flatMap(response -> response.toFullResponse(maxContentBytes))
+                .flatMap(response -> response.toFullHttpResponse(maxContentBytes))
                 .map(fullResponse -> fullResponse.newBuilder()
                         .header("ContentDecodeFailurePlugin", "yes")
                         .header("bytes_aggregated", fullResponse.body().length)

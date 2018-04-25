@@ -47,11 +47,11 @@ import static com.hotels.styx.api.MediaTypes.ICON;
 import static com.hotels.styx.api.MediaTypes.MICROSOFT_ASF_VIDEO;
 import static com.hotels.styx.api.MediaTypes.MICROSOFT_MS_VIDEO;
 import static com.hotels.styx.api.MediaTypes.WAV_AUDIO;
+import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class StaticFileHandlerTest {

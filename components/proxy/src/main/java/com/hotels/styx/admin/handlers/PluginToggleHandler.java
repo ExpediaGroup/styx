@@ -18,13 +18,14 @@ package com.hotels.styx.admin.handlers;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -35,14 +36,14 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.messages.HttpResponseStatus.METHOD_NOT_ALLOWED;
+import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpMethod.PUT;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Comparator.naturalOrder;
@@ -172,11 +173,12 @@ public class PluginToggleHandler implements HttpHandler {
     }
 
     private HttpResponse responseWith(HttpResponseStatus status, String message) {
-        return response(status)
-                .body(message + "\n")
+        return FullHttpResponse.response(status)
+                .body(message + "\n", UTF_8)
                 .contentType(PLAIN_TEXT_UTF_8)
                 .disableCaching()
-                .build();
+                .build()
+                .toStreamingResponse();
     }
 
     private static boolean parseToBoolean(String string) {

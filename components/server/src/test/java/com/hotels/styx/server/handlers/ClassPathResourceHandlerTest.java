@@ -15,9 +15,8 @@
  */
 package com.hotels.styx.server.handlers;
 
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

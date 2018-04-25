@@ -16,7 +16,6 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.messages.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
@@ -292,6 +291,7 @@ public final class HttpRequest implements HttpMessage {
     }
 
 
+
     @Override
     public String toString() {
         return toStringHelper(this)
@@ -350,7 +350,7 @@ public final class HttpRequest implements HttpMessage {
             version(request.version);
         }
 
-        public Builder(com.hotels.styx.api.messages.FullHttpRequest request) {
+        public Builder(FullHttpRequest request) {
             this.id = request.id();
             this.secure = request.isSecure();
             this.url = request.url();

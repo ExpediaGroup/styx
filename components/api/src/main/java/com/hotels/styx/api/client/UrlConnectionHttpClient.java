@@ -16,11 +16,11 @@
 package com.hotels.styx.api.client;
 
 import com.google.common.base.Throwables;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpHeader;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import rx.Observable;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -44,7 +44,6 @@ import java.util.Optional;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.io.ByteStreams.toByteArray;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.common.Joiners.JOINER_ON_COMMA;
 
 /**
@@ -149,12 +148,12 @@ public class UrlConnectionHttpClient implements HttpClient {
 
     private HttpResponse readResponse(HttpURLConnection connection) throws IOException {
         int status = connection.getResponseCode();
-        HttpResponse.Builder response = response(HttpResponseStatus.valueOf(status));
+        FullHttpResponse.Builder response = FullHttpResponse.response(com.hotels.styx.api.messages.HttpResponseStatus.statusWithCode(status));
 
         try (InputStream stream = getInputStream(connection, status)) {
             byte[] content = toByteArray(stream);
             if (content.length > 0) {
-                response.body(content);
+                response.body(content, true);
             }
             connection.getHeaderFields().forEach((key, value) -> {
                 if (!isNullOrEmpty(key)) {
@@ -163,7 +162,7 @@ public class UrlConnectionHttpClient implements HttpClient {
             });
         }
 
-        return response.build();
+        return response.build().toStreamingResponse();
     }
 
     private static InputStream getInputStream(HttpURLConnection connection, int status) throws IOException {

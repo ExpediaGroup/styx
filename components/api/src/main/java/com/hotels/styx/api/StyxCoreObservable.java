@@ -73,7 +73,7 @@ class StyxCoreObservable<T> implements StyxObservable<T> {
     @Override
     public StyxObservable<T> onError(Function<Throwable, StyxObservable<T>> errorHandler) {
         return new StyxCoreObservable<>(delegate.onErrorResumeNext(cause -> {
-            StyxCoreObservable<T> result = (StyxCoreObservable<T>)errorHandler.apply(cause);
+            StyxCoreObservable<T> result = (StyxCoreObservable<T>) errorHandler.apply(cause);
             return result.delegate();
         }));
     }

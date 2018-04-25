@@ -30,14 +30,13 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -70,7 +69,7 @@ public class StaticPipelineBuilderTest {
     }
 
     @Test
-    public void appliesPluginsInOrderTheyAreConfigured()  {
+    public void appliesPluginsInOrderTheyAreConfigured() throws Exception {
         Iterable<NamedPlugin> plugins = ImmutableList.of(
                 interceptor("Test-A", appendResponseHeader("X-From-Plugin", "A")),
                 interceptor("Test-B", appendResponseHeader("X-From-Plugin", "B"))

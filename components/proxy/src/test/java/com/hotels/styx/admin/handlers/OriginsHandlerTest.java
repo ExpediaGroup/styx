@@ -17,7 +17,7 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;

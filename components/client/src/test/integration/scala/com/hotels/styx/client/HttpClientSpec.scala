@@ -79,13 +79,6 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
       .build
   }
 
-  test("Emits an HTTP response that contains the original request.") {
-    originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
-    val request = get("/foo/1").build()
-    val response = waitForStreamingResponse(client.sendRequest(request))
-    response.request() shouldBe request
-  }
-
   test("Emits an HTTP response even when content observable remains un-subscribed.") {
     originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
     val response = waitForResponse(client.sendRequest(get("/foo/1").build()))

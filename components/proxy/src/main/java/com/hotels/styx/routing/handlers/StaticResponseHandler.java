@@ -25,12 +25,13 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RouteHandlerDefinition;
 import com.hotels.styx.routing.config.RouteHandlerFactory;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import rx.Observable;
 
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.messages.HttpResponseStatus.statusWithCode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A HTTP handler for returning a static response.
@@ -46,7 +47,7 @@ public class StaticResponseHandler implements HttpHandler {
 
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return StyxObservable.of(response(HttpResponseStatus.valueOf(status)).body(text).build());
+        return StyxObservable.of(HttpResponse.response(statusWithCode(status)).body(Observable.just(text), UTF_8).build());
     }
 
     private static class StaticResponseConfig {

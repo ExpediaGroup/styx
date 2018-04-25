@@ -17,7 +17,7 @@ package com.hotels.styx.admin.tasks;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.api.service.spi.Registry.ReloadResult;

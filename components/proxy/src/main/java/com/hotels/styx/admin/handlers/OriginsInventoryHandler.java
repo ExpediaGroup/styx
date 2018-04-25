@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
@@ -35,9 +36,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -63,11 +64,12 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsC
 
     @Override
     protected HttpResponse doHandle(HttpRequest request) {
-        return response(OK)
+        return FullHttpResponse.response(OK)
                 .contentType(JSON_UTF_8)
                 .disableCaching()
-                .body(content(isPrettyPrint(request)))
-                .build();
+                .body(content(isPrettyPrint(request)), UTF_8)
+                .build()
+                .toStreamingResponse();
     }
 
     private String content(boolean pretty) {

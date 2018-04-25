@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.utils.handlers;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Origin;
@@ -24,9 +25,8 @@ import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.HTML_UTF_8;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;
 import static java.util.UUID.randomUUID;
 
@@ -46,10 +46,11 @@ public class ContentDigestHandler extends BaseHttpHandler {
                 randomUUID(),
                 requestBody.hashCode());
 
-        return response(OK)
+        return FullHttpResponse.response(OK)
                 .header(CONTENT_TYPE, HTML_UTF_8.toString())
                 .header(CONTENT_LENGTH, responseBody.getBytes(UTF_8).length)
-                .body(responseBody)
-                .build();
+                .body(responseBody, UTF_8)
+                .build()
+                .toStreamingResponse();
     }
 }

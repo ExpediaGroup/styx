@@ -13,10 +13,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.messages;
+package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.StreamingHttpRequest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
@@ -38,9 +40,9 @@ import static com.hotels.styx.api.messages.HttpMethod.GET;
 import static com.hotels.styx.api.messages.HttpMethod.POST;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
-import static com.hotels.styx.api.messages.StreamingHttpRequest.get;
-import static com.hotels.styx.api.messages.StreamingHttpRequest.patch;
-import static com.hotels.styx.api.messages.StreamingHttpRequest.post;
+import static com.hotels.styx.api.StreamingHttpRequest.get;
+import static com.hotels.styx.api.StreamingHttpRequest.patch;
+import static com.hotels.styx.api.StreamingHttpRequest.post;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;

@@ -22,6 +22,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.NoServiceConfiguredException;
+import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.metrics.HttpErrorStatusListener;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.RequestProgressListener;
@@ -45,7 +46,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.TooLongFrameException;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import rx.Observable;
 import rx.Subscriber;
@@ -55,26 +55,27 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
+import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY;
+import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.messages.HttpResponseStatus.GATEWAY_TIMEOUT;
+import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.messages.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
+import static com.hotels.styx.api.messages.HttpResponseStatus.REQUEST_TIMEOUT;
+import static com.hotels.styx.api.messages.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import static com.hotels.styx.api.metrics.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.api.metrics.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.TERMINATED;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.WAITING_FOR_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.ResponseEnhancer.DO_NOT_MODIFY_RESPONSE;
 import static io.netty.channel.ChannelFutureListener.CLOSE;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static io.netty.handler.codec.http.HttpResponseStatus.GATEWAY_TIMEOUT;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
-import static io.netty.handler.codec.http.HttpResponseStatus.REQUEST_TIMEOUT;
-import static io.netty.handler.codec.http.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -426,7 +427,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
 
         cancelSubscription();
         statsSink.onTerminate(ongoingRequest.id());
-        responseWriterFactory.create(ctx).write(response(INTERNAL_SERVER_ERROR).build())
+        responseWriterFactory.create(ctx).write(HttpResponse.response(INTERNAL_SERVER_ERROR).build())
                 .handle((dontCare, ignore) -> ctx.close());
         return TERMINATED;
     }
@@ -440,8 +441,11 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
                 ? exception.getCause()
                 : exception);
 
-        return responseEnhancer.enhance(response(status), request)
-                .body(status.code() >= 500 ? "Site temporarily unavailable." : status.reasonPhrase())
+        String message = status.code() >= 500 ? "Site temporarily unavailable." : status.description();
+
+        return responseEnhancer.enhance(HttpResponse.response(status), request)
+                .header(CONTENT_LENGTH, message.getBytes(UTF_8).length)
+                .body(Observable.just(message), UTF_8)
                 .build();
     }
 

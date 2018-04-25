@@ -33,8 +33,9 @@ import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.net.MediaType.XML_UTF_8;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -63,8 +64,9 @@ public class LoggingConfigurationHandler implements HttpHandler {
         return response(OK)
                 .header(CONTENT_TYPE, content.type)
                 .header(CONTENT_LENGTH, content.length)
-                .body(content.content)
-                .build();
+                .body(content.content, UTF_8)
+                .build()
+                .toStreamingResponse();
     }
 
     private Content loadContent() {

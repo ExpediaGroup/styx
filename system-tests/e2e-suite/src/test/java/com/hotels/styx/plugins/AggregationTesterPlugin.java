@@ -17,8 +17,8 @@ package com.hotels.styx.plugins;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.plugins.spi.Plugin;
 
 public class AggregationTesterPlugin implements Plugin {
     private final int maxContentBytes;
@@ -31,7 +31,7 @@ public class AggregationTesterPlugin implements Plugin {
     public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request)
                 .flatMap(response ->
-                        response.toFullResponse(maxContentBytes)
+                        response.toFullHttpResponse(maxContentBytes)
                         .map(fullHttpResponse ->
                                 fullHttpResponse.newBuilder()
                                         .addHeader("test_plugin", "yes")

@@ -16,14 +16,14 @@
 package testgrp;
 
 import com.google.common.base.Charsets;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpMessage;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.api.StyxObservable;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Collections;
@@ -61,7 +61,7 @@ public class TestPlugin implements Plugin {
         Function<ByteBuf, String> byteBufStringFunction = byteBuf -> byteBuf.toString(Charsets.UTF_8);
 
         return chain.proceed(newRequest)
-                .flatMap(response -> response.toFullResponse(1 * 1024 * 1024))
+                .flatMap(response -> response.toFullHttpResponse(1 * 1024 * 1024))
                 .map(response ->
                         response.newBuilder()
                                 .header(X_HCOM_PLUGINS_HEADER, header)

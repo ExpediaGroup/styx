@@ -27,10 +27,10 @@ import org.testng.annotations.Test;
 
 import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
@@ -111,7 +111,7 @@ public class HttpMessageLoggingInterceptorTest {
     }
 
     private static HttpInterceptor.Chain respondWith(HttpResponse.Builder resp) {
-        return request -> StyxObservable.of(resp.request(request).build());
+        return request -> StyxObservable.of(resp.build());
     }
 
     private static void consume(StyxObservable<HttpResponse> resp) {

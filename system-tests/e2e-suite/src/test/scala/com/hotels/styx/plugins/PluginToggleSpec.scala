@@ -18,8 +18,8 @@ package com.hotels.styx.plugins
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.api.HttpRequest.Builder.{get, put}
-import com.hotels.styx.api.HttpResponse.Builder.response
-import com.hotels.styx.api._
+import com.hotels.styx.api.HttpResponse.response
+import com.hotels.styx.api.{FullHttpResponse, _}
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -111,7 +111,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
 
   private class PluginUnderTest extends PluginAdapter {
     override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): StyxObservable[HttpResponse] =
-      StyxObservable.of(response().body("response-from-plugin").build())
+      StyxObservable.of(FullHttpResponse.response().body("response-from-plugin", UTF_8).build().toStreamingResponse)
   }
 }
 

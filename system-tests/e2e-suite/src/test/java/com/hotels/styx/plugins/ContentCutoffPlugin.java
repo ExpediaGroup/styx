@@ -17,13 +17,12 @@ package com.hotels.styx.plugins;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.plugins.spi.Plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
 
-import static com.hotels.styx.api.HttpMessageBody.utf8String;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ContentCutoffPlugin implements Plugin {
     private static Logger LOGGER = LoggerFactory.getLogger(ContentCutoffPlugin.class);
@@ -31,16 +30,12 @@ public class ContentCutoffPlugin implements Plugin {
     @Override
     public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request)
-                .flatMap(response -> {
-                    Observable<String> body = response.body()
-                            .decode(utf8String(), 1024);
+                .flatMap(response ->
+                        response.toFullHttpResponse(1024)
+                                .map(fullHttpResponse -> {
+                                    LOGGER.info("Throw away response body={}", fullHttpResponse.bodyAs(UTF_8));
+                                    return response;
+                                }));
 
-                    return StyxObservable.of(body)
-                            .map(content -> {
-                                LOGGER.info("Throw away response body={}", content);
-                                return content;
-                            })
-                            .map(content -> response);
-                });
     }
 }

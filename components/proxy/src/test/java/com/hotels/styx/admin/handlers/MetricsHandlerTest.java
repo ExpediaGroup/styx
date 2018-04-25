@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;

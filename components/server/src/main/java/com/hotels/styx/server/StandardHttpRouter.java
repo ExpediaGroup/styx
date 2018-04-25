@@ -19,17 +19,16 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.support.PathTrie;
 import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.support.PathTrie;
 
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
 
 /**
  * Simple Http Router.
  */
 public class StandardHttpRouter implements HttpHandler {
-    private static final HttpHandler NOT_FOUND_HANDLER = (request, context) -> StyxObservable.of(response(NOT_FOUND).build());
+    private static final HttpHandler NOT_FOUND_HANDLER = (request, context) -> StyxObservable.of(HttpResponse.response(NOT_FOUND).build());
 
     private final PathTrie<HttpHandler> routes = new PathTrie<>();
 

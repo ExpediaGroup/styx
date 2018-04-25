@@ -15,12 +15,12 @@
  */
 package loadtest.plugins;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.api.StyxObservable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +52,7 @@ public class AsyncResponseContentDecoderPluginFactory implements PluginFactory {
         @Override
         public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
             return chain.proceed(request)
-                    .flatMap(response ->  response.toFullResponse(this.maxContentLength))
+                    .flatMap(response ->  response.toFullHttpResponse(this.maxContentLength))
                     .flatMap(fullResponse -> StyxObservable.from(asyncEvent(this.delayMillis))
                             .map(x -> fullResponse))
                     .map(FullHttpResponse::toStreamingResponse);

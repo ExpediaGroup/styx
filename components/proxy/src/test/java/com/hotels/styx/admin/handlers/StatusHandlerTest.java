@@ -15,20 +15,19 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.http.handlers.BaseHttpHandler;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.server.HttpInterceptorContext;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -53,9 +52,10 @@ public class StatusHandlerTest {
         return new BaseHttpHandler() {
             @Override
             protected HttpResponse doHandle(HttpRequest request) {
-                return response(status)
-                        .body("some stuff")
-                        .build();
+                return FullHttpResponse.response(status)
+                        .body("some stuff", UTF_8)
+                        .build()
+                        .toStreamingResponse();
             }
         };
     }

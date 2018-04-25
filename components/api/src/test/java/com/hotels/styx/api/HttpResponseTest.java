@@ -15,28 +15,16 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
-import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.messages.HttpResponseStatus;
-import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import rx.Observable;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Charsets.UTF_8;
-import static com.google.common.net.MediaType.ANY_AUDIO_TYPE;
 import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.api.HttpCookieAttribute.domain;
 import static com.hotels.styx.api.HttpCookieAttribute.maxAge;
@@ -44,27 +32,22 @@ import static com.hotels.styx.api.HttpCookieAttribute.path;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.LOCATION;
-import static com.hotels.styx.api.HttpMessageBody.NO_BODY;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.newBuilder;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.api.TestSupport.bodyAsString;
 import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
-import static io.netty.buffer.Unpooled.copiedBuffer;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static io.netty.handler.codec.http.HttpResponseStatus.CREATED;
-import static io.netty.handler.codec.http.HttpResponseStatus.GATEWAY_TIMEOUT;
-import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
-import static io.netty.handler.codec.http.HttpResponseStatus.MULTIPLE_CHOICES;
-import static io.netty.handler.codec.http.HttpResponseStatus.NO_CONTENT;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
-import static io.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-import static java.lang.String.valueOf;
-import static java.time.ZoneOffset.UTC;
+import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY;
+import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.messages.HttpResponseStatus.CREATED;
+import static com.hotels.styx.api.messages.HttpResponseStatus.GATEWAY_TIMEOUT;
+import static com.hotels.styx.api.messages.HttpResponseStatus.MOVED_PERMANENTLY;
+import static com.hotels.styx.api.messages.HttpResponseStatus.MULTIPLE_CHOICES;
+import static com.hotels.styx.api.messages.HttpResponseStatus.NO_CONTENT;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.SEE_OTHER;
+import static com.hotels.styx.api.messages.HttpResponseStatus.TEMPORARY_REDIRECT;
+import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_0;
+import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.support.matchers.IsOptional.isValue;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -72,17 +55,55 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static rx.Observable.empty;
-import static rx.Observable.just;
+import static org.hamcrest.Matchers.nullValue;
 
 public class HttpResponseTest {
+    @Test
+    public void encodesToFullHttpResponse() throws Exception {
+        HttpResponse response = response(CREATED)
+                .version(HTTP_1_0)
+                .header("HeaderName", "HeaderValue")
+                .addCookie("CookieName", "CookieValue")
+                .body(body("foo", "bar"))
+                .build();
+
+        FullHttpResponse full = response.toFullHttpResponse(0x1000)
+                .asCompletableFuture()
+                .get();
+
+        assertThat(full.status(), is(CREATED));
+        assertThat(full.version(), is(HTTP_1_0));
+        assertThat(full.headers(), contains(header("HeaderName", "HeaderValue")));
+        assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
+
+        assertThat(full.body(), is(bytes("foobar")));
+    }
+
+    @Test(dataProvider = "emptyBodyResponses")
+    public void encodesToFullHttpResponseWithEmptyBody(HttpResponse response) throws Exception {
+        FullHttpResponse full = response.toFullHttpResponse(0x1000)
+                .asCompletableFuture()
+                .get();
+
+        assertThat(full.body(), is(new byte[0]));
+    }
+
+    // We want to ensure that these are all considered equivalent
+    @DataProvider(name = "emptyBodyResponses")
+    private Object[][] emptyBodyResponses() {
+        return new Object[][]{
+                {response().build()},
+                {response().body(Observable.empty()).build()},
+        };
+    }
+
     @Test
     public void createsAResponseWithDefaultValues() {
         HttpResponse response = response().build();
         assertThat(response.version(), is(HTTP_1_1));
         assertThat(response.cookies(), is(emptyIterable()));
         assertThat(response.headers(), is(emptyIterable()));
-        assertThat(response.body(), is(NO_BODY));
+        assertThat(bytesToString(response.body()), is(""));
     }
 
     @Test
@@ -90,29 +111,22 @@ public class HttpResponseTest {
         HttpResponse response = response()
                 .status(BAD_GATEWAY)
                 .version(HTTP_1_0)
-                .request(get("/home").id("id").build())
                 .build();
 
         assertThat(response.status(), is(BAD_GATEWAY));
         assertThat(response.version(), is(HTTP_1_0));
         assertThat(response.cookies(), is(emptyIterable()));
         assertThat(response.headers(), is(emptyIterable()));
-        assertThat(response.body(), is(NO_BODY));
-        assertThat(response.request().toString(), is("HttpRequest{version=HTTP/1.1, method=GET, uri=/home, headers=[], cookies=[], id=id, clientAddress=127.0.0.1:0}"));
+        assertThat(bytesToString(response.body()), is(""));
     }
 
     @Test
-    public void setsTheContentType() {
-        assertThat(response().contentType(ANY_AUDIO_TYPE).build().contentType().get(), is(ANY_AUDIO_TYPE.toString()));
-    }
-
-    @Test
-    public void setsASingleOutboundCookie() throws Exception {
+    public void setsASingleOutboundCookie() {
         HttpResponse response = response()
                 .addCookie(cookie("user", "QSplbl9HX1VL", domain(".hotels.com"), path("/"), maxAge(3600)))
                 .build();
 
-        assertThat(response.cookie("user").get(), is(cookie("user", "QSplbl9HX1VL", domain(".hotels.com"), path("/"), maxAge(3600))));
+        assertThat(response.cookie("user"), isValue(cookie("user", "QSplbl9HX1VL", domain(".hotels.com"), path("/"), maxAge(3600))));
     }
 
     @Test
@@ -136,7 +150,7 @@ public class HttpResponseTest {
                 .addCookie("c", "d")
                 .build();
 
-        assertThat(response.cookie("c").get(), is(cookie("c", "d")));
+        assertThat(response.cookie("c"), isValue(cookie("c", "d")));
     }
 
     @Test
@@ -155,7 +169,7 @@ public class HttpResponseTest {
 
     @Test
     public void removesACookie() {
-        HttpResponse response = newBuilder(seeOther("/home"))
+        HttpResponse response = new HttpResponse.Builder(seeOther("/home"))
                 .addCookie(cookie("a", "b"))
                 .addCookie(cookie("c", "d"))
                 .build();
@@ -175,44 +189,26 @@ public class HttpResponseTest {
     @Test
     public void canRemoveResponseBody() {
         HttpResponse response = response(NO_CONTENT)
-                .body("shouldn't be here")
+                .body(body("shouldn't be here"))
                 .build();
 
         HttpResponse shouldClearBody = response.newBuilder()
-                .removeBody()
+                .body(null)
                 .build();
 
-        String reply = shouldClearBody
-                .body()
-                .aggregate(18)
-                .map(bytebuf -> bytebuf.toString(UTF_8))
-                .toBlocking()
-                .first();
-
-        assertThat(reply, is(""));
+        assertThat(shouldClearBody.body(), is(nullValue()));
     }
 
     @Test
     public void supportsCaseInsensitiveHeaderNames() {
         HttpResponse response = response(OK).header("Content-Type", "text/plain").build();
-        assertThat(response.header("content-type").get(), is("text/plain"));
+        assertThat(response.header("content-type"), isValue("text/plain"));
     }
 
     @Test
     public void headerValuesAreCaseSensitive() {
         HttpResponse response = response(OK).header("Content-Type", "TEXT/PLAIN").build();
-        assertThat(response.header("content-type").get(), is(not("text/plain")));
-    }
-
-    @Test
-    public void setsDateHeaderValuesInRfc1123Format() {
-        Instant date = ZonedDateTime.of(2005, 3, 26, 12, 0, 0, 0, UTC).toInstant();
-
-        HttpResponse response = response(OK)
-                .header("date", date)
-                .build();
-
-        assertThat(response.header("date").get(), is("Sat, 26 Mar 2005 12:00:00 GMT"));
+        assertThat(response.header("content-type"), not(isValue("text/plain")));
     }
 
     @Test
@@ -223,13 +219,13 @@ public class HttpResponseTest {
     @Test
     public void shouldCreateAChunkedResponse() {
         assertThat(response().build().chunked(), is(false));
-        assertThat(response().chunked().build().chunked(), is(true));
+        assertThat(response().setChunked().build().chunked(), is(true));
     }
 
     @Test
     public void shouldRemoveContentLengthFromChunkedMessages() {
         HttpResponse response = response().header(CONTENT_LENGTH, 5).build();
-        HttpResponse chunkedResponse = response.newBuilder().chunked().build();
+        HttpResponse chunkedResponse = response.newBuilder().setChunked().build();
 
         assertThat(chunkedResponse.chunked(), is(true));
         assertThat(chunkedResponse.header(CONTENT_LENGTH).isPresent(), is(false));
@@ -238,37 +234,10 @@ public class HttpResponseTest {
     @Test
     public void shouldNotFailToRemoveNonExistentContentLength() {
         HttpResponse response = response().build();
-        HttpResponse chunkedResponse = response.newBuilder().chunked().build();
+        HttpResponse chunkedResponse = response.newBuilder().setChunked().build();
 
         assertThat(chunkedResponse.chunked(), is(true));
         assertThat(chunkedResponse.header(CONTENT_LENGTH).isPresent(), is(false));
-    }
-
-    @Test
-    public void shouldSetsContentLengthForNonStreamingBodyMessage() throws Exception {
-        String helloLength = valueOf(bytes("Hello").length);
-
-        assertThat(contentLength(response().body("")), is("0"));
-        assertThat(contentLength(response().body("Hello")), is(helloLength));
-        assertThat(contentLength(response().body(bytes("Hello"))), is(helloLength));
-        assertThat(contentLength(response().body(ByteBuffer.wrap(bytes("Hello")))), is(helloLength));
-        assertThat(response().body(just(copiedBuffer("Hello", UTF_8))).build().header(CONTENT_LENGTH).isPresent(), is(false));
-    }
-
-    private static String contentLength(HttpResponse.Builder builder) {
-        return builder.build().header(CONTENT_LENGTH).get();
-    }
-
-    @Test
-    public void overridesContent() {
-        HttpResponse response = response()
-                .body("Response content.")
-                .body(" ")
-                .body("Extra content")
-                .build();
-
-        assertThat(bodyAsString(response.body()), is("Extra content"));
-        assertThat(response.contentLength().get(), is(contentLength("Extra content")));
     }
 
     @Test
@@ -282,18 +251,8 @@ public class HttpResponseTest {
         assertThat(response.headers(), hasItem(header("name", "value2")));
     }
 
-    @Test
-    public void canSetObservableAsContent() {
-        Observable<ByteBuf> content = just(buf("One"), buf("Two"), buf("Three"));
-        HttpResponse response = response()
-                .body(content)
-                .build();
-
-        assertThat(bodyAsString(response.body()), is("OneTwoThree"));
-    }
-
     @Test(dataProvider = "responses")
-    public void shouldCheckIfCurrentResponseIsARedirectToOtherResource(io.netty.handler.codec.http.HttpResponseStatus status, boolean isRedirect) {
+    public void shouldCheckIfCurrentResponseIsARedirectToOtherResource(HttpResponseStatus status, boolean isRedirect) {
         assertThat(response(status).build().isRedirect(), is(isRedirect));
     }
 
@@ -314,6 +273,7 @@ public class HttpResponseTest {
 
     @DataProvider(name = "responses")
     public static Object[][] responses() {
+        // format: {status, true if redirect}
         return new Object[][]{
                 {SEE_OTHER, true},
                 {TEMPORARY_REDIRECT, true},
@@ -328,102 +288,54 @@ public class HttpResponseTest {
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void rejectsMultipleContentLengthInSingleHeader() throws Exception {
+    public void rejectsMultipleContentLengthInSingleHeader() {
         response()
                 .addHeader(CONTENT_LENGTH, "15, 16")
-                .validateContentLength()
+                .ensureContentLengthIsValid()
                 .build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void rejectsMultipleContentLength() throws Exception {
+    public void rejectsMultipleContentLength() {
         response()
                 .addHeader(CONTENT_LENGTH, "15")
                 .addHeader(CONTENT_LENGTH, "16")
-                .validateContentLength()
+                .ensureContentLengthIsValid()
                 .build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void rejectsInvalidContentLength() throws Exception {
+    public void rejectsInvalidContentLength() {
         response()
                 .addHeader(CONTENT_LENGTH, "foo")
-                .validateContentLength()
+                .ensureContentLengthIsValid()
                 .build();
-
     }
 
-
-    @Test
-    public void decodesToFullHttpResponse() throws Exception {
-        HttpResponse request = response(CREATED)
-                .version(HTTP_1_0)
-                .header("HeaderName", "HeaderValue")
-                .addCookie("CookieName", "CookieValue")
-                .body("foobar")
-                .body(stream("foo", "bar", "baz"))
-                .build();
-
-        FullHttpResponse full = request.toFullResponse(0x100000)
-                .asCompletableFuture()
-                .get();
-
-        assertThat(full.version(), is(HttpVersion.HTTP_1_0));
-        assertThat(full.status(), is(HttpResponseStatus.CREATED));
-        assertThat(full.headers(), hasItem(header("HeaderName", "HeaderValue")));
-        assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
-        assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
+    private static HttpResponse.Builder response() {
+        return HttpResponse.response();
     }
 
-    @Test
-    public void decodesToFullHttpResponseWithEmptyBody() throws ExecutionException, InterruptedException {
-        HttpResponse request = response(CREATED)
-                .body(empty())
-                .build();
-
-        FullHttpResponse full = request.toFullResponse(0x100000)
-                .asCompletableFuture()
-                .get();
-
-        assertThat(full.status(), is(HttpResponseStatus.CREATED));
-        assertThat(full.bodyAs(UTF_8), is(""));
+    private static HttpResponse.Builder response(HttpResponseStatus status) {
+        return HttpResponse.response(status);
     }
 
-    @Test
-    public void decodingToFullHttpResponseDefaultsToUTF8() throws ExecutionException, InterruptedException {
-        HttpResponse request = response(CREATED)
-                .body(stream("foo", "bar", "baz"))
-                .build();
-
-        FullHttpResponse full = request.toFullResponse(0x100000)
-                .asCompletableFuture()
-                .get();
-
-        assertThat(full.status(), is(HttpResponseStatus.CREATED));
-        assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
-    }
-
-    private static Observable<ByteBuf> stream(String... strings) {
-        return Observable.from(Stream.of(strings)
-                .map(string -> Unpooled.copiedBuffer(string, StandardCharsets.UTF_8))
+    private static Observable<ByteBuf> body(String... contents) {
+        return Observable.from(Stream.of(contents)
+                .map(content -> Unpooled.copiedBuffer(content, UTF_8))
                 .collect(toList()));
     }
 
-    private static Function<ByteBuf, String> toStringDecoder(Charset charset) {
-        return byteBuf -> byteBuf.toString(charset);
+    private static String bytesToString(Observable<ByteBuf> body) {
+        return body.toList()
+                .toBlocking()
+                .single()
+                .stream()
+                .map(byteBuf -> byteBuf.toString(UTF_8))
+                .collect(joining());
     }
 
-    private final Function<ByteBuf, String> utf8Decoder = toStringDecoder(Charsets.UTF_8);
-
-    private byte[] bytes(String content) {
-        return content.getBytes(UTF_8);
-    }
-
-    private static ByteBuf buf(String string) {
-        return copiedBuffer(string, UTF_8);
-    }
-
-    private static int contentLength(String content) {
-        return content.getBytes().length;
+    private static byte[] bytes(String s) {
+        return s.getBytes(UTF_8);
     }
 }

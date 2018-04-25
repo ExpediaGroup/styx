@@ -13,11 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.messages;
+package com.hotels.styx.api;
 
-import com.hotels.styx.api.HttpCookie;
-import com.hotels.styx.api.HttpHeaders;
-import com.hotels.styx.api.HttpMessageSupport;
+import com.hotels.styx.api.messages.HttpVersion;
 
 import java.nio.charset.Charset;
 import java.util.List;

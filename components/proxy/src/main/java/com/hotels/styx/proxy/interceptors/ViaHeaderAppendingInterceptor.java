@@ -16,16 +16,14 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpMessage;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
-import io.netty.handler.codec.http.HttpVersion;
+import com.hotels.styx.api.messages.HttpVersion;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static io.netty.handler.codec.http.HttpHeaders.Names.VIA;
+import static com.hotels.styx.api.HttpHeaderNames.VIA;
 import static io.netty.handler.codec.http.HttpHeaders.newEntity;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 
 /**
  * Add support for "Via" header as per described in Chapter 9.9 in the HTTP/1.1 specification.
@@ -55,7 +53,17 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
                 .build();
     }
 
-    private static CharSequence viaHeader(HttpMessage httpMessage) {
+    // TODO: Mikko: Styx 2.0 API: Remove this duplication once the new HttpRequest object
+    // is migrated across:
+    private static CharSequence viaHeader(HttpRequest httpMessage) {
+        CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
+
+        return httpMessage.headers().get(VIA)
+                .map(viaHeader -> !isNullOrEmpty(viaHeader) ? viaHeader + ", " + styxViaEntry : styxViaEntry)
+                .orElse(styxViaEntry);
+    }
+
+    private static CharSequence viaHeader(HttpResponse httpMessage) {
         CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
 
         return httpMessage.headers().get(VIA)
@@ -64,6 +72,11 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
     }
 
     private static CharSequence styxViaEntry(HttpVersion httpVersion) {
-        return httpVersion.equals(HTTP_1_0) ? VIA_STYX_1_0 : VIA_STYX_1_1;
+        return httpVersion.equals(com.hotels.styx.api.messages.HttpVersion.HTTP_1_0) ? VIA_STYX_1_0 : VIA_STYX_1_1;
+    }
+
+    private static CharSequence styxViaEntry(io.netty.handler.codec.http.HttpVersion httpVersion) {
+        // TODO: Mikko: Styx 2.0 API: Until HttpRequest is switched over to Streaming version:
+        return httpVersion.equals(io.netty.handler.codec.http.HttpVersion.HTTP_1_0) ? VIA_STYX_1_0 : VIA_STYX_1_1;
     }
 }

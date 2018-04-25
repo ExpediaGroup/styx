@@ -26,7 +26,7 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;

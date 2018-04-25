@@ -22,8 +22,8 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static java.util.Arrays.asList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -34,7 +34,7 @@ public class CompositeHttpErrorStatusListenerTest {
     HttpErrorStatusListener delegate2;
     HttpErrorStatusListener delegate3;
     HttpRequest request = HttpRequest.Builder.get("/foo").build();
-    HttpResponse response = HttpResponse.Builder.response(OK).build();
+    HttpResponse response = HttpResponse.response(OK).build();
 
     @BeforeMethod
     public void setUp() {

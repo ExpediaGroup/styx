@@ -17,14 +17,15 @@ package com.hotels.styx.server.netty.connectors;
 
 import com.google.common.collect.ObjectArrays;
 import com.hotels.styx.api.ContentOverflowException;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.metrics.HttpErrorStatusListener;
 import com.hotels.styx.api.metrics.RequestStatsCollector;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.RequestTimeoutException;
@@ -60,8 +61,14 @@ import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderValues.CLOSE;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY;
+import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
+import static com.hotels.styx.api.messages.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.TERMINATED;
@@ -72,12 +79,7 @@ import static com.hotels.styx.support.netty.HttpMessageSupport.httpMessageToByte
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequest;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequestAsBuf;
 import static io.netty.handler.codec.http.HttpMethod.GET;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
-import static io.netty.handler.codec.http.HttpResponseStatus.REQUEST_TIMEOUT;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -215,7 +217,7 @@ public class HttpPipelineHandlerTest {
         channel.writeInbound(httpMessageToBytes(httpRequest(GET, badUri)));
         DefaultHttpResponse response = (DefaultHttpResponse) channel.readOutbound();
 
-        assertThat(response.getStatus(), is(BAD_REQUEST));
+        assertThat(response.getStatus(), is(io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST));
         verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), eq(null));
         verify(errorListener, only()).proxyErrorOccurred(eq(BAD_REQUEST), any(BadRequestException.class));
     }
@@ -230,7 +232,7 @@ public class HttpPipelineHandlerTest {
         channel.writeInbound(httpRequestAsBuf(GET, "http://foo.com/"));
         DefaultHttpResponse response = (DefaultHttpResponse) channel.readOutbound();
 
-        assertThat(response.getStatus(), is(INTERNAL_SERVER_ERROR));
+        assertThat(response.status(), is(io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR));
         verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), any(HttpRequest.class));
         verify(errorListener, only()).proxyErrorOccurred(any(HttpRequest.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
     }
@@ -531,10 +533,11 @@ public class HttpPipelineHandlerTest {
 
         handler.channelRead0(ctx, request);
 
-        verify(responseWriter).write(response(INTERNAL_SERVER_ERROR)
+        verify(responseWriter).write(FullHttpResponse.response(INTERNAL_SERVER_ERROR)
                 .header(CONTENT_LENGTH, 29)
-                .body("Site temporarily unavailable.")
-                .build());
+                .body("Site temporarily unavailable.", UTF_8)
+                .build()
+                .toStreamingResponse());
 
         verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), eq(request));
         verify(errorListener).proxyErrorOccurred(request, INTERNAL_SERVER_ERROR, cause);
@@ -608,10 +611,11 @@ public class HttpPipelineHandlerTest {
         responseObservable.onError(new ContentOverflowException("Request Send Error"));
 
         assertThat(responseUnsubscribed.get(), is(true));
-        verify(responseWriter).write(response(BAD_GATEWAY)
+        verify(responseWriter).write(FullHttpResponse.response(BAD_GATEWAY)
                 .header(CONTENT_LENGTH, "29")
-                .body("Site temporarily unavailable.")
-                .build());
+                .body("Site temporarily unavailable.", UTF_8)
+                .build()
+                .toStreamingResponse());
         verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), eq(request));
 
         writerFuture.complete(null);
@@ -633,10 +637,11 @@ public class HttpPipelineHandlerTest {
         responseObservable.onError(new StyxClientException("Client error occurred", new RuntimeException("Something went wrong")));
 
         assertThat(responseUnsubscribed.get(), is(true));
-        verify(responseWriter).write(response(INTERNAL_SERVER_ERROR)
+        verify(responseWriter).write(FullHttpResponse.response(INTERNAL_SERVER_ERROR)
                 .header(CONTENT_LENGTH, "29")
-                .body("Site temporarily unavailable.")
-                .build());
+                .body("Site temporarily unavailable.", UTF_8)
+                .build()
+                .toStreamingResponse());
 
         writerFuture.complete(null);
         verify(statsCollector).onComplete(request.id(), 500);

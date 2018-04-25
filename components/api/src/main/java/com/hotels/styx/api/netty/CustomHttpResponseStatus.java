@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.api.netty;
 
-import io.netty.handler.codec.http.HttpResponseStatus;
+import com.hotels.styx.api.messages.HttpResponseStatus;
 
 /**
  * Custom HTTP response status codes.

@@ -18,8 +18,8 @@ package com.hotels.styx.proxy.plugin;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.plugins.spi.Plugin;
 
 import java.util.Map;
 

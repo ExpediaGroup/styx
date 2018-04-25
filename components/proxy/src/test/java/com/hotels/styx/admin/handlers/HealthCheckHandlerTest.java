@@ -28,13 +28,13 @@ import java.util.concurrent.ExecutionException;
 import static com.codahale.metrics.health.HealthCheck.Result.healthy;
 import static com.codahale.metrics.health.HealthCheck.Result.unhealthy;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_IMPLEMENTED;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_IMPLEMENTED;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.hamcrest.MatcherAssert.assertThat;
 

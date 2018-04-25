@@ -17,8 +17,8 @@ package com.hotels.styx.plugins;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.plugins.spi.Plugin;
 
 import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;

@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.client.UrlConnectionHttpClient;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.client.SimpleNettyHttpClient;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
 import com.hotels.styx.testapi.StyxServer;

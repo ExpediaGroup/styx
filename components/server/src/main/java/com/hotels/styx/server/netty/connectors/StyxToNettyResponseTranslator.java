@@ -18,6 +18,8 @@ package com.hotels.styx.server.netty.connectors;
 import com.hotels.styx.api.HttpCookie;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 
@@ -28,7 +30,10 @@ import static java.lang.Integer.parseInt;
 class StyxToNettyResponseTranslator implements ResponseTranslator {
 
     public HttpResponse toNettyResponse(com.hotels.styx.api.HttpResponse httpResponse) {
-        DefaultHttpResponse nettyResponse = new DefaultHttpResponse(httpResponse.version(), httpResponse.status(), false);
+        io.netty.handler.codec.http.HttpVersion version = toNettyVersion(httpResponse.version());
+        HttpResponseStatus httpResponseStatus = HttpResponseStatus.valueOf(httpResponse.status().code());
+
+        DefaultHttpResponse nettyResponse = new DefaultHttpResponse(version, httpResponseStatus, false);
 
         httpResponse.headers().forEach(httpHeader ->
                 nettyResponse.headers().add(httpHeader.name(), httpHeader.value()));
@@ -40,6 +45,11 @@ class StyxToNettyResponseTranslator implements ResponseTranslator {
 
         return nettyResponse;
     }
+
+    private HttpVersion toNettyVersion(com.hotels.styx.api.messages.HttpVersion version) {
+        return HttpVersion.valueOf(version.toString());
+    }
+
 
     private static Cookie toNettyCookie(HttpCookie cookie) {
         Cookie nettyCookie = new DefaultCookie(cookie.name(), cookie.value());

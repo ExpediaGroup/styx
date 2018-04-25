@@ -17,6 +17,7 @@ package com.hotels.styx.server.netty.connectors;
 
 import com.hotels.styx.api.HttpCookieAttribute;
 import com.hotels.styx.api.HttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -26,8 +27,8 @@ import static com.hotels.styx.api.HttpCookieAttribute.httpOnly;
 import static com.hotels.styx.api.HttpCookieAttribute.maxAge;
 import static com.hotels.styx.api.HttpCookieAttribute.path;
 import static com.hotels.styx.api.HttpCookieAttribute.secure;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static java.util.Collections.singleton;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -42,8 +43,8 @@ public class StyxToNettyResponseTranslatorTest {
                 .version(HTTP_1_1)
                 .build();
         io.netty.handler.codec.http.HttpResponse nettyResponse = translator.toNettyResponse(styxResponse);
-        assertThat(nettyResponse.status(), equalTo(OK));
-        assertThat(nettyResponse.protocolVersion(), equalTo(HTTP_1_1));
+        assertThat(nettyResponse.status(), equalTo(io.netty.handler.codec.http.HttpResponseStatus.OK));
+        assertThat(nettyResponse.protocolVersion(), equalTo(io.netty.handler.codec.http.HttpVersion.HTTP_1_1));
     }
 
     @Test

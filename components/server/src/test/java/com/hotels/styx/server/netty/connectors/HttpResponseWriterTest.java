@@ -41,9 +41,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.hotels.styx.api.HttpCookie.cookie;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;

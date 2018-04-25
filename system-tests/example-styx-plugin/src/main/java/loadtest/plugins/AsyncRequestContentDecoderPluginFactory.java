@@ -17,9 +17,9 @@ package loadtest.plugins;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.api.StyxObservable;
 
 import java.util.concurrent.CompletableFuture;
 

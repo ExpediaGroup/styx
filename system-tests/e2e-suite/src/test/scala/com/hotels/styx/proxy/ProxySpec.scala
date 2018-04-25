@@ -20,11 +20,10 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.github.tomakehurst.wiremock.client.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.MockServer.responseSupplier
-import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.{FullHttpResponse, HttpRequest}
 import com.hotels.styx.api.HttpRequest.Builder
-import com.hotels.styx.api.HttpResponse.Builder.response
+import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.messages.HttpResponseStatus._
-import com.hotels.styx.api.messages.FullHttpResponse
 import com.hotels.styx.api.support.HostAndPorts._
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
 import com.hotels.styx.support.backends.FakeHttpServer

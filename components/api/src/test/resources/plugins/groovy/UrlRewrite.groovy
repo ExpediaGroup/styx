@@ -3,7 +3,7 @@ package plugins.groovy
 import com.hotels.styx.api.HttpFilter
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.HttpResponse
+
 import rx.Observable
 
 import static com.hotels.styx.api.HttpHeaderNames.LOCATION

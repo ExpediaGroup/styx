@@ -16,11 +16,11 @@
 package com.hotels.styx.routing.handlers
 
 import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.messages.HttpResponseStatus.CREATED
 import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition
 import com.hotels.styx.server.HttpInterceptorContext
-import io.netty.handler.codec.http.HttpResponseStatus.CREATED
 import org.scalatest.{FunSpec, ShouldMatchers}
 
 import scala.collection.JavaConversions._

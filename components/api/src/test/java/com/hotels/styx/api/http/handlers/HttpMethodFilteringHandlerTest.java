@@ -25,7 +25,7 @@ import static com.hotels.styx.api.HttpRequest.Builder.post;
 import static com.hotels.styx.api.MockContext.MOCK_CONTEXT;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpMethod.POST;
-import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
+import static com.hotels.styx.api.messages.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;

@@ -16,7 +16,7 @@
 package com.hotels.styx.routing.handlers
 
 import com.google.common.collect.ImmutableList.{of => list}
-import io.netty.handler.codec.http.HttpResponseStatus.OK
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api._
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
@@ -207,7 +207,7 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
   def mockHandlerFactory(): HttpHandlerFactory = {
     val handlerFactory = mock[HttpHandlerFactory]
     when(handlerFactory.build(any[java.util.List[String]], any[RouteHandlerFactory], any[RouteHandlerDefinition]))
-      .thenReturn(new HttpHandlerAdapter((_, _) => StyxObservable.of(HttpResponse.Builder.response(OK).build())))
+      .thenReturn(new HttpHandlerAdapter((_, _) => StyxObservable.of(HttpResponse.response(OK).build())))
     handlerFactory
   }
 

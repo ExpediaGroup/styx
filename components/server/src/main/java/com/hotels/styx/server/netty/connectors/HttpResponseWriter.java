@@ -70,7 +70,7 @@ class HttpResponseWriter {
                 }
             });
 
-            Subscription subscriber = response.body().content().subscribe(new Subscriber<ByteBuf>() {
+            Subscription subscriber = response.body().subscribe(new Subscriber<ByteBuf>() {
                 @Override
                 public void onStart() {
                     request(1);
@@ -136,7 +136,7 @@ class HttpResponseWriter {
             return future;
         } catch (Throwable cause) {
             LOGGER.warn("Failed to convert response headers. response={}, Cause={}", new Object[]{response, cause});
-            response.body().releaseContentBuffers();
+            response.releaseContentBuffers();
             future.completeExceptionally(cause);
             return future;
         }

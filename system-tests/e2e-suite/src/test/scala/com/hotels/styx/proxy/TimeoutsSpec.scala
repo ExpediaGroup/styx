@@ -19,9 +19,8 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames._
-import com.hotels.styx.api.messages.FullHttpResponse
 import com.hotels.styx.api.messages.HttpResponseStatus._
-import com.hotels.styx.api.{HttpRequest, HttpResponse}
+import com.hotels.styx.api.{FullHttpResponse, HttpRequest, HttpResponse}
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse

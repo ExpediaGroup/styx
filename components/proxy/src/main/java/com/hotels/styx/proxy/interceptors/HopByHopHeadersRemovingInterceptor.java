@@ -50,7 +50,7 @@ public class HopByHopHeadersRemovingInterceptor implements HttpInterceptor {
             newResponse.removeHeader(CONNECTION);
         });
 
-        newResponse.headers()
+        newResponse
                 .removeHeader(KEEP_ALIVE)
                 .removeHeader(PROXY_AUTHENTICATE)
                 .removeHeader(PROXY_AUTHORIZATION)

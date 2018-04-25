@@ -16,8 +16,8 @@
 package com.hotels.styx.api.http.handlers;
 
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.messages.FullHttpResponse;
 import org.testng.annotations.Test;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
@@ -35,7 +35,7 @@ public class StaticBodyHttpHandlerTest {
         StaticBodyHttpHandler handler = new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "foo", UTF_8);
 
         HttpResponse response = handler.handle(get("/").build(), MOCK_CONTEXT).asCompletableFuture().get();
-        FullHttpResponse fullResponse = response.toFullResponse(1024)
+        FullHttpResponse fullResponse = response.toFullHttpResponse(1024)
                 .asCompletableFuture()
                 .get();
 

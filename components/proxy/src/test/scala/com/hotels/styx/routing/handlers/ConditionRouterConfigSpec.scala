@@ -15,14 +15,14 @@
  */
 package com.hotels.styx.routing.handlers
 
-import com.hotels.styx.api.HttpResponse.Builder.response
+import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.{HttpHandler, HttpRequest, StyxObservable}
 import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.HttpHandlerAdapter
 import com.hotels.styx.routing.config.{HttpHandlerFactory, RouteHandlerConfig, RouteHandlerDefinition, RouteHandlerFactory}
 import com.hotels.styx.server.HttpInterceptorContext
-import io.netty.handler.codec.http.HttpResponseStatus.{BAD_GATEWAY, OK}
+import com.hotels.styx.api.messages.HttpResponseStatus.{BAD_GATEWAY, OK}
 import org.mockito.Matchers.{any, eq => meq}
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.mock.MockitoSugar

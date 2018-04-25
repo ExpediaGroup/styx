@@ -21,6 +21,7 @@ import com.hotels.styx.api.HttpCookieAttribute;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.netty.exceptions.TransportLostException;
 import com.hotels.styx.client.BadHttpResponseException;
@@ -52,7 +53,6 @@ import static com.hotels.styx.api.HttpCookieAttribute.maxAge;
 import static com.hotels.styx.api.HttpCookieAttribute.path;
 import static com.hotels.styx.api.HttpCookieAttribute.secure;
 import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.common.Strings.quote;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
 import static io.netty.util.ReferenceCountUtil.retain;
@@ -224,7 +224,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
 
     @VisibleForTesting
     static HttpResponse.Builder toStyxResponse(io.netty.handler.codec.http.HttpResponse nettyResponse) {
-        HttpResponse.Builder responseBuilder = response(nettyResponse.getStatus());
+        HttpResponse.Builder responseBuilder = HttpResponse.response(HttpResponseStatus.statusWithCode(nettyResponse.getStatus().code()));
 
         stream(nettyResponse.headers().spliterator(), false)
                 .filter(header -> !isCookieHeader(header.getKey()))
@@ -242,7 +242,6 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
         try {
             return toStyxResponse(nettyResponse)
                     .body(contentObservable)
-                    .validateContentLength()
                     .build();
         } catch (IllegalArgumentException e) {
             throw new BadHttpResponseException(origin, e);

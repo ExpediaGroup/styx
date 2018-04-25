@@ -16,6 +16,7 @@
 package com.hotels.styx.api.http.handlers;
 
 import com.google.common.net.MediaType;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 
@@ -27,8 +28,7 @@ import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -71,11 +71,12 @@ public class CachedBodyHttpHandler extends BaseHttpHandler {
         }
 
         HttpResponse toResponse() {
-            return response(OK)
+            return FullHttpResponse.response(OK)
                     .header(CONTENT_TYPE, contentType)
                     .header(CONTENT_LENGTH, contentLength)
-                    .body(content)
-                    .build();
+                    .body(content, UTF_8)
+                    .build()
+                    .toStreamingResponse();
         }
     }
 

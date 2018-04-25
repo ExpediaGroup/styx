@@ -16,6 +16,7 @@
 package com.hotels.styx.proxy;
 
 import com.google.common.collect.ImmutableList;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
@@ -37,12 +38,12 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 
-import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.nio.charset.Charset.defaultCharset;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -52,7 +53,7 @@ public class StyxProxyTest extends SSLSetup {
             .build();
 
     private static String content(HttpResponse response) {
-        return getFirst(response.body().content()).toString(defaultCharset());
+        return getFirst(response.body()).toString(defaultCharset());
     }
 
     public static void main(String[] args) {
@@ -99,9 +100,10 @@ public class StyxProxyTest extends SSLSetup {
     }
 
     private StyxObservable<HttpResponse> textResponse(String body) {
-        return StyxObservable.of(response(OK)
-                .body("Response from http connector")
-                .build());
+        return StyxObservable.of(FullHttpResponse.response(OK)
+                .body("Response from http connector", UTF_8)
+                .build()
+                .toStreamingResponse());
     }
 
     private ServerConnector connector(int port) {

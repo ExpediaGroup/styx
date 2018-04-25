@@ -117,7 +117,9 @@ public final class HttpResponseStatus {
         return STATUSES[code];
     }
 
-    private HttpResponseStatus(int code, String description) {
+    // TODO: Mikko: Styx 2.0 API: Had to relax visibility due to CustomHttpResponseStatus class.
+    // Check with Kyle.
+    public HttpResponseStatus(int code, String description) {
         this.code = code;
         this.description = description;
     }

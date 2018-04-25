@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
@@ -26,9 +27,9 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static com.google.common.net.MediaType.HTML_UTF_8;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
@@ -51,10 +52,11 @@ public class PluginListHandler implements HttpHandler {
         String output = section("Enabled", enabled)
                 + section("Disabled", disabled);
 
-        return StyxObservable.of(response(OK)
-                .body(output)
+        return StyxObservable.of(FullHttpResponse.response(OK)
+                .body(output, UTF_8)
                 .contentType(HTML_UTF_8)
-                .build());
+                .build()
+                .toStreamingResponse());
     }
 
     private String section(String toggleState, Stream<NamedPlugin> plugins) {

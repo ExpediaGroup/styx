@@ -24,7 +24,7 @@ import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpRequest.Builder.delete;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpRequest.Builder.post;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
 import static com.hotels.styx.proxy.interceptors.ReturnResponseChain.returnsResponse;

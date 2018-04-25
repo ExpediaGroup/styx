@@ -13,13 +13,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.messages;
+package com.hotels.styx.api;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.HttpCookie;
-import com.hotels.styx.api.HttpHeaders;
-import com.hotels.styx.api.HttpResponse;
+import com.google.common.net.MediaType;
+import com.hotels.styx.api.messages.HttpResponseStatus;
+import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.Unpooled;
 import rx.Observable;
 
@@ -31,12 +31,11 @@ import java.util.Optional;
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
-import static com.hotels.styx.api.messages.HttpResponseStatus.statusWithCode;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
-import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
 import static rx.Observable.just;
@@ -218,15 +217,15 @@ public class FullHttpResponse implements FullHttpMessage {
             this.cookies = new ArrayList<>(response.cookies());
         }
 
-        public Builder(HttpResponse response, byte[] encodedBody) {
-            this.status = statusWithCode(response.status().code());
-            this.version = httpVersion(response.version().toString());
-            this.headers = response.headers().newBuilder();
-            this.body = encodedBody;
-            this.cookies = new ArrayList<>(response.cookies());
-        }
+//        public Builder(HttpResponse response, byte[] encodedBody) {
+//            this.status = statusWithCode(response.status().code());
+//            this.version = httpVersion(response.version().toString());
+//            this.headers = response.headers().newBuilder();
+//            this.body = encodedBody;
+//            this.cookies = new ArrayList<>(response.cookies());
+//        }
 
-        public Builder(StreamingHttpResponse response, byte[] decoded) {
+        public Builder(HttpResponse response, byte[] decoded) {
             this.status = response.status();
             this.version = response.version();
             this.headers = response.headers().newBuilder();
@@ -395,6 +394,10 @@ public class FullHttpResponse implements FullHttpMessage {
         public Builder addHeader(CharSequence name, Object value) {
             headers.add(name, value);
             return this;
+        }
+
+        public Builder contentType(MediaType mediaType) {
+            return addHeader(CONTENT_TYPE, mediaType);
         }
 
         /**

@@ -163,7 +163,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
                     nettyConnection.close();
                 }
             }
-        }).map(response -> response.newBuilder().request(request).build());
+        }).map(response -> response.newBuilder().build());
     }
 
     private void addProxyBridgeHandlers(NettyConnection nettyConnection, Subscriber<? super HttpResponse> observer) {

@@ -22,12 +22,12 @@ import com.google.common.io.Files
 import com.google.common.io.Files._
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.HttpResponse.Builder._
+import com.hotels.styx.api.FullHttpResponse.response
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names.HOST
+import com.hotels.styx.api.messages.HttpResponseStatus._
 import io.netty.handler.codec.http.HttpMethod._
-import io.netty.handler.codec.http.HttpResponseStatus._
 import org.scalatest.FunSpec
 
 import scala.concurrent.duration._
@@ -50,7 +50,7 @@ class BigFileDownloadSpec extends FunSpec
     )
 
     val bigFile: File = newBigFile("big_file.dat")
-    fileServer.stub("/download", responseSupplier(() => response(OK).body(Files.toString(bigFile, UTF_8)).build()))
+    fileServer.stub("/download", responseSupplier(() => response(OK).body(Files.toString(bigFile, UTF_8), UTF_8).build().toStreamingResponse))
   }
 
   override protected def afterAll(): Unit = {

@@ -13,9 +13,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.messages;
+package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.HttpRequest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -35,8 +36,8 @@ import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpRequest.Builder.put;
 import static com.hotels.styx.api.Url.Builder.url;
-import static com.hotels.styx.api.messages.FullHttpRequest.get;
-import static com.hotels.styx.api.messages.FullHttpRequest.patch;
+import static com.hotels.styx.api.FullHttpRequest.get;
+import static com.hotels.styx.api.FullHttpRequest.patch;
 import static com.hotels.styx.api.messages.HttpMethod.DELETE;
 import static com.hotels.styx.api.messages.HttpMethod.GET;
 import static com.hotels.styx.api.messages.HttpMethod.POST;

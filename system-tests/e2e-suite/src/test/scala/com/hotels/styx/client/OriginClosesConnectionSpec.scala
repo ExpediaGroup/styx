@@ -126,7 +126,7 @@ class OriginClosesConnectionSpec extends FunSuite
         .build())
 
     responseObservable
-      .doOnNext((t: HttpResponse) => t.body().content().subscribe(contentSubscriber))
+      .doOnNext((t: HttpResponse) => t.body().subscribe(contentSubscriber))
       .subscribe(responseSubscriber)
 
     responseSubscriber.awaitTerminalEvent()

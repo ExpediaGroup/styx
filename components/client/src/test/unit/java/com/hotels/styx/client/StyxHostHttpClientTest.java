@@ -18,7 +18,7 @@ package com.hotels.styx.client;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.messages.FullHttpRequest;
+import com.hotels.styx.api.FullHttpRequest;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 

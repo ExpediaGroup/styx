@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.infrastructure
 
-import com.hotels.styx.api.messages.FullHttpResponse
+import com.hotels.styx.api.FullHttpResponse
 
 
 trait HttpResponseImplicits {

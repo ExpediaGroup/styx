@@ -38,8 +38,8 @@ import com.hotels.styx.{BackendServicesRegistrySupplier, StyxClientSupplier, Sty
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpInterceptor.{Chain}
 import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.HttpResponse.Builder.response
-import io.netty.handler.codec.http.HttpResponseStatus
+import com.hotels.styx.api.HttpResponse.response
+import com.hotels.styx.api.messages.HttpResponseStatus
 import com.hotels.styx.api._
 import com.hotels.styx.api.messages.HttpResponseStatus.{BAD_GATEWAY, INTERNAL_SERVER_ERROR, OK}
 import com.hotels.styx.api.service.BackendService

@@ -19,13 +19,14 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpRequest.Builder._
+import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.HttpResponse.Builder._
 import com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.api.support.HostAndPorts._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{MockServer, StyxProxySpec}
 import io.netty.buffer.{ByteBuf, Unpooled}
-import io.netty.handler.codec.http.HttpResponseStatus._
+import com.hotels.styx.api.messages.HttpResponseStatus._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 import rx.Observable
@@ -65,7 +66,7 @@ class AggregatingPluginContentOverflowSpec extends FunSpec
 
       mockServer.stub("/body", responseSupplier(
         () => {
-          response(OK).body(
+          HttpResponse.response(OK).body(
             toJavaObservable(
               delay(500.millis,
                 Seq(

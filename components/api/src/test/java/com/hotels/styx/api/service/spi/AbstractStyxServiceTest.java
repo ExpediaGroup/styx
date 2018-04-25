@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.api.service.spi;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.messages.FullHttpResponse;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -43,7 +43,7 @@ public class AbstractStyxServiceTest {
 
         FullHttpResponse response =
                 service.adminInterfaceHandlers().get("status").handle(get, MOCK_CONTEXT)
-                        .flatMap(r -> r.toFullResponse(1024))
+                        .flatMap(r -> r.toFullHttpResponse(1024))
                 .asCompletableFuture()
                 .get();
 

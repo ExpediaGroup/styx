@@ -15,12 +15,12 @@
  */
 package com.hotels.styx.routing.interceptors
 
-import com.hotels.styx.api.HttpResponse.Builder.response
+import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse, StyxObservable}
 import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition
-import io.netty.handler.codec.http.HttpResponseStatus.OK
+import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, ShouldMatchers}
 

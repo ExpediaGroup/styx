@@ -18,11 +18,11 @@ package com.hotels.styx.api.metrics;
 import com.codahale.metrics.Counter;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.plugins.spi.PluginException;
-import io.netty.handler.codec.http.HttpResponseStatus;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 
 /**
  * An error listener that reports error metrics to a {@link MetricRegistry}.

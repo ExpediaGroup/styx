@@ -15,18 +15,19 @@
  */
 package com.hotels.styx.api.http.handlers;
 
+import com.google.common.base.Charsets;
 import com.google.common.net.MediaType;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 
 /**
  * HTTP handler that responds with a static body.
@@ -43,7 +44,7 @@ public class StaticBodyHttpHandler extends BaseHttpHandler {
      * @param body        body to return
      */
     public StaticBodyHttpHandler(MediaType contentType, String body) {
-        this(contentType, body, UTF_8);
+        this(contentType, body, Charsets.UTF_8);
     }
 
     /**
@@ -61,10 +62,11 @@ public class StaticBodyHttpHandler extends BaseHttpHandler {
 
     @Override
     public HttpResponse doHandle(HttpRequest request) {
-        return response(OK)
+        return FullHttpResponse.response(OK)
                 .header(CONTENT_TYPE, this.contentType.toString())
                 .header(CONTENT_LENGTH, this.contentLength)
-                .body(this.body)
-                .build();
+                .body(this.body, StandardCharsets.UTF_8)
+                .build()
+                .toStreamingResponse();
     }
 }

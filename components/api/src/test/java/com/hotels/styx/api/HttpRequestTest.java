@@ -16,7 +16,6 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.api.messages.FullHttpRequest;
 import com.hotels.styx.api.messages.HttpMethod;
 import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
