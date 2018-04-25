@@ -23,7 +23,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.client.UrlConnectionHttpClient;
 import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.client.SimpleNettyHttpClient;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
 import org.testng.annotations.AfterMethod;

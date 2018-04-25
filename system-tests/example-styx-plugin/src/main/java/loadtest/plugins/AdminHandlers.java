@@ -17,7 +17,7 @@ package loadtest.plugins;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.StyxObservable;
 
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;

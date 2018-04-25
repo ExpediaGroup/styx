@@ -58,7 +58,7 @@ import java.util.function.Supplier;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.metrics.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.api.metrics.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
-import static com.hotels.styx.api.v2.StyxInternalObservables.toRxObservable;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.TERMINATED;

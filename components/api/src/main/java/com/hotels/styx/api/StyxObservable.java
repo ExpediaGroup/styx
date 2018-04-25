@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.styx.api.v2;
+package com.hotels.styx.api;
 
 import rx.Observable;
 
@@ -51,10 +51,4 @@ public interface StyxObservable<T> {
     static <T> StyxObservable<T> from(CompletionStage<T> completableFuture) {
         return new StyxCoreObservable<>(completableFuture);
     }
-
-    // TODO: Mikko: Remove this:
-    static <T> StyxObservable<T> from(Observable<T> observable) {
-        return new StyxCoreObservable<>(observable);
-    }
-
 }

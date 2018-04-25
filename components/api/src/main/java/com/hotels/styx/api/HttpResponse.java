@@ -19,7 +19,6 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.messages.FullHttpResponse;
-import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
@@ -218,19 +217,19 @@ public final class HttpResponse implements HttpMessage {
      * with the aggregated content set as a message body.
      * <p>
      * This method aggregates the content stream asynchronously. Once the FullHttpResponse is
-     * available, it will be emitted as an Observable onNext event. If the number of content bytes
-     * exceeds maxContentLength an exception is emitted as Observable onError event.
+     * available, it will be emitted as an StyxObservable event. If the number of content bytes
+     * exceeds maxContentLength an exception is emitted as StyxObservable error event.
      * <p>
      * Performance considerations: An instantiation of FullHttpResponse takes a copy of the aggregated
      * HTTP message content.
      *
      * @param maxContentLength Maximum content bytes accepted from the HTTP content stream.
-     * @return An {Observable} that emits the FullHttpResponse once it is available.
+     * @return An {StyxObservable} that emits the FullHttpResponse once it is available.
      */
     public StyxObservable<FullHttpResponse> toFullResponse(int maxContentLength) {
         // TODO: Mikko: Styx 2.0 API:
         // Fix this:
-        return StyxObservable.from(body.aggregate(maxContentLength)
+        return new StyxCoreObservable<>(body.aggregate(maxContentLength)
                 .map(decoded -> new FullHttpResponse.Builder(this, decoded.copy().array()))
                 .map(FullHttpResponse.Builder::build));
     }

@@ -23,7 +23,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.StyxObservable;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Collections;

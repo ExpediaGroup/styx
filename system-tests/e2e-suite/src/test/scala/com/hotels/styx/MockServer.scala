@@ -24,7 +24,6 @@ import com.hotels.styx.api._
 import com.hotels.styx.api.client.Origin.newOriginBuilder
 import com.hotels.styx.api.http.handlers.NotFoundHandler
 import com.hotels.styx.api.support.HostAndPorts._
-import com.hotels.styx.api.v2.StyxObservable
 import com.hotels.styx.server.handlers.ReturnResponseHandler.returnsResponse
 import com.hotels.styx.server.netty.{NettyServerBuilder, ServerConnector, WebServerConnectorFactory}
 import com.hotels.styx.server.{HttpConnectorConfig, HttpServer}

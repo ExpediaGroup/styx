@@ -20,7 +20,7 @@ import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.client.SimpleNettyHttpClient;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;

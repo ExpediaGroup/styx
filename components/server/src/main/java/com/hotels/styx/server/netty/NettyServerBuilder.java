@@ -19,7 +19,7 @@ import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.metrics.MetricRegistry;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;

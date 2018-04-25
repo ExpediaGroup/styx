@@ -17,13 +17,13 @@ package com.hotels.styx.support.api;
 
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.messages.FullHttpResponse;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.StyxObservable;
 import rx.Observable;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static com.hotels.styx.api.v2.StyxInternalObservables.toRxObservable;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static java.lang.Thread.currentThread;
 
 public final class BlockingObservables {

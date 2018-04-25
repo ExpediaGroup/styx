@@ -18,7 +18,7 @@ package com.hotels.styx.plugins;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.StyxObservable;
 
 public class AggregationTesterPlugin implements Plugin {
     private final int maxContentBytes;

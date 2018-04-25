@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.api.v2.StyxObservable;
-
 /**
  * Handles an {@link HttpRequest}, returning an {@link StyxObservable} that is expected to publish a single {@link HttpResponse} value.
  */

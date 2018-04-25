@@ -25,8 +25,7 @@ import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.metrics.HttpErrorStatusCauseLogger
 import com.hotels.styx.api.plugins.spi.PluginException
-import com.hotels.styx.api.v2.StyxObservable
-import com.hotels.styx.api.{HttpRequest, HttpResponse}
+import com.hotels.styx.api.{HttpRequest, HttpResponse, StyxObservable}
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}

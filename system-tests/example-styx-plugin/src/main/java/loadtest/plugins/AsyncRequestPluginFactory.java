@@ -19,7 +19,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.StyxObservable;
 
 import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

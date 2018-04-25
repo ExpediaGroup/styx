@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.api.v2.StyxObservable;
-
 import java.util.Optional;
 
 /**

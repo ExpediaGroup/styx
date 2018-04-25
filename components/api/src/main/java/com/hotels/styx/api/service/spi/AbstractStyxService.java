@@ -17,7 +17,7 @@ package com.hotels.styx.api.service.spi;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.StyxObservable;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;

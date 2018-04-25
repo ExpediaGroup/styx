@@ -16,8 +16,7 @@
 package com.hotels.styx.routing.interceptors
 
 import com.hotels.styx.api.HttpResponse.Builder.response
-import com.hotels.styx.api.v2.StyxObservable
-import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse}
+import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse, StyxObservable}
 import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition

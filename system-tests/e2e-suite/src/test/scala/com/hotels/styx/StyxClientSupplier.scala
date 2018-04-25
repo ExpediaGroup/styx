@@ -17,7 +17,7 @@ package com.hotels.styx
 
 import com.hotels.styx.api.client.UrlConnectionHttpClient
 import com.hotels.styx.api.messages.FullHttpResponse
-import com.hotels.styx.api.v2.StyxInternalObservables.toRxObservable
+import com.hotels.styx.api.StyxInternalObservables.toRxObservable
 import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse}
 import com.hotels.styx.client.HttpConfig.newHttpConfigBuilder
 import com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder

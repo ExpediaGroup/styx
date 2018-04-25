@@ -17,7 +17,6 @@ package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.messages.FullHttpRequest;
-import com.hotels.styx.api.v2.StyxObservable;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
@@ -203,17 +202,17 @@ public final class HttpRequest implements HttpMessage {
      * with the aggregated content set as a message body.
      * <p>
      * This method aggregates the content stream asynchronously. Once the FullHttpRequest is
-     * available, it will be emitted as an Observable onNext event. If the number of content bytes
-     * exceeds maxContentLength an exception is emitted as Observable onError event.
+     * available, it will be emitted as an StyxObservable event. If the number of content bytes
+     * exceeds maxContentLength an exception is emitted as StyxObservable error event.
      * <p>
      * Performance considerations: An instantiation of FullHttpRequest takes a copy of the aggregated
      * HTTP message content.
      * <p>
      * @param maxContentLength Maximum content bytes accepted from the HTTP content stream.
-     * @return An {Observable} that emits the FullHttpRequest once it is available.
+     * @return An {StyxObservable} that emits the FullHttpRequest once it is available.
      */
     public <T> StyxObservable<FullHttpRequest> toFullRequest(int maxContentLength) {
-        return StyxObservable.from(body.aggregate(maxContentLength)
+        return new StyxCoreObservable<>(body.aggregate(maxContentLength)
                 .map(decoded -> new FullHttpRequest.Builder(this, decoded.copy().array()))
                 .map(FullHttpRequest.Builder::build));
     }

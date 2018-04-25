@@ -19,15 +19,15 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.StyxObservable;
 import rx.Observable;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hotels.styx.api.v2.StyxInternalObservables.fromRxObservable;
-import static com.hotels.styx.api.v2.StyxInternalObservables.toRxObservable;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static java.util.Collections.emptyList;
 import static rx.Observable.create;
 

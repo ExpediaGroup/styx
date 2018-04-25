@@ -43,7 +43,6 @@ import io.netty.handler.codec.http.HttpResponseStatus
 import com.hotels.styx.api._
 import com.hotels.styx.api.messages.HttpResponseStatus.{BAD_GATEWAY, INTERNAL_SERVER_ERROR, OK}
 import com.hotels.styx.api.service.BackendService
-import com.hotels.styx.api.v2.StyxObservable
 import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.support.ImplicitStyxConversions
 import com.hotels.styx.support.backends.FakeHttpServer

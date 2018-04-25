@@ -33,7 +33,7 @@ import com.github.tomakehurst.wiremock.http.StubResponseRenderer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.HttpServers;

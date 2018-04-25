@@ -26,8 +26,7 @@ import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration
 import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.api.service.spi.StyxService
-import com.hotels.styx.api.v2.StyxObservable
-import com.hotels.styx.api.{HttpHandler, HttpRequest, HttpResponse}
+import com.hotels.styx.api.{HttpHandler, HttpRequest, HttpResponse, StyxObservable}
 import com.hotels.styx.config.Config
 import com.hotels.styx.metrics.StyxMetrics
 import com.hotels.styx.proxy.ProxyServerConfig

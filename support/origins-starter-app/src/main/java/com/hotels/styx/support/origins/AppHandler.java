@@ -21,7 +21,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.http.handlers.StaticBodyHttpHandler;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.StyxObservable;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 import static com.google.common.net.MediaType.HTML_UTF_8;

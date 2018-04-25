@@ -37,7 +37,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
-import static com.hotels.styx.api.v2.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;

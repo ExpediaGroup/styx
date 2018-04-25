@@ -18,7 +18,7 @@ package com.hotels.styx.routing.handlers;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.api.v2.StyxInternalObservables.toRxObservable;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.common.StyxFutures.await;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.Arrays.asList;

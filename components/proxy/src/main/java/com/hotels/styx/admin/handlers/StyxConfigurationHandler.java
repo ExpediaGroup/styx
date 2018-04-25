@@ -22,7 +22,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.http.handlers.StaticBodyHttpHandler;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.StyxObservable;
 
 import java.util.Map;
 

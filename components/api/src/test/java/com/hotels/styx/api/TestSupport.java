@@ -15,10 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.api.MockContext.MockObservable;
-import com.hotels.styx.api.v2.StyxObservable;
-import rx.Observable;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class TestSupport {

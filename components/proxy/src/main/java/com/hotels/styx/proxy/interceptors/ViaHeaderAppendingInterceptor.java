@@ -19,7 +19,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpMessage;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.v2.StyxObservable;
+import com.hotels.styx.api.StyxObservable;
 import io.netty.handler.codec.http.HttpVersion;
 
 import static com.google.common.base.Strings.isNullOrEmpty;

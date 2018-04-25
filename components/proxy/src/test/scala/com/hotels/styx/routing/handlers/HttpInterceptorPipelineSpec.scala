@@ -18,7 +18,6 @@ package com.hotels.styx.routing.handlers
 import com.google.common.collect.ImmutableList.{of => list}
 import io.netty.handler.codec.http.HttpResponseStatus.OK
 import com.hotels.styx.api._
-import com.hotels.styx.api.v2.{StyxCoreObservable, StyxObservable}
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin
