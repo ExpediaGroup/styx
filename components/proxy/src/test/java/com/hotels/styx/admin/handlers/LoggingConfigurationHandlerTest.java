@@ -24,7 +24,7 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
@@ -32,6 +32,7 @@ import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import com.hotels.styx.api.HttpRequest;
 
 public class LoggingConfigurationHandlerTest {
     @Test

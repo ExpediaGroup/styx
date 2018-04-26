@@ -16,13 +16,13 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 
 import java.util.Optional;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Fixes bad content length headers.

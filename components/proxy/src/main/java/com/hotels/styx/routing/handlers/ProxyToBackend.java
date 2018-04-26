@@ -20,7 +20,6 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.client.Connection;
@@ -44,6 +43,7 @@ import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpReq
 import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Routing object that proxies a request to a configured backend.

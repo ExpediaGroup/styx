@@ -18,9 +18,9 @@ package com.hotels.styx.plugins
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.MockServer.responseSupplier
-import com.hotels.styx.api.HttpRequest.Builder._
+import com.hotels.styx.api.HttpRequest._
 import com.hotels.styx.api.HttpResponse
-import com.hotels.styx.api.HttpResponse.Builder._
+import com.hotels.styx.api.HttpResponse._
 import com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.api.support.HostAndPorts._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}

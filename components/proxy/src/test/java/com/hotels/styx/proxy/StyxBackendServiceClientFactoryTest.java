@@ -18,7 +18,6 @@ package com.hotels.styx.proxy;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
@@ -33,7 +32,7 @@ import com.hotels.styx.client.StyxHttpClient;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
@@ -50,6 +49,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static rx.Observable.just;
+import com.hotels.styx.api.HttpRequest;
 
 public class StyxBackendServiceClientFactoryTest {
     private Environment environment;

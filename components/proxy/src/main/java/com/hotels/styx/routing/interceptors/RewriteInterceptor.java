@@ -17,7 +17,6 @@ package com.hotels.styx.routing.interceptors;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.service.RewriteConfig;
@@ -26,6 +25,7 @@ import com.hotels.styx.client.RewriteRuleset;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.config.HttpInterceptorFactory;
 import com.hotels.styx.routing.config.RouteHandlerDefinition;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * A built-in interceptor for URL rewrite.

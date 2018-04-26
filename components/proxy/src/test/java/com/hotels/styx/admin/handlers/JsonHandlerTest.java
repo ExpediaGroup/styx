@@ -17,7 +17,6 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Clock;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
@@ -25,13 +24,14 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import com.hotels.styx.api.HttpRequest;
 
 public class JsonHandlerTest {
     long time = currentTimeMillis();

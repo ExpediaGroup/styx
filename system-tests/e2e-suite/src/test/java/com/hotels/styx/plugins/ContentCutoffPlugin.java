@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.plugins;
 
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -23,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import com.hotels.styx.api.HttpRequest;
 
 public class ContentCutoffPlugin implements Plugin {
     private static Logger LOGGER = LoggerFactory.getLogger(ContentCutoffPlugin.class);

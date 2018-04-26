@@ -17,7 +17,6 @@ package com.hotels.styx.routing.handlers;
 
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import rx.Observable;
@@ -30,6 +29,7 @@ import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static java.util.Collections.emptyList;
 import static rx.Observable.create;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * The pipeline consists of a chain of interceptors followed by a handler.

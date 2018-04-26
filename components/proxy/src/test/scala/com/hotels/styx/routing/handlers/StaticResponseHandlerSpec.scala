@@ -40,7 +40,7 @@ class StaticResponseHandlerSpec extends FunSpec with ShouldMatchers {
 
   it("builds static response handler") {
     val handler = new StaticResponseHandler.ConfigFactory().build(List(), null, config)
-    val response = StyxFutures.await(handler.handle(HttpRequest.Builder.get("/foo").build(), HttpInterceptorContext.create).asCompletableFuture())
+    val response = StyxFutures.await(handler.handle(HttpRequest.get("/foo").build(), HttpInterceptorContext.create).asCompletableFuture())
 
     response.status should be (CREATED)
   }

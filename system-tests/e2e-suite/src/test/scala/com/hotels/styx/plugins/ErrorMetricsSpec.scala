@@ -37,7 +37,7 @@ import com.hotels.styx._
 import com.hotels.styx.{BackendServicesRegistrySupplier, StyxClientSupplier, StyxConfiguration, StyxServerSupport}
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpInterceptor.{Chain}
-import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.messages.HttpResponseStatus
 import com.hotels.styx.api._

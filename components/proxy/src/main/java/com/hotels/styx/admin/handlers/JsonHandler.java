@@ -21,7 +21,6 @@ import com.hotels.styx.admin.CachingSupplier;
 import com.hotels.styx.admin.dashboard.JsonSupplier;
 import com.hotels.styx.admin.handlers.json.JsonReformatter;
 import com.hotels.styx.api.Clock;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.http.handlers.BaseHttpHandler;
 import org.slf4j.Logger;
@@ -37,6 +36,7 @@ import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ER
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.slf4j.LoggerFactory.getLogger;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Handler for returning JSON. If a cache expiration value is present, the JSON is not regenerated on every call, unless

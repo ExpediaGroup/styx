@@ -95,10 +95,10 @@ class OriginsReloadSpec extends FunSpec
   }
 
   private def post(url: String, content: String = "") = {
-    decodedRequest(HttpRequest.Builder.post(url).body(content).build())
+    decodedRequest(HttpRequest.post(url).body(content).build())
   }
 
   private def get(url: String) = {
-    decodedRequest(HttpRequest.Builder.get(url).build())
+    decodedRequest(HttpRequest.get(url).build())
   }
 }

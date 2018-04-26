@@ -26,11 +26,11 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static ch.qos.logback.classic.Level.INFO;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 

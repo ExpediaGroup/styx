@@ -17,7 +17,6 @@ package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpInterceptor.Chain;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.messages.HttpResponseStatus;
@@ -31,8 +30,8 @@ import org.testng.annotations.Test;
 import rx.observers.TestSubscriber;
 
 import java.util.concurrent.ExecutionException;
-
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import com.hotels.styx.api.HttpRequest;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.StyxObservable.error;

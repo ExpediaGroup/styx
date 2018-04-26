@@ -108,7 +108,7 @@ class Transport {
         return origin
                 .map(ConnectionPool::borrowConnection)
                 .orElseGet(() -> {
-                    request.body().releaseContentBuffers();
+                    request.releaseContentBuffers();
                     return Observable.error(new NoAvailableHostsException(appId));
                 });
     }

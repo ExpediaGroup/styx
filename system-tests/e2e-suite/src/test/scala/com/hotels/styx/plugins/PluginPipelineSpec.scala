@@ -71,7 +71,7 @@ class PluginPipelineSpec extends FunSpec with StyxProxySpec {
   }
 
   def anHttpRequest: HttpRequest = {
-    HttpRequest.Builder.get(styxServer.routerURL("/pluginPipelineSpec/")).build()
+    HttpRequest.get(styxServer.routerURL("/pluginPipelineSpec/")).build()
   }
 
 }

@@ -18,7 +18,6 @@ package com.hotels.styx.admin.handlers;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
@@ -33,6 +32,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Returns a simple HTML page with a list of plugins, split into enabled and disabled.

@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Connection;
@@ -28,10 +27,11 @@ import rx.Observable;
 import rx.Subscription;
 import rx.observers.TestSubscriber;
 import rx.subjects.PublishSubject;
+import com.hotels.styx.api.HttpRequest;
 
 import java.util.Optional;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static io.netty.buffer.Unpooled.copiedBuffer;

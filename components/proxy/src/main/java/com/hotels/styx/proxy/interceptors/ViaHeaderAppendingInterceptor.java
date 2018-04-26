@@ -16,10 +16,10 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.messages.HttpVersion;
+import com.hotels.styx.api.HttpRequest;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.hotels.styx.api.HttpHeaderNames.VIA;

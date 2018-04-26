@@ -17,12 +17,11 @@ package com.hotels.styx.admin.handlers;
 
 
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
@@ -31,6 +30,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.StringContains.containsString;
+import com.hotels.styx.api.HttpRequest;
 
 public class ThreadsHandlerTest {
     final ThreadsHandler handler = new ThreadsHandler();

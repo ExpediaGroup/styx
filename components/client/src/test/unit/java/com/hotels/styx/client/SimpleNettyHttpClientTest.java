@@ -39,7 +39,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;

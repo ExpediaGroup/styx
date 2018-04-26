@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
-import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse, StyxObservable}
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer

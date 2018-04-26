@@ -16,8 +16,8 @@
 package com.hotels.styx.admin.tasks;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.api.service.spi.Registry.ReloadResult;
@@ -26,7 +26,7 @@ import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;

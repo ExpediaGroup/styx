@@ -170,11 +170,11 @@ class OriginsCommandsSpec extends FeatureSpec
   def getStyxMetricsSnapshot: String = get(styxServer.adminURL("/admin/metrics")).bodyAs(UTF_8)
 
   private def get(url: String): FullHttpResponse = {
-    decodedRequest(HttpRequest.Builder.get(url).build())
+    decodedRequest(HttpRequest.get(url).build())
   }
 
   private def post(url: String, content: String) = {
-    decodedRequest(HttpRequest.Builder.post(url).body(content).build())
+    decodedRequest(HttpRequest.post(url).body(content).build())
   }
 
   def configureAndStart(appId: String, originId: String): FakeHttpServer = {

@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.messages.HttpResponseStatus;
@@ -42,12 +41,13 @@ import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ER
 import static com.hotels.styx.api.messages.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpMethod.GET;
-import static io.netty.handler.codec.http.HttpMethod.PUT;
+import static com.hotels.styx.api.messages.HttpMethod.GET;
+import static com.hotels.styx.api.messages.HttpMethod.PUT;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Comparator.naturalOrder;
 import static org.slf4j.LoggerFactory.getLogger;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Handler that will enable and disable plugins.
@@ -166,7 +166,7 @@ public class PluginToggleHandler implements HttpHandler {
     }
 
     private static StyxObservable<PluginEnabledState> requestedNewState(HttpRequest request) {
-        return request.toFullRequest(MAX_CONTENT_SIZE)
+        return request.toFullHttpRequest(MAX_CONTENT_SIZE)
                 .map(fullRequest -> fullRequest.bodyAs(UTF_8))
                 .map(PluginToggleHandler::parseToBoolean)
                 .map(PluginEnabledState::fromBoolean);

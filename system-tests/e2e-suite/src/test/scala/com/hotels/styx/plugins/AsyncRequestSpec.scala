@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
-import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.StyxCoreObservable
 import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse, StyxObservable}
 import com.hotels.styx.common.CompletableFutures

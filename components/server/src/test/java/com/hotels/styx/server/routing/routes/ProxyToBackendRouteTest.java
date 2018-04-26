@@ -16,13 +16,12 @@
 package com.hotels.styx.server.routing.routes;
 
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 import rx.Observable;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static org.hamcrest.CoreMatchers.is;
@@ -30,6 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.hotels.styx.api.HttpRequest;
 
 public class ProxyToBackendRouteTest {
     @Test

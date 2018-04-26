@@ -55,7 +55,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
   it("builds ProxyToBackend handler") {
     val handler = new ProxyToBackend.ConfigFactory(environment, clientFactory()).build(List(), null, config)
 
-    val response = StyxFutures.await(handler.handle(HttpRequest.Builder.get("/foo").build(), HttpInterceptorContext.create).asCompletableFuture())
+    val response = StyxFutures.await(handler.handle(HttpRequest.get("/foo").build(), HttpInterceptorContext.create).asCompletableFuture())
     response.status should be (OK)
   }
 

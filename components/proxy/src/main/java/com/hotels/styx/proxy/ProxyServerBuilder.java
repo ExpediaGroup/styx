@@ -19,7 +19,6 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.health.HealthCheck;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.proxy.healthchecks.HealthCheckTimestamp;
@@ -31,6 +30,7 @@ import static com.codahale.metrics.health.HealthCheck.Result.unhealthy;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
 import static java.lang.String.format;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * A builder for a ProxyServer.

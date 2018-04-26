@@ -64,6 +64,7 @@ import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ER
 import static com.hotels.styx.api.messages.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static com.hotels.styx.api.messages.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.api.messages.HttpResponseStatus.SERVICE_UNAVAILABLE;
+import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.metrics.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.api.metrics.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
@@ -72,7 +73,6 @@ import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.WAITING_FOR_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.ResponseEnhancer.DO_NOT_MODIFY_RESPONSE;
 import static io.netty.channel.ChannelFutureListener.CLOSE;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;

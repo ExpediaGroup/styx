@@ -16,9 +16,9 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.HttpRequest;
 
 import static com.hotels.styx.StyxConfig.NO_JVM_ROUTE_SET;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Formats response info into a string.

@@ -33,7 +33,7 @@ public class CompositeHttpErrorStatusListenerTest {
     HttpErrorStatusListener delegate1;
     HttpErrorStatusListener delegate2;
     HttpErrorStatusListener delegate3;
-    HttpRequest request = HttpRequest.Builder.get("/foo").build();
+    HttpRequest request = HttpRequest.get("/foo").build();
     HttpResponse response = HttpResponse.response(OK).build();
 
     @BeforeMethod
@@ -86,7 +86,7 @@ public class CompositeHttpErrorStatusListenerTest {
 
     @Test
     public void propagatesProxyErrorsWithRequests() {
-        HttpRequest request = HttpRequest.Builder.get("/foo").build();
+        HttpRequest request = HttpRequest.get("/foo").build();
         IOException cause = new IOException();
         listener.proxyErrorOccurred(request, INTERNAL_SERVER_ERROR, cause);
 

@@ -35,7 +35,7 @@ import static org.hamcrest.Matchers.is;
 
 public class AbstractStyxServiceTest {
 
-    private final HttpRequest get = HttpRequest.Builder.get("/").build();
+    private final HttpRequest get = HttpRequest.get("/").build();
 
     @Test
     public void exposesNameAndStatusViaAdminInterface() throws ExecutionException, InterruptedException {

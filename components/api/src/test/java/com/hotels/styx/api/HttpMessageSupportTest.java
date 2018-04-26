@@ -24,7 +24,6 @@ import static com.hotels.styx.api.HttpHeaderValues.CLOSE;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
 import static com.hotels.styx.api.HttpMessageSupport.chunked;
 import static com.hotels.styx.api.HttpMessageSupport.keepAlive;
-import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -51,7 +50,7 @@ public class HttpMessageSupportTest {
     }
 
     private HttpRequest.Builder requestBuilder() {
-        return new HttpRequest.Builder(GET, "/");
+        return HttpRequest.get("/");
     }
 
     @Test

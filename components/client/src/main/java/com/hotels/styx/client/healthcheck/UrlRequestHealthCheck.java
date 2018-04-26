@@ -26,10 +26,9 @@ import rx.Observer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static io.netty.util.ReferenceCountUtil.release;
 
 /**
@@ -79,7 +78,7 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
     }
 
     private HttpRequest newHealthCheckRequestFor(Origin origin) {
-        return get(healthCheckUri)
+        return HttpRequest.get(healthCheckUri)
                 .header(HOST, origin.hostAsString())
                 .build();
     }

@@ -15,13 +15,13 @@
  */
 package com.hotels.styx.server.handlers;
 
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.FORBIDDEN;
 import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
@@ -30,7 +30,6 @@ import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.mock;
 
 public class ClassPathResourceHandlerTest {
     ClassPathResourceHandler handler = new ClassPathResourceHandler("/admin/dashboard");

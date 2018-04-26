@@ -16,7 +16,6 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 
@@ -28,6 +27,7 @@ import static com.hotels.styx.api.HttpHeaderNames.TE;
 import static com.hotels.styx.api.HttpHeaderNames.TRAILER;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderNames.UPGRADE;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Removes Hop-By-Hop headers.
@@ -73,7 +73,7 @@ public class HopByHopHeadersRemovingInterceptor implements HttpInterceptor {
             newRequest.removeHeader(CONNECTION);
         });
 
-        newRequest.headers()
+        newRequest
                 .removeHeader(KEEP_ALIVE)
                 .removeHeader(PROXY_AUTHENTICATE)
                 .removeHeader(PROXY_AUTHORIZATION)

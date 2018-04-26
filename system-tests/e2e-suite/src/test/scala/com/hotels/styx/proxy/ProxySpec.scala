@@ -20,11 +20,14 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.github.tomakehurst.wiremock.client.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.MockServer.responseSupplier
-import com.hotels.styx.api.{FullHttpResponse, HttpRequest}
+import com.hotels.styx.api.HttpHeaderNames._
 import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.HttpResponse.response
+import com.hotels.styx.api.messages.HttpMethod.{GET, HEAD}
 import com.hotels.styx.api.messages.HttpResponseStatus._
+import com.hotels.styx.api.messages.HttpVersion._
 import com.hotels.styx.api.support.HostAndPorts._
+import com.hotels.styx.api.{FullHttpResponse, HttpRequest}
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origin, Origins}
@@ -32,9 +35,6 @@ import com.hotels.styx.support.matchers.IsOptional.{isValue, matches}
 import com.hotels.styx.support.matchers.RegExMatcher.matchesRegex
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
-import io.netty.handler.codec.http.HttpHeaders.Names._
-import io.netty.handler.codec.http.HttpMethod._
-import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import org.hamcrest.MatcherAssert.assertThat
 import org.scalatest.{BeforeAndAfter, FunSpec}
 

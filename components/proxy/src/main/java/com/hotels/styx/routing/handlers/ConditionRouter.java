@@ -18,7 +18,6 @@ package com.hotels.styx.routing.handlers;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
@@ -43,6 +42,7 @@ import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.format;
 import static java.lang.String.join;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Condition predicate based HTTP router.

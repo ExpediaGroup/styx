@@ -23,8 +23,8 @@ import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.matchers.IsOptional.matches
 import com.hotels.styx.support.matchers.RegExMatcher.matchesRegex
-import io.netty.handler.codec.http.HttpHeaders.Names.HOST
-import io.netty.handler.codec.http.HttpMethod.GET
+import com.hotels.styx.api.HttpHeaderNames.HOST
+import com.hotels.styx.api.messages.HttpMethod.GET
 import org.hamcrest.MatcherAssert.assertThat
 import org.scalatest.{BeforeAndAfter, FunSpec}
 import com.hotels.styx.api.messages.HttpResponseStatus._

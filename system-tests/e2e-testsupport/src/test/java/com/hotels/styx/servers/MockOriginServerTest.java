@@ -19,7 +19,6 @@ import com.github.tomakehurst.wiremock.client.ValueMatchingStrategy;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.client.UrlConnectionHttpClient;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
@@ -34,7 +33,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
@@ -45,6 +44,7 @@ import static javax.net.ssl.HttpsURLConnection.getDefaultHostnameVerifier;
 import static javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import com.hotels.styx.api.HttpRequest;
 
 public class MockOriginServerTest {
 

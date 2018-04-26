@@ -16,14 +16,13 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor.Chain;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
-import static com.hotels.styx.api.HttpRequest.Builder.delete;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpRequest.Builder.post;
+import static com.hotels.styx.api.HttpRequest.delete;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.post;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
@@ -33,6 +32,7 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHENTICATE;
 import static io.netty.handler.codec.http.HttpHeaders.Names.PROXY_AUTHORIZATION;
 import static io.netty.handler.codec.http.HttpHeaders.Names.TE;
 import static org.hamcrest.MatcherAssert.assertThat;
+import com.hotels.styx.api.HttpRequest;
 
 public class HopByHopHeadersRemovingInterceptorTest {
     final Chain ANY_RESPONSE_HANDLER = returnsResponse(response().build());

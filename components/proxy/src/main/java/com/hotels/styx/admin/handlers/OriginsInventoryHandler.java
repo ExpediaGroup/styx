@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.OriginsChangeListener;
@@ -40,6 +39,7 @@ import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.ad
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.slf4j.LoggerFactory.getLogger;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Returns an origins inventory snapshot in an HTTP response.

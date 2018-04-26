@@ -36,7 +36,7 @@ import scala.collection.JavaConverters._
 
 class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with MockitoSugar {
 
-  val hwaRequest = HttpRequest.Builder.get("/x").build()
+  val hwaRequest = HttpRequest.get("/x").build()
 //
 //  it("errors when there is a reference to non-existing pipeline") {
 //    val config = configBlock(

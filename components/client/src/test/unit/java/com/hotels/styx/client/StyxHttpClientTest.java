@@ -16,7 +16,6 @@
 package com.hotels.styx.client;
 
 import com.google.common.net.HostAndPort;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ConnectionPool;
@@ -45,7 +44,7 @@ import java.util.Optional;
 import static com.hotels.styx.api.HttpHeaderNames.CHUNKED;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
@@ -73,6 +72,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static rx.Observable.error;
 import static rx.Observable.just;
+import com.hotels.styx.api.HttpRequest;
 
 public class StyxHttpClientTest {
     private static final Origin SOME_ORIGIN = newOriginBuilder(localhost(9090)).applicationId(GENERIC_APP).build();

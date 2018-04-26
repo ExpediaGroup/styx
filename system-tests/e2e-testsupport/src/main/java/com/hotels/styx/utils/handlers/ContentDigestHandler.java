@@ -16,7 +16,6 @@
 package com.hotels.styx.utils.handlers;
 
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.http.handlers.BaseHttpHandler;
@@ -29,6 +28,7 @@ import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
 import static java.lang.String.format;
 import static java.util.UUID.randomUUID;
+import com.hotels.styx.api.HttpRequest;
 
 public class ContentDigestHandler extends BaseHttpHandler {
     private final Origin origin;

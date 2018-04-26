@@ -40,9 +40,9 @@ import scala.collection.JavaConversions._
 
 class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSugar {
 
-  val hwaRequest = HttpRequest.Builder.get("/x").build()
-  val laRequest = HttpRequest.Builder.get("/lp/x").build()
-  val baRequest = HttpRequest.Builder.get("/ba/x").build()
+  val hwaRequest = HttpRequest.get("/x").build()
+  val laRequest = HttpRequest.get("/lp/x").build()
+  val baRequest = HttpRequest.get("/ba/x").build()
 
   val environment = new Environment.Builder().build()
 

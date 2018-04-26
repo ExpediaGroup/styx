@@ -42,7 +42,7 @@ import static com.google.common.net.MediaType.OCTET_STREAM;
 import static com.google.common.net.MediaType.PDF;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.net.MediaType.PNG;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.MediaTypes.ICON;
 import static com.hotels.styx.api.MediaTypes.MICROSOFT_ASF_VIDEO;
 import static com.hotels.styx.api.MediaTypes.MICROSOFT_MS_VIDEO;

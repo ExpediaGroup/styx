@@ -21,7 +21,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
-import io.netty.handler.codec.http.HttpMethod;
+import com.hotels.styx.api.messages.HttpMethod;
 
 import java.nio.charset.StandardCharsets;
 

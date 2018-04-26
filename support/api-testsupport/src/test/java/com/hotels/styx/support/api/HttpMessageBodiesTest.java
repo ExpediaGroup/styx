@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.support.api;
 
-import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -24,7 +22,9 @@ import org.testng.annotations.Test;
 import rx.Observable;
 
 import static com.hotels.styx.api.FullHttpResponse.response;
-import static com.hotels.styx.api.HttpRequest.Builder.post;
+import static com.hotels.styx.api.HttpRequest.post;
+import com.hotels.styx.api.HttpRequest;
+
 import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.stream;

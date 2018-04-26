@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
@@ -25,7 +25,7 @@ import org.testng.annotations.Test;
 
 import java.util.List;
 
-import static com.hotels.styx.api.HttpRequest.Builder.put;
+import static com.hotels.styx.api.HttpRequest.put;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;

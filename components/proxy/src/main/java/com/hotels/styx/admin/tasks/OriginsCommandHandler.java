@@ -19,7 +19,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.OriginsChangeListener;
@@ -42,6 +41,7 @@ import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.messages.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Handles commands for enabling and disabling origins.

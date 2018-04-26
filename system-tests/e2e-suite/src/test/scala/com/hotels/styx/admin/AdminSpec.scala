@@ -17,12 +17,11 @@ package com.hotels.styx.admin
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec
-
 
 
 class AdminSpec extends FunSpec

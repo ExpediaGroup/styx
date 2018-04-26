@@ -43,7 +43,7 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
     val interceptor = new RewriteInterceptor.ConfigFactory().build(config)
     val capturingChain = new CapturingChain
 
-    val response = StyxFutures.await(interceptor.intercept(HttpRequest.Builder.get("/foo").build(), capturingChain).asCompletableFuture())
+    val response = StyxFutures.await(interceptor.intercept(HttpRequest.get("/foo").build(), capturingChain).asCompletableFuture())
     capturingChain.request().path() should be ("/app/foo")
   }
 
@@ -60,7 +60,7 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
     val interceptor = new RewriteInterceptor.ConfigFactory().build(config)
     val capturingChain = new CapturingChain
 
-    val response = StyxFutures.await(interceptor.intercept(HttpRequest.Builder.get("/foo").build(), capturingChain).asCompletableFuture())
+    val response = StyxFutures.await(interceptor.intercept(HttpRequest.get("/foo").build(), capturingChain).asCompletableFuture())
     capturingChain.request().path() should be ("/foo")
   }
 

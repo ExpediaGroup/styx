@@ -17,7 +17,6 @@ package com.hotels.styx.admin.tasks;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsSnapshot;
@@ -48,6 +47,7 @@ import static java.util.Collections.singleton;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
+import com.hotels.styx.api.HttpRequest;
 
 public class OriginsCommandHandlerTest {
     final Origin activeOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("activeOriginId").build();
@@ -124,7 +124,7 @@ public class OriginsCommandHandlerTest {
     }
 
     private HttpResponse post(String path) {
-        HttpRequest request = HttpRequest.Builder.post(path).build();
+        HttpRequest request = HttpRequest.post(path).build();
         return getFirst(originsCommand.handle(request, HttpInterceptorContext.create()));
     }
 

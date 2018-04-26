@@ -20,15 +20,15 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpRequest.Builder.post;
+import static com.hotels.styx.api.HttpHeaderNames.HOST;
+import static com.hotels.styx.api.HttpHeaderNames.VIA;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.post;
 import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
 import static com.hotels.styx.proxy.interceptors.ReturnResponseChain.returnsResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
-import static io.netty.handler.codec.http.HttpHeaders.Names.HOST;
-import static io.netty.handler.codec.http.HttpHeaders.Names.VIA;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ViaHeaderAppendingInterceptorTest {

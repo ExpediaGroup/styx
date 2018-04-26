@@ -16,64 +16,196 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableList;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
+import com.hotels.styx.api.messages.HttpMethod;
+import com.hotels.styx.api.messages.HttpVersion;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
+import rx.Observable;
+import rx.Subscriber;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hotels.styx.api.FlowControlDisableOperator.disableFlowControl;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
-import static io.netty.handler.codec.http.HttpMethod.CONNECT;
-import static io.netty.handler.codec.http.HttpMethod.DELETE;
-import static io.netty.handler.codec.http.HttpMethod.GET;
-import static io.netty.handler.codec.http.HttpMethod.HEAD;
-import static io.netty.handler.codec.http.HttpMethod.OPTIONS;
-import static io.netty.handler.codec.http.HttpMethod.PATCH;
-import static io.netty.handler.codec.http.HttpMethod.POST;
-import static io.netty.handler.codec.http.HttpMethod.PUT;
-import static io.netty.handler.codec.http.HttpMethod.TRACE;
+import static com.hotels.styx.api.messages.HttpMethod.DELETE;
+import static com.hotels.styx.api.messages.HttpMethod.GET;
+import static com.hotels.styx.api.messages.HttpMethod.HEAD;
+import static com.hotels.styx.api.messages.HttpMethod.METHODS;
+import static com.hotels.styx.api.messages.HttpMethod.PATCH;
+import static com.hotels.styx.api.messages.HttpMethod.POST;
+import static com.hotels.styx.api.messages.HttpMethod.PUT;
+import static com.hotels.styx.api.messages.HttpMethod.httpMethod;
+import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
+import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
+import static io.netty.buffer.ByteBufUtil.getBytes;
+import static io.netty.buffer.Unpooled.compositeBuffer;
+import static io.netty.buffer.Unpooled.copiedBuffer;
+import static io.netty.util.ReferenceCountUtil.release;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 import static java.net.InetSocketAddress.createUnresolved;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 
 /**
- * Represents an HTTP request.
- * You can build an instance using {@link HttpRequest.Builder}.
+ * HTTP request with a fully aggregated/decoded body.
  */
-public final class HttpRequest implements HttpMessage {
+public class HttpRequest implements StreamingHttpMessage {
     private final Object id;
+    // Relic of old API, kept for conversions
     private final InetSocketAddress clientAddress;
     private final HttpVersion version;
     private final HttpMethod method;
     private final Url url;
     private final HttpHeaders headers;
-    private final HttpMessageBody body;
     private final boolean secure;
+    private final Observable<ByteBuf> body;
+    private final List<HttpCookie> cookies;
 
-    private final ImmutableList<HttpCookie> cookies;
-
-    // Lazily created
-    private volatile HttpPostRequestDecoder postRequestDecoder;
-
-    private HttpRequest(Builder builder) {
-        this.id = builder.id != null ? builder.id : randomUUID();
+    HttpRequest(Builder builder) {
+        this.id = builder.id == null ? randomUUID() : builder.id;
         this.clientAddress = builder.clientAddress;
-        this.version = builder.version();
+        this.version = builder.version;
         this.method = builder.method;
         this.url = builder.url;
         this.secure = builder.secure;
-        this.headers = builder.headers().build();
-        this.body = builder.body();
+        this.headers = builder.headers.build();
+        this.body = requireNonNull(builder.body);
         this.cookies = ImmutableList.copyOf(builder.cookies);
+    }
+
+    /**
+     * Creates a request with the GET method.
+     *
+     * @param uri URI
+     * @return {@code this}
+     */
+    public static Builder get(String uri) {
+        return new Builder(GET, uri);
+    }
+
+    /**
+     * Creates a request with the HEAD method.
+     *
+     * @param uri URI
+     * @return {@code this}
+     */
+    public static Builder head(String uri) {
+        return new Builder(HEAD, uri);
+    }
+
+    /**
+     * Creates a request with the POST method.
+     *
+     * @param uri URI
+     * @return {@code this}
+     */
+    public static Builder post(String uri) {
+        return new Builder(POST, uri);
+    }
+
+    /**
+     * Creates a request with the DELETE method.
+     *
+     * @param uri URI
+     * @return {@code this}
+     */
+    public static Builder delete(String uri) {
+        return new Builder(DELETE, uri);
+    }
+
+    /**
+     * Creates a request with the PUT method.
+     *
+     * @param uri URI
+     * @return {@code this}
+     */
+    public static Builder put(String uri) {
+        return new Builder(PUT, uri);
+    }
+
+    /**
+     * Creates a request with the PATCH method.
+     *
+     * @param uri URI
+     * @return {@code this}
+     */
+    public static Builder patch(String uri) {
+        return new Builder(PATCH, uri);
+    }
+
+    /**
+     * Creates a request with the POST method.
+     *
+     * @param uri URI
+     * @param body body
+     * @param  body type
+     * @return {@code this}
+     */
+    public static Builder post(String uri, Observable<ByteBuf> body) {
+        return new Builder(POST, uri).body(body);
+    }
+
+    /**
+     * Creates a request with the PUT method.
+     *
+     * @param uri URI
+     * @param body body
+     * @param  body type
+     * @return {@code this}
+     */
+    public static Builder put(String uri, Observable<ByteBuf> body) {
+        return new Builder(PUT, uri).body(body);
+    }
+
+    /**
+     * Creates a request with the PATCH method.
+     *
+     * @param uri URI
+     * @param body body
+     * @param  body type
+     * @return {@code this}
+     */
+    public static Builder patch(String uri, Observable<ByteBuf> body) {
+        return new Builder(PATCH, uri).body(body);
+    }
+
+    @Override
+    public HttpVersion version() {
+        return this.version;
+    }
+
+    @Override
+    public HttpHeaders headers() {
+        return headers;
+    }
+
+    @Override
+    public List<HttpCookie> cookies() {
+        return cookies;
+    }
+
+    @Override
+    public List<String> headers(CharSequence name) {
+        return headers.getAll(name);
+    }
+
+    @Override
+    public Observable<ByteBuf> body() {
+        return body;
     }
 
     /**
@@ -86,17 +218,7 @@ public final class HttpRequest implements HttpMessage {
     }
 
     /**
-     * Returns the protocol version of this {@link HttpRequest}.
-     *
-     * @return the protocol version
-     */
-    @Override
-    public HttpVersion version() {
-        return this.version;
-    }
-
-    /**
-     * Returns the {@link HttpMethod} of this {@link HttpRequest}.
+     * Returns the HTTP method of this request.
      *
      * @return the HTTP method
      */
@@ -135,46 +257,6 @@ public final class HttpRequest implements HttpMessage {
     }
 
     /**
-     * Returns the value of the header with the specified {@code name}.
-     * If there is more than one header value for the specified header name, the first value is returned.
-     *
-     * @return the value of the header with the specified {@code name} if present
-     */
-    public Optional<String> header(CharSequence name) {
-        return headers.get(name);
-    }
-
-    /**
-     * Return all headers in this request.
-     *
-     * @return all headers
-     */
-    @Override
-    public HttpHeaders headers() {
-        return headers;
-    }
-
-    /**
-     * Returns the values of the headers with the specified {@code name}.
-     *
-     * @param name the name of the headers
-     * @return A {@link List} of header values which will be empty if no values
-     * are found
-     */
-    public ImmutableList<String> headers(CharSequence name) {
-        return headers.getAll(name);
-    }
-
-    /**
-     * Return the HTTP body of this request.
-     *
-     * @return HTTP body
-     */
-    public HttpMessageBody body() {
-        return body;
-    }
-
-    /**
      * Checks if the request has been transferred over a secure connection. If the protocol is HTTPS and the
      * content is delivered over SSL then the request is considered to be secure.
      *
@@ -184,36 +266,9 @@ public final class HttpRequest implements HttpMessage {
         return secure;
     }
 
-    /**
-     * Returns the remote client address that initiated the current request.
-     *
-     * @return the client address for this request
-     */
+    // Relic of old API, kept only for conversions
     public InetSocketAddress clientAddress() {
         return this.clientAddress;
-    }
-
-    /**
-     * Aggregates and converts this streaming request FullHttpRequest.
-     * <p>
-     * Aggregates up to maxContentLength bytes of HTTP request content stream. Once content is
-     * aggregated, this streaming HttpRequest instance is converted to a FullHttpRequest object
-     * with the aggregated content set as a message body.
-     * <p>
-     * This method aggregates the content stream asynchronously. Once the FullHttpRequest is
-     * available, it will be emitted as an StyxObservable event. If the number of content bytes
-     * exceeds maxContentLength an exception is emitted as StyxObservable error event.
-     * <p>
-     * Performance considerations: An instantiation of FullHttpRequest takes a copy of the aggregated
-     * HTTP message content.
-     * <p>
-     * @param maxContentLength Maximum content bytes accepted from the HTTP content stream.
-     * @return An {StyxObservable} that emits the FullHttpRequest once it is available.
-     */
-    public <T> StyxObservable<FullHttpRequest> toFullRequest(int maxContentLength) {
-        return new StyxCoreObservable<>(body.aggregate(maxContentLength)
-                .map(decoded -> new FullHttpRequest.Builder(this, decoded.copy().array()))
-                .map(FullHttpRequest.Builder::build));
     }
 
     /**
@@ -255,32 +310,7 @@ public final class HttpRequest implements HttpMessage {
     }
 
     /**
-     * Returns an {@link Optional} containing the {@link HttpCookie} with the specified {@code name}
-     * if such a cookie exists.
-     *
-     * @param name the name of the cookie
-     * @return returns an optional cookie object from the header
-     */
-    public Optional<HttpCookie> cookie(String name) {
-        return cookies().stream()
-                .filter(cookie -> name.equalsIgnoreCase(cookie.name()))
-                .findFirst();
-    }
-
-    /**
-     * Return all cookies that were sent in the header.
-     * If any cookies exists within the HTTP header they are returned
-     * as {@code HttpCookie} objects. Otherwise it will return
-     * empty list.
-     *
-     * @return all cookie objects from the HTTP header
-     */
-    public ImmutableList<HttpCookie> cookies() {
-        return cookies;
-    }
-
-    /**
-     * Return a new {@link HttpRequest.Builder} that will inherit properties from this request.
+     * Return a new {@link Builder} that will inherit properties from this request.
      * This allows a new request to be made that will be identical to this one except for the properties
      * overridden by the builder methods.
      *
@@ -290,7 +320,36 @@ public final class HttpRequest implements HttpMessage {
         return new Builder(this);
     }
 
+    public StyxObservable<FullHttpRequest> toFullHttpRequest(int maxContentBytes) {
+        CompositeByteBuf byteBufs = compositeBuffer();
 
+        return new StyxCoreObservable<>(
+                body
+                        .lift(disableFlowControl())
+                        .doOnError(e -> byteBufs.release())
+                        .collect(() -> byteBufs, (composite, part) -> {
+                            long newSize = composite.readableBytes() + part.readableBytes();
+
+                            if (newSize > maxContentBytes) {
+                                release(composite);
+                                release(part);
+
+                                throw new ContentOverflowException(format("Maximum content size exceeded. Maximum size allowed is %d bytes.", maxContentBytes));
+                            }
+                            composite.addComponent(part);
+                            composite.writerIndex(composite.writerIndex() + part.readableBytes());
+                        })
+                        .map(HttpRequest::decodeAndRelease)
+                        .map(decoded -> new FullHttpRequest.Builder(this, decoded).build()));
+    }
+
+    private static byte[] decodeAndRelease(CompositeByteBuf aggregate) {
+        try {
+            return getBytes(aggregate);
+        } finally {
+            aggregate.release();
+        }
+    }
 
     @Override
     public String toString() {
@@ -301,146 +360,130 @@ public final class HttpRequest implements HttpMessage {
                 .add("headers", headers)
                 .add("cookies", cookies)
                 .add("id", id)
+                .add("secure", secure)
                 .add("clientAddress", clientAddress)
                 .toString();
     }
 
+    // TODO: Mikko: Identical content to the HttpResponse one. Consider moving to base class.
+    public CompletableFuture<Boolean> releaseContentBuffers() {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
 
-    /**
-     * Return the {@code 'Content-Length'} header value.
-     *
-     * @return the content-length if present
-     */
-    public Optional<Integer> contentLength() {
-        return header(CONTENT_LENGTH).map(Integer::valueOf);
+        body.subscribe(new Subscriber<ByteBuf>() {
+            @Override
+            public void onCompleted() {
+                future.complete(true);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(ByteBuf byteBuf) {
+                byteBuf.release();
+            }
+        });
+
+        return future;
     }
 
     /**
-     * Return {@code true} if the response is chunked.
-     *
-     * @return {@code true} if the response is chunked
+     * Builder.
      */
-
-    public boolean chunked() {
-        return HttpMessageSupport.chunked(headers);
-    }
-
-    /**
-     * A builder for {@link HttpRequest}.
-     */
-    public static final class Builder extends HttpMessageBuilder<Builder, HttpRequest> {
+    public static final class Builder {
         private static final InetSocketAddress LOCAL_HOST = createUnresolved("127.0.0.1", 0);
+
         private Object id;
-        private HttpMethod method;
+        private HttpMethod method = HttpMethod.GET;
         private InetSocketAddress clientAddress = LOCAL_HOST;
         private boolean validate = true;
         private Url url;
         private boolean secure;
-        private List<HttpCookie> cookies = new ArrayList<>();
+        private HttpHeaders.Builder headers;
+        private HttpVersion version = HTTP_1_1;
+        private Observable<ByteBuf> body;
+        private final List<HttpCookie> cookies;
 
-        private Builder(HttpRequest request) {
-            this.id = request.id;
-            this.secure = request.secure;
-            this.url = request.url;
-            this.method = request.method;
-            this.clientAddress = request.clientAddress;
-            this.cookies = new ArrayList<>(request.cookies);
-            body(request.body);
-            headers(request.headers.newBuilder());
-            version(request.version);
+        public Builder() {
+            this.url = Url.Builder.url("/").build();
+            this.headers = new HttpHeaders.Builder();
+            this.body = Observable.empty();
+            this.cookies = new ArrayList<>();
         }
 
-        public Builder(FullHttpRequest request) {
-            this.id = request.id();
-            this.secure = request.isSecure();
-            this.url = request.url();
-            this.method = HttpMethod.valueOf(request.method().name());
-            this.cookies = new ArrayList<>(request.cookies());
-            headers(request.headers().newBuilder());
-            version(HttpVersion.valueOf(request.version().toString()));
-        }
-
-        /**
-         * Creates a builder with an HTTP method.
-         *
-         * @param method HTTP method
-         */
-        public Builder(HttpMethod method) {
-            this.method = method;
-            headers(new HttpHeaders.Builder());
-        }
-
-        /**
-         * Creates a builder with an HTTP method and URI.
-         *
-         * @param method HTTP method
-         * @param uri    URI
-         */
         public Builder(HttpMethod method, String uri) {
-            this.method = method;
+            this();
+            this.method = requireNonNull(method);
             this.url = Url.Builder.url(uri).build();
             this.secure = url.isSecure();
-            headers(new HttpHeaders.Builder());
+        }
+
+        public Builder(HttpRequest request, Observable<ByteBuf> body) {
+            this.id = request.id();
+            this.method = httpMethod(request.method().name());
+            this.clientAddress = request.clientAddress();
+            this.url = request.url();
+            this.secure = request.isSecure();
+            this.version = httpVersion(request.version().toString());
+            this.headers = request.headers().newBuilder();
+            this.body = body;
+            this.cookies = new ArrayList<>(request.cookies());
+        }
+
+        Builder(HttpRequest request) {
+            this.id = request.id();
+            this.method = request.method();
+            this.clientAddress = request.clientAddress();
+            this.url = request.url();
+            this.secure = request.isSecure();
+            this.version = request.version();
+            this.headers = request.headers().newBuilder();
+            this.body = request.body();
+            this.cookies = new ArrayList<>(request.cookies());
+        }
+
+        Builder(FullHttpRequest request) {
+            this.id = request.id();
+            this.method = request.method();
+            this.clientAddress = request.clientAddress();
+            this.url = request.url();
+            this.secure = request.isSecure();
+            this.version = request.version();
+            this.headers = request.headers().newBuilder();
+            this.body = Observable.just(copiedBuffer(request.body()));
+            this.cookies = new ArrayList<>(request.cookies());
         }
 
         /**
-         * Creates a request with the GET method.
+         * Sets the request URI.
          *
          * @param uri URI
          * @return {@code this}
          */
-        public static Builder get(String uri) {
-            return new Builder(GET, uri);
+        public Builder uri(String uri) {
+            return this.url(Url.Builder.url(uri).build());
         }
 
         /**
-         * Creates a request with the HEAD method.
+         * Sets the request body.
          *
-         * @param uri URI
+         * @param content request body
          * @return {@code this}
          */
-        public static Builder head(String uri) {
-            return new Builder(HEAD, uri);
+        public Builder body(Observable<ByteBuf> content) {
+            this.body = content;
+            return this;
         }
 
-        /**
-         * Creates a request with the POST method.
-         *
-         * @param uri URI
-         * @return {@code this}
-         */
-        public static Builder post(String uri) {
-            return new Builder(POST, uri);
-        }
+        // TODO: Mikko: Styx 2.0 API: Remove this method after switch over to StramingHttpRequest.
+        // This method is bad because it just takes string instead of stream of chunks. Also it implicitly
+        // assumes UTF_8 encoding.
 
-        /**
-         * Creates a request with the DELETE method.
-         *
-         * @param uri URI
-         * @return {@code this}
-         */
-        public static Builder delete(String uri) {
-            return new Builder(DELETE, uri);
-        }
-
-        /**
-         * Creates a request with the PUT method.
-         *
-         * @param uri URI
-         * @return {@code this}
-         */
-        public static Builder put(String uri) {
-            return new Builder(PUT, uri);
-        }
-
-        /**
-         * Creates a request with the PATCH method.
-         *
-         * @param uri URI
-         * @return {@code this}
-         */
-        public static Builder patch(String uri) {
-            return new Builder(PATCH, uri);
+        public Builder body(String content) {
+            this.body = Observable.just(copiedBuffer(content, UTF_8));
+            return this;
         }
 
         /**
@@ -455,13 +498,130 @@ public final class HttpRequest implements HttpMessage {
         }
 
         /**
+         * Sets the (only) value for the header with the specified name.
+         * <p/>
+         * All existing values for the same header will be removed.
+         *
+         * @param name  The name of the header
+         * @param value The value of the header
+         * @return {@code this}
+         */
+        public Builder header(CharSequence name, Object value) {
+            checkNotCookie(name);
+            this.headers.set(name, value);
+            return this;
+        }
+
+        /**
+         * Sets the headers.
+         *
+         * @param headers headers
+         * @return {@code this}
+         */
+        public Builder headers(HttpHeaders headers) {
+            this.headers = headers.newBuilder();
+            return this;
+        }
+
+        /**
+         * Adds a new header with the specified {@code name} and {@code value}.
+         * <p/>
+         * Will not replace any existing values for the header.
+         *
+         * @param name  The name of the header
+         * @param value The value of the header
+         * @return {@code this}
+         */
+        public Builder addHeader(CharSequence name, Object value) {
+            checkNotCookie(name);
+            this.headers.add(name, value);
+            return this;
+        }
+
+        /**
+         * Removes the header with the specified name.
+         *
+         * @param name The name of the header to remove
+         * @return {@code this}
+         */
+        public Builder removeHeader(CharSequence name) {
+            headers.remove(name);
+            return this;
+        }
+
+        /**
+         * Sets the request fully qualified url.
+         *
+         * @param url fully qualified url
+         * @return {@code this}
+         */
+        public Builder url(Url url) {
+            this.url = url;
+            this.secure = url.isSecure();
+            return this;
+        }
+
+        /**
+         * Sets the HTTP version.
+         *
+         * @param version HTTP version
+         * @return {@code this}
+         */
+        public Builder version(HttpVersion version) {
+            this.version = requireNonNull(version);
+            return this;
+        }
+
+        /**
          * Sets the HTTP method.
          *
          * @param method HTTP method
          * @return {@code this}
          */
         public Builder method(HttpMethod method) {
-            this.method = method;
+            this.method = requireNonNull(method);
+            return this;
+        }
+
+        public Builder clientAddress(InetSocketAddress clientAddress) {
+            this.clientAddress = clientAddress;
+            return this;
+        }
+
+        /**
+         * Adds a response cookie (adds a new Set-Cookie header).
+         *
+         * @param cookie cookie to add
+         * @return {@code this}
+         */
+        public Builder addCookie(HttpCookie cookie) {
+            cookies.add(checkNotNull(cookie));
+            return this;
+        }
+
+        /**
+         * Adds a response cookie (adds a new Set-Cookie header).
+         *
+         * @param name  cookie name
+         * @param value cookie value
+         * @return {@code this}
+         */
+        public Builder addCookie(String name, String value) {
+            return addCookie(HttpCookie.cookie(name, value));
+        }
+
+        /**
+         * Removes a cookie if present (removes its Set-Cookie header).
+         *
+         * @param name name of the cookie
+         * @return {@code this}
+         */
+        public Builder removeCookie(String name) {
+            cookies.stream()
+                    .filter(cookie -> cookie.name().equalsIgnoreCase(name))
+                    .findFirst()
+                    .ifPresent(cookies::remove);
+
             return this;
         }
 
@@ -477,87 +637,6 @@ public final class HttpRequest implements HttpMessage {
         }
 
         /**
-         * Sets the request URI.
-         *
-         * @param uri URI
-         * @return {@code this}
-         */
-        public Builder uri(String uri) {
-            return this.url(Url.Builder.url(uri).build());
-        }
-
-        /**
-         * Sets the request fully qualified url.
-         *
-         * @param url fully qualified url
-         * @return {@code this}
-         */
-        public Builder url(Url url) {
-            this.url = checkNotNull(url);
-            this.secure = url.isSecure();
-            return this;
-        }
-
-        /**
-         * Adds a new cookie to the Cookie header. Creates the Cookie header if absent.
-         *
-         * @param cookie the cookie to add
-         * @return {@code this}
-         */
-
-        public Builder addCookie(HttpCookie cookie) {
-            cookies.add(checkNotNull(cookie));
-            return this;
-        }
-
-        /**
-         * Adds a new cookie to the Cookie header with the specified {@code name} and {@code value}. Creates the Cookie header if absent.
-         *
-         * @param name  The name of the cookie
-         * @param value The value of the cookie
-         * @return {@code this}
-         */
-        public Builder addCookie(String name, String value) {
-            return addCookie(HttpCookie.cookie(name, value));
-        }
-
-        /**
-         * Removes a cookie from the Cookie header if present.
-         *
-         * @param name cookie name
-         * @return {@code this}
-         */
-        public Builder removeCookie(String name) {
-            cookies.stream()
-                    .filter(cookie -> cookie.name().equals(name))
-                    .findFirst()
-                    .ifPresent(cookies::remove);
-
-            return this;
-        }
-
-        /**
-         * Sets the client IP address.
-         *
-         * @param address IP address
-         * @return {@code this}
-         */
-        public Builder clientAddress(InetSocketAddress address) {
-            this.clientAddress = address;
-            return this;
-        }
-
-        /**
-         * Enables Keep-Alive.
-         *
-         * @return {@code this}
-         */
-        public Builder enableKeepAlive() {
-            this.headers().add(CONNECTION, KEEP_ALIVE);
-            return this;
-        }
-
-        /**
          * Enable validation of uri and some headers.
          *
          * @return {@code this}
@@ -568,17 +647,32 @@ public final class HttpRequest implements HttpMessage {
         }
 
         /**
-         * Builds a request.
+         * Enables Keep-Alive.
          *
-         * @return a request
+         * @return {@code this}
+         */
+        public Builder enableKeepAlive() {
+            return header(CONNECTION, KEEP_ALIVE);
+        }
+
+        /**
+         * Builds a new full request based on the settings configured in this builder.
+         * If {@code validate} is set to true:
+         * <ul>
+         * <li>the host header will be set if absent</li>
+         * <li>an exception will be thrown if the content length is not an integer, or more than one content length exists</li>
+         * <li>an exception will be thrown if the request method is not a valid HTTP method</li>
+         * </ul>
+         *
+         * @return a new full request
          */
         public HttpRequest build() {
             if (validate) {
                 ensureContentLengthIsValid();
                 ensureMethodIsValid();
+                setHostHeader();
             }
 
-            setHostHeader();
             return new HttpRequest(this);
         }
 
@@ -591,17 +685,31 @@ public final class HttpRequest implements HttpMessage {
             checkArgument(isMethodValid(), "Unrecognised HTTP method=%s", this.method);
         }
 
+        private static void checkNotCookie(CharSequence name) {
+            checkArgument(!isCookieHeader(name.toString()), "Cookies must be set with addCookie method");
+        }
+
         private boolean isMethodValid() {
-            return this.method == CONNECT
-                    || this.method == DELETE
-                    || this.method == GET
-                    || this.method == HEAD
-                    || this.method == OPTIONS
-                    || this.method == PATCH
-                    || this.method == POST
-                    || this.method == PUT
-                    || this.method == TRACE;
+            return METHODS.contains(this.method);
+        }
+
+        private void ensureContentLengthIsValid() {
+            List<String> contentLengths = headers.build().getAll(CONTENT_LENGTH);
+
+            checkArgument(contentLengths.size() <= 1, "Duplicate Content-Length found. %s", contentLengths);
+
+            if (contentLengths.size() == 1) {
+                checkArgument(isInteger(contentLengths.get(0)), "Invalid Content-Length found. %s", contentLengths.get(0));
+            }
+        }
+
+        private static boolean isInteger(String contentLength) {
+            try {
+                parseInt(contentLength);
+                return true;
+            } catch (NumberFormatException e) {
+                return false;
+            }
         }
     }
 }
-

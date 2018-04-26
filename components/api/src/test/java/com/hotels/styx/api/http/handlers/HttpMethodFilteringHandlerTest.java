@@ -21,11 +21,11 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.Builder.post;
+import static com.hotels.styx.api.HttpRequest.post;
 import static com.hotels.styx.api.MockContext.MOCK_CONTEXT;
-import static io.netty.handler.codec.http.HttpMethod.GET;
-import static io.netty.handler.codec.http.HttpMethod.POST;
 import static com.hotels.styx.api.messages.HttpResponseStatus.METHOD_NOT_ALLOWED;
+import static com.hotels.styx.api.messages.HttpMethod.GET;
+import static com.hotels.styx.api.messages.HttpMethod.POST;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;

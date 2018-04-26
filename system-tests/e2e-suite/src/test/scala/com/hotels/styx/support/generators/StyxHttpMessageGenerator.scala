@@ -15,12 +15,12 @@
  */
 package com.hotels.styx.support.generators
 
+import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.messages.HttpMethod._
+import com.hotels.styx.api.messages.HttpVersion._
 import com.hotels.styx.support.generators.HttpHeadersGenerator.{HeaderTuple, contentTypeCharset, httpHeaders}
 import com.hotels.styx.support.generators.UrlGenerator.genUrl
-import io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH
-import io.netty.handler.codec.http.HttpMethod._
-import io.netty.handler.codec.http.HttpVersion.{HTTP_1_0, HTTP_1_1}
 import org.scalacheck.Gen
 
 class StyxHttpMessageGenerator {
@@ -51,7 +51,7 @@ class StyxHttpMessageGenerator {
 
   def addContent(builder: HttpRequest.Builder, headers: List[HeaderTuple], content: String): Unit = {
     val charset: String = contentTypeCharset(headers)
-    builder.body(content.getBytes(charset))
+    builder.body(content)
     builder.addHeader(CONTENT_LENGTH, content.getBytes(charset).length)
   }
 

@@ -21,7 +21,7 @@ import com.hotels.styx.api.HttpResponse;
 import org.testng.annotations.Test;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.MockContext.MOCK_CONTEXT;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;

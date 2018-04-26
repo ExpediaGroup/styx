@@ -16,7 +16,6 @@
 package com.hotels.styx.plugins;
 
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -25,6 +24,7 @@ import io.netty.buffer.ByteBuf;
 import java.util.function.Function;
 
 import static com.google.common.base.Charsets.UTF_8;
+import com.hotels.styx.api.HttpRequest;
 
 public class ContentDecodeFailurePlugin implements Plugin {
     private final int maxContentBytes;

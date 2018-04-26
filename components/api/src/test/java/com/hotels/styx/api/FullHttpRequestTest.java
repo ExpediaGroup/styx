@@ -16,11 +16,9 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.api.FullHttpRequest;
-import com.hotels.styx.api.HttpRequest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.HttpMethod;
+import com.hotels.styx.api.messages.HttpMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import rx.Observable;
@@ -34,7 +32,7 @@ import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.api.HttpRequest.Builder.put;
+import static com.hotels.styx.api.FullHttpRequest.put;
 import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.api.FullHttpRequest.get;
 import static com.hotels.styx.api.FullHttpRequest.patch;
@@ -63,7 +61,7 @@ import static rx.Observable.just;
 
 public class FullHttpRequestTest {
     @Test
-    public void convertsToStreamingHttpRequest() {
+    public void convertsToStreamingHttpRequest() throws Exception {
         FullHttpRequest fullRequest = new FullHttpRequest.Builder(POST, "/foo/bar").body("foobar", UTF_8)
                 .secure(true)
                 .version(HTTP_1_1)
@@ -76,17 +74,16 @@ public class FullHttpRequestTest {
         assertThat(streaming.method(), is(HttpMethod.POST));
         assertThat(streaming.url(), is(url("/foo/bar").build()));
         assertThat(streaming.isSecure(), is(true));
-        assertThat(streaming.version(), is(io.netty.handler.codec.http.HttpVersion.HTTP_1_1));
+        assertThat(streaming.version(), is(HTTP_1_1));
         assertThat(streaming.headers(), containsInAnyOrder(
                 header("Content-Length", "6"),
                 header("HeaderName", "HeaderValue")));
         assertThat(streaming.cookies(), contains(cookie("CookieName", "CookieValue")));
 
-        String body = streaming.body()
-                .aggregate(0x100000)
-                .map(byteBuf -> byteBuf.toString(UTF_8))
-                .toBlocking()
-                .single();
+        String body = streaming.toFullHttpRequest(0x10000)
+                .asCompletableFuture()
+                .get()
+                .bodyAs(UTF_8);
 
         assertThat(body, is("foobar"));
     }
@@ -98,7 +95,7 @@ public class FullHttpRequestTest {
         TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
         subscriber.requestMore(1);
 
-        streaming.body().content().subscribe(subscriber);
+        streaming.body().subscribe(subscriber);
 
         assertThat(subscriber.getOnNextEvents().size(), is(0));
         subscriber.assertCompleted();
@@ -246,7 +243,6 @@ public class FullHttpRequestTest {
 
         ByteBuf byteBuf = original.toStreamingRequest()
                 .body()
-                .content()
                 .toBlocking()
                 .first();
 
@@ -255,32 +251,16 @@ public class FullHttpRequestTest {
         assertThat(original.bodyAs(UTF_8), is("original"));
     }
 
-    @Test
-    public void requestBodyCannotBeChangedViaStreamingRequest2() throws ExecutionException, InterruptedException {
+    // TODO: Mikko: Styx 2.0 API: Ought to move to HttpRequest class?
+    @Test(expectedExceptions = io.netty.util.IllegalReferenceCountException.class)
+    public void toFullReqestReleasesOriginalRefCountedBuffers() throws ExecutionException, InterruptedException {
         ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
 
-        HttpRequest original = HttpRequest.Builder.get("/foo")
-                .body(content)
-                .build();
-
-        FullHttpRequest fullRequest = original.toFullRequest(100)
-                .asCompletableFuture()
-                .get();
-
-        content.array()[0] = 'A';
-
-        assertThat(fullRequest.bodyAs(UTF_8), is("original"));
-    }
-
-    @Test
-    public void requestBodyCannotBeChangedViaStreamingRequest3() throws ExecutionException, InterruptedException {
-        ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
-
-        HttpRequest original = HttpRequest.Builder.get("/foo")
+        HttpRequest original = HttpRequest.get("/foo")
                 .body(Observable.just(content))
                 .build();
 
-        FullHttpRequest fullRequest = original.toFullRequest(100)
+        FullHttpRequest fullRequest = original.toFullHttpRequest(100)
                 .asCompletableFuture()
                 .get();
 
@@ -477,10 +457,8 @@ public class FullHttpRequestTest {
 
     @Test
     public void shouldSetsContentLengthForNonStreamingBodyMessage() {
-        assertThat(put("/home").body("").build().header(CONTENT_LENGTH), isValue("0"));
-        assertThat(put("/home").body("Hello").build().header(CONTENT_LENGTH), isValue(valueOf(bytes("Hello").length)));
-        assertThat(put("/home").body(bytes("Hello")).build().header(CONTENT_LENGTH), isValue(valueOf(bytes("Hello").length)));
-        assertThat(put("/home").body(just(Unpooled.copiedBuffer("Hello", UTF_8))).build().header(CONTENT_LENGTH), isAbsent());
+        assertThat(put("/home").body("", UTF_8).build().header(CONTENT_LENGTH), isValue("0"));
+        assertThat(put("/home").body("Hello", UTF_8).build().header(CONTENT_LENGTH), isValue(valueOf(bytes("Hello").length)));
     }
 
     @Test

@@ -28,7 +28,7 @@ import org.testng.annotations.Test;
 import java.util.Collection;
 import java.util.stream.Stream;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.messages.HttpResponseStatus.CONFLICT;

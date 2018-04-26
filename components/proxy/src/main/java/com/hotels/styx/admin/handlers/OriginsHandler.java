@@ -18,7 +18,6 @@ package com.hotels.styx.admin.handlers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.http.handlers.BaseHttpHandler;
 import com.hotels.styx.api.service.BackendService;
@@ -32,6 +31,7 @@ import static com.hotels.styx.api.FullHttpResponse.response;
 import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Provides origins configuration in the form of JSON.

@@ -17,11 +17,11 @@ package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpInterceptor.Chain;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * A handler that return whatever response returned from the passed in handler.

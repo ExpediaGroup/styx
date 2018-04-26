@@ -52,7 +52,7 @@ class OriginRestrictionSpec extends FunSpec
 
   describe("Routes correctly") {
     it("Routes to origin indicated by cookie.") {
-      val request = HttpRequest.Builder.get("/app/")
+      val request = HttpRequest.get("/app/")
         .header(HOST, styxServer.proxyHost)
         .addCookie("originRestrictionCookie", "h2")
         .build()
@@ -64,7 +64,7 @@ class OriginRestrictionSpec extends FunSpec
     }
 
     it("Routes to range of origins indicated by cookie.") {
-      val request = HttpRequest.Builder.get("/app/")
+      val request = HttpRequest.get("/app/")
         .header(HOST, styxServer.proxyHost)
         .addCookie("originRestrictionCookie", "h(2|3)")
         .build()
@@ -75,7 +75,7 @@ class OriginRestrictionSpec extends FunSpec
     }
 
     it("If nothing matches treat as no hosts available") {
-      val request = HttpRequest.Builder.get("/app/")
+      val request = HttpRequest.get("/app/")
         .header(HOST, styxServer.proxyHost)
         .addCookie("originRestrictionCookie", "(?!)")
         .build()
@@ -86,7 +86,7 @@ class OriginRestrictionSpec extends FunSpec
     }
 
     it("Routes to list of origins indicated by cookie.") {
-      val request = HttpRequest.Builder.get("/app/")
+      val request = HttpRequest.get("/app/")
         .header(HOST, styxServer.proxyHost)
         .addCookie("originRestrictionCookie", "h2,h[3-4]")
         .build()

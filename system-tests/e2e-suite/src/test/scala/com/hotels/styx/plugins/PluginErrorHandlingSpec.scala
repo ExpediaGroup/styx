@@ -18,7 +18,7 @@ package com.hotels.styx.plugins
 import java.util.Optional
 
 import com.hotels.styx._
-import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api._
 import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}

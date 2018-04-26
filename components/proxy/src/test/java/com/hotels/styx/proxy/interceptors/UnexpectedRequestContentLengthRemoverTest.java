@@ -19,7 +19,7 @@ import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpRequest;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
 import static com.hotels.styx.proxy.interceptors.ReturnResponseChain.returnsResponse;

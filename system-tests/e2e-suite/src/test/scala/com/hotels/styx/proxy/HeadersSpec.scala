@@ -19,6 +19,7 @@ import com.hotels.styx.api.messages.HttpResponseStatus._
 import _root_.io.netty.handler.codec.http.HttpHeaders.Names.{UPGRADE, _}
 import _root_.io.netty.handler.codec.http.HttpHeaders.Values._
 import _root_.io.netty.handler.codec.http.HttpMethod._
+import com.hotels.styx.api.messages.HttpMethod.GET
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpCookieAttribute.{domain, httpOnly, path}
 import com.hotels.styx.api._
@@ -259,7 +260,7 @@ class HeadersSpec extends FunSpec
 
 
       it("should remove all fields from request indicated by Connection header value") {
-        val req = HttpRequest.Builder.get("/headers")
+        val req = HttpRequest.get("/headers")
           .header(HOST, styxServer.proxyHost)
           .addHeader(CONNECTION, "Foo, Bar, Baz")
           .addHeader("Foo", "abc")

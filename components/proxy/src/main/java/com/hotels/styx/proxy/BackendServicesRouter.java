@@ -19,7 +19,6 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.StyxObservable;
@@ -59,6 +58,7 @@ import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpReq
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
 import static org.slf4j.LoggerFactory.getLogger;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * A {@link HttpHandler} implementation.

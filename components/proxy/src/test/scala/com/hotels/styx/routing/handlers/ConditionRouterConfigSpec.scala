@@ -32,8 +32,8 @@ import scala.collection.JavaConversions._
 
 class ConditionRouterConfigSpec extends FunSpec with ShouldMatchers with MockitoSugar {
 
-  private val httpsRequest = HttpRequest.Builder.get("/foo").secure(true).build
-  private val httpRequest = HttpRequest.Builder.get("/foo").secure(false).build
+  private val httpsRequest = HttpRequest.get("/foo").secure(true).build
+  private val httpRequest = HttpRequest.get("/foo").secure(false).build
   private val routeHandlerFactory = new RouteHandlerFactory(Map("StaticResponseHandler" -> new StaticResponseHandler.ConfigFactory), Map[String, HttpHandler]())
 
   private val config = configBlock(

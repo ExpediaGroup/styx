@@ -15,10 +15,8 @@
  */
 package com.hotels.styx.support.origins;
 
-import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.http.handlers.StaticBodyHttpHandler;
@@ -35,6 +33,7 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.fill;
 import static java.util.UUID.randomUUID;
+import com.hotels.styx.api.HttpRequest;
 
 public class AppHandler implements HttpHandler {
     private final HttpHandler handler;

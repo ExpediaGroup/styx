@@ -19,7 +19,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.service.BackendService;
@@ -32,6 +31,7 @@ import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RouteHandlerDefinition;
 import com.hotels.styx.routing.config.RouteHandlerFactory;
+import com.hotels.styx.api.HttpRequest;
 
 import java.util.List;
 import java.util.Map;

@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.client.SimpleNettyHttpClient;
@@ -46,6 +45,7 @@ import static java.nio.charset.Charset.defaultCharset;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import com.hotels.styx.api.HttpRequest;
 
 public class StyxProxyTest extends SSLSetup {
     final HttpClient client = new SimpleNettyHttpClient.Builder()
@@ -166,7 +166,7 @@ public class StyxProxyTest extends SSLSetup {
     }
 
     private HttpResponse get(String uri) throws IOException {
-        HttpRequest secureRequest = HttpRequest.Builder.get(uri).build();
+        HttpRequest secureRequest = HttpRequest.get(uri).build();
         return execute(secureRequest);
     }
 

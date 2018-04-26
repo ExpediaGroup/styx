@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import ch.qos.logback.classic.Level._
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
 import com.hotels.styx.api.HttpInterceptor.Chain
-import com.hotels.styx.api.HttpRequest.Builder._
+import com.hotels.styx.api.HttpRequest._
 import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.metrics.HttpErrorStatusCauseLogger

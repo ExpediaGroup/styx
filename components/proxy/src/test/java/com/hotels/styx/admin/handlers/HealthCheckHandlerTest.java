@@ -17,7 +17,6 @@ package com.hotels.styx.admin.handlers;
 
 import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
@@ -27,7 +26,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.codahale.metrics.health.HealthCheck.Result.healthy;
 import static com.codahale.metrics.health.HealthCheck.Result.unhealthy;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_IMPLEMENTED;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
@@ -37,6 +36,7 @@ import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.hamcrest.MatcherAssert.assertThat;
+import com.hotels.styx.api.HttpRequest;
 
 public class HealthCheckHandlerTest {
 

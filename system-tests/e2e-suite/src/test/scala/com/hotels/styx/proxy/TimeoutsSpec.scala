@@ -29,7 +29,7 @@ import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig,
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled.copiedBuffer
-import io.netty.handler.codec.http.HttpMethod._
+import com.hotels.styx.api.messages.HttpMethod.GET
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 import rx.Observable

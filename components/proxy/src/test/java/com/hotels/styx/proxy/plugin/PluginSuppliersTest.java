@@ -17,7 +17,6 @@ package com.hotels.styx.proxy.plugin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
@@ -45,6 +44,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import com.hotels.styx.api.HttpRequest;
 
 public class PluginSuppliersTest {
     Path FIXTURES_CLASS_PATH = fixturesHome(PluginSuppliersTest.class, "/plugins");

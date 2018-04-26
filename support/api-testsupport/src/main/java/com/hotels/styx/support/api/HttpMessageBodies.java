@@ -16,15 +16,14 @@
 package com.hotels.styx.support.api;
 
 import com.hotels.styx.api.HttpMessage;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StreamingHttpMessage;
 import com.hotels.styx.api.HttpMessageBody;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import com.hotels.styx.api.HttpRequest;
 
 
 /**
@@ -42,7 +41,7 @@ public final class HttpMessageBodies {
     }
 
     public static String bodyAsString(HttpRequest message) {
-        return await(message.toFullRequest(0x100000)
+        return await(message.toFullHttpRequest(0x100000)
                 .asCompletableFuture())
                 .bodyAs(UTF_8);
     }

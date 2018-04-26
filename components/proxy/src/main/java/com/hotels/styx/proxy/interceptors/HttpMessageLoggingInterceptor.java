@@ -16,10 +16,10 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Logs requests and responses when enabled. Disabled by default.

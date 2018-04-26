@@ -15,13 +15,13 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.io.ResourceFactory;
-import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;

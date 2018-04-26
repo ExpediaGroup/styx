@@ -18,7 +18,6 @@ package com.hotels.styx.admin.handlers;
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.StyxObservable;
@@ -38,6 +37,7 @@ import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Displays contents of logging configuration file.
