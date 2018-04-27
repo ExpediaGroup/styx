@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static java.lang.ClassLoader.getSystemClassLoader;
+import static java.nio.file.Files.list;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -51,13 +52,18 @@ public class PluginsNotCheatingTest {
         }
     }
 
-    private static Path getJarLocation() {
-        URL root = getSystemClassLoader().getResource("");
+    private static Path getJarLocation() throws IOException {
+        Path systemRoot = Paths.get("/");
+        Path classPathRoot = Paths.get(getSystemClassLoader().getResource("").getFile());
 
-        Path rootPath = Paths.get(root.getFile());
-        Path upHigher = Paths.get("/").resolve(rootPath.subpath(0, rootPath.getNameCount() - 3));
+        Path parent = systemRoot
+                .resolve(classPathRoot.subpath(0, classPathRoot.getNameCount() - 3))
+                .resolve("example-styx-plugin/target/");
 
-        // TODO not need to specify version
-        return upHigher.resolve("example-styx-plugin/target/styx-test-plugin-0.7-SNAPSHOT.jar");
+        return list(parent)
+                .filter(file -> file.toString().endsWith(".jar"))
+                .filter(file -> !file.toString().contains("-sources"))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Cannot find any JAR at the specified location"));
     }
 }
