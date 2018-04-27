@@ -16,10 +16,13 @@
 package com.hotels.styx;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static java.lang.ClassLoader.getSystemClassLoader;
+import static java.nio.file.Files.copy;
+import static java.nio.file.Files.createTempDirectory;
 import static java.nio.file.Files.list;
 
 /**
@@ -29,6 +32,20 @@ public final class ExamplePluginJarLocation {
     private ExamplePluginJarLocation() {
     }
 
+    public static Path createTemporarySharedDirectoryForJars() throws IOException {
+        Path tempDirectory = createTempDirectory("styx-plugin-test-jars-");
+        tempDirectory.toFile().deleteOnExit();
+
+        Path plugin = examplePluginJarLocation();
+        Path dependency = exampleDependencyJarLocation();
+
+        copy(plugin, tempDirectory.resolve(plugin.toFile().getName()));
+        copy(dependency, tempDirectory.resolve(dependency.toFile().getName()));
+
+        return tempDirectory;
+    }
+
+    // TODO copy this jar and the dependency jar into a single temporary directory for tests
     public static Path examplePluginJarLocation() throws IOException {
         Path systemRoot = Paths.get("/");
         Path classPathRoot = Paths.get(getSystemClassLoader().getResource("").getFile());
@@ -36,6 +53,21 @@ public final class ExamplePluginJarLocation {
         Path parent = systemRoot
                 .resolve(classPathRoot.subpath(0, classPathRoot.getNameCount() - 3))
                 .resolve("example-styx-plugin/target/");
+
+        return list(parent)
+                .filter(file -> file.toString().endsWith(".jar"))
+                .filter(file -> !file.toString().contains("-sources"))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Cannot find any JAR at the specified location"));
+    }
+
+    public static Path exampleDependencyJarLocation() throws IOException {
+        Path systemRoot = Paths.get("/");
+        Path classPathRoot = Paths.get(getSystemClassLoader().getResource("").getFile());
+
+        Path parent = systemRoot
+                .resolve(classPathRoot.subpath(0, classPathRoot.getNameCount() - 3))
+                .resolve("example-styx-plugin-dependencies/target/");
 
         return list(parent)
                 .filter(file -> file.toString().endsWith(".jar"))
