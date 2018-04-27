@@ -25,7 +25,7 @@ import org.scalatest.FunSpec
 
 class PluginPipelineSpec extends FunSpec with StyxProxySpec {
   val normalBackend = FakeHttpServer.HttpStartupConfig().start()
-  val pluginsFolder = ExamplePluginJarLocation.examplePluginJarLocation();
+  val pluginsFolder = ExamplePluginJarLocation.createTemporarySharedDirectoryForJars()
 
   override val styxConfig = StyxConfig(
     yamlText = s"""
