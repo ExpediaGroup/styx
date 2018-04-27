@@ -38,19 +38,19 @@
       <artifactId>styx-proxy</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>com.hotels.styx</groupId>
-      <artifactId>styx-test-plugin</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
+    <!--<dependency>-->
+      <!--<groupId>com.hotels.styx</groupId>-->
+      <!--<artifactId>styx-test-plugin</artifactId>-->
+      <!--<version>${project.version}</version>-->
+      <!--<scope>provided</scope>-->
+    <!--</dependency>-->
 
-    <dependency>
-      <groupId>com.hotels.styx</groupId>
-      <artifactId>styx-test-plugin-dependencies</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
+    <!--<dependency>-->
+      <!--<groupId>com.hotels.styx</groupId>-->
+      <!--<artifactId>styx-test-plugin-dependencies</artifactId>-->
+      <!--<version>${project.version}</version>-->
+      <!--<scope>provided</scope>-->
+    <!--</dependency>-->
 
     <dependency>
       <groupId>com.hotels.styx</groupId>
