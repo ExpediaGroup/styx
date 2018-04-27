@@ -26,11 +26,12 @@ import static com.hotels.styx.config.schema.SchemaDsl.bool;
 import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.integer;
 import static com.hotels.styx.config.schema.SchemaDsl.list;
+import static com.hotels.styx.config.schema.SchemaDsl.map;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
-import static com.hotels.styx.config.schema.SchemaDsl.optional;
 import static com.hotels.styx.config.schema.SchemaDsl.opaque;
-import static com.hotels.styx.config.schema.SchemaDsl.string;
+import static com.hotels.styx.config.schema.SchemaDsl.optional;
 import static com.hotels.styx.config.schema.SchemaDsl.schema;
+import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.validator.DocumentFormat.newDocument;
 
 final class ServerConfigSchema {
@@ -126,14 +127,19 @@ final class ServerConfigSchema {
             .rootSchema(schema(
                     field("proxy", object(PROXY_CONNECTOR_CONFIG)),
                     field("admin", object(ADMIN_CONNECTOR_CONFIG)),
-                    field("services", object(opaque())),
+                    field("services", object(
+                            field("factories", map(object(opaque())))
+                    )),
                     optional("url", object(URL_ENCODING_CONFIG)),
                     optional("request-logging", object(REQUEST_LOGGING_CONFIG)),
                     optional("styxHeaders", object(STYX_HEADERS_CONFIG)),
                     optional("include", string()),
                     optional("retrypolicy", object(opaque())),
                     optional("loadBalancing", object(opaque())),
-                    optional("plugins", object(opaque())),
+                    optional("plugins", object(
+                            optional("active", string()),
+                            optional("all", map(object(opaque())))
+                    )),
                     optional("jvmRouteName", string()),
                     optional("originRestrictionCookie", string()),
                     optional("responseInfoHeaderFormat", string()),
