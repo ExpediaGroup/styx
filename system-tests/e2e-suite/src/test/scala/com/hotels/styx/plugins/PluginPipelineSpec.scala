@@ -17,7 +17,7 @@ package com.hotels.styx.plugins
 
 import com.google.common.net.HostAndPort
 import com.google.common.net.HostAndPort._
-import com.hotels.styx.StyxProxySpec
+import com.hotels.styx.{ExamplePluginJarLocation, StyxProxySpec}
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -25,7 +25,7 @@ import org.scalatest.FunSpec
 
 class PluginPipelineSpec extends FunSpec with StyxProxySpec {
   val normalBackend = FakeHttpServer.HttpStartupConfig().start()
-  val pluginsFolder = resourcesPluginsPath
+  val pluginsFolder = ExamplePluginJarLocation.examplePluginJarLocation();
 
   override val styxConfig = StyxConfig(
     yamlText = s"""
