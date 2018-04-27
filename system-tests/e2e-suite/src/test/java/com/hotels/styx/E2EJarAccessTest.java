@@ -32,10 +32,10 @@ import static java.nio.file.Files.list;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-// TODO fix name
-// The goal here is to ensure that plugin classes cannot be found in the system class loader
-// So that we know the plugin loading actually works.
-public class PluginsNotCheatingTest {
+// This test is primarily ensuring that our supporting classes and modules are fit-for-purpose
+// i.e. that our example plugin and its dependency are only accessible by legitimately loading their
+// jar files and not just included in the e2e-suite module
+public class E2EJarAccessTest {
     @Test(expectedExceptions = ClassNotFoundException.class)
     public void pluginClassesAreNotAvailableViaSystemClassLoader() throws ClassNotFoundException {
         getSystemClassLoader().loadClass("testgrp.TestPlugin");
@@ -71,22 +71,19 @@ public class PluginsNotCheatingTest {
         }
     }
 
-    // TODO test name
     @Test
-    public void tempDirectoryWorksAsExpected() throws IOException, ClassNotFoundException {
+    public void pluginAndDependencyClassesAreAvailableWhenReferencingDirectory() throws IOException, ClassNotFoundException {
         Path jarLocation = createTemporarySharedDirectoryForJars();
 
         URL[] urls = list(jarLocation)
-                .map(PluginsNotCheatingTest::url)
+                .map(E2EJarAccessTest::url)
                 .toArray(URL[]::new);
 
         try (URLClassLoader classLoader = URLClassLoader.newInstance(urls)) {
             Class<?> pluginClass = classLoader.loadClass("testgrp.TestPlugin");
-
             assertThat(pluginClass.getName(), is("testgrp.TestPlugin"));
 
             Class<?> dependencyClass = classLoader.loadClass("depend.ExampleDependency");
-
             assertThat(dependencyClass.getName(), is("depend.ExampleDependency"));
         }
     }

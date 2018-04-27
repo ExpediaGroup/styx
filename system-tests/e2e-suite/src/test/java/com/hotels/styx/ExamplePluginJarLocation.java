@@ -45,7 +45,6 @@ public final class ExamplePluginJarLocation {
         return tempDirectory;
     }
 
-    // TODO copy this jar and the dependency jar into a single temporary directory for tests
     public static Path examplePluginJarLocation() throws IOException {
         Path systemRoot = Paths.get("/");
         Path classPathRoot = Paths.get(getSystemClassLoader().getResource("").getFile());
