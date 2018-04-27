@@ -23,20 +23,21 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.http.handlers.BaseHttpHandler;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.infrastructure.configuration.json.mixins.BackendServiceMixin;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static java.util.stream.Collectors.toSet;
-import static java.util.stream.StreamSupport.stream;
 
 /**
  * Provides origins configuration in the form of JSON.
  */
 public class OriginsHandler extends BaseHttpHandler {
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = addStyxMixins(new ObjectMapper());
+
     private final Registry<BackendService> backendServicesRegistry;
 
     public OriginsHandler(Registry<BackendService> backendServicesRegistry) {
@@ -45,8 +46,8 @@ public class OriginsHandler extends BaseHttpHandler {
 
     @Override
     protected HttpResponse doHandle(HttpRequest request) {
-        Iterable<BackendServiceSerializer> backendServices = stream(backendServicesRegistry.get().spliterator(), false)
-                .map(BackendServiceSerializer::new).collect(toSet());
+        Iterable<BackendService> backendServices = backendServicesRegistry.get();
+
         return jsonResponse(backendServices, isPrettyPrint(request));
     }
 

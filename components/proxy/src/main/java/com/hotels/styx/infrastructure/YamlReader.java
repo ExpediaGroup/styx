@@ -21,9 +21,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.hotels.styx.api.Resource;
+import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.infrastructure.configuration.UnresolvedPlaceholder;
 import com.hotels.styx.infrastructure.configuration.yaml.NodePath;
 import com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver;
+import com.hotels.styx.infrastructure.configuration.json.mixins.BackendServiceMixin;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -38,6 +40,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.io.ByteStreams.toByteArray;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
+import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.extractPlaceholders;
 import static com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.replacePlaceholder;
 import static com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.resolvePlaceholders;
@@ -54,7 +57,7 @@ import static java.util.stream.StreamSupport.stream;
  * @param <T>
  */
 public final class YamlReader<T> {
-    private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory())
+    private static final ObjectMapper MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()))
             .disable(FAIL_ON_UNKNOWN_PROPERTIES)
             .configure(AUTO_CLOSE_SOURCE, true);
 

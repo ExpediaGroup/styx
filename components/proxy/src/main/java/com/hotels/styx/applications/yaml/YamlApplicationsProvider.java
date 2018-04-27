@@ -23,7 +23,7 @@ import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.applications.ApplicationsProvider;
 import com.hotels.styx.applications.BackendServices;
-import com.hotels.styx.proxy.backends.file.BackendServiceDeserializer;
+import com.hotels.styx.infrastructure.configuration.json.mixins.BackendServiceMixin;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,8 +32,8 @@ import java.util.List;
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.applications.BackendServices.newBackendServices;
+import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.lang.String.format;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 
 /**
@@ -41,8 +41,8 @@ import static java.util.stream.StreamSupport.stream;
  *
  */
 public class YamlApplicationsProvider implements ApplicationsProvider {
-    private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
-    private static final CollectionType TYPE = MAPPER.getTypeFactory().constructCollectionType(List.class, BackendServiceDeserializer.class);
+    private static final ObjectMapper MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()));
+    private static final CollectionType TYPE = MAPPER.getTypeFactory().constructCollectionType(List.class, BackendService.class);
 
     private final BackendServices backendServices;
 
@@ -64,10 +64,7 @@ public class YamlApplicationsProvider implements ApplicationsProvider {
 
     private static Iterable<BackendService> readApplicationsFromResource(Resource resource) {
         try (InputStream stream = resource.inputStream()) {
-            Iterable<BackendServiceDeserializer> backendServices = MAPPER.readValue(stream, TYPE);
-            return stream(backendServices.spliterator(), false)
-                    .map(BackendServiceDeserializer::backendService)
-                    .collect(toList());
+            return MAPPER.readValue(stream, TYPE);
         } catch (JsonMappingException e) {
             throw new RuntimeException(format("Invalid YAML from %s: %s", resource, e.getLocalizedMessage()), e);
         } catch (IOException e) {

@@ -180,7 +180,7 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
 
     @VisibleForTesting
     static class YAMLBackendServicesReader implements FileBackedRegistry.Reader<BackendService> {
-        private final YamlReader<List<BackendServiceDeserializer>> delegate = new YamlReader<>();
+        private final YamlReader<List<BackendService>> delegate = new YamlReader<>();
 
         @Override
         public Iterable<BackendService> read(byte[] content) {
@@ -192,9 +192,7 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         }
 
         private BackendServices readBackendServices(byte[] content) throws Exception {
-            List<BackendServiceDeserializer> read = delegate.read(content, new TypeReference<List<BackendServiceDeserializer>>() {
-            });
-            return newBackendServices(read.stream().map(BackendServiceDeserializer::backendService).collect(toList()));
+            return BackendServices.newBackendServices(delegate.read(content, new TypeReference<List<BackendService>>() { }));
         }
     }
 

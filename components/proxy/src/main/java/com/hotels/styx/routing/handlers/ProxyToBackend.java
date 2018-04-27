@@ -32,7 +32,6 @@ import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
-import com.hotels.styx.proxy.backends.file.BackendServiceDeserializer;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RouteHandlerDefinition;
 import com.hotels.styx.routing.config.RouteHandlerFactory;
@@ -77,8 +76,7 @@ public class ProxyToBackend implements HttpHandler2 {
             JsonNodeConfig jsConfig = new JsonNodeConfig(configBlock.config());
 
             BackendService backendService = jsConfig
-                    .get("backend", BackendServiceDeserializer.class)
-                    .map(BackendServiceDeserializer::backendService)
+                    .get("backend", BackendService.class)
                     .orElseThrow(() ->  missingAttributeError(configBlock, join(".", parents), "backend"));
 
             int clientWorkerThreadsCount = environment.styxConfig().proxyServerConfig().clientWorkerThreadsCount();

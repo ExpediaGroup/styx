@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.hotels.styx.api.configuration.ConversionException;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.infrastructure.configuration.json.mixins.BackendServiceMixin;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -30,6 +32,7 @@ import java.util.Optional;
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.google.common.base.Throwables.propagate;
+import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -37,7 +40,7 @@ import static java.util.Objects.requireNonNull;
  * jackson API and Styx API.
  */
 public class JsonNodeConfig implements Configuration {
-    static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
+    static final ObjectMapper YAML_MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()))
             .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(AUTO_CLOSE_SOURCE, true);
 

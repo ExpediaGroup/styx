@@ -15,11 +15,6 @@
  */
 package com.hotels.styx.api.service;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-
 import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,7 +28,6 @@ import static java.lang.String.format;
 /**
  * Configuration for health-checking.
  */
-@JsonDeserialize(builder = HealthCheckConfig.Builder.class)
 public final class HealthCheckConfig {
     public static final int DEFAULT_HEALTHY_THRESHOLD_VALUE = 2;
     public static final int DEFAULT_UNHEALTHY_THRESHOLD_VALUE = 2;
@@ -108,7 +102,6 @@ public final class HealthCheckConfig {
         return uri;
     }
 
-    @JsonProperty("uri")
     String getUri() {
         return uri.orElse(null);
     }
@@ -118,27 +111,22 @@ public final class HealthCheckConfig {
      *
      * @return health check interval
      */
-    @JsonProperty("intervalMillis")
     public long intervalMillis() {
         return intervalMillis;
     }
 
-    @JsonProperty("timeoutMillis")
     public long timeoutMillis() {
         return timeoutMillis;
     }
 
-    @JsonProperty("healthyThreshold")
     public int healthyThreshold() {
         return healthyThreshold;
     }
 
-    @JsonProperty("unhealthyThreshold")
     public int unhealthyThreshold() {
         return unhealthyThreshold;
     }
 
-    @JsonIgnore
     public boolean isEnabled() {
         return uri.isPresent();
     }
@@ -197,7 +185,6 @@ public final class HealthCheckConfig {
     /**
      * A builder of {@link HealthCheckConfig}s.
      */
-    @JsonPOJOBuilder(buildMethodName = "build", withPrefix = "")
     public static final class Builder {
         private Optional<String> uri = Optional.empty();
         private Optional<Long> intervalMillis = Optional.empty();
@@ -221,7 +208,6 @@ public final class HealthCheckConfig {
          * @param uri a URI
          * @return this builder
          */
-        @JsonProperty("uri")
         public Builder uri(String uri) {
             return uri(Optional.ofNullable(uri));
         }
@@ -243,7 +229,6 @@ public final class HealthCheckConfig {
          * @param interval interval in milliseconds
          * @return this builder
          */
-        @JsonProperty("intervalMillis")
         public Builder interval(long interval) {
             return interval(interval, TimeUnit.MILLISECONDS);
         }
@@ -266,7 +251,6 @@ public final class HealthCheckConfig {
          * @param timeout timeout in milliseconds
          * @return this builder
          */
-        @JsonProperty("timeoutMillis")
         public Builder timeout(long timeout) {
             return timeout(timeout, TimeUnit.MILLISECONDS);
         }
@@ -289,7 +273,6 @@ public final class HealthCheckConfig {
          * @param healthyThreshold the number of healthy results
          * @return this builder
          */
-        @JsonProperty("healthyThreshold")
         public Builder healthyThreshold(int healthyThreshold) {
             this.healthyThreshold = Optional.of(healthyThreshold);
             return this;
@@ -301,7 +284,6 @@ public final class HealthCheckConfig {
          * @param unhealthyThreshold the number of unhealthy results
          * @return this builder
          */
-        @JsonProperty("unhealthyThreshold")
         public Builder unhealthyThreshold(int unhealthyThreshold) {
             this.unhealthyThreshold = Optional.of(unhealthyThreshold);
             return this;
