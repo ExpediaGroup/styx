@@ -16,7 +16,6 @@
 package com.hotels.styx;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -45,13 +44,23 @@ public final class ExamplePluginJarLocation {
         return tempDirectory;
     }
 
-    public static Path examplePluginJarLocation() throws IOException {
+    static Path examplePluginJarLocation() throws IOException {
+        return jarLocation("example-styx-plugin");
+    }
+
+    static Path exampleDependencyJarLocation() throws IOException {
+        return jarLocation("example-styx-plugin-dependencies");
+    }
+
+    // module must be adjacent to e2e-suite
+    private static Path jarLocation(String module) throws IOException {
         Path systemRoot = Paths.get("/");
         Path classPathRoot = Paths.get(getSystemClassLoader().getResource("").getFile());
 
         Path parent = systemRoot
-                .resolve(classPathRoot.subpath(0, classPathRoot.getNameCount() - 3))
-                .resolve("example-styx-plugin/target/");
+                .resolve(removeElementsOnRight(classPathRoot, 3))
+                .resolve(module)
+                .resolve("target");
 
         return list(parent)
                 .filter(file -> file.toString().endsWith(".jar"))
@@ -60,18 +69,7 @@ public final class ExamplePluginJarLocation {
                 .orElseThrow(() -> new IllegalStateException("Cannot find any JAR at the specified location"));
     }
 
-    public static Path exampleDependencyJarLocation() throws IOException {
-        Path systemRoot = Paths.get("/");
-        Path classPathRoot = Paths.get(getSystemClassLoader().getResource("").getFile());
-
-        Path parent = systemRoot
-                .resolve(classPathRoot.subpath(0, classPathRoot.getNameCount() - 3))
-                .resolve("example-styx-plugin-dependencies/target/");
-
-        return list(parent)
-                .filter(file -> file.toString().endsWith(".jar"))
-                .filter(file -> !file.toString().contains("-sources"))
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Cannot find any JAR at the specified location"));
+    private static Path removeElementsOnRight(Path path, int numberOfElements) {
+        return path.subpath(0, path.getNameCount() - numberOfElements);
     }
 }
