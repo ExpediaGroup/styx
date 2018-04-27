@@ -46,7 +46,6 @@ public class DocumentFormatTest {
 
     @Test
     public void validatesElementaryTypes() throws Exception {
-
         boolean result = newDocument()
                 .rootSchema(
                         schema(
@@ -171,6 +170,23 @@ public class DocumentFormatTest {
         assertThat(result, is(true));
     }
 
+    @Test
+    public void convertsStringsToIntegerValues() throws Exception {
+        JsonNode rootObject = YAML_MAPPER.readTree(
+                "root: \n"
+                        + "  myInt: '5' \n");
+
+        boolean result = newDocument()
+                .rootSchema(schema(
+                        field("root", object(
+                                field("myInt", integer())
+                        ))
+                ))
+                .build()
+                .validateObject(rootObject);
+        assertThat(result, is(true));
+    }
+
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Unexpected field type. Field 'root.myString' should be STRING, but it is INTEGER")
     public void checksStringFieldTypes() throws Exception {
@@ -200,6 +216,34 @@ public class DocumentFormatTest {
                 .rootSchema(schema(
                         field("root", object(
                                 field("myBool", bool())
+                        ))
+                ))
+                .build()
+                .validateObject(rootObject);
+        assertThat(result, is(true));
+    }
+
+    @Test
+    public void convertsStringToBooleanValues() throws Exception {
+        JsonNode rootObject = YAML_MAPPER.readTree(
+                "root: \n"
+                        + "  myBool_01: 'true' \n"
+                        + "  myBool_02: 'false' \n"
+                        + "  myBool_03: 'True' \n"
+                        + "  myBool_04: 'False' \n"
+                        + "  myBool_05: 'TRUE' \n"
+                        + "  myBool_06: 'FALSE' \n"
+        );
+
+        boolean result = newDocument()
+                .rootSchema(schema(
+                        field("root", object(
+                                field("myBool_01", bool()),
+                                field("myBool_02", bool()),
+                                field("myBool_03", bool()),
+                                field("myBool_04", bool()),
+                                field("myBool_05", bool()),
+                                field("myBool_06", bool())
                         ))
                 ))
                 .build()
@@ -420,7 +464,6 @@ public class DocumentFormatTest {
 
     @Test
     public void validatesDiscriminatedUnions() throws Exception {
-
         DocumentFormat validator = newDocument()
                 .subSchema("ProxyTo", schema(
                         field("id", string()),
@@ -437,7 +480,6 @@ public class DocumentFormatTest {
                         ))
                 ))
                 .build();
-
 
         boolean outcome1 = validator.validateObject(
                 YAML_MAPPER.readTree(
