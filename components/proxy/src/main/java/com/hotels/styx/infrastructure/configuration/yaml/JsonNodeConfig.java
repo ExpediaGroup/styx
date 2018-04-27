@@ -21,8 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.hotels.styx.api.configuration.ConversionException;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.infrastructure.configuration.json.mixins.BackendServiceMixin;
 
 import java.io.IOException;
 import java.nio.file.Path;

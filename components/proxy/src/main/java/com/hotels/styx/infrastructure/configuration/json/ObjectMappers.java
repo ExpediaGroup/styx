@@ -16,12 +16,22 @@
 package com.hotels.styx.infrastructure.configuration.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotels.styx.api.Id;
+import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.service.Certificate;
+import com.hotels.styx.api.service.ConnectionPoolSettings;
 import com.hotels.styx.api.service.HealthCheckConfig;
-import com.hotels.styx.infrastructure.configuration.json.mixins.BackendServiceMixin;
-import com.hotels.styx.infrastructure.configuration.json.mixins.HealthCheckConfigMixin;
+import com.hotels.styx.api.service.RewriteConfig;
+import com.hotels.styx.api.service.StickySessionConfig;
+import com.hotels.styx.api.service.TlsSettings;
+import com.hotels.styx.infrastructure.configuration.json.mixins.*;
 
 
+/**
+ * Collection of methods that helps to work with {@link ObjectMapper} objects in styx libraries.
+ */
 public class ObjectMappers {
     /**
      * Adds annotation mixins required to serialize/deserialize with json styx domain objects from styx-api module.
@@ -32,7 +42,15 @@ public class ObjectMappers {
         objectMapper.addMixIn(BackendService.class, BackendServiceMixin.class)
                 .addMixIn(BackendService.Builder.class, BackendServiceMixin.Builder.class)
                 .addMixIn(HealthCheckConfig.class, HealthCheckConfigMixin.class)
-                .addMixIn(HealthCheckConfig.Builder.class, HealthCheckConfigMixin.Builder.class);
+                .addMixIn(HealthCheckConfig.Builder.class, HealthCheckConfigMixin.Builder.class)
+                .addMixIn(Certificate.class, CertificateMixin.class)
+                .addMixIn(ConnectionPoolSettings.class, ConnectionPoolSettingsMixin.class)
+                .addMixIn(RewriteConfig.class, RewriteConfigMixin.class)
+                .addMixIn(StickySessionConfig.class, StickySessionConfigMixin.class)
+                .addMixIn(TlsSettings.class, TlsSettingsMixin.class)
+                .addMixIn(Origin.class, OriginMixin.class)
+                .addMixIn(OriginsSnapshot.class, OriginsSnapshotMixin.class)
+                .addMixIn(Id.class, IdMixin.class);
         return objectMapper;
     }
 }

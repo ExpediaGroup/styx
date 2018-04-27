@@ -15,8 +15,6 @@
  */
 package testgrp;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
@@ -108,8 +106,7 @@ public class TestBackendProvider extends AbstractStyxService implements Registry
     private static class Origins {
         private final Set<Origin> origins;
 
-        @JsonCreator
-        private Origins(@JsonProperty Set<Origin> origins) {
+        private Origins(Set<Origin> origins) {
             this.origins = origins;
         }
 

@@ -31,35 +31,42 @@ import com.hotels.styx.api.service.TlsSettings;
 import java.util.List;
 import java.util.Set;
 
+
+/**
+ * Jackson annotations for {@link BackendService}.
+ */
 @JsonDeserialize(builder = BackendService.Builder.class)
 public interface BackendServiceMixin {
     @JsonProperty("id")
-    String idAsString() ;
+    String idAsString();
 
     @JsonProperty("path")
-    String path() ;
+    String path();
 
     @JsonProperty("origins")
-    Set<Origin> origins() ;
+    Set<Origin> origins();
 
     @JsonProperty("connectionPool")
-    ConnectionPool.Settings connectionPoolConfig() ;
+    ConnectionPool.Settings connectionPoolConfig();
 
     @JsonProperty("healthCheck")
-    HealthCheckConfig healthCheckConfig() ;
+    HealthCheckConfig healthCheckConfig();
 
     @JsonProperty("stickySession")
-    StickySessionConfig stickySessionConfig() ;
+    StickySessionConfig stickySessionConfig();
 
     @JsonProperty("rewrites")
-    List<RewriteConfig> rewrites() ;
+    List<RewriteConfig> rewrites();
 
     @JsonProperty("responseTimeoutMillis")
-    int responseTimeoutMillis() ;
+    int responseTimeoutMillis();
 
     @JsonProperty("tlsSettings")
     TlsSettings getTlsSettings();
 
+    /**
+     * Jackson annotations for {@link BackendService.Builder}.
+     */
     @JsonPOJOBuilder(buildMethodName = "build", withPrefix = "")
     interface Builder {
         @JsonProperty("id")
@@ -94,5 +101,4 @@ public interface BackendServiceMixin {
         @JsonProperty("healthCheck")
         BackendService.Builder healthCheckConfig(HealthCheckConfig healthCheckConfig);
     }
-
 }

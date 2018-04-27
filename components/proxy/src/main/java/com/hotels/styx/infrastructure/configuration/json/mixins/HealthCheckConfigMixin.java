@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.hotels.styx.api.service.HealthCheckConfig;
 
 /**
- * Configuration for health-checking.
+ * Jackson annotations for {@link com.hotels.styx.api.service.HealthCheckConfig}.
  */
 @JsonDeserialize(builder = HealthCheckConfig.Builder.class)
 public interface HealthCheckConfigMixin {

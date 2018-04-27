@@ -23,7 +23,6 @@ import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.applications.ApplicationsProvider;
 import com.hotels.styx.applications.BackendServices;
-import com.hotels.styx.infrastructure.configuration.json.mixins.BackendServiceMixin;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +33,6 @@ import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.applications.BackendServices.newBackendServices;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.lang.String.format;
-import static java.util.stream.StreamSupport.stream;
 
 /**
  * Provides applications by reading from a YAML file.

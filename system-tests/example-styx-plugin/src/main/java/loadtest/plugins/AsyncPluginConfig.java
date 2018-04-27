@@ -15,7 +15,6 @@
  */
 package loadtest.plugins;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,8 +23,7 @@ public class AsyncPluginConfig {
     private final int maxContentLength;
     private final int delay;
 
-    public AsyncPluginConfig(@JsonProperty("delayMillis") int delay,
-                             @JsonProperty("maxContentLength") int maxContentLength) {
+    public AsyncPluginConfig(int delay, int maxContentLength) {
         LOGGER.warn("delayMillis={}, maxContentLength={}", new Object[]{delay, maxContentLength});
 
         this.delay = delay;

@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api.service;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.client.ConnectionPool;
 
 import java.util.Objects;
@@ -42,13 +40,12 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
     private final int pendingConnectionTimeoutMillis;
     private final long connectionExpirationSeconds;
 
-    @JsonCreator
-    ConnectionPoolSettings(@JsonProperty("maxConnectionsPerHost") Integer maxConnectionsPerHost,
-                           @JsonProperty("maxPendingConnectionsPerHost") Integer maxPendingConnectionsPerHost,
-                           @JsonProperty("connectTimeoutMillis") Integer connectTimeoutMillis,
-                           @Deprecated @JsonProperty("socketTimeoutMillis") Integer socketTimeoutMillis,
-                           @JsonProperty("pendingConnectionTimeoutMillis") Integer pendingConnectionTimeoutMillis,
-                           @JsonProperty("connectionExpirationSeconds") Long connectionExpirationSeconds) {
+    ConnectionPoolSettings(Integer maxConnectionsPerHost,
+                           Integer maxPendingConnectionsPerHost,
+                           Integer connectTimeoutMillis,
+                           @Deprecated Integer socketTimeoutMillis,
+                           Integer pendingConnectionTimeoutMillis,
+                           Long connectionExpirationSeconds) {
         this.maxConnectionsPerHost = firstNonNull(maxConnectionsPerHost, DEFAULT_MAX_CONNECTIONS_PER_HOST);
         this.maxPendingConnectionsPerHost = firstNonNull(maxPendingConnectionsPerHost, DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST);
         this.connectTimeoutMillis = firstNonNull(connectTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
@@ -74,11 +71,11 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
      */
     @Deprecated
     public ConnectionPoolSettings(int maxConnectionsPerHost,
-                           int maxPendingConnectionsPerHost,
-                           int connectTimeoutMillis,
-                           int socketTimeoutMillis,
-                           int pendingConnectionTimeoutMillis,
-                           long connectionExpirationSeconds) {
+                                  int maxPendingConnectionsPerHost,
+                                  int connectTimeoutMillis,
+                                  int socketTimeoutMillis,
+                                  int pendingConnectionTimeoutMillis,
+                                  long connectionExpirationSeconds) {
         this.maxConnectionsPerHost = firstNonNull(maxConnectionsPerHost, DEFAULT_MAX_CONNECTIONS_PER_HOST);
         this.maxPendingConnectionsPerHost = firstNonNull(maxPendingConnectionsPerHost, DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST);
         this.connectTimeoutMillis = firstNonNull(connectTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
@@ -108,7 +105,7 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
                 builder.socketTimeoutMillis,
                 builder.pendingConnectionTimeoutMillis,
                 builder.connectionExpirationSeconds
-                );
+        );
     }
 
     /**
@@ -132,37 +129,36 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
      */
     @Override
     @Deprecated
-    @JsonProperty("socketTimeoutMillis")
     public int socketTimeoutMillis() {
         return socketTimeoutMillis;
     }
 
     @Override
-    @JsonProperty("connectTimeoutMillis")
+
     public int connectTimeoutMillis() {
         return connectTimeoutMillis;
     }
 
     @Override
-    @JsonProperty("maxConnectionsPerHost")
+
     public int maxConnectionsPerHost() {
         return maxConnectionsPerHost;
     }
 
     @Override
-    @JsonProperty("maxPendingConnectionsPerHost")
+
     public int maxPendingConnectionsPerHost() {
         return maxPendingConnectionsPerHost;
     }
 
     @Override
-    @JsonProperty("pendingConnectionTimeoutMillis")
+
     public int pendingConnectionTimeoutMillis() {
         return pendingConnectionTimeoutMillis;
     }
 
     @Override
-    @JsonProperty("connectionExpirationSeconds")
+
     public long connectionExpirationSeconds() {
         return connectionExpirationSeconds;
     }
@@ -259,7 +255,7 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
          * @deprecated Due to be removed in a future release.
          *
          * @param socketTimeout read timeout
-         * @param timeUnit unit of timeout
+         * @param timeUnit      unit of timeout
          * @return this builder
          */
         @Deprecated
@@ -272,7 +268,7 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
          * Sets socket connect timeout.
          *
          * @param connectTimeout connect timeout
-         * @param timeUnit unit of timeout
+         * @param timeUnit       unit of timeout
          * @return this builder
          */
         public Builder connectTimeout(int connectTimeout, TimeUnit timeUnit) {
@@ -284,7 +280,7 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
          * Sets the maximum wait time for pending consumers.
          *
          * @param waitTimeout timeout
-         * @param timeUnit unit that timeout is measured in
+         * @param timeUnit    unit that timeout is measured in
          * @return this builder
          */
         public Builder pendingConnectionTimeout(int waitTimeout, TimeUnit timeUnit) {
