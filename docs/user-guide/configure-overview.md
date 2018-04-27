@@ -43,6 +43,10 @@ using environment variables with the same name as the property.
       maxChunkSize: 8192
       maxContentLength: 65536
 
+
+      # A timeout for idle persistent connections, in milliseconds.
+      keepAliveTimeoutMillis: 12000
+
       # Time in milliseconds Styx Proxy Service waits for an incoming request from client
       # before replying with 408 Request Timeout.
       requestTimeoutMillis: 12000

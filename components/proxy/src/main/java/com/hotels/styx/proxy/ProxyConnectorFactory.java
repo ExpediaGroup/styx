@@ -214,7 +214,7 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
                     IdleStateEvent e = (IdleStateEvent) evt;
                     if (e.state() == ALL_IDLE && !httpTransactionOngoing) {
                         if (ctx.channel().isActive()) {
-                            LOGGER.warn("Closing suspected leaked connection={}", ctx.channel().remoteAddress());
+                            LOGGER.warn("Closing an idle connection={}", ctx.channel().remoteAddress());
                             ctx.close();
                             idleConnectionClosed.update(1);
                         }
