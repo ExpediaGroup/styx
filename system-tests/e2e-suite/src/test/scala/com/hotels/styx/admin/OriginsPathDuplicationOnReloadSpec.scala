@@ -62,7 +62,6 @@ class OriginsPathDuplicationOnReloadSpec extends FunSpec
         connectionPoolConfig = ConnectionPoolSettings(
           maxConnectionsPerHost = 45,
           maxPendingConnectionsPerHost = 15,
-          socketTimeoutMillis = 120000,
           connectTimeoutMillis = 1000,
           pendingConnectionTimeoutMillis = 8000
         ),

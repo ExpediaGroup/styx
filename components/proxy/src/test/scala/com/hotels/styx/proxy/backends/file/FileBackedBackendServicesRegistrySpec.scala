@@ -51,7 +51,6 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
     .origins(origin("webapp", "webapp-02", "localhost", 9091), origin("webapp", "webapp-01", "localhost", 9090))
     .connectionPoolConfig(new ConnectionPoolSettings.Builder()
       .connectTimeout(8000, MILLISECONDS)
-      .socketTimeout(120000, MILLISECONDS)
       .maxConnectionsPerHost(300)
       .maxPendingConnectionsPerHost(50)
       .build())

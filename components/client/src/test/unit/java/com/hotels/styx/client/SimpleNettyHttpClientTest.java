@@ -120,7 +120,7 @@ public class SimpleNettyHttpClientTest {
         return new SimpleNettyHttpClient.Builder()
                 .connectionDestinationFactory(new CloseAfterUseConnectionDestination.Factory()
                         .connectionSettings(
-                                new ConnectionSettings(1000, 1000))
+                                new ConnectionSettings(1000))
                         .tlsSettings(new TlsSettings.Builder()
                                 .trustAllCerts(true)
                                 .build())

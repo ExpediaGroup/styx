@@ -34,7 +34,6 @@ import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_CONNECT_TIMEOUT_MILLIS;
 import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_MAX_CONNECTIONS_PER_HOST;
 import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
-import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_SOCKET_TIMEOUT_MILLIS;
 import static com.hotels.styx.api.service.HealthCheckConfig.noHealthCheck;
 import static com.hotels.styx.api.service.StickySessionConfig.stickySessionDisabled;
 import static java.util.Collections.emptyList;
@@ -43,7 +42,6 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
     private String name;
     private String path;
     private Set<Origin> origins;
-    private int socketTimeout = DEFAULT_SOCKET_TIMEOUT_MILLIS;
     private int connectTimeout = DEFAULT_CONNECT_TIMEOUT_MILLIS;
     private int maxConnectionsPerHost = DEFAULT_MAX_CONNECTIONS_PER_HOST;
     private int maxPendingConnectionsPerHost = DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
@@ -63,7 +61,6 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
         matcher.rewrites = backendService.rewrites();
 
         ConnectionPool.Settings connectionPoolSettings = backendService.connectionPoolConfig();
-        matcher.socketTimeout = connectionPoolSettings.socketTimeoutMillis();
         matcher.connectTimeout = connectionPoolSettings.connectTimeoutMillis();
         matcher.maxConnectionsPerHost = connectionPoolSettings.maxConnectionsPerHost();
         matcher.maxPendingConnectionsPerHost = connectionPoolSettings.maxPendingConnectionsPerHost();
@@ -99,11 +96,6 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
         return this;
     }
 
-    public ApplicationConfigurationMatcher withSocketTimeout(int socketTimeout) {
-        this.socketTimeout = socketTimeout;
-        return this;
-    }
-
     public ApplicationConfigurationMatcher withMaxConnectionsPerHost(int maxConnectionsPerHost) {
         this.maxConnectionsPerHost = maxConnectionsPerHost;
         return this;
@@ -131,7 +123,6 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
         description.appendText(", path=" + path);
         description.appendText(", origins=" + origins);
         description.appendText(", connectTimeout=" + connectTimeout);
-        description.appendText(", socketTimeout=" + socketTimeout);
         description.appendText(", maxConnectionsPerHost=" + maxConnectionsPerHost);
         description.appendText(", maxPendingConnectionsPerHost=" + maxPendingConnectionsPerHost);
         description.appendText(", healthCheckConfig=" + healthCheckConfig);
@@ -147,7 +138,6 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
                 && Objects.equals(path, backendService.path())
                 && Objects.equals(origins, backendService.origins())
                 && Objects.equals(connectTimeout, settings.connectTimeoutMillis())
-                && Objects.equals(socketTimeout, settings.socketTimeoutMillis())
                 && Objects.equals(maxConnectionsPerHost, settings.maxConnectionsPerHost())
                 && Objects.equals(maxPendingConnectionsPerHost, settings.maxPendingConnectionsPerHost())
                 && Objects.equals(healthCheckConfig, backendService.healthCheckConfig())

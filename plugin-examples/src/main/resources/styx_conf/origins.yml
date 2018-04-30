@@ -4,7 +4,6 @@
   connectionPool:
     maxConnectionsPerHost: 45
     maxPendingConnectionsPerHost: 15
-    socketTimeoutMillis: 120000
     connectTimeoutMillis: 1000
     pendingConnectionTimeoutMillis: 8000
   responseTimeoutMillis: 60000

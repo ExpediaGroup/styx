@@ -35,7 +35,7 @@ import static rx.Observable.just;
 
 public class CloseAfterUseConnectionDestinationTest {
     private final Origin origin = newOriginBuilder("localhost", 9090).build();
-    private final Connection.Settings connectionSettings = new ConnectionSettings(1000, 1000);
+    private final Connection.Settings connectionSettings = new ConnectionSettings(1000);
     private Connection.Factory connectionFactory;
     private Connection connection;
 

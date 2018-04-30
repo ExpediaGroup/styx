@@ -32,13 +32,11 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 50;
     public static final int DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST = 25;
     public static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 2000;
-    public static final int DEFAULT_SOCKET_TIMEOUT_MILLIS = 11000;
     public static final long DEFAULT_CONNECTION_EXPIRATION_SECONDS = -1L;
 
     private final int maxConnectionsPerHost;
     private final int maxPendingConnectionsPerHost;
     private final int connectTimeoutMillis;
-    private final int socketTimeoutMillis;
     private final int pendingConnectionTimeoutMillis;
     private final long connectionExpirationSeconds;
 
@@ -46,13 +44,13 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
     ConnectionPoolSettings(@JsonProperty("maxConnectionsPerHost") Integer maxConnectionsPerHost,
                            @JsonProperty("maxPendingConnectionsPerHost") Integer maxPendingConnectionsPerHost,
                            @JsonProperty("connectTimeoutMillis") Integer connectTimeoutMillis,
+                           // Leave `socketTimeoutMillis` here to keep the configuration backwards compatible:
                            @JsonProperty("socketTimeoutMillis") Integer socketTimeoutMillis,
                            @JsonProperty("pendingConnectionTimeoutMillis") Integer pendingConnectionTimeoutMillis,
                            @JsonProperty("connectionExpirationSeconds") Long connectionExpirationSeconds) {
         this.maxConnectionsPerHost = firstNonNull(maxConnectionsPerHost, DEFAULT_MAX_CONNECTIONS_PER_HOST);
         this.maxPendingConnectionsPerHost = firstNonNull(maxPendingConnectionsPerHost, DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST);
         this.connectTimeoutMillis = firstNonNull(connectTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
-        this.socketTimeoutMillis = firstNonNull(socketTimeoutMillis, DEFAULT_SOCKET_TIMEOUT_MILLIS);
         this.pendingConnectionTimeoutMillis = firstNonNull(pendingConnectionTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
         this.connectionExpirationSeconds = firstNonNull(connectionExpirationSeconds, DEFAULT_CONNECTION_EXPIRATION_SECONDS);
     }
@@ -60,13 +58,11 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
     public ConnectionPoolSettings(int maxConnectionsPerHost,
                            int maxPendingConnectionsPerHost,
                            int connectTimeoutMillis,
-                           int socketTimeoutMillis,
                            int pendingConnectionTimeoutMillis,
                            long connectionExpirationSeconds) {
         this.maxConnectionsPerHost = firstNonNull(maxConnectionsPerHost, DEFAULT_MAX_CONNECTIONS_PER_HOST);
         this.maxPendingConnectionsPerHost = firstNonNull(maxPendingConnectionsPerHost, DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST);
         this.connectTimeoutMillis = firstNonNull(connectTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
-        this.socketTimeoutMillis = firstNonNull(socketTimeoutMillis, DEFAULT_SOCKET_TIMEOUT_MILLIS);
         this.pendingConnectionTimeoutMillis = firstNonNull(pendingConnectionTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
         this.connectionExpirationSeconds = firstNonNull(connectionExpirationSeconds, DEFAULT_CONNECTION_EXPIRATION_SECONDS);
     }
@@ -76,7 +72,6 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
                 builder.maxConnectionsPerHost,
                 builder.maxPendingConnectionsPerHost,
                 builder.connectTimeoutMillis,
-                builder.socketTimeoutMillis,
                 builder.pendingConnectionTimeoutMillis,
                 builder.connectionExpirationSeconds
                 );
@@ -89,12 +84,6 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
      */
     public static ConnectionPoolSettings defaultConnectionPoolSettings() {
         return new ConnectionPoolSettings(new Builder());
-    }
-
-    @Override
-    @JsonProperty("socketTimeoutMillis")
-    public int socketTimeoutMillis() {
-        return socketTimeoutMillis;
     }
 
     @Override
@@ -130,7 +119,7 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
     @Override
     public int hashCode() {
         return Objects.hash(maxConnectionsPerHost, maxPendingConnectionsPerHost, connectTimeoutMillis,
-                socketTimeoutMillis, pendingConnectionTimeoutMillis);
+                pendingConnectionTimeoutMillis);
     }
 
     @Override
@@ -145,7 +134,6 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
         return Objects.equals(this.maxConnectionsPerHost, other.maxConnectionsPerHost)
                 && Objects.equals(this.maxPendingConnectionsPerHost, other.maxPendingConnectionsPerHost)
                 && Objects.equals(this.connectTimeoutMillis, other.connectTimeoutMillis)
-                && Objects.equals(this.socketTimeoutMillis, other.socketTimeoutMillis)
                 && Objects.equals(this.pendingConnectionTimeoutMillis, other.pendingConnectionTimeoutMillis);
     }
 
@@ -155,7 +143,6 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
                 .add("maxConnectionsPerHost", maxConnectionsPerHost)
                 .add("maxPendingConnectionsPerHost", maxPendingConnectionsPerHost)
                 .add("connectTimeoutMillis", connectTimeoutMillis)
-                .add("socketTimeoutMillis", socketTimeoutMillis)
                 .add("pendingConnectionTimeoutMillis", pendingConnectionTimeoutMillis)
                 .toString();
     }
@@ -167,7 +154,6 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
         private int maxConnectionsPerHost = DEFAULT_MAX_CONNECTIONS_PER_HOST;
         private int maxPendingConnectionsPerHost = DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
         private int connectTimeoutMillis = DEFAULT_CONNECT_TIMEOUT_MILLIS;
-        private int socketTimeoutMillis = DEFAULT_SOCKET_TIMEOUT_MILLIS;
         private int pendingConnectionTimeoutMillis = DEFAULT_CONNECT_TIMEOUT_MILLIS;
         private long connectionExpirationSeconds = DEFAULT_CONNECTION_EXPIRATION_SECONDS;
 
@@ -186,7 +172,6 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
             this.maxConnectionsPerHost = settings.maxConnectionsPerHost();
             this.maxPendingConnectionsPerHost = settings.maxPendingConnectionsPerHost();
             this.connectTimeoutMillis = settings.connectTimeoutMillis();
-            this.socketTimeoutMillis = settings.socketTimeoutMillis();
             this.pendingConnectionTimeoutMillis = settings.pendingConnectionTimeoutMillis();
             this.connectionExpirationSeconds = settings.connectionExpirationSeconds();
         }
@@ -210,18 +195,6 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
          */
         public Builder maxPendingConnectionsPerHost(int maxPendingConnectionsPerHost) {
             this.maxPendingConnectionsPerHost = maxPendingConnectionsPerHost;
-            return this;
-        }
-
-        /**
-         * Sets socket read timeout.
-         *
-         * @param socketTimeout read timeout
-         * @param timeUnit unit of timeout
-         * @return this builder
-         */
-        public Builder socketTimeout(int socketTimeout, TimeUnit timeUnit) {
-            this.socketTimeoutMillis = (int) timeUnit.toMillis(socketTimeout);
             return this;
         }
 

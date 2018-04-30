@@ -120,7 +120,6 @@ public class YamlApplicationsProviderTest {
                                 origin("landing", "landing-02", "landinghost2", 9092),
                                 origin("landing", "landing-03", "landinghost3", 9093))
                         .withConnectTimeout(4000)
-                        .withSocketTimeout(4001)
                         .withHealthCheckConfig(newHealthCheckConfigBuilder()
                                 .uri("/alternative.txt")
                                 .interval(5000, MILLISECONDS)
@@ -139,7 +138,6 @@ public class YamlApplicationsProviderTest {
                         .withPath("/")
                         .withOrigins(origin("webapp", "webapp-01", "webapphost1", 9094))
                         .withConnectTimeout(3000)
-                        .withSocketTimeout(3001)
                         .withHealthCheckConfig(newHealthCheckConfigBuilder()
                                 .uri("/version.txt")
                                 .interval(23456, MILLISECONDS)
@@ -158,7 +156,6 @@ public class YamlApplicationsProviderTest {
                         .withPath("/shop/")
                         .withOrigins(origin("shopping", "shopping-01", "shoppinghost1", 9090))
                         .withConnectTimeout(5000)
-                        .withSocketTimeout(5001)
                         .withMaxConnectionsPerHost(200)
                         .withMaxPendingConnectionsPerHost(250)
                         .withHealthCheckConfig(newHealthCheckConfigBuilder()

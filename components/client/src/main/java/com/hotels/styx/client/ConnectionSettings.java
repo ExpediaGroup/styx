@@ -23,7 +23,6 @@ import com.hotels.styx.api.service.TlsSettings;
  */
 public final class ConnectionSettings implements Connection.Settings {
     private final int connectTimeoutMillis;
-    private final int socketTimeoutMillis;
 
     /**
      * Constructor that will take timeouts as longs. Note that they will be treated as ints internally,
@@ -33,47 +32,37 @@ public final class ConnectionSettings implements Connection.Settings {
      * This constructor exists for convenience.
      * @param tlsSettings SSL Settings
      * @param connectTimeoutMillis socket connection timeout in milliseconds
-     * @param socketTimeoutMillis  socket read/write timeout in milliseconds
      */
-    public ConnectionSettings(long connectTimeoutMillis, long socketTimeoutMillis, TlsSettings tlsSettings) {
-        this((int) connectTimeoutMillis, (int) socketTimeoutMillis, tlsSettings);
+    public ConnectionSettings(long connectTimeoutMillis, TlsSettings tlsSettings) {
+        this((int) connectTimeoutMillis, tlsSettings);
     }
 
     /**
      * Construct settings that doesn't support SSL.
      *
      * @param connectTimeoutMillis socket connection timeout in milliseconds
-     * @param socketTimeoutMillis socket read/write timeout in milliseconds
      */
-    public ConnectionSettings(long connectTimeoutMillis, long socketTimeoutMillis) {
-        this((int) connectTimeoutMillis, (int) socketTimeoutMillis, null);
+    public ConnectionSettings(long connectTimeoutMillis) {
+        this((int) connectTimeoutMillis, null);
     }
 
     /**
      * Construct settings that doesn't support SSL.
      *
      * @param connectTimeoutMillis socket connection timeout in milliseconds
-     * @param socketTimeoutMillis socket connection timeout in milliseconds
      */
-    public ConnectionSettings(int connectTimeoutMillis, int socketTimeoutMillis) {
-        this(connectTimeoutMillis, socketTimeoutMillis, null);
+    public ConnectionSettings(int connectTimeoutMillis) {
+        this(connectTimeoutMillis, null);
     }
 
     /**
      * Construct settings with SSL.
      *
      * @param connectTimeoutMillis socket connection timeout in milliseconds
-     * @param socketTimeoutMillis  socket read/write timeout in milliseconds
      * @param tlsSettings SSL Settings
      */
-    public ConnectionSettings(int connectTimeoutMillis, int socketTimeoutMillis, TlsSettings tlsSettings) {
+    public ConnectionSettings(int connectTimeoutMillis, TlsSettings tlsSettings) {
         this.connectTimeoutMillis = connectTimeoutMillis;
-        this.socketTimeoutMillis = socketTimeoutMillis;
-    }
-
-    @Override
-    public int socketTimeoutMillis() {
-        return socketTimeoutMillis;
     }
 
     @Override
