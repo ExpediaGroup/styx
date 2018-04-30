@@ -188,8 +188,6 @@ final class NettyServer extends AbstractService implements HttpServer {
                     .channel(channelType)
                     .option(SO_BACKLOG, 1024)
                     .option(SO_REUSEADDR, true)
-                    .option(TCP_NODELAY, true)
-                    .option(SO_KEEPALIVE, true)
                     .childOption(SO_REUSEADDR, true)
                     .childOption(SO_KEEPALIVE, true)
                     .childOption(TCP_NODELAY, true)
