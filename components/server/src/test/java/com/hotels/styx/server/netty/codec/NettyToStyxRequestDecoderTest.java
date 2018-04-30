@@ -17,7 +17,7 @@ package com.hotels.styx.server.netty.codec;
 
 import com.google.common.base.Strings;
 import com.hotels.styx.api.HttpHeader;
-import com.hotels.styx.api.UniqueIdSupplier;
+import com.hotels.styx.server.UniqueIdSupplier;
 import com.hotels.styx.server.BadRequestException;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -40,7 +40,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.HttpCookie.cookie;
-import static com.hotels.styx.api.UniqueIdSuppliers.fixedUniqueIdSupplier;
+import static com.hotels.styx.server.UniqueIdSuppliers.fixedUniqueIdSupplier;
 import static com.hotels.styx.support.netty.HttpMessageSupport.*;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
