@@ -13,13 +13,18 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api;
+package com.hotels.styx.server;
 
+import org.testng.annotations.Test;
 
-import java.util.function.Supplier;
+import static com.hotels.styx.server.UniqueIdSuppliers.fixedUniqueIdSupplier;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-/**
- * A Unique id provider.
- */
-public interface UniqueIdSupplier extends Supplier<String> {
+public class FixedUniqueIdSupplierTest {
+
+    @Test
+    public void returnsTheConfiguredId() {
+        assertThat(fixedUniqueIdSupplier("01202").get(), is("01202"));
+    }
 }
