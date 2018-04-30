@@ -174,38 +174,6 @@ class ServerConfigSchemaSpec extends FunSpec with ShouldMatchers {
       )) should be(Optional.empty())
     }
 
-    it("Accepts 'plugins' field - but does not validate") {
-      validateServerConfiguration(yamlConfig(
-        minimalConfig
-          +
-          """
-            |plugins:
-            |  active: plugA, plugB
-            |  all:
-            |    plugA:
-            |      x
-            |    plugB:
-            |      y
-          """.stripMargin
-      )) should be(Optional.empty())
-    }
-
-    it("Accepts 'logFormat' field as a STRING") {
-      validateServerConfiguration(yamlConfig(
-        minimalConfig
-          +
-          """
-            |plugins:
-            |  active: plugA, plugB
-            |  all:
-            |    plugA:
-            |      x
-            |    plugB:
-            |      y
-          """.stripMargin
-      )) should be(Optional.empty())
-    }
-
     it("Accepts 'styxHeaders' field as an OBJECT") {
       validateServerConfiguration(yamlConfig(
         minimalConfig
