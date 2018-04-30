@@ -211,7 +211,7 @@ public class Schema {
         private final FieldValue elementType;
 
         MapField(FieldValue elementType) {
-            this.elementType = elementType;
+            this.elementType = requireNonNull(elementType);
         }
 
         public FieldValue elementType() {
