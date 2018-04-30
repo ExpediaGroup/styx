@@ -57,21 +57,21 @@ public class DocumentFormatTest {
                         )
                 )
                 .build()
-                .validateObject(YAML_MAPPER.readTree(
-                        "root: \n"
-                                + "  myInt: 5 \n"
-                                + "  myBool: true \n"
-                                + "  myString: styx\n"));
+                .validateObject(YAML_MAPPER.readTree(""
+                        + "root: \n"
+                        + "  myInt: 5 \n"
+                        + "  myBool: true \n"
+                        + "  myString: styx\n"));
         assertThat(result, is(true));
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Missing a mandatory field 'root.surname'")
     public void ensuresAllMandatoryFieldsArePresent() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "root: \n"
-                        + "  name: John \n"
-                        + "  age: 5\n");
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "root: \n"
+                + "  name: John \n"
+                + "  age: 5\n");
 
         boolean result = newDocument()
                 .rootSchema(
@@ -89,10 +89,10 @@ public class DocumentFormatTest {
 
     @Test
     public void optionalFieldsDoesntHaveToBePresent() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "root: \n"
-                        + "  name: John \n"
-                        + "  age: 5\n");
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "root: \n"
+                + "  name: John \n"
+                + "  age: 5\n");
 
         boolean result = newDocument()
                 .rootSchema(schema(
@@ -110,11 +110,11 @@ public class DocumentFormatTest {
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Unexpected field type. Field 'root.favouriteFood' should be STRING, but it is INTEGER")
     public void verifiesOptionalFields() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "root: \n"
-                        + "  name: John \n"
-                        + "  favouriteFood: 43 \n"
-                        + "  age: 5\n");
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "root: \n"
+                + "  name: John \n"
+                + "  favouriteFood: 43 \n"
+                + "  age: 5\n");
 
         boolean result = newDocument()
                 .rootSchema(schema(
@@ -132,12 +132,12 @@ public class DocumentFormatTest {
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Unexpected field: 'root.xyxz'")
     public void ensuresNoExtraFieldsPresent() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "root: \n"
-                        + "  name: John \n"
-                        + "  surname: Doe \n"
-                        + "  age: 5\n"
-                        + "  xyxz: 'not supposed to be here'\n");
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "root: \n"
+                + "  name: John \n"
+                + "  surname: Doe \n"
+                + "  age: 5\n"
+                + "  xyxz: 'not supposed to be here'\n");
 
         boolean result = newDocument()
                 .rootSchema(schema(
@@ -155,9 +155,9 @@ public class DocumentFormatTest {
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Unexpected field type. Field 'root.myInt' should be INTEGER, but it is STRING")
     public void checksIntegerFieldTypes() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "root: \n"
-                        + "  myInt: 'y' \n");
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "root: \n"
+                + "  myInt: 'y' \n");
 
         boolean result = newDocument()
                 .rootSchema(schema(
@@ -172,9 +172,9 @@ public class DocumentFormatTest {
 
     @Test
     public void convertsStringsToIntegerValues() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "root: \n"
-                        + "  myInt: '5' \n");
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "root: \n"
+                + "  myInt: '5' \n");
 
         boolean result = newDocument()
                 .rootSchema(schema(
@@ -190,9 +190,9 @@ public class DocumentFormatTest {
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Unexpected field type. Field 'root.myString' should be STRING, but it is INTEGER")
     public void checksStringFieldTypes() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "root: \n"
-                        + "  myString: 5.0 \n");
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "root: \n"
+                + "  myString: 5.0 \n");
 
         boolean result = newDocument()
                 .rootSchema(schema(
@@ -208,9 +208,9 @@ public class DocumentFormatTest {
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Unexpected field type. Field 'root.myBool' should be BOOLEAN, but it is INTEGER")
     public void checksBoolFieldTypes() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "root: \n"
-                        + "  myBool: 5.0 \n");
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "root: \n"
+                + "  myBool: 5.0 \n");
 
         boolean result = newDocument()
                 .rootSchema(schema(
@@ -225,14 +225,14 @@ public class DocumentFormatTest {
 
     @Test
     public void convertsStringToBooleanValues() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "root: \n"
-                        + "  myBool_01: 'true' \n"
-                        + "  myBool_02: 'false' \n"
-                        + "  myBool_03: 'True' \n"
-                        + "  myBool_04: 'False' \n"
-                        + "  myBool_05: 'TRUE' \n"
-                        + "  myBool_06: 'FALSE' \n"
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "root: \n"
+                + "  myBool_01: 'true' \n"
+                + "  myBool_02: 'false' \n"
+                + "  myBool_03: 'True' \n"
+                + "  myBool_04: 'False' \n"
+                + "  myBool_05: 'TRUE' \n"
+                + "  myBool_06: 'FALSE' \n"
         );
 
         boolean result = newDocument()
@@ -254,11 +254,11 @@ public class DocumentFormatTest {
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Unexpected list element type. Field 'parent.myList\\[1\\]' should be STRING, but it is INTEGER")
     public void checksListsOfElementaryTypes() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "parent: \n"
-                        + "  myList: \n"
-                        + "   - b \n"
-                        + "   - 5 \n"
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "parent: \n"
+                + "  myList: \n"
+                + "   - b \n"
+                + "   - 5 \n"
         );
 
         boolean result = newDocument()
@@ -275,11 +275,11 @@ public class DocumentFormatTest {
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Unexpected list element type. Field 'parent.myList\\[0\\]' should be INTEGER, but it is STRING")
     public void checksListsOfElementaryTypes_wrongIntegerType() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "parent: \n"
-                        + "  myList: \n"
-                        + "   - b \n"
-                        + "   - 5 \n"
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "parent: \n"
+                + "  myList: \n"
+                + "   - b \n"
+                + "   - 5 \n"
         );
 
         boolean result = newDocument()
@@ -296,13 +296,13 @@ public class DocumentFormatTest {
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.myList\\[1\\].x' should be INTEGER, but it is STRING")
     public void checksListsOfSubObjects() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "parent: \n"
-                        + "  myList: \n"
-                        + "   - x: 0 \n"
-                        + "     y: 0 \n"
-                        + "   - x: a \n"
-                        + "     y: 2 \n"
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "parent: \n"
+                + "  myList: \n"
+                + "   - x: 0 \n"
+                + "     y: 0 \n"
+                + "   - x: a \n"
+                + "     y: 2 \n"
         );
 
         boolean result = newDocument()
@@ -324,12 +324,12 @@ public class DocumentFormatTest {
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Unexpected list element type. Field 'parent.myList\\[1\\]' should be OBJECT \\('SubObjectSchema'\\), but it is STRING")
     public void checksListsOfSubObjects_shouldBeSubobjectButIsString() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "parent: \n"
-                        + "  myList: \n"
-                        + "   - x: 0 \n"
-                        + "     y: 0 \n"
-                        + "   - 'zz' \n"
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "parent: \n"
+                + "  myList: \n"
+                + "   - x: 0 \n"
+                + "     y: 0 \n"
+                + "   - 'zz' \n"
         );
 
         boolean result = newDocument()
@@ -352,9 +352,9 @@ public class DocumentFormatTest {
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.myChild' should be OBJECT \\('age'\\), but it is INTEGER")
     public void checksSubObjectFieldTypes() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "parent: \n"
-                        + "  myChild: 5.0 \n");
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "parent: \n"
+                + "  myChild: 5.0 \n");
 
         boolean result = newDocument()
                 .rootSchema(schema(
@@ -371,13 +371,13 @@ public class DocumentFormatTest {
 
     @Test
     public void validatesSubobjects() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "person: \n"
-                        + "  details: \n"
-                        + "    name: John \n"
-                        + "    surname: Doe \n"
-                        + "    age: 5\n"
-                        + "  id: '005-001-006'\n")
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "person: \n"
+                + "  details: \n"
+                + "    name: John \n"
+                + "    surname: Doe \n"
+                + "    age: 5\n"
+                + "  id: '005-001-006'\n")
                 .get("person");
 
         boolean result = newDocument()
@@ -396,12 +396,12 @@ public class DocumentFormatTest {
 
     @Test
     public void reusesObjectSchemas() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(
-                "httpPipeline: \n"
-                        + "  pipeline: 'interceptorsList'\n"
-                        + "  handler: 'handlerName'\n"
-                        + "plugins:\n"
-                        + "  all: 'x, y z'\n");
+        JsonNode rootObject = YAML_MAPPER.readTree(""
+                + "httpPipeline: \n"
+                + "  pipeline: 'interceptorsList'\n"
+                + "  handler: 'handlerName'\n"
+                + "plugins:\n"
+                + "  all: 'x, y z'\n");
 
         DocumentFormat validator = newDocument()
                 .subSchema("HttpPipeline", schema(
@@ -482,22 +482,22 @@ public class DocumentFormatTest {
                 .build();
 
         boolean outcome1 = validator.validateObject(
-                YAML_MAPPER.readTree(
-                        "httpPipeline: \n"
-                                + "  type: 'ProxyTo'\n"
-                                + "  config:\n"
-                                + "    id: 'local-01'\n"
-                                + "    destination: 'localhost:8080'\n"
+                YAML_MAPPER.readTree(""
+                        + "httpPipeline: \n"
+                        + "  type: 'ProxyTo'\n"
+                        + "  config:\n"
+                        + "    id: 'local-01'\n"
+                        + "    destination: 'localhost:8080'\n"
                 ));
         assertThat(outcome1, is(true));
 
         boolean outcome2 = validator.validateObject(
-                YAML_MAPPER.readTree(
-                        "httpPipeline: \n"
-                                + "  type: 'Redirection'\n"
-                                + "  config:\n"
-                                + "    status: 301\n"
-                                + "    location: /new/location\n"
+                YAML_MAPPER.readTree(""
+                        + "httpPipeline: \n"
+                        + "  type: 'Redirection'\n"
+                        + "  config:\n"
+                        + "    status: 301\n"
+                        + "    location: /new/location\n"
                 ));
         assertThat(outcome2, is(true));
 
@@ -505,11 +505,11 @@ public class DocumentFormatTest {
 
     @Test
     public void ignoresOpaqueSubobjectValidation() throws Exception {
-        JsonNode node2 = YAML_MAPPER.readTree(
-                "parent: \n"
-                        + "  opaque: \n"
-                        + "    x: 5\n"
-                        + "    y: 6\n"
+        JsonNode node2 = YAML_MAPPER.readTree(""
+                + "parent: \n"
+                + "  opaque: \n"
+                + "    x: 5\n"
+                + "    y: 6\n"
         );
 
         DocumentFormat validator = newDocument()
@@ -537,25 +537,25 @@ public class DocumentFormatTest {
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Schema constraint failed. At least one of \\('http', 'https'\\) must be present.")
     public void validatesAtLeastOneConstraintCorrectly() throws Exception {
-        JsonNode first = YAML_MAPPER.readTree(
-                "connectors: \n"
-                        + "  http: 8080\n"
+        JsonNode first = YAML_MAPPER.readTree(""
+                + "connectors: \n"
+                + "  http: 8080\n"
         );
 
-        JsonNode second = YAML_MAPPER.readTree(
-                "connectors: \n"
-                        + "  https: 8443\n"
+        JsonNode second = YAML_MAPPER.readTree(""
+                + "connectors: \n"
+                + "  https: 8443\n"
         );
 
-        JsonNode both = YAML_MAPPER.readTree(
-                "connectors: \n"
-                        + "  http: 8080\n"
-                        + "  https: 8443\n"
+        JsonNode both = YAML_MAPPER.readTree(""
+                + "connectors: \n"
+                + "  http: 8080\n"
+                + "  https: 8443\n"
         );
 
-        JsonNode neither = YAML_MAPPER.readTree(
-                "connectors: \n"
-                        + "  x: 8080\n"
+        JsonNode neither = YAML_MAPPER.readTree(""
+                + "connectors: \n"
+                + "  x: 8080\n"
         );
 
         DocumentFormat validator = newDocument()
@@ -566,8 +566,7 @@ public class DocumentFormatTest {
                                 optional("https", integer()),
                                 atLeastOne("http", "https")
                         ))))
-                .build()
-                ;
+                .build();
 
         assertThat(validator.validateObject(first), is(true));
         assertThat(validator.validateObject(second), is(true));

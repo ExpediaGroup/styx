@@ -229,13 +229,12 @@ public class DocumentFormat {
         FieldType expectedType = field.type();
         FieldType actualType = toFieldType(value);
 
-        if (FieldType.STRING.equals(actualType)) {
-            if (canParseAsInteger(value)) {
-                return;
-            }
-            if (canParseAsBoolean(value)) {
-                return;
-            }
+        if (FieldType.STRING.equals(actualType) && canParseAsInteger(value)) {
+            return;
+        }
+
+        if (FieldType.STRING.equals(actualType) && canParseAsBoolean(value)) {
+            return;
         }
 
         if (expectedType != actualType) {
