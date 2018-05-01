@@ -71,7 +71,7 @@ public class GraphiteReporterServiceTest {
     public void logsWhenServiceStarts() {
         try {
             StyxFutures.await(service.start());
-            assertThat(log.lastMessage(), is(loggingEvent(INFO, "Graphite started on address=\"localhost/127.0.0.1:1234\"")));
+            assertThat(log.lastMessage(), is(loggingEvent(INFO, "Graphite started on address=\"localhost:1234\"")));
         } finally {
             StyxFutures.await(service.stop());
         }
