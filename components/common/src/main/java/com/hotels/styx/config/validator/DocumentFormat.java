@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.config.schema.InvalidSchemaException;
 import com.hotels.styx.config.schema.Schema;
+import com.hotels.styx.config.schema.Schema.FieldType;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +31,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
+import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -46,6 +49,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class DocumentFormat {
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentFormat.class);
+    private static final Pattern YAML_BOOLEAN_VALUES = Pattern.compile("(?i)true|false");
 
     private final Schema rootSchema;
     private final Map<String, Schema> schemas;
@@ -188,26 +192,26 @@ public class DocumentFormat {
                 && !(fieldValue instanceof Schema.ListField);
     }
 
-    private static Schema.FieldType toFieldType(JsonNode value) {
+    private static FieldType toFieldType(JsonNode value) {
         // JsonNodeType.BINARY, Schema.FieldType.
         // JsonNodeType.MISSING,
         // JsonNodeType.NULL,
         // JsonNodeType.POJO,
 
         if (value.isInt()) {
-            return Schema.FieldType.INTEGER;
+            return FieldType.INTEGER;
         }
 
         return ImmutableMap.of(
-                JsonNodeType.ARRAY, Schema.FieldType.LIST,
-                JsonNodeType.BOOLEAN, Schema.FieldType.BOOLEAN,
-                JsonNodeType.NUMBER, Schema.FieldType.INTEGER,
-                JsonNodeType.OBJECT, Schema.FieldType.OBJECT,
-                JsonNodeType.STRING, Schema.FieldType.STRING)
+                JsonNodeType.ARRAY, FieldType.LIST,
+                JsonNodeType.BOOLEAN, FieldType.BOOLEAN,
+                JsonNodeType.NUMBER, FieldType.INTEGER,
+                JsonNodeType.OBJECT, FieldType.OBJECT,
+                JsonNodeType.STRING, FieldType.STRING)
                 .get(value.getNodeType());
     }
 
-    private static String displayExpectedType(Schema.FieldType expectedType, Schema.FieldValue field) {
+    private static String displayExpectedType(FieldType expectedType, Schema.FieldValue field) {
         if (field instanceof Schema.ObjectField) {
             Schema.ObjectField subField = (Schema.ObjectField) field;
             return format("%s ('%s')", expectedType, subField.schema().name());
@@ -222,13 +226,34 @@ public class DocumentFormat {
     }
 
     private static void assertCorrectType(String message, String fieldName, JsonNode value, Schema.FieldValue field) {
-        Schema.FieldType expectedType = field.type();
-        Schema.FieldType actualType = toFieldType(value);
+        FieldType expectedType = field.type();
+        FieldType actualType = toFieldType(value);
+
+        if (FieldType.STRING.equals(actualType) && canParseAsInteger(value)) {
+            return;
+        }
+
+        if (FieldType.STRING.equals(actualType) && canParseAsBoolean(value)) {
+            return;
+        }
 
         if (expectedType != actualType) {
             throw new SchemaValidationException(format("%s Field '%s' should be %s, but it is %s",
                     message, fieldName, displayExpectedType(expectedType, field), actualType));
         }
+    }
+
+    private static boolean canParseAsInteger(JsonNode value) {
+        try {
+            parseInt(value.textValue());
+            return true;
+        } catch (NumberFormatException cause) {
+            return false;
+        }
+    }
+
+    private static boolean canParseAsBoolean(JsonNode value) {
+        return YAML_BOOLEAN_VALUES.matcher(value.textValue()).matches();
     }
 
     /**
@@ -263,16 +288,16 @@ public class DocumentFormat {
 
         private void assertSchemaReferences(Schema schema) {
             schema.fields().forEach(field -> {
-                    if (field.value() instanceof Schema.ObjectFieldLazy) {
-                        Schema.ObjectFieldLazy objectField = (Schema.ObjectFieldLazy) field.value();
-                        if (!schemas.containsKey(objectField.schemaName())) {
-                            throw new InvalidSchemaException(format("No schema configured for lazy object reference '%s'", objectField.schemaName()));
-                        }
+                if (field.value() instanceof Schema.ObjectFieldLazy) {
+                    Schema.ObjectFieldLazy objectField = (Schema.ObjectFieldLazy) field.value();
+                    if (!schemas.containsKey(objectField.schemaName())) {
+                        throw new InvalidSchemaException(format("No schema configured for lazy object reference '%s'", objectField.schemaName()));
                     }
-                    if (field.value() instanceof Schema.ObjectField) {
-                        Schema.ObjectField objectField = (Schema.ObjectField) field.value();
-                        assertSchemaReferences(objectField.schema());
-                    }
+                }
+                if (field.value() instanceof Schema.ObjectField) {
+                    Schema.ObjectField objectField = (Schema.ObjectField) field.value();
+                    assertSchemaReferences(objectField.schema());
+                }
             });
         }
     }
