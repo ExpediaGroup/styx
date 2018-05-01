@@ -22,13 +22,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.service.spi.StyxService;
 import org.slf4j.Logger;
 
-import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.codahale.metrics.MetricFilter.ALL;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -41,16 +40,18 @@ public final class GraphiteReporterService implements StyxService {
 
     private final GraphiteReporter reporter;
     private final long reportingIntervalMillis;
-    private final InetSocketAddress address;
+    private final String host;
+    private final int port;
 
     private GraphiteReporterService(Builder builder) {
-        this.address = builder.inetSocketAddress;
-        MetricRegistry registry = checkNotNull(builder.registry);
+        this.host = requireNonNull(builder.host);
+        this.port = builder.port;
+        MetricRegistry registry = requireNonNull(builder.registry);
         GraphiteSender graphiteSender = Optional
                 .ofNullable(builder.graphiteSender)
-                .orElseGet(() -> new NonSanitizingGraphite(address));
+                .orElseGet(() -> new NonSanitizingGraphite(host, port));
 
-        String prefix = checkNotNull(builder.prefix);
+        String prefix = requireNonNull(builder.prefix);
 
         this.reportingIntervalMillis = builder.reportingIntervalMillis;
         this.reporter = GraphiteReporter.forRegistry(registry)
@@ -64,7 +65,7 @@ public final class GraphiteReporterService implements StyxService {
     @Override
     public CompletableFuture<Void> start() {
         return CompletableFuture.runAsync(() -> {
-            LOGGER.info("Graphite started on address=\"{}\"", address);
+            LOGGER.info("Graphite started on address=\"{}:{}\"", host, port);
             this.reporter.start(reportingIntervalMillis, MILLISECONDS);
         });
     }
@@ -82,8 +83,8 @@ public final class GraphiteReporterService implements StyxService {
     // The sanitize method in Graphite/PickledGraphite adds a lot of object creation. We do not need it because our
     // metric names and values do not contain whitespace.
     private static final class NonSanitizingGraphite extends Graphite {
-        private NonSanitizingGraphite(InetSocketAddress address) {
-            super(address);
+        public NonSanitizingGraphite(String host, int port) {
+            super(host, port);
         }
 
         @Override
@@ -97,10 +98,11 @@ public final class GraphiteReporterService implements StyxService {
      */
     public static final class Builder {
         private String prefix;
-        private InetSocketAddress inetSocketAddress;
         private long reportingIntervalMillis;
         private MetricRegistry registry;
         private GraphiteSender graphiteSender;
+        private String host;
+        private int port;
 
         public Builder metricRegistry(MetricRegistry registry) {
             this.registry = registry;
@@ -119,7 +121,8 @@ public final class GraphiteReporterService implements StyxService {
         }
 
         public Builder address(String host, int port) {
-            this.inetSocketAddress = new InetSocketAddress(host, port);
+            this.host = requireNonNull(host);
+            this.port = port;
             return this;
         }
 
