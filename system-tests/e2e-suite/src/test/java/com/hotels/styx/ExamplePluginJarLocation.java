@@ -54,11 +54,7 @@ public final class ExamplePluginJarLocation {
 
     // module must be adjacent to e2e-suite
     private static Path jarLocation(String module) throws IOException {
-        Path systemRoot = Paths.get("/");
-        Path classPathRoot = Paths.get(getSystemClassLoader().getResource("").getFile());
-
-        Path parent = systemRoot
-                .resolve(removeElementsOnRight(classPathRoot, 3))
+        Path parent = modulesDirectory()
                 .resolve(module)
                 .resolve("target");
 
@@ -69,7 +65,11 @@ public final class ExamplePluginJarLocation {
                 .orElseThrow(() -> new IllegalStateException("Cannot find any JAR at the specified location"));
     }
 
-    private static Path removeElementsOnRight(Path path, int numberOfElements) {
-        return path.subpath(0, path.getNameCount() - numberOfElements);
+    private static Path modulesDirectory() {
+        return classPathRoot().getParent().getParent().getParent();
+    }
+
+    private static Path classPathRoot() {
+        return Paths.get(getSystemClassLoader().getResource("").getFile());
     }
 }

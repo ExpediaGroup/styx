@@ -35,7 +35,7 @@ import static org.hamcrest.Matchers.is;
 // This test is primarily ensuring that our supporting classes and modules are fit-for-purpose
 // i.e. that our example plugin and its dependency are only accessible by legitimately loading their
 // jar files and not just included in the e2e-suite module
-public class E2EJarAccessTest {
+public class BuildVsRuntimeJarAccessTest {
     @Test(expectedExceptions = ClassNotFoundException.class)
     public void pluginClassesAreNotAvailableViaSystemClassLoader() throws ClassNotFoundException {
         getSystemClassLoader().loadClass("testgrp.TestPlugin");
@@ -76,7 +76,7 @@ public class E2EJarAccessTest {
         Path jarLocation = createTemporarySharedDirectoryForJars();
 
         URL[] urls = list(jarLocation)
-                .map(E2EJarAccessTest::url)
+                .map(BuildVsRuntimeJarAccessTest::url)
                 .toArray(URL[]::new);
 
         try (URLClassLoader classLoader = URLClassLoader.newInstance(urls)) {
