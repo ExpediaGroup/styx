@@ -27,7 +27,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.codahale.metrics.MetricFilter.ALL;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -122,7 +121,7 @@ public final class GraphiteReporterService implements StyxService {
         }
 
         public Builder address(String host, int port) {
-            this.host = checkNotNull(host);
+            this.host = requireNonNull(host);
             this.port = port;
             return this;
         }
