@@ -106,7 +106,8 @@ public class Schema {
         INTEGER,
         BOOLEAN,
         OBJECT,
-        LIST
+        LIST,
+        MAP;
     }
 
     /**
@@ -161,6 +162,10 @@ public class Schema {
                 return FieldType.LIST;
             }
 
+            if (this instanceof MapField) {
+                return FieldType.MAP;
+            }
+
             throw new IllegalStateException("Unknown field type: " + this.getClass() + " " + this);
         }
     }
@@ -197,6 +202,21 @@ public class Schema {
             return elementType;
         }
 
+    }
+
+    /**
+     * Map schema field type.
+     */
+    public static class MapField extends FieldValue {
+        private final FieldValue elementType;
+
+        MapField(FieldValue elementType) {
+            this.elementType = requireNonNull(elementType);
+        }
+
+        public FieldValue elementType() {
+            return elementType;
+        }
     }
 
     /**

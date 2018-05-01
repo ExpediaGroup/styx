@@ -205,6 +205,16 @@ public final class SchemaDsl {
     }
 
     /**
+     * Map schema field type.
+     *
+     * A map declares a JSON object type whose field names are treated as
+     * arbitrary (string) keys associated with some elementary or object type.
+     */
+    public static Schema.FieldValue map(Schema.FieldValue elementType) {
+        return new Schema.MapField(elementType);
+    }
+
+    /**
      * A directive to mark the object layout as `opaque`.
      *
      * @return an OpaqueSchema directive

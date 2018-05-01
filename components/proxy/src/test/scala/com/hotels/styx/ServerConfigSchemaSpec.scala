@@ -99,18 +99,18 @@ class ServerConfigSchemaSpec extends FunSpec with ShouldMatchers {
     it("Accepts 'jvmRouteName' field as a STRING") {
       validateServerConfiguration(yamlConfig(
         minimalConfig
-        +
-        """
-          |jvmRouteName: 'instance-01'
-        """.stripMargin
+          +
+          """
+            |jvmRouteName: 'instance-01'
+          """.stripMargin
       )) should be(Optional.empty())
 
       validateServerConfiguration(yamlConfig(
         minimalConfig
-        +
-        """
-          |jvmRouteName: 101
-        """.stripMargin
+          +
+          """
+            |jvmRouteName: 101
+          """.stripMargin
       )) should be(Optional.of("Unexpected field type. Field 'jvmRouteName' should be STRING, but it is INTEGER"))
     }
 
@@ -170,38 +170,6 @@ class ServerConfigSchemaSpec extends FunSpec with ShouldMatchers {
           +
           """
             |originRestrictionCookie: mycookie
-          """.stripMargin
-      )) should be(Optional.empty())
-    }
-
-    it("Accepts 'plugins' field - but does not validate") {
-      validateServerConfiguration(yamlConfig(
-        minimalConfig
-          +
-          """
-            |plugins:
-            |  active: plugA, plugB
-            |  all:
-            |    plugA:
-            |      x
-            |    plugB:
-            |      y
-          """.stripMargin
-      )) should be(Optional.empty())
-    }
-
-    it("Accepts 'logFormat' field as a STRING") {
-      validateServerConfiguration(yamlConfig(
-        minimalConfig
-          +
-          """
-            |plugins:
-            |  active: plugA, plugB
-            |  all:
-            |    plugA:
-            |      x
-            |    plugB:
-            |      y
           """.stripMargin
       )) should be(Optional.empty())
     }
@@ -350,6 +318,36 @@ class ServerConfigSchemaSpec extends FunSpec with ShouldMatchers {
           |      config: {originsFile: "${originsFile:classpath:conf/origins.yml}"}
         """.stripMargin)) should be(Optional.empty())
     }
+  }
+
+  describe("Plugins configuration") {
+    it("Accepts plugins.active as string") {
+      validateServerConfiguration(yamlConfig(
+        minimalConfig +
+          """
+            |plugins:
+            |  active: xyz
+            |""".stripMargin))
+    }
+
+    it("Accepts an absent plugins.active field") {
+      validateServerConfiguration(yamlConfig(
+        minimalConfig +
+          """
+            |plugins:
+            |  all: xyz
+            |""".stripMargin))
+    }
+
+    it("Accepts an plugins.all as an opaque object") {
+      validateServerConfiguration(yamlConfig(
+        minimalConfig +
+          """
+            |plugins:
+            |  all: xyz
+            |""".stripMargin))
+    }
+
   }
 
   private def minimalConfig =

@@ -82,56 +82,85 @@ public class DocumentFormat {
             Schema.ObjectField configField = (Schema.ObjectField) fieldValue;
             validateObject(prefix + name + ".", configField.schema(), tree.get(name));
 
+        } else if (fieldValue instanceof Schema.ListField) {
+            Schema.ListField listField = (Schema.ListField) fieldValue;
+            validateList(prefix + name, listField, tree.get(name));
+
         } else if (fieldValue instanceof Schema.ObjectFieldLazy) {
             Schema.ObjectFieldLazy configField = (Schema.ObjectFieldLazy) fieldValue;
             Schema subSchema = schemas.get(configField.schemaName());
 
             LOGGER.debug("lazy object reference field='{}', subObjectSchema='{}'", name, subSchema.name());
-
             validateObject(prefix + name + ".", subSchema, tree.get(name));
 
         } else if (fieldValue instanceof Schema.DiscriminatedUnionObject) {
             Schema.DiscriminatedUnionObject unionField = (Schema.DiscriminatedUnionObject) fieldValue;
+            String discriminatorFieldName = unionField.discriminatorFieldName();
 
-            String discriminatorField = unionField.discriminatorFieldName();
-            String subObjectType = tree.get(discriminatorField).asText();
+            validateDiscriminatedUnion(prefix + name, discriminatorFieldName, tree.get(unionField.discriminatorFieldName()), tree.get(name));
 
-            Schema subObjectSchema = this.schemas.get(subObjectType);
+        } else if (fieldValue instanceof Schema.MapField) {
+            Schema.MapField mapField = (Schema.MapField) fieldValue;
+            validateMap(prefix + name, mapField, tree.get(name));
+        }
+    }
 
-            LOGGER.debug("discriminated union field='{}', discriminatorField='{}', subObjectType='{}', subObjectSchema='{}'",
-                    new Object[]{name, discriminatorField, subObjectType, subObjectSchema.name()});
+    private void validateDiscriminatedUnion(String prefix, String discriminatorFieldName, JsonNode discriminatorNode, JsonNode unionNode) {
+        String subObjectType = discriminatorNode.asText();
+        Schema subObjectSchema = this.schemas.get(subObjectType);
 
-            validateObject(prefix + name + ".", subObjectSchema, tree.get(name));
+        LOGGER.debug("discriminated union field='{}', discriminatorField='{}', subObjectType='{}', subObjectSchema='{}'",
+                new Object[]{prefix, discriminatorFieldName, subObjectType, subObjectSchema.name()});
 
-        } else if (fieldValue instanceof Schema.ListField) {
-            Schema.ListField listField = (Schema.ListField) fieldValue;
+        validateObject(prefix + ".", subObjectSchema, unionNode);
+    }
 
+    private void validateList(String prefix, Schema.ListField listField, JsonNode list) {
+        if (isBasicType(listField.elementType())) {
             // ALT1: Check that all elements are of desirede (elementary) type
-            if (isBasicType(listField.elementType())) {
-                JsonNode list = tree.get(name);
-                for (int i = 0; i < list.size(); i++) {
-                    JsonNode entry = list.get(i);
-                    assertCorrectType("Unexpected list element type.", format("%s%s[%d]", prefix, name, i), entry, listField.elementType());
-                }
+            for (int i = 0; i < list.size(); i++) {
+                JsonNode entry = list.get(i);
+                assertCorrectType("Unexpected list element type.", format("%s[%d]", prefix, i), entry, listField.elementType());
             }
-
+        } else if (isObject(listField.elementType())) {
             // ALT2: Check that all elements follow the same object
-            if (isObject(listField.elementType())) {
-                JsonNode list = tree.get(name);
-                for (int i = 0; i < list.size(); i++) {
-                    JsonNode entry = list.get(i);
-                    Schema subSchema = getSchema(listField.elementType());
-                    assertCorrectType("Unexpected list element type.", format("%s%s[%d]", prefix, name, i), entry, listField.elementType());
-                    validateObject(prefix + format("%s[%d].", name, i), subSchema, entry);
-                }
+            for (int i = 0; i < list.size(); i++) {
+                JsonNode entry = list.get(i);
+                Schema subSchema = getSchema(listField.elementType());
+                assertCorrectType("Unexpected list element type.", format("%s[%d]", prefix, i), entry, listField.elementType());
+                validateObject(prefix + format("[%d].", i), subSchema, entry);
             }
+        }
 
-            // ALT3: Lists of lists
+        // ALT3: Lists of lists
+        // --- not implemented
+        //
+    }
+
+    private void validateMap(String prefix, Schema.MapField mapField, JsonNode mapNode) {
+        if (isBasicType(mapField.elementType())) {
+            mapNode.fieldNames().forEachRemaining(key -> {
+                JsonNode entry = mapNode.get(key);
+                assertCorrectType("Unexpected map element type.", format("%s.%s", prefix, key), entry, mapField.elementType());
+            });
+        } else if (isObject(mapField.elementType())) {
+            mapNode.fieldNames().forEachRemaining(
+                    key -> {
+                        assertCorrectType("Unexpected map element type.", format("%s.%s", prefix, key), mapNode.get(key), mapField.elementType());
+                        validateObject(format("%s.%s.", prefix, key), getSchema(mapField.elementType()), mapNode.get(key));
+                    }
+            );
+        } else if (mapField.elementType().type() == FieldType.LIST) {
+            mapNode.fieldNames().forEachRemaining(
+                    key -> {
+                        assertCorrectType("Unexpected field type.", format("%s.%s", prefix, key), mapNode.get(key), mapField.elementType());
+                        validateList(prefix, (Schema.ListField) mapField.elementType(), mapNode.get(key));
+                    }
+            );
         }
     }
 
     private void validateObject(String prefix, Schema schema, JsonNode tree) {
-
         LOGGER.info("validate object('{}', schema='{}')", prefix, schema.name());
 
         if (schema.ignore()) {
@@ -222,6 +251,11 @@ public class DocumentFormat {
             return format("%s ('%s')", expectedType, subField.schemaName());
         }
 
+        if (field instanceof Schema.ListField) {
+            Schema.ListField listField = (Schema.ListField) field;
+            return format("%s (%s)", expectedType, listField.elementType().type());
+        }
+
         return expectedType.toString();
     }
 
@@ -234,6 +268,10 @@ public class DocumentFormat {
         }
 
         if (FieldType.STRING.equals(actualType) && canParseAsBoolean(value)) {
+            return;
+        }
+
+        if (FieldType.OBJECT.equals(actualType) && FieldType.MAP.equals(expectedType)) {
             return;
         }
 

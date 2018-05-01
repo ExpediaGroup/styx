@@ -29,6 +29,7 @@ import static com.hotels.styx.config.schema.SchemaDsl.bool;
 import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.integer;
 import static com.hotels.styx.config.schema.SchemaDsl.list;
+import static com.hotels.styx.config.schema.SchemaDsl.map;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
 import static com.hotels.styx.config.schema.SchemaDsl.opaque;
 import static com.hotels.styx.config.schema.SchemaDsl.optional;
@@ -348,6 +349,54 @@ public class DocumentFormatTest {
         assertThat(result, is(true));
     }
 
+    @Test(expectedExceptions = SchemaValidationException.class,
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList' should be LIST \\(INTEGER\\), but it is STRING")
+    public void expectingListButIsString() throws Exception {
+        JsonNode root = YAML_MAPPER.readTree(
+                "myList: 'or not'\n"
+        );
+
+        newDocument()
+                .rootSchema(schema(
+                        field("myList", list(integer()))
+                ))
+                .build()
+                .validateObject(root);
+    }
+
+    @Test(expectedExceptions = SchemaValidationException.class,
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList' should be LIST \\(INTEGER\\), but it is OBJECT")
+    public void expectingListButIsObject() throws Exception {
+        JsonNode root = YAML_MAPPER.readTree(
+                "myList: \n"
+                        + "  x: 1\n"
+                        + "  y: 0\n"
+        );
+
+        newDocument()
+                .rootSchema(schema(
+                        field("myList", list(integer()))
+                ))
+                .build()
+                .validateObject(root);
+    }
+
+    @Test(expectedExceptions = SchemaValidationException.class,
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList' should be LIST \\(OBJECT\\), but it is OBJECT")
+    public void expectingListOfObjectButIsString() throws Exception {
+        JsonNode root = YAML_MAPPER.readTree(
+                "myList: \n"
+                        + "  x: 1\n"
+                        + "  y: 2\n"
+        );
+
+        newDocument()
+                .rootSchema(schema(
+                        field("myList", list(object(field("a", integer()), field("b", integer()))))
+                ))
+                .build()
+                .validateObject(root);
+    }
 
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.myChild' should be OBJECT \\('age'\\), but it is INTEGER")
@@ -517,6 +566,267 @@ public class DocumentFormatTest {
                         field("parent", object(
                                 field("opaque", object(opaque()))
                         ))
+                ))
+                .build();
+
+        boolean outcome = validator.validateObject(node2);
+        assertThat(outcome, is(true));
+    }
+
+    @Test
+    public void acceptsMapOfObjects() throws Exception {
+        JsonNode node2 = YAML_MAPPER.readTree(
+                "parent: \n"
+                        + "  key1: \n"
+                        + "    x: 1\n"
+                        + "    y: 2\n"
+                        + "  key2: \n"
+                        + "    x: 3\n"
+                        + "    y: 4\n"
+        );
+
+        DocumentFormat validator = newDocument()
+                .rootSchema(schema(
+                        field("parent", map(
+                                object(
+                                        field("x", integer()),
+                                        field("y", integer())
+                                )))
+                ))
+                .build();
+
+        boolean outcome = validator.validateObject(node2);
+        assertThat(outcome, is(true));
+    }
+
+    @Test(expectedExceptions = SchemaValidationException.class,
+            expectedExceptionsMessageRegExp = "Unexpected map element type. Field 'parent.key1' should be OBJECT \\('x, y'\\), but it is INTEGER")
+    public void validatesMapOfObjects() throws Exception {
+        JsonNode node2 = YAML_MAPPER.readTree(
+                "parent: \n"
+                        + "  key1: 1\n"
+                        + "  key2: 5\n"
+        );
+
+        DocumentFormat validator = newDocument()
+                .rootSchema(schema(
+                        field("parent", map(
+                                object(
+                                        field("x", integer()),
+                                        field("y", integer())
+                                )))
+                ))
+                .build();
+
+        boolean outcome = validator.validateObject(node2);
+        assertThat(outcome, is(true));
+    }
+
+    @Test
+    public void acceptsMapOfIntegers() throws Exception {
+        JsonNode node2 = YAML_MAPPER.readTree(
+                "parent: \n"
+                        + "  key1: 23\n"
+                        + "  key2: 24\n"
+        );
+
+        DocumentFormat validator = newDocument()
+                .rootSchema(schema(
+                        field("parent", map(integer()))
+                ))
+                .build();
+
+        boolean outcome = validator.validateObject(node2);
+        assertThat(outcome, is(true));
+    }
+
+    @Test(expectedExceptions = SchemaValidationException.class,
+            expectedExceptionsMessageRegExp = "Unexpected map element type. Field 'parent.key1' should be INTEGER, but it is STRING")
+    public void validatesMapOfIntegers() throws Exception {
+        JsonNode node2 = YAML_MAPPER.readTree(
+                "parent: \n"
+                        + "  key1: 'xyz'\n"
+                        + "  key2: 24\n"
+        );
+
+        DocumentFormat validator = newDocument()
+                .rootSchema(schema(
+                        field("parent", map(integer()))
+                ))
+                .build();
+
+        boolean outcome = validator.validateObject(node2);
+        assertThat(outcome, is(true));
+    }
+
+    @Test
+    public void acceptsMapOfStrings() throws Exception {
+        JsonNode node2 = YAML_MAPPER.readTree(
+                "parent: \n"
+                        + "  key1: 'one'\n"
+                        + "  key2: 'two'\n"
+        );
+
+        DocumentFormat validator = newDocument()
+                .rootSchema(schema(
+                        field("parent", map(string()))
+                ))
+                .build();
+
+        boolean outcome = validator.validateObject(node2);
+        assertThat(outcome, is(true));
+    }
+
+    @Test(expectedExceptions = SchemaValidationException.class,
+            expectedExceptionsMessageRegExp = "Unexpected map element type. Field 'parent.key1' should be STRING, but it is INTEGER")
+    public void validatesMapOfStrings() throws Exception {
+        JsonNode node2 = YAML_MAPPER.readTree(
+                "parent: \n"
+                        + "  key1: 5\n"
+                        + "  key2: 'two'\n"
+        );
+
+        DocumentFormat validator = newDocument()
+                .rootSchema(schema(
+                        field("parent", map(string()))
+                ))
+                .build();
+
+        boolean outcome = validator.validateObject(node2);
+        assertThat(outcome, is(true));
+    }
+
+    @Test
+    public void acceptsMapOfBooleans() throws Exception {
+        JsonNode node2 = YAML_MAPPER.readTree(
+                "parent: \n"
+                        + "  ok: true\n"
+                        + "  nok: False\n"
+        );
+
+        DocumentFormat validator = newDocument()
+                .rootSchema(schema(
+                        field("parent", map(bool()))
+                ))
+                .build();
+
+        boolean outcome = validator.validateObject(node2);
+        assertThat(outcome, is(true));
+    }
+
+    @Test(expectedExceptions = SchemaValidationException.class,
+            expectedExceptionsMessageRegExp = "Unexpected map element type. Field 'parent.ok' should be BOOLEAN, but it is STRING")
+    public void validatesMapOfBooleans() throws Exception {
+        JsonNode node2 = YAML_MAPPER.readTree(
+                "parent: \n"
+                        + "  ok: nonbool\n"
+                        + "  nok: False\n"
+        );
+
+        DocumentFormat validator = newDocument()
+                .rootSchema(schema(
+                        field("parent", map(bool()))
+                ))
+                .build();
+
+        boolean outcome = validator.validateObject(node2);
+        assertThat(outcome, is(true));
+    }
+
+    @Test
+    public void acceptsMapOfListOfInts() throws Exception {
+        JsonNode node2 = YAML_MAPPER.readTree(
+                "parent: \n"
+                        + "  key1: \n"
+                        + "    - 1\n"
+                        + "    - 2\n"
+                        + "  key2: \n"
+                        + "    - 3\n"
+                        + "    - 4\n"
+        );
+
+        DocumentFormat validator = newDocument()
+                .rootSchema(schema(
+                        field("parent", map(list(integer())))
+                ))
+                .build();
+
+        boolean outcome = validator.validateObject(node2);
+        assertThat(outcome, is(true));
+    }
+
+    @Test(expectedExceptions = SchemaValidationException.class,
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key1' should be LIST \\(INTEGER\\), but it is OBJECT")
+    public void validatesMapOfListOfInts() throws Exception {
+        JsonNode node2 = YAML_MAPPER.readTree(
+                "parent: \n"
+                        + "  key1: \n"
+                        + "    x: 1\n"
+                        + "    y: 2\n"
+                        + "  key2: \n"
+                        + "    - 3\n"
+                        + "    - 4\n"
+        );
+
+        DocumentFormat validator = newDocument()
+                .rootSchema(schema(
+                        field("parent", map(list(integer())))
+                ))
+                .build();
+
+        boolean outcome = validator.validateObject(node2);
+        assertThat(outcome, is(true));
+    }
+
+    @Test
+    public void acceptssMapOfListOfObjects() throws Exception {
+        JsonNode node2 = YAML_MAPPER.readTree(
+                "parent: \n"
+                        + "  key1: \n"
+                        + "    - x: 1\n"
+                        + "      y: 2\n"
+                        + "    - x: 3\n"
+                        + "      y: 4\n"
+        );
+
+        DocumentFormat validator = newDocument()
+                .rootSchema(schema(
+                        field("parent", map(
+                                list(
+                                        object(
+                                                field("x", integer()),
+                                                field("y", integer()
+                                                )
+                                        )
+                                )))
+                ))
+                .build();
+
+        boolean outcome = validator.validateObject(node2);
+        assertThat(outcome, is(true));
+    }
+
+    @Test(expectedExceptions = SchemaValidationException.class,
+            expectedExceptionsMessageRegExp = "Unexpected list element type. Field 'parent\\[0\\]' should be OBJECT \\('x, y'\\), but it is STRING")
+    public void validatesMapOfListOfObjects() throws Exception {
+        JsonNode node2 = YAML_MAPPER.readTree(
+                "parent: \n"
+                        + "  key1: \n"
+                        + "    - ImString \n"
+                        + "    - x: 3\n"
+                        + "      y: 4\n"
+        );
+
+        DocumentFormat validator = newDocument()
+                .rootSchema(schema(
+                        field("parent", map(
+                                list(
+                                        object(
+                                                field("x", integer()),
+                                                field("y", integer()
+                                                )
+                                        )
+                                )))
                 ))
                 .build();
 
