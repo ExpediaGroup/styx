@@ -15,30 +15,24 @@
  */
 package com.hotels.styx.support.dns;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import sun.net.spi.nameservice.NameService;
 import sun.net.spi.nameservice.NameServiceDescriptor;
-import sun.net.spi.nameservice.dns.DNSNameService;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 /*
  * NOTE: This class is not suited for parallel tests.
  */
 public class LocalNameServiceDescriptor implements NameServiceDescriptor {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(LocalNameServiceDescriptor.class);
+    private static final String dnsName = "local-dns";
 
     @Override
-    public NameService createNameService() throws Exception {
-        return new MockNameService();
+    public NameService createNameService() {
+        return MockNameService.SELF;
     }
 
     @Override
     public String getProviderName() {
-        return MockNameService.dnsName;
+        return dnsName;
     }
 
     @Override
@@ -46,37 +40,4 @@ public class LocalNameServiceDescriptor implements NameServiceDescriptor {
         return "dns";
     }
 
-    static class MockNameService implements NameService {
-
-        static final String dnsName = "local-dns";
-        private static final DNSNameService delegate = getDelegate();
-
-        @Override
-        public InetAddress[] lookupAllHostAddr(String hostName) throws UnknownHostException {
-            LOGGER.warn("lookup addresses for host: " + hostName);
-
-            try {
-                return delegate.lookupAllHostAddr(hostName);
-            } catch (Throwable cause) {
-                LOGGER.warn("Lookup failure: " + cause);
-                cause.printStackTrace();
-                throw cause;
-            }
-        }
-
-        @Override
-        public String getHostByAddr(byte[] bytes) throws UnknownHostException {
-            LOGGER.warn("lookup hosts for address: " + bytes);
-            return delegate.getHostByAddr(bytes);
-        }
-
-        private static DNSNameService getDelegate() {
-            try {
-                return new DNSNameService();
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw new RuntimeException(e);
-            }
-        }
-    }
 }

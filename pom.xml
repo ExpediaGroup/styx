@@ -563,6 +563,10 @@
               -XX:+HeapDumpOnOutOfMemoryError
               -XX:HeapDumpPath=${project.build.directory}/surefire-reports
             </argLine>
+            <systemPropertyVariables>
+              <sun.net.spi.nameservice.provider.1>dns,local-dns</sun.net.spi.nameservice.provider.1>
+              <sun.net.spi.nameservice.provider.2>default</sun.net.spi.nameservice.provider.2>
+            </systemPropertyVariables>
           </configuration>
         </plugin>
 

@@ -45,7 +45,7 @@ import static rx.Observable.just;
  * for implementing a StyxSerive interface.
  */
 public abstract class AbstractStyxService implements StyxService {
-    private final String name;
+    protected final String name;
     private final AtomicReference<StyxServiceStatus> status = new AtomicReference<>(CREATED);
 
     public AbstractStyxService(String name) {

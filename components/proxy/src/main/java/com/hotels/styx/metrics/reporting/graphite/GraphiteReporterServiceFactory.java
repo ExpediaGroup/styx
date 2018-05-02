@@ -21,6 +21,7 @@ import com.hotels.styx.api.configuration.ServiceFactory;
 import com.hotels.styx.api.service.spi.StyxService;
 
 import static com.hotels.styx.metrics.reporting.MetricRegistryConstraints.codaHaleMetricRegistry;
+import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -32,9 +33,13 @@ public class GraphiteReporterServiceFactory implements ServiceFactory<StyxServic
     public StyxService create(Environment environment, Configuration serviceConfiguration) {
         GraphiteConfig graphiteConfig = serviceConfiguration.as(GraphiteConfig.class);
 
+        String host = graphiteConfig.host();
+        int port = graphiteConfig.port();
+
         return new GraphiteReporterService.Builder()
+                .serviceName(format("Graphite-Reporter-%s:%d", host, port))
                 .prefix(graphiteConfig.prefix())
-                .address(graphiteConfig.host(), graphiteConfig.port())
+                .graphiteSender(new NonSanitizingGraphiteSender(host, port))
                 .reportingInterval(graphiteConfig.intervalMillis(), MILLISECONDS)
                 .metricRegistry(codaHaleMetricRegistry(environment))
                 .build();
