@@ -17,11 +17,20 @@ package testgrp;
 
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import org.slf4j.Logger;
+
+import static depend.ExampleDependency.exampleDependencyProperty;
+import static org.slf4j.LoggerFactory.getLogger;
 
 @SuppressWarnings("unused")
 public class TestPluginModule implements PluginFactory {
+    private static final Logger LOGGER = getLogger(TestPluginModule.class);
+
     @Override
     public Plugin create(PluginFactory.Environment environment) {
+        // If this line executes without error then the dependency-relationship is intact.
+        LOGGER.info(exampleDependencyProperty);
+
         return new TestPlugin(environment);
     }
 }

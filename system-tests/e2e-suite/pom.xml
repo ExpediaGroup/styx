@@ -40,13 +40,6 @@
 
     <dependency>
       <groupId>com.hotels.styx</groupId>
-      <artifactId>styx-test-plugin</artifactId>
-      <version>${project.version}</version>
-      <scope>runtime</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.hotels.styx</groupId>
       <artifactId>styx-backend-provider</artifactId>
       <version>${project.version}</version>
       <scope>runtime</scope>
