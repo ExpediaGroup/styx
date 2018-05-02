@@ -206,8 +206,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                 .build();
 
         ConnectionSettings connectionSettings = new ConnectionSettings(
-                connectionPoolSettings.connectTimeoutMillis(),
-                healthCheckConfig.timeoutMillis());
+                connectionPoolSettings.connectTimeoutMillis());
 
         HttpClient client = new SimpleNettyHttpClient.Builder()
                 .userAgent("Styx/" + styxVersion)

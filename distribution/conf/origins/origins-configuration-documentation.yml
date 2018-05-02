@@ -32,7 +32,6 @@
 #
 #maxConnectionsPerHost: the maximum number of connections that may be established to a single origin
 #maxPendingConnectionsPerHost: the maximum number of connections that may be waiting to be established at the same time
-#socketTimeoutMillis: the maximum time Styx should wait to read from an origin
 #connectTimeoutMillis: the maximum time Styx should wait for a connection to be established
 #pendingConnectionTimeoutMillis: the maximum time to wait for a connection from the connection pool
 #
@@ -65,7 +64,6 @@
   connectionPool:
     maxConnectionsPerHost: 300
     maxPendingConnectionsPerHost: 50
-    socketTimeoutMillis: 11000
     connectTimeoutMillis: 12000
     pendingConnectionTimeoutMillis: 10000
   rewrites:

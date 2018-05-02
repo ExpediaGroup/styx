@@ -46,7 +46,7 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
     ConnectionPoolSettings(@JsonProperty("maxConnectionsPerHost") Integer maxConnectionsPerHost,
                            @JsonProperty("maxPendingConnectionsPerHost") Integer maxPendingConnectionsPerHost,
                            @JsonProperty("connectTimeoutMillis") Integer connectTimeoutMillis,
-                           @JsonProperty("socketTimeoutMillis") Integer socketTimeoutMillis,
+                           @Deprecated @JsonProperty("socketTimeoutMillis") Integer socketTimeoutMillis,
                            @JsonProperty("pendingConnectionTimeoutMillis") Integer pendingConnectionTimeoutMillis,
                            @JsonProperty("connectionExpirationSeconds") Long connectionExpirationSeconds) {
         this.maxConnectionsPerHost = firstNonNull(maxConnectionsPerHost, DEFAULT_MAX_CONNECTIONS_PER_HOST);
@@ -57,6 +57,22 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
         this.connectionExpirationSeconds = firstNonNull(connectionExpirationSeconds, DEFAULT_CONNECTION_EXPIRATION_SECONDS);
     }
 
+    /**
+     * A constructor for ConnectionPoolSettings.
+     *
+     * This is a deprecated constructor. Use the alternative constructor that does not
+     * take a {{socketTimeoutMillis}} as an argument.
+     *
+     * @deprecated As the socketTimeout is due to be removed in the future release.
+     *
+     * @param maxConnectionsPerHost         Maximum number of connections.
+     * @param maxPendingConnectionsPerHost  Maximum number of pending connections.
+     * @param connectTimeoutMillis          TCP connection timeout.
+     * @param socketTimeoutMillis             Deprecated.
+     * @param pendingConnectionTimeoutMillis  Pending connection timeout, in milliseconds.
+     * @param connectionExpirationSeconds     Connection expiry, in seconds.
+     */
+    @Deprecated
     public ConnectionPoolSettings(int maxConnectionsPerHost,
                            int maxPendingConnectionsPerHost,
                            int connectTimeoutMillis,
@@ -69,6 +85,19 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
         this.socketTimeoutMillis = firstNonNull(socketTimeoutMillis, DEFAULT_SOCKET_TIMEOUT_MILLIS);
         this.pendingConnectionTimeoutMillis = firstNonNull(pendingConnectionTimeoutMillis, DEFAULT_CONNECT_TIMEOUT_MILLIS);
         this.connectionExpirationSeconds = firstNonNull(connectionExpirationSeconds, DEFAULT_CONNECTION_EXPIRATION_SECONDS);
+    }
+
+    public ConnectionPoolSettings(int maxConnectionsPerHost,
+                           int maxPendingConnectionsPerHost,
+                           int connectTimeoutMillis,
+                           int pendingConnectionTimeoutMillis,
+                           long connectionExpirationSeconds) {
+        this(maxConnectionsPerHost,
+                maxPendingConnectionsPerHost,
+                connectTimeoutMillis,
+                DEFAULT_SOCKET_TIMEOUT_MILLIS,
+                pendingConnectionTimeoutMillis,
+                connectionExpirationSeconds);
     }
 
     private ConnectionPoolSettings(Builder builder) {
@@ -91,7 +120,18 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
         return new ConnectionPoolSettings(new Builder());
     }
 
+    /**
+     * Returns a socket timeout, in milliseconds.
+     *
+     * This getter is deprecated. It just serves the purpose of
+     * implementing an interface contract.
+     *
+     * @deprecated Due to be removed in a future release.
+     *
+     * @return a socket timeout in milliseconds.
+     */
     @Override
+    @Deprecated
     @JsonProperty("socketTimeoutMillis")
     public int socketTimeoutMillis() {
         return socketTimeoutMillis;
@@ -216,10 +256,13 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
         /**
          * Sets socket read timeout.
          *
+         * @deprecated Due to be removed in a future release.
+         *
          * @param socketTimeout read timeout
          * @param timeUnit unit of timeout
          * @return this builder
          */
+        @Deprecated
         public Builder socketTimeout(int socketTimeout, TimeUnit timeUnit) {
             this.socketTimeoutMillis = (int) timeUnit.toMillis(socketTimeout);
             return this;

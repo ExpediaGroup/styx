@@ -13,7 +13,6 @@
   connectionPool:
     maxConnectionsPerHost: 300
     maxPendingConnectionsPerHost: 50
-    socketTimeoutMillis: 120000
     connectTimeoutMillis: 8000
   origins:
   - id: "webapp-01"

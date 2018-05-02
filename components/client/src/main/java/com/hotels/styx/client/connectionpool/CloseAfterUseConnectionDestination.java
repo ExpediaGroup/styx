@@ -19,11 +19,11 @@ import com.google.common.base.Objects;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionDestination;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.service.TlsSettings;
 import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.HttpRequestOperationFactory;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
-import com.hotels.styx.api.service.TlsSettings;
 import rx.Observable;
 
 import java.util.function.Function;
@@ -125,7 +125,7 @@ public class CloseAfterUseConnectionDestination implements ConnectionDestination
      * Factory to construct instances.
      */
     public static class Factory implements ConnectionDestination.Factory {
-        private Connection.Settings connectionSettings = new ConnectionSettings(1000, 1000);
+        private Connection.Settings connectionSettings = new ConnectionSettings(1000);
         private Connection.Factory connectionFactory;
         private TlsSettings tlsSettings;
         private HttpRequestOperationFactory requestOperationFactory = request -> new HttpRequestOperation(

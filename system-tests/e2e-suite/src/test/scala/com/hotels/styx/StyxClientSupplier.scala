@@ -34,7 +34,7 @@ trait StyxClientSupplier {
 
   val client: HttpClient = new SimpleNettyHttpClient.Builder()
     .connectionDestinationFactory(new Factory()
-      .connectionSettings(new ConnectionSettings(1000, 10000))
+      .connectionSettings(new ConnectionSettings(1000))
       .connectionFactory(new NettyConnectionFactory.Builder()
         .name("scalatest-e2e-client")
         .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(2 * 8192).build())

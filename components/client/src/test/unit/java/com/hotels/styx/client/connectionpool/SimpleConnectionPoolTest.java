@@ -547,7 +547,7 @@ public class SimpleConnectionPoolTest {
     @Test
     private SimpleConnectionPool sizeOnePool(Connection.Factory factory) {
         return new SimpleConnectionPool.Factory()
-                .connectionPoolSettings(new ConnectionPoolSettings(1, 1, 1000, 1000, 1000, 1))
+                .connectionPoolSettings(new ConnectionPoolSettings(1, 1, 1000, 1000, 1L))
                 .connectionFactory(factory)
                 .create(origin());
     }

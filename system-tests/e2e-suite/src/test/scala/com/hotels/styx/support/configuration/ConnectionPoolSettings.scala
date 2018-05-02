@@ -26,7 +26,6 @@ import com.hotels.styx.api.service.ConnectionPoolSettings._
 case class ConnectionPoolSettings(maxConnectionsPerHost: Int = DEFAULT_MAX_CONNECTIONS_PER_HOST,
                                   maxPendingConnectionsPerHost: Int = DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST,
                                   connectTimeoutMillis: Int = DEFAULT_CONNECT_TIMEOUT_MILLIS,
-                                  socketTimeoutMillis: Int = DEFAULT_SOCKET_TIMEOUT_MILLIS,
                                   pendingConnectionTimeoutMillis: Int = DEFAULT_CONNECT_TIMEOUT_MILLIS,
                                   connectionExpirationSeconds: Long = DEFAULT_CONNECTION_EXPIRATION_SECONDS
                                ) {
@@ -34,7 +33,6 @@ case class ConnectionPoolSettings(maxConnectionsPerHost: Int = DEFAULT_MAX_CONNE
       .maxConnectionsPerHost(maxConnectionsPerHost)
       .maxConnectionsPerHost(maxPendingConnectionsPerHost)
       .connectTimeout(connectTimeoutMillis, MILLISECONDS)
-      .socketTimeout(socketTimeoutMillis, MILLISECONDS)
       .pendingConnectionTimeout(pendingConnectionTimeoutMillis, MILLISECONDS)
       .connectionExpirationSeconds(connectionExpirationSeconds)
     .build()
@@ -46,7 +44,6 @@ object ConnectionPoolSettings {
       maxConnectionsPerHost = from.maxConnectionsPerHost,
       maxPendingConnectionsPerHost = from.maxPendingConnectionsPerHost,
       connectTimeoutMillis = from.connectTimeoutMillis(),
-      socketTimeoutMillis = from.socketTimeoutMillis(),
       pendingConnectionTimeoutMillis = from.pendingConnectionTimeoutMillis,
       connectionExpirationSeconds = from.connectionExpirationSeconds
     )

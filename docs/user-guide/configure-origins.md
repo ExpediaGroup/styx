@@ -82,8 +82,6 @@ The connection pool block has the following properties:
 
 *   **maxPendingConnectionsPerHost**: the maximum number of connections that may be waiting to be established at the same time
 
-*   **socketTimeoutMillis**: the maximum time Styx should wait to read from an origin
-
 *   **connectTimeoutMillis**: the maximum time Styx should wait for a connection to be established
 
 *   **pendingConnectionTimeoutMillis**: the maximum time to wait for a connection from the connection pool
@@ -155,7 +153,6 @@ Here is the configuration for an example backend service:
       connectionPool:
         maxConnectionsPerHost: 300
         maxPendingConnectionsPerHost: 50
-        socketTimeoutMillis: 11000
         connectTimeoutMillis: 12000
         pendingConnectionTimeoutMillis: 10000    
       rewrites:

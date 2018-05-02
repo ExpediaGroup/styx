@@ -5,7 +5,6 @@
   connectionPool:
     maxConnectionsPerHost: 45
     maxPendingConnectionsPerHost: 15
-    socketTimeoutMillis: 120000
     connectTimeoutMillis: 8000
     pendingConnectionTimeoutMillis: 8000
   origins:
@@ -18,7 +17,6 @@
   connectionPool:
     maxConnectionsPerHost: 45
     maxPendingConnectionsPerHost: 100
-    socketTimeoutMillis: 120000
     connectTimeoutMillis: 8000
     pendingConnectionTimeoutMillis: 8000
   origins:

@@ -10,7 +10,6 @@
   stickySession:
     enabled: true
   connectionPool:
-    socketTimeoutMillis: 3001
     connectTimeoutMillis: 3000
   origins:
   - id: "webapp-01"
@@ -24,7 +23,6 @@
     enabled: true
     timeoutSeconds: 14321
   connectionPool:
-    socketTimeoutMillis: 4001
     connectTimeoutMillis: 4000
   origins:
   - id: "landing-01"
@@ -46,7 +44,6 @@
   connectionPool:
     maxConnectionsPerHost: 200
     maxPendingConnectionsPerHost: 250
-    socketTimeoutMillis: 5001
     connectTimeoutMillis: 5000
   origins:
   - id: "shopping-01"

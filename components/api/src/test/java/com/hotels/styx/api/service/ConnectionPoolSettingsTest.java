@@ -26,9 +26,8 @@ import static org.hamcrest.Matchers.is;
 public class ConnectionPoolSettingsTest {
     @Test
     public void setsConfigurationValues() {
-        ConnectionPoolSettings config = new ConnectionPoolSettings(5, 8, 2345, 1234, 123, 1);
+        ConnectionPoolSettings config = new ConnectionPoolSettings(5, 8, 2345, 123, 1L);
 
-        assertThat(config.socketTimeoutMillis(), is(equalTo(1234)));
         assertThat(config.connectTimeoutMillis(), is(equalTo(2345)));
         assertThat(config.pendingConnectionTimeoutMillis(), is(equalTo(123)));
         assertThat(config.maxConnectionsPerHost(), is(equalTo(5)));
@@ -38,12 +37,11 @@ public class ConnectionPoolSettingsTest {
 
     @Test
     public void shouldBuildFromOtherPoolSettings() {
-        ConnectionPoolSettings config = new ConnectionPoolSettings(5, 8, 2345, 1234, 123, 1);
+        ConnectionPoolSettings config = new ConnectionPoolSettings(5, 8, 2345, 123, 1L);
         ConnectionPoolSettings newConfig = new ConnectionPoolSettings.Builder(config)
                 .connectTimeout(444, MILLISECONDS)
                 .build();
 
-        assertThat(newConfig.socketTimeoutMillis(), is(equalTo(1234)));
         assertThat(newConfig.connectTimeoutMillis(), is(equalTo(444)));
         assertThat(newConfig.pendingConnectionTimeoutMillis(), is(equalTo(123)));
         assertThat(newConfig.maxConnectionsPerHost(), is(equalTo(5)));
