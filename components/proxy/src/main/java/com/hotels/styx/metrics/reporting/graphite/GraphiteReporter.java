@@ -13,6 +13,7 @@ import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.graphite.GraphiteSender;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -20,11 +21,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Locale;
 import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
-
-import static com.google.common.base.Throwables.propagate;
 
 /*
  * This file is from Coda Hale metrics project (now Yammer Metrics), and
@@ -36,12 +36,14 @@ import static com.google.common.base.Throwables.propagate;
 
 /**
  * A reporter which publishes metric values to a Graphite server.
+ * <p>
+ * This reporter is <b>not</b> thread safe and is intended for use within a single thread.
  *
  * @see <a href="http://graphite.wikidot.com/">Graphite - Scalable Realtime Graphing</a>
  */
 public class GraphiteReporter extends ScheduledReporter {
     /**
-     * Returns a new {@link Builder} for {@link GraphiteReporter}.
+     * Returns a new {@link Builder} fGor {@link GraphiteReporter}.
      *
      * @param registry the registry to report
      * @return a {@link Builder} instance for a {@link GraphiteReporter}
@@ -147,27 +149,30 @@ public class GraphiteReporter extends ScheduledReporter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteReporter.class);
 
+    @VisibleForTesting
+    static final int MAX_RETRIES = 5;
+
     private final GraphiteSender graphite;
     private final Clock clock;
     private final String prefix;
 
     private final LoadingCache<String, String> counterPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, String>() {
         @Override
-        public String load(String name) throws Exception {
+        public String load(String name) {
             return prefix(name, "count");
         }
     });
 
     private final LoadingCache<String, String> gaugePrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, String>() {
         @Override
-        public String load(String name) throws Exception {
+        public String load(String name) {
             return prefix(name);
         }
     });
 
     private final LoadingCache<String, HistogramPrefixes> histogramPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, HistogramPrefixes>() {
         @Override
-        public HistogramPrefixes load(String name) throws Exception {
+        public HistogramPrefixes load(String name) {
             return new HistogramPrefixes(name);
         }
     });
@@ -208,6 +213,8 @@ public class GraphiteReporter extends ScheduledReporter {
         long timestamp = clock.getTime() / 1000;
 
         try {
+
+            initConnection();
             gauges.forEach((name, gauge) ->
                     doReport(name, gauge, timestamp, this::reportGauge));
 
@@ -226,6 +233,7 @@ public class GraphiteReporter extends ScheduledReporter {
             graphite.flush();
         } catch (Exception e) {
             LOGGER.error("Error reporting metrics" + e.getMessage(), e);
+        } finally {
             try {
                 graphite.close();
             } catch (IOException e1) {
@@ -236,15 +244,21 @@ public class GraphiteReporter extends ScheduledReporter {
 
     private <M extends Metric> void doReport(String name, M metric, long timestamp, MetricReportingAction<M> consumer) {
         try {
-            if (!graphite.isConnected()) {
-                graphite.connect();
-            }
-
             consumer.execute(name, metric, timestamp);
+        } catch (UncheckedIOException e) {
+            throw e;
         } catch (Exception e) {
             LOGGER.error("Error reporting metric '" + name + "': " + e.getMessage(), e);
-            reconnectIfNecessary(e);
         }
+    }
+
+    @VisibleForTesting
+    void initConnection() {
+        IoRetry.tryTimes(
+                MAX_RETRIES,
+                graphite::connect,
+                (e) -> attemptErrorHandling(graphite::close)
+        );
     }
 
     private void reconnectIfNecessary(Throwable e) {
@@ -348,12 +362,18 @@ public class GraphiteReporter extends ScheduledReporter {
         doSend(name, format(value), timestamp);
     }
 
+
     private void doSend(String name, String value, long timestamp) {
-        try {
-            graphite.send(name, value, timestamp);
-        } catch (Exception e) {
-            reconnectIfNecessary(e);
-        }
+        attemptWithRetryAndReconect(
+                () -> graphite.send(name, value, timestamp));
+    }
+
+    private void attemptWithRetryAndReconect(IoRetry.IoRunnable operation) {
+        IoRetry.tryTimes(
+                MAX_RETRIES,
+                operation,
+                this::reconnectIfNecessary
+        );
     }
 
     private String format(Object o) {

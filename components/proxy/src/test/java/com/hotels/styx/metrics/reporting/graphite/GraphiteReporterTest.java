@@ -37,6 +37,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,11 +47,14 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static ch.qos.logback.classic.Level.ERROR;
+import static com.hotels.styx.metrics.reporting.graphite.GraphiteReporter.MAX_RETRIES;
+import static com.hotels.styx.metrics.reporting.graphite.GraphiteReporter.forRegistry;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -71,14 +75,14 @@ public class GraphiteReporterTest {
     private LoggingTestSupport logging;
 
     @BeforeMethod
-    public void setUp() throws Exception {
+    public void setUp() {
         Clock clock = mock(Clock.class);
         graphite = mock(Graphite.class);
 
         MetricRegistry registry = mock(MetricRegistry.class);
 
         when(clock.getTime()).thenReturn(TIMESTAMP * 1000);
-        reporter = GraphiteReporter.forRegistry(registry)
+        reporter = forRegistry(registry)
                 .withClock(clock)
                 .prefixedWith("prefix")
                 .convertRatesTo(SECONDS)
@@ -143,8 +147,21 @@ public class GraphiteReporterTest {
         assertThat(reported.sent(), hasItem("prefix.ok_timer.max, 5678.00"));
     }
 
+
     @Test
-    public void continuesToSendAfterIOException() throws IOException {
+    public void initConnectRetriesOnFailure() throws Exception {
+
+        doThrow(new UnknownHostException("UNKNOWN-HOST")).when(graphite).connect();
+        try {
+            reporter.initConnection();
+        } catch (UncheckedIOException e) {
+        }
+
+        verify(graphite, times(MAX_RETRIES)).connect();
+    }
+
+    @Test
+    public void failsAfterLimitOfIoExceptions() throws IOException {
         ReportCollector reported = new ReportCollector();
 
         doAnswer(invocationOnMock -> {
@@ -164,14 +181,11 @@ public class GraphiteReporterTest {
 
         reportArgs.report(reporter);
 
-        assertThat(reported.sent(), hasItem("prefix.gauge, 1234"));
-        assertThat(reported.sent(), hasItem("prefix.counter.count, 2345"));
-        assertThat(reported.sent(), hasItem("prefix.histogram.max, 3456"));
         assertThat(reported.sent(), hasItem("prefix.meter.count, 4567"));
-        assertThat(reported.sent(), hasItem("prefix.timer.max, 5678.00"));
+        assertThat(reported.sent(), not(hasItem("prefix.timer.min, 5678.00")));
 
         // connects when report is called, and then again after an IOException
-        verify(graphite, times(6)).connect();
+        verify(graphite, times(MAX_RETRIES + 1)).connect();
     }
 
     @Test(dataProvider = "metricTypes")
@@ -183,7 +197,6 @@ public class GraphiteReporterTest {
         new ReportArgs().add(metricType, "ok_metric", okMetric).report(reporter);
 
         InOrder inOrder = inOrder(graphite);
-        inOrder.verify(graphite).isConnected();
         inOrder.verify(graphite).connect();
         inOrder.verify(graphite).send(any(String.class), any(String.class), eq(TIMESTAMP));
         inOrder.verify(graphite).close();
@@ -195,10 +208,10 @@ public class GraphiteReporterTest {
         reporter.report(map("gauge", gauge("value")), emptyMap(), emptyMap(), emptyMap(), emptyMap());
 
         InOrder inOrder = inOrder(graphite);
-        inOrder.verify(graphite).isConnected();
         inOrder.verify(graphite).connect();
         inOrder.verify(graphite, never()).send("prefix.gauge", "value", TIMESTAMP);
         inOrder.verify(graphite).flush();
+        inOrder.verify(graphite).close();
 
         verifyNoMoreInteractions(graphite);
     }
@@ -208,10 +221,10 @@ public class GraphiteReporterTest {
         reporter.report(map("gauge", gauge((byte) 1)), emptyMap(), emptyMap(), emptyMap(), emptyMap());
 
         InOrder inOrder = inOrder(graphite);
-        inOrder.verify(graphite).isConnected();
         inOrder.verify(graphite).connect();
         inOrder.verify(graphite).send("prefix.gauge", "1", TIMESTAMP);
         inOrder.verify(graphite).flush();
+        inOrder.verify(graphite).close();
 
         verifyNoMoreInteractions(graphite);
     }
@@ -219,66 +232,31 @@ public class GraphiteReporterTest {
     @Test
     public void reportsShortGaugeValues() throws Exception {
         reporter.report(map("gauge", gauge((short) 1)), emptyMap(), emptyMap(), emptyMap(), emptyMap());
-
-        InOrder inOrder = inOrder(graphite);
-        inOrder.verify(graphite).isConnected();
-        inOrder.verify(graphite).connect();
-        inOrder.verify(graphite).send("prefix.gauge", "1", TIMESTAMP);
-        inOrder.verify(graphite).flush();
-
-        verifyNoMoreInteractions(graphite);
+        verify(graphite).send("prefix.gauge", "1", TIMESTAMP);
     }
 
     @Test
     public void reportsIntegerGaugeValues() throws Exception {
         reporter.report(map("gauge", gauge(1)), emptyMap(), emptyMap(), emptyMap(), emptyMap());
-
-        InOrder inOrder = inOrder(graphite);
-        inOrder.verify(graphite).isConnected();
-        inOrder.verify(graphite).connect();
-        inOrder.verify(graphite).send("prefix.gauge", "1", TIMESTAMP);
-        inOrder.verify(graphite).flush();
-
-        verifyNoMoreInteractions(graphite);
+        verify(graphite).send("prefix.gauge", "1", TIMESTAMP);
     }
 
     @Test
     public void reportsLongGaugeValues() throws Exception {
         reporter.report(map("gauge", gauge(1L)), emptyMap(), emptyMap(), emptyMap(), emptyMap());
-
-        InOrder inOrder = inOrder(graphite);
-        inOrder.verify(graphite).isConnected();
-        inOrder.verify(graphite).connect();
-        inOrder.verify(graphite).send("prefix.gauge", "1", TIMESTAMP);
-        inOrder.verify(graphite).flush();
-
-        verifyNoMoreInteractions(graphite);
+        verify(graphite).send("prefix.gauge", "1", TIMESTAMP);
     }
 
     @Test
     public void reportsFloatGaugeValues() throws Exception {
         reporter.report(map("gauge", gauge(1.1f)), emptyMap(), emptyMap(), emptyMap(), emptyMap());
-
-        InOrder inOrder = inOrder(graphite);
-        inOrder.verify(graphite).isConnected();
-        inOrder.verify(graphite).connect();
-        inOrder.verify(graphite).send("prefix.gauge", "1.10", TIMESTAMP);
-        inOrder.verify(graphite).flush();
-
-        verifyNoMoreInteractions(graphite);
+        verify(graphite).send("prefix.gauge", "1.10", TIMESTAMP);
     }
 
     @Test
     public void reportsDoubleGaugeValues() throws Exception {
         reporter.report(map("gauge", gauge(1.1)), emptyMap(), emptyMap(), emptyMap(), emptyMap());
-
-        InOrder inOrder = inOrder(graphite);
-        inOrder.verify(graphite).isConnected();
-        inOrder.verify(graphite).connect();
-        inOrder.verify(graphite).send("prefix.gauge", "1.10", TIMESTAMP);
-        inOrder.verify(graphite).flush();
-
-        verifyNoMoreInteractions(graphite);
+        verify(graphite).send("prefix.gauge", "1.10", TIMESTAMP);
     }
 
     @Test
@@ -288,14 +266,14 @@ public class GraphiteReporterTest {
         reporter.report(map("gauge", gauge(false)), emptyMap(), emptyMap(), emptyMap(), emptyMap());
 
         final InOrder inOrder = inOrder(graphite);
-        inOrder.verify(graphite).isConnected();
         inOrder.verify(graphite).connect();
         inOrder.verify(graphite).send("prefix.gauge", "1", TIMESTAMP);
         inOrder.verify(graphite).flush();
-        inOrder.verify(graphite).isConnected();
+        inOrder.verify(graphite).close();
         inOrder.verify(graphite).connect();
         inOrder.verify(graphite).send("prefix.gauge", "0", TIMESTAMP);
         inOrder.verify(graphite).flush();
+        inOrder.verify(graphite).close();
 
         verifyNoMoreInteractions(graphite);
     }
@@ -305,10 +283,10 @@ public class GraphiteReporterTest {
         reporter.report(emptyMap(), map("counter", counter(100)), emptyMap(), emptyMap(), emptyMap());
 
         InOrder inOrder = inOrder(graphite);
-        inOrder.verify(graphite).isConnected();
         inOrder.verify(graphite).connect();
         inOrder.verify(graphite).send("prefix.counter.count", "100", TIMESTAMP);
         inOrder.verify(graphite).flush();
+        inOrder.verify(graphite).close();
 
         verifyNoMoreInteractions(graphite);
     }
@@ -335,7 +313,6 @@ public class GraphiteReporterTest {
         reporter.report(emptyMap(), emptyMap(), map("histogram", histogram), emptyMap(), emptyMap());
 
         InOrder inOrder = inOrder(graphite);
-        inOrder.verify(graphite).isConnected();
         inOrder.verify(graphite).connect();
         inOrder.verify(graphite).send("prefix.histogram.count", "1", TIMESTAMP);
         inOrder.verify(graphite).send("prefix.histogram.max", "2", TIMESTAMP);
@@ -349,6 +326,7 @@ public class GraphiteReporterTest {
         inOrder.verify(graphite).send("prefix.histogram.p99", "10.00", TIMESTAMP);
         inOrder.verify(graphite).send("prefix.histogram.p999", "11.00", TIMESTAMP);
         inOrder.verify(graphite).flush();
+        inOrder.verify(graphite).close();
 
         verifyNoMoreInteractions(graphite);
     }
@@ -365,7 +343,6 @@ public class GraphiteReporterTest {
         reporter.report(emptyMap(), emptyMap(), emptyMap(), map("meter", meter), emptyMap());
 
         InOrder inOrder = inOrder(graphite);
-        inOrder.verify(graphite).isConnected();
         inOrder.verify(graphite).connect();
         inOrder.verify(graphite).send("prefix.meter.count", "1", TIMESTAMP);
         inOrder.verify(graphite).send("prefix.meter.m1_rate", "2.00", TIMESTAMP);
@@ -373,6 +350,7 @@ public class GraphiteReporterTest {
         inOrder.verify(graphite).send("prefix.meter.m15_rate", "4.00", TIMESTAMP);
         inOrder.verify(graphite).send("prefix.meter.mean_rate", "5.00", TIMESTAMP);
         inOrder.verify(graphite).flush();
+        inOrder.verify(graphite).close();
 
         verifyNoMoreInteractions(graphite);
     }
@@ -404,7 +382,6 @@ public class GraphiteReporterTest {
         reporter.report(emptyMap(), emptyMap(), emptyMap(), emptyMap(), map("timer", timer));
 
         InOrder inOrder = inOrder(graphite);
-        inOrder.verify(graphite).isConnected();
         inOrder.verify(graphite).connect();
         inOrder.verify(graphite).send("prefix.timer.max", "100.00", TIMESTAMP);
         inOrder.verify(graphite).send("prefix.timer.mean", "200.00", TIMESTAMP);
@@ -422,6 +399,7 @@ public class GraphiteReporterTest {
         inOrder.verify(graphite).send("prefix.timer.m15_rate", "5.00", TIMESTAMP);
         inOrder.verify(graphite).send("prefix.timer.mean_rate", "2.00", TIMESTAMP);
         inOrder.verify(graphite).flush();
+        inOrder.verify(graphite).close();
 
         verifyNoMoreInteractions(graphite);
     }
@@ -432,7 +410,6 @@ public class GraphiteReporterTest {
         reporter.report(map("gauge", gauge(1)), emptyMap(), emptyMap(), emptyMap(), emptyMap());
 
         InOrder inOrder = inOrder(graphite);
-        inOrder.verify(graphite).isConnected();
         inOrder.verify(graphite).connect();
         inOrder.verify(graphite).close();
     }
@@ -445,6 +422,7 @@ public class GraphiteReporterTest {
 
         verifyNoMoreInteractions(graphite);
     }
+
 
     private static <T> SortedMap<String, T> emptyMap() {
         return ImmutableSortedMap.of();
