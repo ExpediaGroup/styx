@@ -32,6 +32,16 @@ public interface Connection extends Closeable {
      */
     interface Settings {
         /**
+         * Returns Socket read/write timeout in milliseconds.
+         *
+         * @deprecated Due to be removed in a future release.
+         *
+         * @return number of milliseconds
+         */
+        @Deprecated
+        int socketTimeoutMillis();
+
+        /**
          * Returns Socket connect timeout in milliseconds.
          *
          * @return number of milliseconds

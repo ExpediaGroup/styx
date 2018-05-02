@@ -70,4 +70,15 @@ public final class ConnectionSettings implements Connection.Settings {
         return connectTimeoutMillis;
     }
 
+    /**
+     * Deprecated and due to be removed in a future release.
+     *
+     * @return Always returns a constant 0.
+     */
+    @Deprecated
+    @Override
+    public int socketTimeoutMillis() {
+        return 0;
+    }
+
 }
