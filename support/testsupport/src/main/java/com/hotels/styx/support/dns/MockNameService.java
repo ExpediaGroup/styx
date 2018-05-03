@@ -49,8 +49,9 @@ public class MockNameService implements NameService {
     @Override
     public InetAddress[] lookupAllHostAddr(String hostName) throws UnknownHostException {
 
-        if (delegate.get() != null) {
-            InetAddress[] result = delegate.get().lookupAllHostAddr(hostName);
+        NameService nameService = delegate.get();
+        if (nameService != null) {
+            InetAddress[] result = nameService.lookupAllHostAddr(hostName);
             LOGGER.info("lookup addresses for host: '{}' results={}", hostName, result.length);
             return result;
         }
@@ -62,8 +63,9 @@ public class MockNameService implements NameService {
     public String getHostByAddr(byte[] bytes) throws UnknownHostException {
         LOGGER.info("lookup hosts for address: " + toByteString(bytes));
 
-        if (delegate.get() != null) {
-            String result = delegate.get().getHostByAddr(bytes);
+        NameService nameService = delegate.get();
+        if (nameService != null) {
+            String result = nameService.getHostByAddr(bytes);
             LOGGER.info("lookup hosts for address: '{}' result='{}'", toByteString(bytes), result);
             return result;
         }
