@@ -36,14 +36,12 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * A reporter which publishes metric values to a Graphite server.
- * <p>
- * This reporter is <b>not</b> thread safe and is intended for use within a single thread.
  *
  * @see <a href="http://graphite.wikidot.com/">Graphite - Scalable Realtime Graphing</a>
  */
 public class GraphiteReporter extends ScheduledReporter {
     /**
-     * Returns a new {@link Builder} fGor {@link GraphiteReporter}.
+     * Returns a new {@link Builder} for {@link GraphiteReporter}.
      *
      * @param registry the registry to report
      * @return a {@link Builder} instance for a {@link GraphiteReporter}
@@ -179,14 +177,14 @@ public class GraphiteReporter extends ScheduledReporter {
 
     private final LoadingCache<String, MeteredPrefixes> meteredPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, MeteredPrefixes>() {
         @Override
-        public MeteredPrefixes load(String name) throws Exception {
+        public MeteredPrefixes load(String name) {
             return new MeteredPrefixes(name);
         }
     });
 
     private final LoadingCache<String, TimerPrefixes> timerPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, TimerPrefixes>() {
         @Override
-        public TimerPrefixes load(String name) throws Exception {
+        public TimerPrefixes load(String name) {
             return new TimerPrefixes(name);
         }
     });
