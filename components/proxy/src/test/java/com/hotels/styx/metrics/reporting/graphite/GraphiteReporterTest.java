@@ -149,7 +149,7 @@ public class GraphiteReporterTest {
 
 
     @Test
-    public void initConnectRetriesOnFailure() throws Exception {
+    public void initConnectionRetriesOnFailure() throws Exception {
 
         doThrow(new UnknownHostException("UNKNOWN-HOST")).when(graphite).connect();
         try {

@@ -23,7 +23,6 @@ import java.io.UncheckedIOException;
 
 import static com.hotels.styx.metrics.reporting.graphite.IoRetry.IoRunnable;
 import static com.hotels.styx.metrics.reporting.graphite.IoRetry.tryTimes;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -39,7 +38,7 @@ public class IoRetryTest {
     private IoRunnable task;
 
     @BeforeMethod
-    public void initialize() {
+    public void createMock() {
         task = mock(IoRunnable.class);
     }
 
@@ -56,7 +55,7 @@ public class IoRetryTest {
             tryTimes(3, task, (e) -> assertThat(e, is(instanceOf(IOException.class))));
             fail("An exception should have been thrown");
         } catch (UncheckedIOException e) {
-            assertThat(e.getMessage(), containsString("Operation failed after"));
+            assertThat(e.getMessage(), is("Operation failed after 3 retries: Could not connect"));
         }
         verify(task, times(3)).run();
     }
