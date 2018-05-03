@@ -13,10 +13,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.support.dns;
+package com.hotels.styx.dns;
 
 import sun.net.spi.nameservice.NameService;
 import sun.net.spi.nameservice.NameServiceDescriptor;
+
+import java.util.Optional;
 
 /*
  * NOTE: This class is not suited for parallel tests.
@@ -24,10 +26,14 @@ import sun.net.spi.nameservice.NameServiceDescriptor;
 public class LocalNameServiceDescriptor implements NameServiceDescriptor {
 
     private static final String dnsName = "local-dns";
+    private static Optional<MockNameService> nameService = Optional.empty();
 
     @Override
     public NameService createNameService() {
-        return MockNameService.SELF;
+        synchronized (this) {
+            nameService = Optional.of(MockNameService.SELF);
+        }
+        return nameService.get();
     }
 
     @Override
@@ -38,6 +44,15 @@ public class LocalNameServiceDescriptor implements NameServiceDescriptor {
     @Override
     public String getType() {
         return "dns";
+    }
+
+    /**
+     * Returns a shared MockNameService instance.
+     *
+     * @return a MockNameService.
+     */
+    public static MockNameService get() {
+        return nameService.orElseThrow(() -> new RuntimeException("MockNameService not configured"));
     }
 
 }
