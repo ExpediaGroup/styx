@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.metrics.reporting.graphite;
 
-import com.hotels.styx.dns.LocalNameServiceDescriptor;
+import com.hotels.styx.support.dns.LocalNameServiceDescriptor;
 import com.hotels.styx.support.server.FakeHttpServer;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;

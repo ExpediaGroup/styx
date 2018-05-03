@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.dns;
+package com.hotels.styx.support.dns;
 
 import sun.net.spi.nameservice.NameService;
 import sun.net.spi.nameservice.NameServiceDescriptor;
