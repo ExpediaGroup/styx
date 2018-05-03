@@ -26,14 +26,12 @@ import java.util.Optional;
 public class LocalNameServiceDescriptor implements NameServiceDescriptor {
 
     private static final String dnsName = "local-dns";
-    private static Optional<MockNameService> nameService = Optional.empty();
+    private static volatile MockNameService nameService = null;
 
     @Override
     public NameService createNameService() {
-        synchronized (this) {
-            nameService = Optional.of(MockNameService.SELF);
-        }
-        return nameService.get();
+        nameService = MockNameService.SELF;
+        return nameService;
     }
 
     @Override
@@ -52,7 +50,8 @@ public class LocalNameServiceDescriptor implements NameServiceDescriptor {
      * @return a MockNameService.
      */
     public static MockNameService get() {
-        return nameService.orElseThrow(() -> new RuntimeException("MockNameService not configured"));
+        return Optional.ofNullable(nameService)
+                .orElseThrow(() -> new RuntimeException("MockNameService not configured"));
     }
 
 }
