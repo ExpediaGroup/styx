@@ -26,6 +26,7 @@ import static com.hotels.styx.metrics.reporting.graphite.IoRetry.tryTimes;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -50,7 +51,7 @@ public class IoRetryTest {
 
     @Test
     public void retryUpToMaxTimesForIoException() throws IOException {
-        doThrow(new IOException()).when(task).run();
+        doThrow(new IOException("Could not connect")).when(task).run();
         try {
             tryTimes(3, task, (e) -> assertThat(e, is(instanceOf(IOException.class))));
             fail("An exception should have been thrown");
@@ -70,14 +71,25 @@ public class IoRetryTest {
 
     @Test
     public void noRetriesForOtherExceptions() throws IOException {
-        doThrow(new IllegalArgumentException()).doNothing().when(task).run();
+        doThrow(new NullPointerException()).doNothing().when(task).run();
         try {
             tryTimes(3, task, null);
             fail("An exception should have been thrown");
-        } catch (IllegalArgumentException e) {
+        } catch (NullPointerException e) {
         }
         verify(task, times(1)).run();
     }
 
+
+    @Test
+    public void illegalArgumentExceptionAndNoAttemptsForInvalidArgument() throws IOException {
+        doNothing().when(task).run();
+        try {
+            tryTimes(0, task, null);
+            fail("An exception should have been thrown");
+        } catch (IllegalArgumentException e) {
+        }
+        verify(task, times(0)).run();
+    }
 
 }
