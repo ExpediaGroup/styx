@@ -29,11 +29,6 @@ import static java.lang.String.format;
  */
 final class IoRetry {
 
-    @FunctionalInterface
-    public interface IoRunnable {
-        void run() throws IOException;
-    }
-
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteReporter.class);
 
     /**
@@ -50,7 +45,7 @@ final class IoRetry {
      *                                  when the limit of retries is reached.
      * @throws IllegalArgumentException if {@code times} is less than 1.
      */
-    public static void tryTimes(int times, IoRunnable task, Consumer<IOException> errorHandler)
+    public static void tryTimes(int times, IOAction task, Consumer<IOException> errorHandler)
             throws UncheckedIOException, IllegalArgumentException {
 
         if (times < 1) {

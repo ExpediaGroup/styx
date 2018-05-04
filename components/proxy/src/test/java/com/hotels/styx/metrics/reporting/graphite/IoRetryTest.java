@@ -21,7 +21,6 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
-import static com.hotels.styx.metrics.reporting.graphite.IoRetry.IoRunnable;
 import static com.hotels.styx.metrics.reporting.graphite.IoRetry.tryTimes;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,11 +35,11 @@ import static org.testng.Assert.fail;
 
 public class IoRetryTest {
 
-    private IoRunnable task;
+    private IOAction task;
 
     @BeforeMethod
     public void createMock() {
-        task = mock(IoRunnable.class);
+        task = mock(IOAction.class);
     }
 
     @Test
@@ -76,8 +75,8 @@ public class IoRetryTest {
             tryTimes(3, task, null);
             fail("An exception should have been thrown");
         } catch (NullPointerException e) {
+            verify(task, times(1)).run();
         }
-        verify(task, times(1)).run();
     }
 
 
@@ -88,8 +87,9 @@ public class IoRetryTest {
             tryTimes(0, task, null);
             fail("An exception should have been thrown");
         } catch (IllegalArgumentException e) {
+            verify(task, times(0)).run();
         }
-        verify(task, times(0)).run();
+
     }
 
 }

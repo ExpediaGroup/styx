@@ -14,17 +14,24 @@ import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.graphite.GraphiteSender;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Locale;
 import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
+
+import static com.codahale.metrics.Clock.defaultClock;
+import static com.codahale.metrics.MetricFilter.ALL;
+import static com.codahale.metrics.MetricRegistry.name;
+import static com.google.common.cache.CacheBuilder.newBuilder;
+import static com.hotels.styx.metrics.reporting.graphite.IoRetry.tryTimes;
+import static java.util.Locale.US;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /*
  * This file is from Coda Hale metrics project (now Yammer Metrics), and
@@ -65,11 +72,11 @@ public class GraphiteReporter extends ScheduledReporter {
 
         private Builder(MetricRegistry registry) {
             this.registry = registry;
-            this.clock = Clock.defaultClock();
+            this.clock = defaultClock();
             this.prefix = null;
-            this.rateUnit = TimeUnit.SECONDS;
-            this.durationUnit = TimeUnit.MILLISECONDS;
-            this.filter = MetricFilter.ALL;
+            this.rateUnit = SECONDS;
+            this.durationUnit = MILLISECONDS;
+            this.filter = ALL;
         }
 
         /**
@@ -145,7 +152,7 @@ public class GraphiteReporter extends ScheduledReporter {
         }
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(GraphiteReporter.class);
+    private static final Logger LOGGER = getLogger(GraphiteReporter.class);
 
     @VisibleForTesting
     static final int MAX_RETRIES = 5;
@@ -154,35 +161,35 @@ public class GraphiteReporter extends ScheduledReporter {
     private final Clock clock;
     private final String prefix;
 
-    private final LoadingCache<String, String> counterPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, String>() {
+    private final LoadingCache<String, String> counterPrefixes = newBuilder().build(new CacheLoader<String, String>() {
         @Override
         public String load(String name) {
             return prefix(name, "count");
         }
     });
 
-    private final LoadingCache<String, String> gaugePrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, String>() {
+    private final LoadingCache<String, String> gaugePrefixes = newBuilder().build(new CacheLoader<String, String>() {
         @Override
         public String load(String name) {
             return prefix(name);
         }
     });
 
-    private final LoadingCache<String, HistogramPrefixes> histogramPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, HistogramPrefixes>() {
+    private final LoadingCache<String, HistogramPrefixes> histogramPrefixes = newBuilder().build(new CacheLoader<String, HistogramPrefixes>() {
         @Override
         public HistogramPrefixes load(String name) {
             return new HistogramPrefixes(name);
         }
     });
 
-    private final LoadingCache<String, MeteredPrefixes> meteredPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, MeteredPrefixes>() {
+    private final LoadingCache<String, MeteredPrefixes> meteredPrefixes = newBuilder().build(new CacheLoader<String, MeteredPrefixes>() {
         @Override
         public MeteredPrefixes load(String name) {
             return new MeteredPrefixes(name);
         }
     });
 
-    private final LoadingCache<String, TimerPrefixes> timerPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, TimerPrefixes>() {
+    private final LoadingCache<String, TimerPrefixes> timerPrefixes = newBuilder().build(new CacheLoader<String, TimerPrefixes>() {
         @Override
         public TimerPrefixes load(String name) {
             return new TimerPrefixes(name);
@@ -252,7 +259,7 @@ public class GraphiteReporter extends ScheduledReporter {
 
     @VisibleForTesting
     void initConnection() {
-        IoRetry.tryTimes(
+        tryTimes(
                 MAX_RETRIES,
                 graphite::connect,
                 (e) -> attemptErrorHandling(graphite::close)
@@ -366,8 +373,8 @@ public class GraphiteReporter extends ScheduledReporter {
                 () -> graphite.send(name, value, timestamp));
     }
 
-    private void attemptWithRetryAndReconect(IoRetry.IoRunnable operation) {
-        IoRetry.tryTimes(
+    private void attemptWithRetryAndReconect(IOAction operation) {
+        tryTimes(
                 MAX_RETRIES,
                 operation,
                 this::reconnectIfNecessary
@@ -394,7 +401,7 @@ public class GraphiteReporter extends ScheduledReporter {
     }
 
     private String prefix(String... components) {
-        return MetricRegistry.name(prefix, components);
+        return name(prefix, components);
     }
 
     private String format(long n) {
@@ -404,12 +411,9 @@ public class GraphiteReporter extends ScheduledReporter {
     private String format(double v) {
         // the Carbon plaintext format is pretty underspecified, but it seems like it just wants
         // US-formatted digits
-        return String.format(Locale.US, "%2.2f", v);
+        return String.format(US, "%2.2f", v);
     }
 
-    private interface IOAction {
-        void run() throws IOException;
-    }
 
     private interface MetricReportingAction<M> {
         void execute(String name, M metric, long timestamp);

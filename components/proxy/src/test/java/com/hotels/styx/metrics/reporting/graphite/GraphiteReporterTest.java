@@ -66,6 +66,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.testng.Assert.fail;
 
 public class GraphiteReporterTest {
     private static final long TIMESTAMP = 1000198;
@@ -154,10 +155,10 @@ public class GraphiteReporterTest {
         doThrow(new UnknownHostException("UNKNOWN-HOST")).when(graphite).connect();
         try {
             reporter.initConnection();
+            fail("Should have thrown an exception");
         } catch (UncheckedIOException e) {
+            verify(graphite, times(MAX_RETRIES)).connect();
         }
-
-        verify(graphite, times(MAX_RETRIES)).connect();
     }
 
     @Test
