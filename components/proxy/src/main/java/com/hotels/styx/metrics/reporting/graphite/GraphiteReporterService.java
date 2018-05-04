@@ -59,7 +59,7 @@ public final class GraphiteReporterService extends AbstractStyxService {
     protected CompletableFuture<Void> startService() {
         return CompletableFuture.runAsync(() -> {
             this.reporter.start(reportingIntervalMillis, MILLISECONDS);
-            LOGGER.info("Graphite service started name=\"{}\"", serviceName());
+            LOGGER.info("Graphite service started, service name=\"{}\"", serviceName());
         });
     }
 
@@ -67,7 +67,7 @@ public final class GraphiteReporterService extends AbstractStyxService {
     protected CompletableFuture<Void> stopService() {
         return CompletableFuture.runAsync(() -> {
             this.reporter.stop();
-            LOGGER.info("Graphite service stopped name=\"{}\"", serviceName());
+            LOGGER.info("Graphite service stopped, service name=\"{}\"", serviceName());
         });
     }
 

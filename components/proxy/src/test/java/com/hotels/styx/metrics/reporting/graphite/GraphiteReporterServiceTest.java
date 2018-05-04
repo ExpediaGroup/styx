@@ -71,7 +71,7 @@ public class GraphiteReporterServiceTest {
     public void logsWhenServiceStarts() {
         try {
             StyxFutures.await(service.start());
-            assertThat(log.lastMessage(), is(loggingEvent(INFO, "Graphite service started name=\"Graphite\\-Reporter\\-test\"")));
+            assertThat(log.lastMessage(), is(loggingEvent(INFO, "Graphite service started, service name=\"Graphite\\-Reporter\\-test\"")));
         } finally {
             StyxFutures.await(service.stop());
         }
