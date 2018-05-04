@@ -21,6 +21,7 @@ import sun.net.spi.nameservice.NameService;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -51,7 +52,11 @@ public class MockNameService implements NameService {
         NameService nameService = delegate.get();
         if (nameService != null) {
             InetAddress[] result = nameService.lookupAllHostAddr(hostName);
-            LOGGER.info("lookup addresses for host: '{}' results={}", hostName, result.length);
+            Integer resultLength = Optional.ofNullable(result)
+                    .map(addresses -> addresses.length)
+                    .orElse(null);
+
+            LOGGER.info("lookup addresses for host: '{}' results={}", hostName, resultLength);
             return result;
         }
 
