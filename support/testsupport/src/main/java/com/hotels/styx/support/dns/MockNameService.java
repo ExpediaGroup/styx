@@ -25,6 +25,35 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * A mock name service for unit and integration testing.
+ * <p>
+ * The {@code MockNameService} needs to be registered as a highest priority name
+ * service for JVM. By default, it throws an {@code UnknownHostException}, thus
+ * instructing JVM to attempt the next configured name service.
+ * <p>
+ * The MockNameService behaviour can be customised by registering a delegate by calling
+ * {@code setDelegate}.
+ * <p>
+ * Normally, a Mockito mock for a {@code NameService} interface would be used as a
+ * delegate, allowing easy verification of DNS lookups. After verifications, the
+ * delegate must be removed by calling {@code unset}.
+ * <p>
+ * <p>Concurrency notes:
+ * <li> There is only a single instance of MockNameService registered in the JVM.
+ *      All DNS queries from all threads within JVM will go through this single
+ *      instance.
+ *
+ * <li> Thread safety is guaranteed as long as the basic testing interactions are
+ *      confined within one thread context. That is, the sequence {@code setDelegate},
+ *      subsequent verifications, and {@code unset} must occur within one and same
+ *      thread. As an implementation detail, the delegate object is stored as a
+ *      thread local variable.
+ *
+ * <li> Thereofore NOT POSSIBLE to use a one thread to set the delegate, and to
+ *      verify and unset from another.
+ *
+ */
 public class MockNameService implements NameService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalNameServiceDescriptor.class);
     static final MockNameService SELF = new MockNameService();
