@@ -21,7 +21,6 @@ import sun.net.spi.nameservice.NameService;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,7 +28,7 @@ public class MockNameService implements NameService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalNameServiceDescriptor.class);
     static final MockNameService SELF = new MockNameService();
 
-    private AtomicReference<NameService> delegate = new AtomicReference<>(null);
+    private final ThreadLocal<NameService> delegate = new ThreadLocal<>();
 
     /**
      * Sets the delegate name server to allow consumers to customise the NameServer behaviour.
@@ -43,7 +42,7 @@ public class MockNameService implements NameService {
 
     public void unset() {
         LOGGER.info("Unsetting delegate");
-        this.delegate.set(null);
+        this.delegate.remove();
     }
 
     @Override
