@@ -107,4 +107,7 @@ public abstract class AbstractStyxService implements StyxService {
                         .toStreamingResponse()));
     }
 
+    public String serviceName() {
+        return name;
+    }
 }

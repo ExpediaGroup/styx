@@ -16,13 +16,11 @@
 package com.hotels.styx.metrics.reporting.graphite;
 
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteSender;
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.service.spi.StyxService;
+import com.hotels.styx.api.service.spi.AbstractStyxService;
 import org.slf4j.Logger;
 
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -35,22 +33,17 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Builds graphite reporter from configuration and wraps it in service interface.
  */
-public final class GraphiteReporterService implements StyxService {
+public final class GraphiteReporterService extends AbstractStyxService {
     private static final Logger LOGGER = getLogger(GraphiteReporterService.class);
 
     private final GraphiteReporter reporter;
     private final long reportingIntervalMillis;
-    private final String host;
-    private final int port;
 
     private GraphiteReporterService(Builder builder) {
-        this.host = requireNonNull(builder.host);
-        this.port = builder.port;
-        MetricRegistry registry = requireNonNull(builder.registry);
-        GraphiteSender graphiteSender = Optional
-                .ofNullable(builder.graphiteSender)
-                .orElseGet(() -> new NonSanitizingGraphite(host, port));
+        super(requireNonNull(builder.serviceName));
 
+        MetricRegistry registry = requireNonNull(builder.registry);
+        GraphiteSender graphiteSender = requireNonNull(builder.graphiteSender);
         String prefix = requireNonNull(builder.prefix);
 
         this.reportingIntervalMillis = builder.reportingIntervalMillis;
@@ -63,16 +56,19 @@ public final class GraphiteReporterService implements StyxService {
     }
 
     @Override
-    public CompletableFuture<Void> start() {
+    protected CompletableFuture<Void> startService() {
         return CompletableFuture.runAsync(() -> {
-            LOGGER.info("Graphite started on address=\"{}:{}\"", host, port);
             this.reporter.start(reportingIntervalMillis, MILLISECONDS);
+            LOGGER.info("Graphite service started, service name=\"{}\"", serviceName());
         });
     }
 
     @Override
-    public CompletableFuture<Void> stop() {
-        return CompletableFuture.runAsync(this.reporter::stop);
+    protected CompletableFuture<Void> stopService() {
+        return CompletableFuture.runAsync(() -> {
+            this.reporter.stop();
+            LOGGER.info("Graphite service stopped, service name=\"{}\"", serviceName());
+        });
     }
 
     @VisibleForTesting
@@ -80,49 +76,33 @@ public final class GraphiteReporterService implements StyxService {
         this.reporter.report();
     }
 
-    // The sanitize method in Graphite/PickledGraphite adds a lot of object creation. We do not need it because our
-    // metric names and values do not contain whitespace.
-    private static final class NonSanitizingGraphite extends Graphite {
-        public NonSanitizingGraphite(String host, int port) {
-            super(host, port);
-        }
-
-        @Override
-        protected String sanitize(String s) {
-            return s;
-        }
-    }
-
     /**
      * Builder for reporter service.
      */
     public static final class Builder {
+        private String serviceName;
         private String prefix;
         private long reportingIntervalMillis;
         private MetricRegistry registry;
         private GraphiteSender graphiteSender;
-        private String host;
-        private int port;
 
         public Builder metricRegistry(MetricRegistry registry) {
             this.registry = registry;
             return this;
         }
 
-        @VisibleForTesting
-        Builder graphiteSender(GraphiteSender graphiteSender) {
+        public Builder serviceName(String name) {
+            this.serviceName = name;
+            return this;
+        }
+
+        public Builder graphiteSender(GraphiteSender graphiteSender) {
             this.graphiteSender = graphiteSender;
             return this;
         }
 
         public Builder prefix(String prefix) {
             this.prefix = prefix;
-            return this;
-        }
-
-        public Builder address(String host, int port) {
-            this.host = requireNonNull(host);
-            this.port = port;
             return this;
         }
 

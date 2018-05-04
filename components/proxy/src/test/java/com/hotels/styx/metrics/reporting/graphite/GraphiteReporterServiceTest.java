@@ -54,8 +54,8 @@ public class GraphiteReporterServiceTest {
         sender = new StubGraphiteSender();
         registry = new MetricRegistry();
         service = new GraphiteReporterService.Builder()
+                .serviceName("Graphite-Reporter-test")
                 .prefix("test")
-                .address("localhost", 1234)
                 .reportingInterval(10, MILLISECONDS)
                 .graphiteSender(sender)
                 .metricRegistry(registry)
@@ -71,7 +71,7 @@ public class GraphiteReporterServiceTest {
     public void logsWhenServiceStarts() {
         try {
             StyxFutures.await(service.start());
-            assertThat(log.lastMessage(), is(loggingEvent(INFO, "Graphite started on address=\"localhost:1234\"")));
+            assertThat(log.lastMessage(), is(loggingEvent(INFO, "Graphite service started, service name=\"Graphite\\-Reporter\\-test\"")));
         } finally {
             StyxFutures.await(service.stop());
         }
