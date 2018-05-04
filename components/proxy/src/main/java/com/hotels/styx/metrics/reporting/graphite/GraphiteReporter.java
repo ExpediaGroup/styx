@@ -14,6 +14,7 @@ import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.graphite.GraphiteSender;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.slf4j.Logger;
@@ -26,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import static com.codahale.metrics.Clock.defaultClock;
 import static com.codahale.metrics.MetricFilter.ALL;
 import static com.codahale.metrics.MetricRegistry.name;
-import static com.google.common.cache.CacheBuilder.newBuilder;
 import static com.hotels.styx.metrics.reporting.graphite.IoRetry.tryTimes;
 import static java.util.Locale.US;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -161,35 +161,35 @@ public class GraphiteReporter extends ScheduledReporter {
     private final Clock clock;
     private final String prefix;
 
-    private final LoadingCache<String, String> counterPrefixes = newBuilder().build(new CacheLoader<String, String>() {
+    private final LoadingCache<String, String> counterPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, String>() {
         @Override
         public String load(String name) {
             return prefix(name, "count");
         }
     });
 
-    private final LoadingCache<String, String> gaugePrefixes = newBuilder().build(new CacheLoader<String, String>() {
+    private final LoadingCache<String, String> gaugePrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, String>() {
         @Override
         public String load(String name) {
             return prefix(name);
         }
     });
 
-    private final LoadingCache<String, HistogramPrefixes> histogramPrefixes = newBuilder().build(new CacheLoader<String, HistogramPrefixes>() {
+    private final LoadingCache<String, HistogramPrefixes> histogramPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, HistogramPrefixes>() {
         @Override
         public HistogramPrefixes load(String name) {
             return new HistogramPrefixes(name);
         }
     });
 
-    private final LoadingCache<String, MeteredPrefixes> meteredPrefixes = newBuilder().build(new CacheLoader<String, MeteredPrefixes>() {
+    private final LoadingCache<String, MeteredPrefixes> meteredPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, MeteredPrefixes>() {
         @Override
         public MeteredPrefixes load(String name) {
             return new MeteredPrefixes(name);
         }
     });
 
-    private final LoadingCache<String, TimerPrefixes> timerPrefixes = newBuilder().build(new CacheLoader<String, TimerPrefixes>() {
+    private final LoadingCache<String, TimerPrefixes> timerPrefixes = CacheBuilder.newBuilder().build(new CacheLoader<String, TimerPrefixes>() {
         @Override
         public TimerPrefixes load(String name) {
             return new TimerPrefixes(name);
