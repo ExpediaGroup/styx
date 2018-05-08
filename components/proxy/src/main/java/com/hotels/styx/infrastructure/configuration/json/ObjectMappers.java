@@ -26,7 +26,16 @@ import com.hotels.styx.api.service.HealthCheckConfig;
 import com.hotels.styx.api.service.RewriteConfig;
 import com.hotels.styx.api.service.StickySessionConfig;
 import com.hotels.styx.api.service.TlsSettings;
-import com.hotels.styx.infrastructure.configuration.json.mixins.*;
+import com.hotels.styx.infrastructure.configuration.json.mixins.BackendServiceMixin;
+import com.hotels.styx.infrastructure.configuration.json.mixins.CertificateMixin;
+import com.hotels.styx.infrastructure.configuration.json.mixins.ConnectionPoolSettingsMixin;
+import com.hotels.styx.infrastructure.configuration.json.mixins.HealthCheckConfigMixin;
+import com.hotels.styx.infrastructure.configuration.json.mixins.IdMixin;
+import com.hotels.styx.infrastructure.configuration.json.mixins.OriginMixin;
+import com.hotels.styx.infrastructure.configuration.json.mixins.OriginsSnapshotMixin;
+import com.hotels.styx.infrastructure.configuration.json.mixins.RewriteConfigMixin;
+import com.hotels.styx.infrastructure.configuration.json.mixins.StickySessionConfigMixin;
+import com.hotels.styx.infrastructure.configuration.json.mixins.TlsSettingsMixin;
 
 
 /**
