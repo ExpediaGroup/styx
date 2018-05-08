@@ -48,6 +48,7 @@ public class ObjectMappers {
                 .addMixIn(RewriteConfig.class, RewriteConfigMixin.class)
                 .addMixIn(StickySessionConfig.class, StickySessionConfigMixin.class)
                 .addMixIn(TlsSettings.class, TlsSettingsMixin.class)
+                .addMixIn(TlsSettings.Builder.class, TlsSettingsMixin.Builder.class)
                 .addMixIn(Origin.class, OriginMixin.class)
                 .addMixIn(OriginsSnapshot.class, OriginsSnapshotMixin.class)
                 .addMixIn(Id.class, IdMixin.class);
