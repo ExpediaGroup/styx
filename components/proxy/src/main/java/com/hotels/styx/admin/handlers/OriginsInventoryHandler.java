@@ -36,6 +36,7 @@ import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -45,7 +46,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsChangeListener {
     private static final Logger LOG = getLogger(OriginsInventoryHandler.class);
 
-    private final ObjectMapper mapper = new ObjectMapper().disable(FAIL_ON_EMPTY_BEANS)
+    private final ObjectMapper mapper = addStyxMixins(new ObjectMapper()).disable(FAIL_ON_EMPTY_BEANS)
             .setDefaultPrettyPrinter(PRETTY_PRINTER);
 
     private final Map<Id, OriginsSnapshot> originsInventorySnapshotMap = new ConcurrentHashMap<>();

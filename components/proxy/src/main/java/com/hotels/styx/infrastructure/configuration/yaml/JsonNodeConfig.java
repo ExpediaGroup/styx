@@ -62,7 +62,7 @@ public class JsonNodeConfig implements Configuration {
      */
     protected JsonNodeConfig(JsonNode rootNode, ObjectMapper mapper) {
         this.rootNode = requireNonNull(rootNode);
-        this.mapper = requireNonNull(mapper);
+        this.mapper = addStyxMixins(requireNonNull(mapper));
     }
 
     @Override

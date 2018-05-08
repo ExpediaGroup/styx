@@ -25,8 +25,9 @@ import com.hotels.styx.api.Id;
 public abstract class IdMixin {
 
     @JsonCreator
-    IdMixin(@JsonProperty("id") String value){ }
+    public IdMixin(@JsonProperty("id") String value) {
+    }
 
     @JsonProperty("id")
-    abstract Id id(String value);
+    public abstract Id id(String value);
 }

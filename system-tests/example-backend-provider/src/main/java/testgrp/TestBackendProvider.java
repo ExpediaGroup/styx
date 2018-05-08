@@ -17,16 +17,14 @@ package testgrp;
 
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.service.spi.AbstractRegistry;
 import com.hotels.styx.api.service.spi.AbstractStyxService;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
@@ -91,27 +89,11 @@ public class TestBackendProvider extends AbstractStyxService implements Registry
 
         @Override
         public Registry<BackendService> create(Environment environment, Configuration registryConfiguration) {
-            Id id = registryConfiguration.get("backendService.id", Id. class).get();
-            Origins origins = registryConfiguration.get("backendService.origins", Origins.class).get();
+            BackendService service = registryConfiguration.get("backendService", BackendService.class)
+                    .orElseThrow(() -> new ConfigurationException(
+                            "missing [services.registry.factory.config.backendService] config value for factory class TestBackendProvider.Factory"));
 
-            BackendService backendService = BackendService.newBackendServiceBuilder()
-                    .id(id)
-                    .origins(origins.getOrigins())
-                    .build();
-
-            return new TestBackendProvider(backendService);
-        }
-    }
-
-    private static class Origins {
-        private final Set<Origin> origins;
-
-        private Origins(Set<Origin> origins) {
-            this.origins = origins;
-        }
-
-        public Set<Origin> getOrigins() {
-            return origins;
+            return new TestBackendProvider(service);
         }
     }
 
