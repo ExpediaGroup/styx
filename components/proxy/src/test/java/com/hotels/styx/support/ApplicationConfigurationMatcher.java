@@ -45,7 +45,7 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
     private int connectTimeout = DEFAULT_CONNECT_TIMEOUT_MILLIS;
     private int maxConnectionsPerHost = DEFAULT_MAX_CONNECTIONS_PER_HOST;
     private int maxPendingConnectionsPerHost = DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
-    private HealthCheckConfig healthCheckConfig = noHealthCheck();
+    private HealthCheckConfig healthCheckConfig = null;
     private StickySessionConfig stickySessionConfig = stickySessionDisabled();
     private List<RewriteConfig> rewrites = emptyList();
 

@@ -37,7 +37,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.client.Origin.checkThatOriginsAreDistinct;
 import static com.hotels.styx.api.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
-import static com.hotels.styx.api.service.HealthCheckConfig.noHealthCheck;
 import static com.hotels.styx.api.service.StickySessionConfig.stickySessionDisabled;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -93,7 +92,7 @@ public final class BackendService implements Identifiable {
         this.path = checkNotNull(builder.path, "path");
         this.connectionPoolSettings = checkNotNull(builder.connectionPoolSettings);
         this.origins = ImmutableSet.copyOf(builder.origins);
-        this.healthCheckConfig = checkNotNull(builder.healthCheckConfig);
+        this.healthCheckConfig = nullIfDisabled(builder.healthCheckConfig);
         this.stickySessionConfig = checkNotNull(builder.stickySessionConfig);
         this.rewrites = checkNotNull(builder.rewrites);
         this.responseTimeoutMillis = builder.responseTimeoutMillis == 0
@@ -103,6 +102,12 @@ public final class BackendService implements Identifiable {
 
         checkThatOriginsAreDistinct(origins);
         checkArgument(responseTimeoutMillis >= 0, "Request timeout must be greater than or equal to zero");
+    }
+
+    private static HealthCheckConfig nullIfDisabled(HealthCheckConfig healthCheckConfig) {
+        return healthCheckConfig != null && healthCheckConfig.isEnabled()
+                ? healthCheckConfig
+                : null;
     }
 
     @Override
@@ -221,7 +226,7 @@ public final class BackendService implements Identifiable {
         private Set<Origin> origins = emptySet();
         private ConnectionPool.Settings connectionPoolSettings = defaultConnectionPoolSettings();
         private StickySessionConfig stickySessionConfig = stickySessionDisabled();
-        private HealthCheckConfig healthCheckConfig = noHealthCheck();
+        private HealthCheckConfig healthCheckConfig;
         private List<RewriteConfig> rewrites = emptyList();
         public int responseTimeoutMillis = DEFAULT_RESPONSE_TIMEOUT_MILLIS;
         private TlsSettings tlsSettings;
@@ -413,7 +418,7 @@ public final class BackendService implements Identifiable {
          */
         @JsonProperty("healthCheck")
         public Builder healthCheckConfig(HealthCheckConfig healthCheckConfig) {
-            this.healthCheckConfig = checkNotNull(healthCheckConfig);
+            this.healthCheckConfig = healthCheckConfig;
             return this;
         }
 

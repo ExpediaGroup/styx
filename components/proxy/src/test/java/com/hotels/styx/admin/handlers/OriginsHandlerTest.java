@@ -40,25 +40,40 @@ import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 public class OriginsHandlerTest {
-    static final ObjectMapper MAPPER = new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES);
-    static final String ORIGINS_FILE = fixturesHome() + "conf/origins/origins-for-jsontest.yml";
+    private static final ObjectMapper MAPPER = new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES);
 
-    final Iterable<BackendService> backendServices = loadFromPath(ORIGINS_FILE).get();
+    private static final String ORIGINS_FILE = fixturesHome() + "conf/origins/origins-for-jsontest.yml";
+    private static final String ORIGINS_FILE_NO_HEALTH_CHECK = fixturesHome() + "conf/origins/origins-for-jsontest-no-healthcheck.yml";
 
-    final FileBackedBackendServicesRegistry backendServicesRegistry = FileBackedBackendServicesRegistry.create(ORIGINS_FILE);
-    final OriginsHandler handler = new OriginsHandler(backendServicesRegistry);
+    private final FileBackedBackendServicesRegistry backendServicesRegistry = FileBackedBackendServicesRegistry.create(ORIGINS_FILE);
+    private final FileBackedBackendServicesRegistry backendServicesRegistryNoHealthCheck = FileBackedBackendServicesRegistry.create(ORIGINS_FILE_NO_HEALTH_CHECK);
+
+    private final OriginsHandler handler = new OriginsHandler(backendServicesRegistry);
+    private final OriginsHandler handlerNoHealthCheck = new OriginsHandler(backendServicesRegistryNoHealthCheck);
 
     @BeforeClass
     public void startRegistry() {
         await(backendServicesRegistry.start());
     }
 
+    @BeforeClass
+    public void startRegistryNHC() {
+        await(backendServicesRegistryNoHealthCheck.start());
+    }
+
     @AfterClass
     public void stopRegistry() {
         await(backendServicesRegistry.stop());
+    }
+
+    @AfterClass
+    public void stopRegistryNHC() {
+        await(backendServicesRegistryNoHealthCheck.stop());
     }
 
     @Test
@@ -70,11 +85,13 @@ public class OriginsHandlerTest {
 
         Iterable<BackendService> result = newBackendServices(unmarshalApplications(response.bodyAs(UTF_8)));
 
+        Iterable<BackendService> backendServices = loadFromPath(ORIGINS_FILE).get();
+
         assertThat(result, is(backendServices));
     }
 
     @Test
-    public void respondsWithEmptyArrayWhenNoOrigins() throws IOException {
+    public void respondsWithEmptyArrayWhenNoOrigins() {
         Registry<BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
         OriginsHandler handler = new OriginsHandler(backendServicesRegistry);
 
@@ -84,6 +101,25 @@ public class OriginsHandlerTest {
         assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
 
         assertThat(response.bodyAs(UTF_8), is("[]"));
+    }
+
+    @Test
+    public void healthCheckIsAbsentWhenNotConfigured() throws IOException {
+        FullHttpResponse response = waitForResponse(handlerNoHealthCheck.handle(get("/admin/configuration/origins").build()));
+
+        assertThat(response.status(), is(OK));
+        assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
+
+        String body = response.bodyAs(UTF_8);
+
+        System.out.println("BODY = " + body);
+
+        Iterable<BackendService> result = newBackendServices(unmarshalApplications(body));
+
+        Iterable<BackendService> backendServices = loadFromPath(ORIGINS_FILE_NO_HEALTH_CHECK).get();
+
+        assertThat(result, is(backendServices));
+        assertThat(body, not(containsString("healthCheck")));
     }
 
     private static Iterable<BackendService> unmarshalApplications(String content) throws IOException {
