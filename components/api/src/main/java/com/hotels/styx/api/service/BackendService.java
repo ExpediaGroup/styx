@@ -106,41 +106,33 @@ public final class BackendService implements Identifiable {
         return this.id;
     }
 
-
     String idAsString() {
         return this.id.toString();
     }
-
 
     public String path() {
         return this.path;
     }
 
-
     public Set<Origin> origins() {
         return this.origins;
     }
-
 
     public ConnectionPool.Settings connectionPoolConfig() {
         return this.connectionPoolSettings;
     }
 
-
     public HealthCheckConfig healthCheckConfig() {
         return healthCheckConfig;
     }
-
 
     public StickySessionConfig stickySessionConfig() {
         return this.stickySessionConfig;
     }
 
-
     public List<RewriteConfig> rewrites() {
         return this.rewrites;
     }
-
 
     public int responseTimeoutMillis() {
         return this.responseTimeoutMillis;
@@ -149,7 +141,6 @@ public final class BackendService implements Identifiable {
     public Optional<TlsSettings> tlsSettings() {
         return Optional.ofNullable(this.tlsSettings);
     }
-
 
     private TlsSettings getTlsSettings() {
         return this.tlsSettings().orElse(null);
@@ -253,7 +244,6 @@ public final class BackendService implements Identifiable {
          * @param id an ID
          * @return this builder
          */
-
         public Builder id(String id) {
             return id(Id.id(id));
         }
@@ -264,7 +254,6 @@ public final class BackendService implements Identifiable {
          * @param path a path
          * @return this builder
          */
-
         public Builder path(String path) {
             this.path = checkValidPath(checkNotNull(path));
             return this;
@@ -286,7 +275,6 @@ public final class BackendService implements Identifiable {
          * @param timeout a response timeout in milliseconds.
          * @return this builder
          */
-
         public Builder responseTimeoutMillis(int timeout) {
             this.responseTimeoutMillis = timeout;
             return this;
@@ -298,7 +286,6 @@ public final class BackendService implements Identifiable {
          * @param origins origins
          * @return this builder
          */
-
         public Builder origins(Set<Origin> origins) {
             this.origins = checkNotNull(origins);
             return this;
@@ -317,7 +304,6 @@ public final class BackendService implements Identifiable {
          * Sets the https settings.
          * For programmatic use
          */
-
         public Builder httpsOld(TlsSettings tlsSettings) {
             this.tlsSettings = tlsSettings;
             return this;
@@ -327,7 +313,6 @@ public final class BackendService implements Identifiable {
          * Sets the https settings.
          * For programmatic use
          */
-
         public Builder https(TlsSettings tlsSettings) {
             this.tlsSettings = tlsSettings;
             return this;
@@ -359,7 +344,6 @@ public final class BackendService implements Identifiable {
          * @param rewriteConfigs rewrite configuration
          * @return this builder
          */
-
         public Builder rewrites(List<RewriteConfig> rewriteConfigs) {
             this.rewrites = ImmutableList.copyOf(rewriteConfigs);
             return this;
@@ -371,7 +355,6 @@ public final class BackendService implements Identifiable {
          * @param connectionPoolSettings connection pool configuration
          * @return this builder
          */
-
         public Builder connectionPoolConfig(ConnectionPoolSettings connectionPoolSettings) {
             this.connectionPoolSettings = checkNotNull(connectionPoolSettings);
             return this;
@@ -394,7 +377,6 @@ public final class BackendService implements Identifiable {
          * @param stickySessionConfig sticky-session configuration.
          * @return this builder
          */
-
         public Builder stickySessionConfig(StickySessionConfig stickySessionConfig) {
             this.stickySessionConfig = checkNotNull(stickySessionConfig);
             return this;
@@ -406,7 +388,6 @@ public final class BackendService implements Identifiable {
          * @param healthCheckConfig health-check configuration
          * @return this builder
          */
-
         public Builder healthCheckConfig(HealthCheckConfig healthCheckConfig) {
             this.healthCheckConfig = checkNotNull(healthCheckConfig);
             return this;

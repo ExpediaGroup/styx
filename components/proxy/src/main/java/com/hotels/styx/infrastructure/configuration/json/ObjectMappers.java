@@ -41,7 +41,12 @@ import com.hotels.styx.infrastructure.configuration.json.mixins.TlsSettingsMixin
 /**
  * Collection of methods that helps to work with {@link ObjectMapper} objects in styx libraries.
  */
-public class ObjectMappers {
+public final class ObjectMappers {
+
+    private ObjectMappers() {
+
+    }
+
     /**
      * Adds annotation mixins required to serialize/deserialize with json styx domain objects from styx-api module.
      * @param objectMapper

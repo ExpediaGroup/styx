@@ -134,31 +134,26 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
     }
 
     @Override
-
     public int connectTimeoutMillis() {
         return connectTimeoutMillis;
     }
 
     @Override
-
     public int maxConnectionsPerHost() {
         return maxConnectionsPerHost;
     }
 
     @Override
-
     public int maxPendingConnectionsPerHost() {
         return maxPendingConnectionsPerHost;
     }
 
     @Override
-
     public int pendingConnectionTimeoutMillis() {
         return pendingConnectionTimeoutMillis;
     }
 
     @Override
-
     public long connectionExpirationSeconds() {
         return connectionExpirationSeconds;
     }

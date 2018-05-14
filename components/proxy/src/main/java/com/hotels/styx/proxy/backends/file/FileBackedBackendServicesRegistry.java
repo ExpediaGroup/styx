@@ -40,6 +40,7 @@ import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.api.service.spi.Registry.Outcome.FAILED;
+import static com.hotels.styx.applications.BackendServices.newBackendServices;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
@@ -190,7 +191,7 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         }
 
         private BackendServices readBackendServices(byte[] content) throws Exception {
-            return BackendServices.newBackendServices(delegate.read(content, new TypeReference<List<BackendService>>() {
+            return newBackendServices(delegate.read(content, new TypeReference<List<BackendService>>() {
             }));
         }
     }
