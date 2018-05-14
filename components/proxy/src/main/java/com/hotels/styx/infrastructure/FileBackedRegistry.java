@@ -103,7 +103,11 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
                         return reloaded(format("%s, File reloaded.", logPrefix));
                     }
                 } catch (Exception e) {
-                    LOG.error("Not reloading {} as there was an error reading content", configurationFile.absolutePath(), e);
+                    // Eliminate unhelpful error message when resource constraint exception fails.
+                    // This is a candidate for further refactoring.
+                    if (!"Resource constraint failure".equals(e.getMessage())) {
+                        LOG.error("Not reloading {} as there was an error reading content", configurationFile.absolutePath(), e);
+                    }
                     return failed(format("%s, Reload failure.", logPrefix), e);
                 }
             }
