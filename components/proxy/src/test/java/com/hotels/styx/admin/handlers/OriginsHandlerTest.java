@@ -22,8 +22,6 @@ import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -47,47 +45,22 @@ import static org.hamcrest.Matchers.not;
 public class OriginsHandlerTest {
     private static final ObjectMapper MAPPER = new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES);
 
-    private static final String ORIGINS_FILE = fixturesHome() + "conf/origins/origins-for-jsontest.yml";
-    private static final String ORIGINS_FILE_NO_HEALTH_CHECK = fixturesHome() + "conf/origins/origins-for-jsontest-no-healthcheck.yml";
-
-    private final FileBackedBackendServicesRegistry backendServicesRegistry = FileBackedBackendServicesRegistry.create(ORIGINS_FILE);
-    private final FileBackedBackendServicesRegistry backendServicesRegistryNoHealthCheck = FileBackedBackendServicesRegistry.create(ORIGINS_FILE_NO_HEALTH_CHECK);
-
-    private final OriginsHandler handler = new OriginsHandler(backendServicesRegistry);
-    private final OriginsHandler handlerNoHealthCheck = new OriginsHandler(backendServicesRegistryNoHealthCheck);
-
-    @BeforeClass
-    public void startRegistry() {
-        await(backendServicesRegistry.start());
-    }
-
-    @BeforeClass
-    public void startRegistryNHC() {
-        await(backendServicesRegistryNoHealthCheck.start());
-    }
-
-    @AfterClass
-    public void stopRegistry() {
-        await(backendServicesRegistry.stop());
-    }
-
-    @AfterClass
-    public void stopRegistryNHC() {
-        await(backendServicesRegistryNoHealthCheck.stop());
-    }
-
     @Test
     public void respondsToRequestWithJsonResponse() throws IOException {
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
+        String originsFile = fixturesHome() + "conf/origins/origins-for-jsontest.yml";
 
-        assertThat(response.status(), is(OK));
-        assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
+        Iterable<BackendService> expected = loadFromPath(originsFile).get();
 
-        Iterable<BackendService> result = newBackendServices(unmarshalApplications(response.bodyAs(UTF_8)));
+        withOriginsHandler(originsFile, handler -> {
+            FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
 
-        Iterable<BackendService> backendServices = loadFromPath(ORIGINS_FILE).get();
+            assertThat(response.status(), is(OK));
+            assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
 
-        assertThat(result, is(backendServices));
+            Iterable<BackendService> result = newBackendServices(unmarshalApplications(response.bodyAs(UTF_8)));
+
+            assertThat(result, is(expected));
+        });
     }
 
     @Test
@@ -105,24 +78,44 @@ public class OriginsHandlerTest {
 
     @Test
     public void healthCheckIsAbsentWhenNotConfigured() throws IOException {
-        FullHttpResponse response = waitForResponse(handlerNoHealthCheck.handle(get("/admin/configuration/origins").build()));
+        String originsFile = fixturesHome() + "conf/origins/origins-for-jsontest-no-healthcheck.yml";
 
-        assertThat(response.status(), is(OK));
-        assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
+        Iterable<BackendService> expected = loadFromPath(originsFile).get();
 
-        String body = response.bodyAs(UTF_8);
+        withOriginsHandler(originsFile, handler -> {
+            FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
 
-        System.out.println("BODY = " + body);
+            assertThat(response.status(), is(OK));
+            assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
 
-        Iterable<BackendService> result = newBackendServices(unmarshalApplications(body));
+            String body = response.bodyAs(UTF_8);
 
-        Iterable<BackendService> backendServices = loadFromPath(ORIGINS_FILE_NO_HEALTH_CHECK).get();
+            assertThat(body, not(containsString("healthCheck")));
 
-        assertThat(result, is(backendServices));
-        assertThat(body, not(containsString("healthCheck")));
+            Iterable<BackendService> result = newBackendServices(unmarshalApplications(body));
+            assertThat(result, is(expected));
+        });
     }
 
     private static Iterable<BackendService> unmarshalApplications(String content) throws IOException {
-        return MAPPER.readValue(content, new TypeReference<Iterable<BackendService>>(){});
+        return MAPPER.readValue(content, new TypeReference<Iterable<BackendService>>() {
+        });
+    }
+
+    private interface IoAction {
+        void call(OriginsHandler handler) throws IOException;
+    }
+
+    private static void withOriginsHandler(String path, IoAction action) throws IOException {
+        FileBackedBackendServicesRegistry backendServicesRegistry = FileBackedBackendServicesRegistry.create(path);
+        await(backendServicesRegistry.start());
+
+        try {
+            OriginsHandler handler = new OriginsHandler(backendServicesRegistry);
+
+            action.call(handler);
+        } finally {
+            await(backendServicesRegistry.stop());
+        }
     }
 }
