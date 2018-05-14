@@ -66,15 +66,18 @@ import static org.mockito.Mockito.when;
 public class FileBackedBackendServicesRegistryTest {
     FileBackedBackendServicesRegistry registry;
     LoggingTestSupport log;
+    LoggingTestSupport fileBackedLog;
 
     @BeforeMethod
     public void setUp() {
         log = new LoggingTestSupport(FileBackedBackendServicesRegistry.class);
+        fileBackedLog = new LoggingTestSupport(FileBackedRegistry.class);
     }
 
     @AfterMethod
     public void tearDown() {
         log.stop();
+        fileBackedLog.stop();
     }
 
     @Test
@@ -369,6 +372,8 @@ public class FileBackedBackendServicesRegistryTest {
         ReloadResult result = registry.reload().get(10, SECONDS);
 
         assertThat(result.outcome(), is(FAILED));
+        assertThat(log.log(), hasItem(loggingEvent(ERROR, "Duplicate path '/testpath/' used for applications: 'first', 'second'")));
+        assertThat(result.message(), is("timestamp=NA, md5-hash=3cf21842c8dee594b646ea903fc09490, Reload failure."));
     }
 
     @Test
@@ -414,14 +419,50 @@ public class FileBackedBackendServicesRegistryTest {
     public void constraintRejectsDuplicatePaths() {
         Collection<BackendService> backendServices = ImmutableList.of(
                 new BackendService.Builder()
+                        .id("app-a")
                         .path("/foo")
                         .build(),
                 new BackendService.Builder()
+                        .id("app-b")
+                        .path("/foo")
+                        .build(),
+                new BackendService.Builder()
+                        .id("app-c")
                         .path("/foo")
                         .build()
         );
 
         assertThat(new RejectDuplicatePaths().test(backendServices), is(false));
+        assertThat(log.log(), hasItem(loggingEvent(ERROR, "Duplicate path '/foo' used for applications: 'app-a', 'app-b', 'app-c'")));
+    }
+
+    @Test
+    public void constraintRejectsAndLogsMultipleDuplicatePaths() {
+        Collection<BackendService> backendServices = ImmutableList.of(
+                new BackendService.Builder()
+                        .id("app-a")
+                        .path("/foo")
+                        .build(),
+                new BackendService.Builder()
+                        .id("app-b")
+                        .path("/foo")
+                        .build(),
+                new BackendService.Builder()
+                        .id("app-c")
+                        .path("/foo")
+                        .build(),
+                new BackendService.Builder()
+                        .id("app-x")
+                        .path("/bar")
+                        .build(),
+                new BackendService.Builder()
+                        .id("app-y")
+                        .path("/bar")
+                        .build()
+        );
+
+        assertThat(new RejectDuplicatePaths().test(backendServices), is(false));
+        assertThat(log.log(), hasItem(loggingEvent(ERROR, "Duplicate path '/foo' used for applications: 'app-a', 'app-b', 'app-c', Duplicate path '/bar' used for applications: 'app-x', 'app-y'")));
     }
 
     private static Throwable failureCause(CompletableFuture<?> future) throws TimeoutException, InterruptedException {
