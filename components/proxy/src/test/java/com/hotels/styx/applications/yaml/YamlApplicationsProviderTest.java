@@ -111,6 +111,9 @@ public class YamlApplicationsProviderTest {
     public void canGetApplications(String path) {
         ApplicationsProvider config = loadFromPath(path);
 
+        StreamSupport.stream(config.get().spliterator(), false)
+                .forEach(service -> System.out.println(service.id() + " - " + service.healthCheckConfig()));
+
         assertThat(config.get(), containsInAnyOrder(
                 anApplication()
                         .withName("landing")
@@ -158,12 +161,6 @@ public class YamlApplicationsProviderTest {
                         .withConnectTimeout(5000)
                         .withMaxConnectionsPerHost(200)
                         .withMaxPendingConnectionsPerHost(250)
-                        .withHealthCheckConfig(newHealthCheckConfigBuilder()
-                                .interval(23456, MILLISECONDS)
-                                .healthyThreshold(2)
-                                .unhealthyThreshold(2)
-                                .build()
-                        )
                         .withStickySessionConfig(newStickySessionConfigBuilder()
                                 .enabled(false)
                                 .timeout(43200, SECONDS)
