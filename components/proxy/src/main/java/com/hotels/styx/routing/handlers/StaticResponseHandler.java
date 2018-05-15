@@ -18,20 +18,19 @@ package com.hotels.styx.routing.handlers;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RouteHandlerDefinition;
 import com.hotels.styx.routing.config.RouteHandlerFactory;
-import rx.Observable;
 
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.messages.HttpResponseStatus.statusWithCode;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import com.hotels.styx.api.HttpRequest;
 
 /**
  * A HTTP handler for returning a static response.

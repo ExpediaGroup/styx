@@ -17,11 +17,10 @@ package com.hotels.styx.server.netty.codec;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.HttpCookie;
-import com.hotels.styx.api.HttpMessageBody;
-import com.hotels.styx.server.UniqueIdSupplier;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.messages.HttpVersion;
 import com.hotels.styx.server.BadRequestException;
+import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.ChannelHandlerContext;
@@ -56,10 +55,10 @@ import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.EXPECT;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
-import static com.hotels.styx.server.UniqueIdSuppliers.UUID_VERSION_ONE_SUPPLIER;
 import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.api.common.Strings.quote;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
+import static com.hotels.styx.server.UniqueIdSuppliers.UUID_VERSION_ONE_SUPPLIER;
 import static com.hotels.styx.server.netty.codec.UnwiseCharsEncoder.IGNORE;
 import static java.util.stream.StreamSupport.stream;
 
