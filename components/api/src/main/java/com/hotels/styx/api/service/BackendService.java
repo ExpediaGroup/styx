@@ -15,9 +15,6 @@
  */
 package com.hotels.styx.api.service;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Id;
@@ -47,7 +44,6 @@ import static java.util.Collections.emptySet;
 /**
  * Represents the configuration of an application (i.e. a backend service) that Styx can proxy to.
  */
-@JsonDeserialize(builder = BackendService.Builder.class)
 public final class BackendService implements Identifiable {
     public static final int DEFAULT_RESPONSE_TIMEOUT_MILLIS = 1000;
 
@@ -110,42 +106,34 @@ public final class BackendService implements Identifiable {
         return this.id;
     }
 
-    @JsonProperty("id")
     String idAsString() {
         return this.id.toString();
     }
 
-    @JsonProperty("path")
     public String path() {
         return this.path;
     }
 
-    @JsonProperty("origins")
     public Set<Origin> origins() {
         return this.origins;
     }
 
-    @JsonProperty("connectionPool")
     public ConnectionPool.Settings connectionPoolConfig() {
         return this.connectionPoolSettings;
     }
 
-    @JsonProperty("healthCheck")
     public HealthCheckConfig healthCheckConfig() {
         return healthCheckConfig;
     }
 
-    @JsonProperty("stickySession")
     public StickySessionConfig stickySessionConfig() {
         return this.stickySessionConfig;
     }
 
-    @JsonProperty("rewrites")
     public List<RewriteConfig> rewrites() {
         return this.rewrites;
     }
 
-    @JsonProperty("responseTimeoutMillis")
     public int responseTimeoutMillis() {
         return this.responseTimeoutMillis;
     }
@@ -154,7 +142,6 @@ public final class BackendService implements Identifiable {
         return Optional.ofNullable(this.tlsSettings);
     }
 
-    @JsonProperty("tlsSettings")
     private TlsSettings getTlsSettings() {
         return this.tlsSettings().orElse(null);
     }
@@ -214,7 +201,6 @@ public final class BackendService implements Identifiable {
     /**
      * Application builder.
      */
-    @JsonPOJOBuilder(buildMethodName = "build", withPrefix = "")
     public static final class Builder {
         private Id id = GENERIC_APP;
         private String path = "/";
@@ -258,7 +244,6 @@ public final class BackendService implements Identifiable {
          * @param id an ID
          * @return this builder
          */
-        @JsonProperty("id")
         public Builder id(String id) {
             return id(Id.id(id));
         }
@@ -269,7 +254,6 @@ public final class BackendService implements Identifiable {
          * @param path a path
          * @return this builder
          */
-        @JsonProperty("path")
         public Builder path(String path) {
             this.path = checkValidPath(checkNotNull(path));
             return this;
@@ -291,7 +275,6 @@ public final class BackendService implements Identifiable {
          * @param timeout a response timeout in milliseconds.
          * @return this builder
          */
-        @JsonProperty("responseTimeoutMillis")
         public Builder responseTimeoutMillis(int timeout) {
             this.responseTimeoutMillis = timeout;
             return this;
@@ -303,7 +286,6 @@ public final class BackendService implements Identifiable {
          * @param origins origins
          * @return this builder
          */
-        @JsonProperty("origins")
         public Builder origins(Set<Origin> origins) {
             this.origins = checkNotNull(origins);
             return this;
@@ -322,7 +304,6 @@ public final class BackendService implements Identifiable {
          * Sets the https settings.
          * For programmatic use
          */
-        @JsonProperty("sslSettings")
         public Builder httpsOld(TlsSettings tlsSettings) {
             this.tlsSettings = tlsSettings;
             return this;
@@ -332,7 +313,6 @@ public final class BackendService implements Identifiable {
          * Sets the https settings.
          * For programmatic use
          */
-        @JsonProperty("tlsSettings")
         public Builder https(TlsSettings tlsSettings) {
             this.tlsSettings = tlsSettings;
             return this;
@@ -364,7 +344,6 @@ public final class BackendService implements Identifiable {
          * @param rewriteConfigs rewrite configuration
          * @return this builder
          */
-        @JsonProperty("rewrites")
         public Builder rewrites(List<RewriteConfig> rewriteConfigs) {
             this.rewrites = ImmutableList.copyOf(rewriteConfigs);
             return this;
@@ -376,7 +355,6 @@ public final class BackendService implements Identifiable {
          * @param connectionPoolSettings connection pool configuration
          * @return this builder
          */
-        @JsonProperty("connectionPool")
         public Builder connectionPoolConfig(ConnectionPoolSettings connectionPoolSettings) {
             this.connectionPoolSettings = checkNotNull(connectionPoolSettings);
             return this;
@@ -399,7 +377,6 @@ public final class BackendService implements Identifiable {
          * @param stickySessionConfig sticky-session configuration.
          * @return this builder
          */
-        @JsonProperty("stickySession")
         public Builder stickySessionConfig(StickySessionConfig stickySessionConfig) {
             this.stickySessionConfig = checkNotNull(stickySessionConfig);
             return this;
@@ -411,7 +388,6 @@ public final class BackendService implements Identifiable {
          * @param healthCheckConfig health-check configuration
          * @return this builder
          */
-        @JsonProperty("healthCheck")
         public Builder healthCheckConfig(HealthCheckConfig healthCheckConfig) {
             this.healthCheckConfig = checkNotNull(healthCheckConfig);
             return this;

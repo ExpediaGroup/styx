@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.google.common.base.Charsets;
@@ -30,6 +31,7 @@ import com.hotels.styx.client.StyxHostHttpClient;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +40,7 @@ import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.client.RemoteHost.remoteHost;
+import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -116,9 +119,9 @@ public class OriginsInventoryHandlerTest {
     }
 
     private static Map<Id, OriginsSnapshot> deserialiseJson(String json) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        MapType type = mapper.getTypeFactory().constructMapType(Map.class, Id.class, OriginsSnapshot.class);
-        return mapper.readValue(json, type);
+        ObjectMapper mapper = addStyxMixins(new ObjectMapper());
+        return mapper.readValue(json, new TypeReference<HashMap<Id, OriginsSnapshot>>() {
+        });
     }
 
     private static Set<Origin> generateOrigins(int numberOfOrigins) {

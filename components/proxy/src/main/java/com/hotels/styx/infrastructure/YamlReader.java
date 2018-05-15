@@ -38,6 +38,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.io.ByteStreams.toByteArray;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
+import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.extractPlaceholders;
 import static com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.replacePlaceholder;
 import static com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.resolvePlaceholders;
@@ -54,7 +55,7 @@ import static java.util.stream.StreamSupport.stream;
  * @param <T>
  */
 public final class YamlReader<T> {
-    private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory())
+    private static final ObjectMapper MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()))
             .disable(FAIL_ON_UNKNOWN_PROPERTIES)
             .configure(AUTO_CLOSE_SOURCE, true);
 

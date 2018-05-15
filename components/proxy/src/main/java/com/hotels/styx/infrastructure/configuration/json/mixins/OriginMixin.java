@@ -13,19 +13,24 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.client.applications;
+package com.hotels.styx.infrastructure.configuration.json.mixins;
 
-
-import java.util.function.Supplier;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Provides applications.
+ * Jackson annotations for {@link com.hotels.styx.api.client.Origin}.
  */
-public interface ApplicationsProvider extends Supplier<BackendServices> {
-    /**
-     * Returns a list of applications.
-     *
-     * @return a list of applications
-     */
-    BackendServices get();
+public abstract class OriginMixin {
+
+    @JsonCreator
+    OriginMixin(@JsonProperty("id") String originId,
+           @JsonProperty("host") String host) {
+    }
+
+    @JsonProperty("host")
+    public abstract String hostAsString();
+
+    @JsonProperty("id")
+    public abstract String idAsString();
 }

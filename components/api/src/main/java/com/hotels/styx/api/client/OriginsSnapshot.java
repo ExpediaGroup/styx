@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api.client;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Id;
 
 import java.util.Collection;
@@ -40,11 +38,10 @@ public final class OriginsSnapshot {
     private final Set<Origin> disabledOrigins;
     private final Map<Id, Origin> allOriginsById = new HashMap<>();
 
-    @JsonCreator
-    OriginsSnapshot(@JsonProperty("appId") String appId,
-                    @JsonProperty("activeOrigins") Collection<Origin> activeOrigins,
-                    @JsonProperty("inactiveOrigins") Collection<Origin> inactiveOrigins,
-                    @JsonProperty("disabledOrigins") Collection<Origin> disabledOrigins) {
+    OriginsSnapshot(String appId,
+                    Collection<Origin> activeOrigins,
+                    Collection<Origin> inactiveOrigins,
+                    Collection<Origin> disabledOrigins) {
         this.appId = id(appId);
         this.activeOrigins = withAppId(activeOrigins, appId);
         this.inactiveOrigins = withAppId(inactiveOrigins, appId);
@@ -99,7 +96,6 @@ public final class OriginsSnapshot {
         return appId;
     }
 
-    @JsonProperty("appId")
     String appIdAsString() {
         return appId.toString();
     }
@@ -109,7 +105,6 @@ public final class OriginsSnapshot {
      *
      * @return active origins
      */
-    @JsonProperty("activeOrigins")
     public Set<Origin> activeOrigins() {
         return activeOrigins;
     }
@@ -119,7 +114,6 @@ public final class OriginsSnapshot {
      *
      * @return inactive origins
      */
-    @JsonProperty("inactiveOrigins")
     public Set<Origin> inactiveOrigins() {
         return inactiveOrigins;
     }
@@ -129,7 +123,6 @@ public final class OriginsSnapshot {
      *
      * @return disabled origins
      */
-    @JsonProperty("disabledOrigins")
     public Set<Origin> disabledOrigins() {
         return disabledOrigins;
     }

@@ -30,6 +30,7 @@ import java.util.Optional;
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.google.common.base.Throwables.propagate;
+import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -37,7 +38,7 @@ import static java.util.Objects.requireNonNull;
  * jackson API and Styx API.
  */
 public class JsonNodeConfig implements Configuration {
-    static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
+    static final ObjectMapper YAML_MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()))
             .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(AUTO_CLOSE_SOURCE, true);
 
@@ -61,7 +62,7 @@ public class JsonNodeConfig implements Configuration {
      */
     protected JsonNodeConfig(JsonNode rootNode, ObjectMapper mapper) {
         this.rootNode = requireNonNull(rootNode);
-        this.mapper = requireNonNull(mapper);
+        this.mapper = addStyxMixins(requireNonNull(mapper));
     }
 
     @Override

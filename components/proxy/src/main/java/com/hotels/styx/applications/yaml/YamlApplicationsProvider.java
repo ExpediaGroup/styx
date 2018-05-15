@@ -20,9 +20,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.client.applications.ApplicationsProvider;
 import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.client.applications.BackendServices;
+import com.hotels.styx.applications.ApplicationsProvider;
+import com.hotels.styx.applications.BackendServices;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,7 +30,8 @@ import java.util.List;
 
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
-import static com.hotels.styx.client.applications.BackendServices.newBackendServices;
+import static com.hotels.styx.applications.BackendServices.newBackendServices;
+import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.lang.String.format;
 
 /**
@@ -38,7 +39,7 @@ import static java.lang.String.format;
  *
  */
 public class YamlApplicationsProvider implements ApplicationsProvider {
-    private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
+    private static final ObjectMapper MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()));
     private static final CollectionType TYPE = MAPPER.getTypeFactory().constructCollectionType(List.class, BackendService.class);
 
     private final BackendServices backendServices;

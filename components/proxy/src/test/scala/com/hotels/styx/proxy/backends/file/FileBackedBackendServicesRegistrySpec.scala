@@ -25,10 +25,11 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.hotels.styx.api.client.Origin
 import com.hotels.styx.api.service.{BackendService, ConnectionPoolSettings, StickySessionConfig}
 import com.hotels.styx.api.service.spi.Registry
-import com.hotels.styx.client.applications.BackendServices.newBackendServices
+import com.hotels.styx.applications.BackendServices.newBackendServices
 import com.hotels.styx.api.service.HealthCheckConfig.newHealthCheckConfigBuilder
 import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.api.service.spi.Registry.Changes
+import com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
 import org.mockito.Mockito.{mock, times, verify}
@@ -74,7 +75,7 @@ class FileBackedBackendServicesRegistrySpec extends FunSpec with Eventually {
       .build()
   }
 
-  val Mapper = new ObjectMapper(new YAMLFactory())
+  val Mapper = addStyxMixins(new ObjectMapper(new YAMLFactory()))
 
   describe("A file backed backend services registry") {
     describe("reading yaml content") {

@@ -15,9 +15,6 @@
  */
 package com.hotels.styx.api.service;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 
@@ -36,7 +33,6 @@ import static java.util.Collections.emptySet;
 /**
  * SSL settings for a connection or pool.
  */
-@JsonDeserialize(builder = TlsSettings.Builder.class)
 public class TlsSettings {
 
     private static final String DEFAULT_TRUST_STORE_PATH = System.getProperty("java.home")
@@ -66,42 +62,34 @@ public class TlsSettings {
         return password == null ? "".toCharArray() : password.toCharArray();
     }
 
-    @JsonProperty("trustAllCerts")
     public boolean trustAllCerts() {
         return trustAllCerts;
     }
 
-    @JsonProperty("authenticate")
     public boolean authenticate() {
         return !trustAllCerts;
     }
 
-    @JsonProperty("sslProvider")
     public String sslProvider() {
         return sslProvider;
     }
 
-    @JsonProperty("addlCerts")
     public Set<Certificate> additionalCerts() {
         return additionalCerts;
     }
 
-    @JsonProperty("trustStorePath")
     public String trustStorePath() {
         return trustStorePath;
     }
 
-    @JsonProperty("trustStorePassword")
     public char[] trustStorePassword() {
         return trustStorePassword;
     }
 
-    @JsonProperty("protocols")
     public List<String> protocols() {
         return protocols;
     }
 
-    @JsonProperty("cipherSuites")
     public List<String> cipherSuites() {
         return this.cipherSuites;
     }
@@ -147,7 +135,6 @@ public class TlsSettings {
     /**
      * The builder for SSL settings.
      */
-    @JsonPOJOBuilder(buildMethodName = "build", withPrefix = "")
     public static final class Builder {
         private boolean trustAllCerts = true;
         private String sslProvider = DEFAULT_SSL_PROVIDER;
@@ -168,14 +155,12 @@ public class TlsSettings {
          * @param trustAllCerts
          * @return
          */
-        @JsonProperty("trustAllCerts")
         @Deprecated
         public Builder trustAllCerts(boolean trustAllCerts) {
             this.trustAllCerts = trustAllCerts;
             return this;
         }
 
-        @JsonProperty("authenticate")
         public Builder authenticate(boolean authenticate) {
             this.trustAllCerts = !authenticate;
             return this;
@@ -187,7 +172,6 @@ public class TlsSettings {
          * @param sslProvider
          * @return
          */
-        @JsonProperty("sslProvider")
         public Builder sslProvider(String sslProvider) {
             this.sslProvider = sslProvider;
             return this;
@@ -202,7 +186,6 @@ public class TlsSettings {
          * @param certificates
          * @return
          */
-        @JsonProperty("addlCerts")
         public Builder additionalCerts(Certificate... certificates) {
             this.additionalCerts = Sets.newHashSet(certificates);
             return this;
@@ -215,25 +198,21 @@ public class TlsSettings {
          * @param trustStorePath
          * @return
          */
-        @JsonProperty("trustStorePath")
         public Builder trustStorePath(String trustStorePath) {
             this.trustStorePath = trustStorePath;
             return this;
         }
 
-        @JsonProperty("trustStorePassword")
         public Builder trustStorePassword(String trustStorePwd) {
             this.trustStorePassword = trustStorePwd;
             return this;
         }
 
-        @JsonProperty("protocols")
         public Builder protocols(List<String> protocols) {
             this.protocols = protocols;
             return this;
         }
 
-        @JsonProperty("cipherSuites")
         public Builder cipherSuites(List<String> cipherSuites) {
             this.cipherSuites = cipherSuites;
             return this;

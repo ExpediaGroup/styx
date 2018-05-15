@@ -30,6 +30,7 @@ import java.util.Map;
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.google.common.base.Throwables.propagate;
+import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.extractPlaceholders;
 import static com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.replacePlaceholder;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -42,7 +43,7 @@ public class YamlConfigurationFormat implements ConfigurationFormat<YamlConfigur
 
     private static final Logger LOGGER = getLogger(YamlConfigurationFormat.class);
 
-    static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
+    static final ObjectMapper YAML_MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()))
             .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(AUTO_CLOSE_SOURCE, true);
 
