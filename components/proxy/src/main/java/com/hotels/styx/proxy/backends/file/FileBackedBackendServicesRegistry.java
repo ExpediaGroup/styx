@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
@@ -43,8 +44,9 @@ import static com.hotels.styx.api.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.applications.BackendServices.newBackendServices;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 /**
  * File backed {@link BackendService} registry.
@@ -200,11 +202,34 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
     static class RejectDuplicatePaths implements Predicate<Collection<BackendService>> {
         @Override
         public boolean test(Collection<BackendService> backendServices) {
-            return backendServices.stream()
-                    .collect(groupingBy(BackendService::path, counting()))
-                    .values()
+            Map<String, List<BackendService>> pathToApp = backendServices.stream()
+                    .collect(groupingBy(BackendService::path));
+
+            List<List<BackendService>> duplicateApps = pathToApp.values()
                     .stream()
-                    .noneMatch(count -> count > 1);
+                    .filter(backends -> backends.size() > 1)
+                    .collect(toList());
+
+            if (duplicateApps.size() > 0) {
+                LOGGER.error(errorMessage(duplicateApps));
+            }
+
+            return duplicateApps.size() == 0;
+        }
+
+        private static String errorMessage(List<List<BackendService>> backendServices) {
+            return backendServices.stream()
+                    .map(RejectDuplicatePaths::duplicatePathsErrorForPath)
+                    .collect(joining(", "));
+        }
+
+        private static String duplicatePathsErrorForPath(List<BackendService> apps) {
+            String path = apps.get(0).path();
+            String appsList = apps.stream()
+                    .map(app -> format("'%s'", app.id()))
+                    .collect(joining(", "));
+
+            return format("Duplicate path '%s' used for applications: %s", path, appsList);
         }
     }
 

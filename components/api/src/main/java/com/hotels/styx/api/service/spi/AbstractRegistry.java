@@ -92,7 +92,7 @@ public abstract class AbstractRegistry<T extends Identifiable> implements Regist
     public void set(Iterable<T> newObjects) throws IllegalStateException {
         ImmutableList<T> newSnapshot = ImmutableList.copyOf(newObjects);
 
-        checkState(resourceConstraint.test(newSnapshot));
+        checkState(resourceConstraint.test(newSnapshot), "Resource constraint failure");
 
         Iterable<T> oldSnapshot = snapshot.get();
         snapshot.set(newSnapshot);
