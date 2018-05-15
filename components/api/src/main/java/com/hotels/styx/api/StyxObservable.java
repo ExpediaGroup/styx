@@ -19,6 +19,7 @@ import rx.Observable;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -31,6 +32,7 @@ import java.util.function.Function;
 public interface StyxObservable<T> {
     <U> StyxObservable<U> map(Function<T, U> transformation);
     <U> StyxObservable<U> flatMap(Function<T, StyxObservable<U>> transformation);
+    <U> StyxObservable<U> reduce(BiFunction<T, U, U> accumulator, U initialValue);
 
     // TODO: Mikko: Styx 2.0 Api: `onError`: is more flexible type signature possible? Such as:
     //       <U> StyxObservable<U> onError(Function<Throwable, StyxObservable<U>> errorHandler);
@@ -42,6 +44,15 @@ public interface StyxObservable<T> {
 
     static <T> StyxObservable<T> of(T value) {
         return new StyxCoreObservable<>(Observable.just(value));
+    }
+
+    // TODO: Mikko: Only required for testing?
+    static <T> StyxObservable<T> empty() {
+        return new StyxCoreObservable<T>(Observable.empty());
+    }
+
+    static <T> StyxObservable<T> from(Iterable<T> values) {
+        return new StyxCoreObservable<>(Observable.from(values));
     }
 
     static <T> StyxObservable<T> error(Throwable error) {

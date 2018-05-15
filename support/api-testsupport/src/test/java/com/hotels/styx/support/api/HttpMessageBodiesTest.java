@@ -15,16 +15,15 @@
  */
 package com.hotels.styx.support.api;
 
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import static com.hotels.styx.api.FullHttpResponse.response;
 import static com.hotels.styx.api.HttpRequest.post;
-import com.hotels.styx.api.HttpRequest;
-
 import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.Arrays.stream;
@@ -62,8 +61,8 @@ public class HttpMessageBodiesTest {
     }
 
 
-    private static Observable<ByteBuf> byteBufObservable(String... strings) {
-        return Observable.from(stream(strings)
+    private static StyxObservable<ByteBuf> byteBufObservable(String... strings) {
+        return StyxObservable.from(stream(strings)
                 .map(HttpMessageBodiesTest::buf)
                 .collect(toList()));
     }

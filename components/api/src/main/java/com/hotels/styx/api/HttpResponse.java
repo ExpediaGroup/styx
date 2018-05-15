@@ -59,7 +59,7 @@ public class HttpResponse implements StreamingHttpMessage {
     private final HttpVersion version;
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
-    private final Observable<ByteBuf> body;
+    private final StyxObservable<ByteBuf> body;
     private final List<HttpCookie> cookies;
 
     HttpResponse(Builder builder) {
@@ -96,7 +96,7 @@ public class HttpResponse implements StreamingHttpMessage {
      * @param body   response body
      * @return a new builder
      */
-    public static Builder response(HttpResponseStatus status, Observable<ByteBuf> body) {
+    public static Builder response(HttpResponseStatus status, StyxObservable<ByteBuf> body) {
         return new Builder(status).body(body);
     }
 
@@ -121,7 +121,7 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     @Override
-    public Observable<ByteBuf> body() {
+    public StyxObservable<ByteBuf> body() {
         return body;
     }
 
@@ -145,23 +145,27 @@ public class HttpResponse implements StreamingHttpMessage {
     public StyxObservable<FullHttpResponse> toFullHttpResponse(int maxContentBytes) {
         CompositeByteBuf byteBufs = compositeBuffer();
 
-        return new StyxCoreObservable<>(
-                body.lift(disableFlowControl())
-                        .doOnError(e -> byteBufs.release())
-                        .collect(() -> byteBufs, (composite, part) -> {
-                            long newSize = composite.readableBytes() + part.readableBytes();
+        Observable<FullHttpResponse> delegate = ((StyxCoreObservable<ByteBuf>) body)
+                .delegate()
+                .lift(disableFlowControl())
+                .doOnError(e -> byteBufs.release())
+                .collect(() -> byteBufs, (composite, part) -> {
+                    long newSize = composite.readableBytes() + part.readableBytes();
 
-                            if (newSize > maxContentBytes) {
-                                release(composite);
-                                release(part);
+                    if (newSize > maxContentBytes) {
+                        release(composite);
+                        release(part);
 
-                                throw new ContentOverflowException(format("Maximum content size exceeded. Maximum size allowed is %d bytes.", maxContentBytes));
-                            }
-                            composite.addComponent(part);
-                            composite.writerIndex(composite.writerIndex() + part.readableBytes());
-                        })
-                        .map(HttpResponse::decodeAndRelease)
-                        .map(decoded -> new FullHttpResponse.Builder(this, decoded).build()));
+                        throw new ContentOverflowException(format("Maximum content size exceeded. Maximum size allowed is %d bytes.", maxContentBytes));
+                    }
+                    composite.addComponent(part);
+                    composite.writerIndex(composite.writerIndex() + part.readableBytes());
+                })
+                .map(HttpResponse::decodeAndRelease)
+                .map(decoded -> new FullHttpResponse.Builder(this, decoded)
+                        .build());
+
+        return new StyxCoreObservable<>(delegate);
     }
 
     private static byte[] decodeAndRelease(CompositeByteBuf aggregate) {
@@ -205,22 +209,23 @@ public class HttpResponse implements StreamingHttpMessage {
     public CompletableFuture<Boolean> releaseContentBuffers() {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
 
-        body.subscribe(new Subscriber<ByteBuf>() {
-            @Override
-            public void onCompleted() {
-                future.complete(true);
-            }
+        ((StyxCoreObservable<ByteBuf>) body).delegate()
+                .subscribe(new Subscriber<ByteBuf>() {
+                    @Override
+                    public void onCompleted() {
+                        future.complete(true);
+                    }
 
-            @Override
-            public void onError(Throwable e) {
+                    @Override
+                    public void onError(Throwable e) {
 
-            }
+                    }
 
-            @Override
-            public void onNext(ByteBuf byteBuf) {
-                byteBuf.release();
-            }
-        });
+                    @Override
+                    public void onNext(ByteBuf byteBuf) {
+                        byteBuf.release();
+                    }
+                });
 
         return future;
     }
@@ -233,12 +238,12 @@ public class HttpResponse implements StreamingHttpMessage {
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
         private boolean validate = true;
-        private Observable<ByteBuf> body;
+        private StyxObservable<ByteBuf> body;
         private final List<HttpCookie> cookies;
 
         public Builder() {
             this.headers = new HttpHeaders.Builder();
-            this.body = Observable.empty();
+            this.body = new StyxCoreObservable<>(Observable.empty());
             this.cookies = new ArrayList<>();
         }
 
@@ -255,7 +260,7 @@ public class HttpResponse implements StreamingHttpMessage {
             this.cookies = new ArrayList<>(response.cookies());
         }
 
-        public Builder(FullHttpResponse response, Observable<ByteBuf> decoded) {
+        public Builder(FullHttpResponse response, StyxObservable<ByteBuf> decoded) {
             this.status = statusWithCode(response.status().code());
             this.version = httpVersion(response.version().toString());
             this.headers = response.headers().newBuilder();
@@ -280,20 +285,20 @@ public class HttpResponse implements StreamingHttpMessage {
          * @param content response body
          * @return {@code this}
          */
-        public Builder body(Observable<ByteBuf> content) {
+        public Builder body(StyxObservable<ByteBuf> content) {
             this.body = content;
             return this;
         }
 
         /**
          * Sets the message body. As the content length is known, this header will also be set.
-         *
+         * <p>
          * TODO: Mikko: Styx 2.0 API: Missing test:
          *
          * @param contentObservable message body content.
          * @return {@code this}
          */
-        public Builder body(Observable<String> contentObservable, Charset charset) {
+        public Builder body(StyxObservable<String> contentObservable, Charset charset) {
             return body(contentObservable.map(content -> copiedBuffer(content, charset)));
         }
 
@@ -413,20 +418,22 @@ public class HttpResponse implements StreamingHttpMessage {
 
         /**
          * Removes body of the request
-         *
+         * <p>
          * TODO: Mikko: Styx 2.0 API: Ensure that reference counting works well with the new API.
          * Most importantly it should be safe to use without consumers accidentally using the API
          * in a dangerous way that might cause buffer leaks.
-         *
+         * <p>
          * Especially when transforming a response to another, etc.
          *
          * @return
          */
         public Builder removeBody() {
-            return body(body
+            Observable<ByteBuf> delegate = ((StyxCoreObservable<ByteBuf>) body)
+                    .delegate()
                     .doOnNext(ReferenceCountUtil::release)
-                    .ignoreElements()
-            );
+                    .ignoreElements();
+
+            return body(new StyxCoreObservable<>(delegate));
         }
 
 

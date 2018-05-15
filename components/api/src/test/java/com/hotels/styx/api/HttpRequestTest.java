@@ -23,6 +23,7 @@ import org.testng.annotations.Test;
 import rx.Observable;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpCookie.cookie;
@@ -43,6 +44,7 @@ import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
+import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.String.valueOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
@@ -95,12 +97,12 @@ public class HttpRequestTest {
     private Object[][] emptyBodyRequests() {
         return new Object[][]{
                 {get("/foo/bar").build()},
-                {post("/foo/bar", Observable.empty()).build()},
+                {post("/foo/bar", StyxObservable.empty()).build()},
         };
     }
 
     @Test
-    public void createsARequestWithDefaultValues() {
+    public void createsARequestWithDefaultValues() throws Exception {
         HttpRequest request = get("/index").build();
         assertThat(request.version(), is(HTTP_1_1));
         assertThat(request.url().toString(), is("/index"));
@@ -330,7 +332,7 @@ public class HttpRequestTest {
     public void shouldSetsContentLengthForNonStreamingBodyMessage() {
 //        assertThat(put("/home").body("").build().header(CONTENT_LENGTH), isValue("0"));
 //        assertThat(put("/home").body("Hello").build().header(CONTENT_LENGTH), isValue(valueOf(bytes("Hello").length)));
-        assertThat(put("/home").body(just(Unpooled.copiedBuffer("Hello", UTF_8))).build().header(CONTENT_LENGTH), isAbsent());
+        assertThat(put("/home").body(StyxObservable.of(copiedBuffer("Hello", UTF_8))).build().header(CONTENT_LENGTH), isAbsent());
     }
 
     @Test
@@ -341,7 +343,7 @@ public class HttpRequestTest {
     }
 
     @Test
-    public void builderSetsRequestContent() {
+    public void builderSetsRequestContent() throws Exception {
         HttpRequest request = post("/foo/bar", body("Foo bar")).build();
 
         assertThat(bytesToString(request.body()), is("Foo bar"));
@@ -423,19 +425,16 @@ public class HttpRequestTest {
         assertThat(shouldMatchOriginal.clientAddress(), is(address));
     }
 
-    private static Observable<ByteBuf> body(String... contents) {
-        return Observable.from(Stream.of(contents)
-                .map(content -> Unpooled.copiedBuffer(content, UTF_8))
+    private static StyxObservable<ByteBuf> body(String... contents) {
+        return StyxObservable.from(Stream.of(contents)
+                .map(content -> copiedBuffer(content, UTF_8))
                 .collect(toList()));
     }
 
-    private static String bytesToString(Observable<ByteBuf> body) {
-        return body.toList()
-                .toBlocking()
-                .single()
-                .stream()
-                .map(byteBuf -> byteBuf.toString(UTF_8))
-                .collect(joining());
+    private static String bytesToString(StyxObservable<ByteBuf> body) throws ExecutionException, InterruptedException {
+        return body.reduce((byteBuf, result) -> result + byteBuf.toString(UTF_8), "")
+                .asCompletableFuture()
+                .get();
     }
 
     private static byte[] bytes(String content) {

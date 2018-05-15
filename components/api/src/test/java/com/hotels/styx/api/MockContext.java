@@ -16,6 +16,7 @@
 package com.hotels.styx.api;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class MockContext implements HttpInterceptor.Context {
@@ -48,6 +49,11 @@ public class MockContext implements HttpInterceptor.Context {
         @Override
         public <U> StyxObservable<U> flatMap(Function<T, StyxObservable<U>> transformation) {
             return transformation.apply(value);
+        }
+
+        @Override
+        public <U> StyxObservable<U> reduce(BiFunction<T, U, U> accumulator, U initialValue) {
+            throw new UnsupportedOperationException();
         }
 
         @Override

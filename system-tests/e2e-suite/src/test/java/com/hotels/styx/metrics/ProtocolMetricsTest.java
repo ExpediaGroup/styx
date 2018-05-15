@@ -20,6 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.client.UrlConnectionHttpClient;
 import com.hotels.styx.client.SimpleNettyHttpClient;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
@@ -29,7 +30,6 @@ import io.netty.buffer.Unpooled;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import java.util.stream.Stream;
 
@@ -147,8 +147,8 @@ public class ProtocolMetricsTest {
     }
 
     // used to ensure that we do not increment counters for successive chunks
-    private static Observable<ByteBuf> body(String... chunks) {
-        return Observable.from(
+    private static StyxObservable<ByteBuf> body(String... chunks) {
+        return StyxObservable.from(
                 Stream.of(chunks)
                         .map(chunk -> Unpooled.copiedBuffer(chunk, UTF_8))
                         .collect(toList())

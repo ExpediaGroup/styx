@@ -21,7 +21,8 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.{HttpRequest, HttpResponse, StyxObservable}
+import com.hotels.styx.api.StyxInternalObservables.{fromRxObservable, toRxObservable}
+import com.hotels.styx.api.{HttpRequest, HttpResponse, StyxInternalObservables, StyxObservable}
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -85,14 +86,14 @@ import scala.compat.java8.FunctionConverters.asJavaFunction
 class AsyncRequestContentDelayPlugin extends PluginAdapter {
   override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
     val contentTransformation: rx.Observable[ByteBuf] =
-      request.body()
+      toRxObservable(request.body())
         .observeOn(ComputationScheduler())
         .flatMap(byteBuf => {
           Thread.sleep(1000)
           Observable.just(byteBuf)
         })
     StyxObservable.of(request)
-      .map(asJavaFunction((request: HttpRequest) => request.newBuilder().body(contentTransformation).build()))
+      .map(asJavaFunction((request: HttpRequest) => request.newBuilder().body(fromRxObservable(contentTransformation)).build()))
       .flatMap(asJavaFunction((request: HttpRequest) => chain.proceed(request)))
   }
 }

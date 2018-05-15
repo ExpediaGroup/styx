@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.messages.HttpVersion;
-import io.netty.buffer.Unpooled;
 import rx.Observable;
 
 import java.nio.charset.Charset;
@@ -36,9 +35,9 @@ import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
+import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
-import static rx.Observable.just;
 
 /**
  * HTTP response with a fully aggregated/decoded body.
@@ -151,9 +150,9 @@ public class FullHttpResponse implements FullHttpMessage {
      */
     public HttpResponse toStreamingResponse() {
         if (this.body.length == 0) {
-            return new HttpResponse.Builder(this, Observable.empty()).build();
+            return new HttpResponse.Builder(this, new StyxCoreObservable<>(Observable.empty())).build();
         } else {
-            return new HttpResponse.Builder(this, just(Unpooled.copiedBuffer(this.body))).build();
+            return new HttpResponse.Builder(this, StyxObservable.of(copiedBuffer(this.body))).build();
         }
     }
 

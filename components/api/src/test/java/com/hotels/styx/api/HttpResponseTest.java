@@ -21,7 +21,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import java.util.stream.Stream;
 
@@ -47,7 +46,6 @@ import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -93,12 +91,12 @@ public class HttpResponseTest {
     private Object[][] emptyBodyResponses() {
         return new Object[][]{
                 {response().build()},
-                {response().body(Observable.empty()).build()},
+                {response().body(StyxObservable.empty()).build()},
         };
     }
 
     @Test
-    public void createsAResponseWithDefaultValues() {
+    public void createsAResponseWithDefaultValues() throws Exception {
         HttpResponse response = response().build();
         assertThat(response.version(), is(HTTP_1_1));
         assertThat(response.cookies(), is(emptyIterable()));
@@ -107,7 +105,7 @@ public class HttpResponseTest {
     }
 
     @Test
-    public void createsResponseWithMinimalInformation() {
+    public void createsResponseWithMinimalInformation() throws Exception {
         HttpResponse response = response()
                 .status(BAD_GATEWAY)
                 .version(HTTP_1_0)
@@ -320,19 +318,17 @@ public class HttpResponseTest {
         return HttpResponse.response(status);
     }
 
-    private static Observable<ByteBuf> body(String... contents) {
-        return Observable.from(Stream.of(contents)
+    private static StyxObservable<ByteBuf> body(String... contents) {
+        return StyxObservable.from(Stream.of(contents)
                 .map(content -> Unpooled.copiedBuffer(content, UTF_8))
                 .collect(toList()));
     }
 
-    private static String bytesToString(Observable<ByteBuf> body) {
-        return body.toList()
-                .toBlocking()
-                .single()
-                .stream()
-                .map(byteBuf -> byteBuf.toString(UTF_8))
-                .collect(joining());
+    private static String bytesToString(StyxObservable<ByteBuf> body) throws Exception {
+        return body.reduce((buf, result) -> result + buf.toString(UTF_8), "")
+                .asCompletableFuture()
+                .get();
+
     }
 
     private static byte[] bytes(String s) {

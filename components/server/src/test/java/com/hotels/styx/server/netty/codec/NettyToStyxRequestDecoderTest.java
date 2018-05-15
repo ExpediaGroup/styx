@@ -18,6 +18,7 @@ package com.hotels.styx.server.netty.codec;
 import com.google.common.base.Strings;
 import com.hotels.styx.api.HttpHeader;
 import com.hotels.styx.server.UniqueIdSupplier;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.server.BadRequestException;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -50,6 +51,7 @@ import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.server.UniqueIdSuppliers.fixedUniqueIdSupplier;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpMessageToBytes;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequest;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequestAsBuf;
@@ -338,13 +340,13 @@ public class NettyToStyxRequestDecoderTest {
     }
 
 
-    private TestSubscriber<ByteBuf> subscribeTo(Observable<ByteBuf> contentObservable) {
+    private TestSubscriber<ByteBuf> subscribeTo(StyxObservable<ByteBuf> contentObservable) {
         TestSubscriber<ByteBuf> subscriber = new TestSubscriber<>();
-        contentObservable.subscribe(subscriber);
+        toRxObservable(contentObservable).subscribe(subscriber);
         return subscriber;
     }
 
-    private String subscribeAndRead(Observable<ByteBuf> contentObservable) throws InterruptedException {
+    private String subscribeAndRead(StyxObservable<ByteBuf> contentObservable) throws InterruptedException {
         CountDownLatch bodyCompletedLatch = new CountDownLatch(1);
 
         StringBuilder contentBuilder = subscribeToContent(contentObservable, bodyCompletedLatch);
@@ -353,9 +355,9 @@ public class NettyToStyxRequestDecoderTest {
         return contentBuilder.toString();
     }
 
-    private static StringBuilder subscribeToContent(Observable<ByteBuf> content, CountDownLatch onCompleteLatch) {
+    private static StringBuilder subscribeToContent(StyxObservable<ByteBuf> content, CountDownLatch onCompleteLatch) {
         StringBuilder builder = new StringBuilder();
-        content.subscribe(new Subscriber<ByteBuf>() {
+        toRxObservable(content).subscribe(new Subscriber<ByteBuf>() {
             @Override
             public void onCompleted() {
                 // no-op

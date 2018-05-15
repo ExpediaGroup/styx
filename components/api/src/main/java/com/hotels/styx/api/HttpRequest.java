@@ -72,7 +72,7 @@ public class HttpRequest implements StreamingHttpMessage {
     private final Url url;
     private final HttpHeaders headers;
     private final boolean secure;
-    private final Observable<ByteBuf> body;
+    private final StyxObservable<ByteBuf> body;
     private final List<HttpCookie> cookies;
 
     HttpRequest(Builder builder) {
@@ -155,7 +155,7 @@ public class HttpRequest implements StreamingHttpMessage {
      * @param  body type
      * @return {@code this}
      */
-    public static Builder post(String uri, Observable<ByteBuf> body) {
+    public static Builder post(String uri, StyxObservable<ByteBuf> body) {
         return new Builder(POST, uri).body(body);
     }
 
@@ -167,7 +167,7 @@ public class HttpRequest implements StreamingHttpMessage {
      * @param  body type
      * @return {@code this}
      */
-    public static Builder put(String uri, Observable<ByteBuf> body) {
+    public static Builder put(String uri, StyxObservable<ByteBuf> body) {
         return new Builder(PUT, uri).body(body);
     }
 
@@ -179,7 +179,7 @@ public class HttpRequest implements StreamingHttpMessage {
      * @param  body type
      * @return {@code this}
      */
-    public static Builder patch(String uri, Observable<ByteBuf> body) {
+    public static Builder patch(String uri, StyxObservable<ByteBuf> body) {
         return new Builder(PATCH, uri).body(body);
     }
 
@@ -204,7 +204,7 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     @Override
-    public Observable<ByteBuf> body() {
+    public StyxObservable<ByteBuf> body() {
         return body;
     }
 
@@ -324,7 +324,8 @@ public class HttpRequest implements StreamingHttpMessage {
         CompositeByteBuf byteBufs = compositeBuffer();
 
         return new StyxCoreObservable<>(
-                body
+                ((StyxCoreObservable<ByteBuf>) body)
+                        .delegate()
                         .lift(disableFlowControl())
                         .doOnError(e -> byteBufs.release())
                         .collect(() -> byteBufs, (composite, part) -> {
@@ -369,7 +370,7 @@ public class HttpRequest implements StreamingHttpMessage {
     public CompletableFuture<Boolean> releaseContentBuffers() {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
 
-        body.subscribe(new Subscriber<ByteBuf>() {
+        ((StyxCoreObservable<ByteBuf>) body).delegate().subscribe(new Subscriber<ByteBuf>() {
             @Override
             public void onCompleted() {
                 future.complete(true);
@@ -403,13 +404,13 @@ public class HttpRequest implements StreamingHttpMessage {
         private boolean secure;
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
-        private Observable<ByteBuf> body;
+        private StyxObservable<ByteBuf> body;
         private final List<HttpCookie> cookies;
 
         public Builder() {
             this.url = Url.Builder.url("/").build();
             this.headers = new HttpHeaders.Builder();
-            this.body = Observable.empty();
+            this.body = new StyxCoreObservable<>(Observable.empty());
             this.cookies = new ArrayList<>();
         }
 
@@ -420,7 +421,7 @@ public class HttpRequest implements StreamingHttpMessage {
             this.secure = url.isSecure();
         }
 
-        public Builder(HttpRequest request, Observable<ByteBuf> body) {
+        public Builder(HttpRequest request, StyxObservable<ByteBuf> body) {
             this.id = request.id();
             this.method = httpMethod(request.method().name());
             this.clientAddress = request.clientAddress();
@@ -452,7 +453,7 @@ public class HttpRequest implements StreamingHttpMessage {
             this.secure = request.isSecure();
             this.version = request.version();
             this.headers = request.headers().newBuilder();
-            this.body = Observable.just(copiedBuffer(request.body()));
+            this.body = StyxCoreObservable.of(copiedBuffer(request.body()));
             this.cookies = new ArrayList<>(request.cookies());
         }
 
@@ -472,7 +473,7 @@ public class HttpRequest implements StreamingHttpMessage {
          * @param content request body
          * @return {@code this}
          */
-        public Builder body(Observable<ByteBuf> content) {
+        public Builder body(StyxObservable<ByteBuf> content) {
             this.body = content;
             return this;
         }
@@ -482,7 +483,7 @@ public class HttpRequest implements StreamingHttpMessage {
         // assumes UTF_8 encoding.
 
         public Builder body(String content) {
-            this.body = Observable.just(copiedBuffer(content, UTF_8));
+            this.body = StyxObservable.of(copiedBuffer(content, UTF_8));
             return this;
         }
 

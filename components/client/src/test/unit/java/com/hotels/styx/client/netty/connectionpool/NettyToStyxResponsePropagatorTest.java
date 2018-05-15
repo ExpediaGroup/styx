@@ -48,6 +48,7 @@ import static com.hotels.styx.api.HttpCookieAttribute.domain;
 import static com.hotels.styx.api.HttpCookieAttribute.httpOnly;
 import static com.hotels.styx.api.HttpCookieAttribute.path;
 import static com.hotels.styx.api.Id.GENERIC_APP;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
 import static com.hotels.styx.client.netty.connectionpool.NettyToStyxResponsePropagator.toStyxResponse;
@@ -321,7 +322,7 @@ public class NettyToStyxResponsePropagatorTest {
 
     private TestSubscriber<ByteBuf> subscribeToContent(HttpResponse response) {
         TestSubscriber<ByteBuf> contentSubscriber = new TestSubscriber<>();
-        response.body().subscribe(contentSubscriber);
+        toRxObservable(response.body()).subscribe(contentSubscriber);
         return contentSubscriber;
     }
 

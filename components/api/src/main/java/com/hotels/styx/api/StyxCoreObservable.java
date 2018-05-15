@@ -19,6 +19,7 @@ import rx.Observable;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -69,6 +70,11 @@ class StyxCoreObservable<T> implements StyxObservable<T> {
             return result.delegate;
         }));
     }
+
+    public <U> StyxObservable<U> reduce(BiFunction<T, U, U> accumulator, U seed) {
+        return new StyxCoreObservable<>(delegate.reduce(seed, (result, element) -> accumulator.apply(element, result)));
+    }
+
 
     @Override
     public StyxObservable<T> onError(Function<Throwable, StyxObservable<T>> errorHandler) {

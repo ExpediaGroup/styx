@@ -52,6 +52,7 @@ import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.service.BackendService.DEFAULT_RESPONSE_TIMEOUT_MILLIS;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.lang.String.format;
@@ -267,7 +268,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
         private ChannelFutureListener subscribeToResponseBody() {
             return future -> {
                 if (future.isSuccess()) {
-                    request.body().subscribe(requestBodyChunkSubscriber);
+                    toRxObservable(request.body()).subscribe(requestBodyChunkSubscriber);
                 } else {
                     LOGGER.error(format("error writing body to origin=%s request=%s", nettyConnection.getOrigin(), request), future.cause());
                     responseFromOriginObserver.onError(new TransportLostException(nettyConnection.channel().remoteAddress(), nettyConnection.getOrigin()));

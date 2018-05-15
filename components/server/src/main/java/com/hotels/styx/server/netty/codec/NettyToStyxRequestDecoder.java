@@ -55,6 +55,7 @@ import static com.google.common.collect.Iterables.size;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.EXPECT;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.server.UniqueIdSuppliers.UUID_VERSION_ONE_SUPPLIER;
 import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.api.common.Strings.quote;
@@ -181,7 +182,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 .url(url)
                 .version(toStyxVersion(request.protocolVersion()))
                 .id(uniqueIdSupplier.get())
-                .body(content);
+                .body(fromRxObservable(content));
 
         stream(request.headers().spliterator(), false)
                 .filter(entry -> !isCookieHeader(entry.getKey()))

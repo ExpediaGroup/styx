@@ -20,7 +20,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import rx.Observable;
 import rx.observers.TestSubscriber;
 
 import java.util.Optional;
@@ -348,7 +347,7 @@ public class FullHttpResponseTest {
         TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
         subscriber.requestMore(1);
 
-        streaming.body().subscribe(subscriber);
+        ((StyxCoreObservable<ByteBuf>)streaming.body()).delegate().subscribe(subscriber);
 
         assertThat(subscriber.getOnNextEvents().size(), is(0));
         subscriber.assertCompleted();
@@ -452,8 +451,8 @@ public class FullHttpResponseTest {
                 .body("original", UTF_8)
                 .build();
 
-        ByteBuf byteBuf = original.toStreamingResponse()
-                .body()
+        ByteBuf byteBuf = ((StyxCoreObservable<ByteBuf>)original.toStreamingResponse().body())
+                .delegate()
                 .toBlocking()
                 .first();
 
@@ -467,7 +466,7 @@ public class FullHttpResponseTest {
         ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
 
         HttpResponse original = HttpResponse.response(OK)
-                .body(Observable.just(content))
+                .body(StyxObservable.of(content))
                 .build();
 
         original.toFullHttpResponse(100)

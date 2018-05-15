@@ -16,26 +16,25 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.api.messages.HttpMethod;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import com.hotels.styx.api.messages.HttpMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import rx.Observable;
 import rx.observers.TestSubscriber;
 
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+import static com.hotels.styx.api.FullHttpRequest.get;
+import static com.hotels.styx.api.FullHttpRequest.patch;
+import static com.hotels.styx.api.FullHttpRequest.put;
 import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.api.FullHttpRequest.put;
 import static com.hotels.styx.api.Url.Builder.url;
-import static com.hotels.styx.api.FullHttpRequest.get;
-import static com.hotels.styx.api.FullHttpRequest.patch;
 import static com.hotels.styx.api.messages.HttpMethod.DELETE;
 import static com.hotels.styx.api.messages.HttpMethod.GET;
 import static com.hotels.styx.api.messages.HttpMethod.POST;
@@ -56,7 +55,6 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static rx.Observable.just;
 
 
 public class FullHttpRequestTest {
@@ -95,7 +93,7 @@ public class FullHttpRequestTest {
         TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
         subscriber.requestMore(1);
 
-        streaming.body().subscribe(subscriber);
+        ((StyxCoreObservable<ByteBuf>)streaming.body()).delegate().subscribe(subscriber);
 
         assertThat(subscriber.getOnNextEvents().size(), is(0));
         subscriber.assertCompleted();
@@ -241,8 +239,8 @@ public class FullHttpRequestTest {
                 .body("original", UTF_8)
                 .build();
 
-        ByteBuf byteBuf = original.toStreamingRequest()
-                .body()
+        ByteBuf byteBuf = ((StyxCoreObservable<ByteBuf>)original.toStreamingRequest().body())
+                .delegate()
                 .toBlocking()
                 .first();
 
@@ -257,7 +255,7 @@ public class FullHttpRequestTest {
         ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
 
         HttpRequest original = HttpRequest.get("/foo")
-                .body(Observable.just(content))
+                .body(StyxObservable.of(content))
                 .build();
 
         FullHttpRequest fullRequest = original.toFullHttpRequest(100)

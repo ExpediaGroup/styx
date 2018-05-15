@@ -53,6 +53,7 @@ import static com.hotels.styx.api.HttpCookieAttribute.maxAge;
 import static com.hotels.styx.api.HttpCookieAttribute.path;
 import static com.hotels.styx.api.HttpCookieAttribute.secure;
 import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.common.Strings.quote;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
 import static io.netty.util.ReferenceCountUtil.retain;
@@ -241,7 +242,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     private static HttpResponse toStyxResponse(io.netty.handler.codec.http.HttpResponse nettyResponse, Observable<ByteBuf> contentObservable, Origin origin) {
         try {
             return toStyxResponse(nettyResponse)
-                    .body(contentObservable)
+                    .body(fromRxObservable(contentObservable))
                     .build();
         } catch (IllegalArgumentException e) {
             throw new BadHttpResponseException(origin, e);

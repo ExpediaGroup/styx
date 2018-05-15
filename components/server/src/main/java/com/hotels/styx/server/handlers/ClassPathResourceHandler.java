@@ -19,9 +19,9 @@ import com.google.common.io.ByteStreams;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.http.handlers.BaseHttpHandler;
 import com.hotels.styx.api.messages.HttpResponseStatus;
-import rx.Observable;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -78,7 +78,7 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
 
     private static HttpResponse error(HttpResponseStatus status) {
         return new HttpResponse.Builder(status)
-                .body(Observable.just(status.description()), UTF_8)
+                .body(StyxObservable.of(status.description()), UTF_8)
                 .build();
     }
 

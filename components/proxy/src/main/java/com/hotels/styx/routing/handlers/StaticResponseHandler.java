@@ -47,7 +47,7 @@ public class StaticResponseHandler implements HttpHandler {
 
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return StyxObservable.of(HttpResponse.response(statusWithCode(status)).body(Observable.just(text), UTF_8).build());
+        return StyxObservable.of(HttpResponse.response(statusWithCode(status)).body(StyxObservable.of(text), UTF_8).build());
     }
 
     private static class StaticResponseConfig {

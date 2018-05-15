@@ -17,7 +17,6 @@ package com.hotels.styx.api;
 
 import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
-import rx.Observable;
 
 import java.util.List;
 import java.util.Optional;
@@ -55,7 +54,7 @@ public interface StreamingHttpMessage {
      *
      * @return the body
      */
-    Observable<ByteBuf> body();
+    StyxObservable<ByteBuf> body();
 
     /**
      * Returns the value of the header with the specified {@code name}.

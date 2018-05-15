@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpRequest._
-import com.hotels.styx.api.HttpResponse
+import com.hotels.styx.api.{HttpResponse, StyxInternalObservables}
 import com.hotels.styx.api.HttpResponse._
 import com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.api.support.HostAndPorts._
@@ -33,6 +33,7 @@ import rx.Observable
 import rx.lang.scala.JavaConversions._
 
 import scala.concurrent.duration._
+import com.hotels.styx.api.StyxInternalObservables.fromRxObservable
 
 class AggregatingPluginContentOverflowSpec extends FunSpec
   with StyxProxySpec
@@ -67,7 +68,7 @@ class AggregatingPluginContentOverflowSpec extends FunSpec
       mockServer.stub("/body", responseSupplier(
         () => {
           HttpResponse.response(OK).body(
-            toJavaObservable(
+            StyxInternalObservables.fromRxObservable(toJavaObservable(
               delay(500.millis,
                 Seq(
                   buf("a" * 1000),
@@ -76,7 +77,7 @@ class AggregatingPluginContentOverflowSpec extends FunSpec
                   buf("d" * 1000),
                   buf("e" * 1000),
                   buf("f" * 1000))))
-              .asInstanceOf[Observable[ByteBuf]]).build()
+              .asInstanceOf[Observable[ByteBuf]])).build()
         }))
 
       val request = get(styxServer.routerURL("/body"))

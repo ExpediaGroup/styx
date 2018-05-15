@@ -312,9 +312,9 @@ public class FullHttpRequest implements FullHttpMessage {
                 .clientAddress(clientAddress);
 
         if (this.body.length == 0) {
-            return streamingBuilder.body(Observable.empty()).build();
+            return streamingBuilder.body(new StyxCoreObservable<>(Observable.empty())).build();
         } else {
-            return streamingBuilder.body(Observable.just(Unpooled.copiedBuffer(body))).build();
+            return streamingBuilder.body(StyxObservable.of(Unpooled.copiedBuffer(body))).build();
         }
     }
 

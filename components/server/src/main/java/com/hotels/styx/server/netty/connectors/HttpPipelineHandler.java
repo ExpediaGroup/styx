@@ -22,6 +22,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.NoServiceConfiguredException;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.metrics.HttpErrorStatusListener;
 import com.hotels.styx.api.metrics.MetricRegistry;
@@ -445,7 +446,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
 
         return responseEnhancer.enhance(HttpResponse.response(status), request)
                 .header(CONTENT_LENGTH, message.getBytes(UTF_8).length)
-                .body(Observable.just(message), UTF_8)
+                .body(StyxObservable.of(message), UTF_8)
                 .build();
     }
 

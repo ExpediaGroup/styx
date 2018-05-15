@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames._
 import com.hotels.styx.api.messages.HttpResponseStatus._
-import com.hotels.styx.api.{FullHttpResponse, HttpRequest, HttpResponse}
+import com.hotels.styx.api.{FullHttpResponse, HttpRequest, HttpResponse, StyxInternalObservables}
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
@@ -84,7 +84,7 @@ class TimeoutsSpec extends FunSpec
           .header(HOST, styxServer.proxyHost)
           .header(CONTENT_TYPE, "text/html; charset=UTF-8")
           .header(CONTENT_LENGTH, "500")
-          .body(delayedRequestBody)
+          .body(StyxInternalObservables.fromRxObservable(delayedRequestBody))
           .build()
 
         val resp = decodedRequest(slowRequest, debug = true)
