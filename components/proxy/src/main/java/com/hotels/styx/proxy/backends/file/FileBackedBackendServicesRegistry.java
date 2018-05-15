@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Throwables.propagate;
@@ -47,6 +46,7 @@ import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 /**
  * File backed {@link BackendService} registry.
@@ -207,8 +207,8 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
 
             List<List<BackendService>> duplicateApps = pathToApp.values()
                     .stream()
-                    .filter(bss -> bss.size() > 1)
-                    .collect(Collectors.toList());
+                    .filter(backends -> backends.size() > 1)
+                    .collect(toList());
 
             if (duplicateApps.size() > 0) {
                 LOGGER.error(errorMessage(duplicateApps));
@@ -226,7 +226,7 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
         private static String duplicatePathsErrorForPath(List<BackendService> apps) {
             String path = apps.get(0).path();
             String appsList = apps.stream()
-                    .map(app -> format("'%s'", app.id().toString()))
+                    .map(app -> format("'%s'", app.id()))
                     .collect(joining(", "));
 
             return format("Duplicate path '%s' used for applications: %s", path, appsList);
