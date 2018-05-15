@@ -16,6 +16,9 @@
 package com.hotels.styx.proxy.backends.file;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Resource;
@@ -24,9 +27,7 @@ import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.AbstractStyxService;
 import com.hotels.styx.api.service.spi.Registry;
-import com.hotels.styx.applications.BackendServices;
 import com.hotels.styx.infrastructure.FileBackedRegistry;
-import com.hotels.styx.infrastructure.YamlReader;
 import com.hotels.styx.proxy.backends.file.FileChangeMonitor.FileMonitorSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,11 +38,14 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
+import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
 import static com.hotels.styx.api.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.applications.BackendServices.newBackendServices;
+import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.groupingBy;
@@ -181,20 +185,24 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
 
     @VisibleForTesting
     static class YAMLBackendServicesReader implements FileBackedRegistry.Reader<BackendService> {
-        private final YamlReader<List<BackendService>> delegate = new YamlReader<>();
+        private static final ObjectMapper MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()))
+                .disable(FAIL_ON_UNKNOWN_PROPERTIES)
+                .configure(AUTO_CLOSE_SOURCE, true);
+
+        private static final TypeReference<List<BackendService>> TYPE = new TypeReference<List<BackendService>>() {
+        };
 
         @Override
         public Iterable<BackendService> read(byte[] content) {
             try {
-                return readBackendServices(content);
+                JsonNode rootNode = MAPPER.readTree(content);
+
+                List<BackendService> services = MAPPER.readValue(rootNode.traverse(), TYPE);
+
+                return newBackendServices(services);
             } catch (Exception e) {
                 throw propagate(e);
             }
-        }
-
-        private BackendServices readBackendServices(byte[] content) throws Exception {
-            return newBackendServices(delegate.read(content, new TypeReference<List<BackendService>>() {
-            }));
         }
     }
 
