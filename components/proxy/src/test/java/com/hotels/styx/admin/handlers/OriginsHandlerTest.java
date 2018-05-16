@@ -22,8 +22,6 @@ import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -32,8 +30,8 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
-import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadFromPath;
 import static com.hotels.styx.applications.BackendServices.newBackendServices;
+import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadFromPath;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
@@ -41,42 +39,33 @@ import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 public class OriginsHandlerTest {
-    static final ObjectMapper MAPPER = addStyxMixins(new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES));
-
-    static final String ORIGINS_FILE = fixturesHome() + "conf/origins/origins-for-jsontest.yml";
-
-    final Iterable<BackendService> backendServices = loadFromPath(ORIGINS_FILE).get();
-
-    final FileBackedBackendServicesRegistry backendServicesRegistry = FileBackedBackendServicesRegistry.create(ORIGINS_FILE);
-    final OriginsHandler handler = new OriginsHandler(backendServicesRegistry);
-
-    @BeforeClass
-    public void startRegistry() {
-        await(backendServicesRegistry.start());
-    }
-
-    @AfterClass
-    public void stopRegistry() {
-        await(backendServicesRegistry.stop());
-    }
+    private static final ObjectMapper MAPPER = addStyxMixins(new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES));
 
     @Test
     public void respondsToRequestWithJsonResponse() throws IOException {
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
+        String originsFile = fixturesHome() + "conf/origins/origins-for-jsontest.yml";
 
-        assertThat(response.status(), is(OK));
-        assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
+        Iterable<BackendService> expected = loadFromPath(originsFile).get();
 
-        Iterable<BackendService> result = newBackendServices(unmarshalApplications(response.bodyAs(UTF_8)));
+        withOriginsHandler(originsFile, handler -> {
+            FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
 
-        assertThat(result, is(backendServices));
+            assertThat(response.status(), is(OK));
+            assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
+
+            Iterable<BackendService> result = newBackendServices(unmarshalApplications(response.bodyAs(UTF_8)));
+
+            assertThat(result, is(expected));
+        });
     }
 
     @Test
-    public void respondsWithEmptyArrayWhenNoOrigins() throws IOException {
+    public void respondsWithEmptyArrayWhenNoOrigins() {
         Registry<BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
         OriginsHandler handler = new OriginsHandler(backendServicesRegistry);
 
@@ -88,7 +77,46 @@ public class OriginsHandlerTest {
         assertThat(response.bodyAs(UTF_8), is("[]"));
     }
 
+    @Test
+    public void healthCheckIsAbsentWhenNotConfigured() throws IOException {
+        String originsFile = fixturesHome() + "conf/origins/origins-for-jsontest-no-healthcheck.yml";
+
+        Iterable<BackendService> expected = loadFromPath(originsFile).get();
+
+        withOriginsHandler(originsFile, handler -> {
+            FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
+
+            assertThat(response.status(), is(OK));
+            assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
+
+            String body = response.bodyAs(UTF_8);
+
+            assertThat(body, not(containsString("healthCheck")));
+
+            Iterable<BackendService> result = newBackendServices(unmarshalApplications(body));
+            assertThat(result, is(expected));
+        });
+    }
+
     private static Iterable<BackendService> unmarshalApplications(String content) throws IOException {
-        return MAPPER.readValue(content, new TypeReference<Iterable<BackendService>>() { });
+        return MAPPER.readValue(content, new TypeReference<Iterable<BackendService>>() {
+        });
+    }
+
+    private interface IoAction {
+        void call(OriginsHandler handler) throws IOException;
+    }
+
+    private static void withOriginsHandler(String path, IoAction action) throws IOException {
+        FileBackedBackendServicesRegistry backendServicesRegistry = FileBackedBackendServicesRegistry.create(path);
+        await(backendServicesRegistry.start());
+
+        try {
+            OriginsHandler handler = new OriginsHandler(backendServicesRegistry);
+
+            action.call(handler);
+        } finally {
+            await(backendServicesRegistry.stop());
+        }
     }
 }

@@ -1,0 +1,22 @@
+# See origins-default.yaml for explanation of configuration format
+---
+- id: "webapp"
+  path: "/"
+  stickySession:
+    enabled: true
+    timeoutSeconds: 86400
+  connectionPool:
+    maxConnectionsPerHost: 300
+    maxPendingConnectionsPerHost: 50
+    connectTimeoutMillis: 8000
+  origins:
+  - id: "webapp-01"
+    host: "localhost:9090"
+  - id: "webapp-02"
+    host: "localhost:9091"
+
+- id: "shopping"
+  path: "/shop/"
+  origins:
+  - id: "shopping-01"
+    host: "localhost:9094"

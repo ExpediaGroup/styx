@@ -24,6 +24,7 @@ import com.hotels.styx.api.http.handlers.BaseHttpHandler;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
@@ -35,7 +36,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
  * Provides origins configuration in the form of JSON.
  */
 public class OriginsHandler extends BaseHttpHandler {
-    private final ObjectMapper mapper = addStyxMixins(new ObjectMapper());
+    private final ObjectMapper mapper = addStyxMixins(new ObjectMapper().setSerializationInclusion(NON_NULL));
 
     private final Registry<BackendService> backendServicesRegistry;
 

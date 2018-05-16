@@ -44,7 +44,7 @@ public final class OriginHealthStatusMonitorFactory implements OriginHealthStatu
      */
     @Override
     public OriginHealthStatusMonitor create(Id id, HealthCheckConfig healthCheckConfig, Supplier<OriginHealthCheckFunction> supplier) {
-        if (!healthCheckConfig.isEnabled()) {
+        if (healthCheckConfig == null || !healthCheckConfig.isEnabled()) {
             return new NoOriginHealthStatusMonitor();
         }
 
