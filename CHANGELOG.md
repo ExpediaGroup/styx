@@ -1,5 +1,16 @@
 # Change Log
 
+## [styx-0.7.6](https://github.com/HotelsDotCom/styx/tree/styx-0.7.6) (2018-04-12)
+[Full Changelog](https://github.com/HotelsDotCom/styx/compare/styx-0.7.5...styx-0.7.6)
+
+**Merged pull requests:**
+
+- Origins file monitor [\#97](https://github.com/HotelsDotCom/styx/pull/97) ([mikkokar](https://github.com/mikkokar))
+- Add response codes diagram and page [\#104](https://github.com/HotelsDotCom/styx/pull/104) ([kvosper](https://github.com/kvosper))
+- Document origin configuration and improve user guide. [\#106](https://github.com/HotelsDotCom/styx/pull/106) ([dvlato](https://github.com/dvlato))
+- Improve origins reload visibility [\#108](https://github.com/HotelsDotCom/styx/pull/108) ([mikkokar](https://github.com/mikkokar))
+
+
 ## [styx-0.7.5](https://github.com/HotelsDotCom/styx/tree/styx-0.7.5) (2018-03-13)
 [Full Changelog](https://github.com/HotelsDotCom/styx/compare/styx-0.7.4...styx-0.7.5)
 
