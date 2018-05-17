@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 import com.google.common.net.HostAndPort
 import com.google.common.net.HostAndPort._
-import com.hotels.styx.api.HttpHandler2
+import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.Id._
 import com.hotels.styx.api.client.Origin
@@ -36,7 +36,7 @@ import io.netty.handler.codec.http._
 class NettyHttpServerConnector(serverPort: Int, handler: ChannelInboundHandlerAdapter) extends ServerConnector {
   override def `type`(): String = "http"
 
-  override def configure(channel: Channel, httpController: HttpHandler2): Unit = {
+  override def configure(channel: Channel, httpController: HttpHandler): Unit = {
     val pipeline: ChannelPipeline = channel.pipeline()
     pipeline.addLast("encoder", new HttpResponseEncoder)
     pipeline.addLast("decoder", new HttpRequestDecoder())

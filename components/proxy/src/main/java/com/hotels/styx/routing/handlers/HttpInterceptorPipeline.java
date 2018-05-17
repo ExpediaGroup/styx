@@ -18,10 +18,10 @@ package com.hotels.styx.routing.handlers;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
@@ -30,7 +30,7 @@ import com.hotels.styx.routing.config.RouteHandlerConfig;
 import com.hotels.styx.routing.config.RouteHandlerDefinition;
 import com.hotels.styx.routing.config.RouteHandlerFactory;
 import com.hotels.styx.routing.config.RouteHandlerReference;
-import rx.Observable;
+import com.hotels.styx.api.HttpRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -47,15 +47,15 @@ import static java.util.stream.StreamSupport.stream;
 /**
  * A HTTP handler that contains HTTP interceptor pipeline.
  */
-public class HttpInterceptorPipeline implements HttpHandler2 {
+public class HttpInterceptorPipeline implements HttpHandler {
     private final StandardHttpPipeline handler;
 
-    public HttpInterceptorPipeline(List<HttpInterceptor> interceptors, HttpHandler2 handler) {
+    public HttpInterceptorPipeline(List<HttpInterceptor> interceptors, HttpHandler handler) {
         this.handler = new StandardHttpPipeline(interceptors, handler);
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return handler.handle(request, context);
     }
 
@@ -92,7 +92,7 @@ public class HttpInterceptorPipeline implements HttpHandler2 {
         }
 
         @Override
-        public HttpHandler2 build(List<String> parents, RouteHandlerFactory builtinsFactory, RouteHandlerDefinition configBlock) {
+        public HttpHandler build(List<String> parents, RouteHandlerFactory builtinsFactory, RouteHandlerDefinition configBlock) {
             JsonNode pipeline = configBlock.config().get("pipeline");
             List<HttpInterceptor> interceptors = getHttpInterceptors(append(parents, "pipeline"), pipeline);
 

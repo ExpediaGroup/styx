@@ -13,14 +13,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.messages;
+package com.hotels.styx.api;
 
-import com.hotels.styx.api.HttpCookie;
-import com.hotels.styx.api.HttpHeaders;
-import com.hotels.styx.api.HttpMessageSupport;
-import io.netty.buffer.ByteBuf;
-import rx.Observable;
+import com.hotels.styx.api.messages.HttpVersion;
 
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,9 +25,9 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 
 /**
- * All behaviour common to both streaming requests and streaming responses.
+ * All behaviour common to both full requests and full responses.
  */
-public interface StreamingHttpMessage {
+public interface FullHttpMessage {
     /**
      * Returns the protocol version of this.
      *
@@ -53,11 +50,23 @@ public interface StreamingHttpMessage {
     List<HttpCookie> cookies();
 
     /**
-     * Returns the body of this message in its encoded form.
+     * Returns the body of this message in its unencoded form.
      *
      * @return the body
      */
-    Observable<ByteBuf> body();
+    byte[] body();
+
+    /**
+     * Returns the message body as a String decoded with provided character set.
+     *
+     * Decodes the message body into a Java String object with a provided charset.
+     * The caller must ensure the provided charset is compatible with message content
+     * type and encoding.
+     *
+     * @param charset     Charset used to decode message body.
+     * @return            Message body as a String.
+     */
+    String bodyAs(Charset charset);
 
     /**
      * Returns the value of the header with the specified {@code name}.

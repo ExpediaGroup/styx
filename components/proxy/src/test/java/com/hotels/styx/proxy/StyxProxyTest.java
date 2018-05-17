@@ -16,10 +16,11 @@
 package com.hotels.styx.proxy;
 
 import com.google.common.collect.ImmutableList;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.client.SimpleNettyHttpClient;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
@@ -33,19 +34,18 @@ import com.hotels.styx.server.netty.NettyServerConfig;
 import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import java.io.IOException;
 
-import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.io.ResourceFactory.newResource;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.nio.charset.Charset.defaultCharset;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static rx.Observable.just;
+import com.hotels.styx.api.HttpRequest;
 
 public class StyxProxyTest extends SSLSetup {
     final HttpClient client = new SimpleNettyHttpClient.Builder()
@@ -53,7 +53,7 @@ public class StyxProxyTest extends SSLSetup {
             .build();
 
     private static String content(HttpResponse response) {
-        return getFirst(response.body().content()).toString(defaultCharset());
+        return getFirst(response.body()).toString(defaultCharset());
     }
 
     public static void main(String[] args) {
@@ -99,10 +99,11 @@ public class StyxProxyTest extends SSLSetup {
         assertThat("Server should not be running", !server.isRunning());
     }
 
-    private Observable<HttpResponse> textResponse(String body) {
-        return just(response(OK)
-                .body("Response from http connector")
-                .build());
+    private StyxObservable<HttpResponse> textResponse(String body) {
+        return StyxObservable.of(FullHttpResponse.response(OK)
+                .body("Response from http connector", UTF_8)
+                .build()
+                .toStreamingResponse());
     }
 
     private ServerConnector connector(int port) {
@@ -165,7 +166,7 @@ public class StyxProxyTest extends SSLSetup {
     }
 
     private HttpResponse get(String uri) throws IOException {
-        HttpRequest secureRequest = HttpRequest.Builder.get(uri).build();
+        HttpRequest secureRequest = HttpRequest.get(uri).build();
         return execute(secureRequest);
     }
 

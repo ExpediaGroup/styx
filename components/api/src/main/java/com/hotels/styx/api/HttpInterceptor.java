@@ -17,8 +17,6 @@ package com.hotels.styx.api;
 
 import java.util.Optional;
 
-import rx.Observable;
-
 /**
  * An interceptor can interact with a request before it is passed to the handler and/or the response from the handler
  * before it is returned.
@@ -53,18 +51,6 @@ public interface HttpInterceptor {
         default <T> Optional<T> getIfAvailable(String key, Class<T> clazz) {
             return Optional.ofNullable(get(key, clazz));
         }
-
-        Context EMPTY = new Context() {
-            @Override
-            public void add(String key, Object value) {
-
-            }
-
-            @Override
-            public <T> T get(String key, Class<T> clazz) {
-                return null;
-            }
-        };
     }
 
     /**
@@ -86,17 +72,18 @@ public interface HttpInterceptor {
          * @param request request to propagate
          * @return observable that will provide the response
          */
-        Observable<HttpResponse> proceed(HttpRequest request);
+        StyxObservable<HttpResponse> proceed(HttpRequest request);
+
     }
 
     /**
      * Executes the interceptor's action. The interceptor is responsible for continuing execution of the interceptor
-     * stack with the {@link com.hotels.styx.api.HttpInterceptor.Chain}.
+     * stack with the {@link HttpInterceptor.Chain}.
      *
      * @param request HTTP request
      * @param chain   chain
      * @return observable that will provide the response
      */
-    Observable<HttpResponse> intercept(HttpRequest request, Chain chain);
+    StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain);
 
 }

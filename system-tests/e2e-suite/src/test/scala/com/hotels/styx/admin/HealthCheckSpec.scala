@@ -18,8 +18,8 @@ package com.hotels.styx.admin
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.api.HttpHeaderNames.HOST
-import com.hotels.styx.api.HttpInterceptor.Chain
-import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.HttpInterceptor.{Chain}
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api._
 import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.infrastructure.HttpResponseImplicits
@@ -29,7 +29,6 @@ import com.hotels.styx.support.configuration._
 import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-import rx.Observable
 
 import scala.concurrent.duration._
 
@@ -83,8 +82,8 @@ class HealthCheckSpec extends FunSpec
   }
 
   class FaultyPlugin extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): Observable[HttpResponse] = {
-      Observable.error(new RuntimeException)
+    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
+      StyxObservable.error(new RuntimeException)
     }
   }
 

@@ -31,10 +31,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
-import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
+import static com.hotels.styx.api.messages.HttpMethod.GET;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
 import static com.hotels.styx.server.HttpServers.createHttpServer;
-import static io.netty.handler.codec.http.HttpMethod.GET;
+import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class StaticFileOnRealServerIT {

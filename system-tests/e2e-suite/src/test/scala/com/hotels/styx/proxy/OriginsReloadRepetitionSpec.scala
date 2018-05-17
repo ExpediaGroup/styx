@@ -94,6 +94,6 @@ class OriginsReloadRepetitionSpec extends FunSpec
   }
 
   private def get(url: String) = {
-    decodedRequest(HttpRequest.Builder.get(url).build())
+    decodedRequest(HttpRequest.get(url).build())
   }
 }

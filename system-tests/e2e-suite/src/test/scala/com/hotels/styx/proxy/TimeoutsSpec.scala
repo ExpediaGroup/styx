@@ -19,9 +19,8 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames._
-import com.hotels.styx.api.messages.FullHttpResponse
 import com.hotels.styx.api.messages.HttpResponseStatus._
-import com.hotels.styx.api.{HttpRequest, HttpResponse}
+import com.hotels.styx.api.{FullHttpResponse, HttpRequest, HttpResponse, StyxInternalObservables}
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
@@ -30,7 +29,7 @@ import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig,
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled.copiedBuffer
-import io.netty.handler.codec.http.HttpMethod._
+import com.hotels.styx.api.messages.HttpMethod.GET
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 import rx.Observable
@@ -85,7 +84,7 @@ class TimeoutsSpec extends FunSpec
           .header(HOST, styxServer.proxyHost)
           .header(CONTENT_TYPE, "text/html; charset=UTF-8")
           .header(CONTENT_LENGTH, "500")
-          .body(delayedRequestBody)
+          .body(StyxInternalObservables.fromRxObservable(delayedRequestBody))
           .build()
 
         val resp = decodedRequest(slowRequest, debug = true)

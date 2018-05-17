@@ -102,7 +102,7 @@ class BadResponseFromOriginSpec extends FunSpec
         ))
 
 
-      val request = api.HttpRequest.Builder.get(styxServer.routerURL("/badResponseFromOriginSpec/3")).build()
+      val request = api.HttpRequest.get(styxServer.routerURL("/badResponseFromOriginSpec/3")).build()
       val response = decodedRequest(request)
       response.status() should be(BAD_GATEWAY)
       assertThat(response.headers().get(STYX_INFO_DEFAULT), matches(matchesRegex("noJvmRouteSet;[0-9a-f-]+")))

@@ -15,12 +15,13 @@
  */
 package com.hotels.styx.api.http.handlers;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Returns a 404 Not Found response.
@@ -39,8 +40,9 @@ public class NotFoundHandler extends BaseHttpHandler {
 
     @Override
     public HttpResponse doHandle(HttpRequest request) {
-        return response(NOT_FOUND)
-                .body(NOT_FOUND_MESSAGE)
-                .build();
+        return FullHttpResponse.response(NOT_FOUND)
+                .body(NOT_FOUND_MESSAGE, UTF_8)
+                .build()
+                .toStreamingResponse();
     }
 }

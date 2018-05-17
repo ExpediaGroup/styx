@@ -16,33 +16,33 @@
 package com.hotels.styx.api.http.handlers;
 
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpResponse;
 import org.testng.annotations.Test;
 
-import java.nio.charset.StandardCharsets;
-
-import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.TestSupport.getFirst;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.MockContext.MOCK_CONTEXT;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class StaticBodyHttpHandlerTest {
     @Test
-    public void respondsWithStaticBody() {
+    public void respondsWithStaticBody() throws Exception {
         StaticBodyHttpHandler handler = new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "foo", UTF_8);
 
-        HttpResponse response = getFirst(handler.handle(get("/").build()));
-        HttpResponse.DecodedResponse<String> decodedResponse = response.decode(
-                buf -> buf.toString(StandardCharsets.UTF_8), 1024).toBlocking().first();
+        HttpResponse response = handler.handle(get("/").build(), MOCK_CONTEXT).asCompletableFuture().get();
+        FullHttpResponse fullResponse = response.toFullHttpResponse(1024)
+                .asCompletableFuture()
+                .get();
 
-        assertThat(response.status(), is(OK));
-        assertThat(response.contentType(), isValue(PLAIN_TEXT_UTF_8.toString()));
-        assertThat(response.contentLength(), isValue(length("foo")));
-        assertThat(decodedResponse.body(), is("foo"));
+        assertThat(fullResponse.status(), is(OK));
+        assertThat(fullResponse.contentType(), isValue(PLAIN_TEXT_UTF_8.toString()));
+        assertThat(fullResponse.contentLength(), isValue(length("foo")));
+        assertThat(fullResponse.bodyAs(UTF_8), is("foo"));
     }
 
     private Integer length(String string) {

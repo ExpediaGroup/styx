@@ -17,10 +17,10 @@ package com.hotels.styx.server.netty.codec;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.HttpCookie;
-import com.hotels.styx.api.HttpMessageBody;
-import com.hotels.styx.server.UniqueIdSupplier;
 import com.hotels.styx.api.Url;
+import com.hotels.styx.api.messages.HttpVersion;
 import com.hotels.styx.server.BadRequestException;
+import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.ChannelHandlerContext;
@@ -28,6 +28,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -53,10 +54,11 @@ import static com.google.common.collect.Iterables.size;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.EXPECT;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.server.UniqueIdSuppliers.UUID_VERSION_ONE_SUPPLIER;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.api.common.Strings.quote;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
+import static com.hotels.styx.server.UniqueIdSuppliers.UUID_VERSION_ONE_SUPPLIER;
 import static com.hotels.styx.server.netty.codec.UnwiseCharsEncoder.IGNORE;
 import static java.util.stream.StreamSupport.stream;
 
@@ -174,11 +176,12 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
         Url url = url(unwiseCharEncoder.encode(request.getUri()))
                 .scheme(secure ? "https" : "http")
                 .build();
-        com.hotels.styx.api.HttpRequest.Builder requestBuilder = new com.hotels.styx.api.HttpRequest.Builder(request.getMethod())
+        com.hotels.styx.api.HttpRequest.Builder requestBuilder = new com.hotels.styx.api.HttpRequest.Builder()
+                .method(toStyxMethod(request.method()))
                 .url(url)
-                .version(request.getProtocolVersion())
+                .version(toStyxVersion(request.protocolVersion()))
                 .id(uniqueIdSupplier.get())
-                .body(new HttpMessageBody(content));
+                .body(fromRxObservable(content));
 
         stream(request.headers().spliterator(), false)
                 .filter(entry -> !isCookieHeader(entry.getKey()))
@@ -194,6 +197,14 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 .forEach(requestBuilder::addCookie);
 
         return requestBuilder;
+    }
+
+    private HttpVersion toStyxVersion(io.netty.handler.codec.http.HttpVersion httpVersion) {
+        return HttpVersion.httpVersion(httpVersion.toString());
+    }
+
+    private com.hotels.styx.api.messages.HttpMethod toStyxMethod(HttpMethod method) {
+        return com.hotels.styx.api.messages.HttpMethod.httpMethod(method.name());
     }
 
     private static Set<Cookie> decodeCookieHeader(String header, HttpRequest request) {

@@ -18,13 +18,14 @@ package com.hotels.styx.admin.handlers;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
-import rx.Observable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,19 +35,19 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpMethod.GET;
-import static io.netty.handler.codec.http.HttpMethod.PUT;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.messages.HttpResponseStatus.METHOD_NOT_ALLOWED;
+import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.messages.HttpMethod.GET;
+import static com.hotels.styx.api.messages.HttpMethod.PUT;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Comparator.naturalOrder;
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.Observable.just;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Handler that will enable and disable plugins.
@@ -73,23 +74,23 @@ public class PluginToggleHandler implements HttpHandler {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
-        return getCurrentOrPutNewState(request)
-                .onErrorResumeNext(this::handleErrors);
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return getCurrentOrPutNewState(request, context)
+                .onError(cause -> handleErrors(cause, context));
     }
 
-    private Observable<HttpResponse> getCurrentOrPutNewState(HttpRequest request) {
+    private StyxObservable<HttpResponse> getCurrentOrPutNewState(HttpRequest request, HttpInterceptor.Context context) {
         if (GET.equals(request.method())) {
-            return getCurrentState(request);
+            return getCurrentState(request, context);
         } else if (PUT.equals(request.method())) {
-            return putNewState(request);
+            return putNewState(request, context);
         } else {
-            return just(response(METHOD_NOT_ALLOWED).build());
+            return StyxObservable.of(response(METHOD_NOT_ALLOWED).build());
         }
     }
 
-    private Observable<HttpResponse> getCurrentState(HttpRequest request) {
-        return just(request)
+    private StyxObservable<HttpResponse> getCurrentState(HttpRequest request, HttpInterceptor.Context context) {
+        return StyxObservable.of(request)
                 .map(this::plugin)
                 .map(this::currentState)
                 .map(state -> responseWith(OK, state.toString()));
@@ -99,13 +100,13 @@ public class PluginToggleHandler implements HttpHandler {
         return plugin.enabled() ? PluginEnabledState.ENABLED : PluginEnabledState.DISABLED;
     }
 
-    private Observable<HttpResponse> putNewState(HttpRequest request) {
-        return just(request)
+    private StyxObservable<HttpResponse> putNewState(HttpRequest request, HttpInterceptor.Context context) {
+        return StyxObservable.of(request)
                 .flatMap(this::requestedUpdate)
                 .map(this::applyUpdate);
     }
 
-    private Observable<RequestedUpdate> requestedUpdate(HttpRequest request) {
+    private StyxObservable<RequestedUpdate> requestedUpdate(HttpRequest request) {
         return requestedNewState(request)
                 .map(state -> {
                     NamedPlugin plugin = plugin(request);
@@ -164,19 +165,20 @@ public class PluginToggleHandler implements HttpHandler {
         return matcher;
     }
 
-    private Observable<PluginEnabledState> requestedNewState(HttpRequest request) {
-        return request.decode(byteBuf -> byteBuf.toString(UTF_8), MAX_CONTENT_SIZE)
-                .map(HttpRequest.DecodedRequest::body)
+    private static StyxObservable<PluginEnabledState> requestedNewState(HttpRequest request) {
+        return request.toFullHttpRequest(MAX_CONTENT_SIZE)
+                .map(fullRequest -> fullRequest.bodyAs(UTF_8))
                 .map(PluginToggleHandler::parseToBoolean)
                 .map(PluginEnabledState::fromBoolean);
     }
 
     private HttpResponse responseWith(HttpResponseStatus status, String message) {
-        return response(status)
-                .body(message + "\n")
+        return FullHttpResponse.response(status)
+                .body(message + "\n", UTF_8)
                 .contentType(PLAIN_TEXT_UTF_8)
                 .disableCaching()
-                .build();
+                .build()
+                .toStreamingResponse();
     }
 
     private static boolean parseToBoolean(String string) {
@@ -190,17 +192,17 @@ public class PluginToggleHandler implements HttpHandler {
         }
     }
 
-    private Observable<? extends HttpResponse> handleErrors(Throwable e) {
+    private StyxObservable<HttpResponse> handleErrors(Throwable e, HttpInterceptor.Context context) {
         if (e instanceof PluginNotFoundException) {
-            return just(responseWith(NOT_FOUND, e.getMessage()));
+            return StyxObservable.of(responseWith(NOT_FOUND, e.getMessage()));
         }
 
         if (e instanceof BadPluginToggleRequestException) {
-            return just(responseWith(BAD_REQUEST, e.getMessage()));
+            return StyxObservable.of(responseWith(BAD_REQUEST, e.getMessage()));
         }
 
         LOGGER.error("Plugin toggle error", e);
-        return just(responseWith(INTERNAL_SERVER_ERROR, ""));
+        return StyxObservable.of(responseWith(INTERNAL_SERVER_ERROR, ""));
     }
 
     private enum PluginEnabledState {

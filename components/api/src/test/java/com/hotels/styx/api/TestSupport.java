@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import rx.Observable;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class TestSupport {
@@ -25,10 +23,6 @@ public class TestSupport {
                 .map(bytes -> bytes.toString(UTF_8))
                 .toBlocking()
                 .single();
-    }
-
-    public static <T> T getFirst(Observable<T> observable) {
-        return observable.toBlocking().single();
     }
 
 }

@@ -18,7 +18,7 @@ package com.hotels.styx.client
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets._
-import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.client.Origin._
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.client.{ActiveOrigins, Origin}
@@ -77,13 +77,6 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
     client = newHttpClientBuilder(backendService)
       .loadBalancer(busyConnectionStrategy(activeOrigins(backendService)))
       .build
-  }
-
-  test("Emits an HTTP response that contains the original request.") {
-    originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
-    val request = get("/foo/1").build()
-    val response = waitForStreamingResponse(client.sendRequest(request))
-    response.request() shouldBe request
   }
 
   test("Emits an HTTP response even when content observable remains un-subscribed.") {

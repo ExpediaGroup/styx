@@ -15,36 +15,36 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.http.handlers.BaseHttpHandler;
-import com.hotels.styx.api.messages.FullHttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import com.hotels.styx.api.messages.HttpResponseStatus;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import com.hotels.styx.api.HttpRequest;
 
 public class StatusHandlerTest {
 
     @Test
     public void returnsOKForHealthyHealthcheck() {
         StatusHandler statusHandler = new StatusHandler(underlyingHealthCheckIs(OK));
-        FullHttpResponse response = waitForResponse(statusHandler.handle(get("/status").build()));
+        FullHttpResponse response = waitForResponse(statusHandler.handle(get("/status").build(), HttpInterceptorContext.create()));
         assertThat(response.bodyAs(UTF_8), is("OK"));
     }
 
     @Test
     public void returnsNOT_OKForFaultyHealthcheck() {
         StatusHandler statusHandler = new StatusHandler(underlyingHealthCheckIs(INTERNAL_SERVER_ERROR));
-        FullHttpResponse response = waitForResponse(statusHandler.handle(get("/status").build()));
+        FullHttpResponse response = waitForResponse(statusHandler.handle(get("/status").build(), HttpInterceptorContext.create()));
         assertThat(response.bodyAs(UTF_8), is("NOT_OK"));
     }
 
@@ -52,9 +52,10 @@ public class StatusHandlerTest {
         return new BaseHttpHandler() {
             @Override
             protected HttpResponse doHandle(HttpRequest request) {
-                return response(status)
-                        .body("some stuff")
-                        .build();
+                return FullHttpResponse.response(status)
+                        .body("some stuff", UTF_8)
+                        .build()
+                        .toStreamingResponse();
             }
         };
     }

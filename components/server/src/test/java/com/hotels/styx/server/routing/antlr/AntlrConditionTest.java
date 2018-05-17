@@ -17,9 +17,8 @@ package com.hotels.styx.server.routing.antlr;
 
 import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpCookieAttribute;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.server.routing.Condition;
-import io.netty.handler.codec.http.HttpMethod;
+import com.hotels.styx.api.messages.HttpMethod;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpCookie.cookie;
@@ -30,10 +29,11 @@ import static com.hotels.styx.api.HttpCookieAttribute.path;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpRequest.Builder.post;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.post;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import com.hotels.styx.api.HttpRequest;
 
 public class AntlrConditionTest {
     final Condition.Parser parser = new AntlrConditionParser.Builder()

@@ -15,15 +15,18 @@
  */
 package com.hotels.styx.api.http.handlers;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import io.netty.handler.codec.http.HttpMethod;
-import rx.Observable;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.messages.HttpMethod;
+
+import java.nio.charset.StandardCharsets;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
+import static com.hotels.styx.api.messages.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static java.lang.String.format;
 
 /**
@@ -38,18 +41,20 @@ public class HttpMethodFilteringHandler implements HttpHandler {
     public HttpMethodFilteringHandler(HttpMethod method, HttpHandler httpHandler) {
         this.method = checkNotNull(method);
         this.httpHandler = checkNotNull(httpHandler);
-        this.errorBody = format("%s. Only [%s] is allowed for this request.", METHOD_NOT_ALLOWED.reasonPhrase(), method);
+        this.errorBody = format("%s. Only [%s] is allowed for this request.", METHOD_NOT_ALLOWED.description(), method);
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         if (!method.equals(request.method())) {
-            return Observable.just(
-                    response(METHOD_NOT_ALLOWED)
-                            .body(errorBody)
-                            .build());
+            return StyxObservable.of(
+                    FullHttpResponse.response(METHOD_NOT_ALLOWED)
+                            .body(errorBody, StandardCharsets.UTF_8)
+                            .build()
+                            .toStreamingResponse()
+            );
         }
 
-        return httpHandler.handle(request);
+        return httpHandler.handle(request, context);
     }
 }

@@ -15,14 +15,13 @@
  */
 package com.hotels.styx.support.api.matchers;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.hotels.styx.api.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-
+import com.hotels.styx.api.messages.HttpResponseStatus;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 
 public final class HttpStatusMatcher extends TypeSafeMatcher<HttpResponse> {
@@ -40,7 +39,7 @@ public final class HttpStatusMatcher extends TypeSafeMatcher<HttpResponse> {
     public void describeTo(Description description) {
         description.appendValue(status.code());
         description.appendText(" ");
-        description.appendText(status.reasonPhrase());
+        description.appendText(status.description());
     }
 
     @Override

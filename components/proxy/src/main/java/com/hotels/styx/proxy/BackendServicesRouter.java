@@ -17,35 +17,34 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.service.HealthCheckConfig;
+import com.hotels.styx.api.service.TlsSettings;
+import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.SimpleNettyHttpClient;
 import com.hotels.styx.client.StyxHeaderConfig;
 import com.hotels.styx.client.StyxHostHttpClient;
-import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
-import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
 import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
-import com.hotels.styx.api.service.HealthCheckConfig;
+import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
 import com.hotels.styx.client.healthcheck.UrlRequestHealthCheck;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
-import com.hotels.styx.api.service.TlsSettings;
-import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.server.HttpRouter;
 import org.slf4j.Logger;
-import rx.Observable;
 
 import java.util.Map;
 import java.util.Optional;
@@ -54,13 +53,15 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.concat;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
 import static org.slf4j.LoggerFactory.getLogger;
+import com.hotels.styx.api.HttpRequest;
 
 /**
- * A {@link HttpHandler2} implementation.
+ * A {@link HttpHandler} implementation.
  */
 public class BackendServicesRouter implements HttpRouter, Registry.ChangeListener<BackendService> {
     private static final Logger LOG = getLogger(BackendServicesRouter.class);
@@ -84,7 +85,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     }
 
     @Override
-    public Optional<HttpHandler2> route(HttpRequest request) {
+    public Optional<HttpHandler> route(HttpRequest request) {
         String path = request.path();
 
         return routes.entrySet().stream()
@@ -223,7 +224,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         return new UrlRequestHealthCheck(healthCheckUri, client, metricRegistry);
     }
 
-    private static class ProxyToClientPipeline implements HttpHandler2 {
+    private static class ProxyToClientPipeline implements HttpHandler {
         private final HttpClient client;
         private final OriginsInventory originsInventory;
 
@@ -233,9 +234,10 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         }
 
         @Override
-        public Observable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-            return client.sendRequest(request)
-                    .doOnError(throwable -> handleError(request, throwable));
+        public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+            return fromRxObservable(
+                    client.sendRequest(request)
+                        .doOnError(throwable -> handleError(request, throwable)));
         }
 
         public void close() {

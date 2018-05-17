@@ -17,10 +17,11 @@ package loadtest.plugins;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import rx.Observable;
 
+import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static rx.Observable.timer;
 
@@ -40,9 +41,32 @@ public class AsyncRequestPluginFactory implements PluginFactory {
         }
 
         @Override
-        public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-            return timer(config.delayMillis(), MILLISECONDS)
+        public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+
+
+//            resp1 = chain.context().styxObservable(1)
+//                    .transformAsync(x -> asyncService1());
+//
+//            resp2 = chain.context().styxObservable(2)
+//                    .transformAsync(x -> asyncService2());
+//
+//            zip(resp1, resp2)
+//                    .transformAsync(responseTuple -> ...)
+//
+//            chain.context().endpoints("redis-01")
+//                    .send(redisRequest)
+//                    .
+//
+//
+//            StyxObservable.from(CompletableFuture.completedFuture(1))
+//                    .transform(i -> response(OK).header("X-Int", i).build());
+//
+//            return chain.styxObservable(response(TEMPORARY_REDIRECT).build())
+//                    .transformAsync(x -> chain.proceed(request));
+//
+            return StyxObservable.of(fromSingleObservable(timer(config.delayMillis(), MILLISECONDS)))
                     .flatMap(x -> chain.proceed(request));
         }
     }
+
 }

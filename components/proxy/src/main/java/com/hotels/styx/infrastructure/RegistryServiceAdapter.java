@@ -15,9 +15,9 @@
  */
 package com.hotels.styx.infrastructure;
 
+import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.AbstractStyxService;
 import com.hotels.styx.api.service.spi.Registry;
-import com.hotels.styx.api.service.BackendService;
 
 import java.util.concurrent.CompletableFuture;
 

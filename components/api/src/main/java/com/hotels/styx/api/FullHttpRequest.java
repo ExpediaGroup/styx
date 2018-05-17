@@ -13,14 +13,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.messages;
+package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.HttpCookie;
-import com.hotels.styx.api.HttpHeaders;
-import com.hotels.styx.api.HttpMessageSupport;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.Url;
+import com.hotels.styx.api.messages.HttpMethod;
+import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.Unpooled;
 import rx.Observable;
 
@@ -45,9 +42,7 @@ import static com.hotels.styx.api.messages.HttpMethod.METHODS;
 import static com.hotels.styx.api.messages.HttpMethod.PATCH;
 import static com.hotels.styx.api.messages.HttpMethod.POST;
 import static com.hotels.styx.api.messages.HttpMethod.PUT;
-import static com.hotels.styx.api.messages.HttpMethod.httpMethod;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
-import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
 import static java.lang.Integer.parseInt;
 import static java.net.InetSocketAddress.createUnresolved;
@@ -317,9 +312,9 @@ public class FullHttpRequest implements FullHttpMessage {
                 .clientAddress(clientAddress);
 
         if (this.body.length == 0) {
-            return streamingBuilder.body(Observable.empty()).build();
+            return streamingBuilder.body(new StyxCoreObservable<>(Observable.empty())).build();
         } else {
-            return streamingBuilder.body(Observable.just(Unpooled.copiedBuffer(body))).build();
+            return streamingBuilder.body(StyxObservable.of(Unpooled.copiedBuffer(body))).build();
         }
     }
 
@@ -368,18 +363,6 @@ public class FullHttpRequest implements FullHttpMessage {
         }
 
         public Builder(HttpRequest request, byte[] body) {
-            this.id = request.id();
-            this.method = httpMethod(request.method().name());
-            this.clientAddress = request.clientAddress();
-            this.url = request.url();
-            this.secure = request.isSecure();
-            this.version = httpVersion(request.version().toString());
-            this.headers = request.headers().newBuilder();
-            this.body = body;
-            this.cookies = new ArrayList<>(request.cookies());
-        }
-
-        public Builder(StreamingHttpRequest request, byte[] body) {
             this.id = request.id();
             this.method = request.method();
             this.clientAddress = request.clientAddress();

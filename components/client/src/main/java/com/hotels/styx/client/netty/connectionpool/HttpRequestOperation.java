@@ -20,6 +20,8 @@ import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.messages.HttpMethod;
+import com.hotels.styx.api.messages.HttpVersion;
 import com.hotels.styx.api.netty.exceptions.TransportLostException;
 import com.hotels.styx.client.Operation;
 import com.hotels.styx.client.OriginStatsFactory;
@@ -50,6 +52,7 @@ import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.service.BackendService.DEFAULT_RESPONSE_TIMEOUT_MILLIS;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.lang.String.format;
@@ -108,7 +111,10 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
 
     @VisibleForTesting
     static DefaultHttpRequest toNettyRequest(HttpRequest request) {
-        DefaultHttpRequest nettyRequest = new DefaultHttpRequest(request.version(), request.method(), request.url().toString(), false);
+        HttpVersion version = request.version();
+        HttpMethod method = request.method();
+        String url = request.url().toString();
+        DefaultHttpRequest nettyRequest = new DefaultHttpRequest(toNettyVersion(version), toNettyMethod(method), url, false);
 
         request.headers().forEach((name, value) ->
                 nettyRequest.headers().add(name, value));
@@ -122,6 +128,16 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
         }
 
         return nettyRequest;
+    }
+
+    private static io.netty.handler.codec.http.HttpMethod toNettyMethod(HttpMethod method) {
+        return io.netty.handler.codec.http.HttpMethod.valueOf(method.name());
+    }
+
+    private static io.netty.handler.codec.http.HttpVersion toNettyVersion(HttpVersion version) {
+        return HttpVersion.HTTP_1_0.equals(version)
+                ? io.netty.handler.codec.http.HttpVersion.HTTP_1_0
+                : io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
     }
 
     private static boolean requestIsOngoing(RequestBodyChunkSubscriber bodyChunkSubscriber) {
@@ -163,7 +179,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
                     nettyConnection.close();
                 }
             }
-        }).map(response -> response.newBuilder().request(request).build());
+        }).map(response -> response.newBuilder().build());
     }
 
     private void addProxyBridgeHandlers(NettyConnection nettyConnection, Subscriber<? super HttpResponse> observer) {
@@ -252,7 +268,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
         private ChannelFutureListener subscribeToResponseBody() {
             return future -> {
                 if (future.isSuccess()) {
-                    request.body().content().subscribe(requestBodyChunkSubscriber);
+                    toRxObservable(request.body()).subscribe(requestBodyChunkSubscriber);
                 } else {
                     LOGGER.error(format("error writing body to origin=%s request=%s", nettyConnection.getOrigin(), request), future.cause());
                     responseFromOriginObserver.onError(new TransportLostException(nettyConnection.channel().remoteAddress(), nettyConnection.getOrigin()));

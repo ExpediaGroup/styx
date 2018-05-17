@@ -16,24 +16,24 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import rx.Observable;
+import com.hotels.styx.api.StyxObservable;
 
 import java.util.Optional;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Fixes bad content length headers.
  */
 public class UnexpectedRequestContentLengthRemover implements HttpInterceptor {
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(removeBadContentLength(request));
     }
 
-    private HttpRequest removeBadContentLength(HttpRequest request) {
+    private static HttpRequest removeBadContentLength(HttpRequest request) {
         Optional<Integer> contentLength = request.contentLength();
         if (contentLength.isPresent() && request.chunked()) {
             return request.newBuilder()

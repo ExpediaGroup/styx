@@ -15,14 +15,15 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import java.util.Optional;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -35,7 +36,7 @@ public class MetricsHandlerTest {
 
     @Test
     public void respondsToRequestWithJsonResponse() {
-        FullHttpResponse response = waitForResponse(handler.handle(get("/metrics").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/metrics").build(), HttpInterceptorContext.create()));
         assertThat(response.status(), is(OK));
         assertThat(response.contentType().get(), is(JSON_UTF_8.toString()));
     }
@@ -43,7 +44,7 @@ public class MetricsHandlerTest {
     @Test
     public void exposesRegisteredMetrics() {
         metricRegistry.counter("foo").inc();
-        FullHttpResponse response = waitForResponse(handler.handle(get("/metrics").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/metrics").build(), HttpInterceptorContext.create()));
         assertThat(response.bodyAs(UTF_8), is("{\"version\":\"3.1.3\",\"gauges\":{},\"counters\":{\"foo\":{\"count\":1}},\"histograms\":{},\"meters\":{},\"timers\":{}}"));
     }
 }

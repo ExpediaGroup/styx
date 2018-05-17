@@ -16,9 +16,8 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import rx.Observable;
+import com.hotels.styx.api.StyxObservable;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.KEEP_ALIVE;
@@ -28,13 +27,14 @@ import static com.hotels.styx.api.HttpHeaderNames.TE;
 import static com.hotels.styx.api.HttpHeaderNames.TRAILER;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderNames.UPGRADE;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Removes Hop-By-Hop headers.
  */
 public class HopByHopHeadersRemovingInterceptor implements HttpInterceptor {
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(removeHopByHopHeaders(request))
                 .map(HopByHopHeadersRemovingInterceptor::removeHopByHopHeaders);
     }
@@ -50,7 +50,7 @@ public class HopByHopHeadersRemovingInterceptor implements HttpInterceptor {
             newResponse.removeHeader(CONNECTION);
         });
 
-        newResponse.headers()
+        newResponse
                 .removeHeader(KEEP_ALIVE)
                 .removeHeader(PROXY_AUTHENTICATE)
                 .removeHeader(PROXY_AUTHORIZATION)
@@ -73,7 +73,7 @@ public class HopByHopHeadersRemovingInterceptor implements HttpInterceptor {
             newRequest.removeHeader(CONNECTION);
         });
 
-        newRequest.headers()
+        newRequest
                 .removeHeader(KEEP_ALIVE)
                 .removeHeader(PROXY_AUTHENTICATE)
                 .removeHeader(PROXY_AUTHORIZATION)

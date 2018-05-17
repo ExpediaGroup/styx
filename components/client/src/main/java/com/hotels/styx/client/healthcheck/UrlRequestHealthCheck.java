@@ -26,10 +26,10 @@ import rx.Observer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.util.ReferenceCountUtil.release;
 
 /**
@@ -63,23 +63,24 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
     public void check(Origin origin, OriginHealthCheckFunction.Callback responseCallback) {
         HttpRequest request = newHealthCheckRequestFor(origin);
 
-        client.sendRequest(request).subscribe(response -> {
-            if (response.status().equals(OK)) {
-                responseCallback.originStateResponse(HEALTHY);
-            } else {
-                meterCache.get(origin).mark();
-                responseCallback.originStateResponse(UNHEALTHY);
-            }
+        client.sendRequest(request)
+                .flatMap(response -> toRxObservable(response.toFullHttpResponse(1024 * 100)))
+                .subscribe(response -> {
+                    if (response.status().equals(OK)) {
+                        responseCallback.originStateResponse(HEALTHY);
+                    } else {
+                        meterCache.get(origin).mark();
+                        responseCallback.originStateResponse(UNHEALTHY);
+                    }
 
-            response.body().content().subscribe(RELEASE_BUFFER);
-        }, error -> {
-            meterCache.get(origin).mark();
-            responseCallback.originStateResponse(UNHEALTHY);
-        });
+                }, error -> {
+                    meterCache.get(origin).mark();
+                    responseCallback.originStateResponse(UNHEALTHY);
+                });
     }
 
     private HttpRequest newHealthCheckRequestFor(Origin origin) {
-        return get(healthCheckUri)
+        return HttpRequest.get(healthCheckUri)
                 .header(HOST, origin.hostAsString())
                 .build();
     }

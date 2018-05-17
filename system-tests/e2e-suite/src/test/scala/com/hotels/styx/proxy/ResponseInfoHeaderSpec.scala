@@ -16,7 +16,9 @@
 package com.hotels.styx.proxy
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.hotels.styx.api.HttpHeaderNames._
 import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.messages.HttpMethod.GET
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -24,8 +26,6 @@ import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.matchers.IsOptional.matches
 import com.hotels.styx.support.matchers.RegExMatcher.matchesRegex
 import com.hotels.styx.{MockServer, StyxConfiguration, StyxProxySpec}
-import io.netty.handler.codec.http.HttpHeaders.Names._
-import io.netty.handler.codec.http.HttpMethod._
 import org.hamcrest.MatcherAssert.assertThat
 import org.scalatest.{BeforeAndAfter, FunSpec}
 

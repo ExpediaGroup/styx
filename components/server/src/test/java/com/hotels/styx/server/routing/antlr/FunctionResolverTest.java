@@ -17,17 +17,16 @@ package com.hotels.styx.server.routing.antlr;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpCookie;
-import com.hotels.styx.api.HttpRequest;
 import org.testng.annotations.Test;
 
 import java.util.Map;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import com.hotels.styx.api.HttpRequest;
 
 public class FunctionResolverTest {
     Map<String, Function0> zeroArgumentFunctions = ImmutableMap.of(

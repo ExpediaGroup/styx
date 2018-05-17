@@ -18,15 +18,17 @@ package com.hotels.styx.api;
 import rx.Observable;
 
 /**
- * Handles an {@link HttpRequest}, returning an {@link Observable} that is expected to publish a single {@link HttpResponse} value.
+ * Conversions between StyxObservable and rx.Observable types.
  */
-@FunctionalInterface
-public interface HttpHandler2 {
-    /**
-     * Processes an incoming request.
-     *
-     * @param request the current incoming request
-     * @return an {@link Observable} that is expected to publish a single response
-     */
-    Observable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context);
+public final class StyxInternalObservables {
+    private StyxInternalObservables() {
+    }
+
+    public static <T> Observable<T> toRxObservable(StyxObservable<T> observable) {
+        return ((StyxCoreObservable<T>) observable).delegate();
+    }
+
+    public static <T> StyxObservable<T> fromRxObservable(Observable<T> observable) {
+        return new StyxCoreObservable<>(observable);
+    }
 }

@@ -16,16 +16,15 @@
 package com.hotels.styx.proxy.https
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_PROTO
+import com.hotels.styx.api.HttpHeaderNames.{X_FORWARDED_PROTO, _}
 import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.messages.HttpMethod.GET
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.{SSLSetup, StyxClientSupplier, StyxProxySpec}
-import io.netty.handler.codec.http.HttpHeaders.Names._
-import io.netty.handler.codec.http.HttpMethod._
 import org.scalatest.{FunSpec, ShouldMatchers}
 
 class HttpsSpec extends FunSpec

@@ -20,8 +20,9 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
-import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.{HttpRequest, HttpResponse}
+import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.StyxInternalObservables.{fromRxObservable, toRxObservable}
+import com.hotels.styx.api.{HttpRequest, HttpResponse, StyxInternalObservables, StyxObservable}
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -80,18 +81,19 @@ import rx.lang.scala.JavaConversions.toScalaObservable
 import rx.lang.scala.Observable
 import rx.lang.scala.schedulers._
 
+import scala.compat.java8.FunctionConverters.asJavaFunction
+
 class AsyncRequestContentDelayPlugin extends PluginAdapter {
-  override def intercept(request: HttpRequest, chain: Chain): rx.Observable[HttpResponse] = {
+  override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
     val contentTransformation: rx.Observable[ByteBuf] =
-      request.body().content()
+      toRxObservable(request.body())
         .observeOn(ComputationScheduler())
         .flatMap(byteBuf => {
           Thread.sleep(1000)
           Observable.just(byteBuf)
         })
-
-    Observable.just(request)
-      .map(request => request.newBuilder().body(contentTransformation).build())
-      .flatMap(request => chain.proceed(request))
+    StyxObservable.of(request)
+      .map(asJavaFunction((request: HttpRequest) => request.newBuilder().body(fromRxObservable(contentTransformation)).build()))
+      .flatMap(asJavaFunction((request: HttpRequest) => chain.proceed(request)))
   }
 }

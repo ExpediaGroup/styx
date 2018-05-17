@@ -13,21 +13,20 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.messages;
+package com.hotels.styx.api;
 
 import com.google.common.collect.Iterables;
-import com.hotels.styx.api.HttpCookie;
-import com.hotels.styx.api.HttpResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import rx.Observable;
 import rx.observers.TestSubscriber;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
+import static com.hotels.styx.api.FullHttpRequest.get;
+import static com.hotels.styx.api.FullHttpResponse.response;
 import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.api.HttpCookieAttribute.domain;
 import static com.hotels.styx.api.HttpCookieAttribute.maxAge;
@@ -35,11 +34,7 @@ import static com.hotels.styx.api.HttpCookieAttribute.path;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.LOCATION;
-import static com.hotels.styx.api.HttpMessageBody.utf8String;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
-import static com.hotels.styx.api.messages.FullHttpRequest.get;
-import static com.hotels.styx.api.messages.FullHttpResponse.response;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.messages.HttpResponseStatus.CREATED;
@@ -65,7 +60,7 @@ import static org.hamcrest.Matchers.not;
 
 public class FullHttpResponseTest {
     @Test
-    public void convertsToStreamingHttpResponse() {
+    public void convertsToStreamingHttpResponse() throws Exception {
         FullHttpResponse response = response(CREATED)
                 .version(HTTP_1_1)
                 .header("HeaderName", "HeaderValue")
@@ -75,17 +70,17 @@ public class FullHttpResponseTest {
 
         HttpResponse streaming = response.toStreamingResponse();
 
-        assertThat(streaming.version(), is(io.netty.handler.codec.http.HttpVersion.HTTP_1_1));
-        assertThat(streaming.status(), is(HttpResponseStatus.CREATED));
+        assertThat(streaming.version(), is(HTTP_1_1));
+        assertThat(streaming.status(), is(CREATED));
         assertThat(streaming.headers(), containsInAnyOrder(
                 header("Content-Length", "15"),
                 header("HeaderName", "HeaderValue")));
         assertThat(streaming.cookies(), contains(cookie("CookieName", "CookieValue")));
 
-        String body = streaming.body()
-                .decode(utf8String(), 0x100000)
-                .toBlocking()
-                .single();
+        String body = streaming.toFullHttpResponse(0x100000)
+                .asCompletableFuture()
+                .get()
+                .bodyAs(UTF_8);
 
         assertThat(body, is("message content"));
     }
@@ -352,7 +347,7 @@ public class FullHttpResponseTest {
         TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
         subscriber.requestMore(1);
 
-        streaming.body().content().subscribe(subscriber);
+        ((StyxCoreObservable<ByteBuf>)streaming.body()).delegate().subscribe(subscriber);
 
         assertThat(subscriber.getOnNextEvents().size(), is(0));
         subscriber.assertCompleted();
@@ -456,9 +451,8 @@ public class FullHttpResponseTest {
                 .body("original", UTF_8)
                 .build();
 
-        ByteBuf byteBuf = original.toStreamingResponse()
-                .body()
-                .content()
+        ByteBuf byteBuf = ((StyxCoreObservable<ByteBuf>)original.toStreamingResponse().body())
+                .delegate()
                 .toBlocking()
                 .first();
 
@@ -467,38 +461,19 @@ public class FullHttpResponseTest {
         assertThat(original.bodyAs(UTF_8), is("original"));
     }
 
-    @Test
-    public void responseBodyCannotBeChangedViaStreamingMessage2() {
+    @Test(expectedExceptions = io.netty.util.IllegalReferenceCountException.class)
+    public void toFullResponseReleasesOriginalRefCountedBuffers() throws ExecutionException, InterruptedException {
         ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
 
-        HttpResponse original = response(HttpResponseStatus.OK)
-                .body(content)
+        HttpResponse original = HttpResponse.response(OK)
+                .body(StyxObservable.of(content))
                 .build();
 
-        FullHttpResponse fullResponse = original.toFullResponse(100)
-                .toBlocking()
-                .first();
+        original.toFullHttpResponse(100)
+                .asCompletableFuture()
+                .get();
 
         content.array()[0] = 'A';
-
-        assertThat(fullResponse.bodyAs(UTF_8), is("original"));
-    }
-
-    @Test
-    public void requestBodyCannotBeChangedViaStreamingRequest3() {
-        ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
-
-        HttpResponse original = response(HttpResponseStatus.OK)
-                .body(Observable.just(content))
-                .build();
-
-        FullHttpResponse fullResponse = original.toFullResponse(100)
-                .toBlocking()
-                .first();
-
-        content.array()[0] = 'A';
-
-        assertThat(fullResponse.bodyAs(UTF_8), is("original"));
     }
 
     @Test
@@ -514,4 +489,5 @@ public class FullHttpResponseTest {
         assertThat(request.bodyAs(UTF_8), is("Original body"));
         assertThat(newRequest.bodyAs(UTF_8), is("New body"));
     }
+
 }

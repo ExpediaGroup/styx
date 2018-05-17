@@ -18,8 +18,7 @@ package com.hotels.styx.proxy;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.health.HealthCheck;
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.HttpHandler2;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.proxy.healthchecks.HealthCheckTimestamp;
@@ -31,6 +30,7 @@ import static com.codahale.metrics.health.HealthCheck.Result.unhealthy;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
 import static java.lang.String.format;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * A builder for a ProxyServer.
@@ -40,7 +40,7 @@ public final class ProxyServerBuilder {
     private final ResponseInfoFormat responseInfoFormat;
     private final CharSequence styxInfoHeaderName;
 
-    private HttpHandler2 httpHandler;
+    private HttpHandler httpHandler;
     private Runnable onStartupAction = () -> {
     };
 
@@ -69,7 +69,7 @@ public final class ProxyServerBuilder {
         return responseBuilder.header(styxInfoHeaderName, responseInfoFormat.format(request));
     }
 
-    public ProxyServerBuilder httpHandler(HttpHandler2 httpHandler) {
+    public ProxyServerBuilder httpHandler(HttpHandler httpHandler) {
         this.httpHandler = httpHandler;
         return this;
     }

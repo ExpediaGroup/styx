@@ -15,15 +15,18 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import rx.Observable;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.messages.HttpResponseStatus;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Delegates to another handler and then replaces the response body with "OK" if the status code is 200 OK or "NOT_OK" otherwise.
@@ -41,12 +44,15 @@ public class StatusHandler implements HttpHandler {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
-        return handler.handle(request).map(response ->
-                response.newBuilder()
-                        .contentType(PLAIN_TEXT_UTF_8)
-                        .body(statusContent(response.status()))
-                        .build());
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return handler.handle(request, context)
+                .flatMap(response -> response.toFullHttpResponse(0xffffff))
+                .map(response ->
+                        response.newBuilder()
+                                .contentType(PLAIN_TEXT_UTF_8)
+                                .body(statusContent(response.status()), UTF_8)
+                                .build())
+                .map(FullHttpResponse::toStreamingResponse);
     }
 
     private static String statusContent(HttpResponseStatus status) {

@@ -17,10 +17,9 @@ package com.hotels.styx.servers;
 
 import com.github.tomakehurst.wiremock.client.ValueMatchingStrategy;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.client.UrlConnectionHttpClient;
-import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
 import org.testng.annotations.AfterMethod;
@@ -34,15 +33,18 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
+import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.net.ssl.HttpsURLConnection.getDefaultHostnameVerifier;
 import static javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import com.hotels.styx.api.HttpRequest;
 
 public class MockOriginServerTest {
 
@@ -116,11 +118,9 @@ public class MockOriginServerTest {
 
 
     private FullHttpResponse send(HttpClient client, HttpRequest request) {
-        return client.sendRequest(request)
-                .flatMap(req -> req.toFullResponse(10*1024))
-                .toBlocking()
-                .first();
-
+        return await(fromRxObservable(client.sendRequest(request))
+                .flatMap(req -> req.toFullHttpResponse(10*1024))
+                .asCompletableFuture());
     }
 
     private ValueMatchingStrategy valueMatchingStrategy(String matches) {

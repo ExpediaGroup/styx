@@ -17,7 +17,7 @@ package com.hotels.styx.client
 
 import ch.qos.logback.classic.Level
 import com.google.common.base.Charsets._
-import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.{HttpResponse, service}
 import com.hotels.styx.api.client.ActiveOrigins
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
@@ -43,6 +43,7 @@ import io.netty.handler.codec.http._
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import rx.observers.TestSubscriber
+import com.hotels.styx.api.StyxInternalObservables.toRxObservable
 
 import scala.compat.java8.StreamConverters._
 import scala.concurrent.duration._
@@ -126,7 +127,7 @@ class OriginClosesConnectionSpec extends FunSuite
         .build())
 
     responseObservable
-      .doOnNext((t: HttpResponse) => t.body().content().subscribe(contentSubscriber))
+      .doOnNext((t: HttpResponse) => toRxObservable(t.body()).subscribe(contentSubscriber))
       .subscribe(responseSubscriber)
 
     responseSubscriber.awaitTerminalEvent()

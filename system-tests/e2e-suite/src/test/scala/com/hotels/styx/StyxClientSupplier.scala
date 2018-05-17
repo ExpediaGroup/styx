@@ -15,9 +15,9 @@
  */
 package com.hotels.styx
 
+import com.hotels.styx.api.StyxInternalObservables.toRxObservable
 import com.hotels.styx.api.client.UrlConnectionHttpClient
-import com.hotels.styx.api.messages.FullHttpResponse
-import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse}
+import com.hotels.styx.api.{FullHttpResponse, HttpClient, HttpRequest, HttpResponse}
 import com.hotels.styx.client.HttpConfig.newHttpConfigBuilder
 import com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination.Factory
@@ -59,7 +59,7 @@ trait StyxClientSupplier {
                      maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds): FullHttpResponse = {
     doRequest(request, debug = debug)
       .doOnNext(response => if (debug) println("StyxClientSupplier: received response for: " + request.url().path()))
-      .flatMap(response => response.toFullResponse(maxSize))
+      .flatMap(response => toRxObservable(response.toFullHttpResponse(maxSize)))
       .timeout(timeout)
       .toBlocking
       .first
@@ -71,7 +71,7 @@ trait StyxClientSupplier {
                                maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds): FullHttpResponse = {
     toScalaObservable(client.sendRequest(request))
       .doOnNext(response => if (debug) println("StyxClientSupplier: received response for: " + request.url().path()))
-      .flatMap(response => response.toFullResponse(maxSize))
+      .flatMap(response => toRxObservable(response.toFullHttpResponse(maxSize)))
       .timeout(timeout)
       .toBlocking
       .first

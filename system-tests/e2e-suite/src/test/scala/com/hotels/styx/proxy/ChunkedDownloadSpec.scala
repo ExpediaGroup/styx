@@ -18,6 +18,7 @@ package com.hotels.styx.proxy
 import com.google.common.base.Charsets
 import com.google.common.base.Charsets._
 import com.hotels.styx._
+import com.hotels.styx.api.messages.HttpResponseStatus._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
 import com.hotels.styx.utils.HttpTestClient
@@ -27,7 +28,6 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import io.netty.handler.codec.http.HttpMethod.GET
-import com.hotels.styx.api.messages.HttpResponseStatus._
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT
 import io.netty.handler.codec.http._
@@ -63,7 +63,7 @@ class ChunkedDownloadSpec extends FunSpec
     it("Proxies a response with chunked HTTP content.") {
       originRespondingWith(response200OkWithThreeChunks("a" * 10, "b" * 20, "c" * 30))
 
-      val request = api.HttpRequest.Builder.get(styxServer.routerURL("/chunkedDownloadSpec/1")).build()
+      val request = api.HttpRequest.get(styxServer.routerURL("/chunkedDownloadSpec/1")).build()
       val response = decodedRequest(request)
 
       response.status() should be(OK)
@@ -76,7 +76,7 @@ class ChunkedDownloadSpec extends FunSpec
       val messageBody = "Foo bar 0123456789012345678901234567890123456789\\n" * 100
       originRespondingWith(response200OkWithSlowChunkedMessageBody(messageBody))
 
-      val request = api.HttpRequest.Builder.get(styxServer.routerURL("/chunkedDownloadSpec/2")).build()
+      val request = api.HttpRequest.get(styxServer.routerURL("/chunkedDownloadSpec/2")).build()
       val response = decodedRequest(request)
 
       response.status() should be(OK)

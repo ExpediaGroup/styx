@@ -17,12 +17,12 @@ package com.hotels.styx.plugins
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
-import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING
+import com.hotels.styx.api.HttpHeaderValues.CHUNKED
+import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
-import io.netty.handler.codec.http.HttpHeaders.Names._
-import io.netty.handler.codec.http.HttpHeaders.Values._
-import io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.is
 import org.scalatest.FunSpec
@@ -57,7 +57,7 @@ class ResubscribingPluginSpec extends FunSpec
     it("Returns connections back to pool when plugin performs tasks on separate thread pool") {
       mockServer.stub(urlStartingWith("/foobar"), aResponse
         .withStatus(200)
-        .withHeader(TRANSFER_ENCODING, CHUNKED)
+        .withHeader(TRANSFER_ENCODING.toString, CHUNKED.toString)
       )
 
       val request = get(styxServer.routerURL("/foobar"))

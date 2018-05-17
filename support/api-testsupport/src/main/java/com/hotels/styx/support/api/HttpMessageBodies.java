@@ -16,9 +16,14 @@
 package com.hotels.styx.support.api;
 
 import com.hotels.styx.api.HttpMessage;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpMessageBody;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
+import com.hotels.styx.api.HttpRequest;
 
 
 /**
@@ -35,10 +40,33 @@ public final class HttpMessageBodies {
         return bodyAsString(message.body());
     }
 
+    public static String bodyAsString(HttpRequest message) {
+        return await(message.toFullHttpRequest(0x100000)
+                .asCompletableFuture())
+                .bodyAs(UTF_8);
+    }
+
+    public static String bodyAsString(HttpResponse message) {
+        return await(message.toFullHttpResponse(0x100000)
+                .asCompletableFuture())
+                .bodyAs(UTF_8);
+    }
+
     static String bodyAsString(HttpMessageBody body) {
         return body.decode(bytes -> bytes.toString(UTF_8), 0x100000)
                 .toBlocking()
                 .single();
+    }
+
+    private static <T> T await(CompletableFuture<T> future) {
+        try {
+            return future.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private HttpMessageBodies() {

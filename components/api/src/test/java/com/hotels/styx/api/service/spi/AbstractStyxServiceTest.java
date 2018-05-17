@@ -15,12 +15,14 @@
  */
 package com.hotels.styx.api.service.spi;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.messages.FullHttpResponse;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
+import static com.hotels.styx.api.MockContext.MOCK_CONTEXT;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.FAILED;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.RUNNING;
 import static com.hotels.styx.api.service.spi.StyxServiceStatus.STARTING;
@@ -33,16 +35,17 @@ import static org.hamcrest.Matchers.is;
 
 public class AbstractStyxServiceTest {
 
-    private final HttpRequest get = HttpRequest.Builder.get("/").build();
+    private final HttpRequest get = HttpRequest.get("/").build();
 
     @Test
-    public void exposesNameAndStatusViaAdminInterface() {
+    public void exposesNameAndStatusViaAdminInterface() throws ExecutionException, InterruptedException {
         DerivedStyxService service = new DerivedStyxService("derived-service", new CompletableFuture<>());
 
-        FullHttpResponse response = service.adminInterfaceHandlers().get("status").handle(get)
-                .flatMap(r -> r.toFullResponse(1024))
-                .toBlocking()
-                .first();
+        FullHttpResponse response =
+                service.adminInterfaceHandlers().get("status").handle(get, MOCK_CONTEXT)
+                        .flatMap(r -> r.toFullHttpResponse(1024))
+                .asCompletableFuture()
+                .get();
 
         assertThat(response.bodyAs(UTF_8), is("{ name: \"derived-service\" status: \"CREATED\" }"));
     }
@@ -74,7 +77,7 @@ public class AbstractStyxServiceTest {
     }
 
     @Test(expectedExceptions = IllegalStateException.class,
-    expectedExceptionsMessageRegExp = "Start called in STARTING state")
+            expectedExceptionsMessageRegExp = "Start called in STARTING state")
     public void throwsExceptionFor2ndCallToStart() {
         CompletableFuture<Void> subclassStarted = new CompletableFuture<>();
         DerivedStyxService service = new DerivedStyxService("derived-service", subclassStarted);

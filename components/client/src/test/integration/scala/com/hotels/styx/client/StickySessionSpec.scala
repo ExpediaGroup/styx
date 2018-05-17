@@ -20,7 +20,7 @@ import java.nio.charset.Charset
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.Id.id
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.client.{ActiveOrigins, Origin}
@@ -100,7 +100,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
-    val request: HttpRequest = HttpRequest.Builder.get("/")
+    val request: HttpRequest = HttpRequest.get("/")
       .build
 
     val response = waitForResponse(client.sendRequest(request))

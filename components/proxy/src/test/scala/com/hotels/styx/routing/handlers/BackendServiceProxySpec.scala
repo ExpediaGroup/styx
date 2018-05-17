@@ -26,21 +26,23 @@ import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse}
 import com.hotels.styx.client.{OriginStatsFactory, OriginsInventory}
 import com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded
 import com.hotels.styx.api.service.spi.Registry.{Changes, ReloadResult}
+import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.config.RouteHandlerDefinition
-import io.netty.handler.codec.http.HttpResponseStatus
+import com.hotels.styx.server.HttpInterceptorContext
+import com.hotels.styx.support.api.BlockingObservables
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, ShouldMatchers}
 import rx.Observable
-
+import com.hotels.styx.api.messages.HttpResponseStatus
 import scala.collection.JavaConversions._
 
 class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSugar {
 
-  val hwaRequest = HttpRequest.Builder.get("/x").build()
-  val laRequest = HttpRequest.Builder.get("/lp/x").build()
-  val baRequest = HttpRequest.Builder.get("/ba/x").build()
+  val hwaRequest = HttpRequest.get("/x").build()
+  val laRequest = HttpRequest.get("/lp/x").build()
+  val baRequest = HttpRequest.get("/ba/x").build()
 
   val environment = new Environment.Builder().build()
 
@@ -63,13 +65,13 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
     val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), services).build(List(), null, config)
     backendRegistry.reload()
 
-    val hwaResponse = handler.handle(hwaRequest, null).toBlocking.first()
+    val hwaResponse = StyxFutures.await(handler.handle(hwaRequest, HttpInterceptorContext.create).asCompletableFuture())
     hwaResponse.header("X-Backend-Service").get() should be("hwa")
 
-    val laResponse = handler.handle(laRequest, null).toBlocking.first()
+    val laResponse = StyxFutures.await(handler.handle(laRequest, HttpInterceptorContext.create).asCompletableFuture())
     laResponse.header("X-Backend-Service").get() should be("la")
 
-    val baResponse = handler.handle(baRequest, null).toBlocking.first()
+    val baResponse = StyxFutures.await(handler.handle(baRequest, HttpInterceptorContext.create).asCompletableFuture())
     baResponse.header("X-Backend-Service").get() should be("ba")
   }
 
@@ -111,7 +113,7 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
   private def clientFactory() = new BackendServiceClientFactory() {
     override def createClient(backendService: BackendService, originsInventory: OriginsInventory, originStatsFactory: OriginStatsFactory): HttpClient = new HttpClient {
       override def sendRequest(request: HttpRequest): Observable[HttpResponse] = Observable
-        .just(HttpResponse.Builder
+        .just(HttpResponse
           .response(HttpResponseStatus.OK)
           .addHeader("X-Backend-Service", backendService.id())
           .build()

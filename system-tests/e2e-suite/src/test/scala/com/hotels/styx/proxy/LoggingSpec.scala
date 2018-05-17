@@ -20,12 +20,12 @@ import java.nio.charset.StandardCharsets.UTF_8
 import ch.qos.logback.classic.Level._
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
 import com.hotels.styx.api.HttpInterceptor.Chain
-import com.hotels.styx.api.HttpRequest.Builder._
+import com.hotels.styx.api.HttpRequest._
 import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.metrics.HttpErrorStatusCauseLogger
 import com.hotels.styx.api.plugins.spi.PluginException
-import com.hotels.styx.api.{HttpRequest, HttpResponse}
+import com.hotels.styx.api.{HttpRequest, HttpResponse, StyxObservable}
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -135,18 +135,19 @@ class LoggingSpec extends FunSpec
 
   import com.hotels.styx.support.ImplicitScalaRxConversions.toJavaObservable
   import rx.lang.scala.JavaConversions.toScalaObservable
+  import scala.compat.java8.FunctionConverters.asJavaFunction
 
 
   class BadPlugin extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): rx.Observable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
       Option(request.header(X_THROW_AT).orElse(null)) match {
         case Some(AT_REQUEST) =>
           throw new RuntimeException("Throw exception at Request")
         case Some(AT_RESPONSE) =>
-          toScalaObservable(chain.proceed(request))
-            .doOnNext((response: HttpResponse) => throw new RuntimeException("Throw exception at Response"))
+          chain.proceed(request)
+            .map(asJavaFunction((response: HttpResponse) => throw new RuntimeException("Throw exception at Response")))
         case _ =>
-          toScalaObservable(chain.proceed(request))
+          chain.proceed(request)
       }
     }
   }

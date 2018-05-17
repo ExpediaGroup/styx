@@ -21,8 +21,9 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.client.UrlConnectionHttpClient;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.client.SimpleNettyHttpClient;
 import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
 import org.testng.annotations.AfterMethod;
@@ -38,8 +39,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
@@ -56,7 +57,6 @@ import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static rx.Observable.just;
 
 public class StyxServerTest {
     private final HttpClient client = new SimpleNettyHttpClient.Builder()
@@ -249,8 +249,8 @@ public class StyxServerTest {
     @Test
     public void addsEndpointLinksToPluginPage() {
         setUpStyxAndPluginWithAdminPages(ImmutableMap.of(
-                "adminPage1", request -> just(response().build()),
-                "adminPage2", request -> just(response().build())
+                "adminPage1", (request, ctx)-> StyxObservable.of(response().build()),
+                "adminPage2", (request, ctx) -> StyxObservable.of(response().build())
         ));
 
         FullHttpResponse response = doAdminRequest("/admin/plugins/plugin-with-admin-pages");
@@ -263,8 +263,8 @@ public class StyxServerTest {
     @Test
     public void exposesAdminEndpoints() {
         setUpStyxAndPluginWithAdminPages(ImmutableMap.of(
-                "adminPage1", request -> just(response().header("AdminPage1", "yes").build()),
-                "adminPage2", request -> just(response().header("AdminPage2", "yes").build())
+                "adminPage1", (request, ctx) -> StyxObservable.of(response().header("AdminPage1", "yes").build()),
+                "adminPage2", (request, ctx) -> StyxObservable.of(response().header("AdminPage2", "yes").build())
         ));
 
         FullHttpResponse response = doAdminRequest("/admin/plugins/plugin-with-admin-pages/adminPage1");

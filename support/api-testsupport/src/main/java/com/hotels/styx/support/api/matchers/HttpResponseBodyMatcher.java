@@ -15,13 +15,17 @@
  */
 package com.hotels.styx.support.api.matchers;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpResponse;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
-import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.equalTo;
 
 public class HttpResponseBodyMatcher<T extends HttpResponse> extends TypeSafeMatcher<T> {
@@ -44,17 +48,28 @@ public class HttpResponseBodyMatcher<T extends HttpResponse> extends TypeSafeMat
 
     @Override
     public boolean matchesSafely(T actual) {
-        return matcher.matches(bodyAsString(actual));
+        return matcher.matches(await(actual.toFullHttpResponse(0x100000).asCompletableFuture()).bodyAs(UTF_8));
     }
 
     @Override
     protected void describeMismatchSafely(T item, Description mismatchDescription) {
-        mismatchDescription.appendText("content was '" + bodyAsString(item) + "'");
+        mismatchDescription.appendText("content was '" + await(item.toFullHttpResponse(0x100000).asCompletableFuture()).bodyAs(UTF_8) + "'");
     }
 
     @Override
     public void describeTo(Description description) {
         description.appendText("content with ");
         matcher.describeTo(description);
+    }
+
+    private <T> T await(CompletableFuture<T> future) {
+        try {
+            return future.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
