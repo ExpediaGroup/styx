@@ -55,11 +55,12 @@ public interface StyxObservable<T> {
         return new StyxCoreObservable<>(Observable.from(values));
     }
 
+    static <T> StyxObservable<T> from(CompletionStage<T> completableFuture) {
+        return new StyxCoreObservable<>(completableFuture);
+    }
+
     static <T> StyxObservable<T> error(Throwable error) {
         return new StyxCoreObservable<>(Observable.error(error));
     }
 
-    static <T> StyxObservable<T> from(CompletionStage<T> completableFuture) {
-        return new StyxCoreObservable<>(completableFuture);
-    }
 }

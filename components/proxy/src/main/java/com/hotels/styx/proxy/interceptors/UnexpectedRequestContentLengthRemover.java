@@ -33,7 +33,7 @@ public class UnexpectedRequestContentLengthRemover implements HttpInterceptor {
         return chain.proceed(removeBadContentLength(request));
     }
 
-    private HttpRequest removeBadContentLength(HttpRequest request) {
+    private static HttpRequest removeBadContentLength(HttpRequest request) {
         Optional<Integer> contentLength = request.contentLength();
         if (contentLength.isPresent() && request.chunked()) {
             return request.newBuilder()

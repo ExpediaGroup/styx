@@ -23,6 +23,7 @@ import com.hotels.styx.api.HttpRequest;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.hotels.styx.api.HttpHeaderNames.VIA;
+import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpHeaders.newEntity;
 
 /**
@@ -35,26 +36,16 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
 
     @Override
     public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-        HttpRequest newRequest = requestWithAppendedViaHeader(request);
-
-        return chain.proceed(newRequest)
-                .map(this::responseWithAppendedViaHeader);
-    }
-
-    private HttpResponse responseWithAppendedViaHeader(HttpResponse response) {
-        return response.newBuilder()
-                .header(VIA, viaHeader(response))
-                .build();
-    }
-
-    private HttpRequest requestWithAppendedViaHeader(HttpRequest request) {
-        return request.newBuilder()
+        HttpRequest newRequest = request.newBuilder()
                 .header(VIA, viaHeader(request))
                 .build();
+
+        return chain.proceed(newRequest)
+                .map(response -> response.newBuilder()
+                        .header(VIA, viaHeader(response))
+                        .build());
     }
 
-    // TODO: Mikko: Styx 2.0 API: Remove this duplication once the new HttpRequest object
-    // is migrated across:
     private static CharSequence viaHeader(HttpRequest httpMessage) {
         CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
 
@@ -72,11 +63,6 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
     }
 
     private static CharSequence styxViaEntry(HttpVersion httpVersion) {
-        return httpVersion.equals(com.hotels.styx.api.messages.HttpVersion.HTTP_1_0) ? VIA_STYX_1_0 : VIA_STYX_1_1;
-    }
-
-    private static CharSequence styxViaEntry(io.netty.handler.codec.http.HttpVersion httpVersion) {
-        // TODO: Mikko: Styx 2.0 API: Until HttpRequest is switched over to Streaming version:
-        return httpVersion.equals(io.netty.handler.codec.http.HttpVersion.HTTP_1_0) ? VIA_STYX_1_0 : VIA_STYX_1_1;
+        return httpVersion.equals(HTTP_1_0) ? VIA_STYX_1_0 : VIA_STYX_1_1;
     }
 }

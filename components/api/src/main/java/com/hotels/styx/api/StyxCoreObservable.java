@@ -75,7 +75,6 @@ class StyxCoreObservable<T> implements StyxObservable<T> {
         return new StyxCoreObservable<>(delegate.reduce(seed, (result, element) -> accumulator.apply(element, result)));
     }
 
-
     @Override
     public StyxObservable<T> onError(Function<Throwable, StyxObservable<T>> errorHandler) {
         return new StyxCoreObservable<>(delegate.onErrorResumeNext(cause -> {
