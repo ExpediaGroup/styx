@@ -46,7 +46,7 @@ public class StatusHandler implements HttpHandler {
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return handler.handle(request, context)
-                .flatMap(response -> response.toFullHttpResponse(0xffffff))
+                .flatMap(response -> response.toFullResponse(0xffffff))
                 .map(response ->
                         response.newBuilder()
                                 .contentType(PLAIN_TEXT_UTF_8)

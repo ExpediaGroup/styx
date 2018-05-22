@@ -77,7 +77,7 @@ public class FullHttpResponseTest {
                 header("HeaderName", "HeaderValue")));
         assertThat(streaming.cookies(), contains(cookie("CookieName", "CookieValue")));
 
-        String body = streaming.toFullHttpResponse(0x100000)
+        String body = streaming.toFullResponse(0x100000)
                 .asCompletableFuture()
                 .get()
                 .bodyAs(UTF_8);
@@ -469,7 +469,7 @@ public class FullHttpResponseTest {
                 .body(StyxObservable.of(content))
                 .build();
 
-        original.toFullHttpResponse(100)
+        original.toFullResponse(100)
                 .asCompletableFuture()
                 .get();
 

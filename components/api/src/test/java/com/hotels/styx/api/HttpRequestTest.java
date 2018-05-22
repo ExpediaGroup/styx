@@ -17,10 +17,8 @@ package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
@@ -70,7 +68,7 @@ public class HttpRequestTest {
                 .addCookie("CookieName", "CookieValue")
                 .build();
 
-        FullHttpRequest full = streamingRequest.toFullHttpRequest(0x1000)
+        FullHttpRequest full = streamingRequest.toFullRequest(0x1000)
                 .asCompletableFuture()
                 .get();
 
@@ -85,7 +83,7 @@ public class HttpRequestTest {
 
     @Test(dataProvider = "emptyBodyRequests")
     public void encodesToStreamingHttpRequestWithEmptyBody(HttpRequest streamingRequest) throws Exception {
-        FullHttpRequest full = streamingRequest.toFullHttpRequest(0x1000)
+        FullHttpRequest full = streamingRequest.toFullRequest(0x1000)
                 .asCompletableFuture()
                 .get();
 
@@ -417,7 +415,7 @@ public class HttpRequestTest {
 
         HttpRequest streaming = new HttpRequest.Builder(original).build();
 
-        HttpRequest shouldMatchOriginal = streaming.toFullHttpRequest(0x100)
+        HttpRequest shouldMatchOriginal = streaming.toFullRequest(0x100)
                 .asCompletableFuture()
                 .get()
                 .toStreamingRequest();

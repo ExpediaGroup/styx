@@ -50,13 +50,13 @@ public final class BlockingObservables {
 
     public static FullHttpResponse waitForResponse(StyxObservable<HttpResponse> responseObs) {
         return futureGetAndPropagate(responseObs
-                .flatMap(response -> response.toFullHttpResponse(120*1024))
+                .flatMap(response -> response.toFullResponse(120*1024))
                 .asCompletableFuture());
     }
 
     public static FullHttpResponse waitForResponse(Observable<HttpResponse> responseObs) {
         return responseObs
-                .flatMap(response -> toRxObservable(response.toFullHttpResponse(120*1024)))
+                .flatMap(response -> toRxObservable(response.toFullResponse(120*1024)))
                 .toBlocking()
                 .single();
     }

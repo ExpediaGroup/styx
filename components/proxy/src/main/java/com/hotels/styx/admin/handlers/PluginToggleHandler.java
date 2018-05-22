@@ -166,7 +166,7 @@ public class PluginToggleHandler implements HttpHandler {
     }
 
     private static StyxObservable<PluginEnabledState> requestedNewState(HttpRequest request) {
-        return request.toFullHttpRequest(MAX_CONTENT_SIZE)
+        return request.toFullRequest(MAX_CONTENT_SIZE)
                 .map(fullRequest -> fullRequest.bodyAs(UTF_8))
                 .map(PluginToggleHandler::parseToBoolean)
                 .map(PluginEnabledState::fromBoolean);

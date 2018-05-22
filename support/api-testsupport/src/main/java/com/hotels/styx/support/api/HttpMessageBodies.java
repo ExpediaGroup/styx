@@ -41,13 +41,13 @@ public final class HttpMessageBodies {
     }
 
     public static String bodyAsString(HttpRequest message) {
-        return await(message.toFullHttpRequest(0x100000)
+        return await(message.toFullRequest(0x100000)
                 .asCompletableFuture())
                 .bodyAs(UTF_8);
     }
 
     public static String bodyAsString(HttpResponse message) {
-        return await(message.toFullHttpResponse(0x100000)
+        return await(message.toFullResponse(0x100000)
                 .asCompletableFuture())
                 .bodyAs(UTF_8);
     }

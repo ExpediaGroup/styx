@@ -43,7 +43,7 @@ public class AbstractStyxServiceTest {
 
         FullHttpResponse response =
                 service.adminInterfaceHandlers().get("status").handle(get, MOCK_CONTEXT)
-                        .flatMap(r -> r.toFullHttpResponse(1024))
+                        .flatMap(r -> r.toFullResponse(1024))
                 .asCompletableFuture()
                 .get();
 

@@ -64,7 +64,7 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
         HttpRequest request = newHealthCheckRequestFor(origin);
 
         client.sendRequest(request)
-                .flatMap(response -> toRxObservable(response.toFullHttpResponse(1024 * 100)))
+                .flatMap(response -> toRxObservable(response.toFullResponse(1024 * 100)))
                 .subscribe(response -> {
                     if (response.status().equals(OK)) {
                         responseCallback.originStateResponse(HEALTHY);

@@ -44,7 +44,7 @@ public class AsyncRequestContentDecoderPluginFactory implements PluginFactory {
 
         @Override
         public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-            return request.toFullHttpRequest(config.maxContentLength())
+            return request.toFullRequest(config.maxContentLength())
                             .flatMap(fullHttpRequest -> StyxObservable.from(asyncOperation(config.delayMillis())))
                             .map(outcome -> request.newBuilder().header("X-Outcome", outcome.result()))
                             .flatMap(x -> chain.proceed(request));

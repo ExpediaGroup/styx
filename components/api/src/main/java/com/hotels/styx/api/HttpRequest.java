@@ -320,7 +320,7 @@ public class HttpRequest implements StreamingHttpMessage {
         return new Builder(this);
     }
 
-    public StyxObservable<FullHttpRequest> toFullHttpRequest(int maxContentBytes) {
+    public StyxObservable<FullHttpRequest> toFullRequest(int maxContentBytes) {
         CompositeByteBuf byteBufs = compositeBuffer();
 
         return new StyxCoreObservable<>(
