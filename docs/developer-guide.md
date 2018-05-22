@@ -90,6 +90,8 @@ And see the startup logs using:
 
 ## On Developing Plugins
 
+ - [Styx API Overview](./developer-guide/api-overview.md) - Styx programming API overview.
+
  - [Plugins](./developer-guide/plugins.md) - How to develop plugins.
 
  - [Plugins Scenarios](./developer-guide/plugins-scenarios.md) - How to implement different traffic handling scenarios in plugins.
