@@ -33,6 +33,7 @@ import com.hotels.styx.admin.handlers.OriginsInventoryHandler;
 import com.hotels.styx.admin.handlers.PingHandler;
 import com.hotels.styx.admin.handlers.PluginListHandler;
 import com.hotels.styx.admin.handlers.PluginToggleHandler;
+import com.hotels.styx.admin.handlers.ProxyStatusHandler;
 import com.hotels.styx.admin.handlers.StartupConfigHandler;
 import com.hotels.styx.admin.handlers.StatusHandler;
 import com.hotels.styx.admin.handlers.StyxConfigurationHandler;
@@ -123,6 +124,7 @@ public class AdminServerBuilder {
         httpRouter.add("/admin/origins/status", new OriginsInventoryHandler(environment.eventBus()));
         httpRouter.add("/admin/configuration/logging", new LoggingConfigurationHandler(styxConfig.startupConfig().logConfigLocation()));
         httpRouter.add("/admin/configuration/startup", new StartupConfigHandler(styxConfig.startupConfig()));
+        httpRouter.add("/admin/proxystatus", new ProxyStatusHandler(environment.eventNexus()));
 
         // Dashboard
         httpRouter.add("/admin/dashboard/data.json", dashboardDataHandler(styxConfig));
@@ -141,6 +143,7 @@ public class AdminServerBuilder {
         return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
                 .toNettyServerBuilder(adminServerConfig)
                 .httpHandler(httpRouter)
+                .eventNexus(environment.eventNexus())
                 .build();
     }
 
@@ -161,6 +164,7 @@ public class AdminServerBuilder {
                 link("version.txt", "/version.txt"),
                 link("Status", "/admin/status"),
                 link("Ping", "/admin/ping"),
+                link("Proxy Status", "/admin/proxystatus"),
                 link("Threads", "/admin/threads"),
                 link("Metrics", "/admin/metrics?pretty"),
                 link("Health Check", "/admin/healthcheck"),

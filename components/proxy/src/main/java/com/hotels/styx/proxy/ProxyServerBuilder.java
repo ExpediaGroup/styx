@@ -62,6 +62,7 @@ public final class ProxyServerBuilder {
                 .register(HealthCheckTimestamp.NAME, new HealthCheckTimestamp())
                 .register("errors-rate-500", new ErrorsRateHealthCheck(environment.metricRegistry()))
                 .doOnStartUp(onStartupAction)
+                .eventNexus(environment.eventNexus())
                 .build();
     }
 

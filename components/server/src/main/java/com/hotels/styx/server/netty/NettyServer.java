@@ -19,6 +19,7 @@ import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.events.EventNexus;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import io.netty.bootstrap.ServerBootstrap;
@@ -38,10 +39,8 @@ import java.net.InetSocketAddress;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Throwables.propagate;
 import static io.netty.channel.ChannelOption.ALLOCATOR;
 import static io.netty.channel.ChannelOption.SO_BACKLOG;
@@ -49,7 +48,9 @@ import static io.netty.channel.ChannelOption.SO_KEEPALIVE;
 import static io.netty.channel.ChannelOption.SO_REUSEADDR;
 import static io.netty.channel.ChannelOption.TCP_NODELAY;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -69,14 +70,16 @@ final class NettyServer extends AbstractService implements HttpServer {
     private final HttpHandler2 httpHandler;
     private final ServerSocketBinder httpServerSocketBinder;
     private final ServerSocketBinder httpsServerSocketBinder;
+    private final String name;
+    private final EventNexus eventNexus;
 
     private Callable<?> stopper;
 
     NettyServer(NettyServerBuilder nettyServerBuilder) {
         this.host = nettyServerBuilder.host();
-        this.channelGroup = checkNotNull(nettyServerBuilder.channelGroup());
-        this.serverEventLoopFactory = checkNotNull(nettyServerBuilder.serverEventLoopFactory(), "serverEventLoopFactory cannot be null");
-        this.httpHandler = checkNotNull(nettyServerBuilder.httpHandler());
+        this.channelGroup = requireNonNull(nettyServerBuilder.channelGroup());
+        this.serverEventLoopFactory = requireNonNull(nettyServerBuilder.serverEventLoopFactory(), "serverEventLoopFactory cannot be null");
+        this.httpHandler = requireNonNull(nettyServerBuilder.httpHandler());
 
         this.httpConnector = nettyServerBuilder.httpConnector();
         this.httpsConnector = nettyServerBuilder.httpsConnector();
@@ -85,6 +88,9 @@ final class NettyServer extends AbstractService implements HttpServer {
         this.httpsServerSocketBinder = httpsConnector.map(ServerSocketBinder::new).orElse(null);
 
         this.startupActions = nettyServerBuilder.startupActions();
+
+        this.name = requireNonNull(nettyServerBuilder.name());
+        this.eventNexus = requireNonNull(nettyServerBuilder.eventNexus());
     }
 
     @Override
@@ -120,12 +126,14 @@ final class NettyServer extends AbstractService implements HttpServer {
 
         ServiceManager serviceManager = new ServiceManager(
                 Stream.of(httpServerSocketBinder, httpsServerSocketBinder)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList())
+                        .filter(Objects::nonNull)
+                        .collect(toList())
         );
 
         serviceManager.addListener(new ServerListener(this));
         serviceManager.startAsync().awaitHealthy();
+
+        eventNexus.publish("server.started." + name, true);
 
         this.stopper = () -> {
             serviceManager.stopAsync().awaitStopped();
@@ -208,7 +216,7 @@ final class NettyServer extends AbstractService implements HttpServer {
                             Channel channel = future.channel();
                             channelGroup.add(channel);
                             address = (InetSocketAddress) channel.localAddress();
-                            LOGGER.info("server connector {} bound successfully on port {} socket port {}", new Object[] {serverConnector.getClass(), port, address});
+                            LOGGER.info("server connector {} bound successfully on port {} socket port {}", new Object[]{serverConnector.getClass(), port, address});
                             connectorStopper = new Stopper(bossGroup, workerGroup);
                             notifyStarted();
                         } else {

@@ -21,6 +21,8 @@ import com.hotels.styx.api.metrics.HttpErrorStatusCauseLogger;
 import com.hotels.styx.api.metrics.HttpErrorStatusListener;
 import com.hotels.styx.api.metrics.HttpErrorStatusMetrics;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.events.EventNexus;
+import com.hotels.styx.events.SimpleEventNexus;
 import com.hotels.styx.server.ServerEnvironment;
 
 import java.util.function.Supplier;
@@ -33,12 +35,14 @@ import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATIO
 public final class Environment implements com.hotels.styx.api.Environment {
     private final Version version;
     private final EventBus eventBus;
+    private final EventNexus eventNexus;
     private final AggregatedConfiguration aggregatedConfiguration;
     private final HttpErrorStatusListener httpErrorStatusListener;
     private final ServerEnvironment serverEnvironment;
 
     private Environment(Builder builder) {
         this.eventBus = firstNonNull(builder.eventBus, () -> new EventBus("Styx"));
+        this.eventNexus = new SimpleEventNexus();
 
         this.aggregatedConfiguration = firstNonNull(builder.aggregatedConfiguration, () -> new AggregatedConfiguration(new StyxConfig()));
         this.version = firstNonNull(builder.version, Version::newVersion);
@@ -56,6 +60,10 @@ public final class Environment implements com.hotels.styx.api.Environment {
 
     public EventBus eventBus() {
         return eventBus;
+    }
+
+    public EventNexus eventNexus() {
+        return eventNexus;
     }
 
     public Version buildInfo() {
@@ -80,7 +88,6 @@ public final class Environment implements com.hotels.styx.api.Environment {
     public HealthCheckRegistry healthCheckRegistry() {
         return serverEnvironment.healthCheckRegistry();
     }
-
 
     public StyxConfig styxConfig() {
         return aggregatedConfiguration.styxConfig();
