@@ -19,6 +19,7 @@ import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import io.netty.bootstrap.ServerBootstrap;
@@ -30,7 +31,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.util.concurrent.EventExecutorGroup;
-import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 
 import java.net.BindException;
@@ -38,18 +38,22 @@ import java.net.InetSocketAddress;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.base.Throwables.propagate;
+import static com.hotels.styx.common.Result.failure;
+import static com.hotels.styx.common.Result.success;
 import static io.netty.channel.ChannelOption.ALLOCATOR;
 import static io.netty.channel.ChannelOption.SO_BACKLOG;
 import static io.netty.channel.ChannelOption.SO_KEEPALIVE;
 import static io.netty.channel.ChannelOption.SO_REUSEADDR;
 import static io.netty.channel.ChannelOption.TCP_NODELAY;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -65,18 +69,20 @@ final class NettyServer extends AbstractService implements HttpServer {
     private final Optional<ServerConnector> httpConnector;
     private final Optional<ServerConnector> httpsConnector;
 
-    private final Iterable<Runnable> startupActions;
-    private final HttpHandler2 httpHandler;
+    private final Iterable<Runnable> beforeStartActions;
+    private final Supplier<HttpHandler2> httpHandler;
     private final ServerSocketBinder httpServerSocketBinder;
     private final ServerSocketBinder httpsServerSocketBinder;
+    private final String name;
+    private final ConfigStore configStore;
 
     private Callable<?> stopper;
 
     NettyServer(NettyServerBuilder nettyServerBuilder) {
         this.host = nettyServerBuilder.host();
-        this.channelGroup = checkNotNull(nettyServerBuilder.channelGroup());
-        this.serverEventLoopFactory = checkNotNull(nettyServerBuilder.serverEventLoopFactory(), "serverEventLoopFactory cannot be null");
-        this.httpHandler = checkNotNull(nettyServerBuilder.httpHandler());
+        this.channelGroup = requireNonNull(nettyServerBuilder.channelGroup());
+        this.serverEventLoopFactory = requireNonNull(nettyServerBuilder.serverEventLoopFactory(), "serverEventLoopFactory cannot be null");
+        this.httpHandler = memoize(nettyServerBuilder.httpHandler()::get)::get;
 
         this.httpConnector = nettyServerBuilder.httpConnector();
         this.httpsConnector = nettyServerBuilder.httpsConnector();
@@ -84,7 +90,10 @@ final class NettyServer extends AbstractService implements HttpServer {
         this.httpServerSocketBinder = httpConnector.map(ServerSocketBinder::new).orElse(null);
         this.httpsServerSocketBinder = httpsConnector.map(ServerSocketBinder::new).orElse(null);
 
-        this.startupActions = nettyServerBuilder.startupActions();
+        this.beforeStartActions = nettyServerBuilder.beforeStartActions();
+
+        this.name = requireNonNull(nettyServerBuilder.name());
+        this.configStore = requireNonNull(nettyServerBuilder.configStore());
     }
 
     @Override
@@ -107,30 +116,32 @@ final class NettyServer extends AbstractService implements HttpServer {
 
     @Override
     protected void doStart() {
-        LOGGER.info("starting services");
+        try {
+            LOGGER.info("starting services for {}", name);
 
-        for (Runnable action : startupActions) {
-            try {
+            for (Runnable action : beforeStartActions) {
                 action.run();
-            } catch (Exception e) {
-                notifyFailed(e);
-                return;
             }
+
+            ServiceManager serviceManager = new ServiceManager(
+                    Stream.of(httpServerSocketBinder, httpsServerSocketBinder)
+                            .filter(Objects::nonNull)
+                            .collect(toList())
+            );
+
+            serviceManager.addListener(new ServerListener(this));
+            serviceManager.startAsync().awaitHealthy();
+
+            this.stopper = () -> {
+                serviceManager.stopAsync().awaitStopped();
+                return null;
+            };
+
+            configStore.set("server.started." + name, success());
+        } catch (Exception e) {
+            configStore.set("server.started." + name, failure(e));
+            notifyFailed(e);
         }
-
-        ServiceManager serviceManager = new ServiceManager(
-                Stream.of(httpServerSocketBinder, httpsServerSocketBinder)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList())
-        );
-
-        serviceManager.addListener(new ServerListener(this));
-        serviceManager.startAsync().awaitHealthy();
-
-        this.stopper = () -> {
-            serviceManager.stopAsync().awaitStopped();
-            return null;
-        };
     }
 
     @Override
@@ -146,7 +157,7 @@ final class NettyServer extends AbstractService implements HttpServer {
     private static final class ServerListener extends ServiceManager.Listener {
         private final NettyServer server;
 
-        public ServerListener(NettyServer server) {
+        ServerListener(NettyServer server) {
             this.server = server;
         }
 
@@ -194,8 +205,8 @@ final class NettyServer extends AbstractService implements HttpServer {
                     .childOption(ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                     .childHandler(new ChannelInitializer() {
                         @Override
-                        protected void initChannel(Channel ch) throws Exception {
-                            serverConnector.configure(ch, httpHandler);
+                        protected void initChannel(Channel ch) {
+                            serverConnector.configure(ch, httpHandler.get());
                         }
                     });
 
@@ -208,8 +219,9 @@ final class NettyServer extends AbstractService implements HttpServer {
                             Channel channel = future.channel();
                             channelGroup.add(channel);
                             address = (InetSocketAddress) channel.localAddress();
-                            LOGGER.info("server connector {} bound successfully on port {} socket port {}", new Object[] {serverConnector.getClass(), port, address});
+                            LOGGER.info("server connector {} bound successfully on port {} socket port {}", new Object[]{serverConnector.getClass(), port, address});
                             connectorStopper = new Stopper(bossGroup, workerGroup);
+                            httpHandler.get();
                             notifyStarted();
                         } else {
                             notifyFailed(mapToBetterException(future.cause(), port));
@@ -218,7 +230,7 @@ final class NettyServer extends AbstractService implements HttpServer {
         }
 
         public int port() {
-            return (address != null) ? address.getPort() : -1;
+            return address != null ? address.getPort() : -1;
         }
 
         private Throwable mapToBetterException(Throwable cause, int port) {
@@ -243,13 +255,13 @@ final class NettyServer extends AbstractService implements HttpServer {
             private final EventLoopGroup bossGroup;
             private final EventLoopGroup workerGroup;
 
-            public Stopper(EventLoopGroup bossGroup, EventLoopGroup workerGroup) {
+            Stopper(EventLoopGroup bossGroup, EventLoopGroup workerGroup) {
                 this.bossGroup = bossGroup;
                 this.workerGroup = workerGroup;
             }
 
             @Override
-            public Void call() throws Exception {
+            public Void call() {
                 channelGroup.close().awaitUninterruptibly();
                 shutdownEventExecutorGroup(bossGroup);
                 shutdownEventExecutorGroup(workerGroup);
@@ -257,8 +269,8 @@ final class NettyServer extends AbstractService implements HttpServer {
                 return null;
             }
 
-            private Future<?> shutdownEventExecutorGroup(EventExecutorGroup eventExecutorGroup) {
-                return eventExecutorGroup.shutdownGracefully(10, 1000, MILLISECONDS);
+            private void shutdownEventExecutorGroup(EventExecutorGroup eventExecutorGroup) {
+                eventExecutorGroup.shutdownGracefully(10, 1000, MILLISECONDS);
             }
         }
     }

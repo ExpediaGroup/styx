@@ -66,14 +66,14 @@ public final class StyxPipelineFactory implements PipelineFactory {
         Map<String, HttpHandlerFactory> objectFactories = createBuiltinRoutingObjectFactories(
                 config.environment(),
                 config.services(),
-                config.plugins(),
+                config.plugins().get(),
                 builtinInterceptorsFactory);
 
         RouteHandlerFactory routeHandlerFactory = new RouteHandlerFactory(objectFactories, new ConcurrentHashMap<>());
 
         return styxHttpPipeline(
                 config.environment().styxConfig(),
-                configuredPipeline(config.environment(), config.services(), config.plugins(), routeHandlerFactory));
+                configuredPipeline(config.environment(), config.services(), config.plugins().get(), routeHandlerFactory));
     }
 
     private static HttpHandler2 styxHttpPipeline(StyxConfig config, HttpHandler2 interceptorsPipeline) {

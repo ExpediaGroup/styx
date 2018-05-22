@@ -15,6 +15,7 @@
  */
 package com.hotels.styx;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.io.CharStreams;
 import com.google.common.util.concurrent.AbstractService;
@@ -144,14 +145,19 @@ public final class StyxServer extends AbstractService {
 
         this.serviceManager = new ServiceManager(new ArrayList<Service>() {
             {
-                add(proxyServer);
                 add(adminServer);
+                add(proxyServer);
                 servicesFromConfig.entrySet().stream()
                         .map(Map.Entry::getValue)
                         .map(StyxServer::toGuavaService)
                         .forEach(this::add);
             }
         });
+    }
+
+    @VisibleForTesting
+    HttpServer adminServer() {
+        return adminServer;
     }
 
     public InetSocketAddress proxyHttpAddress() {

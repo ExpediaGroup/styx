@@ -34,7 +34,7 @@ public class HttpServers {
         return NettyServerBuilder.newBuilder()
                 .name("NettyServer")
                 .setHttpConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(port)))
-                .httpHandler(new StandardHttpRouter().add("/", handler))
+                .httpHandler(() -> new StandardHttpRouter().add("/", handler))
                 .build();
     }
 
@@ -52,7 +52,7 @@ public class HttpServers {
         return NettyServerBuilder.newBuilder()
                 .name(name)
                 .setHttpConnector(new WebServerConnectorFactory().create(httpConnectorConfig))
-                .httpHandler(handler)
+                .httpHandler(() -> handler)
                 .build();
     }
 
@@ -70,7 +70,7 @@ public class HttpServers {
         return NettyServerBuilder.newBuilder()
                 .name(name)
                 .setHttpsConnector(new WebServerConnectorFactory().create(httpsConnectorConfig))
-                .httpHandler(handler)
+                .httpHandler(() -> handler)
                 .build();
     }
 

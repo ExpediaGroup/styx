@@ -49,6 +49,7 @@ public class NettyServerBuilderSpec {
         LOG.info("connectors={} name={}", serverConfig.connectors(), name);
 
         NettyServerBuilder builder = NettyServerBuilder.newBuilder()
+                .name(name)
                 .setMetricsRegistry(environment.metricRegistry())
                 .setHealthCheckRegistry(environment.healthCheckRegistry())
                 .setServerEventLoopFactory(serverEventLoopFactory(serverConfig));

@@ -68,7 +68,7 @@ public class StyxProxyTest extends SSLSetup {
     }
 
     @Test
-    public void startsAndStopsAServer() throws Exception {
+    public void startsAndStopsAServer() {
         HttpServer server = new NettyServerBuilder()
                 .setHttpConnector(connector(freePort()))
                 .build();

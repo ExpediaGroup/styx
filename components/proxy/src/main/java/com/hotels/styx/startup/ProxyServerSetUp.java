@@ -16,11 +16,13 @@
 package com.hotels.styx.startup;
 
 import com.google.common.util.concurrent.Service;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.proxy.ProxyServerBuilder;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpServer;
 import org.slf4j.Logger;
+
+import java.util.function.Supplier;
 
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static java.lang.String.format;
@@ -40,18 +42,16 @@ public final class ProxyServerSetUp {
     }
 
     public HttpServer createProxyServer(StyxServerComponents config) {
-        HttpHandler2 pipeline = pipelineFactory.create(config);
-
         HttpServer proxyServer = new ProxyServerBuilder(config.environment())
-                .httpHandler(pipeline)
-                .onStartup(() -> initialisePlugins(config.plugins()))
+                .httpHandler(() -> pipelineFactory.create(config))
+                .beforeStart(() -> initialisePlugins(config.environment().configStore(), config.plugins().get()))
                 .build();
 
         proxyServer.addListener(new PluginsNotifierOfProxyState(config.plugins()), sameThreadExecutor());
         return proxyServer;
     }
 
-    private static void initialisePlugins(Iterable<NamedPlugin> plugins) {
+    private static void initialisePlugins(ConfigStore configStore, Iterable<NamedPlugin> plugins) {
         int exceptions = 0;
 
         for (NamedPlugin plugin : plugins) {
@@ -66,18 +66,20 @@ public final class ProxyServerSetUp {
         if (exceptions > 0) {
             throw new RuntimeException(format("%s plugins failed to start", exceptions));
         }
+
+        configStore.set("plugins", plugins);
     }
 
     private static class PluginsNotifierOfProxyState extends Service.Listener {
-        private final Iterable<NamedPlugin> plugins;
+        private final Supplier<? extends Iterable<NamedPlugin>> plugins;
 
-        PluginsNotifierOfProxyState(Iterable<NamedPlugin> plugins) {
+        PluginsNotifierOfProxyState(Supplier<? extends Iterable<NamedPlugin>> plugins) {
             this.plugins = plugins;
         }
 
         @Override
         public void stopping(Service.State from) {
-            for (NamedPlugin plugin : plugins) {
+            for (NamedPlugin plugin : plugins.get()) {
                 try {
                     plugin.styxStopping();
                 } catch (Exception e) {

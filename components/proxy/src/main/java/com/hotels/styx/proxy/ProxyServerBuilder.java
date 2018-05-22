@@ -26,6 +26,8 @@ import com.hotels.styx.proxy.healthchecks.HealthCheckTimestamp;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.netty.NettyServerBuilderSpec;
 
+import java.util.function.Supplier;
+
 import static com.codahale.metrics.health.HealthCheck.Result.healthy;
 import static com.codahale.metrics.health.HealthCheck.Result.unhealthy;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -40,8 +42,8 @@ public final class ProxyServerBuilder {
     private final ResponseInfoFormat responseInfoFormat;
     private final CharSequence styxInfoHeaderName;
 
-    private HttpHandler2 httpHandler;
-    private Runnable onStartupAction = () -> {
+    private Supplier<HttpHandler2> httpHandler;
+    private Runnable beforeStartAction = () -> {
     };
 
     public ProxyServerBuilder(Environment environment) {
@@ -54,14 +56,15 @@ public final class ProxyServerBuilder {
         ProxyServerConfig proxyConfig = environment.styxConfig().proxyServerConfig();
         String unwiseCharacters = environment.styxConfig().get(ENCODE_UNWISECHARS).orElse("");
 
-        return new NettyServerBuilderSpec("Proxy", environment.serverEnvironment(),
+        return new NettyServerBuilderSpec("proxy", environment.serverEnvironment(),
                 new ProxyConnectorFactory(proxyConfig, environment.metricRegistry(), environment.errorListener(), unwiseCharacters, this::addInfoHeader))
                 .toNettyServerBuilder(proxyConfig)
                 .httpHandler(httpHandler)
                 // register health check
                 .register(HealthCheckTimestamp.NAME, new HealthCheckTimestamp())
                 .register("errors-rate-500", new ErrorsRateHealthCheck(environment.metricRegistry()))
-                .doOnStartUp(onStartupAction)
+                .beforeStart(beforeStartAction)
+                .configStore(environment.configStore())
                 .build();
     }
 
@@ -69,13 +72,13 @@ public final class ProxyServerBuilder {
         return responseBuilder.header(styxInfoHeaderName, responseInfoFormat.format(request));
     }
 
-    public ProxyServerBuilder httpHandler(HttpHandler2 httpHandler) {
+    public ProxyServerBuilder httpHandler(Supplier<HttpHandler2> httpHandler) {
         this.httpHandler = httpHandler;
         return this;
     }
 
-    public ProxyServerBuilder onStartup(Runnable startupAction) {
-        this.onStartupAction = startupAction;
+    public ProxyServerBuilder beforeStart(Runnable beforeStartAction) {
+        this.beforeStartAction = beforeStartAction;
         return this;
     }
 

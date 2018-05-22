@@ -33,6 +33,7 @@ import com.hotels.styx.admin.handlers.OriginsInventoryHandler;
 import com.hotels.styx.admin.handlers.PingHandler;
 import com.hotels.styx.admin.handlers.PluginListHandler;
 import com.hotels.styx.admin.handlers.PluginToggleHandler;
+import com.hotels.styx.admin.handlers.ProxyStatusHandler;
 import com.hotels.styx.admin.handlers.StartupConfigHandler;
 import com.hotels.styx.admin.handlers.StatusHandler;
 import com.hotels.styx.admin.handlers.StyxConfigurationHandler;
@@ -41,6 +42,7 @@ import com.hotels.styx.admin.handlers.VersionTextHandler;
 import com.hotels.styx.admin.tasks.OriginsCommandHandler;
 import com.hotels.styx.admin.tasks.OriginsReloadCommandHandler;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.http.handlers.HttpMethodFilteringHandler;
 import com.hotels.styx.api.http.handlers.StaticBodyHttpHandler;
@@ -56,9 +58,11 @@ import org.slf4j.Logger;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -82,17 +86,11 @@ public class AdminServerBuilder {
     private final Environment environment;
     private final Configuration configuration;
 
-    private Iterable<NamedPlugin> plugins;
     private Registry<BackendService> backendServicesRegistry;
 
     public AdminServerBuilder(Environment environment) {
         this.environment = environment;
         this.configuration = environment.configuration();
-    }
-
-    public AdminServerBuilder plugins(Iterable<NamedPlugin> plugins) {
-        this.plugins = checkNotNull(plugins);
-        return this;
     }
 
     public AdminServerBuilder backendServicesRegistry(Registry<BackendService> backendServicesRegistry) {
@@ -101,47 +99,89 @@ public class AdminServerBuilder {
     }
 
     public HttpServer build() {
-        LOG.info("event bus that will be used is {}", environment.eventBus());
         StyxConfig styxConfig = environment.styxConfig();
         HttpHandler healthCheckHandler = new HealthCheckHandler(environment.healthCheckRegistry(), newSingleThreadExecutor());
 
         Optional<Duration> metricsCacheExpiration = styxConfig.adminServerConfig().metricsCacheExpiration();
         AdminServerConfig adminServerConfig = styxConfig.adminServerConfig();
 
-        StandardHttpRouter httpRouter = new StandardHttpRouter();
-        httpRouter.add("/", new IndexHandler(indexLinkPaths()));
-        httpRouter.add("/version.txt", new VersionTextHandler(styxConfig.versionFiles()));
-        httpRouter.add("/admin", new IndexHandler(indexLinkPaths()));
-        httpRouter.add("/admin/status", new StatusHandler(healthCheckHandler));
-        httpRouter.add("/admin/ping", new PingHandler());
-        httpRouter.add("/admin/threads", new ThreadsHandler());
-        httpRouter.add("/admin/metrics", new MetricsHandler(environment.metricRegistry(), metricsCacheExpiration));
-        httpRouter.add("/admin/healthcheck", healthCheckHandler);
-        httpRouter.add("/admin/configuration", new StyxConfigurationHandler(staticConfiguration()));
-        httpRouter.add("/admin/configuration/origins", new OriginsHandler(backendServicesRegistry));
-        httpRouter.add("/admin/jvm", new JVMMetricsHandler(environment.metricRegistry(), metricsCacheExpiration));
-        httpRouter.add("/admin/origins/status", new OriginsInventoryHandler(environment.eventBus()));
-        httpRouter.add("/admin/configuration/logging", new LoggingConfigurationHandler(styxConfig.startupConfig().logConfigLocation()));
-        httpRouter.add("/admin/configuration/startup", new StartupConfigHandler(styxConfig.startupConfig()));
+        Iterable<IndexHandler.Link> links = indexLinkPaths();
 
-        // Dashboard
-        httpRouter.add("/admin/dashboard/data.json", dashboardDataHandler(styxConfig));
-        httpRouter.add("/admin/dashboard/", new ClassPathResourceHandler("/admin/dashboard/"));
+        RouterBuilder httpRouter = new RouterBuilder()
+                .add("/", new IndexHandler(links))
+                .add("/version.txt", new VersionTextHandler(styxConfig.versionFiles()))
+                .add("/admin", new IndexHandler(links))
+                .add("/admin/status", new StatusHandler(healthCheckHandler))
+                .add("/admin/ping", new PingHandler())
+                .add("/admin/threads", new ThreadsHandler())
+                .add("/admin/metrics", new MetricsHandler(environment.metricRegistry(), metricsCacheExpiration))
+                .add("/admin/healthcheck", healthCheckHandler)
+                .add("/admin/configuration", new StyxConfigurationHandler(staticConfiguration()))
+                .add("/admin/configuration/origins", new OriginsHandler(backendServicesRegistry))
+                .add("/admin/jvm", new JVMMetricsHandler(environment.metricRegistry(), metricsCacheExpiration))
+                .add("/admin/origins/status", new OriginsInventoryHandler(environment.eventBus()))
+                .add("/admin/configuration/logging", new LoggingConfigurationHandler(styxConfig.startupConfig().logConfigLocation()))
+                .add("/admin/configuration/startup", new StartupConfigHandler(styxConfig.startupConfig()))
+                .add("/admin/styx/proxy/status", new ProxyStatusHandler(environment.configStore()))
 
-        // Tasks
-        httpRouter.add("/admin/tasks/origins/reload", new HttpMethodFilteringHandler(POST, new OriginsReloadCommandHandler(backendServicesRegistry)));
-        httpRouter.add("/admin/tasks/origins", new HttpMethodFilteringHandler(POST, new OriginsCommandHandler(environment.eventBus())));
-        httpRouter.add("/admin/tasks/plugin/", new PluginToggleHandler(plugins));
+                // Dashboard
+                .add("/admin/dashboard/data.json", dashboardDataHandler(styxConfig))
+                .add("/admin/dashboard/", new ClassPathResourceHandler("/admin/dashboard/"))
 
-        // Plugins Handler
-        routesForPlugins().forEach(route -> httpRouter.add(route.path(), route.handler()));
+                // Tasks
+                .add("/admin/tasks/origins/reload", new HttpMethodFilteringHandler(POST, new OriginsReloadCommandHandler(backendServicesRegistry)))
+                .add("/admin/tasks/origins", new HttpMethodFilteringHandler(POST, new OriginsCommandHandler(environment.eventBus())))
+                ;
 
-        httpRouter.add("/admin/plugins", new PluginListHandler(plugins));
+        environment.configStore().watch("plugins", List.class)
+                .map(list -> (List<NamedPlugin>) list)
+                .subscribe(plugins -> {
+                    routesForPlugins(plugins).forEach(route -> httpRouter.add(route.path(), route.handler()));
+                    httpRouter.add("/admin/tasks/plugin/", new PluginToggleHandler(plugins));
+                    httpRouter.add("/admin/plugins", new PluginListHandler(plugins));
+                });
 
-        return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
+        verifyThatLinksInIndexMapToRealEndpoints(links, httpRouter.paths);
+
+        return new NettyServerBuilderSpec("admin", environment.serverEnvironment(), new WebServerConnectorFactory())
                 .toNettyServerBuilder(adminServerConfig)
-                .httpHandler(httpRouter)
+                .httpHandler(() -> httpRouter.router)
+                .configStore(environment.configStore())
                 .build();
+    }
+
+    private static final class RouterBuilder {
+        private final StandardHttpRouter router = new StandardHttpRouter();
+        private final Set<String> paths = new HashSet<>();
+
+        public RouterBuilder add(String path, HttpHandler2 handler) {
+            this.router.add(path, handler);
+            this.paths.add(path);
+            return this;
+        }
+    }
+
+    private static void verifyThatLinksInIndexMapToRealEndpoints(Iterable<IndexHandler.Link> links, Set<String> paths) {
+        for (IndexHandler.Link link : links) {
+            String path = removeQueryString(link.path());
+
+            // easiest to just make a hardcoded exception-to-the-rule here until we decide to refactor this class fully
+            boolean skip = "/admin/dashboard/index.html".equals(path) || "/admin/plugins".equals(path);
+
+            if (!skip && !paths.contains(path)) {
+                throw new IllegalArgumentException(format(
+                        "%s links to %s, but that path does not exist in router. Valid paths are %s%n",
+                        link.label(),
+                        link.path(),
+                        paths));
+            }
+        }
+    }
+
+    private static String removeQueryString(String path) {
+        int index = path.indexOf('?');
+
+        return index == -1 ? path : path.substring(0, index);
     }
 
     private JsonHandler<DashboardData> dashboardDataHandler(StyxConfig styxConfig) {
@@ -161,6 +201,7 @@ public class AdminServerBuilder {
                 link("version.txt", "/version.txt"),
                 link("Status", "/admin/status"),
                 link("Ping", "/admin/ping"),
+                link("Proxy Status", "/admin/styx/proxy/status"),
                 link("Threads", "/admin/threads"),
                 link("Metrics", "/admin/metrics?pretty"),
                 link("Health Check", "/admin/healthcheck"),
@@ -174,7 +215,7 @@ public class AdminServerBuilder {
                 link("Plugins", "/admin/plugins"));
     }
 
-    private List<Route> routesForPlugins() {
+    private static List<Route> routesForPlugins(Iterable<NamedPlugin> plugins) {
         return stream(plugins.spliterator(), true)
                 .flatMap(namedPlugin -> routesForPlugin(namedPlugin).stream())
                 .collect(toList());

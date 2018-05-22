@@ -65,7 +65,7 @@ public class StyxServerComponentsTest {
                         namedPlugin("plugin2", stubPlugin("MyResponse2"))))
                 .build();
 
-        List<NamedPlugin> plugins = components.plugins();
+        List<NamedPlugin> plugins = components.plugins().get();
         List<String> names = plugins.stream().map(NamedPlugin::name).collect(toList());
 
         assertThat(names, contains("plugin1", "plugin2"));
