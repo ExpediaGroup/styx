@@ -15,9 +15,7 @@
  */
 package com.hotels.styx.support.api;
 
-import com.hotels.styx.api.HttpMessage;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.HttpMessageBody;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -27,7 +25,7 @@ import com.hotels.styx.api.HttpRequest;
 
 
 /**
- * Provides a support method for dealing with {@link HttpMessageBody}.
+ * Provides a support method for dealing with streaming HTTP request bodies.
  */
 public final class HttpMessageBodies {
     /**
@@ -36,10 +34,6 @@ public final class HttpMessageBodies {
      * @param message the message to read the body from
      * @return the body of the message as string
      */
-    public static String bodyAsString(HttpMessage message) {
-        return bodyAsString(message.body());
-    }
-
     public static String bodyAsString(HttpRequest message) {
         return await(message.toFullRequest(0x100000)
                 .asCompletableFuture())
@@ -50,12 +44,6 @@ public final class HttpMessageBodies {
         return await(message.toFullResponse(0x100000)
                 .asCompletableFuture())
                 .bodyAs(UTF_8);
-    }
-
-    static String bodyAsString(HttpMessageBody body) {
-        return body.decode(bytes -> bytes.toString(UTF_8), 0x100000)
-                .toBlocking()
-                .single();
     }
 
     private static <T> T await(CompletableFuture<T> future) {
