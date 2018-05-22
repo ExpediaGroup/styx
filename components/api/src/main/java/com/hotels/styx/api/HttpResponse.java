@@ -142,7 +142,7 @@ public class HttpResponse implements StreamingHttpMessage {
         return status.code() >= 300 && status.code() < 400;
     }
 
-    public StyxObservable<FullHttpResponse> toFullHttpResponse(int maxContentBytes) {
+    public StyxObservable<FullHttpResponse> toFullResponse(int maxContentBytes) {
         CompositeByteBuf byteBufs = compositeBuffer();
 
         Observable<FullHttpResponse> delegate = ((StyxCoreObservable<ByteBuf>) body)

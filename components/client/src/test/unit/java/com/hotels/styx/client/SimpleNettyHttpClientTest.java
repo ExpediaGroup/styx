@@ -70,7 +70,7 @@ public class SimpleNettyHttpClientTest {
         withOrigin(HTTP, port -> {
             FullHttpResponse response =
                     await(fromRxObservable(httpClient().sendRequest(httpRequest(port)))
-                            .flatMap(r -> r.toFullHttpResponse(MAX_LENGTH))
+                            .flatMap(r -> r.toFullResponse(MAX_LENGTH))
                             .asCompletableFuture());
 
             assertThat(response.status(), is(OK));
@@ -81,7 +81,7 @@ public class SimpleNettyHttpClientTest {
     public void sendsHttps() throws IOException {
         withOrigin(HTTPS, port -> {
             FullHttpResponse response = httpsClient().sendRequest(httpsRequest(port))
-                    .flatMap(r -> toRxObservable(r.toFullHttpResponse(MAX_LENGTH)))
+                    .flatMap(r -> toRxObservable(r.toFullResponse(MAX_LENGTH)))
                     .toBlocking()
                     .single();
 
@@ -93,7 +93,7 @@ public class SimpleNettyHttpClientTest {
     public void cannotSendHttpsWhenConfiguredForHttp() throws IOException {
         withOrigin(HTTPS, port -> {
             FullHttpResponse response = httpClient().sendRequest(httpsRequest(port))
-                    .flatMap(r -> toRxObservable(r.toFullHttpResponse(MAX_LENGTH)))
+                    .flatMap(r -> toRxObservable(r.toFullResponse(MAX_LENGTH)))
                     .toBlocking()
                     .single();
 
@@ -105,7 +105,7 @@ public class SimpleNettyHttpClientTest {
     public void cannotSendHttpWhenConfiguredForHttps() throws IOException {
         withOrigin(HTTP, port -> {
             FullHttpResponse response = httpsClient().sendRequest(httpRequest(port))
-                    .flatMap(r -> toRxObservable(r.toFullHttpResponse(MAX_LENGTH)))
+                    .flatMap(r -> toRxObservable(r.toFullResponse(MAX_LENGTH)))
                     .toBlocking()
                     .single();
 
@@ -213,7 +213,7 @@ public class SimpleNettyHttpClientTest {
                 .build();
 
         client.sendRequest(request)
-                .flatMap(r -> toRxObservable(r.toFullHttpResponse(MAX_LENGTH)))
+                .flatMap(r -> toRxObservable(r.toFullResponse(MAX_LENGTH)))
                 .toBlocking()
                 .single();
     }

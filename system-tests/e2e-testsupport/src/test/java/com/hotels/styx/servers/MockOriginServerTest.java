@@ -119,7 +119,7 @@ public class MockOriginServerTest {
 
     private FullHttpResponse send(HttpClient client, HttpRequest request) {
         return await(fromRxObservable(client.sendRequest(request))
-                .flatMap(req -> req.toFullHttpResponse(10*1024))
+                .flatMap(req -> req.toFullResponse(10*1024))
                 .asCompletableFuture());
     }
 

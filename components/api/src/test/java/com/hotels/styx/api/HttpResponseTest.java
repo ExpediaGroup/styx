@@ -65,7 +65,7 @@ public class HttpResponseTest {
                 .body(body("foo", "bar"))
                 .build();
 
-        FullHttpResponse full = response.toFullHttpResponse(0x1000)
+        FullHttpResponse full = response.toFullResponse(0x1000)
                 .asCompletableFuture()
                 .get();
 
@@ -79,7 +79,7 @@ public class HttpResponseTest {
 
     @Test(dataProvider = "emptyBodyResponses")
     public void encodesToFullHttpResponseWithEmptyBody(HttpResponse response) throws Exception {
-        FullHttpResponse full = response.toFullHttpResponse(0x1000)
+        FullHttpResponse full = response.toFullResponse(0x1000)
                 .asCompletableFuture()
                 .get();
 

@@ -59,7 +59,7 @@ trait StyxClientSupplier {
                      maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds): FullHttpResponse = {
     doRequest(request, debug = debug)
       .doOnNext(response => if (debug) println("StyxClientSupplier: received response for: " + request.url().path()))
-      .flatMap(response => toRxObservable(response.toFullHttpResponse(maxSize)))
+      .flatMap(response => toRxObservable(response.toFullResponse(maxSize)))
       .timeout(timeout)
       .toBlocking
       .first
@@ -71,7 +71,7 @@ trait StyxClientSupplier {
                                maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds): FullHttpResponse = {
     toScalaObservable(client.sendRequest(request))
       .doOnNext(response => if (debug) println("StyxClientSupplier: received response for: " + request.url().path()))
-      .flatMap(response => toRxObservable(response.toFullHttpResponse(maxSize)))
+      .flatMap(response => toRxObservable(response.toFullResponse(maxSize)))
       .timeout(timeout)
       .toBlocking
       .first

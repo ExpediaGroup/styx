@@ -36,7 +36,7 @@ public class ContentDecodeFailurePlugin implements Plugin {
     @Override
     public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request)
-                .flatMap(response -> response.toFullHttpResponse(maxContentBytes))
+                .flatMap(response -> response.toFullResponse(maxContentBytes))
                 .map(fullResponse -> fullResponse.newBuilder()
                         .header("ContentDecodeFailurePlugin", "yes")
                         .header("bytes_aggregated", fullResponse.body().length)

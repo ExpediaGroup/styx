@@ -31,7 +31,7 @@ public class ContentCutoffPlugin implements Plugin {
     public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request)
                 .flatMap(response ->
-                        response.toFullHttpResponse(1024)
+                        response.toFullResponse(1024)
                                 .map(fullHttpResponse -> {
                                     LOGGER.info("Throw away response body={}", fullHttpResponse.bodyAs(UTF_8));
                                     return response;

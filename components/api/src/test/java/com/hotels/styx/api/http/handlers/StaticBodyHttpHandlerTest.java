@@ -35,7 +35,7 @@ public class StaticBodyHttpHandlerTest {
         StaticBodyHttpHandler handler = new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "foo", UTF_8);
 
         HttpResponse response = handler.handle(get("/").build(), MOCK_CONTEXT).asCompletableFuture().get();
-        FullHttpResponse fullResponse = response.toFullHttpResponse(1024)
+        FullHttpResponse fullResponse = response.toFullResponse(1024)
                 .asCompletableFuture()
                 .get();
 
