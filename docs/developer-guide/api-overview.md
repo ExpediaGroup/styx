@@ -132,8 +132,98 @@ full message object into as many streaming objects as necessary. For example:
  
 ### Http Interceptor Interface
 
+A HTTP interceptor is an object transforms, responds, or runs side-effecting actions 
+for HTTP traffic passing through. 
+
+Styx arranges interceptors in a linear chain, forming a core of its proxying pipeline.
+All recieved traffic goes through the interceptor chain which then acts on the traffic
+accordingly.  
+  
+Styx has some internal Styx interceptors. But normally it is the custom plugins that
+add value for Styx deployments. An extension point for a custom plugin is the 
+`HttpInterceptor` interface. It has only one method:
+
+```java
+    public interface HttpInterceptor {
+       ...
+       StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain);
+    }
+```
+
+A Styx plugin is an implementation of this method. 
+
+It is the `intercept` method which transforms or acts on a received request, 
+and its corresponding response. As an event based system, all implementations 
+must be strictly non-blocking. Blocking the thread would stall Styx event processing 
+loop. So take care to stick with asynchronous implementation.
+
+The received request is passed in as its first argument. The second argument, `Chain`, is
+a handle to the remaining tail of the `HttpInterceptor` chain. The most important
+function of the chain is the `proceed` method. It passes the request to the
+next interceptor in the chain. It returns a response observable, in which you
+bind any response transformations. For example:
+
+
+```java
+    @Override
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        HttpRequest newRequest = request.newBuilder()
+                .header(VIA, viaHeader(request))
+                .build();
+
+        return chain.proceed(newRequest)
+                .map(response -> response.newBuilder()
+                        .header(VIA, viaHeader(response))
+                        .build());
+    }
+```
+
+The chain also contains a request context which can be obtained with a 
+call to `chain.context()`. It is a set of key-value properties associated 
+with the request. Plugins may store some information in the context. So does
+Styx core add snippets of information, such as sender IP addresses. 
+
 ### Http Handler Interface
+
+Http Handler interface forms a basis for Styx admin interfaces and routing objects. 
+As opposed to `HttpInterceptor`s, which just pass the messages down the pipeline,
+the `HttpHandler` is meant to *consume* the HTTP request. It is a similarly simple
+interface:
+
+```java
+    public interface HttpHandler {
+        StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context);
+    }
+```
+
+It asynchronously processes the request, and returns the response within a context of 
+`StyxObservable`. It is given the `HttpInterceptor.Context` as a second argument, so that it is able
+to access the request context properties.
+
+Notice the absence of `Chain`. Therefore it is not able to proceed the message any further.
+
+As with `HttpInterceptor` implementations, the `handle` method must never block. Blocking the
+thread will block the Styx event loop.  
+
 
 ### Styx Observable
 
-   
+Conceptually similar to Futures, `StyxObservable` is a data type that 
+facilitates asynchronous event handling, modelled after Rx 
+[observables](http://reactivex.io/documentation/observable.html).
+
+However `rx.Observable` is very generic reactive stream abstraction. 
+The `StyxObservable` is an observable that has been adapted 
+for the specific Styx use case, which is of processing live network data 
+streams. 
+
+Another key difference between the two observables is that `StyxObservable`
+does not have a `subscribe` method. More precisely it has been hidden 
+to prevent 3rd party extensions from subscribing to live data streams. 
+This is a privileged operation that for the reliable operation is exclusive 
+for Styx core only.  
+
+Styx `HttpInterceptor` and `HttpHandler` objects merely build a pipeline of 
+`StyxObservable` operators modelling a data path for HTTP response processing. 
+The interceptors operate in a  "sand-boxed" environment and Styx core 
+triggers the subscription when it sees fit.  
