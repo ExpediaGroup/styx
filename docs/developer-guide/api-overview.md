@@ -76,29 +76,59 @@ streaming vs full, is reflected in the type signatures of the content accessors:
     }
 ```
 
+### Conversion Between HTTP Message Types
  
-The API offers an easy conversion between the two.
+It is easy to convert between the streaming and full HTTP messages.  
 
-Call `.toFullRequest(Int maxContentBytes)` (or `.toFullResponse(Int maxContentBytes)`) 
-on the streaming message object to aggregate it to a `FullHttpRequest` (or `FullHttpResponse`).
-The full type signature of `.toFullNNN` is:
+Streaming `HttpRequest` has a `toFullRequest` method (`toFullResponse` for `HttpResponse`).
+It aggregates a HTTP message body stream into one continuous byte array and creates a 
+corresponding `FullHttpRequest` (`FullHttpResponse`). Its type signature is:
 
 ```java
    public StyxObservable<FullHttpRequest> toFullRequest(int maxContentBytes);
 ```
-  
-This instructs Styx Core to start aggregating up to `maxContentBytes`. The operation is 
-asynchronous as indicated by `StyxObservable<FullHttpResponse>` return type. Once the 
-content is fully aggregated a `FullHttpResponse` object is emitted via the observable.
 
-To convert a full message to streaming, you would call `toStreamingRequest()` 
-(or `toStreamingResponse`). Because content aggregation is not involved, the API is
-simpler:
+Note that the HTTP content streams represents live network traffic streaming
+through Styx core. The content stream is not memoized nor stored. 
+When the content is gone, it is gone for good. 
+Therefore a `HttpRequest` (`HttpResponse`) can be aggreaged to a full 
+message strictly once only.
 
+The type signature illustrates other facts about the content stream:
+
+* Return type of `StyxObservable` shows that HTTP content stream is 
+  aggregated asynchronously. Obviously because the rest of the content 
+  stream are yet to be received from the network.
+
+* The `maxContentBytes` is the maximum sets the upper limit for the message 
+  body, protecting us from exhausting memory in face of very long message
+  bodies, or perhaps from denial of service attacks. If the limit is reached,
+  the conversion fails with `ContentOverflowException`. 
+
+Converting a full message to a stream is much easier. The `FullHttpRequest` 
+(`FullHttpResponse`) has a method called `toStreamingRequest` (or `toStreamingResponse`): 
 ```java
     public HttpRequest toStreamingRequest()
 ``` 
- 
+
+As the method sinature reveals a `HttpResponse` is available immediately.
+Also because the content is permanently stored in full, you can clone a
+full message object into as many streaming objects as necessary. For example:
+
+```java
+    public class PingHandler extends BaseHttpHandler {
+        private static final FullHttpResponse PONG = response(OK)
+                .disableCaching()
+                .contentType(PLAIN_TEXT_UTF_8)
+                .body("pong", UTF_8)
+                .build();
+        
+        @Override
+        protected HttpResponse doHandle(HttpRequest request) {
+            return PONG.toStreamingResponse();
+        }
+    }   
+```
  
 ### Http Interceptor Interface
 
