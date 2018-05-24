@@ -4,130 +4,173 @@
 
 ### Synchronously transforming requests
  
-Transforming request object synchronously is trivial. Just transform the HttpRequest object via the HttpRequest.Builder 
-object, and pass it to the chain.proceed(), as the example demonstrates.
+Transforming request object synchronously is trivial. Just call `request.newBuilder()` to
+create a new `HttpRequest.Builder` object. It has already been initialised with the copy of
+the original `request`. Modify the builder as desired, consturct a new version, and pass
+it to the `chain.proceed()`, as the example demonstrates:
 
-    import com.hotels.styx.api.HttpInterceptor;
-    import com.hotels.styx.api.HttpRequest;
-    import com.hotels.styx.api.HttpResponse;
- 
-    public class FooAppendingInterceptor implements HttpInterceptor {
-        @Override
-        public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-            return chain.proceed(
-                    request.newBuilder()
-                            .header("X-Foo", "Bar")
-                            .build());
-        }
+```java
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.plugins.spi.Plugin;
+
+import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
+
+public class SyncRequestPlugin implements Plugin {
+    @Override
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        return chain.proceed(
+                request.newBuilder()
+                    .header(USER_AGENT, "Styx/1.0 just testing plugins")
+                    .build()
+        );
     }
+}
+
+```
     
 ### Synchronously transforming response
 
-In this example, we will synchronously transom the response by adding an "X-Foo" header to it.
+This example demonstrates how to synchronously transform a HTTP response. We will
+use a `StyxObservable` `map` method to add an "X-Foo" header to the response.
 
-Use Rx Java map() to transform a response object synchronously. 
+```java
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.plugins.spi.Plugin;
 
-Remember that chain.proceed() returns an Rx Observable of HttpResponse. We'll use map() to register a callback that Java
-Rx framework calls back once the response becomes available. In the example below, it is the lambda expression 
-HttpResponse -> HttpResponse that is called when response is available. The lambda expression constructs a new 
-HttpResponse object with the new header added.
+public class SyncResponsePlugin implements Plugin {
+    @Override
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, HttpInterceptor.Chain chain) {
+        return chain.proceed(request)
+                .map(response -> response.newBuilder()
+                        .header("X-Foo", "bar")
+                        .build()
+                );
+    }
+}
 
-The map() itself returns a new Rx Observable<HttpResponse>, satisfying the type signature for intercept() method. 
-Therefore it can be returned as such from intercept().
-
-	import com.hotels.styx.api.HttpInterceptor;
-	import com.hotels.styx.api.HttpRequest;
-	import com.hotels.styx.api.HttpResponse;
-	 
-	public class FooAppendingInterceptor implements HttpInterceptor {
-	    @Override
-	    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-	        return chain.proceed(request)
-	                .map(response -> response.newBuilder()
-	                                         .header("X-Foo", "Bar")
-	                                         .build());
-	    }
-	}
-	
+```
 	
 ### Asynchronously transform request object
 
-Sometimes it is necessary to transform the request asynchronously. For example, it may be necessary to consult an 
-external service(s) like databases and such to look up necessary information for the request transformation. In this case:
-1. Perform a non-blocking call to an asynchronous API. It is best to wrap such API behind Rx Java observables.
-2. Call the chain.proceed(request) when the the asynchronous operation completes.
-3. Because chain.proceed() itself is an asynchronous operation returning Observable[HttpResponse], it needs to be called from inside Rx flatMap() operator.
+Sometimes it is necessary to transform the request asynchronously. For example, may need to 
+look up external key value stores to parametrise the request transformation. The example below
+shows how to modify a request URL path based on an asynchronous lookup to an external database.
+ 	
+```java
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.Url;
+import com.hotels.styx.api.plugins.spi.Plugin;
 
-In the following example, the interceptor either allows or rejects the request based on a query to an external service.
-The API for external service is wrapped behind requestAccessQueryAsynch() method. Normally a method like this would 
-initiate a transaction to the external service, and return a Future, Promise, Rx Observable, etc. of the outcome. 
-For sake of simplicity, here it returns an Observable.just(true).
+import java.util.concurrent.CompletableFuture;
 
-The flatMap() operator allows us to register a function that itself performs an asynchronous operation. In our example, 
-requestAccessQueryAsynch() returns back an Observable[Boolean] indicating if the access is granted or not. When the 
-access query completes, Rx framework calls out to the registered function, which in this example is a lambda expression 
-of type Boolean => Observable[HttpResponse]. The lambda expression transforms the access grant outcome into a HttpResponse 
-object. This is an asynchronous transformation, because the lambda expression calls out to asynchronous chain.proceed().
+public class AsyncRequestInterceptor implements Plugin {
 
-Our lambda expression looks into the access grant outcome. When true, the request is proxied onwards by a call to 
-chain.proceed(request). Otherwise a FORBIDDEN response is returned.
-	
-	import com.hotels.styx.api.HttpInterceptor;
-	import com.hotels.styx.api.HttpRequest;
-	import com.hotels.styx.api.HttpResponse;
-	...
-	 
-    public class AsyncRequestDelayInterceptor implements HttpInterceptor {
-   	    private static final HttpResponse rejected = HttpResponse.Builder.response(FORBIDDEN).build();
-        @Override
-        public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-            return requestAccessQueryAsync(request)
-                .flatMap((allowed) -> allowed ? chain.proceed(request) : Observable.just(rejected));
-        }
+    @Override
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, HttpInterceptor.Chain chain) {
         
-        private Observable<Boolean> requestAccessQueryAsync(HttpRequest request) {
-            // do something asynchronous
-            // ...
-	        return Observable.create((downstream) -> {
-	           CompletableFuture.supplyAsync(() -> {
-	               downstream.onNext("foo"); 
-	               downstream.onComplete();
-	           });
-	        });
-        }
+        return StyxObservable.of(request)                                               // (1)
+                .flatMap(na -> asyncUrlReplacement(request.url()))                      // (2)
+                .map(newUrl -> request.newBuilder()                                     // (5)
+                        .url(newUrl)
+                        .build())
+                .flatMap(chain::proceed);                                               // (6)
     }
-	
+
+    private static StyxObservable<Url> asyncUrlReplacement(Url url) {
+        return StyxObservable.from(pathReplacementService(url.path()))                  // (4)
+                .map(newPath -> new Url.Builder(url)
+                        .path(newPath)
+                        .build());
+    }
+
+    private static CompletableFuture<String> pathReplacementService(String url) {
+        return CompletableFuture.completedFuture("/replacement/path");                  // (3)
+    }
+}
+```
+
+Step 1. For asynchronous transformation we'll start by constructing a response observable. 
+We can construct it with any initial value, but in this example we'll just use the `request`. 
+But it doesn't have to be a `request` as it is available from the closure.
+
+Step 2. We will call the `asyncUrlReplacement`, and bind it to the response observable using 
+`flatMap` operator. The `asyncUrlReplacement` wraps a call to the remote service and converts 
+the outcome into a `StyxObservable`.
+
+Step 3. A call to `pathReplacementService` makes a non-blocking call to the remote key/value store.
+Well, at least we pretend to call the key value store, but in this example we'll just return a 
+completed future of a constant value.   
+
+Step 4. `CompletableFuture` needs to be converted to `StyxObservable` so that the operation can
+be bound to the response observable created previously in step 1.
+
+Step 5. The eventual outcome from the `asyncUrlReplacement` yields a new, modified URL instance.
+We will map this to a new `HttpRequest` instance replaced URL.
+
+Step 6. Finally, we will bind the outcome of `chain.proceed` into the response observable.
+Remember that `chain.proceed` returns an `Observable<HttpResponse>` it is therefore 
+interface compatible and can be `flatMap`'d to the response observable. The resulting
+response observable chain is returned from the `intercept`.
+
+
 ### Asynchronously transform response object
 
-Processing a HTTP response asynchronously is very similar to processing response synchronously. Instead of Rx map() 
-operator, you'll use a flatMap().  In this example, we assume asyncOperation() makes a network call, performs I/O, 
-or off-loads response processing to a separate thread pool. For this reason it returns an Observable[HttpResponse] 
-so that it can emit a transformed response once completed. 
+This example demonstrates asynchronous response processing. Here we pretend that `callTo3rdParty` method
+makes a non-blocking request to retrieve string that is inserted into a response header. 
 
-The Rx framework calls asyncOperation() once the the response becomes available from the adjacent plugin. A call to 
-asyncOperation() triggers another asynchronous operation, whose result becomes available via the returned observable, 
-which is linked to the Observable chain using the Rx flatMap() operator.
+A `callTo3rdParty` returns a `CompletableFuture` which asynchronously produces a string value. We 
+will call this function when the HTTP response is received. 
+
+```java
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.plugins.spi.Plugin;
+
+import java.util.concurrent.CompletableFuture;
+
+public class AsyncResponseInterceptor implements Plugin {
+    private static final String X_MY_HEADER = "X-My-Header";
+
+    @Override
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, HttpInterceptor.Chain chain) {
+        return chain.proceed(request)                                                                            // (1)
+                .flatMap(response ->                                                                             // (3)
+                        StyxObservable
+                                .from(callTo3rdParty(response.header(X_MY_HEADER).orElse("default")))            // (1)
+                                .map(value ->                                                                    // (4)
+                                        response.newBuilder()
+                                                .header(X_MY_HEADER, value)
+                                                .build())
+                );
+    }
+
+    private static CompletableFuture<String> callTo3rdParty(String myHeader) {
+        return CompletableFuture.completedFuture("value");
+    }
+}
+```
+
+Step 1. We start by calling `chain.proceed(request)` to obtain a response observable. 
+
+Step 2. A `callTo3rdParty` returns a CompletableFuture. We use `StyxObservable.from` to convert it 
+into a `StyxObservable` so that it can be bound to the response observable. 
+
+Step 3. The `flatMap` operator binds `callToThirdParty` into the response observable.
+
+Step 4. We will transform the HTTP response by inserting an outcome of `callToThirdParty`, or `value`, 
+into the response headers.	
 
 
-	import rx.Observable;
-	import rx.schedulers.Schedulers;
-	import rx.lang.scala.ImplicitFunctionConversions.*;
-	import com.hotels.styx.api.HttpInterceptor;
-	import com.hotels.styx.api.HttpRequest;
-	import com.hotels.styx.api.HttpResponse;
-	import com.hotels.styx.api.HttpInterceptor.Chain;
-	...
-	 
-	public class AsyncResponseProcessingPlugin implements HttpInterceptor {
-	  public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-	    return chain.proceed(request).flatMap(this::asyncOperation);
-	  }
-	   
-	  private Observable<HttpResponse> asyncOperation(HttpResponse response) {
-	    return Observable.just(response);
-	  }
-	}
-	
 ## Transforming HTTP Content	
 
 HTTP content can be processed in a streaming fashion, or it can be aggregated into one big blob and decoded into a 
