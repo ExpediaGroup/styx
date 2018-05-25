@@ -171,134 +171,159 @@ Step 4. We will transform the HTTP response by inserting an outcome of `callToTh
 into the response headers.	
 
 
-## Transforming HTTP Content	
+## HTTP Content Transformations	
 
-HTTP content can be processed in a streaming fashion, or it can be aggregated into one big blob and decoded into a 
-business domain object. Here we will explain how to do this. And as always, this can be done in a synchronous or 
-asynchronous fashion.
+Styx exposes HTTP messages to interceptors as streaming `HttpRequest` and `HttpResponse` messages.
+In this form, the interceptors can process the content in a streaming fashion. That is, they they
+can look into, and modify the content as it streams through.
 
-Content transformation always involves creating a new copy of a proxied HTTP object and overriding its body content. 
-Because the body itself is an Observable<ByteBuf>, it can be transformed using similar techniques as demonstrated for 
-the HTTP headers above. The example below transforms the HTTP response content in as streaming fashion using a 
-transformContent() function. The new response is created by invoking a response.newBuilder() method. Using the 
-resulting builder, the response body is overridden. 
+Alternatively, streaming messages can be aggregated into a `FullHttpRequest` or `FullHttpResponse` 
+messages. The full HTTP message body is then available at interceptor's disposal. Note that content
+aggregation is always an asynchronous operation. This is because Styx must wait until all content
+has been received. 
 
-	chain.proceed(request)
-	  .map((HttpResponse response) -> response.newBuilder()
-	      .body(response.body().content().map(this::transformContent))
-	      .build()
-	  );
+### Aggregating Content into Full Messages
 
-As always, the content can be transformed both synchronously or asynchronously. In this document we will explore all the options.
+```java
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.plugins.spi.Plugin;
 
-Content can be decoded to a business domain object for further processing.
+public class RequestAggregationPlugin implements Plugin {
+    private static final int MAX_CONTENT_LENGTH = 100000;
 
-### Decode content into business domain objects
+    @Override
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        return request.toFullRequest(MAX_CONTENT_LENGTH)
+                .map(fullRequest -> fullRequest.newBuilder()
+                        .body(new byte[0], true)
+                        .build())
+                .flatMap(fullRequest -> chain.proceed(fullRequest.toStreamingRequest()));
+    }
+}
+```
 
-Decoding content into a business domain object is always an asynchronous operation. This is because Styx must wait 
-until it has received enough HTTP content to attempt decoding content.
+`maxContentBytes` is a safety valve that prevents Styx from accumulating too much content
+and possibly running out of memory. Styx only accumulates up to `maxContentBytes` of content. 
+`toFullRequest` fails when the content stream exceeds this amount, and  Styx emits a 
+`ContentOverflowException`,  
 
-HttpResponse object has a decode() method that can be used to decode HTTP response content into business domain objects. 
-The decode() method has the following type:
 
-    public <T> Observable<DecodedResponse<T>> decode(Function<ByteBuf, T> decoder, int maxContentBytes)
+### Synchronously transforming streaming request content
+
+In this rather contrived example we will transform HTTP response content to 
+upper case letters. 
+
+Streaming `HttpRequest` content is a byte buffer stream. The stream can be accessed
+with a `request.body()` method and its data type is `StyxObservable<ByteBuf>`.
+
+Because `toUpperCase` is non-blocking transformation we can compose it to the original
+byte stream using a `map` operator.
+
+The mapping function decodes the original byte buffer `buf` to an UTF-8 encoded
+Java `String`, and copies its upper case representation into a newly created byte buffer.
+The old byte buffer `buf` is discarded.
+
+Because `buf` is a Netty reference counted `ByteBuf`, we must take care to decrement its
+reference count by calling `buf.release()`. 
+
+```java
+public class MyPlugin extends Plugin {
+    @Override
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        StyxObservable<ByteBuf> toUpperCase = request.body()
+                .map(buf -> {
+                    buf.release();
+                    return copiedBuffer(buf.toString(UTF_8).toUpperCase(), UTF_8);
+                });
+
+        return chain.proceed(
+                request.newBuilder()
+                        .body(toUpperCase)
+                        .build()
+        );
+    }
+}    
+```
+
+### Asynchronously transforming streaming request content
+
+Asynchronous content stream transformation is very similar to the synchronous transformation.
+The only difference is that asynchronous transformation must be composed with a `flatMap` 
+instead of `map`. Otherwise the same discussion apply. As always it is important to take care
+of the reference counting.
+
+```java
+public class AsyncRequestContentTransformation implements Plugin {
+
+    @Override
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        StyxObservable<ByteBuf> contentMapping = request.body()
+                .flatMap(buf -> {
+                    String content = buf.toString(UTF_8);
+                    buf.release();
+                    return sendToRemoteServer(content)
+                            .map(value -> copiedBuffer(value, UTF_8));
+                });
+
+        return chain.proceed(
+                request.newBuilder()
+                        .body(contentMapping)
+                        .build()
+        );
+    }
     
-The decode() takes two arguments: a decoder function, and a maxContentBytes integer. It returns an Observable<DecodedResponse<T>> 
-which is underlines its asynchronous nature. The decode() accumulates entire HTTP response content into a single aggregated 
-byte buffer, and then calls the supplied  decoder method passing in the aggregated buffer as a parameter. The decoder 
-is a function, or typically a lambda expression supplied by the plugin, that converts the aggregated http content into 
-a business domain object of type T. Styx will take care of managing all aspects related to direct memory buffers, such 
-as releasing them if necessary.
+    StyxObservable<String> sendToRemoteServer(String buf) {
+        return StyxObservable.of("modified 3rd party content");
+    }
+}    
+```
 
-The maxContentBytes is a safety valve that prevents styx from accumulating too much content. Styx will only accumulate 
-up to maxContentBytes of content. If the content exceeds this amount, Styx will emit a ContentOverflowException. 
-This is to prevent out of memory exceptions in face of very large responses.
+### Synchronously transforming streaming response content
 
-Because decode() itself is an asynchronous operation, the plugin must call it inside a flatMap() operator. 
-When the HTTP response has arrived, and its content decoded, a DecodedResponse instance is emitted. The DecodedResponse 
-contains the decoded business domain object along with a HTTP response builder that can be used for further transformations.
+```java
+public class AsyncResponseContentStreamTransformation implements Plugin {
+    @Override
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        return chain.proceed(request)
+                .map(response -> {
+                        StyxObservable<ByteBuf> contentMapping = response.body()
+                                .map(buf -> {
+                                    buf.release();
+                                    return copiedBuffer(buf.toString(UTF_8).toUpperCase(), UTF_8);
+                                });
+                        return response.newBuilder()
+                                .body(contentMapping)
+                                .build();
+                });
+    }
+}
+```
 
-In the example below, we will map over the decodedResponse to add a new "bytes_aggregated" header to the response, containing 
-a string length (as opposed to content length) of the received response content. Note that it is necessary to add the 
-response body back to the new response by calling decodedResponse.responseBuilder().body().
+### Asynchronously transforming streaming response content
 
-	
-	@Override
-	public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-	    return chain.proceed(request)
-	            .flatMap(response -> response.decode((byteBuf) -> byteBuf.toString(UTF_8), maxContentBytes))
-	            .map(decodedResponse -> decodedResponse.responseBuilder()
-	                    .header("test_plugin", "yes")
-	                    .header("bytes_aggregated", decodedResponse.body().length())
-	                    .body(decodedResponse.body())
-	                    .build());
-	} 
+```java
+public class AsyncResponseContentStreamTransformation implements Plugin {
+    @Override
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        return chain.proceed(request)
+                .map(response -> {
+                        StyxObservable<ByteBuf> contentMapping = response.body()
+                                .flatMap(buf -> {
+                                    String content = buf.toString(UTF_8);
+                                    buf.release();
+                                    return sendToRemoteServer(content)
+                                            .map(value -> copiedBuffer(value, UTF_8));
+                                });
+                        return response.newBuilder()
+                                .body(contentMapping)
+                                .build();
+                });
+    }
 
-### Synchronously transform streaming request content
-
-In the following example, we will transform the HTTP response content to upper case letters. 
-
-Because the transformation to upper case does not involve IO or blocking operations, it can be done synchronously with 
-Rx map() operator. First we create a new observable called toUpperCase which contains the necessary transformation on 
-the body observable.  Then we create a new HTTP request object passing in the transformed observable as a new body.
-
-Notice that the lambda expression for the map() operator receives a ByteBuf buf as an argument. We must assume it is 
-a reference counted buffer, and to avoid leaks we must call buf.release() before returning a copy from the lambda expression.
-	
-	import com.hotels.styx.api.HttpRequest;
-	import com.hotels.styx.api.HttpResponse;
-	import io.netty.buffer.ByteBuf;
-	import rx.Observable;
-	import static com.google.common.base.Charsets.UTF_8;
-	import static io.netty.buffer.Unpooled.copiedBuffer;
-	 
-	...
-	 
-	@Override
-	public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-	    Observable<ByteBuf> toUpperCase = request.body()
-	            .content()
-	            .map(buf -> {
-	                String transformed = buf.toString(UTF_8).toUpperCase();
-	                buf.release();
-	                return copiedBuffer(transformed, UTF_8);
-	            });
-	 
-	    return chain.proceed(
-	            request.newBuilder()
-	                    .body(toUpperCase)
-	                    .build()
-	    );
-	}
-	
-### [DRAFT] Replace the HTTP response content with a new body and discarding the existing one
-
-In the following example the plugin replaces the entire HTTP response content with a custom response content.
-
-In this scenario the plugin creates a new HttpResponse based on the existing one. However changing entirely the response
-content can be a source of memory leaks if the current content is not programmatically released. This is because the 
-Observable content resides in the direct memory whereas the rest of the plugin will be in the heap. If the content will 
-not be manually released it will remain in the direct memory and eventually it will cause Styx to fail with a:
-
-java.lang.OutOfMemoryError: Direct buffer memory
-
-In order to avoid memory leaks it is necessary to release the existing ByteBuf by using the doOnNext() operator which 
-creates a new Observable with a side-effect behavior. In this specific case the side-effect is a call to a function which 
-releases the reference count. Make sure to subscribe to this new Observable otherwise the function will not be executed.
-	
-	import com.hotels.styx.api.HttpRequest;
-	import com.hotels.styx.api.HttpResponse;
-	import com.hotels.styx.api.plugins.spi.Plugin;
-	import io.netty.util.ReferenceCountUtil;
-	import rx.Observable;
-	 
-	...
-	 
-	@Override
-	public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-	    Observable<HttpResponse> responseObservable = chain.proceed(request);
-	    return responseObservable.map(response -> {
-	        response.body().content().doOnNext(byteBuf -> ReferenceCountUtil.release(byteBuf)).subscribe();
-	        return response.newBuilder().body("Custom HTTP response content").build();
-	    });
-	}
+    StyxObservable<String> sendToRemoteServer(String buf) {
+        return StyxObservable.of("modified 3rd party content");
+    }
+}    
+```
