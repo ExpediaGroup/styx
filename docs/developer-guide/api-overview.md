@@ -132,7 +132,7 @@ full message object into as many streaming objects as necessary. For example:
  
 ### Http Interceptor Interface
 
-A HTTP interceptor is an object transforms, responds, or runs side-effecting actions 
+A HTTP interceptor is an object that transforms, responds, or runs side-effecting actions 
 for HTTP traffic passing through. 
 
 Styx arranges interceptors in a linear chain, forming a core of its proxying pipeline.
@@ -180,8 +180,8 @@ bind any response transformations. For example:
 
 The chain also contains a request context which can be obtained with a 
 call to `chain.context()`. It is a set of key-value properties associated 
-with the request. Plugins may store some information in the context. So does
-Styx core add snippets of information, such as sender IP addresses. 
+with the request. Plugins may store information in the context.
+Styx core also add snippets of information like sender IP address, and so on. 
 
 ### Http Handler Interface
 
@@ -212,7 +212,7 @@ Conceptually similar to Futures, `StyxObservable` is a data type that
 facilitates asynchronous event handling, modelled after Rx 
 [observables](http://reactivex.io/documentation/observable.html).
 
-However `rx.Observable` is very generic reactive stream abstraction. 
+However `rx.Observable` is a very generic reactive stream abstraction. 
 The `StyxObservable` is an observable that has been adapted 
 for the specific Styx use case, which is of processing live network data 
 streams. 
