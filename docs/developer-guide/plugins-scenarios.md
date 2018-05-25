@@ -27,7 +27,6 @@ public class SyncRequestPlugin implements Plugin {
         );
     }
 }
-
 ```
     
 ### Synchronously transforming response
@@ -52,7 +51,6 @@ public class SyncResponsePlugin implements Plugin {
                 );
     }
 }
-
 ```
 	
 ### Asynchronously transform request object
@@ -182,6 +180,7 @@ messages. The full HTTP message body is then available at interceptor's disposal
 aggregation is always an asynchronous operation. This is because Styx must wait until all content
 has been received. 
 
+
 ### Aggregating Content into Full Messages
 
 ```java
@@ -208,6 +207,23 @@ public class RequestAggregationPlugin implements Plugin {
 and possibly running out of memory. Styx only accumulates up to `maxContentBytes` of content. 
 `toFullRequest` fails when the content stream exceeds this amount, and  Styx emits a 
 `ContentOverflowException`,  
+
+
+### Transformations on Streaming HTTP response content
+
+Streaming HTTP body content can be transformed both synchronously and asynchronously.
+However there are some pitfalls you need to know:
+
+ - Reference counting. Styx exposes the content stream as an observable of reference counted
+   Netty `ByteBuf` objects. Ensure the reference counts are correctly decremented when
+   buffers are transformed. 
+   
+ - Continuity (or discontinuity) of Styx content observable. Each content tranformation with 
+  `map` or `flatMap` is a composition of some source observable. So is each content transformation 
+  linked to some source observable, an ultimate source being the Styx server core.
+  It is the consumer's responsibility to ensure this link never gets broken. That is, you 
+  are not allowed to just substitute the content observable with another one, unless it composes
+  to the previous content source.
 
 
 ### Synchronously transforming streaming request content
