@@ -121,7 +121,11 @@ class ProxySpec extends FunSpec
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
+      println("Sending request, waiting for response ...")
+
       val resp = decodedRequest(req)
+
+      println("Got response ...")
 
       recordingBackend.verify(headRequestedFor(urlPathEqualTo("/bodiless")))
 
