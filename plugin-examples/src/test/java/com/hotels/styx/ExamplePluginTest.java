@@ -52,7 +52,7 @@ public class ExamplePluginTest {
                 .build();
 
         //The method StyxFutures.await() in styx-common wraps future.get() including appropriate Exception handling.
-        HttpResponse response = (plugin.intercept(request, chain).asCompletableFuture()).get();
+        HttpResponse response = plugin.intercept(request, chain).asCompletableFuture().get();
         assertThat(response.header("myResponseheader").orElse(null), is("bar"));
     }
 }
