@@ -14,11 +14,12 @@
   limitations under the License.
  */
 package com.hotels.styx;
+
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import rx.Observable;
 
 import java.util.Map;
 
@@ -55,7 +56,7 @@ public class ExamplePlugin implements Plugin {
      * @return
      */
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         /* the intercept method is where you can modify the request, modify the response and
          handle side-effects.
 

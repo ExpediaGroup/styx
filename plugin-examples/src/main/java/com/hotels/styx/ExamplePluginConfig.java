@@ -15,8 +15,8 @@
  */
 package com.hotels.styx;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * This configuration class exists purely to demonstrate how configuration can be provided to Styx plugins.
