@@ -16,6 +16,7 @@
 package com.hotels.styx;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * This configuration class exists purely to demonstrate how configuration can be provided to Styx plugins.
@@ -33,8 +34,8 @@ public class ExamplePluginConfig {
      * @param responseHeaderValue
      */
     public ExamplePluginConfig(
-            String requestHeaderValue,
-            String responseHeaderValue) {
+            @JsonProperty("requestHeaderValue") String requestHeaderValue,
+            @JsonProperty("responseHeaderValue") String responseHeaderValue) {
         this.requestHeaderValue = requestHeaderValue;
         this.responseHeaderValue = responseHeaderValue;
     }
