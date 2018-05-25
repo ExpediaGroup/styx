@@ -27,8 +27,13 @@ import com.hotels.styx.api.messages.HttpMethod.{GET, HEAD}
 import com.hotels.styx.api.messages.HttpResponseStatus._
 import com.hotels.styx.api.messages.HttpVersion._
 import com.hotels.styx.api.support.HostAndPorts._
-import com.hotels.styx.api.{FullHttpResponse, HttpRequest}
+import com.hotels.styx.api.{FullHttpResponse, HttpClient, HttpRequest}
+import com.hotels.styx.client.HttpConfig.newHttpConfigBuilder
+import com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
+import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination.Factory
+import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory
+import com.hotels.styx.client.{ConnectionSettings, SimpleNettyHttpClient}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origin, Origins}
 import com.hotels.styx.support.matchers.IsOptional.{isValue, matches}
@@ -117,11 +122,21 @@ class ProxySpec extends FunSpec
       .stub(head(urlPathEqualTo("/bodiless")), aResponse.withStatus(200))
 
     it("should respond to HEAD with bodiless response") {
+
+      val client: HttpClient = new SimpleNettyHttpClient.Builder()
+        .connectionDestinationFactory(new Factory()
+          .connectionSettings(new ConnectionSettings(1000))
+          .connectionFactory(new NettyConnectionFactory.Builder()
+            .name("scalatest-e2e-client")
+            .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(2 * 8192).build())
+            .httpRequestOperationFactory(httpRequestOperationFactoryBuilder().build())
+            .build())).build()
+
       val req = new HttpRequest.Builder(HEAD, "/bodiless")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
-      val resp = decodedRequest(req)
+      val resp = decodedRequestWithClient(client, req)
 
       recordingBackend.verify(headRequestedFor(urlPathEqualTo("/bodiless")))
 
