@@ -15,7 +15,6 @@
  */
 package com.hotels.styx;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 /**
@@ -34,8 +33,8 @@ public class ExamplePluginConfig {
      * @param responseHeaderValue
      */
     public ExamplePluginConfig(
-            @JsonProperty("requestHeaderValue") String requestHeaderValue,
-            @JsonProperty("responseHeaderValue") String responseHeaderValue) {
+            String requestHeaderValue,
+            String responseHeaderValue) {
         this.requestHeaderValue = requestHeaderValue;
         this.responseHeaderValue = responseHeaderValue;
     }
