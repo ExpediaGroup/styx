@@ -21,6 +21,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.HttpUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Subscriber;
@@ -32,7 +33,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
-import static io.netty.handler.codec.http.HttpHeaders.setTransferEncodingChunked;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.util.Objects.requireNonNull;
 
@@ -154,7 +154,7 @@ class HttpResponseWriter {
     private ChannelFuture writeHeaders(HttpResponse response) {
         io.netty.handler.codec.http.HttpResponse nettyResponse = responseTranslator.toNettyResponse(response);
         if (!(response.contentLength().isPresent() || response.chunked())) {
-            setTransferEncodingChunked(nettyResponse);
+            HttpUtil.setTransferEncodingChunked(nettyResponse, true);
         }
 
         return nettyWriteAndFlush(nettyResponse);

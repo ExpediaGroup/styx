@@ -136,6 +136,8 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         ensureContentProducerIsCreated(ctx);
 
+        LOGGER.warn("channelRead0: {}", msg);
+
         if (msg instanceof io.netty.handler.codec.http.HttpResponse) {
             io.netty.handler.codec.http.HttpResponse nettyResponse = (io.netty.handler.codec.http.HttpResponse) msg;
             if (nettyResponse.getDecoderResult().isFailure()) {

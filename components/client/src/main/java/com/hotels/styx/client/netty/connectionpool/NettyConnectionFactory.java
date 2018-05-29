@@ -34,6 +34,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 import rx.Observable;
 
@@ -106,6 +107,8 @@ public class NettyConnectionFactory implements Connection.Factory {
         protected void initChannel(Channel ch) {
             ChannelPipeline pipeline = ch.pipeline();
 
+            pipeline.addLast("logging-handler-1", new LoggingHandler());
+
             if (sslContext != null) {
                 pipeline.addLast("ssl", sslContext.newHandler(ch.alloc()));
             }
@@ -114,6 +117,8 @@ public class NettyConnectionFactory implements Connection.Factory {
             if (httpConfig.compress()) {
                 pipeline.addLast("decompressor", new HttpContentDecompressor());
             }
+
+            pipeline.addLast("logging-handler-2", new LoggingHandler());
         }
     }
 
