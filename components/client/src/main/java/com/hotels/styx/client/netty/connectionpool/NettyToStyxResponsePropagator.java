@@ -139,7 +139,6 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
         if (msg instanceof io.netty.handler.codec.http.HttpResponse) {
             io.netty.handler.codec.http.HttpResponse nettyResponse = (io.netty.handler.codec.http.HttpResponse) msg;
             if (nettyResponse.getDecoderResult().isFailure()) {
-                LOGGER.warn("Http Response Failure. ", nettyResponse.decoderResult());
                 emitResponseError(new BadHttpResponseException(origin, nettyResponse.getDecoderResult().cause()));
                 return;
             }

@@ -30,26 +30,21 @@ import com.hotels.styx.api.support.HostAndPorts._
 import com.hotels.styx.api.{FullHttpResponse, HttpRequest}
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.support.configuration
-import com.hotels.styx.support.configuration._
+import com.hotels.styx.support.configuration.{HttpBackend, Origin, Origins}
 import com.hotels.styx.support.matchers.IsOptional.{isValue, matches}
 import com.hotels.styx.support.matchers.RegExMatcher.matchesRegex
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
 import org.hamcrest.MatcherAssert.assertThat
 import org.scalatest.{BeforeAndAfter, FunSpec}
-import com.hotels.styx.support.ResourcePaths.fixturesHome
 
 class ProxySpec extends FunSpec
   with StyxProxySpec
-  //  with DefaultStyxConfiguration
+  with DefaultStyxConfiguration
   with BeforeAndAfter {
-  val styxConfig: StyxBaseConfig = configuration.StyxConfig(
-    proxyConfig = ProxyConfig(Connectors(HttpConnectorConfig(port = 8080), null)),
-    logbackXmlLocation = fixturesHome(this.getClass, "/conf/logback/logback-debug-instrument.xml")
-  )
-  val recordingBackend = FakeHttpServer.HttpStartupConfig(port = 10001).start()
-  val mockServer = new MockServer(10002)
+  val mockServer = new MockServer(0)
+
+  val recordingBackend = FakeHttpServer.HttpStartupConfig().start()
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -103,6 +98,7 @@ class ProxySpec extends FunSpec
 
       mockServer.stub("/http10", responseSupplier(() => response().build()))
 
+
       val req = new HttpRequest.Builder(GET, "/http10")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
@@ -120,25 +116,12 @@ class ProxySpec extends FunSpec
       .stub(urlPathEqualTo("/bodiless"), aResponse.withStatus(200))
       .stub(head(urlPathEqualTo("/bodiless")), aResponse.withStatus(200))
 
-    /*
-      * As a HEAD it should not have had a body.
-      *
-      * However Styx keeps the `transfer-encoding: chunked` header.
-      *
-      * For this reason, Netty client codec (HttpObectDecoder) removes the `transfer-encoding: chunked`
-      * header from the message.
-      *
-      */
     it("should respond to HEAD with bodiless response") {
       val req = new HttpRequest.Builder(HEAD, "/bodiless")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
-      println("Sending request, waiting for response ...")
-
       val resp = decodedRequest(req)
-
-      println("Got response ...")
 
       recordingBackend.verify(headRequestedFor(urlPathEqualTo("/bodiless")))
 
@@ -147,14 +130,6 @@ class ProxySpec extends FunSpec
     }
 
     it("should remove body from the 204 No Content responses") {
-      /*
-       * Doesn't work as intended. This is because WireMock doesn't include
-       * the HTTP header in the first place.
-       *
-       * Therefore there is no content in the messages that styx could
-       * remove.
-       *
-       */
       recordingBackend
         .stub(urlPathEqualTo("/204"), aResponse.withStatus(204).withBody("I should not be here"))
 
