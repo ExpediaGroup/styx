@@ -177,7 +177,7 @@ In this form, the interceptors can process the content in a streaming fashion. T
 can look into, and modify the content as it streams through.
 
 Alternatively, streaming messages can be aggregated into a `FullHttpRequest` or `FullHttpResponse` 
-messages. The full HTTP message body is then available at interceptor's disposal. Note that content
+messages. The full HTTP message body is then available for the interceptor to use. Note that content
 aggregation is always an asynchronous operation. This is because the streaming HTTP message is 
 exposing the content, in byte buffers, as it arrives from the network, and Styx must wait until 
 all content has been received. 
