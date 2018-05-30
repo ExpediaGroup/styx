@@ -4,9 +4,12 @@
 
 ### Synchronously transforming requests
  
-Transforming request object synchronously is trivial. Just call `request.newBuilder()` to
+Transforming a request object synchronously is trivial. By "synchronously" we mean in the 
+same thread, in non-blocking fashion. 
+
+Just call `request.newBuilder()` to
 create a new `HttpRequest.Builder` object. It has already been initialised with the copy of
-the original `request`. Modify the builder as desired, consturct a new version, and pass
+the original `request`. Modify the builder as desired, construct a new version, and pass
 it to the `chain.proceed()`, as the example demonstrates:
 
 ```java
@@ -32,7 +35,7 @@ public class SyncRequestPlugin implements Plugin {
 ### Synchronously transforming response
 
 This example demonstrates how to synchronously transform a HTTP response. We will
-use a `StyxObservable` `map` method to add an "X-Foo" header to the response.
+use a `StyxObservable.map` method to add an "X-Foo" header to the response.
 
 ```java
 import com.hotels.styx.api.HttpInterceptor;
@@ -55,8 +58,8 @@ public class SyncResponsePlugin implements Plugin {
 	
 ### Asynchronously transform request object
 
-Sometimes it is necessary to transform the request asynchronously. For example, may need to 
-look up external key value stores to parametrise the request transformation. The example below
+Sometimes it is necessary to transform the request asynchronously. For example, you may need to 
+look up external key value stores to parameterise the request transformation. The example below
 shows how to modify a request URL path based on an asynchronous lookup to an external database.
  	
 ```java
@@ -74,46 +77,43 @@ public class AsyncRequestInterceptor implements Plugin {
     @Override
     public StyxObservable<HttpResponse> intercept(HttpRequest request, HttpInterceptor.Chain chain) {
         
-        return StyxObservable.of(request)                                               // (1)
-                .flatMap(na -> asyncUrlReplacement(request.url()))                      // (2)
-                .map(newUrl -> request.newBuilder()                                     // (5)
+        return asyncUrlReplacement(request.url())                                       // (1)
+                .map(newUrl -> request.newBuilder()                                     // (4)
                         .url(newUrl)
                         .build())
-                .flatMap(chain::proceed);                                               // (6)
+                .flatMap(chain::proceed);                                               // (5)
     }
 
     private static StyxObservable<Url> asyncUrlReplacement(Url url) {
-        return StyxObservable.from(pathReplacementService(url.path()))                  // (4)
+        return StyxObservable.from(pathReplacementService(url.path()))                  // (3)
                 .map(newPath -> new Url.Builder(url)
                         .path(newPath)
                         .build());
     }
 
     private static CompletableFuture<String> pathReplacementService(String url) {
-        return CompletableFuture.completedFuture("/replacement/path");                  // (3)
+        // Pretend to make a call here:
+        return CompletableFuture.completedFuture("/replacement/path");                  // (2)
     }
 }
 ```
 
-Step 1. For asynchronous transformation we'll start by constructing a response observable. 
-We can construct it with any initial value, but in this example we'll just use the `request`. 
-But it doesn't have to be a `request` as it is available from the closure.
+Step 1. We call the `asyncUrlReplacement`, which returns a `StyxObservable<Url>`.
+The `asyncUrlReplacement` wraps a call to the remote service and converts 
+the outcome into a `StyxObservable`, which is the basis for our response observable.
 
-Step 2. We will call the `asyncUrlReplacement`, and bind it to the response observable using 
-`flatMap` operator. The `asyncUrlReplacement` wraps a call to the remote service and converts 
-the outcome into a `StyxObservable`.
-
-Step 3. A call to `pathReplacementService` makes a non-blocking call to the remote key/value store.
+Step 2. A call to `pathReplacementService` makes a non-blocking call to the remote key/value store.
 Well, at least we pretend to call the key value store, but in this example we'll just return a 
 completed future of a constant value.   
 
-Step 4. `CompletableFuture` needs to be converted to `StyxObservable` so that the operation can
-be bound to the response observable created previously in step 1.
+Step 3. `CompletableFuture` is converted to `StyxObservable`, so that other asynchronous
+operations like `chain.proceed` can be bound to it later on.
 
-Step 5. The eventual outcome from the `asyncUrlReplacement` yields a new, modified URL instance.
-We will map this to a new `HttpRequest` instance replaced URL.
+Step 4. The eventual outcome from the `asyncUrlReplacement` yields a new, modified URL instance.
+We'll transform the `request` by substituting the URL path with the new one. 
+This is a quick synchronous operation so we'll do it in a `map` operator. 
 
-Step 6. Finally, we will bind the outcome of `chain.proceed` into the response observable.
+Step 5. Finally, we will bind the outcome from `chain.proceed` into the response observable.
 Remember that `chain.proceed` returns an `Observable<HttpResponse>` it is therefore 
 interface compatible and can be `flatMap`'d to the response observable. The resulting
 response observable chain is returned from the `intercept`.
@@ -144,7 +144,7 @@ public class AsyncResponseInterceptor implements Plugin {
         return chain.proceed(request)                                                                            // (1)
                 .flatMap(response ->                                                                             // (3)
                         StyxObservable
-                                .from(callTo3rdParty(response.header(X_MY_HEADER).orElse("default")))            // (1)
+                                .from(thirdPartyHeaderService(response.header(X_MY_HEADER).orElse("default")))            // (1)
                                 .map(value ->                                                                    // (4)
                                         response.newBuilder()
                                                 .header(X_MY_HEADER, value)
@@ -152,7 +152,8 @@ public class AsyncResponseInterceptor implements Plugin {
                 );
     }
 
-    private static CompletableFuture<String> callTo3rdParty(String myHeader) {
+    private static CompletableFuture<String> thirdPartyHeaderService(String myHeader) {
+        // Pretend to make a call here:
         return CompletableFuture.completedFuture("value");
     }
 }
@@ -177,8 +178,9 @@ can look into, and modify the content as it streams through.
 
 Alternatively, streaming messages can be aggregated into a `FullHttpRequest` or `FullHttpResponse` 
 messages. The full HTTP message body is then available at interceptor's disposal. Note that content
-aggregation is always an asynchronous operation. This is because Styx must wait until all content
-has been received. 
+aggregation is always an asynchronous operation. This is because the streaming HTTP message is 
+exposing the content, in byte buffers, as it arrives from the network, and Styx must wait until 
+all content has been received. 
 
 
 ### Aggregating Content into Full Messages
