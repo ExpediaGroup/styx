@@ -32,16 +32,16 @@ e2e-compile:
 
 ## Run system tests
 e2e-test:
-	mvn -f system-tests/pom.xml -P$(PLATFORM) scalatest:test
+	mvn -f system-tests/e2e-suite/pom.xml -P$(PLATFORM) scalatest:test
 
 ## Execute a single end-to-end (scala) test
 # Alternatively, it should be possible to run an individual e2e test
 # with following Maven command:
 #
-#  mvn -f system-tests/pom.xml scalatest:test -Dsuites='*ProxyPropertySpec'
+#  mvn -f system-tests/e2e-suite/pom.xml scalatest:test -Dsuites='*ProxyPropertySpec'
 #
 e2e-test-single:
-	mvn -f system-tests/pom.xml scalatest:test -Dsuites='${TEST}'
+	mvn -f system-tests/e2e-suite/pom.xml scalatest:test -Dsuites='${TEST}'
 
 ## Compile, test and create styx.zip
 release: clean
