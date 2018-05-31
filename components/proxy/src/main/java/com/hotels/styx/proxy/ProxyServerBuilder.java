@@ -54,7 +54,7 @@ public final class ProxyServerBuilder {
         ProxyServerConfig proxyConfig = environment.styxConfig().proxyServerConfig();
         String unwiseCharacters = environment.styxConfig().get(ENCODE_UNWISECHARS).orElse("");
 
-        return new NettyServerBuilderSpec("Proxy", environment.serverEnvironment(),
+        return new NettyServerBuilderSpec("proxy", environment.serverEnvironment(),
                 new ProxyConnectorFactory(proxyConfig, environment.metricRegistry(), environment.errorListener(), unwiseCharacters, this::addInfoHeader))
                 .toNettyServerBuilder(proxyConfig)
                 .httpHandler(httpHandler)
@@ -62,7 +62,7 @@ public final class ProxyServerBuilder {
                 .register(HealthCheckTimestamp.NAME, new HealthCheckTimestamp())
                 .register("errors-rate-500", new ErrorsRateHealthCheck(environment.metricRegistry()))
                 .doOnStartUp(onStartupAction)
-                .eventNexus(environment.eventNexus())
+                .configStore(environment.configStore())
                 .build();
     }
 

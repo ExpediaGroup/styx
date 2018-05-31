@@ -124,7 +124,7 @@ public class AdminServerBuilder {
         httpRouter.add("/admin/origins/status", new OriginsInventoryHandler(environment.eventBus()));
         httpRouter.add("/admin/configuration/logging", new LoggingConfigurationHandler(styxConfig.startupConfig().logConfigLocation()));
         httpRouter.add("/admin/configuration/startup", new StartupConfigHandler(styxConfig.startupConfig()));
-        httpRouter.add("/admin/proxystatus", new ProxyStatusHandler(environment.eventNexus()));
+        httpRouter.add("/admin/proxystatus", new ProxyStatusHandler(environment.configStore()));
 
         // Dashboard
         httpRouter.add("/admin/dashboard/data.json", dashboardDataHandler(styxConfig));
@@ -140,10 +140,10 @@ public class AdminServerBuilder {
 
         httpRouter.add("/admin/plugins", new PluginListHandler(plugins));
 
-        return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
+        return new NettyServerBuilderSpec("admin", environment.serverEnvironment(), new WebServerConnectorFactory())
                 .toNettyServerBuilder(adminServerConfig)
                 .httpHandler(httpRouter)
-                .eventNexus(environment.eventNexus())
+                .configStore(environment.configStore())
                 .build();
     }
 

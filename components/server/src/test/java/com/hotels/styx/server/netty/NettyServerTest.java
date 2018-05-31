@@ -15,28 +15,29 @@
  */
 package com.hotels.styx.server.netty;
 
-import com.hotels.styx.events.EventNexus;
+import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.server.HttpServer;
 import org.testng.annotations.Test;
 
+import static com.hotels.styx.support.matchers.IsOptional.isValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 public class NettyServerTest {
     @Test
-    public void firesEventWhenStarted() {
-        EventNexus eventNexus = mock(EventNexus.class);
+    public void notifiesAboutStart() {
+        ConfigStore configStore = new ConfigStore();
 
         ServerConnector httpConnector = mock(ServerConnector.class);
 
         HttpServer server = NettyServerBuilder.newBuilder()
-                .eventNexus(eventNexus)
+                .configStore(configStore)
                 .setHttpConnector(httpConnector)
                 .name("testserver")
                 .build();
 
         server.startAsync().awaitRunning();
 
-        verify(eventNexus).publish("server.started.testserver", true);
+        assertThat(configStore.get("server.started.testserver", Boolean.class), isValue(true));
     }
 }

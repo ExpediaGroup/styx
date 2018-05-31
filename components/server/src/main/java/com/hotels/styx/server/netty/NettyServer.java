@@ -19,7 +19,7 @@ import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
 import com.hotels.styx.api.HttpHandler2;
-import com.hotels.styx.events.EventNexus;
+import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import io.netty.bootstrap.ServerBootstrap;
@@ -71,7 +71,7 @@ final class NettyServer extends AbstractService implements HttpServer {
     private final ServerSocketBinder httpServerSocketBinder;
     private final ServerSocketBinder httpsServerSocketBinder;
     private final String name;
-    private final EventNexus eventNexus;
+    private final ConfigStore configStore;
 
     private Callable<?> stopper;
 
@@ -90,7 +90,7 @@ final class NettyServer extends AbstractService implements HttpServer {
         this.startupActions = nettyServerBuilder.startupActions();
 
         this.name = requireNonNull(nettyServerBuilder.name());
-        this.eventNexus = requireNonNull(nettyServerBuilder.eventNexus());
+        this.configStore = requireNonNull(nettyServerBuilder.configStore());
     }
 
     @Override
@@ -133,7 +133,7 @@ final class NettyServer extends AbstractService implements HttpServer {
         serviceManager.addListener(new ServerListener(this));
         serviceManager.startAsync().awaitHealthy();
 
-        eventNexus.publish("server.started." + name, true);
+        configStore.set("server.started." + name, true);
 
         this.stopper = () -> {
             serviceManager.stopAsync().awaitStopped();

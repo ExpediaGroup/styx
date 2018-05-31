@@ -16,32 +16,25 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.events.EventNexus;
-import com.hotels.styx.events.Event;
+import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.support.api.HttpMessageBodies;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import rx.subjects.PublishSubject;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ProxyStatusHandlerTest {
     private HttpRequest request;
     private ProxyStatusHandler handler;
-    private PublishSubject<Event> publishSubject;
+    private ConfigStore configStore;
 
     @BeforeMethod
     public void setUp() {
         request = get("/").build();
-        publishSubject = PublishSubject.create();
-        EventNexus eventNexus = mock(EventNexus.class);
-        when(eventNexus.events(anyString())).thenReturn(publishSubject);
-        handler = new ProxyStatusHandler(eventNexus);
+        configStore = new ConfigStore();
+        handler = new ProxyStatusHandler(configStore);
     }
 
     @Test
@@ -55,9 +48,8 @@ public class ProxyStatusHandlerTest {
     }
 
     @Test
-    public void afterEventIsFiredResponseIsTrue() {
-        publishSubject.onNext(new Event("server.started.proxy", true));
-        publishSubject.onCompleted();
+    public void afterConfigIsUpdatedResponseIsTrue() {
+        configStore.set("server.started.proxy", true);
 
         String response = handler.handle(request)
                 .map(HttpMessageBodies::bodyAsString)
