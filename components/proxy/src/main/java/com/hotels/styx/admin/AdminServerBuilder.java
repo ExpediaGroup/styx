@@ -164,7 +164,7 @@ public class AdminServerBuilder {
                 link("version.txt", "/version.txt"),
                 link("Status", "/admin/status"),
                 link("Ping", "/admin/ping"),
-                link("Proxy Status", "/admin/proxystatus"),
+                link("Proxy Status", "/admin/styx/proxy/status"),
                 link("Threads", "/admin/threads"),
                 link("Metrics", "/admin/metrics?pretty"),
                 link("Health Check", "/admin/healthcheck"),
