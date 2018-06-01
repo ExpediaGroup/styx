@@ -38,17 +38,21 @@ public class ProxyStatusHandlerTest {
     }
 
     @Test
-    public void initiallyResponseIsFalse() {
+    public void initiallyResponseIsDown() {
         String response = handler.handle(request)
                 .map(HttpMessageBodies::bodyAsString)
                 .toBlocking()
                 .single();
 
-        assertThat(response, is("false"));
+        assertThat(response, is(""
+                + "{\n"
+                + "  status:DOWN\n"
+                + "}"
+                + "\n"));
     }
 
     @Test
-    public void afterConfigIsUpdatedResponseIsTrue() {
+    public void afterConfigIsUpdatedResponseIsUp() {
         configStore.set("server.started.proxy", true);
 
         String response = handler.handle(request)
@@ -56,6 +60,10 @@ public class ProxyStatusHandlerTest {
                 .toBlocking()
                 .single();
 
-        assertThat(response, is("true"));
+        assertThat(response, is(""
+                + "{\n"
+                + "  status:UP\n"
+                + "}"
+                + "\n"));
     }
 }

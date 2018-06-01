@@ -117,7 +117,11 @@ public class StyxServerTest {
 
             assertThat(
                     sendGet(client, "http://localhost:%s/admin/proxystatus", styxServer.adminHttpAddress().getPort()),
-                    is("true"));
+                    is(""
+                            + "{\n"
+                            + "  status:UP\n"
+                            + "}"
+                            + "\n"));
         } finally {
             stopIfRunning(styxServer);
         }
@@ -137,7 +141,11 @@ public class StyxServerTest {
 
             assertThat(
                     sendGet(client, "http://localhost:%s/admin/proxystatus", styxServer.adminHttpAddress().getPort()),
-                    is("false"));
+                    is(""
+                            + "{\n"
+                            + "  status:DOWN\n"
+                            + "}"
+                            + "\n"));
         } finally {
             stopIfRunning(styxServer);
         }

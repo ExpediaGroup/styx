@@ -21,6 +21,7 @@ import com.hotels.styx.api.http.handlers.BaseHttpHandler;
 import com.hotels.styx.configstore.ConfigStore;
 
 import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -38,8 +39,10 @@ public class ProxyStatusHandler extends BaseHttpHandler {
         boolean started = configStore.get("server.started.proxy", Boolean.class)
                 .orElse(false);
 
+        String json = format("{%n  status:%s%n}%n", started ? "UP" : "DOWN");
+
         return response()
-                .body(Boolean.toString(started))
+                .body(json)
                 .build();
     }
 }
