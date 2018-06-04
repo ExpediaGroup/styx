@@ -80,10 +80,18 @@ This tells you that the application has successfully started, and that proxy ser
     
 # Liveness check
 
-It is possible to check when Styx is ready for serve requests by accessing an admin endpoint at `/admin/proxystatus`.
-When you send a `GET` request to that URL, the response will have a body containing either `true` or `false`.
-If it is `false`, then the proxy server has not yet started up.
-If it is `true`, then the proxy server has started up, including all of the plugins configured for it.
+It is possible to check when Styx is ready for serve requests by accessing an admin endpoint at `/admin/styx/proxy/status`.
+When you send a `GET` request to that URL, the response will have a body containing:
+
+        {
+        status: "<UP|DOWN>"
+        }
+
+Where `<UP|DOWN>` is: 
+
+* `UP` if the proxy server has not yet started up.
+* `DOWN` if the proxy server has started up, including all of the plugins configured for it.
+
 
     
 # Configuring JVM Settings
