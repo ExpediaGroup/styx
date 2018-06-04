@@ -19,6 +19,7 @@ package com.hotels.styx.server.netty.connectors;
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.NoServiceConfiguredException;
@@ -41,7 +42,6 @@ import com.hotels.styx.common.FsmEventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
 import com.hotels.styx.common.StateMachine;
 import com.hotels.styx.server.BadRequestException;
-import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.RequestTimeoutException;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -53,7 +53,9 @@ import rx.Subscriber;
 import rx.Subscription;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
@@ -240,7 +242,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         // the same call stack as "onLegitimateRequest" handler. This happens when a plugin
         // generates a response.
         try {
-            Observable<HttpResponse> responseObservable = toRxObservable(httpPipeline.handle(v11Request, HttpInterceptorContext.create()));
+            Observable<HttpResponse> responseObservable = toRxObservable(httpPipeline.handle(v11Request, new HttpInterceptorContext()));
             subscription = responseObservable
                     .subscribe(new Subscriber<HttpResponse>() {
                                    @Override
@@ -653,6 +655,20 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
                     throw new IOException("Connection reset by peer");
                 }
             };
+        }
+    }
+
+    private final class HttpInterceptorContext implements HttpInterceptor.Context {
+        private final Map<String, Object> context = new ConcurrentHashMap<>();
+
+        @Override
+        public void add(String key, Object value) {
+            context.put(key, value);
+        }
+
+        @Override
+        public <T> T get(String key, Class<T> clazz) {
+            return (T) context.get(key);
         }
     }
 }
