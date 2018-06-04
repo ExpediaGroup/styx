@@ -91,8 +91,6 @@ final class NettyServer extends AbstractService implements HttpServer {
 
         this.name = requireNonNull(nettyServerBuilder.name());
         this.configStore = requireNonNull(nettyServerBuilder.configStore());
-
-
     }
 
     @Override

@@ -116,7 +116,7 @@ public class StyxServerTest {
             styxServer.startAsync().awaitRunning();
 
             assertThat(
-                    sendGet(client, "http://localhost:%s/admin/proxystatus", styxServer.adminHttpAddress().getPort()),
+                    sendGet(client, "http://localhost:%s/admin/styx/proxy/status", styxServer.adminHttpAddress().getPort()),
                     is(""
                             + "{\n"
                             + "  status:UP\n"
@@ -140,7 +140,7 @@ public class StyxServerTest {
             }
 
             assertThat(
-                    sendGet(client, "http://localhost:%s/admin/proxystatus", styxServer.adminHttpAddress().getPort()),
+                    sendGet(client, "http://localhost:%s/admin/styx/proxy/status", styxServer.adminHttpAddress().getPort()),
                     is(""
                             + "{\n"
                             + "  status:DOWN\n"

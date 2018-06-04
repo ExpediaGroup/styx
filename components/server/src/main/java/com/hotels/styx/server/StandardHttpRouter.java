@@ -45,5 +45,4 @@ public class StandardHttpRouter implements HttpHandler2 {
         routes.put(path, httpHandler);
         return this;
     }
-
 }
