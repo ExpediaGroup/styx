@@ -22,10 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
- * TODO: This is duplicated from the `server` package so that plugin tests are able
- * to pass in a context for the `handle` method.
- *
- * ConcurrentHashMap backed implementation of HttpInterceptor.Context.
+ * An HttpInterceptor.Context implementation for 3rd party plugin tests.
+ * This is a minimal ConcurrentHashMap backed implementation.
  */
 public final class HttpInterceptorContext implements HttpInterceptor.Context {
     private final Map<String, Object> context = new ConcurrentHashMap<>();
