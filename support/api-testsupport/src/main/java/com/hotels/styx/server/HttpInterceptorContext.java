@@ -21,11 +21,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * This is a duplicate of `com.hotels.styx.testapi.HttpInterceptorContext`
+ * for the use of Styx core unit tests.
+ * They cannot use the `testapi` implementation because the `testapi` itself
+ * depends on the styx core modules, introducing a cyclic dependency.
  *
- * TODO: This is duplicated from the `server` package so that plugin tests are able
- * to pass in a context for the `handle` method.
- *
- * ConcurrentHashMap backed implementation of HttpInterceptor.Context.
  */
 public final class HttpInterceptorContext implements HttpInterceptor.Context {
     private final Map<String, Object> context = new ConcurrentHashMap<>();

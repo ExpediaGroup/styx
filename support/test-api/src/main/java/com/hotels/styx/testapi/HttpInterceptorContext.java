@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server;
+package com.hotels.styx.testapi;
 
 import com.hotels.styx.api.HttpInterceptor;
 
@@ -21,7 +21,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * ConcurrentHashMap backed implementation of HttpInterceptor.Context.
+ *
+ * An HttpInterceptor.Context implementation for 3rd party plugin tests.
+ * This is a minimal ConcurrentHashMap backed implementation.
  */
 public final class HttpInterceptorContext implements HttpInterceptor.Context {
     private final Map<String, Object> context = new ConcurrentHashMap<>();
