@@ -119,7 +119,7 @@ public class StyxServerTest {
                     sendGet(client, "http://localhost:%s/admin/styx/proxy/status", styxServer.adminHttpAddress().getPort()),
                     is(""
                             + "{\n"
-                            + "  status:UP\n"
+                            + "  status:STARTED\n"
                             + "}"
                             + "\n"));
         } finally {
@@ -143,7 +143,7 @@ public class StyxServerTest {
                     sendGet(client, "http://localhost:%s/admin/styx/proxy/status", styxServer.adminHttpAddress().getPort()),
                     is(""
                             + "{\n"
-                            + "  status:DOWN\n"
+                            + "  status:FAILED\n"
                             + "}"
                             + "\n"));
         } finally {

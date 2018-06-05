@@ -44,7 +44,7 @@ public final class ProxyServerSetUp {
 
         HttpServer proxyServer = new ProxyServerBuilder(config.environment())
                 .httpHandler(pipeline)
-                .onStartup(() -> initialisePlugins(config.plugins()))
+                .beforeStart(() -> initialisePlugins(config.plugins()))
                 .build();
 
         proxyServer.addListener(new PluginsNotifierOfProxyState(config.plugins()), sameThreadExecutor());

@@ -18,7 +18,10 @@ package com.hotels.styx.admin.handlers;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.http.handlers.BaseHttpHandler;
+import com.hotels.styx.common.Result;
 import com.hotels.styx.configstore.ConfigStore;
+
+import java.util.Optional;
 
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static java.lang.String.format;
@@ -36,10 +39,16 @@ public class ProxyStatusHandler extends BaseHttpHandler {
 
     @Override
     protected HttpResponse doHandle(HttpRequest request) {
-        boolean started = configStore.get("server.started.proxy", Boolean.class)
-                .orElse(false);
+        String resultDescription = configStore.get("server.started.proxy", Result.class)
+                .map(result -> (Result<String>) result)
+                .map(result -> result.mapSuccess(any -> "STARTED"))
+                .map(result -> result.defaultOnFailure(any -> "FAILED"))
+                .map(Result::successValue)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .orElse("INCOMPLETE");
 
-        String json = format("{%n  status:%s%n}%n", started ? "UP" : "DOWN");
+        String json = format("{%n  status:%s%n}%n", resultDescription);
 
         return response()
                 .body(json)

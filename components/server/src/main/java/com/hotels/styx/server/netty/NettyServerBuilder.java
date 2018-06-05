@@ -54,7 +54,7 @@ public final class NettyServerBuilder {
     private String name = "styx";
     private Optional<ServerConnector> httpConnector = Optional.empty();
     private Optional<ServerConnector> httpsConnector = Optional.empty();
-    private final List<Runnable> startupActions = newCopyOnWriteArrayList();
+    private final List<Runnable> beforeStartActions = newCopyOnWriteArrayList();
     private HttpHandler2 httpHandler = (request, context) -> just(response(NOT_FOUND).build());
     private ConfigStore configStore = new ConfigStore();
 
@@ -139,13 +139,13 @@ public final class NettyServerBuilder {
         return httpsConnector;
     }
 
-    public NettyServerBuilder doOnStartUp(Runnable... startupActions) {
-        this.startupActions.addAll(asList(startupActions));
+    public NettyServerBuilder beforeStart(Runnable... beforeStartActions) {
+        this.beforeStartActions.addAll(asList(beforeStartActions));
         return this;
     }
 
-    Iterable<Runnable> startupActions() {
-        return startupActions;
+    Iterable<Runnable> beforeStartActions() {
+        return beforeStartActions;
     }
 
     public String name() {

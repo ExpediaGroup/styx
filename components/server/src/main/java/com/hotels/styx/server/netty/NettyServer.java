@@ -42,6 +42,8 @@ import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Throwables.propagate;
+import static com.hotels.styx.common.Result.failure;
+import static com.hotels.styx.common.Result.success;
 import static io.netty.channel.ChannelOption.ALLOCATOR;
 import static io.netty.channel.ChannelOption.SO_BACKLOG;
 import static io.netty.channel.ChannelOption.SO_KEEPALIVE;
@@ -66,7 +68,7 @@ final class NettyServer extends AbstractService implements HttpServer {
     private final Optional<ServerConnector> httpConnector;
     private final Optional<ServerConnector> httpsConnector;
 
-    private final Iterable<Runnable> startupActions;
+    private final Iterable<Runnable> beforeStartActions;
     private final HttpHandler2 httpHandler;
     private final ServerSocketBinder httpServerSocketBinder;
     private final ServerSocketBinder httpsServerSocketBinder;
@@ -87,7 +89,7 @@ final class NettyServer extends AbstractService implements HttpServer {
         this.httpServerSocketBinder = httpConnector.map(ServerSocketBinder::new).orElse(null);
         this.httpsServerSocketBinder = httpsConnector.map(ServerSocketBinder::new).orElse(null);
 
-        this.startupActions = nettyServerBuilder.startupActions();
+        this.beforeStartActions = nettyServerBuilder.beforeStartActions();
 
         this.name = requireNonNull(nettyServerBuilder.name());
         this.configStore = requireNonNull(nettyServerBuilder.configStore());
@@ -113,32 +115,32 @@ final class NettyServer extends AbstractService implements HttpServer {
 
     @Override
     protected void doStart() {
-        LOGGER.info("starting services");
+        try {
+            LOGGER.info("starting services");
 
-        for (Runnable action : startupActions) {
-            try {
+            for (Runnable action : beforeStartActions) {
                 action.run();
-            } catch (Exception e) {
-                notifyFailed(e);
-                return;
             }
+
+            ServiceManager serviceManager = new ServiceManager(
+                    Stream.of(httpServerSocketBinder, httpsServerSocketBinder)
+                            .filter(Objects::nonNull)
+                            .collect(toList())
+            );
+
+            serviceManager.addListener(new ServerListener(this));
+            serviceManager.startAsync().awaitHealthy();
+
+            this.stopper = () -> {
+                serviceManager.stopAsync().awaitStopped();
+                return null;
+            };
+
+            configStore.set("server.started." + name, success());
+        } catch (Exception e) {
+            configStore.set("server.started." + name, failure(e));
+            notifyFailed(e);
         }
-
-        ServiceManager serviceManager = new ServiceManager(
-                Stream.of(httpServerSocketBinder, httpsServerSocketBinder)
-                        .filter(Objects::nonNull)
-                        .collect(toList())
-        );
-
-        serviceManager.addListener(new ServerListener(this));
-        serviceManager.startAsync().awaitHealthy();
-
-        configStore.set("server.started." + name, true);
-
-        this.stopper = () -> {
-            serviceManager.stopAsync().awaitStopped();
-            return null;
-        };
     }
 
     @Override

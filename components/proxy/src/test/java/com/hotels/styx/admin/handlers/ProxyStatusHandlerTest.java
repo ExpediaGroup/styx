@@ -22,6 +22,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.common.Result.failure;
+import static com.hotels.styx.common.Result.success;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -38,7 +40,7 @@ public class ProxyStatusHandlerTest {
     }
 
     @Test
-    public void initiallyResponseIsDown() {
+    public void initiallyResponseIsIncomplete() {
         String response = handler.handle(request)
                 .map(HttpMessageBodies::bodyAsString)
                 .toBlocking()
@@ -46,14 +48,14 @@ public class ProxyStatusHandlerTest {
 
         assertThat(response, is(""
                 + "{\n"
-                + "  status:DOWN\n"
+                + "  status:INCOMPLETE\n"
                 + "}"
                 + "\n"));
     }
 
     @Test
-    public void afterConfigIsUpdatedResponseIsUp() {
-        configStore.set("server.started.proxy", true);
+    public void afterConfigIsUpdatedSuccessfullyResponseIsStarted() {
+        configStore.set("server.started.proxy", success());
 
         String response = handler.handle(request)
                 .map(HttpMessageBodies::bodyAsString)
@@ -62,7 +64,23 @@ public class ProxyStatusHandlerTest {
 
         assertThat(response, is(""
                 + "{\n"
-                + "  status:UP\n"
+                + "  status:STARTED\n"
+                + "}"
+                + "\n"));
+    }
+
+    @Test
+    public void afterConfigIsUpdatedUnsuccessfullyResponseIsFailed() {
+        configStore.set("server.started.proxy", failure());
+
+        String response = handler.handle(request)
+                .map(HttpMessageBodies::bodyAsString)
+                .toBlocking()
+                .single();
+
+        assertThat(response, is(""
+                + "{\n"
+                + "  status:FAILED\n"
                 + "}"
                 + "\n"));
     }

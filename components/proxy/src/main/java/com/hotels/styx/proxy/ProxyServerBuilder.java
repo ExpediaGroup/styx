@@ -41,7 +41,7 @@ public final class ProxyServerBuilder {
     private final CharSequence styxInfoHeaderName;
 
     private HttpHandler2 httpHandler;
-    private Runnable onStartupAction = () -> {
+    private Runnable beforeStartAction = () -> {
     };
 
     public ProxyServerBuilder(Environment environment) {
@@ -61,7 +61,7 @@ public final class ProxyServerBuilder {
                 // register health check
                 .register(HealthCheckTimestamp.NAME, new HealthCheckTimestamp())
                 .register("errors-rate-500", new ErrorsRateHealthCheck(environment.metricRegistry()))
-                .doOnStartUp(onStartupAction)
+                .beforeStart(beforeStartAction)
                 .configStore(environment.configStore())
                 .build();
     }
@@ -75,8 +75,8 @@ public final class ProxyServerBuilder {
         return this;
     }
 
-    public ProxyServerBuilder onStartup(Runnable startupAction) {
-        this.onStartupAction = startupAction;
+    public ProxyServerBuilder beforeStart(Runnable beforeStartAction) {
+        this.beforeStartAction = beforeStartAction;
         return this;
     }
 

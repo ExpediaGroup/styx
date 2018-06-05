@@ -15,10 +15,12 @@
  */
 package com.hotels.styx.server.netty;
 
+import com.hotels.styx.common.Result;
 import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.server.HttpServer;
 import org.testng.annotations.Test;
 
+import static com.hotels.styx.common.Result.success;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -38,6 +40,6 @@ public class NettyServerTest {
 
         server.startAsync().awaitRunning();
 
-        assertThat(configStore.get("server.started.testserver", Boolean.class), isValue(true));
+        assertThat(configStore.get("server.started.testserver", Result.class), isValue(success()));
     }
 }
