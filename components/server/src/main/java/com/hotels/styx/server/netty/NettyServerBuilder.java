@@ -19,6 +19,7 @@ import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
@@ -37,6 +38,7 @@ import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
 import static rx.Observable.just;
 
 /**
@@ -52,8 +54,9 @@ public final class NettyServerBuilder {
     private String name = "styx";
     private Optional<ServerConnector> httpConnector = Optional.empty();
     private Optional<ServerConnector> httpsConnector = Optional.empty();
-    private final List<Runnable> startupActions = newCopyOnWriteArrayList();
+    private final List<Runnable> beforeStartActions = newCopyOnWriteArrayList();
     private HttpHandler2 httpHandler = (request, context) -> just(response(NOT_FOUND).build());
+    private ConfigStore configStore = new ConfigStore();
 
     public static NettyServerBuilder newBuilder() {
         return new NettyServerBuilder();
@@ -136,13 +139,26 @@ public final class NettyServerBuilder {
         return httpsConnector;
     }
 
-    public NettyServerBuilder doOnStartUp(Runnable... startupActions) {
-        this.startupActions.addAll(asList(startupActions));
+    public NettyServerBuilder beforeStart(Runnable... beforeStartActions) {
+        this.beforeStartActions.addAll(asList(beforeStartActions));
         return this;
     }
 
-    Iterable<Runnable> startupActions() {
-        return startupActions;
+    Iterable<Runnable> beforeStartActions() {
+        return beforeStartActions;
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public NettyServerBuilder configStore(ConfigStore configStore) {
+        this.configStore = requireNonNull(configStore);
+        return this;
+    }
+
+    public ConfigStore configStore() {
+        return configStore;
     }
 
     public HttpServer build() {

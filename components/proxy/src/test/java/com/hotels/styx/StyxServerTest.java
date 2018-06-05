@@ -18,6 +18,7 @@ package com.hotels.styx;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Service;
 import com.hotels.styx.admin.AdminServerConfig;
+import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
@@ -27,6 +28,8 @@ import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.api.service.spi.StyxService;
+import com.hotels.styx.client.SimpleNettyHttpClient;
+import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.proxy.ProxyServerConfig;
@@ -44,16 +47,20 @@ import rx.Observable;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.util.concurrent.Service.State.FAILED;
+import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATION;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
+import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -98,6 +105,65 @@ public class StyxServerTest {
         } finally {
             stopIfRunning(styxServer);
         }
+    }
+
+    @Test
+    public void adminHandlerIndicatesWhenProxyServerHasStarted() {
+        HttpClient client = simpleClient();
+
+        StyxServer styxServer = styxServer();
+        try {
+            styxServer.startAsync().awaitRunning();
+
+            assertThat(
+                    sendGet(client, "http://localhost:%s/admin/styx/proxy/status", styxServer.adminHttpAddress().getPort()),
+                    is(""
+                            + "{\n"
+                            + "  status:STARTED\n"
+                            + "}"
+                            + "\n"));
+        } finally {
+            stopIfRunning(styxServer);
+        }
+    }
+
+    @Test
+    public void ifProxyFailsToStartAdminHandlerReturnsFalse() {
+        HttpClient client = simpleClient();
+
+        StyxServer styxServer = styxServerWithPlugins(failingPlugin("fail"));
+        try {
+            try {
+                styxServer.startAsync().awaitRunning();
+            } catch (Exception e) {
+                // expected
+            }
+
+            assertThat(
+                    sendGet(client, "http://localhost:%s/admin/styx/proxy/status", styxServer.adminHttpAddress().getPort()),
+                    is(""
+                            + "{\n"
+                            + "  status:FAILED\n"
+                            + "}"
+                            + "\n"));
+        } finally {
+            stopIfRunning(styxServer);
+        }
+    }
+
+    private static HttpClient simpleClient() {
+        return new SimpleNettyHttpClient.Builder()
+                .connectionDestinationFactory(new CloseAfterUseConnectionDestination.Factory())
+                .build();
+    }
+
+    private static String sendGet(HttpClient client, String urlPattern, Object... args) {
+        HttpRequest request = get(format(urlPattern, args)).build();
+
+        return client.sendRequest(request)
+                .flatMap(message -> message.body().decode(bytes -> bytes.toString(UTF_8), 0x100000))
+                .toBlocking()
+                .single();
     }
 
     @Test
@@ -196,6 +262,10 @@ public class StyxServerTest {
         };
     }
 
+    private static StyxServer styxServer() {
+        return styxServerWithPlugins(emptyList());
+    }
+
     private static StyxServer styxServerWithPlugins(NamedPlugin... plugins) {
         return styxServerWithPlugins(newArrayList(plugins));
     }
@@ -264,16 +334,19 @@ public class StyxServerTest {
     }
 
     private static void eventually(Runnable block) {
+        AtomicReference<Throwable> ref = new AtomicReference<>();
         long startTime = currentTimeMillis();
         while (currentTimeMillis() - startTime < 3000) {
             try {
                 block.run();
                 return;
-            } catch (Exception e) {
+            } catch (Exception | AssertionError e) {
                 // pass
+                ref.set(e);
             }
         }
-        throw new AssertionError("Eventually block did not complete in 3 seconds.");
+
+        throw new AssertionError("Eventually block did not complete in 3 seconds.", ref.get());
     }
 
     private static Runtime captureSystemExit(Runnable block) {
