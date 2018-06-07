@@ -13,21 +13,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-/**
-  * Copyright (C) 2013-2018 Expedia Inc.
-  *
-  * Licensed under the Apache License, Version 2.0 (the "License");
-  * you may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at
-  *
-  * http://www.apache.org/licenses/LICENSE-2.0
-  *
-  * Unless required by applicable law or agreed to in writing, software
-  * distributed under the License is distributed on an "AS IS" BASIS,
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  */
 package com.hotels.styx.plugins
 
 import java.nio.charset.StandardCharsets.UTF_8
@@ -53,11 +38,11 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
   override protected def beforeEach(): Unit = {
     setPluginEnabled("true")
 
-    val resp1 = decodedRequest(get(styxServer.adminURL("/admin/plugins")).build().toStreamingRequest)
+    val resp1 = decodedRequest(get(styxServer.adminURL("/admin/plugins")).build())
     resp1.status() should be(OK)
     resp1.bodyAs(UTF_8) should include("<h3>Enabled</h3><a href='/admin/plugins/pluginUnderTest'>pluginUnderTest</a><br /><h3>Disabled</h3>")
 
-    val resp2 = decodedRequest(get(styxServer.routerURL("/")).build().toStreamingRequest)
+    val resp2 = decodedRequest(get(styxServer.routerURL("/")).build())
     resp2.status() should be(OK)
     resp2.bodyAs(UTF_8) should include("response-from-plugin")
 
@@ -73,7 +58,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
     it("Should move the plugin to disabled when toggled") {
       disablePlugin()
 
-      val resp = decodedRequest(get(styxServer.adminURL("/admin/plugins")).build().toStreamingRequest)
+      val resp = decodedRequest(get(styxServer.adminURL("/admin/plugins")).build())
 
       resp.status() should be(OK)
       resp.bodyAs(UTF_8) should include("<h3>Enabled</h3><h3>Disabled</h3><a href='/admin/plugins/pluginUnderTest'>pluginUnderTest</a><br />")
@@ -82,7 +67,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
     it("Plugin should not be called when disabled") {
       disablePlugin()
 
-      val resp = decodedRequest(get(styxServer.routerURL("/")).build().toStreamingRequest)
+      val resp = decodedRequest(get(styxServer.routerURL("/")).build())
 
       resp.status() should be(OK)
     }
@@ -108,8 +93,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
     val resp = decodedRequest(
       put(styxServer.adminURL("/admin/tasks/plugin/pluginUnderTest/enabled"))
         .body(enabled, UTF_8)
-        .build()
-        .toStreamingRequest)
+        .build())
 
     resp.status() should be(OK)
     resp.bodyAs(UTF_8)
@@ -118,8 +102,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
   private def checkPluginEnabled(): String = {
     val resp = decodedRequest(
       get(styxServer.adminURL("/admin/tasks/plugin/pluginUnderTest/enabled"))
-        .build()
-        .toStreamingRequest)
+        .build())
 
     resp.status() should be(OK)
     resp.bodyAs(UTF_8)

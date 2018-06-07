@@ -17,31 +17,25 @@ package com.hotels.styx.client;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionDestination;
-import com.hotels.styx.api.service.ConnectionPoolSettings;
 import com.hotels.styx.api.service.TlsSettings;
-import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
-import com.hotels.styx.client.connectionpool.SimpleConnectionPool;
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import rx.observers.TestSubscriber;
-import rx.subjects.ReplaySubject;
+import rx.Observable;
 
 import java.io.IOException;
 import java.util.function.IntConsumer;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static com.hotels.styx.api.FullHttpRequest.get;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
-import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.client.Protocol.HTTP;
 import static com.hotels.styx.client.Protocol.HTTPS;
@@ -51,11 +45,13 @@ import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-public class SimpleNettyHttpClientTest {
-    private HttpRequest anyRequest;
+public class SimpleHttpClientTest {
+    private FullHttpRequest anyRequest;
     private static int MAX_LENGTH = 1024;
 
     @BeforeMethod
@@ -68,11 +64,7 @@ public class SimpleNettyHttpClientTest {
     @Test
     public void sendsHttp() throws IOException {
         withOrigin(HTTP, port -> {
-            FullHttpResponse response =
-                    await(fromRxObservable(httpClient().sendRequest(httpRequest(port)))
-                            .flatMap(r -> r.toFullResponse(MAX_LENGTH))
-                            .asCompletableFuture());
-
+            FullHttpResponse response = await(httpClient().sendRequest(httpRequest(port)));
             assertThat(response.status(), is(OK));
         });
     }
@@ -80,11 +72,7 @@ public class SimpleNettyHttpClientTest {
     @Test
     public void sendsHttps() throws IOException {
         withOrigin(HTTPS, port -> {
-            FullHttpResponse response = httpsClient().sendRequest(httpsRequest(port))
-                    .flatMap(r -> toRxObservable(r.toFullResponse(MAX_LENGTH)))
-                    .toBlocking()
-                    .single();
-
+            FullHttpResponse response = await(httpsClient().sendRequest(httpsRequest(port)));
             assertThat(response.status(), is(OK));
         });
     }
@@ -92,11 +80,7 @@ public class SimpleNettyHttpClientTest {
     @Test(expectedExceptions = Exception.class)
     public void cannotSendHttpsWhenConfiguredForHttp() throws IOException {
         withOrigin(HTTPS, port -> {
-            FullHttpResponse response = httpClient().sendRequest(httpsRequest(port))
-                    .flatMap(r -> toRxObservable(r.toFullResponse(MAX_LENGTH)))
-                    .toBlocking()
-                    .single();
-
+            FullHttpResponse response = await(httpClient().sendRequest(httpsRequest(port)));
             assertThat(response.status(), is(OK));
         });
     }
@@ -104,40 +88,33 @@ public class SimpleNettyHttpClientTest {
     @Test(expectedExceptions = Exception.class)
     public void cannotSendHttpWhenConfiguredForHttps() throws IOException {
         withOrigin(HTTP, port -> {
-            FullHttpResponse response = httpsClient().sendRequest(httpRequest(port))
-                    .flatMap(r -> toRxObservable(r.toFullResponse(MAX_LENGTH)))
-                    .toBlocking()
-                    .single();
-
+            FullHttpResponse response = await(httpsClient().sendRequest(httpRequest(port)));
             assertThat(response.status(), is(OK));
         });
     }
 
-    private HttpClient httpClient() {
-        return new SimpleNettyHttpClient.Builder()
-                .connectionDestinationFactory(new CloseAfterUseConnectionDestination.Factory())
+    private SimpleHttpClient httpClient() {
+        return new SimpleHttpClient.Builder()
                 .build();
     }
 
-    private HttpClient httpsClient() {
-        return new SimpleNettyHttpClient.Builder()
-                .connectionDestinationFactory(new CloseAfterUseConnectionDestination.Factory()
-                        .connectionSettings(
-                                new ConnectionSettings(1000))
-                        .tlsSettings(new TlsSettings.Builder()
-                                .trustAllCerts(true)
-                                .build())
-                )
+    private SimpleHttpClient httpsClient() {
+        return new SimpleHttpClient.Builder()
+                .connectionSettings(new ConnectionSettings(1000))
+                .tlsSettings(new TlsSettings.Builder()
+                        .authenticate(false)
+                        .build())
+                .responseTimeoutMillis(6000)
                 .build();
     }
 
-    private HttpRequest httpRequest(int port) {
+    private FullHttpRequest httpRequest(int port) {
         return get("http://localhost:" + port)
                 .header(HOST, "localhost:" + port)
                 .build();
     }
 
-    private HttpRequest httpsRequest(int port) {
+    private FullHttpRequest httpsRequest(int port) {
         return get("https://localhost:" + port)
                 .header(HOST, "localhost:" + port)
                 .build();
@@ -159,11 +136,13 @@ public class SimpleNettyHttpClientTest {
     @Test
     public void willNotSetAnyUserAgentIfNotSpecified() {
         Connection mockConnection = mock(Connection.class);
-        HttpClient client = new SimpleNettyHttpClient.Builder()
-                .connectionDestinationFactory(connectInstantlyConnectionDestinationFactory(mockConnection))
+        when(mockConnection.write(any(HttpRequest.class))).thenReturn(Observable.just(HttpResponse.response().build()));
+
+        SimpleHttpClient client = new SimpleHttpClient.Builder()
+                .setConnectionFactory((origin, connectionSettings) -> Observable.just(mockConnection))
                 .build();
 
-        client.sendRequest(anyRequest).subscribe(new TestSubscriber<>());
+        client.sendRequest(anyRequest);
 
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(mockConnection).write(captor.capture());
@@ -173,12 +152,14 @@ public class SimpleNettyHttpClientTest {
     @Test
     public void setsTheSpecifiedUserAgentWhenSpecified() {
         Connection mockConnection = mock(Connection.class);
-        HttpClient client = new SimpleNettyHttpClient.Builder()
-                .connectionDestinationFactory(connectInstantlyConnectionDestinationFactory(mockConnection))
+        when(mockConnection.write(any(HttpRequest.class))).thenReturn(Observable.just(HttpResponse.response().build()));
+
+        SimpleHttpClient client = new SimpleHttpClient.Builder()
+                .setConnectionFactory((origin, connectionSettings) -> Observable.just(mockConnection))
                 .userAgent("Styx/5.6")
                 .build();
 
-        client.sendRequest(anyRequest).subscribe(new TestSubscriber<Object>());
+        client.sendRequest(anyRequest);
 
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(mockConnection).write(captor.capture());
@@ -188,16 +169,17 @@ public class SimpleNettyHttpClientTest {
     @Test
     public void retainsTheUserAgentStringFromTheRequest() {
         Connection mockConnection = mock(Connection.class);
-        HttpClient client = new SimpleNettyHttpClient.Builder()
-                .connectionDestinationFactory(connectInstantlyConnectionDestinationFactory(mockConnection))
+        when(mockConnection.write(any(HttpRequest.class))).thenReturn(Observable.just(HttpResponse.response().build()));
+
+        SimpleHttpClient client = new SimpleHttpClient.Builder()
+                .setConnectionFactory((origin, connectionSettings) -> Observable.just(mockConnection))
                 .userAgent("Styx/5.6")
                 .build();
 
         client.sendRequest(get("/foo.txt")
                 .header(USER_AGENT, "Foo/Bar")
                 .header(HOST, "localhost:1234")
-                .build())
-                .subscribe(new TestSubscriber<Object>());
+                .build());
 
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(mockConnection).write(captor.capture());
@@ -206,30 +188,10 @@ public class SimpleNettyHttpClientTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void requestWithNoHostOrUrlAuthorityCausesException() {
-        HttpRequest request = get("/foo.txt").build();
+        FullHttpRequest request = get("/foo.txt").build();
 
-        HttpClient client = new SimpleNettyHttpClient.Builder()
-                .connectionDestinationFactory(connectInstantlyConnectionDestinationFactory(mock(Connection.class)))
-                .build();
+        SimpleHttpClient client = new SimpleHttpClient.Builder().build();
 
-        client.sendRequest(request)
-                .flatMap(r -> toRxObservable(r.toFullResponse(MAX_LENGTH)))
-                .toBlocking()
-                .single();
-    }
-
-    private static Connection.Factory connectInstantlyConnectionFactory(Connection mockConnection) {
-        return (origin, connectionSettings) -> {
-            ReplaySubject<Connection> connectionSubject = ReplaySubject.create();
-            connectionSubject.onNext(mockConnection);
-            connectionSubject.onCompleted();
-            return connectionSubject;
-        };
-    }
-
-    private static ConnectionDestination.Factory connectInstantlyConnectionDestinationFactory(Connection mockConnection) {
-        return new SimpleConnectionPool.Factory()
-                .connectionFactory(connectInstantlyConnectionFactory(mockConnection))
-                .connectionPoolSettings(new ConnectionPoolSettings.Builder().build());
+        await(client.sendRequest(request));
     }
 }

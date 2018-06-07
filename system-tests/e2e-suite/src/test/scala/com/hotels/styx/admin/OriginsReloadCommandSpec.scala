@@ -19,7 +19,7 @@ import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import java.nio.file.{Files, Paths}
 
 import com.google.common.io.Files.createTempDir
-import com.hotels.styx.api.HttpRequest.post
+import com.hotels.styx.api.FullHttpRequest.post
 import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry
 import com.hotels.styx.support.ResourcePaths.fixturesHome

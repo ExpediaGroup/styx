@@ -17,13 +17,12 @@ package com.hotels.styx.client
 
 import ch.qos.logback.classic.Level
 import com.google.common.base.Charsets._
-import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.{HttpResponse, service}
 import com.hotels.styx.api.client.ActiveOrigins
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException
-import com.hotels.styx.api.service.spi
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
@@ -124,7 +123,8 @@ class OriginClosesConnectionSpec extends FunSuite
     val responseObservable = styxClient.sendRequest(
       get("/foo/3")
         .addHeader(HOST, originHost)
-        .build())
+        .build()
+        .toStreamingRequest)
 
     responseObservable
       .doOnNext((t: HttpResponse) => toRxObservable(t.body()).subscribe(contentSubscriber))

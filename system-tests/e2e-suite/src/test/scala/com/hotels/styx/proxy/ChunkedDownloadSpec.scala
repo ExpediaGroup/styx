@@ -33,7 +33,7 @@ import io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT
 import io.netty.handler.codec.http._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-
+import com.hotels.styx.api.FullHttpRequest.get
 import scala.concurrent.duration.{Duration, _}
 
 
@@ -63,7 +63,7 @@ class ChunkedDownloadSpec extends FunSpec
     it("Proxies a response with chunked HTTP content.") {
       originRespondingWith(response200OkWithThreeChunks("a" * 10, "b" * 20, "c" * 30))
 
-      val request = api.HttpRequest.get(styxServer.routerURL("/chunkedDownloadSpec/1")).build()
+      val request = get(styxServer.routerURL("/chunkedDownloadSpec/1")).build()
       val response = decodedRequest(request)
 
       response.status() should be(OK)
@@ -76,7 +76,7 @@ class ChunkedDownloadSpec extends FunSpec
       val messageBody = "Foo bar 0123456789012345678901234567890123456789\\n" * 100
       originRespondingWith(response200OkWithSlowChunkedMessageBody(messageBody))
 
-      val request = api.HttpRequest.get(styxServer.routerURL("/chunkedDownloadSpec/2")).build()
+      val request = get(styxServer.routerURL("/chunkedDownloadSpec/2")).build()
       val response = decodedRequest(request)
 
       response.status() should be(OK)

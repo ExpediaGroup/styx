@@ -27,7 +27,6 @@ import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.api.service.spi.StyxService;
-import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.proxy.ProxyServerConfig;
