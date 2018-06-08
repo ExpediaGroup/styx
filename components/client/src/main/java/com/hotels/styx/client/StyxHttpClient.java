@@ -33,6 +33,7 @@ import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.RewriteRule;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.slf4j.Logger;
 import rx.Observable;
 
@@ -47,6 +48,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
 import static io.netty.handler.codec.http.HttpMethod.HEAD;
 import static java.util.Collections.emptyList;
@@ -146,8 +148,7 @@ public final class StyxHttpClient implements HttpClient {
             List<RemoteHost> newPreviousOrigins = newArrayList(previousOrigins);
             newPreviousOrigins.add(remoteHost.get());
 
-            return host.hostClient()
-                    .sendRequest(request)
+            return toRxObservable(host.hostClient().handle(request, HttpInterceptorContext.create()))
                     .map(response -> addStickySessionIdentifier(response, host.origin()))
                     .doOnError(throwable -> logError(request, throwable))
                     .doOnUnsubscribe(() -> originStatsFactory.originStats(host.origin()).requestCancelled())

@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client.loadbalancing.strategies;
 
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
@@ -43,10 +43,10 @@ public class PowerOfTwoStrategyTest {
     final Origin ORIGIN_THREE = newOriginBuilder(localHostAndFreePort()).id("three").build();
     final Origin ORIGIN_FOUR = newOriginBuilder(localHostAndFreePort()).id("four").build();
 
-    private final RemoteHost HOST_ONE = remoteHost(ORIGIN_ONE, mock(HttpClient.class), lbMetrics(5));
-    private final RemoteHost HOST_TWO = remoteHost(ORIGIN_TWO, mock(HttpClient.class), lbMetrics(6));
-    private final RemoteHost HOST_THREE = remoteHost(ORIGIN_THREE, mock(HttpClient.class), lbMetrics(3));
-    private final RemoteHost HOST_FOUR = remoteHost(ORIGIN_FOUR, mock(HttpClient.class), lbMetrics(2));
+    private final RemoteHost HOST_ONE = remoteHost(ORIGIN_ONE, mock(HttpHandler.class), lbMetrics(5));
+    private final RemoteHost HOST_TWO = remoteHost(ORIGIN_TWO, mock(HttpHandler.class), lbMetrics(6));
+    private final RemoteHost HOST_THREE = remoteHost(ORIGIN_THREE, mock(HttpHandler.class), lbMetrics(3));
+    private final RemoteHost HOST_FOUR = remoteHost(ORIGIN_FOUR, mock(HttpHandler.class), lbMetrics(2));
     List<RemoteHost> allOrigins = asList(HOST_ONE, HOST_TWO, HOST_THREE,  HOST_FOUR);
 
     private long RNG_SEED = 5;

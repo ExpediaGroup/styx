@@ -22,12 +22,13 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.Announcer;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.OriginsChangeListener;
+import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
@@ -51,6 +52,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
@@ -395,7 +397,10 @@ public final class OriginsInventory
     private Collection<RemoteHost> pools(OriginState state) {
         return origins.values().stream()
                 .filter(origin -> origin.state().equals(state))
-                .map(origin -> remoteHost(origin.origin, origin.hostClient, origin.hostClient))
+                .map(origin -> {
+                    HttpHandler hostClient = (request, context) -> fromRxObservable(origin.hostClient.sendRequest(request));
+                    return remoteHost(origin.origin, hostClient, origin.hostClient);
+                })
                 .collect(toList());
     }
 
