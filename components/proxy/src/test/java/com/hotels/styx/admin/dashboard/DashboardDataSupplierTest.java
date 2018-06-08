@@ -20,10 +20,17 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.HttpHandler;
+<<<<<<< HEAD
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.RemoteHost;
+=======
+import com.hotels.styx.api.client.RemoteHost;
+import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.client.OriginsSnapshot;
+>>>>>>> Replace HttpClient with HttpHandler:
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
@@ -33,6 +40,7 @@ import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hotels.styx.api.Id.id;
+import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.client.RemoteHost.remoteHost;
 import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;

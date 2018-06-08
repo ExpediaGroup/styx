@@ -17,9 +17,9 @@ package com.hotels.styx.client.stickysession;
 
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
 import org.testng.annotations.Test;
@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.collect.Iterables.getFirst;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.client.RemoteHost.remoteHost;
+import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static java.util.Arrays.asList;
 import static java.util.Collections.EMPTY_LIST;
 import static org.hamcrest.MatcherAssert.assertThat;
