@@ -17,17 +17,16 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.MapType;
 import com.google.common.base.Charsets;
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.admin.tasks.StubConnectionPool;
 import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsSnapshot;
-import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
-import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
@@ -39,8 +38,8 @@ import java.util.Set;
 
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.client.RemoteHost.remoteHost;
+import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
@@ -137,7 +136,7 @@ public class OriginsInventoryHandlerTest {
     private static List<RemoteHost> pool(Set<Origin> origins) {
         return origins.stream()
                 .map(StubConnectionPool::new)
-                .map(pool -> remoteHost(pool.getOrigin(), mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)))
+                .map(pool -> remoteHost(pool.getOrigin(), mock(HttpHandler.class), mock(LoadBalancingMetricSupplier.class)))
                 .collect(toList());
     }
 

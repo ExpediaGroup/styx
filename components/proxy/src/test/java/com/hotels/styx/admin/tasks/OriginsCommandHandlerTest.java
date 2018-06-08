@@ -17,13 +17,14 @@ package com.hotels.styx.admin.tasks;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsSnapshot;
-import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.client.OriginsCommandsListener;
-import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
@@ -35,8 +36,8 @@ import org.testng.annotations.Test;
 import java.util.Set;
 
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.client.RemoteHost.remoteHost;
+import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
@@ -47,17 +48,16 @@ import static java.util.Collections.singleton;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
-import com.hotels.styx.api.HttpRequest;
 
 public class OriginsCommandHandlerTest {
     final Origin activeOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("activeOriginId").build();
-    final Set<RemoteHost> activeOrigins = singleton(remoteHost(activeOrigin, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)));
+    final Set<RemoteHost> activeOrigins = singleton(remoteHost(activeOrigin, mock(HttpHandler.class), mock(LoadBalancingMetricSupplier.class)));
 
     final Origin disabledOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("disabledOriginId").build();
-    final Set<RemoteHost> disabledOrigins = singleton(remoteHost(disabledOrigin, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)));
+    final Set<RemoteHost> disabledOrigins = singleton(remoteHost(disabledOrigin, mock(HttpHandler.class), mock(LoadBalancingMetricSupplier.class)));
 
     final Origin inactiveOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("inactiveOriginId").build();
-    final Set<RemoteHost> inactiveOrigins = singleton(remoteHost(inactiveOrigin, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)));
+    final Set<RemoteHost> inactiveOrigins = singleton(remoteHost(inactiveOrigin, mock(HttpHandler.class), mock(LoadBalancingMetricSupplier.class)));
 
     final EventBus eventBus = new EventBus();
     final OriginsCommandHandler originsCommand = new OriginsCommandHandler(eventBus);

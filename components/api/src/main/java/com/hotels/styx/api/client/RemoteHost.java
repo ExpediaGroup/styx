@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.api.client;
 
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetric;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
@@ -29,16 +29,16 @@ import static java.util.Objects.requireNonNull;
  */
 public final class RemoteHost {
     private final Origin origin;
-    private final HttpClient hostClient;
+    private final HttpHandler hostClient;
     private final LoadBalancingMetricSupplier metricSupplier;
 
-    private RemoteHost(Origin origin, HttpClient hostClient, LoadBalancingMetricSupplier metricSupplier) {
+    private RemoteHost(Origin origin, HttpHandler hostClient, LoadBalancingMetricSupplier metricSupplier) {
         this.origin = requireNonNull(origin);
         this.hostClient = requireNonNull(hostClient);
         this.metricSupplier = requireNonNull(metricSupplier);
     }
 
-    public static RemoteHost remoteHost(Origin origin, HttpClient client, LoadBalancingMetricSupplier metricSupplier) {
+    public static RemoteHost remoteHost(Origin origin, HttpHandler client, LoadBalancingMetricSupplier metricSupplier) {
         return new RemoteHost(origin, client, metricSupplier);
     }
 
@@ -50,7 +50,7 @@ public final class RemoteHost {
         return this.origin;
     }
 
-    public HttpClient hostClient() {
+    public HttpHandler hostClient() {
         return hostClient;
     }
 

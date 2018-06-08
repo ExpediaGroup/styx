@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.client;
 
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
@@ -49,7 +50,7 @@ import static org.mockito.Mockito.when;
 public class OriginRestrictionLoadBalancingStrategyTest {
     List<RemoteHost> origins = Stream.of(0, 1, 2, 3, 4, 5, 6)
             .map(i -> newOriginBuilder("localhost", 8080 + i).id("origin-" + i).build())
-            .map(origin -> remoteHost(origin, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)))
+            .map(origin -> remoteHost(origin, mock(HttpHandler.class), mock(LoadBalancingMetricSupplier.class)))
             .collect(toList());
 
     private LoadBalancer delegate;

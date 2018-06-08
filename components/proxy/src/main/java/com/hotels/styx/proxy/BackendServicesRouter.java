@@ -19,6 +19,7 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.StyxObservable;
@@ -58,7 +59,6 @@ import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpReq
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
 import static org.slf4j.LoggerFactory.getLogger;
-import com.hotels.styx.api.HttpRequest;
 
 /**
  * A {@link HttpHandler} implementation.
@@ -190,8 +190,9 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         }
     }
 
-    private HttpClient newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
-        return clientFactory.createClient(backendService, originsInventory, originStatsFactory);
+    private HttpHandler newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
+        HttpClient client = clientFactory.createClient(backendService, originsInventory, originStatsFactory);
+        return (request, context) -> fromRxObservable(client.sendRequest(request));
     }
 
     private static OriginHealthCheckFunction originHealthCheckFunction(
@@ -225,28 +226,21 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     }
 
     private static class ProxyToClientPipeline implements HttpHandler {
-        private final HttpClient client;
+        private final HttpHandler client;
         private final OriginsInventory originsInventory;
 
-        ProxyToClientPipeline(HttpClient httpClient, OriginsInventory originsInventory) {
+        ProxyToClientPipeline(HttpHandler httpClient, OriginsInventory originsInventory) {
             this.client = checkNotNull(httpClient);
             this.originsInventory = originsInventory;
         }
 
         @Override
         public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-            return fromRxObservable(
-                    client.sendRequest(request)
-                        .doOnError(throwable -> handleError(request, throwable)));
+            return client.handle(request, context);
         }
 
         public void close() {
             originsInventory.close();
         }
-
-        private static void handleError(HttpRequest request, Throwable throwable) {
-            LOG.error("Error proxying request={} exceptionClass={} exceptionMessage=\"{}\"", new Object[]{request, throwable.getClass().getName(), throwable.getMessage()});
-        }
-
     }
 }
