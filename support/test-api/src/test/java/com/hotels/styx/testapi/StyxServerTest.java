@@ -24,6 +24,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
+import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.api.service.TlsSettings;
 import com.hotels.styx.client.SimpleHttpClient;
 import org.testng.annotations.AfterMethod;
@@ -208,9 +209,11 @@ public class StyxServerTest {
                         .header("plugin-executed", "yes")
                         .build());
 
+        PluginFactory pluginFactory = environment -> responseDecorator;
+
         styxServer = new StyxServer.Builder()
                 .addRoute("/", originServer1.port())
-                .addPlugin("response-decorator", responseDecorator)
+                .addPluginFactory("response-decorator", pluginFactory, null)
                 .start();
 
         FullHttpResponse response = await(client.sendRequest(get(format("http://localhost:%d/foo", styxServer.proxyHttpPort())).build()));
