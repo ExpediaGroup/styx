@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.spi.config.JsonSpiExtension;
 import com.hotels.styx.spi.config.SpiExtension;
 import com.hotels.styx.spi.config.SpiExtensionFactory;
 import org.testng.annotations.Test;
@@ -42,14 +41,14 @@ public class FileSystemPluginFactoryLoaderTest {
     public void pluginLoaderLoadsPluginFromJarFile() {
         SpiExtensionFactory factory = new SpiExtensionFactory("testgrp.TestPluginModule", pluginsPath.toString());
 
-        PluginFactory plugin = pluginFactoryLoader.load(new JsonSpiExtension(factory, config, null));
+        PluginFactory plugin = pluginFactoryLoader.load(new SpiExtension(factory, config, null));
 
         assertThat(plugin, is(not(nullValue())));
         assertThat(plugin.getClass().getName(), is("testgrp.TestPluginModule"));
     }
 
     @Test(expectedExceptions = ConfigurationException.class, expectedExceptionsMessageRegExp =
-            "Could not load a plugin factory for configuration=JsonSpiExtension\\{" +
+            "Could not load a plugin factory for configuration=SpiExtension\\{" +
                     "factory=SpiExtensionFactory\\{" +
                     "class=incorrect.plugin.class.name.TestPluginModule, " +
                             "classPath=.*[\\\\/]components[\\\\/]proxy[\\\\/]target[\\\\/]test-classes[\\\\/]plugins[\\\\/]oneplugin[\\\\/]testPluginA-1.0-SNAPSHOT.jar" +
@@ -59,7 +58,7 @@ public class FileSystemPluginFactoryLoaderTest {
         Path pluginsPath = fixturesHome(PluginSuppliersTest.class, jarFile);
 
         SpiExtensionFactory factory = new SpiExtensionFactory("incorrect.plugin.class.name.TestPluginModule", pluginsPath.toString());
-        SpiExtension spiExtension = new JsonSpiExtension(factory, config, null);
+        SpiExtension spiExtension = new SpiExtension(factory, config, null);
         new FileSystemPluginFactoryLoader().load(spiExtension);
     }
 }

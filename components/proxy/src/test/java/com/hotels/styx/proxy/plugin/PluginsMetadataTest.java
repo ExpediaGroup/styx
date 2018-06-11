@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.common.Pair;
-import com.hotels.styx.spi.config.JsonSpiExtension;
 import com.hotels.styx.spi.config.SpiExtensionFactory;
 import com.hotels.styx.spi.config.SpiExtension;
 import org.testng.annotations.Test;
@@ -68,7 +67,7 @@ public class PluginsMetadataTest {
     }
 
     private SpiExtension pluginMetadata() {
-        return new JsonSpiExtension(factory(), config(), true);
+        return new SpiExtension(factory(), config(), true);
     }
 
     private SpiExtensionFactory factory() {
