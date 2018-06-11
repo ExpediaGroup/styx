@@ -53,9 +53,7 @@ public class ConfigStoreTest {
                 });
 
         configStore.set("foo", "bar");
-
         sync.await(1, SECONDS);
-
         assertThat(update.get(), is("bar"));
     }
 
@@ -74,9 +72,7 @@ public class ConfigStoreTest {
                 });
 
         configStore.set("foo", "bar");
-
         sync.await(1, SECONDS);
-
         assertThat(valueInStore.get(), is(valueInUpdate.get()));
     }
 
@@ -93,7 +89,6 @@ public class ConfigStoreTest {
                 });
 
         configStore.set("foo", "bar");
-
         unlockedByTestThread.countDown();
         unlockedBySubscribeThread.await(2, SECONDS);
     }
@@ -103,7 +98,6 @@ public class ConfigStoreTest {
     public void multipleListenersCanSubscribeSimultaneously() {
         Latch unlockedByListener1 = new Latch(1);
         Latch unlockedByListener2 = new Latch(1);
-
         Latch unlockedWhenBothFinish = new Latch(2);
 
         Observable<String> watch = configStore.watch("foo", String.class);
@@ -123,7 +117,6 @@ public class ConfigStoreTest {
         });
 
         configStore.set("foo", "bar");
-
         unlockedWhenBothFinish.await(5, SECONDS);
     }
 }

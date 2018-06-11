@@ -112,8 +112,8 @@ public class StyxServerTest {
     @Test
     public void adminHandlerIndicatesWhenProxyServerHasStarted() {
         HttpClient client = simpleClient();
-
         StyxServer styxServer = styxServer();
+
         try {
             styxServer.startAsync().awaitRunning();
 
@@ -122,8 +122,7 @@ public class StyxServerTest {
                     is(""
                             + "{\n"
                             + "  \"status\":\"STARTED\"\n"
-                            + "}"
-                            + "\n"));
+                            + "}\n"));
         } finally {
             stopIfRunning(styxServer);
         }
@@ -132,8 +131,8 @@ public class StyxServerTest {
     @Test
     public void adminHandlerIndicatesWhenProxyServerFailsToStart() {
         HttpClient client = simpleClient();
-
         StyxServer styxServer = styxServerWithPlugins(failingPlugin("fail"));
+
         try {
             try {
                 styxServer.startAsync().awaitRunning();
@@ -146,8 +145,7 @@ public class StyxServerTest {
                     is(""
                             + "{\n"
                             + "  \"status\":\"FAILED\"\n"
-                            + "}"
-                            + "\n"));
+                            + "}\n"));
         } finally {
             stopIfRunning(styxServer);
         }
@@ -156,10 +154,9 @@ public class StyxServerTest {
     @Test
     public void adminHandlerIsAvailableBeforeProxyServerStarts() {
         HttpClient client = simpleClient();
-
         LatchedStartUpPlugin plugin = new LatchedStartUpPlugin();
-
         StyxServer styxServer = styxServerWithPlugins(namedPlugin("slow", plugin));
+
         try {
             new Thread(styxServer::startAsync).start();
             styxServer.adminServer().awaitRunning();
@@ -169,8 +166,7 @@ public class StyxServerTest {
                     is(""
                             + "{\n"
                             + "  \"status\":\"INCOMPLETE\"\n"
-                            + "}"
-                            + "\n"));
+                            + "}\n"));
         } finally {
             plugin.release();
             stopIfRunning(styxServer);
@@ -378,19 +374,20 @@ public class StyxServerTest {
     }
 
     private static void eventually(Runnable block) {
-        AtomicReference<Throwable> ref = new AtomicReference<>();
+        AtomicReference<Throwable> lastException = new AtomicReference<>();
         long startTime = currentTimeMillis();
+
         while (currentTimeMillis() - startTime < 3000) {
             try {
                 block.run();
                 return;
             } catch (Exception | AssertionError e) {
                 // pass
-                ref.set(e);
+                lastException.set(e);
             }
         }
 
-        throw new AssertionError("Eventually block did not complete in 3 seconds.", ref.get());
+        throw new AssertionError("Eventually block did not complete in 3 seconds.", lastException.get());
     }
 
     private static Runtime captureSystemExit(Runnable block) {

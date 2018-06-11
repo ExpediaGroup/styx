@@ -29,7 +29,6 @@ public class NettyServerTest {
     @Test
     public void notifiesAboutStart() {
         ConfigStore configStore = new ConfigStore();
-
         ServerConnector httpConnector = mock(ServerConnector.class);
 
         HttpServer server = NettyServerBuilder.newBuilder()
@@ -39,7 +38,6 @@ public class NettyServerTest {
                 .build();
 
         server.startAsync().awaitRunning();
-
         assertThat(configStore.get("server.started.testserver", Result.class), isValue(success()));
     }
 }

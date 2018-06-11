@@ -49,8 +49,7 @@ public class ProxyStatusHandlerTest {
         assertThat(response, is(""
                 + "{\n"
                 + "  \"status\":\"INCOMPLETE\"\n"
-                + "}"
-                + "\n"));
+                + "}\n"));
     }
 
     @Test
@@ -65,8 +64,7 @@ public class ProxyStatusHandlerTest {
         assertThat(response, is(""
                 + "{\n"
                 + "  \"status\":\"STARTED\"\n"
-                + "}"
-                + "\n"));
+                + "}\n"));
     }
 
     @Test
@@ -81,7 +79,6 @@ public class ProxyStatusHandlerTest {
         assertThat(response, is(""
                 + "{\n"
                 + "  \"status\":\"FAILED\"\n"
-                + "}"
-                + "\n"));
+                + "}\n"));
     }
 }

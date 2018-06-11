@@ -84,13 +84,14 @@ It is possible to check when Styx is ready for serve requests by accessing an ad
 When you send a `GET` request to that URL, the response will have a body containing:
 
         {
-        status: "<UP|DOWN>"
+        status: "<STARTED|FAILED|INCOMPLETE>"
         }
 
-Where `<UP|DOWN>` is: 
+Where `<STARTED|FAILED|INCOMPLETE>` is: 
 
-* `UP` if the proxy server has not yet started up.
-* `DOWN` if the proxy server has started up, including all of the plugins configured for it.
+* `INCOMPLETE` if the proxy server has not finished starting up, nor encountered any failure.
+* `STARTED` if the proxy server has started up, including all of the plugins configured for it.
+* `FAILED` if the proxy server tried to start up, but failed for any reason.
 
 
     

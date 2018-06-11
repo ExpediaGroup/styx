@@ -90,7 +90,7 @@ public final class ProxyServerBuilder {
         }
 
         @Override
-        protected Result check() throws Exception {
+        protected Result check() {
             Meter errorRate = metricRegistry.meter("requests.error-rate.500");
             double oneMinuteRate = errorRate.getOneMinuteRate();
             return oneMinuteRate > 1.0
