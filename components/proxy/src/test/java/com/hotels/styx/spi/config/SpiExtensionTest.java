@@ -34,7 +34,7 @@ public class SpiExtensionTest {
     public void getsConfigAsClass() throws IOException {
         JsonNode configNode = MAPPER.readTree("foo: bar");
 
-        SpiExtension metadata = new SpiExtension(new SpiExtensionFactory("factoryClass", "classPath"), configNode, null);
+        SpiExtension metadata = new JsonSpiExtension(new SpiExtensionFactory("factoryClass", "classPath"), configNode, null);
 
         TestObject config = metadata.config(TestObject.class);
 

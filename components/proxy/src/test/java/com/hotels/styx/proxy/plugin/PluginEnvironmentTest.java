@@ -21,6 +21,7 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.spi.config.JsonSpiExtension;
 import com.hotels.styx.spi.config.SpiExtension;
 import com.hotels.styx.spi.config.SpiExtensionFactory;
 import org.testng.annotations.BeforeMethod;
@@ -75,7 +76,7 @@ public class PluginEnvironmentTest {
     private SpiExtension pluginMetadata(String pluginName) {
         SpiExtensionFactory factory = new SpiExtensionFactory("PluginXFactory", "/path");
 
-        return new SpiExtension(factory, config, null);
+        return new JsonSpiExtension(factory, config, null);
     }
 
 }
