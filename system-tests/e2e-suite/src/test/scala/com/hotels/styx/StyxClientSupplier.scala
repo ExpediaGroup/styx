@@ -63,15 +63,4 @@ trait StyxClientSupplier {
     Await.result(future, timeout)
   }
 
-//  def decodedRequestWithClient(client: FullHttpClient,
-//                               request: FullHttpRequest,
-//                               debug: Boolean = false,
-//                               maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds): FullHttpResponse = {
-//    toScalaObservable(client.sendRequest(request))
-//      .doOnNext(response => if (debug) println("StyxClientSupplier: received response for: " + request.url().path()))
-//      .flatMap(response => toRxObservable(response.toFullResponse(maxSize)))
-//      .timeout(timeout)
-//      .toBlocking
-//      .first
-//  }
 }

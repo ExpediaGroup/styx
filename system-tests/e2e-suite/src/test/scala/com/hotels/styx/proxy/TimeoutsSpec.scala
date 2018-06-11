@@ -15,31 +15,27 @@
  */
 package com.hotels.styx.proxy
 
-import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.api.HttpHeaderNames._
-import com.hotels.styx.api.messages.HttpResponseStatus._
-import com.hotels.styx.api._
+import com.hotels.styx.StyxProxySpec
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.TestClientSupport
-import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig, StyxConfig}
-import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
-import _root_.io.netty.buffer.ByteBuf
-import _root_.io.netty.buffer.Unpooled.copiedBuffer
-import com.hotels.styx.api.messages.HttpMethod.GET
+import com.hotels.styx.support.configuration._
+import io.netty.buffer.Unpooled.copiedBuffer
+import io.netty.handler.codec.http.HttpHeaderNames.{CONTENT_LENGTH, CONTENT_TYPE, HOST}
+import io.netty.handler.codec.http.HttpResponseStatus.{GATEWAY_TIMEOUT, REQUEST_TIMEOUT}
+import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
+import io.netty.handler.codec.http._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-import rx.Observable
 
 import scala.concurrent.duration._
 
 class TimeoutsSpec extends FunSpec
   with StyxProxySpec
   with TestClientSupport
-  with StyxClientSupplier
   with Eventually {
 
   val normalBackend = FakeHttpServer.HttpStartupConfig().start()
@@ -73,73 +69,54 @@ class TimeoutsSpec extends FunSpec
     normalBackend.stub(urlPathEqualTo("/headers"), aResponse.withStatus(200))
   }
 
-//  describe("Timeouts handling") {
+  describe("Timeouts handling") {
 
-    // TODO: SORT THIS OUT. A MUST!
+    describe("Request timeouts") {
+      it("should log and return 408 Request Timeout when client does not send a full HTTP request within configurable time.") {
+        val testClient = aggregatingTestClient("localhost", styxServer.httpPort)
 
-//    describe("Request timeouts") {
-//      it("should log and return 408 Request Timeout when client does not send a full HTTP request within configurable time.") {
-//        val delayedRequestBody: Observable[ByteBuf] = Observable.just(copiedBuffer("content".getBytes()))
-//          .delay(styxConfig.proxyConfig.requestTimeoutMillis, MILLISECONDS)
-//
-//        val slowRequest = new HttpRequest.Builder(GET, "/backends")
-//          .header(HOST, styxServer.proxyHost)
-//          .header(CONTENT_TYPE, "text/html; charset=UTF-8")
-//          .header(CONTENT_LENGTH, "500")
-//          .body(StyxInternalObservables.fromRxObservable(delayedRequestBody))
-//          .build()
-//
-//        val resp = decodedRequest(slowRequest, debug = true)
-//
-//        assert(resp.status() == REQUEST_TIMEOUT)
-//      }
-//    }
+        val response = withTestClient(testClient) {
 
-//    describe("Response timeouts") {
+          val slowRequest = new DefaultHttpRequest(HTTP_1_1, HttpMethod.GET, "/backends")
+          slowRequest.headers().add(HOST, styxServer.proxyHost)
+          slowRequest.headers().add(CONTENT_TYPE, "text/html; charset=UTF-8")
+          slowRequest.headers().add(CONTENT_LENGTH, "500")
 
-//      it("should return a 504 if a backend takes longer than the configured response timeout to start returning a response") {
-//        val req = new FullHttpRequest.Builder(GET, "/slowResponseHeader")
-//          .addHeader(HOST, styxServer.proxyHost)
-//          .build()
-//
-//        val transaction = client.sendRequest(req)
-//        val (resp, responseTime) = responseAndResponseTime(transaction)
-//
-//        slowBackend.verify(getRequestedFor(urlPathEqualTo("/slowResponseHeader")))
-//
-//        assert(resp.status() == GATEWAY_TIMEOUT)
-//        assert(responseTime > responseTimeout)
-//      }
-//
-//      ignore("should still return the response if the body takes longer than the header timeout") {
-//        val req = new HttpRequest.Builder(GET, "/slowResponseBody")
-//          .addHeader(HOST, styxServer.proxyHost)
-//          .build()
-//
-//        val resp = decodedRequest(req)
-//
-//        slowBackend.verify(getRequestedFor(urlPathEqualTo("/slowResponseBody")))
-//
-//        assert(resp.status() == OK)
-//      }
-//    }
-//  }
+          testClient.write(slowRequest)
+          testClient.write(new DefaultHttpContent(copiedBuffer("xys", UTF_8)))
 
-  def responseAndResponseTime(transaction: Observable[HttpResponse]): (FullHttpResponse, Long) = {
-    var response = FullHttpResponse.response().build()
+          val response = testClient.waitForResponse().asInstanceOf[FullHttpResponse]
 
-    val duration = time {
-      response = waitForResponse(transaction)
+          assert(response.status() == REQUEST_TIMEOUT)
+        }
+      }
     }
 
-    (response, duration)
+    describe("Response timeouts") {
+      it("should return a 504 if a backend takes longer than the configured response timeout to start returning a response") {
+        val testClient = aggregatingTestClient("localhost", styxServer.httpPort)
+
+        withTestClient(testClient) {
+
+          val slowRequest = new DefaultFullHttpRequest(HTTP_1_1, HttpMethod.GET, "/slowResponseHeader")
+          slowRequest.headers().add(HOST, styxServer.proxyHost)
+
+          testClient.write(slowRequest)
+
+          val responseTime = time {
+            val response = testClient.waitForResponse().asInstanceOf[FullHttpResponse]
+            assert(response.status() == GATEWAY_TIMEOUT)
+          }
+          assert(responseTime > responseTimeout)
+        }
+      }
+    }
+
+    def time[A](codeBlock: => A) = {
+      val s = System.nanoTime
+      codeBlock
+      ((System.nanoTime - s) / 1e6).asInstanceOf[Int]
+    }
+
   }
-
-
-  def time[A](codeBlock: => A) = {
-    val s = System.nanoTime
-    codeBlock
-    ((System.nanoTime - s) / 1e6).asInstanceOf[Int]
-  }
-
 }
