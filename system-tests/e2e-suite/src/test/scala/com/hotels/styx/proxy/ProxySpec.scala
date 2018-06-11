@@ -17,23 +17,19 @@ package com.hotels.styx.proxy
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import com.github.tomakehurst.wiremock.client.RequestPatternBuilder
+import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, WireMock}
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.MockServer.responseSupplier
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.FullHttpRequest.head
 import com.hotels.styx.api.HttpHeaderNames._
-import com.hotels.styx.api.HttpRequest.Builder
 import com.hotels.styx.api.HttpResponse.response
-import com.hotels.styx.api.messages.HttpMethod.{GET, HEAD}
 import com.hotels.styx.api.messages.HttpResponseStatus._
 import com.hotels.styx.api.messages.HttpVersion._
 import com.hotels.styx.api.support.HostAndPorts._
-import com.hotels.styx.api.{FullHttpResponse, HttpClient, HttpRequest}
-import com.hotels.styx.client.HttpConfig.newHttpConfigBuilder
-import com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder
+import com.hotels.styx.api.{FullHttpClient, FullHttpResponse}
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
-import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination.Factory
-import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory
-import com.hotels.styx.client.{ConnectionSettings, SimpleNettyHttpClient}
+import com.hotels.styx.client.{ConnectionSettings, SimpleHttpClient}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origin, Origins}
 import com.hotels.styx.support.matchers.IsOptional.{isValue, matches}
@@ -42,6 +38,10 @@ import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
 import org.hamcrest.MatcherAssert.assertThat
 import org.scalatest.{BeforeAndAfter, FunSpec}
+
+import scala.compat.java8.FutureConverters.CompletionStageOps
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class ProxySpec extends FunSpec
   with StyxProxySpec
@@ -80,7 +80,7 @@ class ProxySpec extends FunSpec
           .withBody("bodyContent")
         )
 
-      val req = new HttpRequest.Builder(GET, "/")
+      val req = get("/")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
@@ -104,7 +104,7 @@ class ProxySpec extends FunSpec
       mockServer.stub("/http10", responseSupplier(() => response().build()))
 
 
-      val req = new HttpRequest.Builder(GET, "/http10")
+      val req = get("/http10")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
@@ -119,24 +119,21 @@ class ProxySpec extends FunSpec
   describe("Handling responses without body") {
     recordingBackend
       .stub(urlPathEqualTo("/bodiless"), aResponse.withStatus(200))
-      .stub(head(urlPathEqualTo("/bodiless")), aResponse.withStatus(200))
+      .stub(WireMock.head(urlPathEqualTo("/bodiless")), aResponse.withStatus(200))
 
     it("should respond to HEAD with bodiless response") {
 
-      val client: HttpClient = new SimpleNettyHttpClient.Builder()
-        .connectionDestinationFactory(new Factory()
-          .connectionSettings(new ConnectionSettings(1000))
-          .connectionFactory(new NettyConnectionFactory.Builder()
-            .name("scalatest-e2e-client")
-            .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(2 * 8192).build())
-            .httpRequestOperationFactory(httpRequestOperationFactoryBuilder().build())
-            .build())).build()
+      val client: FullHttpClient = new SimpleHttpClient.Builder()
+        .connectionSettings(new ConnectionSettings(1000))
+        .maxHeaderSize(2 * 8192)
+        .threadName("scalatest-e2e-client")
+        .build()
 
-      val req = new HttpRequest.Builder(HEAD, "/bodiless")
+      val req = head("/bodiless")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
-      val resp = decodedRequestWithClient(client, req)
+      val resp = Await.result(client.sendRequest(req).toScala, 5.seconds)
 
       recordingBackend.verify(headRequestedFor(urlPathEqualTo("/bodiless")))
 
@@ -148,7 +145,7 @@ class ProxySpec extends FunSpec
       recordingBackend
         .stub(urlPathEqualTo("/204"), aResponse.withStatus(204).withBody("I should not be here"))
 
-      val request = new Builder(GET, "/204")
+      val request = get("/204")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
@@ -162,7 +159,7 @@ class ProxySpec extends FunSpec
       recordingBackend
         .stub(urlPathEqualTo("/304"), aResponse.withStatus(304).withBody("I should not be here"))
 
-      val request = new Builder(GET, "/304")
+      val request = get("/304")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
@@ -179,7 +176,7 @@ class ProxySpec extends FunSpec
           "/unavailable" -> HttpBackend("http10", Origins(Origin("localhost", freePort(), "app-1-01")))
         )
 
-        val req = new Builder(GET, "/unavailable")
+        val req = get("/unavailable")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
@@ -192,7 +189,7 @@ class ProxySpec extends FunSpec
       it("should return a 502 BAD_GATEWAY if a backend service is not configured") {
         styxServer.setBackends()
 
-        val req = new Builder(GET, "/nonexistant-service")
+        val req = get("/nonexistant-service")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
@@ -210,7 +207,7 @@ class ProxySpec extends FunSpec
         .stub(urlStartingWith("/url"), aResponse.withStatus(200))
 
       it("should substitute URL path according to configuration") {
-        val req = new Builder(GET, "/url/search.do?resolved-location=CITY%3A549499%3APROVIDED%3APROVIDED&destination-id=549499&q-destination=London%2C%20England%2C%20United%20Kingdom&q-rooms=1&q-room-0-adults=2&q-room-0-children=0")
+        val req = get("/url/search.do?resolved-location=CITY%3A549499%3APROVIDED%3APROVIDED&destination-id=549499&q-destination=London%2C%20England%2C%20United%20Kingdom&q-rooms=1&q-room-0-adults=2&q-room-0-children=0")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
@@ -219,7 +216,7 @@ class ProxySpec extends FunSpec
       }
 
       it("should encode the path") {
-        val req = new Builder(GET, "/url/lp/de408991/%D7%9E%D7%9C%D7%95%D7%A0%D7%95%D7%AA-%D7%A7%D7%95%D7%A4%D7%A0%D7%94%D7%92%D7%9F-%D7%93%D7%A0%D7%9E%D7%A8%D7%A7/")
+        val req = get("/url/lp/de408991/%D7%9E%D7%9C%D7%95%D7%A0%D7%95%D7%AA-%D7%A7%D7%95%D7%A4%D7%A0%D7%94%D7%92%D7%9F-%D7%93%D7%A0%D7%9E%D7%A8%D7%A7/")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
@@ -228,7 +225,7 @@ class ProxySpec extends FunSpec
       }
 
       it("should pass url with allowed chars in the path without encoding") {
-        val req = new Builder(GET, "/url/newsletter/subscribe.html;sessid=lUmrydZOJM85gj5BliH_qVcl-V.noJvmRouteSet")
+        val req = get("/url/newsletter/subscribe.html;sessid=lUmrydZOJM85gj5BliH_qVcl-V.noJvmRouteSet")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 

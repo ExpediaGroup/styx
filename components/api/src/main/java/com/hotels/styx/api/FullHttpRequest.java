@@ -309,6 +309,7 @@ public class FullHttpRequest implements FullHttpMessage {
      */
     public HttpRequest toStreamingRequest() {
         HttpRequest.Builder streamingBuilder = new HttpRequest.Builder(this)
+                .disableValidation()
                 .clientAddress(clientAddress);
 
         if (this.body.length == 0) {

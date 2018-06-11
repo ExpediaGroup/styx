@@ -20,13 +20,12 @@ import java.nio.charset.StandardCharsets.UTF_8
 import ch.qos.logback.classic.Level._
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
 import com.hotels.styx.api.HttpInterceptor.Chain
-import com.hotels.styx.api.HttpRequest._
+import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.metrics.HttpErrorStatusCauseLogger
 import com.hotels.styx.api.plugins.spi.PluginException
 import com.hotels.styx.api.{HttpRequest, HttpResponse, StyxObservable}
-import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.matchers.LoggingEventMatcher._
@@ -97,7 +96,7 @@ class LoggingSpec extends FunSpec
         .addHeader(X_THROW_AT, AT_REQUEST)
         .build()
 
-      val response = waitForResponse(client.sendRequest(request))
+      val response = decodedRequest(request)
 
       assertThat(response.status(), is(INTERNAL_SERVER_ERROR))
 

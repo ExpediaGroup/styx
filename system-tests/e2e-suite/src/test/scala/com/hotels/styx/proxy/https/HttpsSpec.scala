@@ -16,8 +16,8 @@
 package com.hotels.styx.proxy.https
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.hotels.styx.api.FullHttpRequest
 import com.hotels.styx.api.HttpHeaderNames.{X_FORWARDED_PROTO, _}
-import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.messages.HttpMethod.GET
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.infrastructure.HttpResponseImplicits
@@ -63,7 +63,7 @@ class HttpsSpec extends FunSpec
         "https-app", Origins(recordingBackend), TlsSettings()
       ))
 
-      val req = new HttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
+      val req = new FullHttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
         .header(HOST, styxServer.httpsProxyHost)
         .build()
 

@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
-import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse, StyxObservable}
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -70,7 +70,7 @@ class AsyncPluginResponseSpec extends FunSpec
         .addHeader("Content-Length", "0")
         .build()
 
-      val response = waitForResponse(client.sendRequest(request))
+      val response = decodedRequest(request)
 
       mockServer.verify(1, getRequestedFor(urlStartingWith("/foobar")))
       response.bodyAs(UTF_8) should be("I should be here!")

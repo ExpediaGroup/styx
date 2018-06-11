@@ -18,18 +18,16 @@ package com.hotels.styx.plugins
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.MockServer.responseSupplier
-import com.hotels.styx.api.HttpRequest._
-import com.hotels.styx.api.{HttpResponse, StyxObservable}
-import com.hotels.styx.api.HttpResponse._
+import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.HttpResponse.response
+import com.hotels.styx.api.StyxObservable
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{MockServer, StyxProxySpec}
 import io.netty.buffer.{ByteBuf, Unpooled}
-import com.hotels.styx.api.messages.HttpResponseStatus
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-import rx.Observable.just
+
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 

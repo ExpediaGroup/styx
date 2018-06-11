@@ -33,10 +33,9 @@ import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.client.SimpleNettyHttpClient;
+import com.hotels.styx.client.SimpleHttpClient;
 import com.hotels.styx.client.StyxHeaderConfig;
 import com.hotels.styx.client.StyxHostHttpClient;
-import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
 import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
 import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
@@ -210,12 +209,8 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         ConnectionSettings connectionSettings = new ConnectionSettings(
                 connectionPoolSettings.connectTimeoutMillis());
 
-        HttpClient client = new SimpleNettyHttpClient.Builder()
+        SimpleHttpClient client = new SimpleHttpClient.Builder()
                 .userAgent("Styx/" + styxVersion)
-                .connectionDestinationFactory(
-                        new CloseAfterUseConnectionDestination.Factory()
-                                .connectionSettings(connectionSettings)
-                                .connectionFactory(connectionFactory))
                 .build();
 
         String healthCheckUri = healthCheckConfig

@@ -163,6 +163,7 @@ public class HttpResponse implements StreamingHttpMessage {
                 })
                 .map(HttpResponse::decodeAndRelease)
                 .map(decoded -> new FullHttpResponse.Builder(this, decoded)
+                        .disableValidation()
                         .build());
 
         return new StyxCoreObservable<>(delegate);

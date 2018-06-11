@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import ch.qos.logback.classic.Level._
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
-import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -131,7 +131,7 @@ class HttpMessageLoggingSpec extends FunSpec
         assertThat(logger.log.size(), is(2))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, request=\\{method=GET, secure=true, uri=/foobar, origin=\"N/A\", headers=.*, cookies=\\[\\]}")))
+          "requestId=[-a-z0-9]+, request=\\{method=GET, secure=true, uri=https://localhost:[0-9]+/foobar, origin=\"N/A\", headers=.*, cookies=\\[\\]}")))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
           "requestId=[-a-z0-9]+, response=\\{status=200 OK, headers=\\[Server=Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + "=generic-app-01, Via=1.1 styx\\], cookies=\\[\\]\\}")))

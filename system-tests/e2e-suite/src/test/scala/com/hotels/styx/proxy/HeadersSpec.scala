@@ -15,14 +15,14 @@
  */
 package com.hotels.styx.proxy
 
-import com.hotels.styx.api.messages.HttpResponseStatus._
 import _root_.io.netty.handler.codec.http.HttpHeaders.Names.{UPGRADE, _}
 import _root_.io.netty.handler.codec.http.HttpHeaders.Values._
-import _root_.io.netty.handler.codec.http.HttpMethod._
-import com.hotels.styx.api.messages.HttpMethod.GET
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.HttpCookieAttribute.{domain, httpOnly, path}
-import com.hotels.styx.api._
+import com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_FOR
+import com.hotels.styx.api.messages.HttpResponseStatus._
+import com.hotels.styx.api.{HttpCookie, HttpHeaderValues}
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
@@ -64,7 +64,7 @@ class HeadersSpec extends FunSpec
   describe("Headers handling") {
 
     it("should pass through most http headers to the backend") {
-      val req = new HttpRequest.Builder(GET, "/headers")
+      val req = get("/headers")
         .addHeader(HOST, styxServer.proxyHost)
         .addHeader("Foo", "bar")
         .addHeader("User-Agent", "Styx/1.0")
@@ -81,7 +81,7 @@ class HeadersSpec extends FunSpec
     }
 
     it("should not add a default User-Agent if there isn't one in the request") {
-      val req = new HttpRequest.Builder(GET, "/headers")
+      val req = get("/headers")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
@@ -96,7 +96,7 @@ class HeadersSpec extends FunSpec
     describe("setting host header") {
 
       it("it should set the host if missing") {
-        val req = new HttpRequest.Builder(GET, s"http://localhost:${recordingBackend.port()}/headers")
+        val req = get(s"http://localhost:${recordingBackend.port()}/headers")
           .build()
 
         val resp = decodedRequest(req)
@@ -108,7 +108,7 @@ class HeadersSpec extends FunSpec
       }
 
       it("should use host and port from an absolute URI to override the Host header") {
-        val req = new HttpRequest.Builder(GET, s"http://localhost:${recordingBackend.port()}/headers")
+        val req = get(s"http://localhost:${recordingBackend.port()}/headers")
           .addHeader(HOST, "www.example.com")
           .build()
 
@@ -125,7 +125,7 @@ class HeadersSpec extends FunSpec
     describe("setting to X-Forwarded-For header") {
 
       it("should add the client IP to X-Forwarded-For") {
-        val req = new HttpRequest.Builder(GET, "/headers")
+        val req = get("/headers")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
@@ -134,14 +134,14 @@ class HeadersSpec extends FunSpec
         assert(resp.status() == OK)
 
         recordingBackend.verify(getRequestedFor(urlPathEqualTo("/headers"))
-          .withHeader(HttpHeaderNames.X_FORWARDED_FOR.toString, equalTo("127.0.0.1")))
+          .withHeader(X_FORWARDED_FOR.toString, equalTo("127.0.0.1")))
 
       }
 
       it("should append the client IP to X-Forwarded-For") {
-        val req = new HttpRequest.Builder(GET, "/headers")
+        val req = get("/headers")
           .addHeader(HOST, styxServer.proxyHost)
-          .addHeader(HttpHeaderNames.X_FORWARDED_FOR, "10.9.8.7")
+          .addHeader(X_FORWARDED_FOR, "10.9.8.7")
           .build()
 
         val resp = decodedRequest(req)
@@ -149,7 +149,7 @@ class HeadersSpec extends FunSpec
         assert(resp.status() == OK)
 
         recordingBackend.verify(getRequestedFor(urlPathEqualTo("/headers"))
-          .withHeader(HttpHeaderNames.X_FORWARDED_FOR.toString, equalTo("10.9.8.7, 127.0.0.1")))
+          .withHeader(X_FORWARDED_FOR.toString, equalTo("10.9.8.7, 127.0.0.1")))
 
       }
     }
@@ -157,7 +157,7 @@ class HeadersSpec extends FunSpec
     describe("setting VIA header") {
 
       it("should add itself to the Via request header for an HTTP/1.1 request") {
-        val req = new HttpRequest.Builder(GET, "/headers")
+        val req = get("/headers")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
@@ -170,7 +170,7 @@ class HeadersSpec extends FunSpec
       }
 
       it("should append itself to the Via request header for an HTTP/1.1 request") {
-        val req = new HttpRequest.Builder(GET, "/headers")
+        val req = get("/headers")
           .addHeader(HOST, styxServer.proxyHost)
           .addHeader(VIA, "1.1 apache")
           .build()
@@ -184,7 +184,7 @@ class HeadersSpec extends FunSpec
       }
 
       it("should add itself to the Via response heaver") {
-        val req = new HttpRequest.Builder(GET, "/headers")
+        val req = get("/headers")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
@@ -196,7 +196,7 @@ class HeadersSpec extends FunSpec
         recordingBackend.stub(urlPathEqualTo("/headers"), aResponse.withStatus(200)
           .withHeader(VIA, "1.1 apache"))
 
-        val req = new HttpRequest.Builder(GET, "/headers")
+        val req = get("/headers")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
@@ -211,7 +211,7 @@ class HeadersSpec extends FunSpec
     describe("hop by hop headers") {
 
       it("should remove hop by hop headers, apart from Transfer-Encoding, from request") {
-        val req = new HttpRequest.Builder(GET, "/headers")
+        val req = get("/headers")
           .header(HOST, styxServer.proxyHost)
           .header("Keep-Alive", "true")
           .header(PROXY_AUTHENTICATE, "true")
@@ -241,7 +241,7 @@ class HeadersSpec extends FunSpec
         )
 
 
-        val req = new HttpRequest.Builder(GET, "/headers")
+        val req = get("/headers")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
@@ -260,7 +260,7 @@ class HeadersSpec extends FunSpec
 
 
       it("should remove all fields from request indicated by Connection header value") {
-        val req = HttpRequest.get("/headers")
+        val req = get("/headers")
           .header(HOST, styxServer.proxyHost)
           .addHeader(CONNECTION, "Foo, Bar, Baz")
           .addHeader("Foo", "abc")
@@ -294,7 +294,7 @@ class HeadersSpec extends FunSpec
           .withHeader(UPGRADE, "foo")
         )
 
-        val req = new HttpRequest.Builder(GET, "/headers")
+        val req = get("/headers")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
@@ -317,7 +317,7 @@ class HeadersSpec extends FunSpec
           .withHeader(CONTENT_LENGTH, "60")
         )
 
-        val req = new HttpRequest.Builder(GET, "/headers")
+        val req = get("/headers")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
@@ -333,7 +333,7 @@ class HeadersSpec extends FunSpec
           responseWithHeaders(
             HttpHeader(CONTENT_LENGTH, "50, 60")))
 
-        val req = new HttpRequest.Builder(GET, "/badheaders")
+        val req = get("/badheaders")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
@@ -347,7 +347,7 @@ class HeadersSpec extends FunSpec
           responseWithHeaders(
             HttpHeader(CONTENT_LENGTH, "50, 50")))
 
-        val req = new HttpRequest.Builder(GET, "/badheaders")
+        val req = get("/badheaders")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
@@ -362,7 +362,7 @@ class HeadersSpec extends FunSpec
             HttpHeader(CONTENT_LENGTH, "50"),
             HttpHeader(TRANSFER_ENCODING, CHUNKED)))
 
-        val req = new HttpRequest.Builder(GET, "/badheaders")
+        val req = get("/badheaders")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 
@@ -385,7 +385,7 @@ class HeadersSpec extends FunSpec
           "/badheaders" -> HttpBackend("app-1", Origins(originOne))
         )
 
-        val req = new HttpRequest.Builder(GET, "/quotedCookies")
+        val req = get("/quotedCookies")
           .addHeader(HOST, styxServer.proxyHost)
           .addCookie("test-cookie", "\"hu_hotels_com,HCOM_HU,hu_HU,\"")
           .build()
@@ -409,7 +409,7 @@ class HeadersSpec extends FunSpec
           "/badheaders" -> HttpBackend("app-1", Origins(originOne))
         )
 
-        val req = new HttpRequest.Builder(GET, "/cookies")
+        val req = get("/cookies")
           .addHeader(HOST, styxServer.proxyHost)
           .build()
 

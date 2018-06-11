@@ -17,9 +17,10 @@ package com.hotels.styx.servers;
 
 import com.github.tomakehurst.wiremock.client.ValueMatchingStrategy;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.hotels.styx.api.FullHttpClient;
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.client.UrlConnectionHttpClient;
+import com.hotels.styx.api.service.TlsSettings;
+import com.hotels.styx.client.SimpleHttpClient;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
 import org.testng.annotations.AfterMethod;
@@ -33,8 +34,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.api.FullHttpRequest.get;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
 import static com.hotels.styx.common.StyxFutures.await;
@@ -44,17 +44,18 @@ import static javax.net.ssl.HttpsURLConnection.getDefaultHostnameVerifier;
 import static javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import com.hotels.styx.api.HttpRequest;
 
 public class MockOriginServerTest {
 
     private MockOriginServer server;
-    private UrlConnectionHttpClient client;
+    private FullHttpClient client;
     private HostnameVerifier oldHostNameVerifier;
+    private SimpleHttpClient tlsClient;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        client = new UrlConnectionHttpClient(1000, 1000);
+        client = new SimpleHttpClient.Builder().build();
+        tlsClient = new SimpleHttpClient.Builder().tlsSettings(new TlsSettings.Builder().build()).build();
         oldHostNameVerifier = disableHostNameVerification();
     }
 
@@ -76,10 +77,10 @@ public class MockOriginServerTest {
                         .withHeader("a", "b")
                         .withBody("Hello, World!"));
 
-        FullHttpResponse response = send(client,
+        FullHttpResponse response = await(client.sendRequest(
                 get(format("http://localhost:%d/mock", server.port()))
                         .header("X-Forwarded-Proto", "http")
-                        .build());
+                        .build()));
 
         assertThat(response.status(), is(OK));
         assertThat(response.header("a"), is(Optional.of("b")));
@@ -104,23 +105,17 @@ public class MockOriginServerTest {
                         .withHeader("a", "b")
                         .withBody("Hello, World!"));
 
-        FullHttpResponse response = send(client,
-                get(format("https://localhost:%d/mock", server.port()))
-                        .header("X-Forwarded-Proto", "http")
-                        .build());
+        FullHttpResponse response = await(
+                tlsClient.sendRequest(
+                        get(format("https://localhost:%d/mock", server.port()))
+                                .header("X-Forwarded-Proto", "http")
+                                .build()));
 
         assertThat(response.status(), is(OK));
         assertThat(response.header("a"), is(Optional.of("b")));
 
         server.verify(getRequestedFor(urlEqualTo("/mock"))
                 .withHeader("X-Forwarded-Proto", valueMatchingStrategy("http")));
-    }
-
-
-    private FullHttpResponse send(HttpClient client, HttpRequest request) {
-        return await(fromRxObservable(client.sendRequest(request))
-                .flatMap(req -> req.toFullResponse(10*1024))
-                .asCompletableFuture());
     }
 
     private ValueMatchingStrategy valueMatchingStrategy(String matches) {

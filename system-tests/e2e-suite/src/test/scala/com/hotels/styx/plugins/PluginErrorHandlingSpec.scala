@@ -15,10 +15,11 @@
  */
 package com.hotels.styx.plugins
 
+import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Optional
 
 import com.hotels.styx._
-import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api._
 import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
@@ -72,7 +73,7 @@ class PluginErrorHandlingSpec extends FunSpec
       for (i <- 1 to 2) {
         val request = get(styxServer.routerURL("/foo"))
           .header("Fail_after_handle", "true")
-          .body("foo")
+          .body("foo", UTF_8)
           .build()
         val resp = decodedRequest(request)
         assert(resp.status() == INTERNAL_SERVER_ERROR)

@@ -16,27 +16,23 @@
 package com.hotels.styx.plugins
 
 import java.nio.charset.StandardCharsets.UTF_8
-import java.util.concurrent.CompletableFuture
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
-import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.StyxCoreObservable
-import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse, StyxObservable}
-import com.hotels.styx.common.CompletableFutures
-import com.hotels.styx.support.api.BlockingObservables.waitForResponse
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.{HttpRequest, HttpResponse, StyxObservable}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import org.scalatest.FunSpec
-import rx.lang.scala.Observable
 
 import scala.compat.java8.functionConverterImpls.AsJavaFunction
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.compat.java8.FutureConverters.CompletionStageOps
 
 class AsyncRequestSpec extends FunSpec
   with StyxProxySpec
@@ -69,7 +65,7 @@ class AsyncRequestSpec extends FunSpec
         .addHeader("Content-Length", "0")
         .build()
 
-      val response = waitForResponse(client.sendRequest(request))
+      val response = Await.result(client.sendRequest(request).toScala, 5.seconds)
 
       mockServer.verify(1, getRequestedFor(urlStartingWith("/foobar")))
       response.bodyAs(UTF_8) should be("I should be here!")

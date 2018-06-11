@@ -19,13 +19,15 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING
 import com.hotels.styx.api.HttpHeaderValues.CHUNKED
-import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.is
 import org.scalatest.FunSpec
+
+// TODO: Mikko no longer necessary?
 
 class ResubscribingPluginSpec extends FunSpec
   with StyxProxySpec
@@ -64,7 +66,7 @@ class ResubscribingPluginSpec extends FunSpec
         .addHeader("Content-Length", "0")
         .build()
 
-      val response = client.sendRequest(request).toBlocking.single()
+      val response = decodedRequest(request)
 
       assertThat(response.status(), is(INTERNAL_SERVER_ERROR))
 
