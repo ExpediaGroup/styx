@@ -152,7 +152,7 @@ public final class HttpResponse implements HttpMessage {
      */
     public Optional<HttpCookie> cookie(String name) {
         return cookies().stream()
-                .filter(cookie -> name.equalsIgnoreCase(cookie.name()))
+                .filter(cookie -> name.equals(cookie.name()))
                 .findFirst();
     }
 
@@ -516,7 +516,7 @@ public final class HttpResponse implements HttpMessage {
          */
         public Builder removeCookie(String name) {
             cookies.stream()
-                    .filter(cookie -> cookie.name().equalsIgnoreCase(name))
+                    .filter(cookie -> cookie.name().equals(name))
                     .findFirst()
                     .ifPresent(cookie -> cookies.remove(cookie));
 

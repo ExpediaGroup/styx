@@ -335,7 +335,7 @@ public final class HttpRequest implements HttpMessage {
      */
     public Optional<HttpCookie> cookie(String name) {
         return cookies().stream()
-                .filter(cookie -> name.equalsIgnoreCase(cookie.name()))
+                .filter(cookie -> name.equals(cookie.name()))
                 .findFirst();
     }
 

@@ -321,7 +321,7 @@ public class StreamingHttpResponse implements StreamingHttpMessage {
          */
         public Builder removeCookie(String name) {
             cookies.stream()
-                    .filter(cookie -> cookie.name().equalsIgnoreCase(name))
+                    .filter(cookie -> cookie.name().equals(name))
                     .findFirst()
                     .ifPresent(cookies::remove);
 
