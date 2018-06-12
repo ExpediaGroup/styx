@@ -44,6 +44,7 @@ import java.util.Set;
 
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.testapi.ssl.SslTesting.acceptAllSslRequests;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
@@ -255,8 +256,8 @@ public final class StyxServer {
         private final Object pluginConfig;
 
         PluginFactoryConfig(String name, PluginFactory pluginFactory, Object pluginConfig) {
-            this.name = name;
-            this.pluginFactory = pluginFactory;
+            this.name = requireNonNull(name);
+            this.pluginFactory = requireNonNull(pluginFactory);
             this.pluginConfig = pluginConfig;
         }
     }
