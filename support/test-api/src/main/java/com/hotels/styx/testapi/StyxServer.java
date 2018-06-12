@@ -153,7 +153,7 @@ public final class StyxServer {
         return metricRegistry;
     }
 
-    private PluginFactory.Environment toPluginEnvironment(Environment environment, PluginTriple x) {
+    private static PluginFactory.Environment toPluginEnvironment(Environment environment, PluginFactoryConfig config) {
         return new PluginFactory.Environment() {
             @Override
             public Configuration configuration() {
@@ -172,7 +172,7 @@ public final class StyxServer {
 
             @Override
             public <T> T pluginConfig(Class<T> clazz) {
-                return (T) x.pluginConfig;
+                return (T) config.pluginConfig;
             }
         };
     }
@@ -182,7 +182,7 @@ public final class StyxServer {
      */
     public static final class Builder {
         private final Map<String, com.hotels.styx.api.service.BackendService> routes = new HashMap<>();
-        public final List<PluginTriple> pluginFactories = new ArrayList<>();
+        private final List<PluginFactoryConfig> pluginFactories = new ArrayList<>();
 
         /**
          * Adds a plugin to the server.
@@ -192,12 +192,12 @@ public final class StyxServer {
          * @return this builder
          */
         public Builder addPlugin(String name, Plugin plugin) {
-            pluginFactories.add(new PluginTriple(name, env -> plugin, null));
+            pluginFactories.add(new PluginFactoryConfig(name, env -> plugin, null));
             return this;
         }
 
         public Builder addPluginFactory(String name, PluginFactory pluginFactory, Object pluginConfig) {
-            pluginFactories.add(new PluginTriple(name, pluginFactory, pluginConfig));
+            pluginFactories.add(new PluginFactoryConfig(name, pluginFactory, pluginConfig));
             return this;
         }
 
@@ -249,12 +249,12 @@ public final class StyxServer {
         }
     }
 
-    private static class PluginTriple {
+    private static class PluginFactoryConfig {
         private final String name;
         private final PluginFactory pluginFactory;
         private final Object pluginConfig;
 
-        PluginTriple(String name, PluginFactory pluginFactory, Object pluginConfig) {
+        PluginFactoryConfig(String name, PluginFactory pluginFactory, Object pluginConfig) {
             this.name = name;
             this.pluginFactory = pluginFactory;
             this.pluginConfig = pluginConfig;
