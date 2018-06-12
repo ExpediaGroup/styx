@@ -42,6 +42,7 @@ import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
+import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 import static io.netty.handler.codec.http.HttpMethod.CONNECT;
 import static io.netty.handler.codec.http.HttpMethod.DELETE;
 import static io.netty.handler.codec.http.HttpMethod.GET;
@@ -334,9 +335,7 @@ public final class HttpRequest implements HttpMessage {
      * @return returns an optional cookie object from the header
      */
     public Optional<HttpCookie> cookie(String name) {
-        return cookies().stream()
-                .filter(cookie -> name.equals(cookie.name()))
-                .findFirst();
+        return findCookie(cookies, name);
     }
 
     /**
@@ -648,9 +647,7 @@ public final class HttpRequest implements HttpMessage {
          * @return {@code this}
          */
         public Builder removeCookie(String name) {
-            cookies.stream()
-                    .filter(cookie -> cookie.name().equals(name))
-                    .findFirst()
+            findCookie(cookies, name)
                     .ifPresent(cookies::remove);
 
             return this;

@@ -37,6 +37,7 @@ import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpMessageBody.NO_BODY;
+import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpResponseStatus.FOUND;
 import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
@@ -151,9 +152,7 @@ public final class HttpResponse implements HttpMessage {
      * @return the cookie if present
      */
     public Optional<HttpCookie> cookie(String name) {
-        return cookies().stream()
-                .filter(cookie -> name.equals(cookie.name()))
-                .findFirst();
+        return findCookie(cookies, name);
     }
 
     /**
@@ -515,11 +514,8 @@ public final class HttpResponse implements HttpMessage {
          * @return {@code this}
          */
         public Builder removeCookie(String name) {
-            cookies.stream()
-                    .filter(cookie -> cookie.name().equals(name))
-                    .findFirst()
+            findCookie(cookies, name)
                     .ifPresent(cookie -> cookies.remove(cookie));
-
             return this;
         }
 

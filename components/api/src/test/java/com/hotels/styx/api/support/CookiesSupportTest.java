@@ -15,8 +15,15 @@
  */
 package com.hotels.styx.api.support;
 
+import com.google.common.collect.ImmutableList;
+import com.hotels.styx.api.HttpCookie;
+import com.hotels.styx.api.HttpCookieAttribute;
 import org.testng.annotations.Test;
 
+import java.util.List;
+import java.util.Optional;
+
+import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -35,4 +42,17 @@ public class CookiesSupportTest {
         assertThat(isCookieHeader("cookiex"), is(false));
     }
 
+    @Test
+    public void canFindCookieName(){
+        HttpCookie expectedCookie = HttpCookie.cookie("cookie1", "value1", HttpCookieAttribute.httpOnly());
+        List<HttpCookie> cookies = ImmutableList.of(expectedCookie);
+        assertThat(findCookie(cookies, expectedCookie.name()),is(Optional.of(expectedCookie)));
+    }
+
+    @Test
+    public void cookieNamesAreCaseSensitive(){
+        HttpCookie expectedCookie = HttpCookie.cookie("cookie1", "value1", HttpCookieAttribute.httpOnly());
+        List<HttpCookie> cookies = ImmutableList.of(expectedCookie);
+        assertThat(findCookie(cookies, expectedCookie.name().toUpperCase()),is(Optional.empty()));
+    }
 }

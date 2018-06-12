@@ -48,6 +48,7 @@ import static com.hotels.styx.api.messages.HttpMethod.PUT;
 import static com.hotels.styx.api.messages.HttpMethod.httpMethod;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
+import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
 import static java.lang.Integer.parseInt;
 import static java.net.InetSocketAddress.createUnresolved;
@@ -592,9 +593,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * @return {@code this}
          */
         public Builder removeCookie(String name) {
-            cookies.stream()
-                    .filter(cookie -> cookie.name().equals(name))
-                    .findFirst()
+           findCookie(cookies, name)
                     .ifPresent(cookies::remove);
 
             return this;

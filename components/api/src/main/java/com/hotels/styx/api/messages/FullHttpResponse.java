@@ -37,6 +37,7 @@ import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.messages.HttpResponseStatus.statusWithCode;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
+import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
 import static rx.Observable.just;
@@ -361,9 +362,7 @@ public class FullHttpResponse implements FullHttpMessage {
          * @return {@code this}
          */
         public Builder removeCookie(String name) {
-            cookies.stream()
-                    .filter(cookie -> cookie.name().equals(name))
-                    .findFirst()
+            findCookie(cookies, name)
                     .ifPresent(cookies::remove);
 
             return this;
