@@ -55,25 +55,7 @@ public class ConfigStoreTest {
         configStore.set("foo", "bar");
         sync.await(1, SECONDS);
         assertThat(update.get(), is("bar"));
-    }
-
-    @Test
-    public void valueInConfigStoreIsConsistentWithListenersUpdate() {
-        AtomicReference<String> valueInStore = new AtomicReference<>();
-        AtomicReference<String> valueInUpdate = new AtomicReference<>();
-
-        Latch sync = new Latch(1);
-
-        configStore.watch("foo", String.class)
-                .subscribe(value -> {
-                    valueInStore.set(configStore.get("foo", String.class).orElse(null));
-                    valueInUpdate.set(value);
-                    sync.countDown();
-                });
-
-        configStore.set("foo", "bar");
-        sync.await(1, SECONDS);
-        assertThat(valueInStore.get(), is(valueInUpdate.get()));
+        assertThat(configStore.get("foo"), isValue("bar"));
     }
 
     // If this test fails it will cause a deadlock, resulting in a latch timeout
@@ -118,5 +100,23 @@ public class ConfigStoreTest {
 
         configStore.set("foo", "bar");
         unlockedWhenBothFinish.await(5, SECONDS);
+    }
+
+    @Test
+    public void emitsCurrentStateOnSubscribe() {
+        configStore.set("foo", "bar");
+
+        AtomicReference<Object> state = new AtomicReference<>();
+        Latch waitingForEvent = new Latch(1);
+
+        configStore.watch("foo")
+                .subscribe(value -> {
+                    state.set(value);
+                    waitingForEvent.countDown();
+                });
+
+        waitingForEvent.await(1, SECONDS);
+
+        assertThat(state.get(), is("bar"));
     }
 }

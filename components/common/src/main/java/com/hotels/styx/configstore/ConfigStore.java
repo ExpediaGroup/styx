@@ -19,11 +19,16 @@ import rx.Observable;
 import rx.Observer;
 import rx.subjects.PublishSubject;
 
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
+import static rx.Observable.concat;
 import static rx.schedulers.Schedulers.computation;
 
 /**
@@ -63,15 +68,35 @@ public class ConfigStore {
         this.updates.onNext(new Update(key, value));
     }
 
+    public <T> Observable<T> watch(String key, Class<T> type) {
+        return watch(key).cast(type);
+    }
+
     public <T> Observable<T> watch(String key) {
-        return propagation.filter(update -> update.key().equals(key))
+        Observable<T> subsequentStates = propagation
+                .filter(update -> update.key().equals(key))
                 .map(Update::value)
                 .map(value -> (T) value)
                 .observeOn(computation());
+
+        return concat(currentValueIfPresent(key), subsequentStates);
     }
 
-    public <T> Observable<T> watch(String key, Class<T> type) {
-        return watch(key).cast(type);
+    private <T> Observable<T> currentValueIfPresent(String key) {
+        return Observable.from(singleOrEmpty(() -> (T) values.get(key)));
+    }
+
+    /* Returns an iterable of one item if the supplier supplies a non-null value
+       Returns an iterable of zero items if the supplier supplies a null value
+    */
+    private static <T> Iterable<T> singleOrEmpty(Supplier<T> supplier) {
+        return () -> {
+            T value = supplier.get();
+
+            return value == null
+                    ? (Iterator<T>) emptyList().iterator()
+                    : singletonList(value).iterator();
+        };
     }
 
     private static class Update {
