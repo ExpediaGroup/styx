@@ -20,18 +20,20 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.http.handlers.BaseHttpHandler;
 import com.hotels.styx.common.Result;
 import com.hotels.styx.configstore.ConfigStore;
-
-import java.util.Optional;
+import org.slf4j.Logger;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Handler that returns whether the proxy server has started.
  */
 public class ProxyStatusHandler extends BaseHttpHandler {
+    private static final Logger LOG = getLogger(ProxyStatusHandler.class);
+
     private final ConfigStore configStore;
 
     public ProxyStatusHandler(ConfigStore configStore) {
@@ -41,12 +43,7 @@ public class ProxyStatusHandler extends BaseHttpHandler {
     @Override
     protected HttpResponse doHandle(HttpRequest request) {
         String resultDescription = configStore.get("server.started.proxy", Result.class)
-                .map(result -> (Result<String>) result)
-                .map(result -> result.mapSuccess(any -> "STARTED"))
-                .map(result -> result.defaultOnFailure(any -> "FAILED"))
-                .map(Result::successValue)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .map(ProxyStatusHandler::content)
                 .orElse("INCOMPLETE");
 
         String json = format("{%n  \"status\":\"%s\"%n}%n", resultDescription);
@@ -55,5 +52,17 @@ public class ProxyStatusHandler extends BaseHttpHandler {
                 .contentType(JSON_UTF_8)
                 .body(json)
                 .build();
+    }
+
+    private static String content(Result result) {
+        switch (result) {
+            case SUCCESS:
+                return "STARTED";
+            case FAILURE:
+                return "FAILED";
+            default:
+                LOG.error("Invalid result type {}", result);
+                return result.toString();
+        }
     }
 }

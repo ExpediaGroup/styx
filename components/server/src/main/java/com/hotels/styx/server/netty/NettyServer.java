@@ -43,8 +43,8 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.base.Throwables.propagate;
-import static com.hotels.styx.common.Result.failure;
-import static com.hotels.styx.common.Result.success;
+import static com.hotels.styx.common.Result.FAILURE;
+import static com.hotels.styx.common.Result.SUCCESS;
 import static io.netty.channel.ChannelOption.ALLOCATOR;
 import static io.netty.channel.ChannelOption.SO_BACKLOG;
 import static io.netty.channel.ChannelOption.SO_KEEPALIVE;
@@ -137,9 +137,9 @@ final class NettyServer extends AbstractService implements HttpServer {
                 return null;
             };
 
-            configStore.set("server.started." + name, success());
+            configStore.set("server.started." + name, SUCCESS);
         } catch (Exception e) {
-            configStore.set("server.started." + name, failure(e));
+            configStore.set("server.started." + name, FAILURE);
             notifyFailed(e);
         }
     }

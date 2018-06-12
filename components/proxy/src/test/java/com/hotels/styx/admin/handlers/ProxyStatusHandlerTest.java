@@ -22,8 +22,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.common.Result.failure;
-import static com.hotels.styx.common.Result.success;
+import static com.hotels.styx.common.Result.FAILURE;
+import static com.hotels.styx.common.Result.SUCCESS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -54,7 +54,7 @@ public class ProxyStatusHandlerTest {
 
     @Test
     public void afterConfigIsUpdatedSuccessfullyResponseIsStarted() {
-        configStore.set("server.started.proxy", success());
+        configStore.set("server.started.proxy", SUCCESS);
 
         String response = handler.handle(request)
                 .map(HttpMessageBodies::bodyAsString)
@@ -69,7 +69,7 @@ public class ProxyStatusHandlerTest {
 
     @Test
     public void afterConfigIsUpdatedUnsuccessfullyResponseIsFailed() {
-        configStore.set("server.started.proxy", failure());
+        configStore.set("server.started.proxy", FAILURE);
 
         String response = handler.handle(request)
                 .map(HttpMessageBodies::bodyAsString)

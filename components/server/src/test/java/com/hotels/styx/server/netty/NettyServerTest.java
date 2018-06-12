@@ -20,7 +20,7 @@ import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.server.HttpServer;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.common.Result.success;
+import static com.hotels.styx.common.Result.SUCCESS;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -38,6 +38,6 @@ public class NettyServerTest {
                 .build();
 
         server.startAsync().awaitRunning();
-        assertThat(configStore.get("server.started.testserver", Result.class), isValue(success()));
+        assertThat(configStore.get("server.started.testserver", Result.class), isValue(SUCCESS));
     }
 }
