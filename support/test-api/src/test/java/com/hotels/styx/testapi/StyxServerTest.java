@@ -127,6 +127,50 @@ public class StyxServerTest {
     }
 
     @Test
+    public void startsProxyOnSpecifiedHttpPort() {
+        int proxyPort = freePort();
+        styxServer = new StyxServer.Builder()
+                .httpPort(proxyPort)
+                .addRoute("/", originServer1.port())
+                .start();
+
+        FullHttpResponse response = await(client.sendRequest(get(format("https://localhost:%d/", proxyPort)).build()));
+
+        assertThat(response.status(), is(OK));
+    }
+
+    @Test
+    public void startsAdminOnSpecifiedHttpPort() {
+        int adminPort = freePort();
+        styxServer = new StyxServer.Builder()
+                .adminHttpPort(adminPort)
+                .addRoute("/", originServer1.port())
+                .start();
+
+        FullHttpResponse response = await(client.sendRequest(get(format("https://localhost:%d/admin", adminPort)).build()));
+
+        assertThat(response.status(), is(OK));
+    }
+
+    @Test
+    public void startsProxyOnSpecifiedHttpsPort() {
+        int httpsPort = freePort();
+
+        styxServer = new StyxServer.Builder()
+                .proxyHttpsPort(httpsPort)
+                .addRoute("/", originServer1.port())
+                .start();
+
+        SimpleHttpClient tlsClient = new SimpleHttpClient.Builder()
+                .tlsSettings(new TlsSettings.Builder().build())
+                .build();
+
+        FullHttpResponse response = await(tlsClient.sendRequest(get(format("https://localhost:%d/", httpsPort)).build()));
+
+        assertThat(response.status(), is(OK));
+    }
+
+    @Test
     public void choosesFreeAdminPortNumbers() throws Exception {
         Optional<StyxServer> styx1 = Optional.empty();
         Optional<StyxServer> styx2 = Optional.empty();
@@ -139,7 +183,6 @@ public class StyxServerTest {
             styx1.ifPresent(StyxServer::stop);
             styx2.ifPresent(StyxServer::stop);
         }
-
     }
 
     @Test
@@ -362,15 +405,6 @@ public class StyxServerTest {
         WireMock.verify(getRequestedFor(urlPathEqualTo("/foo")));
         configureFor(originServer2.port());
         WireMock.verify(getRequestedFor(urlPathEqualTo("/o2/foo")));
-    }
-
-    private FullHttpResponse sendGet(String path) {
-        return doRequest(client, "http", styxServer.proxyHttpPort(), startWithSlash(path));
-    }
-
-    private FullHttpResponse doRequest(FullHttpClient client, String protocol, int port, String path) {
-        String url = format("%s://localhost:%s%s", protocol, port, startWithSlash(path));
-        return await(client.sendRequest(get(url).build()));
     }
 
     private String startWithSlash(String path) {
