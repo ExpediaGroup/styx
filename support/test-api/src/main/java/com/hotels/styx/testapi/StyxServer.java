@@ -195,7 +195,7 @@ public final class StyxServer {
          * @param proxyPort
          * @return this builder
          */
-        public Builder httpPort(int proxyPort) {
+        public Builder proxyHttpPort(int proxyPort) {
             this.proxyHttpPort = proxyPort;
             return this;
         }
