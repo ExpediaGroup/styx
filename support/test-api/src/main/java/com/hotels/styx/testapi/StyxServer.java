@@ -184,9 +184,9 @@ public final class StyxServer {
     public static final class Builder {
         private final Map<String, com.hotels.styx.api.service.BackendService> routes = new HashMap<>();
         private final List<PluginFactoryConfig> pluginFactories = new ArrayList<>();
-        private int proxyHttpPort = 0;
-        private int adminHttpPort = 0;
-        private int proxyHttpsPort = 0;
+        private int proxyHttpPort;
+        private int adminHttpPort;
+        private int proxyHttpsPort;
 
         /**
          * Specifies the HTTP port for proxy server.
