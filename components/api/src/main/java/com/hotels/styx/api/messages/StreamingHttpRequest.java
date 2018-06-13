@@ -50,6 +50,7 @@ import static com.hotels.styx.api.messages.HttpMethod.PUT;
 import static com.hotels.styx.api.messages.HttpMethod.httpMethod;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
+import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.compositeBuffer;
@@ -577,9 +578,7 @@ public class StreamingHttpRequest implements StreamingHttpMessage {
          * @return {@code this}
          */
         public Builder removeCookie(String name) {
-            cookies.stream()
-                    .filter(cookie -> cookie.name().equalsIgnoreCase(name))
-                    .findFirst()
+            findCookie(cookies, name)
                     .ifPresent(cookies::remove);
 
             return this;

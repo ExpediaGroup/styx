@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 
 /**
  * All behaviour common to both full requests and full responses.
@@ -97,9 +98,7 @@ public interface FullHttpMessage {
      * @return the cookie if present
      */
     default Optional<HttpCookie> cookie(String name) {
-        return cookies().stream()
-                .filter(cookie -> name.equalsIgnoreCase(cookie.name()))
-                .findFirst();
+        return findCookie(cookies(), name);
     }
 
     /**
