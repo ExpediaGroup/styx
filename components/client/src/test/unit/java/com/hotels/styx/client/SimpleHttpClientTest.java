@@ -22,6 +22,7 @@ import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Connection;
+import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.service.TlsSettings;
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
@@ -36,6 +37,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static com.hotels.styx.api.FullHttpRequest.get;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.client.Protocol.HTTP;
 import static com.hotels.styx.client.Protocol.HTTPS;
@@ -62,7 +64,7 @@ public class SimpleHttpClientTest {
     }
 
     @Test
-    public void sendsHttp() throws IOException {
+    public void sendsHttp() {
         withOrigin(HTTP, port -> {
             FullHttpResponse response = await(httpClient().sendRequest(httpRequest(port)));
             assertThat(response.status(), is(OK));
@@ -70,7 +72,7 @@ public class SimpleHttpClientTest {
     }
 
     @Test
-    public void sendsHttps() throws IOException {
+    public void sendsHttps() {
         withOrigin(HTTPS, port -> {
             FullHttpResponse response = await(httpsClient().sendRequest(httpsRequest(port)));
             assertThat(response.status(), is(OK));
@@ -78,7 +80,7 @@ public class SimpleHttpClientTest {
     }
 
     @Test(expectedExceptions = Exception.class)
-    public void cannotSendHttpsWhenConfiguredForHttp() throws IOException {
+    public void cannotSendHttpsWhenConfiguredForHttp() {
         withOrigin(HTTPS, port -> {
             FullHttpResponse response = await(httpClient().sendRequest(httpsRequest(port)));
             assertThat(response.status(), is(OK));
@@ -91,6 +93,109 @@ public class SimpleHttpClientTest {
             FullHttpResponse response = await(httpsClient().sendRequest(httpRequest(port)));
             assertThat(response.status(), is(OK));
         });
+    }
+
+    @Test
+    public void willNotSetAnyUserAgentIfNotSpecified() {
+        Connection mockConnection = mock(Connection.class);
+        when(mockConnection.write(any(HttpRequest.class))).thenReturn(Observable.just(response().build()));
+
+        SimpleHttpClient client = new SimpleHttpClient.Builder()
+                .setConnectionFactory((origin, connectionSettings) -> Observable.just(mockConnection))
+                .build();
+
+        client.sendRequest(anyRequest);
+
+        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(mockConnection).write(captor.capture());
+        assertThat(captor.getValue().header(USER_AGENT), isAbsent());
+    }
+
+    @Test
+    public void setsTheSpecifiedUserAgentWhenSpecified() {
+        Connection mockConnection = mock(Connection.class);
+        when(mockConnection.write(any(HttpRequest.class))).thenReturn(Observable.just(response().build()));
+
+        SimpleHttpClient client = new SimpleHttpClient.Builder()
+                .setConnectionFactory((origin, connectionSettings) -> Observable.just(mockConnection))
+                .userAgent("Styx/5.6")
+                .build();
+
+        client.sendRequest(anyRequest);
+
+        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(mockConnection).write(captor.capture());
+        assertThat(captor.getValue().header(USER_AGENT), isValue("Styx/5.6"));
+    }
+
+    @Test
+    public void retainsTheUserAgentStringFromTheRequest() {
+        Connection mockConnection = mock(Connection.class);
+        when(mockConnection.write(any(HttpRequest.class))).thenReturn(Observable.just(response().build()));
+
+        SimpleHttpClient client = new SimpleHttpClient.Builder()
+                .setConnectionFactory((origin, connectionSettings) -> Observable.just(mockConnection))
+                .userAgent("Styx/5.6")
+                .build();
+
+        client.sendRequest(get("/foo.txt")
+                .header(USER_AGENT, "Foo/Bar")
+                .header(HOST, "localhost:1234")
+                .build());
+
+        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(mockConnection).write(captor.capture());
+        assertThat(captor.getValue().header(USER_AGENT), isValue("Foo/Bar"));
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void requestWithNoHostOrUrlAuthorityCausesException() {
+        FullHttpRequest request = get("/foo.txt").build();
+
+        SimpleHttpClient client = new SimpleHttpClient.Builder().build();
+
+        await(client.sendRequest(request));
+    }
+
+    @Test
+    public void sendsToDefaultHttpPort() {
+        Connection.Factory connectionFactory = mockConnectionFactory(mockConnection(response(OK).build()));
+
+        SimpleHttpClient client = new SimpleHttpClient.Builder()
+                .setConnectionFactory(connectionFactory)
+                .build();
+
+        await(client.sendRequest(
+                        FullHttpRequest.get("/")
+                                .header(HOST, "localhost")
+                                .build()
+                ));
+
+        ArgumentCaptor<Origin> originCaptor = ArgumentCaptor.forClass(Origin.class);
+        verify(connectionFactory).createConnection(originCaptor.capture(), any(Connection.Settings.class));
+
+        assertThat(originCaptor.getValue().host().getPort(), is(80));
+    }
+
+    @Test
+    public void sendsToDefaultHttpsPort() {
+        Connection.Factory connectionFactory = mockConnectionFactory(mockConnection(response(OK).build()));
+
+        SimpleHttpClient client = new SimpleHttpClient.Builder()
+                .setConnectionFactory(connectionFactory)
+                .build();
+
+        await(client.sendRequest(
+                        FullHttpRequest.get("/")
+                                .secure(true)
+                                .header(HOST, "localhost")
+                                .build()
+                ));
+
+        ArgumentCaptor<Origin> originCaptor = ArgumentCaptor.forClass(Origin.class);
+        verify(connectionFactory).createConnection(originCaptor.capture(), any(Connection.Settings.class));
+
+        assertThat(originCaptor.getValue().host().getPort(), is(443));
     }
 
     private SimpleHttpClient httpClient() {
@@ -133,65 +238,17 @@ public class SimpleHttpClientTest {
         }
     }
 
-    @Test
-    public void willNotSetAnyUserAgentIfNotSpecified() {
-        Connection mockConnection = mock(Connection.class);
-        when(mockConnection.write(any(HttpRequest.class))).thenReturn(Observable.just(HttpResponse.response().build()));
-
-        SimpleHttpClient client = new SimpleHttpClient.Builder()
-                .setConnectionFactory((origin, connectionSettings) -> Observable.just(mockConnection))
-                .build();
-
-        client.sendRequest(anyRequest);
-
-        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(mockConnection).write(captor.capture());
-        assertThat(captor.getValue().header(USER_AGENT), isAbsent());
+    private Connection mockConnection(HttpResponse response) {
+        Connection connection = mock(Connection.class);
+        when(connection.write(any(HttpRequest.class))).thenReturn(Observable.just(response));
+        return connection;
     }
 
-    @Test
-    public void setsTheSpecifiedUserAgentWhenSpecified() {
-        Connection mockConnection = mock(Connection.class);
-        when(mockConnection.write(any(HttpRequest.class))).thenReturn(Observable.just(HttpResponse.response().build()));
-
-        SimpleHttpClient client = new SimpleHttpClient.Builder()
-                .setConnectionFactory((origin, connectionSettings) -> Observable.just(mockConnection))
-                .userAgent("Styx/5.6")
-                .build();
-
-        client.sendRequest(anyRequest);
-
-        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(mockConnection).write(captor.capture());
-        assertThat(captor.getValue().header(USER_AGENT), isValue("Styx/5.6"));
+    private Connection.Factory mockConnectionFactory(Connection connection) {
+        Connection.Factory factory = mock(Connection.Factory.class);
+        when(factory.createConnection(any(Origin.class), any(Connection.Settings.class)))
+                .thenReturn(Observable.just(connection));
+        return factory;
     }
 
-    @Test
-    public void retainsTheUserAgentStringFromTheRequest() {
-        Connection mockConnection = mock(Connection.class);
-        when(mockConnection.write(any(HttpRequest.class))).thenReturn(Observable.just(HttpResponse.response().build()));
-
-        SimpleHttpClient client = new SimpleHttpClient.Builder()
-                .setConnectionFactory((origin, connectionSettings) -> Observable.just(mockConnection))
-                .userAgent("Styx/5.6")
-                .build();
-
-        client.sendRequest(get("/foo.txt")
-                .header(USER_AGENT, "Foo/Bar")
-                .header(HOST, "localhost:1234")
-                .build());
-
-        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(mockConnection).write(captor.capture());
-        assertThat(captor.getValue().header(USER_AGENT), isValue("Foo/Bar"));
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void requestWithNoHostOrUrlAuthorityCausesException() {
-        FullHttpRequest request = get("/foo.txt").build();
-
-        SimpleHttpClient client = new SimpleHttpClient.Builder().build();
-
-        await(client.sendRequest(request));
-    }
 }

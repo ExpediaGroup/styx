@@ -84,7 +84,13 @@ public final class SimpleHttpClient implements FullHttpClient {
                             .orElseThrow(() -> new IllegalArgumentException("Cannot send request " + request + " as URL is not absolute and no HOST header is present"));
                 });
 
-        return newOriginBuilder(HostAndPort.fromString(hostAndPort)).build();
+        HostAndPort host = HostAndPort.fromString(hostAndPort);
+
+        if (host.getPortOrDefault(-1) < 0) {
+            host = host.withDefaultPort(request.isSecure() ? 443 : 80);
+        }
+
+        return newOriginBuilder(host).build();
     }
 
     /**
