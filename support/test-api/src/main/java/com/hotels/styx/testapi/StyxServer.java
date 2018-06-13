@@ -74,7 +74,7 @@ public final class StyxServer {
                 .collect(toList());
 
         StyxServerComponents config = new StyxServerComponents.Builder()
-                .styxConfig(styxConfig())
+                .styxConfig(styxConfig(builder))
                 .pluginsLoader(loader)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))
                 .build();
@@ -92,22 +92,22 @@ public final class StyxServer {
         return this;
     }
 
-    private static StyxConfig styxConfig() {
+    private static StyxConfig styxConfig(Builder builder) {
         return new StyxConfig(new MapBackedConfiguration()
-                .set("proxy", proxyServerConfig())
-                .set("admin", adminServerConfig()));
+                .set("proxy", proxyServerConfig(builder))
+                .set("admin", adminServerConfig(builder)));
     }
 
-    private static AdminServerConfig adminServerConfig() {
+    private static AdminServerConfig adminServerConfig(Builder builder) {
         return new AdminServerConfig.Builder()
-                .setHttpConnector(new HttpConnectorConfig(0))
+                .setHttpConnector(new HttpConnectorConfig(builder.adminHttpPort))
                 .build();
     }
 
-    private static ProxyServerConfig proxyServerConfig() {
+    private static ProxyServerConfig proxyServerConfig(Builder builder) {
         return new ProxyServerConfig.Builder()
-                .setHttpConnector(new HttpConnectorConfig(0))
-                .setHttpsConnector(new HttpsConnectorConfig.Builder().port(0).build())
+                .setHttpConnector(new HttpConnectorConfig(builder.proxyHttpPort))
+                .setHttpsConnector(new HttpsConnectorConfig.Builder().port(builder.proxyHttpsPort).build())
                 .build();
     }
 
@@ -184,6 +184,51 @@ public final class StyxServer {
     public static final class Builder {
         private final Map<String, com.hotels.styx.api.service.BackendService> routes = new HashMap<>();
         private final List<PluginFactoryConfig> pluginFactories = new ArrayList<>();
+        private int proxyHttpPort;
+        private int adminHttpPort;
+        private int proxyHttpsPort;
+
+        /**
+         * Specifies the HTTP port for proxy server.
+         *
+         * By default, Styx will automatically allocate a free port number. This happens when a port is
+         * not set a value on the builder, or it is set a value of 0 (zero).
+         *
+         * @param proxyPort
+         * @return this builder
+         */
+        public Builder proxyHttpPort(int proxyPort) {
+            this.proxyHttpPort = proxyPort;
+            return this;
+        }
+
+        /**
+         * Specifies the HTTPS port for proxy server.
+         *
+         * By default, Styx will automatically allocate a free port number. This happens when a port is
+         * not set a value on the builder, or it is set a value of 0 (zero).
+         *
+         * @param proxyPort
+         * @return this builder
+         */
+        public Builder proxyHttpsPort(int proxyPort) {
+            this.proxyHttpsPort = proxyPort;
+            return this;
+        }
+
+        /**
+         * Specifies the HTTP port for admin server
+         *
+         * By default, Styx will automatically allocate a free port number. This happens when a port is
+         * not set a value on the builder, or it is set a value of 0 (zero).
+         *
+         * @param adminPort
+         * @return this builder
+         */
+        public Builder adminHttpPort(int adminPort) {
+            this.adminHttpPort = adminPort;
+            return this;
+        }
 
         /**
          * Adds a plugin to the server.
