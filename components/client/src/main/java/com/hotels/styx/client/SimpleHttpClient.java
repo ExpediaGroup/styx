@@ -45,7 +45,7 @@ import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
 public final class SimpleHttpClient implements FullHttpClient {
     private static final int DEFAULT_HTTPS_PORT = 443;
     private static final int DEFAULT_HTTP_PORT = 80;
-    
+
     private final Optional<String> userAgent;
     private final ConnectionSettings connectionSettings;
     private final int maxResponseSize;
