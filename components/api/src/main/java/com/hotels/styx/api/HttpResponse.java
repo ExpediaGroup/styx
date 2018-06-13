@@ -44,6 +44,7 @@ import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.messages.HttpResponseStatus.statusWithCode;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
+import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.compositeBuffer;
 import static io.netty.buffer.Unpooled.copiedBuffer;
@@ -118,6 +119,16 @@ public class HttpResponse implements StreamingHttpMessage {
     @Override
     public List<HttpCookie> cookies() {
         return cookies;
+    }
+
+    /**
+     * Return the single cookie with the specified {@code name}.
+     *
+     * @param name cookie name
+     * @return the cookie if present
+     */
+    public Optional<HttpCookie> cookie(String name) {
+        return findCookie(cookies, name);
     }
 
     @Override
@@ -366,11 +377,8 @@ public class HttpResponse implements StreamingHttpMessage {
          * @return {@code this}
          */
         public Builder removeCookie(String name) {
-            cookies.stream()
-                    .filter(cookie -> cookie.name().equalsIgnoreCase(name))
-                    .findFirst()
-                    .ifPresent(cookies::remove);
-
+            findCookie(cookies, name)
+                    .ifPresent(cookie -> cookies.remove(cookie));
             return this;
         }
 

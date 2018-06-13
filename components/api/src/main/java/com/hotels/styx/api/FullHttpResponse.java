@@ -35,6 +35,7 @@ import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
@@ -216,14 +217,6 @@ public class FullHttpResponse implements FullHttpMessage {
             this.cookies = new ArrayList<>(response.cookies());
         }
 
-//        public Builder(HttpResponse response, byte[] encodedBody) {
-//            this.status = statusWithCode(response.status().code());
-//            this.version = httpVersion(response.version().toString());
-//            this.headers = response.headers().newBuilder();
-//            this.body = encodedBody;
-//            this.cookies = new ArrayList<>(response.cookies());
-//        }
-
         public Builder(HttpResponse response, byte[] decoded) {
             this.status = response.status();
             this.version = response.version();
@@ -359,9 +352,7 @@ public class FullHttpResponse implements FullHttpMessage {
          * @return {@code this}
          */
         public Builder removeCookie(String name) {
-            cookies.stream()
-                    .filter(cookie -> cookie.name().equalsIgnoreCase(name))
-                    .findFirst()
+            findCookie(cookies, name)
                     .ifPresent(cookies::remove);
 
             return this;
