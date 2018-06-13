@@ -130,7 +130,7 @@ public class StyxServerTest {
     public void startsProxyOnSpecifiedHttpPort() {
         int proxyPort = freePort();
         styxServer = new StyxServer.Builder()
-                .httpPort(proxyPort)
+                .proxyHttpPort(proxyPort)
                 .addRoute("/", originServer1.port())
                 .start();
 
