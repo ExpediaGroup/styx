@@ -190,7 +190,9 @@ public final class StyxServer {
 
         /**
          * Specifies the HTTP port for proxy server.
-         * Set port number to 0 (zero) to let Styx automatically allocate a free port number.
+         *
+         * By default, Styx will automatically allocate a free port number. This happens when a port is
+         * not set a value on the builder, or it is set a value of 0 (zero).
          *
          * @param proxyPort
          * @return this builder
@@ -202,7 +204,9 @@ public final class StyxServer {
 
         /**
          * Specifies the HTTPS port for proxy server.
-         * Set port number to 0 (zero) to let Styx automatically allocate a free port number.
+         *
+         * By default, Styx will automatically allocate a free port number. This happens when a port is
+         * not set a value on the builder, or it is set a value of 0 (zero).
          *
          * @param proxyPort
          * @return this builder
@@ -214,7 +218,9 @@ public final class StyxServer {
 
         /**
          * Specifies the HTTP port for admin server
-         * Set port number to 0 (zero) to let Styx automatically allocate a free port number.
+         *
+         * By default, Styx will automatically allocate a free port number. This happens when a port is
+         * not set a value on the builder, or it is set a value of 0 (zero).
          *
          * @param adminPort
          * @return this builder
