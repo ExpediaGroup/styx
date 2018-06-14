@@ -70,7 +70,7 @@ class OriginsReloadSpec extends FunSpec
         "/foobar" -> HttpBackend("appOne", Origins(backend1, backend2, backend3))
       )
 
-      eventually(timeout(1.seconds)) {
+      eventually(timeout(10.seconds)) {
         val response = get(styxServer.adminURL("/admin/origins/status"))
 
         response.bodyAs(UTF_8) should include("localhost:" + backend1.port())
@@ -84,7 +84,7 @@ class OriginsReloadSpec extends FunSpec
         "/foobar" -> HttpBackend("appOne", Origins(backend1))
       )
 
-      eventually(timeout(1.seconds)) {
+      eventually(timeout(10.seconds)) {
         val response = get(styxServer.adminURL("/admin/origins/status"))
 
         response.bodyAs(UTF_8) should include("localhost:" + backend1.port())
