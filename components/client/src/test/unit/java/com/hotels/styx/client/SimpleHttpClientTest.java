@@ -165,11 +165,9 @@ public class SimpleHttpClientTest {
                 .setConnectionFactory(connectionFactory)
                 .build();
 
-        await(client.sendRequest(
-                        FullHttpRequest.get("/")
-                                .header(HOST, "localhost")
-                                .build()
-                ));
+        client.sendRequest(get("/")
+                .header(HOST, "localhost")
+                .build());
 
         ArgumentCaptor<Origin> originCaptor = ArgumentCaptor.forClass(Origin.class);
         verify(connectionFactory).createConnection(originCaptor.capture(), any(Connection.Settings.class));
@@ -185,12 +183,10 @@ public class SimpleHttpClientTest {
                 .setConnectionFactory(connectionFactory)
                 .build();
 
-        await(client.sendRequest(
-                        FullHttpRequest.get("/")
-                                .secure(true)
-                                .header(HOST, "localhost")
-                                .build()
-                ));
+        client.sendRequest(get("/")
+                .secure(true)
+                .header(HOST, "localhost")
+                .build());
 
         ArgumentCaptor<Origin> originCaptor = ArgumentCaptor.forClass(Origin.class);
         verify(connectionFactory).createConnection(originCaptor.capture(), any(Connection.Settings.class));
