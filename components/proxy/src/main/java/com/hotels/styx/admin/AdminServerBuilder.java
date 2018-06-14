@@ -42,12 +42,12 @@ import com.hotels.styx.admin.handlers.VersionTextHandler;
 import com.hotels.styx.admin.tasks.OriginsCommandHandler;
 import com.hotels.styx.admin.tasks.OriginsReloadCommandHandler;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpHandler2;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.http.handlers.HttpMethodFilteringHandler;
 import com.hotels.styx.api.http.handlers.StaticBodyHttpHandler;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.common.Delay;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.StandardHttpRouter;
@@ -58,11 +58,9 @@ import org.slf4j.Logger;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiFunction;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -107,7 +105,7 @@ public class AdminServerBuilder {
 
         Iterable<IndexHandler.Link> links = indexLinkPaths();
 
-        RouterBuilder httpRouter = new RouterBuilder()
+        StandardHttpRouter httpRouter = new StandardHttpRouter()
                 .add("/", new IndexHandler(links))
                 .add("/version.txt", new VersionTextHandler(styxConfig.versionFiles()))
                 .add("/admin", new IndexHandler(links))
@@ -141,47 +139,11 @@ public class AdminServerBuilder {
                     httpRouter.add("/admin/plugins", new PluginListHandler(plugins));
                 });
 
-        verifyThatLinksInIndexMapToRealEndpoints(links, httpRouter.paths);
-
         return new NettyServerBuilderSpec("admin", environment.serverEnvironment(), new WebServerConnectorFactory())
                 .toNettyServerBuilder(adminServerConfig)
-                .httpHandler(() -> httpRouter.router)
+                .httpHandler(() -> httpRouter)
                 .configStore(environment.configStore())
                 .build();
-    }
-
-    private static final class RouterBuilder {
-        private final StandardHttpRouter router = new StandardHttpRouter();
-        private final Set<String> paths = new HashSet<>();
-
-        public RouterBuilder add(String path, HttpHandler2 handler) {
-            this.router.add(path, handler);
-            this.paths.add(path);
-            return this;
-        }
-    }
-
-    private static void verifyThatLinksInIndexMapToRealEndpoints(Iterable<IndexHandler.Link> links, Set<String> paths) {
-        for (IndexHandler.Link link : links) {
-            String path = removeQueryString(link.path());
-
-            // easiest to just make a hardcoded exception-to-the-rule here until we decide to refactor this class fully
-            boolean skip = "/admin/dashboard/index.html".equals(path) || "/admin/plugins".equals(path);
-
-            if (!skip && !paths.contains(path)) {
-                throw new IllegalArgumentException(format(
-                        "%s links to %s, but that path does not exist in router. Valid paths are %s%n",
-                        link.label(),
-                        link.path(),
-                        paths));
-            }
-        }
-    }
-
-    private static String removeQueryString(String path) {
-        int index = path.indexOf('?');
-
-        return index == -1 ? path : path.substring(0, index);
     }
 
     private JsonHandler<DashboardData> dashboardDataHandler(StyxConfig styxConfig) {
