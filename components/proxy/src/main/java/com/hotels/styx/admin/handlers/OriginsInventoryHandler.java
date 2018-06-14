@@ -50,6 +50,7 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsC
             .setDefaultPrettyPrinter(PRETTY_PRINTER);
 
     private final Map<Id, OriginsSnapshot> originsInventorySnapshotMap = new ConcurrentHashMap<>();
+    private volatile boolean receivedSnapshots;
 
     /**
      * Construct an instance.
@@ -63,6 +64,10 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsC
 
     @Override
     protected HttpResponse doHandle(HttpRequest request) {
+        if (!receivedSnapshots) {
+            LOG.info("Received request for origins snapshot, but no origins snapshot has been received. Responding with empty object instead.");
+        }
+
         return response(OK)
                 .contentType(JSON_UTF_8)
                 .disableCaching()
@@ -95,7 +100,8 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsC
     @Subscribe
     @Override
     public void originsChanged(OriginsSnapshot snapshot) {
-        LOG.debug("received origins inventory state change {}", snapshot);
+        this.receivedSnapshots = true;
+        LOG.info("received origins inventory state change {}", snapshot);
         originsInventorySnapshotMap.put(snapshot.appId(), snapshot);
     }
 }
