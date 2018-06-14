@@ -43,6 +43,9 @@ import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
  * A client that uses netty as transport.
  */
 public final class SimpleHttpClient implements FullHttpClient {
+    private static final int DEFAULT_HTTPS_PORT = 443;
+    private static final int DEFAULT_HTTP_PORT = 80;
+
     private final Optional<String> userAgent;
     private final ConnectionSettings connectionSettings;
     private final int maxResponseSize;
@@ -84,7 +87,13 @@ public final class SimpleHttpClient implements FullHttpClient {
                             .orElseThrow(() -> new IllegalArgumentException("Cannot send request " + request + " as URL is not absolute and no HOST header is present"));
                 });
 
-        return newOriginBuilder(HostAndPort.fromString(hostAndPort)).build();
+        HostAndPort host = HostAndPort.fromString(hostAndPort);
+
+        if (host.getPortOrDefault(-1) < 0) {
+            host = host.withDefaultPort(request.isSecure() ? DEFAULT_HTTPS_PORT : DEFAULT_HTTP_PORT);
+        }
+
+        return newOriginBuilder(host).build();
     }
 
     /**
