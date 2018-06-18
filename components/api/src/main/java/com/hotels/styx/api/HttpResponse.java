@@ -121,16 +121,6 @@ public class HttpResponse implements StreamingHttpMessage {
         return cookies;
     }
 
-    /**
-     * Return the single cookie with the specified {@code name}.
-     *
-     * @param name cookie name
-     * @return the cookie if present
-     */
-    public Optional<HttpCookie> cookie(String name) {
-        return findCookie(cookies, name);
-    }
-
     @Override
     public StyxObservable<ByteBuf> body() {
         return body;
@@ -378,7 +368,7 @@ public class HttpResponse implements StreamingHttpMessage {
          */
         public Builder removeCookie(String name) {
             findCookie(cookies, name)
-                    .ifPresent(cookie -> cookies.remove(cookie));
+                    .ifPresent(cookies::remove);
             return this;
         }
 
