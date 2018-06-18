@@ -74,14 +74,12 @@ public class MemoryBackedRegistry<T extends Identifiable> extends AbstractRegist
         }
     }
 
-    public CompletableFuture<Void> reset() {
+    public void reset() {
         resources.clear();
 
         if (autoReload) {
-            return reload().thenApply(any -> null);
+            reload();
         }
-
-        return completedFuture(null);
     }
 
     @Override
