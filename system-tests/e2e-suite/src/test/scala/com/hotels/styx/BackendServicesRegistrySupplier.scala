@@ -26,7 +26,7 @@ trait BackendServicesRegistrySupplier {
   def setBackends(registry: MemoryBackedRegistry[BackendService], pathAndbackends: (String, StyxBackend)*) = {
     resetBackendRoutes(registry).thenAccept(new Consumer[Void] {
       override def accept(t: Void): Unit = {
-        Thread.sleep(100)
+
         pathAndbackends.foreach {
           case (path, backend) =>
             registry.add(backend.toBackend(path).asJava)
