@@ -45,6 +45,7 @@ import static com.hotels.styx.api.messages.HttpMethod.METHODS;
 import static com.hotels.styx.api.messages.HttpMethod.PATCH;
 import static com.hotels.styx.api.messages.HttpMethod.POST;
 import static com.hotels.styx.api.messages.HttpMethod.PUT;
+import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 import static com.hotels.styx.api.messages.HttpMethod.httpMethod;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
@@ -150,9 +151,9 @@ public class HttpRequest implements StreamingHttpMessage {
     /**
      * Creates a request with the POST method.
      *
-     * @param uri URI
+     * @param uri  URI
      * @param body body
-     * @param  body type
+     * @param body type
      * @return {@code this}
      */
     public static Builder post(String uri, StyxObservable<ByteBuf> body) {
@@ -162,9 +163,9 @@ public class HttpRequest implements StreamingHttpMessage {
     /**
      * Creates a request with the PUT method.
      *
-     * @param uri URI
+     * @param uri  URI
      * @param body body
-     * @param  body type
+     * @param body type
      * @return {@code this}
      */
     public static Builder put(String uri, StyxObservable<ByteBuf> body) {
@@ -174,9 +175,9 @@ public class HttpRequest implements StreamingHttpMessage {
     /**
      * Creates a request with the PATCH method.
      *
-     * @param uri URI
+     * @param uri  URI
      * @param body body
-     * @param  body type
+     * @param body type
      * @return {@code this}
      */
     public static Builder patch(String uri, StyxObservable<ByteBuf> body) {
@@ -197,6 +198,18 @@ public class HttpRequest implements StreamingHttpMessage {
     public List<HttpCookie> cookies() {
         return cookies;
     }
+
+    /*
+     * Returns an {@link Optional} containing the {@link HttpCookie} with the specified {@code name}
+     * if such a cookie exists.
+     *
+     * @param name the name of the cookie
+     * @return returns an optional cookie object from the header
+     */
+    public Optional<HttpCookie> cookie(String name) {
+        return findCookie(cookies, name);
+    }
+
 
     @Override
     public List<String> headers(CharSequence name) {
@@ -614,13 +627,11 @@ public class HttpRequest implements StreamingHttpMessage {
         /**
          * Removes a cookie if present (removes its Set-Cookie header).
          *
-         * @param name name of the cookie
+         * @param name cookie name
          * @return {@code this}
          */
         public Builder removeCookie(String name) {
-            cookies.stream()
-                    .filter(cookie -> cookie.name().equalsIgnoreCase(name))
-                    .findFirst()
+            findCookie(cookies, name)
                     .ifPresent(cookies::remove);
 
             return this;

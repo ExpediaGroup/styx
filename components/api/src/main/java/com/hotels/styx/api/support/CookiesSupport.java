@@ -15,6 +15,13 @@
  */
 package com.hotels.styx.api.support;
 
+import com.hotels.styx.api.HttpCookie;
+
+import java.util.Collection;
+import java.util.Optional;
+
+import static java.util.Objects.requireNonNull;
+
 /**
  * Does some validation for cookie header names.
  */
@@ -30,5 +37,21 @@ public final class CookiesSupport {
      */
     public static boolean isCookieHeader(String header) {
         return "Set-Cookie".equalsIgnoreCase(header) || "Cookie".equalsIgnoreCase(header);
+    }
+
+    /**
+     * Find a cookie with the specified {@code name}.
+     *
+     * @param cookies list of cookies
+     * @param name cookie name
+     * @return the cookie if present
+     */
+    public static Optional<HttpCookie> findCookie(Collection<HttpCookie> cookies, String name){
+        requireNonNull(cookies);
+        requireNonNull(name);
+        return cookies
+                .stream()
+                .filter(cookie -> name.equals(cookie.name()))
+                .findFirst();
     }
 }
