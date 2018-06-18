@@ -15,6 +15,8 @@
  */
 package com.hotels.styx
 
+import java.util.function.Consumer
+
 import com.hotels.styx.api.service.BackendService
 import com.hotels.styx.infrastructure.MemoryBackedRegistry
 import com.hotels.styx.support.configuration.StyxBackend
@@ -22,12 +24,18 @@ import com.hotels.styx.support.configuration.StyxBackend
 trait BackendServicesRegistrySupplier {
 
   def setBackends(registry: MemoryBackedRegistry[BackendService], pathAndbackends: (String, StyxBackend)*) = {
-    resetBackendRoutes(registry)
+    resetBackendRoutes(registry).thenAccept(new Consumer[Void] {
+      override def accept(t: Void): Unit = {
 
-    pathAndbackends.foreach {
-      case (path, backend) =>
-        registry.add(backend.toBackend(path).asJava)
-    }
+        pathAndbackends.foreach {
+          case (path, backend) =>
+            registry.add(backend.toBackend(path).asJava)
+        }
+
+      }
+    })
+
+
   }
 
   def resetBackendRoutes(registry: MemoryBackedRegistry[BackendService]) = {
