@@ -345,13 +345,13 @@ public final class OriginsInventory
     private boolean isUnchangedOrigin(Id originId, Origin newOrigin) {
         MonitoredOrigin oldOrigin = this.origins.get(originId);
 
-        return (nonNull(oldOrigin) && nonNull(newOrigin)) && oldOrigin.origin.equals(newOrigin);
+        return nonNull(oldOrigin) && nonNull(newOrigin) && oldOrigin.origin.equals(newOrigin);
     }
 
     private boolean isUpdatedOrigin(Id originId, Origin newOrigin) {
         MonitoredOrigin oldOrigin = this.origins.get(originId);
 
-        return (nonNull(oldOrigin) && nonNull(newOrigin)) && !oldOrigin.origin.equals(newOrigin);
+        return nonNull(oldOrigin) && nonNull(newOrigin) && !oldOrigin.origin.equals(newOrigin);
     }
 
     private boolean isRemovedOrigin(Id originId, Origin newOrigin) {
@@ -389,9 +389,11 @@ public final class OriginsInventory
     }
 
     private void notifyStateChange() {
-        OriginsSnapshot event = new OriginsSnapshot(appId, pools(ACTIVE), pools(INACTIVE), pools(DISABLED));
-        inventoryListeners.announce().originsChanged(event);
-        eventBus.post(event);
+        if (!closed.get()) {
+            OriginsSnapshot event = new OriginsSnapshot(appId, pools(ACTIVE), pools(INACTIVE), pools(DISABLED));
+            inventoryListeners.announce().originsChanged(event);
+            eventBus.post(event);
+        }
     }
 
     private Collection<RemoteHost> pools(OriginState state) {
