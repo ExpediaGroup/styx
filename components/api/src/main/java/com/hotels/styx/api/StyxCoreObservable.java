@@ -93,10 +93,7 @@ class StyxCoreObservable<T> implements StyxObservable<T> {
 
     private static <T> CompletableFuture<T> fromSingleObservable(Observable<T> observable) {
         final CompletableFuture<T> future = new CompletableFuture<>();
-        observable
-                .doOnError(future::completeExceptionally)
-                .single()
-                .forEach(future::complete);
+        observable.single().subscribe(future::complete, future::completeExceptionally);
         return future;
     }
 

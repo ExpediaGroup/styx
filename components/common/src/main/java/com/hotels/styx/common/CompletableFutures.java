@@ -27,14 +27,9 @@ public final class CompletableFutures {
     }
 
     // TODO: We need to substitute this in favour of Styx APIs
-    //
-    // Credit: http://www.nurkiewicz.com/2014/11/converting-between-completablefuture.html
     public static <T> CompletableFuture<T> fromSingleObservable(Observable<T> observable) {
         final CompletableFuture<T> future = new CompletableFuture<>();
-        observable
-                .doOnError(future::completeExceptionally)
-                .single()
-                .forEach(future::complete);
+        observable.single().subscribe(future::complete, future::completeExceptionally);
         return future;
     }
 
