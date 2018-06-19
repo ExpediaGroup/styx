@@ -280,10 +280,10 @@ public final class OriginsInventory
 
     private void handleCloseEvent() {
         if (closed.compareAndSet(false, true)) {
+            eventBus.unregister(this);
             origins.values().forEach(host -> removeMonitoredEndpoint(host.origin.id()));
             this.origins = ImmutableMap.of();
             notifyStateChange();
-            eventBus.unregister(this);
         }
     }
 
@@ -345,13 +345,13 @@ public final class OriginsInventory
     private boolean isUnchangedOrigin(Id originId, Origin newOrigin) {
         MonitoredOrigin oldOrigin = this.origins.get(originId);
 
-        return (nonNull(oldOrigin) && nonNull(newOrigin)) && oldOrigin.origin.equals(newOrigin);
+        return nonNull(oldOrigin) && nonNull(newOrigin) && oldOrigin.origin.equals(newOrigin);
     }
 
     private boolean isUpdatedOrigin(Id originId, Origin newOrigin) {
         MonitoredOrigin oldOrigin = this.origins.get(originId);
 
-        return (nonNull(oldOrigin) && nonNull(newOrigin)) && !oldOrigin.origin.equals(newOrigin);
+        return nonNull(oldOrigin) && nonNull(newOrigin) && !oldOrigin.origin.equals(newOrigin);
     }
 
     private boolean isRemovedOrigin(Id originId, Origin newOrigin) {
