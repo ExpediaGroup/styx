@@ -188,16 +188,18 @@ public final class OriginsInventory
 
     @Override
     public void submit(Object event) {
-        if (event instanceof SetOriginsEvent) {
-            handleSetOriginsEvent((SetOriginsEvent) event);
-        } else if (event instanceof OriginHealthEvent) {
-            handleOriginHealthEvent((OriginHealthEvent) event);
-        } else if (event instanceof EnableOriginCommand) {
-            handleEnableOriginCommand((EnableOriginCommand) event);
-        } else if (event instanceof DisableOriginCommand) {
-            handleDisableOriginCommand((DisableOriginCommand) event);
-        } else if (event instanceof CloseEvent) {
-            handleCloseEvent();
+        if (!closed.get()) {
+            if (event instanceof SetOriginsEvent) {
+                handleSetOriginsEvent((SetOriginsEvent) event);
+            } else if (event instanceof OriginHealthEvent) {
+                handleOriginHealthEvent((OriginHealthEvent) event);
+            } else if (event instanceof EnableOriginCommand) {
+                handleEnableOriginCommand((EnableOriginCommand) event);
+            } else if (event instanceof DisableOriginCommand) {
+                handleDisableOriginCommand((DisableOriginCommand) event);
+            } else if (event instanceof CloseEvent) {
+                handleCloseEvent();
+            }
         }
     }
 
