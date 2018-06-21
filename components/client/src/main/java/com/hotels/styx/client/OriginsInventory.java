@@ -175,7 +175,8 @@ public final class OriginsInventory
     @Subscribe
     @Override
     public void onCommand(GetOriginsInventorySnapshot getOriginsInventorySnapshot) {
-        notifyStateChange(getOriginsInventorySnapshot);
+        eventQueue.submit(getOriginsInventorySnapshot);
+//        notifyStateChange(getOriginsInventorySnapshot);
     }
 
     @Override
@@ -190,7 +191,9 @@ public final class OriginsInventory
     @Override
     public void submit(Object event) {
         if (!closed.get()) {
-            if (event instanceof SetOriginsEvent) {
+            if (event instanceof GetOriginsInventorySnapshot) {
+                notifyStateChange((GetOriginsInventorySnapshot) event);
+            } else if (event instanceof SetOriginsEvent) {
                 handleSetOriginsEvent((SetOriginsEvent) event);
             } else if (event instanceof OriginHealthEvent) {
                 handleOriginHealthEvent((OriginHealthEvent) event);
