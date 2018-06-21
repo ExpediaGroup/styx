@@ -16,7 +16,6 @@
 package com.hotels.styx.client.origincommands;
 
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.common.SourceableEvent;
 
 import java.util.Objects;
 
@@ -27,7 +26,7 @@ import static java.util.Objects.hash;
 /**
  * Abstract parent class for origin-related commands. Takes two parameters: application ID and origin ID.
  */
-abstract class OriginCommand extends SourceableEvent {
+abstract class OriginCommand {
     private final Id appId;
     private final Id originId;
 

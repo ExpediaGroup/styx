@@ -16,7 +16,6 @@
 package com.hotels.styx.api.client;
 
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.common.SourceableEvent;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -32,7 +31,7 @@ import static java.util.stream.Collectors.toSet;
 /**
  * Holds the state of currently configured origins, i.e. whether the origin is active, inactive or disabled.
  */
-public final class OriginsSnapshot extends SourceableEvent {
+public final class OriginsSnapshot {
     private final Id appId;
     private final Set<Origin> activeOrigins;
     private final Set<Origin> inactiveOrigins;
