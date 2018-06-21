@@ -21,7 +21,6 @@ import java.util.stream.Stream;
 
 import static java.lang.Thread.currentThread;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Sourceable event. Useful for debugging.
