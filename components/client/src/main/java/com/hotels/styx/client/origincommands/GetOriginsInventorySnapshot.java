@@ -16,8 +16,10 @@
 package com.hotels.styx.client.origincommands;
 
 
+import com.hotels.styx.api.common.SourceableEvent;
+
 /**
  * An event that signals that the {@link com.hotels.styx.client.OriginsInventory} should publish a new snapshot.
  */
-public final class GetOriginsInventorySnapshot {
+public final class GetOriginsInventorySnapshot extends SourceableEvent {
 }

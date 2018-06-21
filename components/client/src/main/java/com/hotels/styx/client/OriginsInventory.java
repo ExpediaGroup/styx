@@ -29,6 +29,7 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsChangeListener;
 import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.RemoteHost;
+import com.hotels.styx.api.common.SourceableEvent;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.service.BackendService;
@@ -174,7 +175,7 @@ public final class OriginsInventory
     @Subscribe
     @Override
     public void onCommand(GetOriginsInventorySnapshot getOriginsInventorySnapshot) {
-        notifyStateChange();
+        notifyStateChange(getOriginsInventorySnapshot);
     }
 
     @Override
@@ -198,12 +199,12 @@ public final class OriginsInventory
             } else if (event instanceof DisableOriginCommand) {
                 handleDisableOriginCommand((DisableOriginCommand) event);
             } else if (event instanceof CloseEvent) {
-                handleCloseEvent();
+                handleCloseEvent((CloseEvent) event);
             }
         }
     }
 
-    private static class SetOriginsEvent {
+    private static class SetOriginsEvent extends SourceableEvent {
         final Set<Origin> newOrigins;
 
         SetOriginsEvent(Set<Origin> newOrigins) {
@@ -237,7 +238,7 @@ public final class OriginsInventory
         }
     }
 
-    private static class CloseEvent {
+    private static class CloseEvent extends SourceableEvent {
 
     }
 
@@ -274,16 +275,16 @@ public final class OriginsInventory
         this.origins = originChanges.updatedOrigins();
 
         if (originChanges.changed()) {
-            notifyStateChange();
+            notifyStateChange(event);
         }
     }
 
-    private void handleCloseEvent() {
+    private void handleCloseEvent(CloseEvent event) {
         if (closed.compareAndSet(false, true)) {
             eventBus.unregister(this);
             origins.values().forEach(host -> removeMonitoredEndpoint(host.origin.id()));
             this.origins = ImmutableMap.of();
-            notifyStateChange();
+            notifyStateChange(event);
         }
     }
 
@@ -388,8 +389,9 @@ public final class OriginsInventory
                 .collect(toList());
     }
 
-    private void notifyStateChange() {
+    private void notifyStateChange(SourceableEvent cause) {
         OriginsSnapshot event = new OriginsSnapshot(appId, pools(ACTIVE), pools(INACTIVE), pools(DISABLED));
+        event.setParent(cause);
         inventoryListeners.announce().originsChanged(event);
         eventBus.post(event);
     }
@@ -408,10 +410,10 @@ public final class OriginsInventory
                 .count();
     }
 
-    private static class UnhealthyEvent {
+    private static class UnhealthyEvent extends SourceableEvent {
     }
 
-    private static class HealthyEvent {
+    private static class HealthyEvent extends SourceableEvent {
     }
 
     private final class MonitoredOrigin {
@@ -429,7 +431,7 @@ public final class OriginsInventory
             this.machine = new StateMachine.Builder<OriginState>()
                     .initialState(ACTIVE)
                     .onInappropriateEvent((state, event) -> state)
-                    .onStateChange(this::onStateChange)
+                    .onStateChange((oldState, newState, event) -> onStateChange(oldState, newState, (SourceableEvent) event))
 
                     .transition(ACTIVE, UnhealthyEvent.class, e -> INACTIVE)
                     .transition(INACTIVE, HealthyEvent.class, e -> ACTIVE)
@@ -447,7 +449,7 @@ public final class OriginsInventory
             connectionPool.close();
         }
 
-        private void onStateChange(OriginState oldState, OriginState newState, Object event) {
+        private void onStateChange(OriginState oldState, OriginState newState, SourceableEvent event) {
             if (oldState != newState) {
                 LOG.info("Origin state change: origin=\"{}={}\", change=\"{}->{}\"", new Object[]{appId, origin.id(), oldState, newState});
 
@@ -457,7 +459,7 @@ public final class OriginsInventory
                     startMonitoring();
                 }
 
-                notifyStateChange();
+                notifyStateChange(event);
             }
         }
 
