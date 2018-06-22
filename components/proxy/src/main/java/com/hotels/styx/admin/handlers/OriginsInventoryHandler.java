@@ -95,7 +95,7 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsC
     @Subscribe
     @Override
     public void originsChanged(OriginsSnapshot snapshot) {
-        LOG.info("received origins inventory state change {}", snapshot);
+//        LOG.info("received origins inventory state change {}", snapshot);
         originsInventorySnapshotMap.put(snapshot.appId(), snapshot);
     }
 }
