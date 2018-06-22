@@ -201,16 +201,15 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             ConnectionPool.Settings connectionPoolSettings,
             HealthCheckConfig healthCheckConfig,
             String styxVersion) {
-        NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
-                .name("Health-Check-Monitor-" + appId)
-                .tlsSettings(tlsSettings.orElse(null))
-                .build();
 
         ConnectionSettings connectionSettings = new ConnectionSettings(
                 connectionPoolSettings.connectTimeoutMillis());
 
         SimpleHttpClient client = new SimpleHttpClient.Builder()
+                .connectionSettings(connectionSettings)
+                .threadName("Health-Check-Monitor-" + appId)
                 .userAgent("Styx/" + styxVersion)
+                .tlsSettings(tlsSettings.orElse(null))
                 .build();
 
         String healthCheckUri = healthCheckConfig
