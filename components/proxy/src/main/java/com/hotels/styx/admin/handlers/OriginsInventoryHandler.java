@@ -27,6 +27,7 @@ import com.hotels.styx.api.client.OriginsChangeListener;
 import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.http.handlers.BaseHttpHandler;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
+import org.slf4j.Logger;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,11 +38,14 @@ import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Returns an origins inventory snapshot in an HTTP response.
  */
 public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsChangeListener {
+    private static final Logger LOG = getLogger(OriginsInventoryHandler.class);
+
     private final ObjectMapper mapper = addStyxMixins(new ObjectMapper()).disable(FAIL_ON_EMPTY_BEANS)
             .setDefaultPrettyPrinter(PRETTY_PRINTER);
 
@@ -91,6 +95,7 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsC
     @Subscribe
     @Override
     public void originsChanged(OriginsSnapshot snapshot) {
+        LOG.info("received origins inventory state change {}", snapshot);
         originsInventorySnapshotMap.put(snapshot.appId(), snapshot);
     }
 }
