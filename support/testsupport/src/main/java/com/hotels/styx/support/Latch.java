@@ -19,6 +19,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Throwables.propagate;
+import static java.lang.Thread.currentThread;
 
 /**
  * Wrapper for CountDownLatch to make it more convenient to use.
@@ -46,7 +47,7 @@ public class Latch {
                 throw new IllegalStateException("Timed out");
             }
         } catch (InterruptedException e) {
-            throw propagate(e);
+            currentThread().interrupt();
         }
     }
 
