@@ -15,16 +15,20 @@
  */
 package com.hotels.styx.configstore;
 
+import com.hotels.styx.configstore.ConfigStore.KeyValuePair;
 import com.hotels.styx.support.Latch;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 
 public class ConfigStoreTest {
@@ -118,5 +122,41 @@ public class ConfigStoreTest {
         waitingForEvent.await(1, SECONDS);
 
         assertThat(state.get(), is("bar"));
+    }
+
+    @Test
+    public void canGetAllValuesUnderRoot() {
+        configStore.set("foo", "alpha");
+        configStore.set("foo.bar", "beta");
+        configStore.set("bar.foo", "gamma");
+
+        List<KeyValuePair<String>> results = configStore.startingWith("foo");
+
+        assertThat(results, containsInAnyOrder(
+                new KeyValuePair<>("foo", "alpha"),
+                new KeyValuePair<>("foo.bar", "beta")
+                ));
+    }
+
+    @Test
+    public void canWatchAllValuesUnderRoot() {
+        Latch sync = new Latch(2);
+        List<KeyValuePair<String>> results = new CopyOnWriteArrayList<>();
+
+        configStore.watchAll("foo", String.class)
+                .subscribe(kv -> {
+                    results.add(kv);
+                    sync.countDown();
+                });
+
+        configStore.set("foo", "alpha");
+        configStore.set("foo.bar", "beta");
+        configStore.set("bar.foo", "gamma");
+        sync.await(1, SECONDS);
+
+        assertThat(results, containsInAnyOrder(
+                new KeyValuePair<>("foo", "alpha"),
+                new KeyValuePair<>("foo.bar", "beta")
+        ));
     }
 }

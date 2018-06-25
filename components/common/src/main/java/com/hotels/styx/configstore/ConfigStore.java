@@ -15,19 +15,25 @@
  */
 package com.hotels.styx.configstore;
 
+import com.google.common.annotations.VisibleForTesting;
 import rx.Observable;
 import rx.Observer;
 import rx.subjects.PublishSubject;
 
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 import static rx.Observable.concat;
 import static rx.schedulers.Schedulers.computation;
 
@@ -36,6 +42,8 @@ import static rx.schedulers.Schedulers.computation;
  * Added to allow Styx to operate in a more dynamic, adaptive way.
  */
 public class ConfigStore {
+    private static final String DELIMITER = ".";
+
     private final Observer<Update> updates;
     private final ConcurrentMap<String, Object> values;
     private final Observable<Update> propagation;
@@ -82,8 +90,51 @@ public class ConfigStore {
         return concat(currentValueIfPresent(key), subsequentStates);
     }
 
+    public <T> Observable<KeyValuePair<T>> watchAll(String rootKey) {
+        return watchAll(rootKey, Object.class)
+                .map(value -> (KeyValuePair<T>) value);
+    }
+
+    public <T> Observable<KeyValuePair<T>> watchAll(String rootKey, Class<T> type) {
+        String prefix = rootKey + DELIMITER;
+
+        return watch(key -> rootKey.equals(key) || key.startsWith(prefix), type);
+    }
+
+    public <T> List<KeyValuePair<T>> startingWith(String rootKey) {
+        return (List) startingWith(rootKey, Object.class);
+    }
+
+    // Note: as the number of entries increases, it may be necessary to adopt a different data structure.
+    public <T> List<KeyValuePair<T>> startingWith(String rootKey, Class<T> type) {
+        String prefix = rootKey + DELIMITER;
+
+        return values.entrySet().stream()
+                .filter(entry -> entry.getKey().equals(rootKey) || entry.getKey().startsWith(prefix))
+                .map(entry -> new KeyValuePair<>(entry, type))
+                .collect(toList());
+    }
+
+    private <T> Observable<KeyValuePair<T>> watch(Predicate<String> keyMatcher, Class<T> type) {
+        Observable<KeyValuePair<T>> subsequentStates = propagation
+                .filter(update -> keyMatcher.test(update.key()))
+                .map(update -> new KeyValuePair<>(update, type))
+                .observeOn(computation());
+
+        return concat(currentValuesIfPresent(keyMatcher, type), subsequentStates);
+    }
+
     private <T> Observable<T> currentValueIfPresent(String key) {
         return Observable.from(singleOrEmpty(() -> (T) values.get(key)));
+    }
+
+    private <T> Observable<KeyValuePair<T>> currentValuesIfPresent(Predicate<String> keyMatcher, Class<T> type) {
+        Iterable<KeyValuePair<T>> generateOnCall = () -> values.entrySet().stream()
+                .filter(entry -> keyMatcher.test(entry.getKey()))
+                .map(entry -> new KeyValuePair<>(entry, type))
+                .iterator();
+
+        return Observable.from(generateOnCall);
     }
 
     /* Returns an iterable of one item if the supplier supplies a non-null value
@@ -99,11 +150,61 @@ public class ConfigStore {
         };
     }
 
+    public static final class KeyValuePair<T> {
+        private final String key;
+        private final T value;
+
+        @VisibleForTesting
+        KeyValuePair(String key, T value) {
+            this.key = requireNonNull(key);
+            this.value = requireNonNull(value);
+        }
+
+        private KeyValuePair(Map.Entry<String, ?> entry, Class<T> type) {
+            this(entry.getKey(), type.cast(entry.getValue()));
+        }
+
+        private KeyValuePair(Update update, Class<T> type) {
+            this(update.key(), type.cast(update.value()));
+        }
+
+        public String key() {
+            return key;
+        }
+
+        public T value() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            KeyValuePair<?> that = (KeyValuePair<?>) o;
+            return Objects.equals(key, that.key) &&
+                    Objects.equals(value, that.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(key, value);
+        }
+
+        @Override
+        public String toString() {
+            return key + "->" + value;
+        }
+    }
+
     private static class Update {
         private final String key;
         private final Object value;
 
-        Update(String key, Object value) {
+        private Update(String key, Object value) {
             this.key = requireNonNull(key);
             this.value = requireNonNull(value);
         }
