@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.configstore;
 
-import com.hotels.styx.configstore.ConfigStore.KeyValuePair;
+import com.hotels.styx.configstore.ConfigStore.ConfigEntry;
 import com.hotels.styx.support.Latch;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -130,18 +130,18 @@ public class ConfigStoreTest {
         configStore.set("foo.bar", "beta");
         configStore.set("bar.foo", "gamma");
 
-        List<KeyValuePair<String>> results = configStore.startingWith("foo");
+        List<ConfigEntry<String>> results = configStore.startingWith("foo");
 
         assertThat(results, containsInAnyOrder(
-                new KeyValuePair<>("foo", "alpha"),
-                new KeyValuePair<>("foo.bar", "beta")
+                new ConfigEntry<>("foo", "alpha"),
+                new ConfigEntry<>("foo.bar", "beta")
                 ));
     }
 
     @Test
     public void canWatchAllValuesUnderRoot() {
         Latch sync = new Latch(2);
-        List<KeyValuePair<String>> results = new CopyOnWriteArrayList<>();
+        List<ConfigEntry<String>> results = new CopyOnWriteArrayList<>();
 
         configStore.watchAll("foo", String.class)
                 .subscribe(kv -> {
@@ -155,8 +155,8 @@ public class ConfigStoreTest {
         sync.await(1, SECONDS);
 
         assertThat(results, containsInAnyOrder(
-                new KeyValuePair<>("foo", "alpha"),
-                new KeyValuePair<>("foo.bar", "beta")
+                new ConfigEntry<>("foo", "alpha"),
+                new ConfigEntry<>("foo.bar", "beta")
         ));
     }
 }
