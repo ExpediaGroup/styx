@@ -59,7 +59,7 @@ public class ConfigStoreTest {
         configStore.set("foo", "bar");
         sync.await(1, SECONDS);
         assertThat(update.get(), is("bar"));
-        assertThat(configStore.get("foo"), isValue("bar"));
+        assertThat(configStore.get("foo", String.class), isValue("bar"));
     }
 
     // If this test fails it will cause a deadlock, resulting in a latch timeout
@@ -113,7 +113,7 @@ public class ConfigStoreTest {
         AtomicReference<Object> state = new AtomicReference<>();
         Latch waitingForEvent = new Latch(1);
 
-        configStore.watch("foo")
+        configStore.watch("foo", String.class)
                 .subscribe(value -> {
                     state.set(value);
                     waitingForEvent.countDown();
@@ -130,7 +130,7 @@ public class ConfigStoreTest {
         configStore.set("foo.bar", "beta");
         configStore.set("bar.foo", "gamma");
 
-        List<ConfigEntry<String>> results = configStore.startingWith("foo");
+        List<ConfigEntry<String>> results = configStore.startingWith("foo", String.class);
 
         assertThat(results, containsInAnyOrder(
                 new ConfigEntry<>("foo", "alpha"),

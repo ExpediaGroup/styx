@@ -65,51 +65,74 @@ public class ConfigStore {
         this.propagation = propagation;
     }
 
-    public <T> Optional<T> get(String key) {
-        return Optional.ofNullable((T) values.get(key));
-    }
-
+    /**
+     * Get the current value of a config entry, if present.
+     *
+     * @param key  key
+     * @param type type to cast to, if present
+     * @param <T>  type
+     * @return value if present, otherwise empty
+     */
     public <T> Optional<T> get(String key, Class<T> type) {
         return Optional.ofNullable(values.get(key)).map(type::cast);
     }
 
+    /**
+     * Sets the value of a config entry. This will also publish the new value to watchers.
+     *
+     * @param key   key
+     * @param value new value
+     */
     public void set(String key, Object value) {
         this.updates.onNext(new ConfigEntry<>(key, value));
     }
 
+    /**
+     * Watch for changes to an entry.
+     *
+     * @param key  key
+     * @param type type to cast values to
+     * @param <T>  type
+     * @return observable supplying entry values when changes occur
+     */
     public <T> Observable<T> watch(String key, Class<T> type) {
-        return watch(key).cast(type);
-    }
-
-    public <T> Observable<T> watch(String key) {
         Observable<T> subsequentStates = propagation
                 .filter(update -> update.key().equals(key))
                 .map(ConfigEntry::value)
-                .map(value -> (T) value)
+                .cast(type)
                 .observeOn(computation());
 
-        return concat(currentValueIfPresent(key), subsequentStates);
+        return concat(currentValueIfPresent(key, type), subsequentStates);
     }
 
-    public <T> Observable<ConfigEntry<T>> watchAll(String rootKey) {
-        return watchAll(rootKey, Object.class)
-                .map(value -> (ConfigEntry<T>) value);
-    }
-
+    /**
+     * Watch for changes to all entries under a given root key.
+     * For example, if the {@code rootKey} is "foo" then you would receive entries named "foo", "foo.bar", "foo.bar.baz", etc.
+     *
+     * @param rootKey root key
+     * @param type    type to cast values to
+     * @param <T>     type
+     * @return observable supplying entries when changes occur
+     */
     public <T> Observable<ConfigEntry<T>> watchAll(String rootKey, Class<T> type) {
         String prefix = rootKey + DELIMITER;
 
         return watch(key -> rootKey.equals(key) || key.startsWith(prefix), type);
     }
 
-    public <T> List<ConfigEntry<T>> startingWith(String rootKey) {
-        return (List) startingWith(rootKey, Object.class);
-    }
-
-    // Note: as the number of entries increases, it may be necessary to adopt a different data structure.
+    /**
+     * Get all entries under a given root key.
+     * For example, if the {@code rootKey} is "foo" then you would receive entries named "foo", "foo.bar", "foo.bar.baz", etc.
+     *
+     * @param rootKey root key
+     * @param type    type to cast values to
+     * @param <T>     type
+     * @return list of entries
+     */
     public <T> List<ConfigEntry<T>> startingWith(String rootKey, Class<T> type) {
         String prefix = rootKey + DELIMITER;
 
+        // Note: as the number of entries increases, it may be necessary to adopt a different data structure.
         return values.entrySet().stream()
                 .filter(entry -> entry.getKey().equals(rootKey) || entry.getKey().startsWith(prefix))
                 .map(entry -> new ConfigEntry<>(entry, type))
@@ -125,8 +148,10 @@ public class ConfigStore {
         return concat(currentValuesIfPresent(keyMatcher, type), subsequentStates);
     }
 
-    private <T> Observable<T> currentValueIfPresent(String key) {
-        return Observable.from(singleOrEmpty(() -> (T) values.get(key)));
+    private <T> Observable<T> currentValueIfPresent(String key, Class<T> type) {
+        return Observable.from(
+                singleOrEmpty(() -> values.get(key)))
+                .cast(type);
     }
 
     private <T> Observable<ConfigEntry<T>> currentValuesIfPresent(Predicate<String> keyMatcher, Class<T> type) {
@@ -151,6 +176,11 @@ public class ConfigStore {
         };
     }
 
+    /**
+     * A config entry with a key and value.
+     *
+     * @param <T> value type
+     */
     public static final class ConfigEntry<T> {
         private final String key;
         private final T value;
@@ -190,8 +220,8 @@ public class ConfigStore {
                 return false;
             }
             ConfigEntry<?> that = (ConfigEntry<?>) o;
-            return Objects.equals(key, that.key) &&
-                    Objects.equals(value, that.value);
+            return Objects.equals(key, that.key)
+                    && Objects.equals(value, that.value);
         }
 
         @Override
