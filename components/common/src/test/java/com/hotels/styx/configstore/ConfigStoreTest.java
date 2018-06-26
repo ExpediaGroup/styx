@@ -16,15 +16,17 @@
 package com.hotels.styx.configstore;
 
 import com.hotels.styx.configstore.ConfigStore.ConfigEntry;
-import com.hotels.styx.support.Latch;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hotels.styx.support.LatchesAndBarriers.await;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,7 +49,7 @@ public class ConfigStoreTest {
 
     @Test
     public void listenersReceiveUpdatesWhenValuesChange() {
-        Latch sync = new Latch(1);
+        CountDownLatch sync = new CountDownLatch(1);
         AtomicReference<String> update = new AtomicReference<>();
 
         configStore.watch("foo", String.class)
@@ -57,53 +59,38 @@ public class ConfigStoreTest {
                 });
 
         configStore.set("foo", "bar");
-        sync.await(1, SECONDS);
+        await(sync, 1, SECONDS);
         assertThat(update.get(), is("bar"));
         assertThat(configStore.get("foo", String.class), isValue("bar"));
     }
 
-    // If this test fails it will cause a deadlock, resulting in a latch timeout
+    // If this test fails it will time out
     @Test
     public void listensOnSeparateThread() {
-        Latch unlockedByTestThread = new Latch(1);
-        Latch unlockedBySubscribeThread = new Latch(1);
+        CyclicBarrier barrier = new CyclicBarrier(2);
 
         configStore.watch("foo", String.class)
-                .subscribe(value -> {
-                    unlockedByTestThread.await(1, SECONDS);
-                    unlockedBySubscribeThread.countDown();
-                });
+                .subscribe(value -> await(barrier, 1, SECONDS));
 
         configStore.set("foo", "bar");
-        unlockedByTestThread.countDown();
-        unlockedBySubscribeThread.await(2, SECONDS);
+        await(barrier, 1, SECONDS);
     }
 
-    // If this test fails it will cause a deadlock, resulting in a latch timeout
+    // If this test fails it will time out
     @Test
     public void multipleListenersCanSubscribeSimultaneously() {
-        Latch unlockedByListener1 = new Latch(1);
-        Latch unlockedByListener2 = new Latch(1);
-        Latch unlockedWhenBothFinish = new Latch(2);
+        CyclicBarrier barrier = new CyclicBarrier(3);
 
         Observable<String> watch = configStore.watch("foo", String.class);
 
         // Listener 1
-        watch.subscribe(value -> {
-            unlockedByListener1.countDown();
-            unlockedByListener2.await(1, SECONDS);
-            unlockedWhenBothFinish.countDown();
-        });
+        watch.subscribe(value -> await(barrier, 1, SECONDS));
 
         // Listener 2
-        watch.subscribe(value -> {
-            unlockedByListener1.await(1, SECONDS);
-            unlockedByListener2.countDown();
-            unlockedWhenBothFinish.countDown();
-        });
+        watch.subscribe(value -> await(barrier, 1, SECONDS));
 
         configStore.set("foo", "bar");
-        unlockedWhenBothFinish.await(5, SECONDS);
+        await(barrier, 1, SECONDS);
     }
 
     @Test
@@ -111,7 +98,7 @@ public class ConfigStoreTest {
         configStore.set("foo", "bar");
 
         AtomicReference<Object> state = new AtomicReference<>();
-        Latch waitingForEvent = new Latch(1);
+        CountDownLatch waitingForEvent = new CountDownLatch(1);
 
         configStore.watch("foo", String.class)
                 .subscribe(value -> {
@@ -119,7 +106,7 @@ public class ConfigStoreTest {
                     waitingForEvent.countDown();
                 });
 
-        waitingForEvent.await(1, SECONDS);
+        await(waitingForEvent, 1, SECONDS);
 
         assertThat(state.get(), is("bar"));
     }
@@ -135,12 +122,12 @@ public class ConfigStoreTest {
         assertThat(results, containsInAnyOrder(
                 new ConfigEntry<>("foo", "alpha"),
                 new ConfigEntry<>("foo.bar", "beta")
-                ));
+        ));
     }
 
     @Test
     public void canWatchAllValuesUnderRoot() {
-        Latch sync = new Latch(2);
+        CountDownLatch sync = new CountDownLatch(2);
         List<ConfigEntry<String>> results = new CopyOnWriteArrayList<>();
 
         configStore.watchAll("foo", String.class)
@@ -152,7 +139,7 @@ public class ConfigStoreTest {
         configStore.set("foo", "alpha");
         configStore.set("foo.bar", "beta");
         configStore.set("bar.foo", "gamma");
-        sync.await(1, SECONDS);
+        await(sync, 1, SECONDS);
 
         assertThat(results, containsInAnyOrder(
                 new ConfigEntry<>("foo", "alpha"),
