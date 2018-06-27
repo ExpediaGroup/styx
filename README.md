@@ -5,7 +5,9 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Version](https://img.shields.io/maven-central/v/com.hotels.styx/styx-server.svg)
 
-<img width="460" align="right" alt="Styx Logo" src="./docs/assets/styx-logo.svg">
+<p align="center">
+  <img width="420" alt="Styx Logo" src="./docs/assets/styx-logo.svg">
+</p>
 
 Styx is a programmable reverse proxy for JVM (Java Virtual Machine). It can be used
 as a stand-alone application, or as a platform to build custom networking applications. 
