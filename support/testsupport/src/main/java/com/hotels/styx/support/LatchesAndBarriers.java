@@ -40,6 +40,7 @@ public final class LatchesAndBarriers {
             }
         } catch (InterruptedException e) {
             currentThread().interrupt();
+            throw new RuntimeException(e);
         }
     }
 
@@ -48,6 +49,7 @@ public final class LatchesAndBarriers {
             barrier.await(timeout, unit);
         } catch (InterruptedException e) {
             currentThread().interrupt();
+            throw new RuntimeException(e);
         } catch (BrokenBarrierException e) {
             throw new IllegalStateException(e);
         } catch (TimeoutException e) {
