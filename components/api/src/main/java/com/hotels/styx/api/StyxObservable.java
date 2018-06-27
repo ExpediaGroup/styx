@@ -36,8 +36,6 @@ public interface StyxObservable<T> {
 
     <U> StyxObservable<U> reduce(BiFunction<T, U, U> accumulator, U initialValue);
 
-    // TODO: Mikko: Styx 2.0 Api: `onError`: is more flexible type signature possible? Such as:
-    //       <U> StyxObservable<U> onError(Function<Throwable, StyxObservable<U>> errorHandler);
     StyxObservable<T> onError(Function<Throwable, StyxObservable<T>> errorHandler);
 
     /**
@@ -62,11 +60,6 @@ public interface StyxObservable<T> {
 
     static <T> StyxObservable<T> of(T value) {
         return new StyxCoreObservable<>(Observable.just(value));
-    }
-
-    // TODO: Mikko: Only required for testing?
-    static <T> StyxObservable<T> empty() {
-        return new StyxCoreObservable<T>(Observable.empty());
     }
 
     static <T> StyxObservable<T> from(Iterable<T> values) {

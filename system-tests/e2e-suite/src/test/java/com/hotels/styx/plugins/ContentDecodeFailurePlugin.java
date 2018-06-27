@@ -45,8 +45,7 @@ public class ContentDecodeFailurePlugin implements Plugin {
                 .map(FullHttpResponse::toStreamingResponse);
     }
 
-    // TODO: Mikko: Styx 2.0 Api:
-    // Can we still test these types of scenarios?
+    // TODO: See https://github.com/HotelsDotCom/styx/issues/202
     private Function<ByteBuf, String> decodeOrFailOperation(HttpRequest request) {
         return (byteBuf) -> {
             if (request.header("Fail_during_decoder").isPresent()) {

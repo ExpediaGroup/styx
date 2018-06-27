@@ -34,7 +34,7 @@ class PluginErrorHandlingSpec extends FunSpec
 
   val normalBackend = FakeHttpServer.HttpStartupConfig().start()
 
-  // TODO: Mikko: Styx 2.0 API: Can we e2e test content decode failues any more? Does it make sense to try to e2e test them?
+  // TODO: See https://github.com/HotelsDotCom/styx/issues/202
 
   override val styxConfig = StyxConfig(plugins = List(
     "failBeforeInterceptor" -> new FailBeforeHandleInterceptor(),
@@ -90,7 +90,7 @@ class PluginErrorHandlingSpec extends FunSpec
       }
     }
 
-    // TODO: Mikko: Styx 2.0 Api: Probably not possible to test under the new API.
+    // TODO: See https://github.com/HotelsDotCom/styx/issues/202
     ignore("Catches exceptions from plugins performing content decoding, and maps them to INTERNAL_SERVER_ERRORs") {
       for (i <- 1 to 2) {
         val request = get(styxServer.routerURL("/foo"))

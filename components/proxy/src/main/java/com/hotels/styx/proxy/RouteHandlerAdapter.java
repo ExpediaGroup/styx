@@ -40,6 +40,7 @@ public class RouteHandlerAdapter implements HttpHandler {
                 // TODO: NoServiceConfiguredException happens *after* routing. Therefore it doesn't contain
                 // any helpful information about the state of the router as to why service was not configured.
                 // It might be useful to think if there is a better way of addressing this issue.
+                // What kind of information might we want?
                 .orElse(StyxObservable.error(new NoServiceConfiguredException(request.path())));
     }
 }

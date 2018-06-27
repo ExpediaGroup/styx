@@ -54,9 +54,9 @@ import static com.hotels.styx.api.messages.HttpResponseStatus.REQUEST_URI_TOO_LO
 import static com.hotels.styx.api.messages.HttpResponseStatus.UNAUTHORIZED;
 import static com.hotels.styx.api.messages.HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE;
 import static com.hotels.styx.api.metrics.HttpErrorStatusMetrics.formattedExceptionName;
-import static com.hotels.styx.api.netty.CustomHttpResponseStatus.ORIGIN_CONNECTION_REFUSED;
-import static com.hotels.styx.api.netty.CustomHttpResponseStatus.ORIGIN_CONNECTION_TIMED_OUT;
-import static com.hotels.styx.api.netty.CustomHttpResponseStatus.ORIGIN_SERVER_TIMED_OUT;
+import static com.hotels.styx.api.messages.CustomHttpResponseStatus.ORIGIN_CONNECTION_REFUSED;
+import static com.hotels.styx.api.messages.CustomHttpResponseStatus.ORIGIN_CONNECTION_TIMED_OUT;
+import static com.hotels.styx.api.messages.CustomHttpResponseStatus.ORIGIN_SERVER_TIMED_OUT;
 import static java.lang.System.arraycopy;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;

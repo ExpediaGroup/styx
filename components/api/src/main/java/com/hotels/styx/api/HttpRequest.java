@@ -21,14 +21,12 @@ import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import rx.Observable;
-import rx.Subscriber;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -376,30 +374,6 @@ public class HttpRequest implements StreamingHttpMessage {
                 .add("secure", secure)
                 .add("clientAddress", clientAddress)
                 .toString();
-    }
-
-    // TODO: Mikko: Identical content to the HttpResponse one. Consider moving to base class.
-    public CompletableFuture<Boolean> releaseContentBuffers() {
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
-
-        ((StyxCoreObservable<ByteBuf>) body).delegate().subscribe(new Subscriber<ByteBuf>() {
-            @Override
-            public void onCompleted() {
-                future.complete(true);
-            }
-
-            @Override
-            public void onError(Throwable e) {
-
-            }
-
-            @Override
-            public void onNext(ByteBuf byteBuf) {
-                byteBuf.release();
-            }
-        });
-
-        return future;
     }
 
     /**

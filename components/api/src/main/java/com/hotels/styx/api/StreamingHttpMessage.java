@@ -17,9 +17,11 @@ package com.hotels.styx.api;
 
 import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
+import rx.Subscriber;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
@@ -112,5 +114,29 @@ public interface StreamingHttpMessage {
      */
     default boolean chunked() {
         return HttpMessageSupport.chunked(headers());
+    }
+
+    default CompletableFuture<Boolean> releaseContentBuffers() {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+        ((StyxCoreObservable<ByteBuf>) body()).delegate()
+                .subscribe(new Subscriber<ByteBuf>() {
+                    @Override
+                    public void onCompleted() {
+                        future.complete(true);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        future.completeExceptionally(e);
+                    }
+
+                    @Override
+                    public void onNext(ByteBuf byteBuf) {
+                        byteBuf.release();
+                    }
+                });
+
+        return future;
     }
 }

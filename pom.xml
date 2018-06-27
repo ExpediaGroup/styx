@@ -62,8 +62,6 @@
     </site>
   </distributionManagement>
 
-  <!--TODO end customization -->
-
   <modules>
     <module>bom</module>
     <module>components</module>

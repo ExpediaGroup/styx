@@ -41,7 +41,6 @@ public final class ProxyToBackendRoute implements HttpHandler {
 
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        // TODO: Mikko: Styx 2.0 API:
         return fromRxObservable(client.sendRequest(request));
     }
 }

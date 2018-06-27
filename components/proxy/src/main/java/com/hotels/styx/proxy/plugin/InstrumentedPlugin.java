@@ -89,6 +89,7 @@ public class InstrumentedPlugin implements Plugin {
         try {
             // TODO: Mikko: Styx 2.0 API:
             // Check this:
+            // Check what about it?
             return fromRxObservable(
                     toRxObservable(plugin.intercept(request, chain))
                             .doOnNext(response -> recordStatusCode(chain, response))

@@ -34,6 +34,7 @@ public class MockContext implements HttpInterceptor.Context {
     }
 
     // TODO: Mikko: Styx 2.0 API: MockObservable support for `onError`.
+    // This class is never used.
     static class MockObservable<T> implements StyxObservable<T> {
         private final T value;
 

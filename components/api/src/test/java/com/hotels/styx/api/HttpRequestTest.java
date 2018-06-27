@@ -17,6 +17,7 @@ package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -81,6 +82,23 @@ public class HttpRequestTest {
         assertThat(full.body(), is(bytes("foobar")));
     }
 
+    @Test(expectedExceptions = io.netty.util.IllegalReferenceCountException.class)
+    public void toFullRequestReleasesOriginalReferenceCountedBuffers() throws ExecutionException, InterruptedException {
+        ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
+
+        HttpRequest original = HttpRequest.get("/foo")
+                .body(StyxObservable.of(content))
+                .build();
+
+        FullHttpRequest fullRequest = original.toFullRequest(100)
+                .asCompletableFuture()
+                .get();
+
+        content.array()[0] = 'A';
+
+        assertThat(fullRequest.bodyAs(UTF_8), is("original"));
+    }
+
     @Test(dataProvider = "emptyBodyRequests")
     public void encodesToStreamingHttpRequestWithEmptyBody(HttpRequest streamingRequest) throws Exception {
         FullHttpRequest full = streamingRequest.toFullRequest(0x1000)
@@ -95,7 +113,7 @@ public class HttpRequestTest {
     private Object[][] emptyBodyRequests() {
         return new Object[][]{
                 {get("/foo/bar").build()},
-                {post("/foo/bar", StyxObservable.empty()).build()},
+                {post("/foo/bar", StyxCoreObservable.empty()).build()},
         };
     }
 

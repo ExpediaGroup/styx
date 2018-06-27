@@ -26,9 +26,8 @@ public final class CompletableFutures {
     private CompletableFutures() {
     }
 
-    // TODO: We need to substitute this in favour of Styx APIs
     public static <T> CompletableFuture<T> fromSingleObservable(Observable<T> observable) {
-        final CompletableFuture<T> future = new CompletableFuture<>();
+        CompletableFuture<T> future = new CompletableFuture<>();
         observable.single().subscribe(future::complete, future::completeExceptionally);
         return future;
     }

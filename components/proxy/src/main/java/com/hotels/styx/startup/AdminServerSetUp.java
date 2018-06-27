@@ -32,6 +32,7 @@ public final class AdminServerSetUp {
         // TODO: Pass all backend Service Registries to AdminServerBuilder:
         // - only one backendServicesRegistry is passed in to the admin interface. Instead we
         //   should pass all of them:
+        // The comment seems to refer to part of a larger piece of work. Is there an issue to associate this with?
         return new AdminServerBuilder(config.environment())
                 .backendServicesRegistry((Registry<BackendService>) config.services().get("backendServiceRegistry"))
                 .plugins(config.plugins())

@@ -144,6 +144,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             };
 
             //TODO: origins inventory builder assumes that appId/originId tuple is unique and it will fail on metrics registration.
+            // We have plans to entirely revamp the OriginsInventory, see https://github.com/HotelsDotCom/styx/issues/197
             OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(environment.eventBus())
                     .metricsRegistry(environment.metricRegistry())
