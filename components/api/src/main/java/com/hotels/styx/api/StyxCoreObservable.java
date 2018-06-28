@@ -61,14 +61,16 @@ class StyxCoreObservable<T> implements StyxObservable<T> {
     }
 
     public <U> StyxObservable<U> flatMap(Function<T, StyxObservable<U>> transformation) {
-        return new StyxCoreObservable<>(delegate.flatMap(response -> {
-            // TODO: Mikko: Dangerous cast.
-            // Because StyxObservable is an interface, nothing prevents plugins from
-            // implementing it and returning a derived object from the `transformation`
-            // function. This would obviously break the cast.
-            StyxCoreObservable<U> result = (StyxCoreObservable<U>) transformation.apply(response);
-            return result.delegate;
-        }));
+        return new StyxCoreObservable<>(delegate.flatMap(response ->
+                toObservable(transformation.apply(response))));
+    }
+
+    private static <U> Observable<? extends U> toObservable(StyxObservable<U> styxObservable) {
+        if (styxObservable instanceof StyxCoreObservable) {
+            return ((StyxCoreObservable<U>) styxObservable).delegate;
+        }
+
+        return toObservable(styxObservable.asCompletableFuture());
     }
 
     public <U> StyxObservable<U> reduce(BiFunction<T, U, U> accumulator, U seed) {
