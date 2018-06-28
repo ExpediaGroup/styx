@@ -36,7 +36,7 @@ class StyxCoreObservable<T> implements StyxObservable<T> {
         this.delegate = toObservable(future);
     }
 
-    public static <T> Observable<T> toObservable(CompletionStage<T> future) {
+    private static <T> Observable<T> toObservable(CompletionStage<T> future) {
         return Observable.create(subscriber ->
                 future.whenComplete((result, error) -> {
                     if (error != null) {
@@ -92,7 +92,7 @@ class StyxCoreObservable<T> implements StyxObservable<T> {
     }
 
     private static <T> CompletableFuture<T> fromSingleObservable(Observable<T> observable) {
-        final CompletableFuture<T> future = new CompletableFuture<>();
+        CompletableFuture<T> future = new CompletableFuture<>();
         observable.single().subscribe(future::complete, future::completeExceptionally);
         return future;
     }
