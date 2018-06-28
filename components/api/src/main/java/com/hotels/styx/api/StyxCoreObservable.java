@@ -24,6 +24,7 @@ import java.util.function.Function;
 
 /**
  * An observable that underpins the StyxObservable interface.
+ *
  * @param <T>
  */
 class StyxCoreObservable<T> implements StyxObservable<T> {
@@ -32,6 +33,7 @@ class StyxCoreObservable<T> implements StyxObservable<T> {
     public StyxCoreObservable(Observable<T> delegate) {
         this.delegate = delegate;
     }
+
     public StyxCoreObservable(CompletionStage<T> future) {
         this.delegate = toObservable(future);
     }
@@ -66,11 +68,9 @@ class StyxCoreObservable<T> implements StyxObservable<T> {
     }
 
     private static <U> Observable<? extends U> toObservable(StyxObservable<U> styxObservable) {
-        if (styxObservable instanceof StyxCoreObservable) {
-            return ((StyxCoreObservable<U>) styxObservable).delegate;
-        }
-
-        return toObservable(styxObservable.asCompletableFuture());
+        return styxObservable instanceof StyxCoreObservable
+                ? ((StyxCoreObservable<U>) styxObservable).delegate
+                : toObservable(styxObservable.asCompletableFuture());
     }
 
     public <U> StyxObservable<U> reduce(BiFunction<T, U, U> accumulator, U seed) {
