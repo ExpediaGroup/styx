@@ -24,20 +24,38 @@ import java.util.function.Function;
 
 /**
  * Exposes a transformation API for HTTP interceptors.
- *
+ * <p>
  * This interface provides a is *not* intended for plugins to extend.
  *
  * @param <T>
  */
 public interface StyxObservable<T> {
     <U> StyxObservable<U> map(Function<T, U> transformation);
+
     <U> StyxObservable<U> flatMap(Function<T, StyxObservable<U>> transformation);
+
     <U> StyxObservable<U> reduce(BiFunction<T, U, U> accumulator, U initialValue);
 
     // TODO: Mikko: Styx 2.0 Api: `onError`: is more flexible type signature possible? Such as:
     //       <U> StyxObservable<U> onError(Function<Throwable, StyxObservable<U>> errorHandler);
     StyxObservable<T> onError(Function<Throwable, StyxObservable<T>> errorHandler);
 
+    /**
+     * Converts this observable to a completable future. Note that in order to do this, it must
+     * publish exactly one element before completing, otherwise the future will complete exceptionally,
+     * with the error being:
+     *
+     * <ul>
+     * <li>
+     * {@link java.util.NoSuchElementException} if it completes without publishing any elements.
+     * </li>
+     * <li>
+     * {@link IllegalArgumentException} if more than one element is published.
+     * </li>
+     * </ul>
+     *
+     * @return a completable future
+     */
     CompletableFuture<T> asCompletableFuture();
 
     // Static Factory Methods

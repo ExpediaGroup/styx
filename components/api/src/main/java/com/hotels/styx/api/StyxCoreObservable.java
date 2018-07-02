@@ -24,6 +24,7 @@ import java.util.function.Function;
 
 /**
  * An observable that underpins the StyxObservable interface.
+ *
  * @param <T>
  */
 class StyxCoreObservable<T> implements StyxObservable<T> {
@@ -32,11 +33,12 @@ class StyxCoreObservable<T> implements StyxObservable<T> {
     public StyxCoreObservable(Observable<T> delegate) {
         this.delegate = delegate;
     }
+
     public StyxCoreObservable(CompletionStage<T> future) {
         this.delegate = toObservable(future);
     }
 
-    public static <T> Observable<T> toObservable(CompletionStage<T> future) {
+    private static <T> Observable<T> toObservable(CompletionStage<T> future) {
         return Observable.create(subscriber ->
                 future.whenComplete((result, error) -> {
                     if (error != null) {
@@ -61,14 +63,14 @@ class StyxCoreObservable<T> implements StyxObservable<T> {
     }
 
     public <U> StyxObservable<U> flatMap(Function<T, StyxObservable<U>> transformation) {
-        return new StyxCoreObservable<>(delegate.flatMap(response -> {
-            // TODO: Mikko: Dangerous cast.
-            // Because StyxObservable is an interface, nothing prevents plugins from
-            // implementing it and returning a derived object from the `transformation`
-            // function. This would obviously break the cast.
-            StyxCoreObservable<U> result = (StyxCoreObservable<U>) transformation.apply(response);
-            return result.delegate;
-        }));
+        return new StyxCoreObservable<>(delegate.flatMap(response ->
+                toObservable(transformation.apply(response))));
+    }
+
+    private static <U> Observable<? extends U> toObservable(StyxObservable<U> styxObservable) {
+        return styxObservable instanceof StyxCoreObservable
+                ? ((StyxCoreObservable<U>) styxObservable).delegate
+                : toObservable(styxObservable.asCompletableFuture());
     }
 
     public <U> StyxObservable<U> reduce(BiFunction<T, U, U> accumulator, U seed) {
@@ -92,7 +94,7 @@ class StyxCoreObservable<T> implements StyxObservable<T> {
     }
 
     private static <T> CompletableFuture<T> fromSingleObservable(Observable<T> observable) {
-        final CompletableFuture<T> future = new CompletableFuture<>();
+        CompletableFuture<T> future = new CompletableFuture<>();
         observable.single().subscribe(future::complete, future::completeExceptionally);
         return future;
     }
