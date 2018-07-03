@@ -17,6 +17,7 @@ package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.Optional;
@@ -30,12 +31,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class MetricsHandlerTest {
-    final CodaHaleMetricRegistry metricRegistry = new CodaHaleMetricRegistry();
-    final MetricsHandler handler = new MetricsHandler(metricRegistry, Optional.empty());
+    private CodaHaleMetricRegistry metricRegistry;
+    private MetricsHandler handler;
+
+    @BeforeMethod
+    public void setUp() {
+        metricRegistry = new CodaHaleMetricRegistry();
+        handler = new MetricsHandler(metricRegistry, Optional.empty());
+    }
 
     @Test
     public void respondsToRequestWithJsonResponse() {
-        FullHttpResponse response = waitForResponse(handler.handle(get("/metrics").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics").build()));
         assertThat(response.status(), is(OK));
         assertThat(response.contentType().get(), is(JSON_UTF_8.toString()));
     }
@@ -43,7 +50,15 @@ public class MetricsHandlerTest {
     @Test
     public void exposesRegisteredMetrics() {
         metricRegistry.counter("foo").inc();
-        FullHttpResponse response = waitForResponse(handler.handle(get("/metrics").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics").build()));
         assertThat(response.bodyAs(UTF_8), is("{\"version\":\"3.1.3\",\"gauges\":{},\"counters\":{\"foo\":{\"count\":1}},\"histograms\":{},\"meters\":{},\"timers\":{}}"));
+    }
+
+    @Test
+    public void canRequestSpecificMetric() {
+        metricRegistry.counter("foo.bar.baz").inc(1);
+
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo/bar/baz").build()));
+        assertThat(response.bodyAs(UTF_8), is("{\"count\":1}"));
     }
 }

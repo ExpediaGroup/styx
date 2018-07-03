@@ -15,30 +15,40 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.json.MetricsModule;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import rx.Observable;
 
 import java.time.Duration;
 import java.util.Optional;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.messages.FullHttpResponse.response;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.slf4j.LoggerFactory.getLogger;
+import static rx.Observable.just;
 
 /**
  * Handler for showing all registered metrics for styx server. Can cache page content.
  */
 public class MetricsHandler extends JsonHandler<MetricRegistry> {
-    private static final Logger LOG = getLogger(MetricsHandler.class);
-
     private static final boolean DO_NOT_SHOW_SAMPLES = false;
+    private final CodaHaleMetricRegistry metricRegistry;
+
+    private final ObjectMapper metricSerialiser = new ObjectMapper()
+            .registerModule(new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
 
     /**
      * Constructs a new handler.
@@ -47,13 +57,58 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
      * @param cacheExpiration duration for which generated page content should be cached
      */
     public MetricsHandler(CodaHaleMetricRegistry metricRegistry, Optional<Duration> cacheExpiration) {
-        super(checkNotNull(metricRegistry.getMetricRegistry()), cacheExpiration, new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
+        super(requireNonNull(metricRegistry.getMetricRegistry()), cacheExpiration, new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
+
+        this.metricRegistry = metricRegistry;
     }
 
     @Override
     public Observable<HttpResponse> handle(HttpRequest request) {
-//        LOG.info("Path = " + request.path());
+        String path = removeFinalSlash(request.path());
 
-        return super.handle(request);
+        if (path.equals("/admin/metrics")) {
+            return super.handle(request);
+        }
+
+        String metricName = metricNameFromPath(path);
+        boolean pretty = request.queryParam("pretty").isPresent();
+
+        HttpResponse response = metric(metricName)
+                .map(metric -> serialiseMetric(metric, pretty))
+                .map(body -> response(OK).body(body, UTF_8))
+                .map(FullHttpResponse.Builder::build)
+                .map(FullHttpResponse::toStreamingResponse)
+                .orElseGet(() -> response(NOT_FOUND).build());
+
+        return just(response);
+    }
+
+    private String serialiseMetric(Metric metric, boolean pretty) {
+        ObjectWriter writer = pretty ? metricSerialiser.writerWithDefaultPrettyPrinter() : metricSerialiser.writer();
+
+        try {
+            return writer.writeValueAsString(metric);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Optional<Metric> metric(String metricName) {
+        return Optional.ofNullable(metricRegistry
+                .getMetricRegistry()
+                .getMetrics()
+                .get(metricName));
+    }
+
+    private static String metricNameFromPath(String path) {
+        String relativePath = path.substring("/admin/metrics/".length());
+
+        return relativePath.replace('/', '.');
+    }
+
+    private static String removeFinalSlash(String path) {
+        return path.endsWith("/")
+                ? path.substring(0, path.length() - 1)
+                : path;
     }
 }
