@@ -25,7 +25,7 @@ import org.testng.annotations.Test;
 
 import java.util.List;
 
-import static com.hotels.styx.api.HttpRequest.put;
+import static com.hotels.styx.api.FullHttpRequest.put;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
@@ -57,7 +57,7 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void enablesDisabledPlugin() {
-        HttpRequest request = put("/foo/off/enabled").body("true").build();
+        HttpRequest request = put("/foo/off/enabled").body("true", UTF_8).build().toStreamingRequest();
 
         FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
@@ -69,7 +69,7 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void disablesEnabledPlugin() {
-        HttpRequest request = put("/foo/on/enabled").body("false").build();
+        HttpRequest request = put("/foo/on/enabled").body("false", UTF_8).build().toStreamingRequest();
 
         FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
@@ -81,7 +81,7 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void notifiesWhenPluginAlreadyDisabled() {
-        HttpRequest request = put("/foo/off/enabled").body("false").build();
+        HttpRequest request = put("/foo/off/enabled").body("false", UTF_8).build().toStreamingRequest();
 
         FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
@@ -93,7 +93,7 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void notifiesWhenPluginAlreadyEnabled() {
-        HttpRequest request = put("/foo/on/enabled").body("true").build();
+        HttpRequest request = put("/foo/on/enabled").body("true", UTF_8).build().toStreamingRequest();
 
         FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
@@ -105,7 +105,7 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void saysBadRequestWhenUrlIsInvalid() {
-        HttpRequest request = put("/foo//enabled").body("true").build();
+        HttpRequest request = put("/foo//enabled").body("true", UTF_8).build().toStreamingRequest();
 
         FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
@@ -117,7 +117,7 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void saysBadRequestWhenNoStateSpecified() {
-        HttpRequest request = put("/foo/on/enabled").build();
+        HttpRequest request = put("/foo/on/enabled").build().toStreamingRequest();
 
         FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
@@ -129,7 +129,7 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void saysBadRequestWhenPluginDoesNotExist() {
-        HttpRequest request = put("/foo/nonexistent/enabled").body("true").build();
+        HttpRequest request = put("/foo/nonexistent/enabled").body("true", UTF_8).build().toStreamingRequest();
 
         FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
@@ -141,7 +141,7 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void saysBadRequestWhenValueIsInvalid() {
-        HttpRequest request = put("/foo/off/enabled").body("invalid").build();
+        HttpRequest request = put("/foo/off/enabled").body("invalid", UTF_8).build().toStreamingRequest();
 
         FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 

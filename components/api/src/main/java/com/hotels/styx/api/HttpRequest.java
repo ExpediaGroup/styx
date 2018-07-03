@@ -45,10 +45,10 @@ import static com.hotels.styx.api.messages.HttpMethod.METHODS;
 import static com.hotels.styx.api.messages.HttpMethod.PATCH;
 import static com.hotels.styx.api.messages.HttpMethod.POST;
 import static com.hotels.styx.api.messages.HttpMethod.PUT;
-import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 import static com.hotels.styx.api.messages.HttpMethod.httpMethod;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
+import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.compositeBuffer;
@@ -57,7 +57,6 @@ import static io.netty.util.ReferenceCountUtil.release;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.net.InetSocketAddress.createUnresolved;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 
@@ -488,15 +487,6 @@ public class HttpRequest implements StreamingHttpMessage {
          */
         public Builder body(StyxObservable<ByteBuf> content) {
             this.body = content;
-            return this;
-        }
-
-        // TODO: Mikko: Styx 2.0 API: Remove this method after switch over to StramingHttpRequest.
-        // This method is bad because it just takes string instead of stream of chunks. Also it implicitly
-        // assumes UTF_8 encoding.
-
-        public Builder body(String content) {
-            this.body = StyxObservable.of(copiedBuffer(content, UTF_8));
             return this;
         }
 

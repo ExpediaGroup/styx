@@ -15,8 +15,10 @@
  */
 package com.hotels.styx.support.generators
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
-import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.{FullHttpRequest, HttpRequest}
 import com.hotels.styx.api.messages.HttpMethod._
 import com.hotels.styx.api.messages.HttpVersion._
 import com.hotels.styx.support.generators.HttpHeadersGenerator.{HeaderTuple, contentTypeCharset, httpHeaders}
@@ -35,23 +37,23 @@ class StyxHttpMessageGenerator {
     contentDataLen <- Gen.choose(0, maxContentChunkLength)
     contentData <- Gen.listOfN(contentDataLen, Gen.alphaChar).map(_.mkString)
   } yield {
-    val builder = new HttpRequest.Builder(method, uri).version(version)
+    val builder = new FullHttpRequest.Builder(method, uri).version(version)
     if (method != HEAD) {
       addContent(builder, headers, contentData)
     }
     addHeaders(builder, headers)
-    builder.build()
+    builder.build().toStreamingRequest
   }
 
-  def addHeaders(builder: HttpRequest.Builder, headers: List[HeaderTuple]) = {
+  def addHeaders(builder: FullHttpRequest.Builder, headers: List[HeaderTuple]) = {
     for (header <- headers) {
       builder.addHeader(header._1, header._2)
     }
   }
 
-  def addContent(builder: HttpRequest.Builder, headers: List[HeaderTuple], content: String): Unit = {
+  def addContent(builder: FullHttpRequest.Builder, headers: List[HeaderTuple], content: String): Unit = {
     val charset: String = contentTypeCharset(headers)
-    builder.body(content)
+    builder.body(content, UTF_8)
     builder.addHeader(CONTENT_LENGTH, content.getBytes(charset).length)
   }
 
