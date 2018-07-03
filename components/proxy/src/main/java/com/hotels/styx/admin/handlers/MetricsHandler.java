@@ -17,7 +17,12 @@ package com.hotels.styx.admin.handlers;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.json.MetricsModule;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import rx.Observable;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -25,11 +30,14 @@ import java.util.Optional;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Handler for showing all registered metrics for styx server. Can cache page content.
  */
 public class MetricsHandler extends JsonHandler<MetricRegistry> {
+    private static final Logger LOG = getLogger(MetricsHandler.class);
+
     private static final boolean DO_NOT_SHOW_SAMPLES = false;
 
     /**
@@ -40,5 +48,12 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
      */
     public MetricsHandler(CodaHaleMetricRegistry metricRegistry, Optional<Duration> cacheExpiration) {
         super(checkNotNull(metricRegistry.getMetricRegistry()), cacheExpiration, new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
+    }
+
+    @Override
+    public Observable<HttpResponse> handle(HttpRequest request) {
+//        LOG.info("Path = " + request.path());
+
+        return super.handle(request);
     }
 }
