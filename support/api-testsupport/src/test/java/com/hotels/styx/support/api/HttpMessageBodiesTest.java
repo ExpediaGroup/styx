@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.support.api;
 
+import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
@@ -34,28 +35,38 @@ import static org.hamcrest.Matchers.is;
 public class HttpMessageBodiesTest {
     @Test
     public void createsRequestBodyString() {
-        HttpRequest request = post("/").body("Hello, World!").build();
+        HttpRequest request = FullHttpRequest.post("/")
+                .body("Hello, World!", UTF_8)
+                .build()
+                .toStreamingRequest();
 
         assertThat(bodyAsString(request), is("Hello, World!"));
     }
 
     @Test
     public void createsRequestBodyStringFromObservable() {
-        HttpRequest request = post("/").body(byteBufObservable("Hello,", " Wor", "ld!")).build();
+        HttpRequest request = post("/")
+                .body(byteBufObservable("Hello,", " Wor", "ld!"))
+                .build();
 
         assertThat(bodyAsString(request), is("Hello, World!"));
     }
 
     @Test
     public void createsResponseBodyString() {
-        HttpResponse response = response().body("Hello, World!", UTF_8).build().toStreamingResponse();
+        HttpResponse response = response()
+                .body("Hello, World!", UTF_8)
+                .build()
+                .toStreamingResponse();
 
         assertThat(bodyAsString(response), is("Hello, World!"));
     }
 
     @Test
     public void createsResponseBodyStringFromObservable() {
-        HttpResponse response = HttpResponse.response().body(byteBufObservable("Hello,", " Wor", "ld!")).build();
+        HttpResponse response = HttpResponse.response()
+                .body(byteBufObservable("Hello,", " Wor", "ld!"))
+                .build();
 
         assertThat(bodyAsString(response), is("Hello, World!"));
     }
