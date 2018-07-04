@@ -58,7 +58,7 @@ public class MetricsHandlerTest {
     public void canRequestSpecificMetric() {
         metricRegistry.counter("foo.bar.baz").inc(1);
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo/bar/baz").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo.bar.baz").build()));
         assertThat(response.bodyAs(UTF_8), is("{\"count\":1}"));
     }
 }

@@ -101,9 +101,7 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
     }
 
     private static String metricNameFromPath(String path) {
-        String relativePath = path.substring("/admin/metrics/".length());
-
-        return relativePath.replace('/', '.');
+        return path.substring("/admin/metrics/".length());
     }
 
     private static String removeFinalSlash(String path) {
