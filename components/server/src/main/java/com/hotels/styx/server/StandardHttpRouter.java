@@ -46,4 +46,8 @@ public class StandardHttpRouter implements HttpHandler2 {
         return this;
     }
 
+    @Override
+    public String toString() {
+        return routes.toString();
+    }
 }

@@ -31,7 +31,9 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
+import static com.google.common.base.Suppliers.memoize;
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.startup.PluginsLoader.PLUGINS_FROM_CONFIG;
@@ -46,7 +48,7 @@ import static java.util.concurrent.Executors.newSingleThreadExecutor;
 public class StyxServerComponents {
     private final Environment environment;
     private final Map<String, StyxService> services;
-    private final List<NamedPlugin> plugins;
+    private final Supplier<List<NamedPlugin>> plugins;
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
@@ -54,7 +56,9 @@ public class StyxServerComponents {
         this.environment = newEnvironment(styxConfig);
         builder.loggingSetUp.setUp(environment);
 
-        this.plugins = builder.pluginsLoader.load(environment);
+        Supplier<List<NamedPlugin>> baseSupplier = () -> builder.pluginsLoader.load(environment);
+
+        this.plugins = memoize(baseSupplier::get)::get;
 
         this.services = mergeServices(
                 builder.servicesLoader.load(environment),
@@ -70,7 +74,7 @@ public class StyxServerComponents {
         return services;
     }
 
-    public List<NamedPlugin> plugins() {
+    public Supplier<List<NamedPlugin>> plugins() {
         return plugins;
     }
 

@@ -95,6 +95,14 @@ public class IndexHandler extends BaseHttpHandler {
             return new Link(label, path);
         }
 
+        public String label() {
+            return label;
+        }
+
+        public String path() {
+            return path;
+        }
+
         @Override
         public int compareTo(Link o) {
             int comparison = label.compareTo(o.label);

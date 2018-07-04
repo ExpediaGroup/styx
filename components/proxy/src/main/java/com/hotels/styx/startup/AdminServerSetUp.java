@@ -34,7 +34,6 @@ public final class AdminServerSetUp {
         //   should pass all of them:
         return new AdminServerBuilder(config.environment())
                 .backendServicesRegistry((Registry<BackendService>) config.services().get("backendServiceRegistry"))
-                .plugins(config.plugins())
                 .build();
     }
 }

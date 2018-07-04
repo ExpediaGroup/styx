@@ -76,7 +76,24 @@ about the port numbers it is listening on.
 
 This tells you that the application has successfully started, and that proxy server is listening ports 8080 for HTTP, 
 8443 for HTTPS, and that admin interface has started on port 9000 (HTTPS).
+ 
     
+# Liveness check
+
+It is possible to check when Styx is ready for serve requests by accessing an admin endpoint at `/admin/styx/proxy/status`.
+When you send a `GET` request to that URL, the response will have a body containing:
+
+        {
+        status: "<STARTED|FAILED|INCOMPLETE>"
+        }
+
+Where `<STARTED|FAILED|INCOMPLETE>` is: 
+
+* `INCOMPLETE` if the proxy server has not finished starting up, nor encountered any failure.
+* `STARTED` if the proxy server has started up, including all of the plugins configured for it.
+* `FAILED` if the proxy server tried to start up, but failed for any reason.
+
+
     
 # Configuring JVM Settings
 

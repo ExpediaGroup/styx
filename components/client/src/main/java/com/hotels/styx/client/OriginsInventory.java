@@ -26,8 +26,8 @@ import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ActiveOrigins;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.OriginsChangeListener;
+import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
@@ -174,7 +174,8 @@ public final class OriginsInventory
     @Subscribe
     @Override
     public void onCommand(GetOriginsInventorySnapshot getOriginsInventorySnapshot) {
-        notifyStateChange();
+        eventQueue.submit(getOriginsInventorySnapshot);
+//        notifyStateChange(getOriginsInventorySnapshot);
     }
 
     @Override
@@ -188,16 +189,20 @@ public final class OriginsInventory
 
     @Override
     public void submit(Object event) {
-        if (event instanceof SetOriginsEvent) {
-            handleSetOriginsEvent((SetOriginsEvent) event);
-        } else if (event instanceof OriginHealthEvent) {
-            handleOriginHealthEvent((OriginHealthEvent) event);
-        } else if (event instanceof EnableOriginCommand) {
-            handleEnableOriginCommand((EnableOriginCommand) event);
-        } else if (event instanceof DisableOriginCommand) {
-            handleDisableOriginCommand((DisableOriginCommand) event);
-        } else if (event instanceof CloseEvent) {
-            handleCloseEvent();
+        if (!closed.get()) {
+            if (event instanceof GetOriginsInventorySnapshot) {
+                notifyStateChange();
+            } else if (event instanceof SetOriginsEvent) {
+                handleSetOriginsEvent((SetOriginsEvent) event);
+            } else if (event instanceof OriginHealthEvent) {
+                handleOriginHealthEvent((OriginHealthEvent) event);
+            } else if (event instanceof EnableOriginCommand) {
+                handleEnableOriginCommand((EnableOriginCommand) event);
+            } else if (event instanceof DisableOriginCommand) {
+                handleDisableOriginCommand((DisableOriginCommand) event);
+            } else if (event instanceof CloseEvent) {
+                handleCloseEvent();
+            }
         }
     }
 
@@ -248,26 +253,26 @@ public final class OriginsInventory
         concat(this.origins.keySet().stream(), newOriginsMap.keySet().stream())
                 .collect(toSet())
                 .forEach(originId -> {
-                    Origin origin = newOriginsMap.get(originId);
+                            Origin origin = newOriginsMap.get(originId);
 
-                    if (isNewOrigin(originId, origin)) {
-                        MonitoredOrigin monitoredOrigin = addMonitoredEndpoint(origin);
-                        originChanges.addOrReplaceOrigin(originId, monitoredOrigin);
+                            if (isNewOrigin(originId, origin)) {
+                                MonitoredOrigin monitoredOrigin = addMonitoredEndpoint(origin);
+                                originChanges.addOrReplaceOrigin(originId, monitoredOrigin);
 
-                    } else if (isUpdatedOrigin(originId, origin)) {
-                        MonitoredOrigin monitoredOrigin = changeMonitoredEndpoint(origin);
-                        originChanges.addOrReplaceOrigin(originId, monitoredOrigin);
+                            } else if (isUpdatedOrigin(originId, origin)) {
+                                MonitoredOrigin monitoredOrigin = changeMonitoredEndpoint(origin);
+                                originChanges.addOrReplaceOrigin(originId, monitoredOrigin);
 
-                    } else if (isUnchangedOrigin(originId, origin)) {
-                        LOG.info("Existing origin has been left unchanged. Origin={}:{}", appId, origin);
-                        originChanges.keepExistingOrigin(originId, this.origins.get(originId));
+                            } else if (isUnchangedOrigin(originId, origin)) {
+                                LOG.info("Existing origin has been left unchanged. Origin={}:{}", appId, origin);
+                                originChanges.keepExistingOrigin(originId, this.origins.get(originId));
 
-                    } else if (isRemovedOrigin(originId, origin)) {
-                        removeMonitoredEndpoint(originId);
-                        originChanges.noteRemovedOrigin();
-                    }
-                }
-        );
+                            } else if (isRemovedOrigin(originId, origin)) {
+                                removeMonitoredEndpoint(originId);
+                                originChanges.noteRemovedOrigin();
+                            }
+                        }
+                );
 
         this.origins = originChanges.updatedOrigins();
 
@@ -278,10 +283,10 @@ public final class OriginsInventory
 
     private void handleCloseEvent() {
         if (closed.compareAndSet(false, true)) {
+            eventBus.unregister(this);
             origins.values().forEach(host -> removeMonitoredEndpoint(host.origin.id()));
             this.origins = ImmutableMap.of();
             notifyStateChange();
-            eventBus.unregister(this);
         }
     }
 
@@ -343,13 +348,13 @@ public final class OriginsInventory
     private boolean isUnchangedOrigin(Id originId, Origin newOrigin) {
         MonitoredOrigin oldOrigin = this.origins.get(originId);
 
-        return (nonNull(oldOrigin) && nonNull(newOrigin)) && oldOrigin.origin.equals(newOrigin);
+        return nonNull(oldOrigin) && nonNull(newOrigin) && oldOrigin.origin.equals(newOrigin);
     }
 
     private boolean isUpdatedOrigin(Id originId, Origin newOrigin) {
         MonitoredOrigin oldOrigin = this.origins.get(originId);
 
-        return (nonNull(oldOrigin) && nonNull(newOrigin)) && !oldOrigin.origin.equals(newOrigin);
+        return nonNull(oldOrigin) && nonNull(newOrigin) && !oldOrigin.origin.equals(newOrigin);
     }
 
     private boolean isRemovedOrigin(Id originId, Origin newOrigin) {
@@ -476,10 +481,12 @@ public final class OriginsInventory
         }
     }
 
+    @VisibleForTesting
     public static Builder newOriginsInventoryBuilder(Id appId) {
         return new Builder(appId);
     }
 
+    @VisibleForTesting
     public static Builder newOriginsInventoryBuilder(BackendService backendService) {
         return new Builder(backendService.id())
                 .connectionPoolFactory(simplePoolFactory(backendService, new CodaHaleMetricRegistry()))
