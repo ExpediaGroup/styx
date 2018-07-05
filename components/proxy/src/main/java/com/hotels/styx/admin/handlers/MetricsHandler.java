@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.hotels.styx.api.messages.FullHttpResponse.response;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
@@ -45,6 +47,8 @@ import static rx.Observable.just;
  * Handler for showing all registered metrics for styx server. Can cache page content.
  */
 public class MetricsHandler extends JsonHandler<MetricRegistry> {
+    private static final Pattern SPECIFIC_METRICS_PATH_PATTERN = Pattern.compile(".*/metrics/(.+)/?");
+
     private static final boolean DO_NOT_SHOW_SAMPLES = false;
     private final CodaHaleMetricRegistry metricRegistry;
 
@@ -65,13 +69,12 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
 
     @Override
     public Observable<HttpResponse> handle(HttpRequest request) {
-        String path = removeFinalSlash(request.path());
+        return metricName(request.path())
+                .map(metricName -> specificMetricsResponse(request, metricName))
+                .orElseGet(() -> super.handle(request));
+    }
 
-        if (path.equals("/admin/metrics")) {
-            return super.handle(request);
-        }
-
-        String metricName = metricNameFromPath(path);
+    private Observable<HttpResponse> specificMetricsResponse(HttpRequest request, String metricName) {
         boolean pretty = request.queryParam("pretty").isPresent();
 
         String serialised = serialise(metrics(metricName), pretty);
@@ -80,6 +83,16 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
                 .body(serialised, UTF_8)
                 .build()
                 .toStreamingResponse());
+    }
+
+    private static Optional<String> metricName(String path) {
+        Matcher matcher = SPECIFIC_METRICS_PATH_PATTERN.matcher(path);
+
+        if (matcher.matches()) {
+            return Optional.of(matcher.group(1));
+        }
+
+        return Optional.empty();
     }
 
     private String serialise(Object object, boolean pretty) {
@@ -110,15 +123,5 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
 
     private static <K, V> Predicate<Map.Entry<K, V>> entryPredicate(BiPredicate<K, V> predicate) {
         return entry -> predicate.test(entry.getKey(), entry.getValue());
-    }
-
-    private static String metricNameFromPath(String path) {
-        return path.substring("/admin/metrics/".length());
-    }
-
-    private static String removeFinalSlash(String path) {
-        return path.endsWith("/")
-                ? path.substring(0, path.length() - 1)
-                : path;
     }
 }
