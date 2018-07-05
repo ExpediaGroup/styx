@@ -55,9 +55,10 @@ public class MetricsHandlerTest {
     }
 
     @Test
-    public void canRequestMetricsBeginningWith() {
+    public void canRequestMetricsBeginningWithPrefix() {
         metricRegistry.counter("foo.bar").inc(1);
         metricRegistry.counter("foo.bar.baz").inc(1);
+        metricRegistry.counter("foo.barx").inc(1); // should not be included
 
         FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo.bar").build()));
         assertThat(response.bodyAs(UTF_8), is("{\"foo.bar\":{\"count\":1},\"foo.bar.baz\":{\"count\":1}}"));

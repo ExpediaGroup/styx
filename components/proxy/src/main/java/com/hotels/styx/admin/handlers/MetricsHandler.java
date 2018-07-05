@@ -104,8 +104,10 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
     }
 
     private Map<String, Metric> metrics(String metricNameStart) {
+        String prefix = metricNameStart + ".";
+
         return MapStream.stream(metricRegistry.getMetricRegistry().getMetrics())
-                .filter((name, metric) -> name.startsWith(metricNameStart))
+                .filter((name, metric) -> name.equals(metricNameStart) || name.startsWith(prefix))
                 .toMap();
     }
 }

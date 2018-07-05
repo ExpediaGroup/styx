@@ -5,6 +5,23 @@ can be viewed via admin interface at `http://<styx-host>/admin/metrics`.
 They can also be exported into a Graphite monitoring backend. Support for
 other monitoring back-ends can be implemented via service point interface.
 
+## Viewing Specific Metrics via the Admin Interface
+
+In addition to viewing the entire set of metrics, it is also possible to request specific metrics like this:
+
+`http://<styx-host>/admin/metrics/<metric-name>`
+
+This will return the metric that matches the specified name (if it exists) as well as any metrics
+that use the specified name as a prefix.
+
+For example `http://<styx-host>/admin/metrics/requests.response` would return
+
+    requests.response.sent
+    requests.response.status.1xx
+    requests.response.status.2xx
+    ...
+    
+    
 ## Metrics Grouping
 
 Styx metrics are roughly grouped into *server* and *client* metrics.
