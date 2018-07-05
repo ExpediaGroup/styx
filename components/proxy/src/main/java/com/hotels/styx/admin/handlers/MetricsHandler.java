@@ -23,21 +23,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import rx.Observable;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
-import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.api.messages.FullHttpResponse.response;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toMap;
 import static rx.Observable.just;
 
 /**
@@ -73,31 +74,42 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
         String metricName = metricNameFromPath(path);
         boolean pretty = request.queryParam("pretty").isPresent();
 
-        HttpResponse response = metric(metricName)
-                .map(metric -> serialiseMetric(metric, pretty))
-                .map(body -> response(OK).body(body, UTF_8))
-                .map(FullHttpResponse.Builder::build)
-                .map(FullHttpResponse::toStreamingResponse)
-                .orElseGet(() -> response(NOT_FOUND).build());
+        String serialised = serialise(metrics(metricName), pretty);
 
-        return just(response);
+        return just(response(OK)
+                .body(serialised, UTF_8)
+                .build()
+                .toStreamingResponse());
     }
 
-    private String serialiseMetric(Metric metric, boolean pretty) {
+    private String serialise(Object object, boolean pretty) {
         ObjectWriter writer = pretty ? metricSerialiser.writerWithDefaultPrettyPrinter() : metricSerialiser.writer();
 
         try {
-            return writer.writeValueAsString(metric);
+            return writer.writeValueAsString(object);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private Optional<Metric> metric(String metricName) {
-        return Optional.ofNullable(metricRegistry
+    private Map<String, Metric> metrics(String metricNameStart) {
+        return filter(metricRegistry
                 .getMetricRegistry()
-                .getMetrics()
-                .get(metricName));
+                .getMetrics(), (name, metric) -> name.startsWith(metricNameStart));
+    }
+
+    private static <K, V> Map<K, V> filter(Map<K, V> map, BiPredicate<K, V> predicate) {
+        return map.entrySet()
+                .stream()
+                .filter(entryPredicate(predicate))
+                .collect(toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue
+                ));
+    }
+
+    private static <K, V> Predicate<Map.Entry<K, V>> entryPredicate(BiPredicate<K, V> predicate) {
+        return entry -> predicate.test(entry.getKey(), entry.getValue());
     }
 
     private static String metricNameFromPath(String path) {

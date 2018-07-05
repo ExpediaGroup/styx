@@ -55,10 +55,11 @@ public class MetricsHandlerTest {
     }
 
     @Test
-    public void canRequestSpecificMetric() {
+    public void canRequestMetricsBeginningWith() {
+        metricRegistry.counter("foo.bar").inc(1);
         metricRegistry.counter("foo.bar.baz").inc(1);
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo.bar.baz").build()));
-        assertThat(response.bodyAs(UTF_8), is("{\"count\":1}"));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo.bar").build()));
+        assertThat(response.bodyAs(UTF_8), is("{\"foo.bar\":{\"count\":1},\"foo.bar.baz\":{\"count\":1}}"));
     }
 }
