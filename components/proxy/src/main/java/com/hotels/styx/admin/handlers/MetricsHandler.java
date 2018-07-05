@@ -24,13 +24,12 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.common.MapStream;
 import rx.Observable;
 
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,7 +39,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.toMap;
 import static rx.Observable.just;
 
 /**
@@ -106,22 +104,8 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
     }
 
     private Map<String, Metric> metrics(String metricNameStart) {
-        return filter(metricRegistry
-                .getMetricRegistry()
-                .getMetrics(), (name, metric) -> name.startsWith(metricNameStart));
-    }
-
-    private static <K, V> Map<K, V> filter(Map<K, V> map, BiPredicate<K, V> predicate) {
-        return map.entrySet()
-                .stream()
-                .filter(entryPredicate(predicate))
-                .collect(toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue
-                ));
-    }
-
-    private static <K, V> Predicate<Map.Entry<K, V>> entryPredicate(BiPredicate<K, V> predicate) {
-        return entry -> predicate.test(entry.getKey(), entry.getValue());
+        return MapStream.stream(metricRegistry.getMetricRegistry().getMetrics())
+                .filter((name, metric) -> name.startsWith(metricNameStart))
+                .toMap();
     }
 }
