@@ -24,13 +24,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.util.ReferenceCountUtil;
 import rx.Observable;
-import rx.Subscriber;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -208,30 +206,6 @@ public class HttpResponse implements StreamingHttpMessage {
                 && Objects.equal(this.cookies, other.cookies);
     }
 
-    public CompletableFuture<Boolean> releaseContentBuffers() {
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
-
-        ((StyxCoreObservable<ByteBuf>) body).delegate()
-                .subscribe(new Subscriber<ByteBuf>() {
-                    @Override
-                    public void onCompleted() {
-                        future.complete(true);
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-
-                    }
-
-                    @Override
-                    public void onNext(ByteBuf byteBuf) {
-                        byteBuf.release();
-                    }
-                });
-
-        return future;
-    }
-
     /**
      * Builder.
      */
@@ -293,11 +267,10 @@ public class HttpResponse implements StreamingHttpMessage {
         }
 
         /**
-         * Sets the message body. As the content length is known, this header will also be set.
-         * <p>
-         * TODO: Mikko: Styx 2.0 API: Missing test:
+         * Sets the message body by encoding a {@link StyxObservable} of {@link String}s into bytes.
          *
          * @param contentObservable message body content.
+         * @param charset character set
          * @return {@code this}
          */
         public Builder body(StyxObservable<String> contentObservable, Charset charset) {
@@ -416,16 +389,11 @@ public class HttpResponse implements StreamingHttpMessage {
         }
 
         /**
-         * Removes body of the request
-         * <p>
-         * TODO: Mikko: Styx 2.0 API: Ensure that reference counting works well with the new API.
-         * Most importantly it should be safe to use without consumers accidentally using the API
-         * in a dangerous way that might cause buffer leaks.
-         * <p>
-         * Especially when transforming a response to another, etc.
+         * Removes body of the request.
          *
-         * @return
+         * @return {@code this}
          */
+        // TODO: See https://github.com/HotelsDotCom/styx/issues/201
         public Builder removeBody() {
             Observable<ByteBuf> delegate = ((StyxCoreObservable<ByteBuf>) body)
                     .delegate()

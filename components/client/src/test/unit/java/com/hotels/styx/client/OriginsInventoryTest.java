@@ -262,10 +262,6 @@ public class OriginsInventoryTest {
         verify(pool1).close();
     }
 
-
-
-    // TODO: Mikko: ignore any origin updates with wrong application-ID.
-
     @Test
     public void willNotDisableOriginsNotBelongingToTheApp() {
         inventory.setOrigins(ORIGIN_1);

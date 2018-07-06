@@ -143,7 +143,6 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                 return StyxHostHttpClient.create(backendService.id(), connectionPool.getOrigin().id(), headerConfig.originIdHeaderName(), connectionPool);
             };
 
-            //TODO: origins inventory builder assumes that appId/originId tuple is unique and it will fail on metrics registration.
             OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(environment.eventBus())
                     .metricsRegistry(environment.metricRegistry())

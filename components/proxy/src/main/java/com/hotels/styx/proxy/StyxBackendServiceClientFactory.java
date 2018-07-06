@@ -61,6 +61,7 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
                 .orElseGet(() -> new BusyConnectionsStrategy(originsInventory));
 
         // TODO: Ensure that listeners are also unregistered:
+        // We are going to revamp how we handle origins, https://github.com/HotelsDotCom/styx/issues/197
         originsInventory.addOriginsChangeListener(configuredLbStrategy);
 
         LoadBalancer loadBalancingStrategy = decorateLoadBalancer(

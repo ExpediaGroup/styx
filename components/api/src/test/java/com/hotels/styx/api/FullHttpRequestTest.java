@@ -249,24 +249,6 @@ public class FullHttpRequestTest {
         assertThat(original.bodyAs(UTF_8), is("original"));
     }
 
-    // TODO: Mikko: Styx 2.0 API: Ought to move to HttpRequest class?
-    @Test(expectedExceptions = io.netty.util.IllegalReferenceCountException.class)
-    public void toFullReqestReleasesOriginalRefCountedBuffers() throws ExecutionException, InterruptedException {
-        ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
-
-        HttpRequest original = HttpRequest.get("/foo")
-                .body(StyxObservable.of(content))
-                .build();
-
-        FullHttpRequest fullRequest = original.toFullRequest(100)
-                .asCompletableFuture()
-                .get();
-
-        content.array()[0] = 'A';
-
-        assertThat(fullRequest.bodyAs(UTF_8), is("original"));
-    }
-
     @Test
     public void transformedBodyIsNewCopy() {
         FullHttpRequest request = get("/foo")

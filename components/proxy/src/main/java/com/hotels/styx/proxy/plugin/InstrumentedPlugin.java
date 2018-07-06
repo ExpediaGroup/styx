@@ -18,6 +18,7 @@ package com.hotels.styx.proxy.plugin;
 import com.codahale.metrics.Meter;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.messages.HttpResponseStatus;
@@ -36,7 +37,6 @@ import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ER
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 import static rx.Observable.error;
-import com.hotels.styx.api.HttpRequest;
 
 /**
  * Collects metrics on plugin.
@@ -87,8 +87,6 @@ public class InstrumentedPlugin implements Plugin {
     public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain originalChain) {
         StatusRecordingChain chain = new StatusRecordingChain(originalChain);
         try {
-            // TODO: Mikko: Styx 2.0 API:
-            // Check this:
             return fromRxObservable(
                     toRxObservable(plugin.intercept(request, chain))
                             .doOnNext(response -> recordStatusCode(chain, response))

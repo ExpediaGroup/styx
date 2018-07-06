@@ -50,6 +50,10 @@ class StyxCoreObservable<T> implements StyxObservable<T> {
                 }));
     }
 
+    public static <T> StyxObservable<T> empty() {
+        return new StyxCoreObservable<>(Observable.empty());
+    }
+
     public static <T> StyxObservable<T> of(T item) {
         return new StyxCoreObservable<T>(Observable.just(item));
     }

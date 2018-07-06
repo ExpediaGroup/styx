@@ -22,6 +22,8 @@ import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpCookie.cookie;
@@ -45,7 +47,9 @@ import static com.hotels.styx.api.messages.HttpResponseStatus.TEMPORARY_REDIRECT
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
+import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -91,7 +95,7 @@ public class HttpResponseTest {
     private Object[][] emptyBodyResponses() {
         return new Object[][]{
                 {response().build()},
-                {response().body(StyxObservable.empty()).build()},
+                {response().body(StyxCoreObservable.empty()).build()},
         };
     }
 
@@ -308,6 +312,28 @@ public class HttpResponseTest {
                 .addHeader(CONTENT_LENGTH, "foo")
                 .ensureContentLengthIsValid()
                 .build();
+    }
+
+    @Test
+    public void encodesBodyWithCharset() throws InterruptedException, ExecutionException, TimeoutException {
+        StyxObservable<String> o = StyxObservable.of("Hello, World!");
+
+        FullHttpResponse responseUtf8 = response()
+                .body(o, UTF_8)
+                .build()
+                .toFullResponse(1_000_000)
+                .asCompletableFuture()
+                .get(1, SECONDS);
+
+        FullHttpResponse responseUtf16 = response()
+                .body(o, UTF_16)
+                .build()
+                .toFullResponse(1_000_000)
+                .asCompletableFuture()
+                .get(1, SECONDS);
+
+        assertThat(responseUtf8.body(), is("Hello, World!".getBytes(UTF_8)));
+        assertThat(responseUtf16.body(), is("Hello, World!".getBytes(UTF_16)));
     }
 
     private static HttpResponse.Builder response() {
