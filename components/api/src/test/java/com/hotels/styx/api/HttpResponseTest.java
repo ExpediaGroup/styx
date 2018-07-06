@@ -318,24 +318,22 @@ public class HttpResponseTest {
     public void encodesBodyWithCharset() throws InterruptedException, ExecutionException, TimeoutException {
         StyxObservable<String> o = StyxObservable.of("Hello, World!");
 
-        byte[] bytesUtf8 = response()
+        FullHttpResponse responseUtf8 = response()
                 .body(o, UTF_8)
                 .build()
                 .toFullResponse(1_000_000)
-                .map(FullHttpResponse::body)
                 .asCompletableFuture()
                 .get(1, SECONDS);
 
-        byte[] bytesUtf16 = response()
+        FullHttpResponse responseUtf16 = response()
                 .body(o, UTF_16)
                 .build()
                 .toFullResponse(1_000_000)
-                .map(FullHttpResponse::body)
                 .asCompletableFuture()
                 .get(1, SECONDS);
 
-        assertThat(bytesUtf8, is("Hello, World!".getBytes(UTF_8)));
-        assertThat(bytesUtf16, is("Hello, World!".getBytes(UTF_16)));
+        assertThat(responseUtf8.body(), is("Hello, World!".getBytes(UTF_8)));
+        assertThat(responseUtf16.body(), is("Hello, World!".getBytes(UTF_16)));
     }
 
     private static HttpResponse.Builder response() {
