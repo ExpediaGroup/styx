@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -58,9 +59,15 @@ public class MetricsHandlerTest {
     public void canRequestMetricsBeginningWithPrefix() {
         metricRegistry.counter("foo.bar").inc(1);
         metricRegistry.counter("foo.bar.baz").inc(1);
-        metricRegistry.counter("foo.barx").inc(1);
+        metricRegistry.counter("foo.barx").inc(1); // should not be included
 
         FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo.bar").build()));
-        assertThat(response.bodyAs(UTF_8), is("{\"foo.bar\":{\"count\":1},\"foo.barx\":{\"count\":1},\"foo.bar.baz\":{\"count\":1}}"));
+        assertThat(response.bodyAs(UTF_8), is("{\"foo.bar\":{\"count\":1},\"foo.bar.baz\":{\"count\":1}}"));
+    }
+
+    @Test
+    public void ifNoMetricsMatchNameThen404NotFoundIsReturned() {
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo.bar").build()));
+        assertThat(response.status(), is(NOT_FOUND));
     }
 }

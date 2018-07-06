@@ -34,6 +34,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.hotels.styx.api.messages.FullHttpResponse.response;
+import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -73,9 +74,15 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
     }
 
     private Observable<HttpResponse> specificMetricsResponse(HttpRequest request, String metricName) {
+        Map<String, Metric> metrics = metrics(metricName);
+
+        if (metrics.isEmpty()) {
+            return just(response(NOT_FOUND).build().toStreamingResponse());
+        }
+
         boolean pretty = request.queryParam("pretty").isPresent();
 
-        String serialised = serialise(metrics(metricName), pretty);
+        String serialised = serialise(metrics, pretty);
 
         return just(response(OK)
                 .body(serialised, UTF_8)
@@ -104,8 +111,10 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
     }
 
     private Map<String, Metric> metrics(String metricNameStart) {
+        String prefix = metricNameStart + ".";
+
         return MapStream.stream(metricRegistry.getMetricRegistry().getMetrics())
-                .filter((name, metric) -> name.equals(metricNameStart) || name.startsWith(metricNameStart))
+                .filter((name, metric) -> name.equals(metricNameStart) || name.startsWith(prefix))
                 .toMap();
     }
 }
