@@ -86,6 +86,7 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
 
         return just(response(OK)
                 .body(serialised, UTF_8)
+                .disableCaching()
                 .build()
                 .toStreamingResponse());
     }
