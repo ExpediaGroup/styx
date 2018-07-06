@@ -14,7 +14,7 @@ In addition to viewing the entire set of metrics, it is also possible to request
 This will return the metric that matches the specified name (if it exists) as well as any metrics
 that use the specified name as a prefix.
 
-For example `http://<styx-host>/admin/metrics/requests.response` would return
+For example `http://<styx-host>/admin/metrics/requests.respo` would return
 
     requests.response.sent
     requests.response.status.1xx
