@@ -18,8 +18,7 @@ package com.hotels.styx.admin
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.messages.HttpResponseStatus.{NOT_FOUND, OK}
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec
@@ -36,14 +35,14 @@ class MetricsSpec extends FunSpec
       val response = decodedRequest(get(styxServer.adminURL("/admin/metrics/jvm.bufferpool.direct")).build())
       assert(response.status == OK)
       assert(response.isNotCacheAble())
-      response.bodyAs(UTF_8) should include("{\"jvm.bufferpool.direct.used\":{\"value\":1},\"jvm.bufferpool.direct.capacity\":{\"value\":0},\"jvm.bufferpool.direct.count\":{\"value\":1}}")
+      response.bodyAs(UTF_8) should include regex "\\{\"jvm.bufferpool.direct.used\":\\{\"value\":\\d+\\},\"jvm.bufferpool.direct.capacity\":\\{\"value\":\\d+\\},\"jvm.bufferpool.direct.count\":\\{\"value\":\\d+\\}\\}"
     }
 
     it("exposes metrics by exact name") {
       val response = decodedRequest(get(styxServer.adminURL("/admin/metrics/jvm.bufferpool.direct.used")).build())
       assert(response.status == OK)
       assert(response.isNotCacheAble())
-      response.bodyAs(UTF_8) should include("{\"jvm.bufferpool.direct.used\":{\"value\":1}}")
+      response.bodyAs(UTF_8) should include regex "\\{\"jvm.bufferpool.direct.used\":\\{\"value\":\\d+\\}\\}"
     }
 
     it("returns 404 for non-existent metrics") {
