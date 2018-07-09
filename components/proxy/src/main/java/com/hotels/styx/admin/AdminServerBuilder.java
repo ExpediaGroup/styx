@@ -115,7 +115,9 @@ public class AdminServerBuilder {
         httpRouter.add("/admin/status", new StatusHandler(healthCheckHandler));
         httpRouter.add("/admin/ping", new PingHandler());
         httpRouter.add("/admin/threads", new ThreadsHandler());
-        httpRouter.add("/admin/metrics", new MetricsHandler(environment.metricRegistry(), metricsCacheExpiration));
+        MetricsHandler metricsHandler = new MetricsHandler(environment.metricRegistry(), metricsCacheExpiration);
+        httpRouter.add("/admin/metrics", metricsHandler);
+        httpRouter.add("/admin/metrics/", metricsHandler);
         httpRouter.add("/admin/healthcheck", healthCheckHandler);
         httpRouter.add("/admin/configuration", new StyxConfigurationHandler(staticConfiguration()));
         httpRouter.add("/admin/configuration/origins", new OriginsHandler(backendServicesRegistry));
