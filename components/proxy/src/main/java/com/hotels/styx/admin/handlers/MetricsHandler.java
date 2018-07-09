@@ -15,22 +15,44 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.json.MetricsModule;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.common.MapStream;
+import rx.Observable;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hotels.styx.api.messages.FullHttpResponse.response;
+import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static rx.Observable.just;
 
 /**
  * Handler for showing all registered metrics for styx server. Can cache page content.
  */
 public class MetricsHandler extends JsonHandler<MetricRegistry> {
+    private static final Pattern SPECIFIC_METRICS_PATH_PATTERN = Pattern.compile(".*/metrics/(.+)/?");
+
     private static final boolean DO_NOT_SHOW_SAMPLES = false;
+    private final CodaHaleMetricRegistry metricRegistry;
+
+    private final ObjectMapper metricSerialiser = new ObjectMapper()
+            .registerModule(new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
 
     /**
      * Constructs a new handler.
@@ -39,6 +61,61 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
      * @param cacheExpiration duration for which generated page content should be cached
      */
     public MetricsHandler(CodaHaleMetricRegistry metricRegistry, Optional<Duration> cacheExpiration) {
-        super(checkNotNull(metricRegistry.getMetricRegistry()), cacheExpiration, new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
+        super(requireNonNull(metricRegistry.getMetricRegistry()), cacheExpiration, new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
+
+        this.metricRegistry = metricRegistry;
+    }
+
+    @Override
+    public Observable<HttpResponse> handle(HttpRequest request) {
+        return metricName(request.path())
+                .map(metricName -> specificMetricsResponse(request, metricName))
+                .orElseGet(() -> super.handle(request));
+    }
+
+    private Observable<HttpResponse> specificMetricsResponse(HttpRequest request, String metricName) {
+        Map<String, Metric> metrics = metrics(metricName);
+
+        if (metrics.isEmpty()) {
+            return just(response(NOT_FOUND).build().toStreamingResponse());
+        }
+
+        boolean pretty = request.queryParam("pretty").isPresent();
+
+        String serialised = serialise(metrics, pretty);
+
+        return just(response(OK)
+                .body(serialised, UTF_8)
+                .disableCaching()
+                .build()
+                .toStreamingResponse());
+    }
+
+    private static Optional<String> metricName(String path) {
+        Matcher matcher = SPECIFIC_METRICS_PATH_PATTERN.matcher(path);
+
+        if (matcher.matches()) {
+            return Optional.of(matcher.group(1));
+        }
+
+        return Optional.empty();
+    }
+
+    private String serialise(Object object, boolean pretty) {
+        ObjectWriter writer = pretty ? metricSerialiser.writerWithDefaultPrettyPrinter() : metricSerialiser.writer();
+
+        try {
+            return writer.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Map<String, Metric> metrics(String metricNameStart) {
+        String prefix = metricNameStart + ".";
+
+        return MapStream.stream(metricRegistry.getMetricRegistry().getMetrics())
+                .filter((name, metric) -> name.equals(metricNameStart) || name.startsWith(prefix))
+                .toMap();
     }
 }
