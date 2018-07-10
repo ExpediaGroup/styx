@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
@@ -145,12 +146,18 @@ public final class StyxHttpClient implements HttpClient {
             RemoteHost host = remoteHost.get();
             List<RemoteHost> newPreviousOrigins = newArrayList(previousOrigins);
             newPreviousOrigins.add(remoteHost.get());
+            AtomicBoolean completed = new AtomicBoolean(false);
 
             return host.hostClient()
                     .sendRequest(request)
                     .map(response -> addStickySessionIdentifier(response, host.origin()))
                     .doOnError(throwable -> logError(request, throwable))
-                    .doOnUnsubscribe(() -> originStatsFactory.originStats(host.origin()).requestCancelled())
+                    .doOnCompleted(() -> completed.set(true))
+                    .doOnUnsubscribe(() -> {
+                        if (!completed.get()) {
+                            originStatsFactory.originStats(host.origin()).requestCancelled();
+                        }
+                    })
                     .doOnNext(this::recordErrorStatusMetrics)
                     .map(response -> removeUnexpectedResponseBody(request, response))
                     .map(this::removeRedundantContentLengthHeader)
