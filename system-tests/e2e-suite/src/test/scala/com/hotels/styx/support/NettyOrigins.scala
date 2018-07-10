@@ -48,7 +48,7 @@ class NettyHttpServerConnector(serverPort: Int, handler: ChannelInboundHandlerAd
 
 trait NettyOrigins {
 
-  case class HttpHeader(name: String, value: String)
+  case class HttpHeader(name: CharSequence, value: String)
 
   val customResponseHandler = new CustomResponseHandler()
 
