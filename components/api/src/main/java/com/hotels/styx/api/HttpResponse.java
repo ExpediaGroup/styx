@@ -23,7 +23,6 @@ import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.util.ReferenceCountUtil;
-import org.slf4j.LoggerFactory;
 import rx.Observable;
 
 import java.nio.charset.Charset;
@@ -56,10 +55,6 @@ import static java.util.Objects.requireNonNull;
  * HTTP response with a fully aggregated/decoded body.
  */
 public class HttpResponse implements StreamingHttpMessage {
-    static {
-        LoggerFactory.getLogger(HttpResponse.class).info("Running my latest build!");
-    }
-
     private final HttpVersion version;
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
