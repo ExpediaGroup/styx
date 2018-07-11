@@ -47,7 +47,7 @@ public final class SimpleHttpClient implements FullHttpClient {
     private static final int DEFAULT_HTTP_PORT = 80;
 
     private final Optional<String> userAgent;
-    private final ConnectionSettings connectionSettings;
+    private final Connection.Settings connectionSettings;
     private final int maxResponseSize;
     private final Connection.Factory connectionFactory;
 
@@ -103,13 +103,13 @@ public final class SimpleHttpClient implements FullHttpClient {
         private Connection.Factory connectionFactory;
         private TlsSettings tlsSettings;
         private String userAgent;
-        private ConnectionSettings connectionSettings = new ConnectionSettings(1000);
+        private Connection.Settings connectionSettings = new ConnectionSettings(1000);
         private int responseTimeout = 60000;
         private int maxResponseSize = 1024 * 100;
         private int maxHeaderSize = 8192;
         private String threadName = "simple-netty-http-client";
 
-        public Builder connectionSettings(ConnectionSettings connectionSettings) {
+        public Builder connectionSettings(Connection.Settings connectionSettings) {
             this.connectionSettings = connectionSettings;
             return this;
         }
