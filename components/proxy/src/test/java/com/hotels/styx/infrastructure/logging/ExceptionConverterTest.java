@@ -22,7 +22,7 @@ import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.ContextBase;
 import ch.qos.logback.core.status.ErrorStatus;
 import ch.qos.logback.core.status.StatusManager;
-import com.hotels.styx.api.netty.exceptions.NoAvailableHostsException;
+import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.Id.GENERIC_APP;

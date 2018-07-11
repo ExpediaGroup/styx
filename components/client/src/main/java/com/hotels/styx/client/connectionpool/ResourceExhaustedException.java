@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.hotels.styx.api.netty.exceptions.IsRetryableException;
+import com.hotels.styx.api.exceptions.IsRetryableException;
 
 /**
  * Something has run out of resources.

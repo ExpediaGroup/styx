@@ -20,7 +20,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.netty.exceptions.NoAvailableHostsException;
+import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import rx.Observable;
 
 import java.util.Optional;

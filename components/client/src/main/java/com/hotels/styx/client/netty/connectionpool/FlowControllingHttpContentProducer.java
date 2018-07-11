@@ -17,7 +17,7 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
+import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.common.StateMachine;
 import io.netty.buffer.ByteBuf;

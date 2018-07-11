@@ -22,7 +22,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.messages.HttpMethod;
 import com.hotels.styx.api.messages.HttpVersion;
-import com.hotels.styx.api.netty.exceptions.TransportLostException;
+import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.client.Operation;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
