@@ -22,7 +22,6 @@ import com.hotels.styx.api.{HttpResponse, service}
 import com.hotels.styx.api.client.ActiveOrigins
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
-import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
@@ -43,6 +42,7 @@ import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import rx.observers.TestSubscriber
 import com.hotels.styx.api.StyxInternalObservables.toRxObservable
+import com.hotels.styx.api.exceptions.ResponseTimeoutException
 
 import scala.compat.java8.StreamConverters._
 import scala.concurrent.duration._

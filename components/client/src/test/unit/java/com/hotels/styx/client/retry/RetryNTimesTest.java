@@ -21,7 +21,7 @@ import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
-import com.hotels.styx.api.netty.exceptions.IsRetryableException;
+import com.hotels.styx.api.exceptions.IsRetryableException;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 

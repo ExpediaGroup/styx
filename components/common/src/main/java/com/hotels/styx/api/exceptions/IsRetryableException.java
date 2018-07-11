@@ -13,20 +13,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.netty.exceptions;
-
-import com.hotels.styx.api.Id;
+package com.hotels.styx.api.exceptions;
 
 /**
- * An exception to be thrown when there are no hosts available.
+ * A marker interface for exceptions that indicates that the operation that caused the exception can be retried.
  */
-public class NoAvailableHostsException extends RuntimeException {
-    /**
-     * Constructor.
-     *
-     * @param applicationId ID of the application for which there are no hosts
-     */
-    public NoAvailableHostsException(Id applicationId) {
-        super(String.format("No hosts available for application %s", applicationId));
-    }
+public interface IsRetryableException {
 }

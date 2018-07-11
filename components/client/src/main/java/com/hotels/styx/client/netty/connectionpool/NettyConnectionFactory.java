@@ -19,7 +19,7 @@ import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.netty.ClientEventLoopFactory;
-import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
+import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.client.ChannelOptionSetting;
 import com.hotels.styx.client.HttpConfig;
 import com.hotels.styx.client.HttpRequestOperationFactory;

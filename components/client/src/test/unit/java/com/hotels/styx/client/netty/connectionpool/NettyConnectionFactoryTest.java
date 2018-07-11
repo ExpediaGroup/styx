@@ -17,7 +17,7 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
+import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.support.server.FakeHttpServer;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
