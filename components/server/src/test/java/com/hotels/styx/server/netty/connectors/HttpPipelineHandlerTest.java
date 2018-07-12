@@ -62,6 +62,7 @@ import static com.hotels.styx.api.HttpRequest.Builder.get;
 import static com.hotels.styx.api.HttpResponse.Builder.response;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
+import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE_CLIENT_CLOSED;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.TERMINATED;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.WAITING_FOR_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.ResponseEnhancer.DO_NOT_MODIFY_RESPONSE;
@@ -291,17 +292,71 @@ public class HttpPipelineHandlerTest {
     }
 
     @Test
-    public void doesNotDecrementRequestsOngoingOnChannelInactiveWhenRequestIsNotOngoing() throws Exception {
-        HttpPipelineHandler adapter = handlerWithMocks(respondingPipeline)
-                .responseEnhancer(DO_NOT_MODIFY_RESPONSE)
-                .build();
-
-        adapter.channelActive(ctx);
-        adapter.channelRead0(ctx, request);
+    public void allowsResponseObservableToCompleteAfterAfterDisconnect() throws Exception {
+        handler.channelActive(ctx);
+        handler.channelRead0(ctx, request);
         verify(statsCollector).onRequest(eq(request.id()));
 
-        adapter.channelInactive(ctx);
+        responseObservable.onNext(response);
+
+        // When a remote peer (client) has received a response in full,
+        // and it has closed the TCP connection:
+        handler.channelInactive(ctx);
+
+        // ... only after that the response observable completes:
+        responseObservable.onCompleted();
+
+        // ... then treat it like a successfully sent response:
+        writerFuture.complete(null);
+        verify(statsCollector, never()).onTerminate(eq(request.id()));
+        verify(statsCollector).onComplete(eq(request.id()), eq(200));
+    }
+
+    @Test
+    public void responseFailureInSendingResponseClientConnectedState() throws Exception {
+        RuntimeException cause = new RuntimeException("Something went wrong");
+
+        handler.channelActive(ctx);
+        handler.channelRead0(ctx, request);
+        verify(statsCollector).onRequest(eq(request.id()));
+
+        responseObservable.onNext(response);
+
+        // Remote peer (client) has closed the connection for whatever reason:
+        handler.channelInactive(ctx);
+
+        // ... the PipelineHandler is now in SENDING_RESPONSE_CLIENT_DISCONNECTED state,
+        // and response writer indicates a failure:
+        writerFuture.completeExceptionally(cause);
         verify(statsCollector).onTerminate(eq(request.id()));
+        verify(statsCollector, never()).onComplete(eq(request.id()), eq(200));
+        assertThat(metrics.counter("outstanding").getCount(), is(0L));
+        assertThat(metrics.counter("requests.cancelled.responseWriteError").getCount(), is(1L));
+
+        assertThat(responseUnsubscribed.get(), is(true));
+    }
+
+    @Test
+    public void channelExceptionAfterClientClosed() throws Exception {
+        RuntimeException cause = new RuntimeException("Something went wrong");
+
+        handler.channelActive(ctx);
+        handler.channelRead0(ctx, request);
+        verify(statsCollector).onRequest(eq(request.id()));
+
+        responseObservable.onNext(response);
+
+        // Remote peer (client) has closed the connection for whatever reason:
+        handler.channelInactive(ctx);
+
+        // ... but the channel exception occurs while response writer has finished:
+        handler.exceptionCaught(ctx, cause);
+
+        // Then, just log the error,
+        verify(errorListener).proxyingFailure(eq(request), eq(response), eq(cause));
+
+        // and allow response writer event (success/failure) to conclude the state machine cycle.
+        assertThat(handler.state(), is(SENDING_RESPONSE_CLIENT_CLOSED));
     }
 
     @Test
@@ -752,27 +807,27 @@ public class HttpPipelineHandlerTest {
         assertThat(handler.state(), is(TERMINATED));
     }
 
-    @Test
-    public void channelInactiveEventInSendingResponseState() throws Exception {
-        // In Sending Response state,
-        // The inbound TCP connection gets closes
-
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        HttpPipelineHandler adapter = handlerWithMocks().responseEnhancer(DO_NOT_MODIFY_RESPONSE).responseWriterFactory(responseWriterFactory(future)).build();
-
-        adapter.channelActive(ctx);
-        adapter.channelRead0(ctx, request);
-        responseObservable.onNext(response);
-        assertThat(adapter.state(), is(SENDING_RESPONSE));
-        assertThat(future.isCompletedExceptionally(), is(false));
-
-        adapter.channelInactive(ctx);
-
-        assertThat(future.isCompletedExceptionally(), is(true));
-        assertThat(responseUnsubscribed.get(), is(true));
-        verify(statsCollector).onTerminate(request.id());
-        assertThat(adapter.state(), is(TERMINATED));
-    }
+//    @Test
+//    public void channelInactiveEventInSendingResponseState() throws Exception {
+//        // In Sending Response state,
+//        // The inbound TCP connection gets closes
+//
+//        CompletableFuture<Void> future = new CompletableFuture<>();
+//        HttpPipelineHandler adapter = handlerWithMocks().responseEnhancer(DO_NOT_MODIFY_RESPONSE).responseWriterFactory(responseWriterFactory(future)).build();
+//
+//        adapter.channelActive(ctx);
+//        adapter.channelRead0(ctx, request);
+//        responseObservable.onNext(response);
+//        assertThat(adapter.state(), is(SENDING_RESPONSE));
+//        assertThat(future.isCompletedExceptionally(), is(false));
+//
+//        adapter.channelInactive(ctx);
+//
+//        assertThat(future.isCompletedExceptionally(), is(true));
+//        assertThat(responseUnsubscribed.get(), is(true));
+//        verify(statsCollector).onTerminate(request.id());
+//        assertThat(adapter.state(), is(TERMINATED));
+//    }
 
     @Test
     public void ioExceptionInSendingResponseState() throws Exception {

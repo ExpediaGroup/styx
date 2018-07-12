@@ -117,7 +117,8 @@ class OutstandingRequestsSpec extends FunSpec
 
       client.disconnect()
 
-      eventually(timeout(2 seconds)) {
+      // Eventually times out as per responseTimeout configuration:
+      eventually(timeout(4 seconds)) {
         styxServer.metricsSnapshot.count("requests.outstanding").get should be(0)
       }
     }
