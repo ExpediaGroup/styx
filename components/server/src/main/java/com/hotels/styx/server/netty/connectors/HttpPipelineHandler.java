@@ -146,7 +146,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
 
                 .transition(SENDING_RESPONSE, ResponseSentEvent.class, event -> onResponseSent(event.ctx))
                 .transition(SENDING_RESPONSE, ResponseWriteErrorEvent.class, event -> onResponseWriteError(event.ctx, event.cause))
-                .transition(SENDING_RESPONSE, ChannelInactiveEvent.class, event -> clientClosed())
+                .transition(SENDING_RESPONSE, ChannelInactiveEvent.class, event -> SENDING_RESPONSE_CLIENT_CLOSED)
                 .transition(SENDING_RESPONSE, ChannelExceptionEvent.class, event -> onChannelExceptionWhenSendingResponse(event.ctx, event.cause))
                 .transition(SENDING_RESPONSE, ResponseObservableErrorEvent.class, event -> logError(SENDING_RESPONSE,  event.cause))
                 .transition(SENDING_RESPONSE, ResponseObservableCompletedEvent.class, event -> SENDING_RESPONSE)
@@ -325,10 +325,6 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         ongoingRequest = null;
         ctx.close();
         return TERMINATED;
-    }
-
-    private State clientClosed() {
-        return SENDING_RESPONSE_CLIENT_CLOSED;
     }
 
     private State onResponseWriteError(ChannelHandlerContext ctx, Throwable cause) {
