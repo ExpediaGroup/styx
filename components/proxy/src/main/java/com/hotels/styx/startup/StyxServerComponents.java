@@ -141,8 +141,8 @@ public class StyxServerComponents {
             return plugins(env -> list);
         }
 
-        @VisibleForTesting
-        Builder plugins(PluginsLoader pluginsLoader) {
+
+        public Builder plugins(PluginsLoader pluginsLoader) {
             this.pluginsLoader = requireNonNull(pluginsLoader);
             return this;
         }
