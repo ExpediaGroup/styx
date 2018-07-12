@@ -807,28 +807,6 @@ public class HttpPipelineHandlerTest {
         assertThat(handler.state(), is(TERMINATED));
     }
 
-//    @Test
-//    public void channelInactiveEventInSendingResponseState() throws Exception {
-//        // In Sending Response state,
-//        // The inbound TCP connection gets closes
-//
-//        CompletableFuture<Void> future = new CompletableFuture<>();
-//        HttpPipelineHandler adapter = handlerWithMocks().responseEnhancer(DO_NOT_MODIFY_RESPONSE).responseWriterFactory(responseWriterFactory(future)).build();
-//
-//        adapter.channelActive(ctx);
-//        adapter.channelRead0(ctx, request);
-//        responseObservable.onNext(response);
-//        assertThat(adapter.state(), is(SENDING_RESPONSE));
-//        assertThat(future.isCompletedExceptionally(), is(false));
-//
-//        adapter.channelInactive(ctx);
-//
-//        assertThat(future.isCompletedExceptionally(), is(true));
-//        assertThat(responseUnsubscribed.get(), is(true));
-//        verify(statsCollector).onTerminate(request.id());
-//        assertThat(adapter.state(), is(TERMINATED));
-//    }
-
     @Test
     public void ioExceptionInSendingResponseState() throws Exception {
         // In Sending Response state,
