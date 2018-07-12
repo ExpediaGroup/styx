@@ -154,17 +154,9 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
 
                 .transition(SENDING_RESPONSE_CLIENT_CLOSED, ResponseSentEvent.class, event -> onResponseSentAfterClientClosed(event.ctx))
                 .transition(SENDING_RESPONSE_CLIENT_CLOSED, ResponseWriteErrorEvent.class, event -> onResponseWriteError(event.ctx, event.cause))
-                .transition(SENDING_RESPONSE_CLIENT_CLOSED, ChannelInactiveEvent.class, event -> {
-                    LOGGER.warn(warningMessage("Weird. This event/state was not supposed to happen."));
-                    return SENDING_RESPONSE_CLIENT_CLOSED;
-                })
                 .transition(SENDING_RESPONSE_CLIENT_CLOSED, ChannelExceptionEvent.class, event -> logError(SENDING_RESPONSE_CLIENT_CLOSED,  event.cause))
                 .transition(SENDING_RESPONSE_CLIENT_CLOSED, ResponseObservableErrorEvent.class, event -> logError(SENDING_RESPONSE_CLIENT_CLOSED, event.cause))
                 .transition(SENDING_RESPONSE_CLIENT_CLOSED, ResponseObservableCompletedEvent.class, event -> SENDING_RESPONSE_CLIENT_CLOSED)
-                .transition(SENDING_RESPONSE_CLIENT_CLOSED, RequestReceivedEvent.class, event -> {
-                    LOGGER.warn(warningMessage("Weird. This event/state was not supposed to happen."));
-                    return SENDING_RESPONSE_CLIENT_CLOSED;
-                })
 
                 .transition(TERMINATED, ChannelInactiveEvent.class, event -> TERMINATED)
 
