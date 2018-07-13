@@ -20,7 +20,7 @@ import com.hotels.styx.api.messages.FullHttpResponse
 import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse}
 import com.hotels.styx.client.HttpConfig.newHttpConfigBuilder
 import com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder
-import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination.Factory
+import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory
 import com.hotels.styx.client.{ConnectionSettings, SimpleNettyHttpClient}
 import rx.lang.scala.JavaConversions.toScalaObservable
@@ -33,7 +33,7 @@ trait StyxClientSupplier {
   val FIVE_SECONDS: Int = 5 * 1000
 
   val client: HttpClient = new SimpleNettyHttpClient.Builder()
-    .connectionDestinationFactory(new Factory()
+    .connectionDestinationFactory(new CloseAfterUseConnectionDestination.Factory()
       .connectionSettings(new ConnectionSettings(1000))
       .connectionFactory(new NettyConnectionFactory.Builder()
         .name("scalatest-e2e-client")

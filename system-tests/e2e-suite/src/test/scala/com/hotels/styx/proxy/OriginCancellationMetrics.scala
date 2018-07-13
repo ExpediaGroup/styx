@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.proxy
 
+import com.hotels.styx.api.HttpRequest.Builder.get
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
@@ -59,7 +60,7 @@ class OriginCancellationMetrics extends FunSpec
           HttpHeader(CONTENT_LENGTH, "0")
         ))
 
-      val request = api.HttpRequest.Builder.get(styxServer.routerURL("/OriginCancellationMetrics/1")).build()
+      val request = get(styxServer.routerURL("/OriginCancellationMetrics/1")).build()
       val response = decodedRequest(request)
       response.status() should be(OK)
 
@@ -73,7 +74,7 @@ class OriginCancellationMetrics extends FunSpec
           HttpHeader(CONTENT_LENGTH, "0")
         ))
 
-      val request = api.HttpRequest.Builder.get(styxServer.routerURL("/OriginCancellationMetrics/2")).build()
+      val request = get(styxServer.routerURL("/OriginCancellationMetrics/2")).build()
       val response = decodedRequest(request)
       response.status() should be(BAD_GATEWAY)
 

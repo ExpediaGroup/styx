@@ -60,6 +60,7 @@ import static com.hotels.styx.api.metrics.HttpErrorStatusListener.IGNORE_ERROR_S
 import static com.hotels.styx.api.metrics.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
+import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE_CLIENT_CLOSED;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.TERMINATED;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.WAITING_FOR_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.ResponseEnhancer.DO_NOT_MODIFY_RESPONSE;
@@ -145,11 +146,17 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
 
                 .transition(SENDING_RESPONSE, ResponseSentEvent.class, event -> onResponseSent(event.ctx))
                 .transition(SENDING_RESPONSE, ResponseWriteErrorEvent.class, event -> onResponseWriteError(event.ctx, event.cause))
-                .transition(SENDING_RESPONSE, ChannelInactiveEvent.class, event -> onChannelInactive())
+                .transition(SENDING_RESPONSE, ChannelInactiveEvent.class, event -> SENDING_RESPONSE_CLIENT_CLOSED)
                 .transition(SENDING_RESPONSE, ChannelExceptionEvent.class, event -> onChannelExceptionWhenSendingResponse(event.ctx, event.cause))
-                .transition(SENDING_RESPONSE, ResponseObservableErrorEvent.class, event -> logError(event.cause))
+                .transition(SENDING_RESPONSE, ResponseObservableErrorEvent.class, event -> logError(SENDING_RESPONSE,  event.cause))
                 .transition(SENDING_RESPONSE, ResponseObservableCompletedEvent.class, event -> SENDING_RESPONSE)
                 .transition(SENDING_RESPONSE, RequestReceivedEvent.class, event -> onPrematureRequest(event.request, event.ctx))
+
+                .transition(SENDING_RESPONSE_CLIENT_CLOSED, ResponseSentEvent.class, event -> onResponseSentAfterClientClosed(event.ctx))
+                .transition(SENDING_RESPONSE_CLIENT_CLOSED, ResponseWriteErrorEvent.class, event -> onResponseWriteError(event.ctx, event.cause))
+                .transition(SENDING_RESPONSE_CLIENT_CLOSED, ChannelExceptionEvent.class, event -> logError(SENDING_RESPONSE_CLIENT_CLOSED,  event.cause))
+                .transition(SENDING_RESPONSE_CLIENT_CLOSED, ResponseObservableErrorEvent.class, event -> logError(SENDING_RESPONSE_CLIENT_CLOSED, event.cause))
+                .transition(SENDING_RESPONSE_CLIENT_CLOSED, ResponseObservableCompletedEvent.class, event -> SENDING_RESPONSE_CLIENT_CLOSED)
 
                 .transition(TERMINATED, ChannelInactiveEvent.class, event -> TERMINATED)
 
@@ -161,9 +168,9 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
                 .build();
     }
 
-    private State logError(Throwable cause) {
+    private State logError(State state, Throwable cause) {
         httpErrorStatusListener.proxyingFailure(ongoingRequest, ongoingResponse, cause);
-        return SENDING_RESPONSE;
+        return state;
     }
 
     @VisibleForTesting
@@ -175,6 +182,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         ACCEPTING_REQUESTS,
         WAITING_FOR_RESPONSE,
         SENDING_RESPONSE,
+        SENDING_RESPONSE_CLIENT_CLOSED,
         TERMINATED
     }
 
@@ -304,6 +312,13 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         }
     }
 
+    private State onResponseSentAfterClientClosed(ChannelHandlerContext ctx) {
+        statsSink.onComplete(ongoingRequest.id(), ongoingResponse.status().code());
+        ongoingRequest = null;
+        ctx.close();
+        return TERMINATED;
+    }
+
     private State onResponseWriteError(ChannelHandlerContext ctx, Throwable cause) {
         metrics.counter("requests.cancelled.responseWriteError").inc();
         cancelSubscription();
@@ -349,7 +364,6 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         // the exception as if a request had been received:
         return handleChannelException(ctx, cause);
     }
-
 
     private State handleChannelException(ChannelHandlerContext ctx, Throwable cause) {
         if (!isIoException(cause)) {
