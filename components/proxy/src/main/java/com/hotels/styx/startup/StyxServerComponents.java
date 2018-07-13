@@ -138,10 +138,10 @@ public class StyxServerComponents {
         public Builder plugins(Iterable<NamedPlugin> plugins) {
             requireNonNull(plugins);
             List<NamedPlugin> list = ImmutableList.copyOf(plugins);
-            return pluginsLoader(env -> list);
+            return plugins(env -> list);
         }
 
-        public Builder pluginsLoader(PluginsLoader pluginsLoader) {
+        public Builder plugins(PluginsLoader pluginsLoader) {
             this.pluginsLoader = requireNonNull(pluginsLoader);
             return this;
         }

@@ -61,7 +61,7 @@ public class StyxServerComponentsTest {
     public void loadsPlugins() {
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig())
-                .pluginsLoader(env -> ImmutableList.of(
+                .plugins(env -> ImmutableList.of(
                         namedPlugin("plugin1", stubPlugin("MyResponse1")),
                         namedPlugin("plugin2", stubPlugin("MyResponse2"))))
                 .build();
