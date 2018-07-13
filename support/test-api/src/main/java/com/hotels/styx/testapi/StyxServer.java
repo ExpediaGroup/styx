@@ -75,7 +75,7 @@ public final class StyxServer {
 
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .styxConfig(styxConfig(builder))
-                .pluginsLoader(loader)
+                .plugins(loader)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))
                 .build();
 
