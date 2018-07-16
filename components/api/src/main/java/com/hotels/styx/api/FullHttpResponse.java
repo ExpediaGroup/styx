@@ -92,9 +92,12 @@ public class FullHttpResponse implements FullHttpMessage {
         return headers;
     }
 
-    @Override
     public List<HttpCookie> cookies() {
         return cookies;
+    }
+
+    public Optional<HttpCookie> cookie(String name) {
+        return findCookie(cookies(), name);
     }
 
     /**

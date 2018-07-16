@@ -21,6 +21,8 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.HttpCookieAttribute.{domain, httpOnly, path}
 import com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_FOR
+import com.hotels.styx.api.cookies.RequestCookie
+import com.hotels.styx.api.cookies.RequestCookie.cookie
 import com.hotels.styx.api.messages.HttpResponseStatus._
 import com.hotels.styx.api.{HttpCookie, HttpHeaderValues}
 import com.hotels.styx.support.NettyOrigins
@@ -387,7 +389,7 @@ class HeadersSpec extends FunSpec
 
         val req = get("/quotedCookies")
           .addHeader(HOST, styxServer.proxyHost)
-          .addCookie("test-cookie", "\"hu_hotels_com,HCOM_HU,hu_HU,\"")
+          .cookies(cookie("test-cookie", "\"hu_hotels_com,HCOM_HU,hu_HU,\""))
           .build()
 
         val resp = decodedRequest(req)

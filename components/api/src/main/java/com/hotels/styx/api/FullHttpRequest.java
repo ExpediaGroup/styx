@@ -15,7 +15,8 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableList;
+import com.hotels.styx.api.cookies.PseudoMap;
+import com.hotels.styx.api.cookies.RequestCookie;
 import com.hotels.styx.api.messages.HttpMethod;
 import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.Unpooled;
@@ -23,14 +24,12 @@ import rx.Observable;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
@@ -43,10 +42,10 @@ import static com.hotels.styx.api.messages.HttpMethod.PATCH;
 import static com.hotels.styx.api.messages.HttpMethod.POST;
 import static com.hotels.styx.api.messages.HttpMethod.PUT;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
-import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
 import static java.lang.Integer.parseInt;
 import static java.net.InetSocketAddress.createUnresolved;
+import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 
@@ -63,7 +62,6 @@ public class FullHttpRequest implements FullHttpMessage {
     private final HttpHeaders headers;
     private final boolean secure;
     private final byte[] body;
-    private final List<HttpCookie> cookies;
 
     FullHttpRequest(Builder builder) {
         this.id = builder.id == null ? randomUUID() : builder.id;
@@ -74,7 +72,6 @@ public class FullHttpRequest implements FullHttpMessage {
         this.secure = builder.secure;
         this.headers = builder.headers.build();
         this.body = requireNonNull(builder.body);
-        this.cookies = ImmutableList.copyOf(builder.cookies);
     }
 
     /**
@@ -145,11 +142,6 @@ public class FullHttpRequest implements FullHttpMessage {
     @Override
     public HttpHeaders headers() {
         return headers;
-    }
-
-    @Override
-    public List<HttpCookie> cookies() {
-        return cookies;
     }
 
     @Override
@@ -320,6 +312,10 @@ public class FullHttpRequest implements FullHttpMessage {
         }
     }
 
+    public PseudoMap<String, RequestCookie> cookies() {
+        return RequestCookie.decode(headers);
+    }
+
     @Override
     public String toString() {
         return toStringHelper(this)
@@ -327,7 +323,6 @@ public class FullHttpRequest implements FullHttpMessage {
                 .add("method", method)
                 .add("uri", url)
                 .add("headers", headers)
-                .add("cookies", cookies)
                 .add("id", id)
                 .add("secure", secure)
                 .toString();
@@ -348,13 +343,11 @@ public class FullHttpRequest implements FullHttpMessage {
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
         private byte[] body;
-        private final List<HttpCookie> cookies;
 
         public Builder() {
             this.url = Url.Builder.url("/").build();
             this.headers = new HttpHeaders.Builder();
             this.body = new byte[0];
-            this.cookies = new ArrayList<>();
         }
 
         public Builder(HttpMethod method, String uri) {
@@ -373,8 +366,6 @@ public class FullHttpRequest implements FullHttpMessage {
             this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = body;
-//            this.cookies = new ArrayList<>(request.cookies());
-            this.cookies = new ArrayList<>();
         }
 
         Builder(FullHttpRequest request) {
@@ -386,7 +377,6 @@ public class FullHttpRequest implements FullHttpMessage {
             this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = request.body();
-            this.cookies = new ArrayList<>(request.cookies());
         }
 
         /**
@@ -549,41 +539,14 @@ public class FullHttpRequest implements FullHttpMessage {
             return this;
         }
 
-        /**
-         * Adds a response cookie (adds a new Set-Cookie header).
-         *
-         * @param cookie cookie to add
-         * @return {@code this}
-         */
-        public Builder addCookie(HttpCookie cookie) {
-            cookies.add(checkNotNull(cookie));
+        public Builder cookies(RequestCookie... cookies) {
+            return cookies(asList(cookies));
+        }
+
+        private Builder cookies(List<RequestCookie> cookies) {
+            RequestCookie.encode(headers, cookies);
             return this;
         }
-
-        /**
-         * Adds a response cookie (adds a new Set-Cookie header).
-         *
-         * @param name  cookie name
-         * @param value cookie value
-         * @return {@code this}
-         */
-        public Builder addCookie(String name, String value) {
-            return addCookie(HttpCookie.cookie(name, value));
-        }
-
-        /**
-         * Removes a cookie if present (removes its Set-Cookie header).
-         *
-         * @param name name of the cookie
-         * @return {@code this}
-         */
-        public Builder removeCookie(String name) {
-           findCookie(cookies, name)
-                    .ifPresent(cookies::remove);
-
-            return this;
-        }
-
         /**
          * Sets whether the request is be secure.
          *
