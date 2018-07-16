@@ -15,7 +15,8 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableList;
+import com.hotels.styx.api.cookies.PseudoMap;
+import com.hotels.styx.api.cookies.RequestCookie;
 import com.hotels.styx.api.messages.HttpMethod;
 import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
@@ -23,14 +24,12 @@ import io.netty.buffer.CompositeByteBuf;
 import rx.Observable;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.FlowControlDisableOperator.disableFlowControl;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
@@ -46,8 +45,6 @@ import static com.hotels.styx.api.messages.HttpMethod.PUT;
 import static com.hotels.styx.api.messages.HttpMethod.httpMethod;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
-import static com.hotels.styx.api.support.CookiesSupport.findCookie;
-import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.compositeBuffer;
 import static io.netty.buffer.Unpooled.copiedBuffer;
@@ -55,8 +52,10 @@ import static io.netty.util.ReferenceCountUtil.release;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.net.InetSocketAddress.createUnresolved;
+import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * HTTP request with a fully aggregated/decoded body.
@@ -71,7 +70,6 @@ public class HttpRequest implements StreamingHttpMessage {
     private final HttpHeaders headers;
     private final boolean secure;
     private final StyxObservable<ByteBuf> body;
-    private final List<HttpCookie> cookies;
 
     HttpRequest(Builder builder) {
         this.id = builder.id == null ? randomUUID() : builder.id;
@@ -82,7 +80,6 @@ public class HttpRequest implements StreamingHttpMessage {
         this.secure = builder.secure;
         this.headers = builder.headers.build();
         this.body = requireNonNull(builder.body);
-        this.cookies = ImmutableList.copyOf(builder.cookies);
     }
 
     /**
@@ -190,23 +187,6 @@ public class HttpRequest implements StreamingHttpMessage {
     public HttpHeaders headers() {
         return headers;
     }
-
-    @Override
-    public List<HttpCookie> cookies() {
-        return cookies;
-    }
-
-    /*
-     * Returns an {@link Optional} containing the {@link HttpCookie} with the specified {@code name}
-     * if such a cookie exists.
-     *
-     * @param name the name of the cookie
-     * @return returns an optional cookie object from the header
-     */
-    public Optional<HttpCookie> cookie(String name) {
-        return findCookie(cookies, name);
-    }
-
 
     @Override
     public List<String> headers(CharSequence name) {
@@ -362,6 +342,10 @@ public class HttpRequest implements StreamingHttpMessage {
         }
     }
 
+    public PseudoMap<String, RequestCookie> cookies() {
+        return RequestCookie.decode(headers);
+    }
+
     @Override
     public String toString() {
         return toStringHelper(this)
@@ -369,7 +353,6 @@ public class HttpRequest implements StreamingHttpMessage {
                 .add("method", method)
                 .add("uri", url)
                 .add("headers", headers)
-                .add("cookies", cookies)
                 .add("id", id)
                 .add("secure", secure)
                 .add("clientAddress", clientAddress)
@@ -391,13 +374,11 @@ public class HttpRequest implements StreamingHttpMessage {
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
         private StyxObservable<ByteBuf> body;
-        private final List<HttpCookie> cookies;
 
         public Builder() {
             this.url = Url.Builder.url("/").build();
             this.headers = new HttpHeaders.Builder();
             this.body = new StyxCoreObservable<>(Observable.empty());
-            this.cookies = new ArrayList<>();
         }
 
         public Builder(HttpMethod method, String uri) {
@@ -416,7 +397,6 @@ public class HttpRequest implements StreamingHttpMessage {
             this.version = httpVersion(request.version().toString());
             this.headers = request.headers().newBuilder();
             this.body = body;
-            this.cookies = new ArrayList<>(request.cookies());
         }
 
         Builder(HttpRequest request) {
@@ -428,7 +408,6 @@ public class HttpRequest implements StreamingHttpMessage {
             this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = request.body();
-            this.cookies = new ArrayList<>(request.cookies());
         }
 
         Builder(FullHttpRequest request) {
@@ -440,7 +419,9 @@ public class HttpRequest implements StreamingHttpMessage {
             this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = StyxCoreObservable.of(copiedBuffer(request.body()));
-            this.cookies = new ArrayList<>(request.cookies());
+            RequestCookie.encode(headers, request.cookies().stream()
+                    .map(cookie -> RequestCookie.cookie(cookie.name(), cookie.value()))
+                    .collect(toSet()));
         }
 
         /**
@@ -485,7 +466,6 @@ public class HttpRequest implements StreamingHttpMessage {
          * @return {@code this}
          */
         public Builder header(CharSequence name, Object value) {
-            checkNotCookie(name);
             this.headers.set(name, value);
             return this;
         }
@@ -511,7 +491,6 @@ public class HttpRequest implements StreamingHttpMessage {
          * @return {@code this}
          */
         public Builder addHeader(CharSequence name, Object value) {
-            checkNotCookie(name);
             this.headers.add(name, value);
             return this;
         }
@@ -567,41 +546,6 @@ public class HttpRequest implements StreamingHttpMessage {
         }
 
         /**
-         * Adds a response cookie (adds a new Set-Cookie header).
-         *
-         * @param cookie cookie to add
-         * @return {@code this}
-         */
-        public Builder addCookie(HttpCookie cookie) {
-            cookies.add(checkNotNull(cookie));
-            return this;
-        }
-
-        /**
-         * Adds a response cookie (adds a new Set-Cookie header).
-         *
-         * @param name  cookie name
-         * @param value cookie value
-         * @return {@code this}
-         */
-        public Builder addCookie(String name, String value) {
-            return addCookie(HttpCookie.cookie(name, value));
-        }
-
-        /**
-         * Removes a cookie if present (removes its Set-Cookie header).
-         *
-         * @param name cookie name
-         * @return {@code this}
-         */
-        public Builder removeCookie(String name) {
-            findCookie(cookies, name)
-                    .ifPresent(cookies::remove);
-
-            return this;
-        }
-
-        /**
          * Sets whether the request is be secure.
          *
          * @param secure true if secure
@@ -629,6 +573,15 @@ public class HttpRequest implements StreamingHttpMessage {
          */
         public Builder enableKeepAlive() {
             return header(CONNECTION, KEEP_ALIVE);
+        }
+
+        public Builder cookies(RequestCookie... cookies) {
+            return cookies(asList(cookies));
+        }
+
+        private Builder cookies(List<RequestCookie> cookies) {
+            RequestCookie.encode(headers, cookies);
+            return this;
         }
 
         /**
@@ -659,10 +612,6 @@ public class HttpRequest implements StreamingHttpMessage {
 
         private void ensureMethodIsValid() {
             checkArgument(isMethodValid(), "Unrecognised HTTP method=%s", this.method);
-        }
-
-        private static void checkNotCookie(CharSequence name) {
-            checkArgument(!isCookieHeader(name.toString()), "Cookies must be set with addCookie method");
         }
 
         private boolean isMethodValid() {

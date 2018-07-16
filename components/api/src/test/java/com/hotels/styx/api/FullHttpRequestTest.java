@@ -16,6 +16,7 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.api.cookies.RequestCookie;
 import com.hotels.styx.api.messages.HttpMethod;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -75,8 +76,9 @@ public class FullHttpRequestTest {
         assertThat(streaming.version(), is(HTTP_1_1));
         assertThat(streaming.headers(), containsInAnyOrder(
                 header("Content-Length", "6"),
-                header("HeaderName", "HeaderValue")));
-        assertThat(streaming.cookies(), contains(cookie("CookieName", "CookieValue")));
+                header("HeaderName", "HeaderValue"),
+                header("Cookie", "CookieName=CookieValue")));
+        assertThat(streaming.cookies(), contains(RequestCookie.cookie("CookieName", "CookieValue")));
 
         String body = streaming.toFullRequest(0x10000)
                 .asCompletableFuture()

@@ -17,7 +17,6 @@ package com.hotels.styx.client;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
@@ -25,10 +24,11 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.api.cookies.RequestCookie;
+import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.RewriteRule;
 import com.hotels.styx.client.retry.RetryNTimes;
@@ -289,12 +289,12 @@ public final class StyxHttpClient implements HttpClient {
             @Override
             public Optional<String> preferredOrigins() {
                 if (nonNull(originsRestrictionCookieName)) {
-                    return rewrittenRequest.cookie(originsRestrictionCookieName)
-                            .map(HttpCookie::value)
+                    return rewrittenRequest.cookies().firstMatch(originsRestrictionCookieName)
+                            .map(RequestCookie::value)
                             .map(Optional::of)
-                            .orElse(rewrittenRequest.cookie("styx_origin_" + id).map(HttpCookie::value));
+                            .orElse(rewrittenRequest.cookies().firstMatch("styx_origin_" + id).map(RequestCookie::value));
                 } else {
-                    return rewrittenRequest.cookie("styx_origin_" + id).map(HttpCookie::value);
+                    return rewrittenRequest.cookies().firstMatch("styx_origin_" + id).map(RequestCookie::value);
                 }
             }
 

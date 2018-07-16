@@ -65,12 +65,16 @@ public final class RequestCookie {
         return new RequestCookie(name, value);
     }
 
-    public static Set<RequestCookie> decode(HttpHeaders headers) {
-        return headers.getAll(COOKIE).stream()
+    public static PseudoMap<String, RequestCookie> decode(HttpHeaders headers) {
+        return wrap(headers.getAll(COOKIE).stream()
                 .map(ServerCookieDecoder.LAX::decode)
                 .flatMap(Collection::stream)
                 .map(RequestCookie::convert)
-                .collect(toSet());
+                .collect(toSet()));
+    }
+
+    private static PseudoMap<String, RequestCookie> wrap(Set<RequestCookie> cookies) {
+        return new PseudoMap<>(cookies, (name, cookie) -> cookie.name().equals(name));
     }
 
     public static void encode(HttpHeaders.Builder headers, Collection<RequestCookie> cookies) {
@@ -78,7 +82,9 @@ public final class RequestCookie {
                 .map(RequestCookie::convert)
                 .collect(toSet());
 
-        headers.set(COOKIE, ClientCookieEncoder.LAX.encode(nettyCookies));
+        if (!nettyCookies.isEmpty()) {
+            headers.set(COOKIE, ClientCookieEncoder.LAX.encode(nettyCookies));
+        }
     }
 
     private static Cookie convert(RequestCookie cookie) {

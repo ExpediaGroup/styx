@@ -24,6 +24,7 @@ import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.Id.id
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.client.{ActiveOrigins, Origin}
+import com.hotels.styx.api.cookies.RequestCookie
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
@@ -127,7 +128,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build
 
     val request: HttpRequest = get("/")
-      .addCookie("styx_origin_app", "app-02")
+      .cookies(RequestCookie.cookie("styx_origin_app", "app-02"))
       .build
 
     val response1 = waitForResponse(client.sendRequest(request))
@@ -145,9 +146,10 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build
 
     val request: HttpRequest = get("/")
-      .addCookie("other_cookie1", "foo")
-      .addCookie("styx_origin_app", "app-02")
-      .addCookie("other_cookie2", "bar")
+      .cookies(
+        RequestCookie.cookie("other_cookie1", "foo"),
+        RequestCookie.cookie("styx_origin_app", "app-02"),
+        RequestCookie.cookie("other_cookie2", "bar"))
       .build()
 
 
@@ -166,7 +168,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build
 
     val request: HttpRequest = get("/")
-      .addCookie("styx_origin_app", "h3")
+      .cookies(RequestCookie.cookie("styx_origin_app", "h3"))
       .build
 
     val response = waitForResponse(client.sendRequest(request))
@@ -184,7 +186,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build
 
     val request: HttpRequest = get("/")
-      .addCookie("styx_origin_app", "app-02")
+      .cookies(RequestCookie.cookie("styx_origin_app", "app-02"))
       .build
 
     val response = waitForResponse(client.sendRequest(request))

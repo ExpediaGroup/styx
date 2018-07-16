@@ -373,7 +373,8 @@ public class FullHttpRequest implements FullHttpMessage {
             this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = body;
-            this.cookies = new ArrayList<>(request.cookies());
+//            this.cookies = new ArrayList<>(request.cookies());
+            this.cookies = new ArrayList<>();
         }
 
         Builder(FullHttpRequest request) {

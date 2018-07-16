@@ -16,12 +16,13 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.messages.HttpMethod;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import org.testng.annotations.Test;
 
+import static com.hotels.styx.api.cookies.RequestCookie.cookie;
 import static com.hotels.styx.api.messages.HttpMethod.GET;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.core.Is.is;
 
@@ -31,8 +32,10 @@ public class HttpRequestOperationTest {
         HttpRequest request = new HttpRequest.Builder()
                 .method(GET)
                 .header("X-Forwarded-Proto", "https")
-                .addCookie("HASESSION_V3", "asdasdasd")
-                .addCookie("has", "123456789")
+                .cookies(
+                        cookie("HASESSION_V3", "asdasdasd"),
+                        cookie("has", "123456789")
+                )
                 .uri("https://www.example.com/foo%2Cbar?foo,baf=2")
                 .build();
 
@@ -40,7 +43,10 @@ public class HttpRequestOperationTest {
         assertThat(nettyRequest.method(), is(io.netty.handler.codec.http.HttpMethod.GET));
         assertThat(nettyRequest.uri(), is("https://www.example.com/foo%2Cbar?foo%2Cbaf=2"));
         assertThat(nettyRequest.headers().get("X-Forwarded-Proto"), is("https"));
-        assertThat(nettyRequest.headers().getAll("Cookie"), contains("HASESSION_V3=asdasdasd; has=123456789"));
+        assertThat(nettyRequest.headers().getAll("Cookie"), anyOf(
+                contains("HASESSION_V3=asdasdasd; has=123456789"),
+                contains("has=123456789; HASESSION_V3=asdasdasd")
+        ));
     }
 
     @Test

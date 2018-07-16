@@ -25,16 +25,15 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
-import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpRequest.patch;
 import static com.hotels.styx.api.HttpRequest.post;
 import static com.hotels.styx.api.HttpRequest.put;
 import static com.hotels.styx.api.Url.Builder.url;
+import static com.hotels.styx.api.cookies.RequestCookie.cookie;
 import static com.hotels.styx.api.messages.HttpMethod.DELETE;
 import static com.hotels.styx.api.messages.HttpMethod.GET;
 import static com.hotels.styx.api.messages.HttpMethod.POST;
@@ -44,11 +43,9 @@ import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static java.lang.String.valueOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -57,7 +54,6 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static rx.Observable.just;
 
 public class HttpRequestTest {
     @Test
@@ -66,7 +62,7 @@ public class HttpRequestTest {
                 .secure(true)
                 .version(HTTP_1_0)
                 .header("HeaderName", "HeaderValue")
-                .addCookie("CookieName", "CookieValue")
+                .cookies(cookie("CookieName", "CookieValue"))
                 .build();
 
         FullHttpRequest full = streamingRequest.toFullRequest(0x1000)
@@ -77,8 +73,10 @@ public class HttpRequestTest {
         assertThat(full.url(), is(url("/foo/bar").build()));
         assertThat(full.isSecure(), is(true));
         assertThat(full.version(), is(HTTP_1_0));
-        assertThat(full.headers(), contains(header("HeaderName", "HeaderValue")));
-        assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
+        assertThat(full.headers(), containsInAnyOrder(
+                header("HeaderName", "HeaderValue"),
+                header("Cookie", "CookieName=CookieValue")));
+//        assertThat(full.cookies(), contains(HttpCookie.cookie("CookieName", "CookieValue")));
         assertThat(full.body(), is(bytes("foobar")));
     }
 
@@ -131,7 +129,7 @@ public class HttpRequestTest {
         assertThat(request.headers("any"), is(emptyIterable()));
 
         assertThat(bytesToString(request.body()), is(""));
-        assertThat(request.cookie("any"), isAbsent());
+        assertThat(request.cookies().firstMatch("any"), isAbsent());
         assertThat(request.header("any"), isAbsent());
         assertThat(request.keepAlive(), is(true));
         assertThat(request.method(), is(GET));
@@ -145,11 +143,11 @@ public class HttpRequestTest {
                 .version(HTTP_1_0)
                 .id("id")
                 .header("headerName", "a")
-                .addCookie("cfoo", "bar")
+                .cookies(cookie("cfoo", "bar"))
                 .build();
 
-        assertThat(request.toString(), is("HttpRequest{version=HTTP/1.0, method=PATCH, uri=https://hotels.com, " +
-                "headers=[headerName=a, Host=hotels.com], cookies=[cfoo=bar], id=id, secure=true, clientAddress=127.0.0.1:0}"));
+        assertThat(request.toString(), is("HttpRequest{version=HTTP/1.0, method=PATCH, uri=https://hotels.com, headers=[headerName=a, Cookie=cfoo=bar, Host=hotels.com]," +
+                " id=id, secure=true, clientAddress=127.0.0.1:0}"));
 
         assertThat(request.headers("headerName"), is(singletonList("a")));
     }
@@ -194,7 +192,7 @@ public class HttpRequestTest {
     @Test
     public void createsRequestBuilderFromRequest() {
         HttpRequest originalRequest = get("/home")
-                .addCookie(cookie("fred", "blogs"))
+                .cookies(cookie("fred", "blogs"))
                 .header("some", "header")
                 .build();
 
@@ -249,33 +247,36 @@ public class HttpRequestTest {
     @Test
     public void canExtractCookies() {
         HttpRequest request = get("/")
-                .addCookie("cookie1", "foo")
-                .addCookie("cookie3", "baz")
-                .addCookie("cookie2", "bar")
+                .cookies(
+                        cookie("cookie1", "foo"),
+                        cookie("cookie3", "baz"),
+                        cookie("cookie2", "bar"))
                 .build();
 
-        assertThat(request.cookie("cookie1"), isValue(cookie("cookie1", "foo")));
-        assertThat(request.cookie("cookie2"), isValue(cookie("cookie2", "bar")));
-        assertThat(request.cookie("cookie3"), isValue(cookie("cookie3", "baz")));
+        assertThat(request.cookies().firstMatch("cookie1"), isValue(cookie("cookie1", "foo")));
+        assertThat(request.cookies().firstMatch("cookie2"), isValue(cookie("cookie2", "bar")));
+        assertThat(request.cookies().firstMatch("cookie3"), isValue(cookie("cookie3", "baz")));
     }
 
     @Test
     public void cannotExtractNonExistentCookie() {
         HttpRequest request = get("/")
-                .addCookie("cookie1", "foo")
-                .addCookie("cookie3", "baz")
-                .addCookie("cookie2", "bar")
+                .cookies(
+                        cookie("cookie1", "foo"),
+                        cookie("cookie3", "baz"),
+                        cookie("cookie2", "bar"))
                 .build();
 
-        assertThat(request.cookie("cookie4"), isAbsent());
+        assertThat(request.cookies().firstMatch("cookie4"), isAbsent());
     }
 
     @Test
     public void extractsAllCookies() {
         HttpRequest request = get("/")
-                .addCookie("cookie1", "foo")
-                .addCookie("cookie3", "baz")
-                .addCookie("cookie2", "bar")
+                .cookies(
+                        cookie("cookie1", "foo"),
+                        cookie("cookie3", "baz"),
+                        cookie("cookie2", "bar"))
                 .build();
 
         assertThat(request.cookies(), containsInAnyOrder(
@@ -304,50 +305,8 @@ public class HttpRequestTest {
         assertThat(shouldRemoveHeader.headers(), contains(header("a", "b")));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "cookieHeaderName")
-    public void willNotAllowCookieHeaderToBeSet(CharSequence cookieHeaderName) {
-        get("/").header(cookieHeaderName, "Value");
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "cookieHeaderName")
-    public void willNotAllowCookieHeaderToBeAdded(CharSequence cookieHeaderName) {
-        get("/").addHeader(cookieHeaderName, "Value");
-    }
-
-    @DataProvider(name = "cookieHeaderName")
-    private Object[][] cookieHeaderName() {
-        return new Object[][]{
-                {COOKIE},
-                {"Cookie"},
-                {"cookie"},
-                {"COOKIE"}
-        };
-    }
-
-    @Test
-    public void removesCookies() {
-        HttpRequest request = get("/")
-                .addCookie("lang", "en_US|en-us_hotels_com")
-                .addCookie("styx_origin_hpt", "hpt1")
-                .removeCookie("lang")
-                .build();
-        assertThat(request.cookies(), contains(cookie("styx_origin_hpt", "hpt1")));
-    }
-
-    @Test
-    public void removesACookieSetInCookie() {
-        HttpRequest request = get("/")
-                .addCookie("lang", "en_US|en-us_hotels_com")
-                .addCookie("styx_origin_hpt", "hpt1")
-                .removeCookie("lang")
-                .build();
-        assertThat(request.cookies(), contains(cookie("styx_origin_hpt", "hpt1")));
-    }
-
     @Test
     public void shouldSetsContentLengthForNonStreamingBodyMessage() {
-//        assertThat(put("/home").body("").build().header(CONTENT_LENGTH), isValue("0"));
-//        assertThat(put("/home").body("Hello").build().header(CONTENT_LENGTH), isValue(valueOf(bytes("Hello").length)));
         assertThat(put("/home").body(StyxObservable.of(copiedBuffer("Hello", UTF_8))).build().header(CONTENT_LENGTH), isAbsent());
     }
 
@@ -367,17 +326,17 @@ public class HttpRequestTest {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookie() {
-        get("/").addCookie(null).build();
+        get("/").cookies(null);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void rejectsNullCookieName() {
-        get("/").addCookie(null, "value").build();
+        get("/").cookies(cookie(null, "value")).build();
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookieValue() {
-        get("/").addCookie("name", null).build();
+        get("/").cookies(cookie("name", null)).build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)

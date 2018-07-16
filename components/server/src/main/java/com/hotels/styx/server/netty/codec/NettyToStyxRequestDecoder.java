@@ -16,7 +16,6 @@
 package com.hotels.styx.server.netty.codec;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.messages.HttpVersion;
 import com.hotels.styx.server.BadRequestException;
@@ -43,7 +42,6 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayDeque;
-import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
@@ -51,13 +49,10 @@ import java.util.Set;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.Iterables.size;
-import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.EXPECT;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.Url.Builder.url;
-import static com.hotels.styx.api.common.Strings.quote;
-import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
 import static com.hotels.styx.server.UniqueIdSuppliers.UUID_VERSION_ONE_SUPPLIER;
 import static com.hotels.styx.server.netty.codec.UnwiseCharsEncoder.IGNORE;
 import static java.util.stream.StreamSupport.stream;
@@ -184,17 +179,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 .body(fromRxObservable(content));
 
         stream(request.headers().spliterator(), false)
-                .filter(entry -> !isCookieHeader(entry.getKey()))
                 .forEach(entry -> requestBuilder.addHeader(entry.getKey(), entry.getValue()));
-
-        request.headers().getAll(COOKIE).stream()
-                .map(header -> decodeCookieHeader(header, request))
-                .flatMap(Collection::stream)
-                .map(nettyCookie -> {
-                    String cookieValue = nettyCookie.wrap() ? quote(nettyCookie.value()) : nettyCookie.value();
-                    return HttpCookie.cookie(nettyCookie.name(), cookieValue);
-                })
-                .forEach(requestBuilder::addCookie);
 
         return requestBuilder;
     }

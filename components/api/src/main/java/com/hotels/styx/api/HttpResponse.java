@@ -114,7 +114,6 @@ public class HttpResponse implements StreamingHttpMessage {
         return headers;
     }
 
-    @Override
     public List<HttpCookie> cookies() {
         return cookies;
     }
@@ -175,6 +174,17 @@ public class HttpResponse implements StreamingHttpMessage {
             aggregate.release();
         }
     }
+
+    /**
+     * Return the single cookie with the specified {@code name}.
+     *
+     * @param name cookie name
+     * @return the cookie if present
+     */
+    public Optional<HttpCookie> cookie(String name) {
+        return findCookie(cookies(), name);
+    }
+
 
     @Override
     public String toString() {

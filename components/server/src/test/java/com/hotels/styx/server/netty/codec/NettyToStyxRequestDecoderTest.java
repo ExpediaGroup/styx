@@ -17,9 +17,9 @@ package com.hotels.styx.server.netty.codec;
 
 import com.google.common.base.Strings;
 import com.hotels.styx.api.HttpHeader;
-import com.hotels.styx.server.UniqueIdSupplier;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.server.BadRequestException;
+import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -49,9 +49,9 @@ import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Sets.newHashSet;
-import static com.hotels.styx.api.HttpCookie.cookie;
-import static com.hotels.styx.server.UniqueIdSuppliers.fixedUniqueIdSupplier;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
+import static com.hotels.styx.api.cookies.RequestCookie.cookie;
+import static com.hotels.styx.server.UniqueIdSuppliers.fixedUniqueIdSupplier;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpMessageToBytes;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequest;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequestAsBuf;
@@ -263,9 +263,11 @@ public class NettyToStyxRequestDecoderTest {
 
         com.hotels.styx.api.HttpRequest expected = new com.hotels.styx.api.HttpRequest.Builder(
                 com.hotels.styx.api.messages.HttpMethod.GET, "http://foo.com/")
-                .addCookie(cookie("ABC01", "\"1\""))
-                .addCookie(cookie("ABC02", "1"))
-                .addCookie(cookie("guid", "xxxxx-xxx-xxx-xxx-xxxxxxx"))
+                .cookies(
+                        cookie("ABC01", "\"1\""),
+                        cookie("ABC02", "1"),
+                        cookie("guid", "xxxxx-xxx-xxx-xxx-xxxxxxx")
+                )
                 .build();
         assertThat(newHashSet(styxRequest.cookies()), is(newHashSet(expected.cookies())));
     }
@@ -286,9 +288,11 @@ public class NettyToStyxRequestDecoderTest {
 
         com.hotels.styx.api.HttpRequest expected = new com.hotels.styx.api.HttpRequest.Builder(
                 com.hotels.styx.api.messages.HttpMethod.GET, "http://foo.com/")
-                .addCookie(cookie("ABC01", "\"1\""))
-                .addCookie(cookie("ABC02", "1"))
-                .addCookie(cookie("guid", "a,b"))
+                .cookies(
+                        cookie("ABC01", "\"1\""),
+                        cookie("ABC02", "1"),
+                        cookie("guid", "a,b")
+                )
                 .build();
         assertThat(newHashSet(styxRequest.cookies()), is(newHashSet(expected.cookies())));
     }
