@@ -13,12 +13,8 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package com.hotels.styx.server.netty.codec;
+package com.hotels.styx.api.cookies;
 
-import static com.hotels.styx.server.netty.codec.CookieUtil.add;
-import static com.hotels.styx.server.netty.codec.CookieUtil.addQuoted;
-import static com.hotels.styx.server.netty.codec.CookieUtil.stringBuilder;
-import static com.hotels.styx.server.netty.codec.CookieUtil.stripTrailingSeparator;
 import static io.netty.util.internal.ObjectUtil.checkNotNull;
 
 import io.netty.handler.codec.http.HttpHeaderDateFormat;
@@ -95,37 +91,37 @@ public final class ServerCookieEncoder extends CookieEncoder {
 
         validateCookie(name, value);
 
-        StringBuilder buf = stringBuilder();
+        StringBuilder buf = CookieUtil.stringBuilder();
 
         if (cookie.wrap()) {
-            addQuoted(buf, name, value);
+            CookieUtil.addQuoted(buf, name, value);
         } else {
-            add(buf, name, value);
+            CookieUtil.add(buf, name, value);
         }
 
         if (cookie.maxAge() != Long.MIN_VALUE) {
             if (cookie.maxAge() >= 0) {
-                add(buf, CookieHeaderNames.MAX_AGE, cookie.maxAge());
+                CookieUtil.add(buf, CookieHeaderNames.MAX_AGE, cookie.maxAge());
             }
             Date expires = new Date(cookie.maxAge() * 1000 + System.currentTimeMillis());
-            add(buf, CookieHeaderNames.EXPIRES, HttpHeaderDateFormat.get().format(expires));
+            CookieUtil.add(buf, CookieHeaderNames.EXPIRES, HttpHeaderDateFormat.get().format(expires));
         }
 
         if (cookie.path() != null) {
-            add(buf, CookieHeaderNames.PATH, cookie.path());
+            CookieUtil.add(buf, CookieHeaderNames.PATH, cookie.path());
         }
 
         if (cookie.domain() != null) {
-            add(buf, CookieHeaderNames.DOMAIN, cookie.domain());
+            CookieUtil.add(buf, CookieHeaderNames.DOMAIN, cookie.domain());
         }
         if (cookie.isSecure()) {
-            add(buf, CookieHeaderNames.SECURE);
+            CookieUtil.add(buf, CookieHeaderNames.SECURE);
         }
         if (cookie.isHttpOnly()) {
-            add(buf, CookieHeaderNames.HTTPONLY);
+            CookieUtil.add(buf, CookieHeaderNames.HTTPONLY);
         }
 
-        return stripTrailingSeparator(buf);
+        return CookieUtil.stripTrailingSeparator(buf);
     }
 
     /** Deduplicate a list of encoded cookies by keeping only the last instance with a given name.

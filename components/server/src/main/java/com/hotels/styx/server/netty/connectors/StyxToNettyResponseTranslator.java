@@ -24,7 +24,7 @@ import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 
 import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
-import static com.hotels.styx.server.netty.codec.ServerCookieEncoder.LAX;
+import static com.hotels.styx.api.cookies.ServerCookieEncoder.LAX;
 import static java.lang.Integer.parseInt;
 
 class StyxToNettyResponseTranslator implements ResponseTranslator {
