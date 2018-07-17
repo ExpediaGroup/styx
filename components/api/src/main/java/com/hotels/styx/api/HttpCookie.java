@@ -24,7 +24,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.Iterables.isEmpty;
-import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Sets.newHashSet;
 
 /**
  * An HttpCookie represents an HTTP cookie as sent in the {@code Set-Cookie} header of an
@@ -71,7 +71,7 @@ public final class HttpCookie {
             checkNotNull(item);
         }
 
-        return newArrayList(array);
+        return newHashSet(array);
     }
 
     /**
@@ -83,7 +83,7 @@ public final class HttpCookie {
      * @return a cookie
      */
     public static HttpCookie cookie(String name, String value, Iterable<HttpCookieAttribute> attributes) {
-        return new HttpCookie(name, value, attributes);
+        return new HttpCookie(name, value, newHashSet(attributes));
     }
 
     /**

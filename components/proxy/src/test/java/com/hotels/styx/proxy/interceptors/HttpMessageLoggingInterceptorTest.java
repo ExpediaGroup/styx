@@ -19,6 +19,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.cookies.ResponseCookie;
 import com.hotels.styx.support.api.HttpMessageBodies;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.AfterMethod;
@@ -60,11 +61,11 @@ public class HttpMessageLoggingInterceptorTest {
         consume(interceptor.intercept(request, respondWith(
                 response(OK)
                 .header("RespHeader", "RespHeaderValue")
-                .addCookie("RespCookie", "RespCookieValue")
+                .cookies(ResponseCookie.cookie("RespCookie", "RespCookieValue"))
         )));
 
         String requestPattern = "request=\\{method=GET, secure=false, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\], cookies=\\[ReqCookie=ReqCookieValue\\]\\}";
-        String responsePattern = "response=\\{status=200 OK, headers=\\[RespHeader=RespHeaderValue\\], cookies=\\[RespCookie=RespCookieValue\\]\\}";
+        String responsePattern = "response=\\{status=200 OK, headers=\\[RespHeader=RespHeaderValue\\, Set-Cookie=RespCookie=RespCookieValue], cookies=\\[RespCookie=RespCookieValue\\]\\}";
 
         assertThat(responseLogSupport.log(), contains(
                 loggingEvent(INFO, "requestId=" + request.id() + ", " + requestPattern),
@@ -82,7 +83,7 @@ public class HttpMessageLoggingInterceptorTest {
         consume(interceptor.intercept(request, respondWith(
                 response(OK)
                         .header("RespHeader", "RespHeaderValue")
-                        .addCookie("RespCookie", "RespCookieValue")
+                        .cookies(ResponseCookie.cookie("RespCookie", "RespCookieValue"))
         )));
 
         String requestPattern = "request=\\{method=GET, secure=false, uri=/, origin=\"N/A\"}";

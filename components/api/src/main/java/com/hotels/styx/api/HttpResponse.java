@@ -16,8 +16,9 @@
 package com.hotels.styx.api;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
+import com.hotels.styx.api.cookies.PseudoMap;
+import com.hotels.styx.api.cookies.ResponseCookie;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
@@ -26,13 +27,11 @@ import io.netty.util.ReferenceCountUtil;
 import rx.Observable;
 
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.FlowControlDisableOperator.disableFlowControl;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
@@ -42,13 +41,13 @@ import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.messages.HttpResponseStatus.statusWithCode;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
-import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.compositeBuffer;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.util.ReferenceCountUtil.release;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -59,14 +58,12 @@ public class HttpResponse implements StreamingHttpMessage {
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
     private final StyxObservable<ByteBuf> body;
-    private final List<HttpCookie> cookies;
 
     HttpResponse(Builder builder) {
         this.version = builder.version;
         this.status = builder.status;
         this.headers = builder.headers.build();
         this.body = builder.body;
-        this.cookies = ImmutableList.copyOf(builder.cookies);
     }
 
     /**
@@ -112,10 +109,6 @@ public class HttpResponse implements StreamingHttpMessage {
     @Override
     public HttpHeaders headers() {
         return headers;
-    }
-
-    public List<HttpCookie> cookies() {
-        return cookies;
     }
 
     @Override
@@ -175,16 +168,13 @@ public class HttpResponse implements StreamingHttpMessage {
         }
     }
 
-    /**
-     * Return the single cookie with the specified {@code name}.
-     *
-     * @param name cookie name
-     * @return the cookie if present
-     */
-    public Optional<HttpCookie> cookie(String name) {
-        return findCookie(cookies(), name);
+    public PseudoMap<String, ResponseCookie> cookies() {
+        return ResponseCookie.decode(headers);
     }
 
+    public Optional<ResponseCookie> cookie(String name) {
+        return cookies().firstMatch(name);
+    }
 
     @Override
     public String toString() {
@@ -192,13 +182,12 @@ public class HttpResponse implements StreamingHttpMessage {
                 .add("version", version)
                 .add("status", status)
                 .add("headers", headers)
-                .add("cookies", cookies)
                 .toString();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(version, status, headers, cookies);
+        return Objects.hashCode(version, status, headers);
     }
 
     @Override
@@ -212,8 +201,7 @@ public class HttpResponse implements StreamingHttpMessage {
         HttpResponse other = (HttpResponse) obj;
         return Objects.equal(this.version, other.version)
                 && Objects.equal(this.status, other.status)
-                && Objects.equal(this.headers, other.headers)
-                && Objects.equal(this.cookies, other.cookies);
+                && Objects.equal(this.headers, other.headers);
     }
 
     /**
@@ -225,12 +213,10 @@ public class HttpResponse implements StreamingHttpMessage {
         private HttpVersion version = HTTP_1_1;
         private boolean validate = true;
         private StyxObservable<ByteBuf> body;
-        private final List<HttpCookie> cookies;
 
         public Builder() {
             this.headers = new HttpHeaders.Builder();
             this.body = new StyxCoreObservable<>(Observable.empty());
-            this.cookies = new ArrayList<>();
         }
 
         public Builder(HttpResponseStatus status) {
@@ -243,7 +229,6 @@ public class HttpResponse implements StreamingHttpMessage {
             this.version = response.version();
             this.headers = response.headers().newBuilder();
             this.body = response.body();
-            this.cookies = new ArrayList<>(response.cookies());
         }
 
         public Builder(FullHttpResponse response, StyxObservable<ByteBuf> decoded) {
@@ -251,7 +236,6 @@ public class HttpResponse implements StreamingHttpMessage {
             this.version = httpVersion(response.version().toString());
             this.headers = response.headers().newBuilder();
             this.body = decoded;
-            this.cookies = new ArrayList<>(response.cookies());
         }
 
         /**
@@ -280,7 +264,7 @@ public class HttpResponse implements StreamingHttpMessage {
          * Sets the message body by encoding a {@link StyxObservable} of {@link String}s into bytes.
          *
          * @param contentObservable message body content.
-         * @param charset character set
+         * @param charset           character set
          * @return {@code this}
          */
         public Builder body(StyxObservable<String> contentObservable, Charset charset) {
@@ -321,37 +305,12 @@ public class HttpResponse implements StreamingHttpMessage {
             return this;
         }
 
-        /**
-         * Adds a response cookie (adds a new Set-Cookie header).
-         *
-         * @param cookie cookie to add
-         * @return {@code this}
-         */
-        public Builder addCookie(HttpCookie cookie) {
-            cookies.add(checkNotNull(cookie));
-            return this;
+        public Builder cookies(ResponseCookie... cookies) {
+            return cookies(asList(cookies));
         }
 
-        /**
-         * Adds a response cookie (adds a new Set-Cookie header).
-         *
-         * @param name  cookie name
-         * @param value cookie value
-         * @return {@code this}
-         */
-        public Builder addCookie(String name, String value) {
-            return addCookie(HttpCookie.cookie(name, value));
-        }
-
-        /**
-         * Removes a cookie if present (removes its Set-Cookie header).
-         *
-         * @param name name of the cookie
-         * @return {@code this}
-         */
-        public Builder removeCookie(String name) {
-            findCookie(cookies, name)
-                    .ifPresent(cookies::remove);
+        private Builder cookies(List<ResponseCookie> cookies) {
+            ResponseCookie.encode(headers, cookies);
             return this;
         }
 

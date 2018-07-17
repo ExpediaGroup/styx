@@ -15,24 +15,24 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.Iterables;
+import com.hotels.styx.api.cookies.ResponseCookie;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
-import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.api.HttpCookieAttribute.domain;
 import static com.hotels.styx.api.HttpCookieAttribute.maxAge;
 import static com.hotels.styx.api.HttpCookieAttribute.path;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpHeaderNames.LOCATION;
+import static com.hotels.styx.api.cookies.ResponseCookie.cookie;
 import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
@@ -53,8 +53,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -65,7 +67,7 @@ public class HttpResponseTest {
         HttpResponse response = response(CREATED)
                 .version(HTTP_1_0)
                 .header("HeaderName", "HeaderValue")
-                .addCookie("CookieName", "CookieValue")
+                .cookies(cookie("CookieName", "CookieValue"))
                 .body(body("foo", "bar"))
                 .build();
 
@@ -75,7 +77,7 @@ public class HttpResponseTest {
 
         assertThat(full.status(), is(CREATED));
         assertThat(full.version(), is(HTTP_1_0));
-        assertThat(full.headers(), contains(header("HeaderName", "HeaderValue")));
+        assertThat(full.headers(), contains(header("HeaderName", "HeaderValue"), header("Set-Cookie", "CookieName=CookieValue")));
         assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
 
         assertThat(full.body(), is(bytes("foobar")));
@@ -125,34 +127,36 @@ public class HttpResponseTest {
     @Test
     public void setsASingleOutboundCookie() {
         HttpResponse response = response()
-                .addCookie(cookie("user", "QSplbl9HX1VL", domain(".hotels.com"), path("/"), maxAge(3600)))
+                .cookies(cookie("user", "QSplbl9HX1VL", domain(".hotels.com"), path("/"), maxAge(3600)))
                 .build();
 
-        assertThat(response.cookie("user"), isValue(cookie("user", "QSplbl9HX1VL", domain(".hotels.com"), path("/"), maxAge(3600))));
+        assertThat(response.cookies().firstMatch("user"), isValue(cookie("user", "QSplbl9HX1VL", domain(".hotels.com"), path("/"), maxAge(3600))));
     }
 
     @Test
     public void setsMultipleOutboundCookies() {
         HttpResponse response = response()
-                .addCookie("a", "b")
-                .addCookie("c", "d")
+                .cookies(
+                        cookie("a", "b"),
+                        cookie("c", "d"))
                 .build();
 
-        Iterable<HttpCookie> cookies = response.cookies();
-        assertThat(Iterables.size(cookies), is(2));
+        Set<ResponseCookie> cookies = response.cookies();
 
-        assertThat(Iterables.get(cookies, 0), is(cookie("a", "b")));
-        assertThat(Iterables.get(cookies, 1), is(cookie("c", "d")));
+        assertThat(cookies, containsInAnyOrder(
+                cookie("a", "b"),
+                cookie("c", "d")));
     }
 
     @Test
     public void getASingleCookieValue() {
         HttpResponse response = response()
-                .addCookie("a", "b")
-                .addCookie("c", "d")
+                .cookies(
+                        cookie("a", "b"),
+                        cookie("c", "d"))
                 .build();
 
-        assertThat(response.cookie("c"), isValue(cookie("c", "d")));
+        assertThat(response.cookies().firstMatch("c"), isValue(cookie("c", "d")));
     }
 
     @Test
@@ -167,25 +171,6 @@ public class HttpResponseTest {
                 .build();
 
         assertThat(shouldRemoveHeader.headers(), contains(header("a", "b")));
-    }
-
-    @Test
-    public void removesACookie() {
-        HttpResponse response = new HttpResponse.Builder(seeOther("/home"))
-                .addCookie(cookie("a", "b"))
-                .addCookie(cookie("c", "d"))
-                .build();
-        HttpResponse shouldClearCookie = response.newBuilder()
-                .removeCookie("a")
-                .build();
-
-        assertThat(shouldClearCookie.cookies(), contains(cookie("c", "d")));
-    }
-
-    private static HttpResponse seeOther(String newLocation) {
-        return response(SEE_OTHER)
-                .header(LOCATION, newLocation)
-                .build();
     }
 
     @Test
@@ -260,17 +245,17 @@ public class HttpResponseTest {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookie() {
-        response().addCookie(null).build();
+        response().cookies(null).build();
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookieName() {
-        response().addCookie(null, "value").build();
+        response().cookies(cookie(null, "value")).build();
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookieValue() {
-        response().addCookie("name", null).build();
+        response().cookies(cookie("name", null)).build();
     }
 
     @DataProvider(name = "responses")

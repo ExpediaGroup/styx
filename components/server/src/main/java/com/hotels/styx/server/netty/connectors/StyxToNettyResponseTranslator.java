@@ -15,17 +15,10 @@
  */
 package com.hotels.styx.server.netty.connectors;
 
-import com.hotels.styx.api.HttpCookie;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.cookie.Cookie;
-import io.netty.handler.codec.http.cookie.DefaultCookie;
-
-import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
-import static com.hotels.styx.api.cookies.ServerCookieEncoder.LAX;
-import static java.lang.Integer.parseInt;
 
 class StyxToNettyResponseTranslator implements ResponseTranslator {
 
@@ -38,43 +31,11 @@ class StyxToNettyResponseTranslator implements ResponseTranslator {
         httpResponse.headers().forEach(httpHeader ->
                 nettyResponse.headers().add(httpHeader.name(), httpHeader.value()));
 
-        httpResponse.cookies().stream()
-                .map(StyxToNettyResponseTranslator::toNettyCookie)
-                .map(LAX::encode)
-                .forEach(setCookieHeader -> nettyResponse.headers().add(SET_COOKIE, setCookieHeader));
-
         return nettyResponse;
     }
 
-    private HttpVersion toNettyVersion(com.hotels.styx.api.messages.HttpVersion version) {
+    private static HttpVersion toNettyVersion(com.hotels.styx.api.messages.HttpVersion version) {
         return HttpVersion.valueOf(version.toString());
     }
-
-
-    private static Cookie toNettyCookie(HttpCookie cookie) {
-        Cookie nettyCookie = new DefaultCookie(cookie.name(), cookie.value());
-
-        cookie.attributes().forEach(attribute -> {
-            switch (attribute.name().toLowerCase()) {
-                case "domain":
-                    nettyCookie.setDomain(attribute.value());
-                    break;
-                case "path":
-                    nettyCookie.setPath(attribute.value());
-                    break;
-                case "max-age":
-                    nettyCookie.setMaxAge(parseInt(attribute.value()));
-                    break;
-                case "httponly":
-                    nettyCookie.setHttpOnly(true);
-                    break;
-                case "secure":
-                    nettyCookie.setSecure(true);
-                    break;
-            }
-        });
-        return nettyCookie;
-    }
-
 }
 

@@ -19,26 +19,26 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.hotels.styx.api.HttpCookieAttribute;
 import com.hotels.styx.api.HttpHeaders;
+import com.hotels.styx.api.HttpResponse;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.Iterables.isEmpty;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.hotels.styx.api.HttpCookieAttribute.domain;
-import static com.hotels.styx.api.HttpCookieAttribute.httpOnly;
-import static com.hotels.styx.api.HttpCookieAttribute.maxAge;
-import static com.hotels.styx.api.HttpCookieAttribute.path;
-import static com.hotels.styx.api.HttpCookieAttribute.secure;
+import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.common.Strings.quote;
+import static io.netty.handler.codec.http.cookie.Cookie.UNDEFINED_MAX_AGE;
+import static java.lang.Long.parseLong;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -46,25 +46,32 @@ import static java.util.stream.Collectors.toSet;
  */
 public final class ResponseCookie {
     private static final Joiner JOINER_ON_SEMI_COLON_AND_SPACE = Joiner.on("; ");
+
     private final String name;
     private final String value;
-    private final int hashCode;
-    private final Iterable<HttpCookieAttribute> attributes;
 
-    /**
-     * Constructs a cookie with a name, value and attributes.
-     *
-     * @param name       cookie name
-     * @param value      cookie value
-     * @param attributes cookie attributes
-     */
-    private ResponseCookie(String name, String value, Iterable<HttpCookieAttribute> attributes) {
-        checkArgument(!isNullOrEmpty(name), "name cannot be null or empty");
-        checkNotNull(value, "value cannot be null");
-        this.name = name;
-        this.value = value;
-        this.attributes = checkNotNull(attributes);
-        this.hashCode = Objects.hashCode(name, value, attributes);
+    // attributes
+    private final String domain;
+    private final Long maxAge;
+    private final String path;
+    private final boolean httpOnly;
+    private final boolean secure;
+    private final int hashCode;
+
+    private ResponseCookie(Builder builder) {
+        if (builder.name == null || builder.name.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+
+        this.name = builder.name;
+        this.value = builder.value;
+
+        this.domain = builder.domain;
+        this.maxAge = builder.maxAge;
+        this.path = builder.path;
+        this.httpOnly = builder.httpOnly;
+        this.secure = builder.secure;
+        this.hashCode = Objects.hashCode(name, value, domain, maxAge, path, secure, httpOnly);
     }
 
     /**
@@ -76,16 +83,16 @@ public final class ResponseCookie {
      * @return a cookie
      */
     public static ResponseCookie cookie(String name, String value, HttpCookieAttribute... attributes) {
-        return new ResponseCookie(name, value, nonNulls(attributes));
+        return cookie(name, value, nonNulls(attributes));
     }
 
     // throws exception if any values are null
-    private static <X> Collection<X> nonNulls(X... array) {
+    private static <X> Set<X> nonNulls(X... array) {
         for (X item : array) {
             checkNotNull(item);
         }
 
-        return newArrayList(array);
+        return newHashSet(array);
     }
 
     /**
@@ -97,14 +104,40 @@ public final class ResponseCookie {
      * @return a cookie
      */
     public static ResponseCookie cookie(String name, String value, Iterable<HttpCookieAttribute> attributes) {
-        return new ResponseCookie(name, value, attributes);
+        ResponseCookie.Builder builder = new ResponseCookie.Builder(name, value);
+
+        attributes.forEach(attribute -> {
+            switch (attribute.name()) {
+                case "Domain":
+                    builder.domain(attribute.value());
+                    break;
+                case "Path":
+                    builder.path(attribute.value());
+                    break;
+                case "Max-Age":
+                    builder.maxAge(parseLong(attribute.value()));
+                    break;
+                case "Secure":
+                    builder.secure(true);
+                    break;
+                case "HttpOnly":
+                    builder.httpOnly(true);
+                    break;
+            }
+        });
+
+        return builder.build();
     }
 
-    public static Set<ResponseCookie> decode(HttpHeaders headers) {
-        return headers.getAll(SET_COOKIE).stream()
+    public static PseudoMap<String, ResponseCookie> decode(HttpHeaders headers) {
+        return wrap(headers.getAll(SET_COOKIE).stream()
                 .map(ClientCookieDecoder.LAX::decode)
                 .map(ResponseCookie::convert)
-                .collect(toSet());
+                .collect(toSet()));
+    }
+
+    private static PseudoMap<String, ResponseCookie> wrap(Set<ResponseCookie> cookies) {
+        return new PseudoMap<>(cookies, (name, cookie) -> cookie.name().equals(name));
     }
 
     public static void encode(HttpHeaders.Builder headers, Collection<ResponseCookie> cookies) {
@@ -115,27 +148,41 @@ public final class ResponseCookie {
         headers.set(SET_COOKIE, ServerCookieEncoder.LAX.encode(nettyCookies));
     }
 
+    public static void encode(HttpResponse.Builder builder, ResponseCookie cookie) {
+        builder.addHeader(SET_COOKIE, ServerCookieEncoder.LAX.encode(convert(cookie)));
+    }
+
     private static Cookie convert(ResponseCookie cookie) {
-        return new DefaultCookie(cookie.name, cookie.value);
+        DefaultCookie nCookie = new DefaultCookie(cookie.name, cookie.value);
+
+        nCookie.setDomain(cookie.domain);
+        nCookie.setHttpOnly(cookie.httpOnly);
+        nCookie.setSecure(cookie.secure);
+        if (cookie.maxAge != null) {
+            nCookie.setMaxAge(cookie.maxAge);
+        }
+        nCookie.setPath(cookie.path);
+
+        return nCookie;
     }
 
     private static ResponseCookie convert(Cookie cookie) {
         Iterable<HttpCookieAttribute> attributes = new ArrayList<HttpCookieAttribute>() {
             {
                 if (!isNullOrEmpty(cookie.domain())) {
-                    add(domain(cookie.domain()));
-                }
-                if (!isNullOrEmpty(cookie.path())) {
-                    add(path(cookie.path()));
+                    add(HttpCookieAttribute.domain(cookie.domain()));
                 }
                 if (cookie.maxAge() != Long.MIN_VALUE) {
-                    add(maxAge((int) cookie.maxAge()));
+                    add(HttpCookieAttribute.maxAge((int) cookie.maxAge()));
+                }
+                if (!isNullOrEmpty(cookie.path())) {
+                    add(HttpCookieAttribute.path(cookie.path()));
                 }
                 if (cookie.isHttpOnly()) {
-                    add(httpOnly());
+                    add(HttpCookieAttribute.httpOnly());
                 }
                 if (cookie.isSecure()) {
-                    add(secure());
+                    add(HttpCookieAttribute.secure());
                 }
             }
         };
@@ -166,9 +213,33 @@ public final class ResponseCookie {
      *
      * @return cookie attributes
      */
-    public Iterable<HttpCookieAttribute> attributes() {
+    // TODO delete after clean-up
+    public Set<HttpCookieAttribute> attributes() {
+        Set<HttpCookieAttribute> attributes = new HashSet<>();
+
+        if (!isNullOrEmpty(domain)) {
+            attributes.add(HttpCookieAttribute.domain(domain));
+        }
+
+        if (!isNullOrEmpty(path)) {
+            attributes.add(HttpCookieAttribute.path(path));
+        }
+
+        if (maxAge != null && maxAge != UNDEFINED_MAX_AGE) {
+            attributes.add(HttpCookieAttribute.maxAge(maxAge.intValue()));
+        }
+
+        if (secure) {
+            attributes.add(HttpCookieAttribute.secure());
+        }
+
+        if (httpOnly) {
+            attributes.add(HttpCookieAttribute.httpOnly());
+        }
+
         return attributes;
     }
+
 
     @Override
     public int hashCode() {
@@ -184,7 +255,7 @@ public final class ResponseCookie {
             return false;
         }
         ResponseCookie other = (ResponseCookie) obj;
-        return Objects.equal(name, other.name) && Objects.equal(value, other.value) && Objects.equal(attributes, other.attributes);
+        return Objects.equal(name, other.name) && Objects.equal(value, other.value) && Objects.equal(attributes(), other.attributes());
     }
 
     @Override
@@ -193,8 +264,88 @@ public final class ResponseCookie {
                 .append(name)
                 .append('=')
                 .append(value)
-                .append(isEmpty(attributes) ? "" : "; ");
+                .append(isEmpty(attributes()) ? "" : "; ");
 
-        return JOINER_ON_SEMI_COLON_AND_SPACE.appendTo(builder, attributes).toString();
+        return JOINER_ON_SEMI_COLON_AND_SPACE.appendTo(builder, attributes()).toString();
     }
+
+    public Optional<Long> maxAge() {
+        return Optional.ofNullable(maxAge).filter(value -> value != UNDEFINED_MAX_AGE);
+    }
+
+    public Optional<String> path() {
+        return Optional.ofNullable(path);
+    }
+
+    public boolean httpOnly() {
+        return httpOnly;
+    }
+
+    public Optional<String> domain() {
+        return Optional.ofNullable(domain);
+    }
+
+    public boolean secure() {
+        return secure;
+    }
+
+    /**
+     * Builds response cookie.
+     */
+    public static class Builder {
+        private String name;
+        private String value;
+
+        // attributes
+        private String domain;
+        private Long maxAge;
+        private String path;
+        private boolean httpOnly;
+        private boolean secure;
+
+        public Builder(String name, String value) {
+            this.name = requireNonNull(name);
+            this.value = requireNonNull(value);
+        }
+
+        public Builder name(String name) {
+            this.name = requireNonNull(name);
+            return this;
+        }
+
+        public Builder value(String value) {
+            this.value = requireNonNull(value);
+            return this;
+        }
+
+        public Builder domain(String domain) {
+            this.domain = requireNonNull(domain);
+            return this;
+        }
+
+        public Builder maxAge(long maxAge) {
+            this.maxAge = maxAge;
+            return this;
+        }
+
+        public Builder path(String path) {
+            this.path = requireNonNull(path);
+            return this;
+        }
+
+        public Builder httpOnly(boolean httpOnly) {
+            this.httpOnly = httpOnly;
+            return this;
+        }
+
+        public Builder secure(boolean secure) {
+            this.secure = secure;
+            return this;
+        }
+
+        public ResponseCookie build() {
+            return new ResponseCookie(this);
+        }
+    }
+
 }

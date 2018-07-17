@@ -106,7 +106,12 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
 
     val response = waitForResponse(client.sendRequest(request))
     response.status() should be(OK)
-    response.cookie("styx_origin_app").get().toString should fullyMatch regex "styx_origin_app=app-0[12]; Max-Age=.*; Path=/; HttpOnly"
+    val cookie = response.cookie("styx_origin_app").get()
+    cookie.value() should fullyMatch regex "app-0[12]"
+
+    cookie.path().get() should be("/")
+    cookie.httpOnly() should be(true)
+    cookie.maxAge().isPresent should be(true)
   }
 
   test("Responds without sticky session cookie when sticky session is not enabled") {
@@ -175,7 +180,14 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
 
     response.status() should be(OK)
     response.cookies().asScala should have size (1)
-    response.cookie("styx_origin_app").get().toString should fullyMatch regex "styx_origin_app=app-0[12]; Max-Age=.*; Path=/; HttpOnly"
+
+    val cookie = response.cookie("styx_origin_app").get()
+
+    cookie.value() should fullyMatch regex "app-0[12]"
+
+    cookie.path().get() should be("/")
+    cookie.httpOnly() should be(true)
+    cookie.maxAge().isPresent should be(true)
   }
 
   test("Routes to new origin when the origin indicated by sticky session cookie is no longer available.") {
@@ -192,8 +204,14 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
     val response = waitForResponse(client.sendRequest(request))
 
     response.status() should be(OK)
-    response.cookies() should have size (1)
-    response.cookie("styx_origin_app").get().toString should fullyMatch regex "styx_origin_app=app-02; Max-Age=.*; Path=/; HttpOnly"
+    response.cookies() should have size 1
+    val cookie = response.cookie("styx_origin_app").get()
+
+    cookie.value() should be("app-02")
+
+    cookie.path().get() should be("/")
+    cookie.httpOnly() should be(true)
+    cookie.maxAge().isPresent should be(true)
   }
 
   private def healthCheckIntervalFor(appId: String) = 1000

@@ -21,12 +21,12 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.api.HttpCookieAttribute.domain;
 import static com.hotels.styx.api.HttpCookieAttribute.httpOnly;
 import static com.hotels.styx.api.HttpCookieAttribute.maxAge;
 import static com.hotels.styx.api.HttpCookieAttribute.path;
 import static com.hotels.styx.api.HttpCookieAttribute.secure;
+import static com.hotels.styx.api.cookies.ResponseCookie.cookie;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static java.util.Collections.singleton;
@@ -59,7 +59,7 @@ public class StyxToNettyResponseTranslatorTest {
     @Test(dataProvider = "attributes")
     public void shouldCreateNettyResponseWithCookieWithAttributes(HttpCookieAttribute attribute, String attributeString) {
         HttpResponse styxResponse = new HttpResponse.Builder(OK)
-                .addCookie(cookie("cookie-test", "cookie-value", singleton(attribute)))
+                .cookies(cookie("cookie-test", "cookie-value", singleton(attribute)))
                 .build();
         io.netty.handler.codec.http.HttpResponse nettyResponse = translator.toNettyResponse(styxResponse);
         assertTrue(nettyResponse.headers().containsValue("Set-Cookie", "cookie-test=cookie-value; " + attributeString,
@@ -79,7 +79,7 @@ public class StyxToNettyResponseTranslatorTest {
     @Test()
     public void shouldCreateNettyResponseWithCookieWithMaxAge() {
         HttpResponse styxResponse = new HttpResponse.Builder(OK)
-                .addCookie(cookie("cookie-test", "cookie-value", singleton(maxAge(1))))
+                .cookies(cookie("cookie-test", "cookie-value", singleton(maxAge(1))))
                 .build();
         io.netty.handler.codec.http.HttpResponse nettyResponse = translator.toNettyResponse(styxResponse);
         assertTrue(nettyResponse.headers().get("Set-Cookie").startsWith("cookie-test=cookie-value; Max-Age=1; Expires="));

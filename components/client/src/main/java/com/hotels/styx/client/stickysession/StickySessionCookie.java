@@ -16,14 +16,14 @@
 package com.hotels.styx.client.stickysession;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpCookieAttribute;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.cookies.ResponseCookie;
 
-import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.api.HttpCookieAttribute.httpOnly;
 import static com.hotels.styx.api.HttpCookieAttribute.maxAge;
 import static com.hotels.styx.api.HttpCookieAttribute.path;
+import static com.hotels.styx.api.cookies.ResponseCookie.cookie;
 
 /**
  * Provides methods for handling sticky-session cookies used to identify which origin has "stuck".
@@ -40,7 +40,7 @@ public final class StickySessionCookie {
      * @param maxAge maxAge attribute for cookie
      * @return a new cookie
      */
-    public static HttpCookie newStickySessionCookie(Id applicationId, Id originId, int maxAge) {
+    public static ResponseCookie newStickySessionCookie(Id applicationId, Id originId, int maxAge) {
         return cookie(stickySessionCookieName(applicationId), originId.toString(), attributes(maxAge));
     }
 

@@ -43,15 +43,16 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.base.Charsets.UTF_8;
-import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.api.HttpCookieAttribute.domain;
 import static com.hotels.styx.api.HttpCookieAttribute.httpOnly;
 import static com.hotels.styx.api.HttpCookieAttribute.path;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.cookies.ResponseCookie.cookie;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
 import static com.hotels.styx.client.netty.connectionpool.NettyToStyxResponsePropagator.toStyxResponse;
+import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -244,8 +245,8 @@ public class NettyToStyxResponsePropagatorTest {
         nettyResponse.headers().add("Set-Cookie", "SESSID=sessId; Domain=.foo.com; Path=/; HttpOnly");
         HttpResponse styxResponse = toStyxResponse(nettyResponse).build();
 
-        assertThat(styxResponse.header("Set-Cookie"), is(Optional.empty()));
-        assertThat(styxResponse.cookie("SESSID"), equalTo(
+        assertThat(styxResponse.header("Set-Cookie"), isValue("SESSID=sessId; Domain=.foo.com; Path=/; HttpOnly"));
+        assertThat(styxResponse.cookies().firstMatch("SESSID"), equalTo(
                 Optional.of(cookie("SESSID", "sessId", domain(".foo.com"), path("/"), httpOnly()))));
     }
 
@@ -255,8 +256,8 @@ public class NettyToStyxResponsePropagatorTest {
         nettyResponse.headers().add("Set-Cookie", "SESSID=\"sessId\"; Domain=.foo.com; Path=/; HttpOnly");
         HttpResponse styxResponse = toStyxResponse(nettyResponse).build();
 
-        assertThat(styxResponse.header("Set-Cookie"), is(Optional.empty()));
-        assertThat(styxResponse.cookie("SESSID"), equalTo(
+        assertThat(styxResponse.header("Set-Cookie"), isValue("SESSID=\"sessId\"; Domain=.foo.com; Path=/; HttpOnly"));
+        assertThat(styxResponse.cookies().firstMatch("SESSID"), equalTo(
                 Optional.of(cookie("SESSID", "\"sessId\"", domain(".foo.com"), path("/"), httpOnly()))));
     }
 

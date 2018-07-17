@@ -25,6 +25,7 @@ import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.cookies.RequestCookie;
+import com.hotels.styx.api.cookies.ResponseCookie;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.metrics.MetricRegistry;
@@ -309,12 +310,16 @@ public final class StyxHttpClient implements HttpClient {
     private HttpResponse addStickySessionIdentifier(HttpResponse httpResponse, Origin origin) {
         if (this.loadBalancer instanceof StickySessionLoadBalancingStrategy) {
             int maxAge = backendService.stickySessionConfig().stickySessionTimeoutSeconds();
-            return httpResponse.newBuilder()
-                    .addCookie(newStickySessionCookie(id, origin.id(), maxAge))
-                    .build();
+            return addCookie(httpResponse, newStickySessionCookie(id, origin.id(), maxAge));
         } else {
             return httpResponse;
         }
+    }
+
+    private static HttpResponse addCookie(HttpResponse response, ResponseCookie cookie) {
+        HttpResponse.Builder builder = response.newBuilder();
+        ResponseCookie.encode(builder, cookie);
+        return builder.build();
     }
 
     private HttpRequest rewriteUrl(HttpRequest request) {

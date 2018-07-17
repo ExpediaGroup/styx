@@ -32,7 +32,7 @@ public class ResponseCookieTest {
         cookie("", "value", domain(".hotels.com"));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void acceptsOnlyNonNullName() {
         cookie(null, "value", domain(".hotels.com"));
     }
