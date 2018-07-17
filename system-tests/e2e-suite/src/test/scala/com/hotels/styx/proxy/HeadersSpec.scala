@@ -21,10 +21,10 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.HttpCookieAttribute.{domain, httpOnly, path}
 import com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_FOR
-import com.hotels.styx.api.cookies.{RequestCookie, ResponseCookie}
+import com.hotels.styx.api.HttpHeaderValues
 import com.hotels.styx.api.cookies.RequestCookie.cookie
+import com.hotels.styx.api.cookies.ResponseCookie
 import com.hotels.styx.api.messages.HttpResponseStatus._
-import com.hotels.styx.api.{HttpCookie, HttpHeaderValues}
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}

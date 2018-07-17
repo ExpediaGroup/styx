@@ -42,7 +42,6 @@ import static com.hotels.styx.api.messages.HttpMethod.PATCH;
 import static com.hotels.styx.api.messages.HttpMethod.POST;
 import static com.hotels.styx.api.messages.HttpMethod.PUT;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
-import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
 import static java.lang.Integer.parseInt;
 import static java.net.InetSocketAddress.createUnresolved;
 import static java.util.Arrays.asList;
@@ -463,7 +462,6 @@ public class FullHttpRequest implements FullHttpMessage {
          * @return {@code this}
          */
         public Builder header(CharSequence name, Object value) {
-            checkNotCookie(name);
             this.headers.set(name, value);
             return this;
         }
@@ -489,7 +487,6 @@ public class FullHttpRequest implements FullHttpMessage {
          * @return {@code this}
          */
         public Builder addHeader(CharSequence name, Object value) {
-            checkNotCookie(name);
             this.headers.add(name, value);
             return this;
         }
@@ -605,10 +602,6 @@ public class FullHttpRequest implements FullHttpMessage {
 
         private void ensureMethodIsValid() {
             checkArgument(isMethodValid(), "Unrecognised HTTP method=%s", this.method);
-        }
-
-        private static void checkNotCookie(CharSequence name) {
-            checkArgument(!isCookieHeader(name.toString()), "Cookies must be set with addCookie method");
         }
 
         private boolean isMethodValid() {

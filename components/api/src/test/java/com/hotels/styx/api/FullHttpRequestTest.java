@@ -397,16 +397,6 @@ public class FullHttpRequestTest {
         assertThat(shouldRemoveHeader.headers(), contains(header("a", "b")));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "cookieHeaderName")
-    public void willNotAllowCookieHeaderToBeSet(CharSequence cookieHeaderName) {
-        get("/").header(cookieHeaderName, "Value");
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "cookieHeaderName")
-    public void willNotAllowCookieHeaderToBeAdded(CharSequence cookieHeaderName) {
-        get("/").addHeader(cookieHeaderName, "Value");
-    }
-
     @DataProvider(name = "cookieHeaderName")
     private Object[][] cookieHeaderName() {
         return new Object[][]{
