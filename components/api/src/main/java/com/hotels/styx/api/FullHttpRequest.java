@@ -24,16 +24,21 @@ import rx.Observable;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
+import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
+import static com.hotels.styx.api.cookies.RequestCookie.encode;
 import static com.hotels.styx.api.messages.HttpMethod.DELETE;
 import static com.hotels.styx.api.messages.HttpMethod.GET;
 import static com.hotels.styx.api.messages.HttpMethod.HEAD;
@@ -155,6 +160,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Because FullHttpRequest is an immutable object, the returned byte array
      * reference cannot be used to modify the message content.
      * <p>
+     *
      * @return Message body content
      */
     @Override
@@ -164,12 +170,12 @@ public class FullHttpRequest implements FullHttpMessage {
 
     /**
      * Returns the message body as a String decoded with provided character set.
-     *
+     * <p>
      * Decodes the message body into a Java String object with a provided charset.
      * The caller must ensure the provided charset is compatible with message content
      * type and encoding.
      *
-     * @param charset     Charset used to decode message body.
+     * @param charset Charset used to decode message body.
      * @return Message body as a String.
      */
     @Override
@@ -293,7 +299,7 @@ public class FullHttpRequest implements FullHttpMessage {
 
     /**
      * Converts this request into a streaming form (HttpRequest).
-     *
+     * <p>
      * Converts this request into a HttpRequest object which represents the HTTP request as a
      * stream of bytes.
      *
@@ -312,7 +318,17 @@ public class FullHttpRequest implements FullHttpMessage {
     }
 
     public PseudoMap<String, RequestCookie> cookies() {
-        return RequestCookie.decode(headers);
+        // Note: there should only be one "Cookie" header, but we check for multiples just in case
+        // the alternative would be to respond with a 400 Bad Request status if multiple "Cookie" headers were detected
+
+        return wrap(headers.getAll(COOKIE).stream()
+                .map(RequestCookie::decode)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet()));
+    }
+
+    private static PseudoMap<String, RequestCookie> wrap(Set<RequestCookie> cookies) {
+        return new PseudoMap<>(cookies, (name, cookie) -> cookie.name().equals(name));
     }
 
     @Override
@@ -390,7 +406,7 @@ public class FullHttpRequest implements FullHttpMessage {
 
         /**
          * Sets the request body.
-         *
+         * <p>
          * This method encodes a String content to a byte array using the specified
          * charset, and sets the Content-Length header accordingly.
          *
@@ -404,13 +420,13 @@ public class FullHttpRequest implements FullHttpMessage {
 
         /**
          * Sets the request body.
-         *
+         * <p>
          * This method encodes the content to a byte array using the specified
          * charset, and sets the Content-Length header *if* the setContentLength
          * argument is true.
          *
-         * @param content request body
-         * @param charset Charset used for encoding request body.
+         * @param content          request body
+         * @param charset          Charset used for encoding request body.
          * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
          * @return {@code this}
          */
@@ -422,12 +438,12 @@ public class FullHttpRequest implements FullHttpMessage {
 
         /**
          * Sets the request body.
-         *
+         * <p>
          * This method encodes the content to a byte array provided, and
          * sets the Content-Length header *if* the setContentLength
          * argument is true.
          *
-         * @param content request body
+         * @param content          request body
          * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
          * @return {@code this}
          */
@@ -541,9 +557,12 @@ public class FullHttpRequest implements FullHttpMessage {
         }
 
         private Builder cookies(List<RequestCookie> cookies) {
-            RequestCookie.encode(headers, cookies);
+            if (!cookies.isEmpty()) {
+                header(COOKIE, encode(cookies));
+            }
             return this;
         }
+
         /**
          * Sets whether the request is be secure.
          *

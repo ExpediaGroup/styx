@@ -16,7 +16,6 @@
 package com.hotels.styx.api.cookies;
 
 import com.google.common.base.Objects;
-import com.hotels.styx.api.HttpHeaders;
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
@@ -27,7 +26,6 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.common.Strings.quote;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
@@ -65,26 +63,22 @@ public final class RequestCookie {
         return new RequestCookie(name, value);
     }
 
-    public static PseudoMap<String, RequestCookie> decode(HttpHeaders headers) {
-        return wrap(headers.getAll(COOKIE).stream()
-                .map(ServerCookieDecoder.LAX::decode)
-                .flatMap(Collection::stream)
+    public static Set<RequestCookie> decode(String headerValue) {
+        return ServerCookieDecoder.LAX.decode(headerValue).stream()
                 .map(RequestCookie::convert)
-                .collect(toSet()));
+                .collect(toSet());
     }
 
-    public static void encode(HttpHeaders.Builder headers, Collection<RequestCookie> cookies) {
+    public static String encode(Collection<RequestCookie> cookies) {
+        if (cookies.isEmpty()) {
+            throw new IllegalArgumentException("Cannot create cookie header value from zero cookies");
+        }
+
         Set<Cookie> nettyCookies = cookies.stream()
                 .map(RequestCookie::convert)
                 .collect(toSet());
 
-        if (!nettyCookies.isEmpty()) {
-            headers.set(COOKIE, ClientCookieEncoder.LAX.encode(nettyCookies));
-        }
-    }
-
-    private static PseudoMap<String, RequestCookie> wrap(Set<RequestCookie> cookies) {
-        return new PseudoMap<>(cookies, (name, cookie) -> cookie.name().equals(name));
+        return ClientCookieEncoder.LAX.encode(nettyCookies);
     }
 
     private static Cookie convert(RequestCookie cookie) {

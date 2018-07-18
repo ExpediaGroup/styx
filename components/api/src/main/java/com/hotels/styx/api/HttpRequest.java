@@ -24,17 +24,22 @@ import io.netty.buffer.CompositeByteBuf;
 import rx.Observable;
 
 import java.net.InetSocketAddress;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.FlowControlDisableOperator.disableFlowControl;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
+import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
+import static com.hotels.styx.api.cookies.RequestCookie.encode;
 import static com.hotels.styx.api.messages.HttpMethod.DELETE;
 import static com.hotels.styx.api.messages.HttpMethod.GET;
 import static com.hotels.styx.api.messages.HttpMethod.HEAD;
@@ -55,7 +60,6 @@ import static java.net.InetSocketAddress.createUnresolved;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
-import static java.util.stream.Collectors.toSet;
 
 /**
  * HTTP request with a fully aggregated/decoded body.
@@ -343,7 +347,17 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     public PseudoMap<String, RequestCookie> cookies() {
-        return RequestCookie.decode(headers);
+        // Note: there should only be one "Cookie" header, but we check for multiples just in case
+        // the alternative would be to respond with a 400 Bad Request status if multiple "Cookie" headers were detected
+
+        return wrap(headers.getAll(COOKIE).stream()
+                .map(RequestCookie::decode)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet()));
+    }
+
+    private static PseudoMap<String, RequestCookie> wrap(Set<RequestCookie> cookies) {
+        return new PseudoMap<>(cookies, (name, cookie) -> cookie.name().equals(name));
     }
 
     @Override
@@ -419,9 +433,6 @@ public class HttpRequest implements StreamingHttpMessage {
             this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = StyxCoreObservable.of(copiedBuffer(request.body()));
-            RequestCookie.encode(headers, request.cookies().stream()
-                    .map(cookie -> RequestCookie.requestCookie(cookie.name(), cookie.value()))
-                    .collect(toSet()));
         }
 
         /**
@@ -580,7 +591,9 @@ public class HttpRequest implements StreamingHttpMessage {
         }
 
         private Builder cookies(List<RequestCookie> cookies) {
-            RequestCookie.encode(headers, cookies);
+            if (!cookies.isEmpty()) {
+                header(COOKIE, encode(cookies));
+            }
             return this;
         }
 

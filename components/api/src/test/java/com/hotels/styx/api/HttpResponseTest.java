@@ -73,7 +73,7 @@ public class HttpResponseTest {
 
         assertThat(full.status(), is(CREATED));
         assertThat(full.version(), is(HTTP_1_0));
-        assertThat(full.headers(), contains(header("HeaderName", "HeaderValue"), header("Set-Cookie", "CookieName=CookieValue")));
+        assertThat(full.headers(), containsInAnyOrder(header("HeaderName", "HeaderValue"), header("Set-Cookie", "CookieName=CookieValue")));
         assertThat(full.cookies(), contains(responseCookie("CookieName", "CookieValue").build()));
 
         assertThat(full.body(), is(bytes("foobar")));

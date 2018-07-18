@@ -26,13 +26,17 @@ import rx.Observable;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
+import static com.hotels.styx.api.cookies.ResponseCookie.decode;
+import static com.hotels.styx.api.cookies.ResponseCookie.encode;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static io.netty.buffer.Unpooled.copiedBuffer;
@@ -151,7 +155,11 @@ public class FullHttpResponse implements FullHttpMessage {
     }
 
     public PseudoMap<String, ResponseCookie> cookies() {
-        return ResponseCookie.decode(headers);
+        return wrap(decode(headers.getAll(SET_COOKIE)));
+    }
+
+    private static PseudoMap<String, ResponseCookie> wrap(Set<ResponseCookie> cookies) {
+        return new PseudoMap<>(cookies, (name, cookie) -> cookie.name().equals(name));
     }
 
     public Optional<ResponseCookie> cookie(String name) {
@@ -323,7 +331,8 @@ public class FullHttpResponse implements FullHttpMessage {
         }
 
         private Builder cookies(List<ResponseCookie> cookies) {
-            ResponseCookie.encode(headers, cookies);
+            encode(cookies).forEach(cookie ->
+                    addHeader(SET_COOKIE, cookie));
             return this;
         }
 

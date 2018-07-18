@@ -15,19 +15,18 @@
  */
 package com.hotels.styx.api.cookies;
 
-import com.hotels.styx.api.HttpHeaders;
-import com.hotels.styx.api.HttpResponse;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.common.Strings.quote;
 import static io.netty.handler.codec.http.cookie.Cookie.UNDEFINED_MAX_AGE;
 import static java.util.Objects.hash;
@@ -69,23 +68,23 @@ public final class ResponseCookie {
         return new ResponseCookie.Builder(name, value);
     }
 
-    public static PseudoMap<String, ResponseCookie> decode(HttpHeaders headers) {
-        return wrap(headers.getAll(SET_COOKIE).stream()
+    public static Set<ResponseCookie> decode(List<String> headerValues) {
+        return headerValues.stream()
                 .map(ClientCookieDecoder.LAX::decode)
                 .map(ResponseCookie::convert)
-                .collect(toSet()));
+                .collect(Collectors.toSet());
     }
 
-    public static void encode(HttpHeaders.Builder headers, Collection<ResponseCookie> cookies) {
+    public static List<String> encode(Collection<ResponseCookie> cookies) {
         Set<Cookie> nettyCookies = cookies.stream()
                 .map(ResponseCookie::convert)
                 .collect(toSet());
 
-        headers.set(SET_COOKIE, ServerCookieEncoder.LAX.encode(nettyCookies));
+        return ServerCookieEncoder.LAX.encode(nettyCookies);
     }
 
-    public static void encode(HttpResponse.Builder builder, ResponseCookie cookie) {
-        builder.addHeader(SET_COOKIE, ServerCookieEncoder.LAX.encode(convert(cookie)));
+    public static String encode(ResponseCookie cookie) {
+        return ServerCookieEncoder.LAX.encode(convert(cookie));
     }
 
     /**
@@ -124,10 +123,6 @@ public final class ResponseCookie {
 
     public boolean secure() {
         return secure;
-    }
-
-    private static PseudoMap<String, ResponseCookie> wrap(Set<ResponseCookie> cookies) {
-        return new PseudoMap<>(cookies, (name, cookie) -> cookie.name().equals(name));
     }
 
     private static Cookie convert(ResponseCookie cookie) {

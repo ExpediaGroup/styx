@@ -49,6 +49,7 @@ import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
+import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
@@ -317,9 +318,9 @@ public final class StyxHttpClient implements HttpClient {
     }
 
     private static HttpResponse addCookie(HttpResponse response, ResponseCookie cookie) {
-        HttpResponse.Builder builder = response.newBuilder();
-        ResponseCookie.encode(builder, cookie);
-        return builder.build();
+        return response.newBuilder()
+                .addHeader(SET_COOKIE, ResponseCookie.encode(cookie))
+                .build();
     }
 
     private HttpRequest rewriteUrl(HttpRequest request) {
