@@ -19,11 +19,10 @@ import _root_.io.netty.handler.codec.http.HttpHeaders.Names.{UPGRADE, _}
 import _root_.io.netty.handler.codec.http.HttpHeaders.Values._
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.FullHttpRequest.get
-import com.hotels.styx.api.HttpCookieAttribute.{domain, httpOnly, path}
 import com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_FOR
 import com.hotels.styx.api.HttpHeaderValues
 import com.hotels.styx.api.cookies.RequestCookie.cookie
-import com.hotels.styx.api.cookies.ResponseCookie
+import com.hotels.styx.api.cookies.ResponseCookie.responseCookie
 import com.hotels.styx.api.messages.HttpResponseStatus._
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -398,7 +397,7 @@ class HeadersSpec extends FunSpec
           .withHeader("Cookie", equalTo("test-cookie=\"hu_hotels_com,HCOM_HU,hu_HU,\""))
           .withHeader("Host", equalTo(styxServer.proxyHost)))
 
-        assert(resp.cookie("test-cookie").get == ResponseCookie.cookie("test-cookie", "\"hu_hotels_com,HCOM_HU,hu_HU,\"", domain(".example.com"), path("/")))
+        assert(resp.cookie("test-cookie").get == responseCookie("test-cookie", "\"hu_hotels_com,HCOM_HU,hu_HU,\"").domain(".example.com").path("/").build())
       }
 
       it("should handle http only cookies") {
@@ -417,8 +416,8 @@ class HeadersSpec extends FunSpec
 
         val resp = decodedRequest(req)
         assert(resp.cookies().size() == 2)
-        assert(resp.cookie("abc").get == ResponseCookie.cookie("abc", "1", domain(".example.com"), path("/")))
-        assert(resp.cookie("SESSID").get == ResponseCookie.cookie("SESSID", "sessid", domain(".example.com"), path("/"), httpOnly()))
+        assert(resp.cookie("abc").get == responseCookie("abc", "1").domain(".example.com").path("/").build())
+        assert(resp.cookie("SESSID").get == responseCookie("SESSID", "sessid").domain(".example.com").path("/").httpOnly(true).build())
 
       }
     }

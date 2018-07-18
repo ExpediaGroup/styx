@@ -16,6 +16,7 @@
 package com.hotels.styx.client.netty;
 
 import ch.qos.logback.classic.Level;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Origin;
@@ -25,7 +26,6 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import com.hotels.styx.api.HttpRequest;
 
 import static ch.qos.logback.classic.Level.INFO;
 import static ch.qos.logback.classic.Level.WARN;
@@ -78,7 +78,7 @@ public class HttpRequestMessageLoggerTest {
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", true).logRequest(styxRequest, origin);
 
         assertThat(log.lastMessage(), is(loggingEvent(INFO,
-                format("requestId=%s, request=\\{method=GET, secure=false, uri=%s, origin=\"%s\", headers=\\[Host=www.hotels.com\\], cookies=\\[\\]\\}",
+                format("requestId=%s, request=\\{method=GET, secure=false, uri=%s, origin=\"%s\", headers=\\[Host=www.hotels.com\\]\\}",
                         styxRequest.id(), styxRequest.url(), origin.hostAsString()))));
     }
 
@@ -97,7 +97,7 @@ public class HttpRequestMessageLoggerTest {
         HttpResponse styxResponse = response(OK).build();
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", true).logResponse(styxRequest, styxResponse);
 
-        assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, response=\\{status=200 OK\\, headers=\\[\\], cookies=\\[\\]}", styxRequest.id()))));
+        assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, response=\\{status=200 OK\\, headers=\\[\\]}", styxRequest.id()))));
     }
 
     @Test

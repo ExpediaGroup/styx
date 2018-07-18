@@ -113,10 +113,10 @@ class HttpMessageLoggingSpec extends FunSpec
         assertThat(logger.log.size(), is(2))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, request=\\{method=GET, secure=false, uri=http://localhost:[0-9]+/foobar, origin=\"N/A\", headers=\\[Host=localhost:[0-9]+\\], cookies=\\[\\]}")))
+          "requestId=[-a-z0-9]+, request=\\{method=GET, secure=false, uri=http://localhost:[0-9]+/foobar, origin=\"N/A\", headers=\\[Host=localhost:[0-9]+\\]}")))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, response=\\{status=200 OK, headers=\\[Server=Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + "=generic-app-01, Via=1.1 styx\\], cookies=\\[\\]\\}")))
+          "requestId=[-a-z0-9]+, response=\\{status=200 OK, headers=\\[Server=Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + "=generic-app-01, Via=1.1 styx\\]\\}")))
       }
     }
 
@@ -131,10 +131,10 @@ class HttpMessageLoggingSpec extends FunSpec
         assertThat(logger.log.size(), is(2))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, request=\\{method=GET, secure=true, uri=https://localhost:[0-9]+/foobar, origin=\"N/A\", headers=.*, cookies=\\[\\]}")))
+          "requestId=[-a-z0-9]+, request=\\{method=GET, secure=true, uri=https://localhost:[0-9]+/foobar, origin=\"N/A\", headers=.*}")))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, response=\\{status=200 OK, headers=\\[Server=Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + "=generic-app-01, Via=1.1 styx\\], cookies=\\[\\]\\}")))
+          "requestId=[-a-z0-9]+, response=\\{status=200 OK, headers=\\[Server=Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + "=generic-app-01, Via=1.1 styx\\]\\}")))
       }
     }
   }

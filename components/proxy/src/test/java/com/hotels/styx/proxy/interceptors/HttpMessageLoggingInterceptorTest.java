@@ -64,8 +64,8 @@ public class HttpMessageLoggingInterceptorTest {
                 .cookies(ResponseCookie.cookie("RespCookie", "RespCookieValue"))
         )));
 
-        String requestPattern = "request=\\{method=GET, secure=false, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\], cookies=\\[ReqCookie=ReqCookieValue\\]\\}";
-        String responsePattern = "response=\\{status=200 OK, headers=\\[RespHeader=RespHeaderValue\\, Set-Cookie=RespCookie=RespCookieValue], cookies=\\[RespCookie=RespCookieValue\\]\\}";
+        String requestPattern = "request=\\{method=GET, secure=false, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\]\\}";
+        String responsePattern = "response=\\{status=200 OK, headers=\\[RespHeader=RespHeaderValue\\, Set-Cookie=RespCookie=RespCookieValue]\\}";
 
         assertThat(responseLogSupport.log(), contains(
                 loggingEvent(INFO, "requestId=" + request.id() + ", " + requestPattern),
@@ -104,8 +104,8 @@ public class HttpMessageLoggingInterceptorTest {
 
         consume(interceptor.intercept(request, respondWith(response(OK))));
 
-        String requestPattern = "request=\\{method=GET, secure=true, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\], cookies=\\[ReqCookie=ReqCookieValue\\]\\}";
-        String responsePattern = "response=\\{status=200 OK, headers=\\[\\], cookies=\\[\\]\\}";
+        String requestPattern = "request=\\{method=GET, secure=true, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\]\\}";
+        String responsePattern = "response=\\{status=200 OK, headers=\\[\\]\\}";
 
         assertThat(responseLogSupport.log(), contains(
                 loggingEvent(INFO, "requestId=" + request.id() + ", " + requestPattern),

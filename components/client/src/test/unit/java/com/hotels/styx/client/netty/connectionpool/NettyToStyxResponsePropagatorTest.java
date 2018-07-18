@@ -43,13 +43,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.base.Charsets.UTF_8;
-import static com.hotels.styx.api.HttpCookieAttribute.domain;
-import static com.hotels.styx.api.HttpCookieAttribute.httpOnly;
-import static com.hotels.styx.api.HttpCookieAttribute.path;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.cookies.ResponseCookie.cookie;
+import static com.hotels.styx.api.cookies.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
 import static com.hotels.styx.client.netty.connectionpool.NettyToStyxResponsePropagator.toStyxResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
@@ -247,7 +244,11 @@ public class NettyToStyxResponsePropagatorTest {
 
         assertThat(styxResponse.header("Set-Cookie"), isValue("SESSID=sessId; Domain=.foo.com; Path=/; HttpOnly"));
         assertThat(styxResponse.cookies().firstMatch("SESSID"), equalTo(
-                Optional.of(cookie("SESSID", "sessId", domain(".foo.com"), path("/"), httpOnly()))));
+                Optional.of(responseCookie("SESSID", "sessId")
+                        .domain(".foo.com")
+                        .path("/")
+                        .httpOnly(true)
+                        .build())));
     }
 
     @Test
@@ -258,7 +259,11 @@ public class NettyToStyxResponsePropagatorTest {
 
         assertThat(styxResponse.header("Set-Cookie"), isValue("SESSID=\"sessId\"; Domain=.foo.com; Path=/; HttpOnly"));
         assertThat(styxResponse.cookies().firstMatch("SESSID"), equalTo(
-                Optional.of(cookie("SESSID", "\"sessId\"", domain(".foo.com"), path("/"), httpOnly()))));
+                Optional.of(responseCookie("SESSID", "\"sessId\"")
+                        .domain(".foo.com")
+                        .path("/")
+                        .httpOnly(true)
+                        .build())));
     }
 
     @Test
