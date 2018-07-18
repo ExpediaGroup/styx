@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api.cookies;
 
-import com.google.common.base.Joiner;
 import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.HttpResponse;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
@@ -39,8 +38,6 @@ import static java.util.stream.Collectors.toSet;
  * Represents an HTTP cookie as sent in the {@code Set-Cookie} header.
  */
 public final class ResponseCookie {
-    private static final Joiner JOINER_ON_SEMI_COLON_AND_SPACE = Joiner.on("; ");
-
     private final String name;
     private final String value;
 
@@ -90,10 +87,6 @@ public final class ResponseCookie {
                 .collect(toSet()));
     }
 
-    private static PseudoMap<String, ResponseCookie> wrap(Set<ResponseCookie> cookies) {
-        return new PseudoMap<>(cookies, (name, cookie) -> cookie.name().equals(name));
-    }
-
     public static void encode(HttpHeaders.Builder headers, Collection<ResponseCookie> cookies) {
         Set<Cookie> nettyCookies = cookies.stream()
                 .map(ResponseCookie::convert)
@@ -104,6 +97,48 @@ public final class ResponseCookie {
 
     public static void encode(HttpResponse.Builder builder, ResponseCookie cookie) {
         builder.addHeader(SET_COOKIE, ServerCookieEncoder.LAX.encode(convert(cookie)));
+    }
+
+    /**
+     * Returns cookie name.
+     *
+     * @return cookie name
+     */
+    public String name() {
+        return name;
+    }
+
+    /**
+     * Returns cookie value.
+     *
+     * @return cookie value
+     */
+    public String value() {
+        return value;
+    }
+
+    public Optional<Long> maxAge() {
+        return Optional.ofNullable(maxAge).filter(value -> value != UNDEFINED_MAX_AGE);
+    }
+
+    public Optional<String> path() {
+        return Optional.ofNullable(path);
+    }
+
+    public boolean httpOnly() {
+        return httpOnly;
+    }
+
+    public Optional<String> domain() {
+        return Optional.ofNullable(domain);
+    }
+
+    public boolean secure() {
+        return secure;
+    }
+
+    private static PseudoMap<String, ResponseCookie> wrap(Set<ResponseCookie> cookies) {
+        return new PseudoMap<>(cookies, (name, cookie) -> cookie.name().equals(name));
     }
 
     private static Cookie convert(ResponseCookie cookie) {
@@ -130,24 +165,6 @@ public final class ResponseCookie {
                 .httpOnly(cookie.isHttpOnly())
                 .secure(cookie.isSecure())
                 .build();
-    }
-
-    /**
-     * Returns cookie name.
-     *
-     * @return cookie name
-     */
-    public String name() {
-        return name;
-    }
-
-    /**
-     * Returns cookie value.
-     *
-     * @return cookie value
-     */
-    public String value() {
-        return value;
     }
 
     @Override
@@ -186,26 +203,6 @@ public final class ResponseCookie {
                 .add("secure", secure)
                 .add("hashCode", hashCode)
                 .toString();
-    }
-
-    public Optional<Long> maxAge() {
-        return Optional.ofNullable(maxAge).filter(value -> value != UNDEFINED_MAX_AGE);
-    }
-
-    public Optional<String> path() {
-        return Optional.ofNullable(path);
-    }
-
-    public boolean httpOnly() {
-        return httpOnly;
-    }
-
-    public Optional<String> domain() {
-        return Optional.ofNullable(domain);
-    }
-
-    public boolean secure() {
-        return secure;
     }
 
     /**

@@ -26,10 +26,10 @@ import java.util.Collection;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.common.Strings.quote;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -48,7 +48,7 @@ public final class RequestCookie {
      */
     private RequestCookie(String name, String value) {
         checkArgument(!isNullOrEmpty(name), "name cannot be null or empty");
-        checkNotNull(value, "value cannot be null");
+        requireNonNull(value, "value cannot be null");
         this.name = name;
         this.value = value;
         this.hashCode = Objects.hashCode(name, value);
@@ -73,10 +73,6 @@ public final class RequestCookie {
                 .collect(toSet()));
     }
 
-    private static PseudoMap<String, RequestCookie> wrap(Set<RequestCookie> cookies) {
-        return new PseudoMap<>(cookies, (name, cookie) -> cookie.name().equals(name));
-    }
-
     public static void encode(HttpHeaders.Builder headers, Collection<RequestCookie> cookies) {
         Set<Cookie> nettyCookies = cookies.stream()
                 .map(RequestCookie::convert)
@@ -85,6 +81,10 @@ public final class RequestCookie {
         if (!nettyCookies.isEmpty()) {
             headers.set(COOKIE, ClientCookieEncoder.LAX.encode(nettyCookies));
         }
+    }
+
+    private static PseudoMap<String, RequestCookie> wrap(Set<RequestCookie> cookies) {
+        return new PseudoMap<>(cookies, (name, cookie) -> cookie.name().equals(name));
     }
 
     private static Cookie convert(RequestCookie cookie) {
