@@ -19,7 +19,6 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
-import com.hotels.styx.api.cookies.ResponseCookie;
 import com.hotels.styx.support.api.HttpMessageBodies;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.AfterMethod;
@@ -30,6 +29,7 @@ import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
+import static com.hotels.styx.api.cookies.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
@@ -61,7 +61,7 @@ public class HttpMessageLoggingInterceptorTest {
         consume(interceptor.intercept(request, respondWith(
                 response(OK)
                 .header("RespHeader", "RespHeaderValue")
-                .cookies(ResponseCookie.cookie("RespCookie", "RespCookieValue"))
+                .cookies(responseCookie("RespCookie", "RespCookieValue").build())
         )));
 
         String requestPattern = "request=\\{method=GET, secure=false, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\]\\}";
@@ -83,7 +83,7 @@ public class HttpMessageLoggingInterceptorTest {
         consume(interceptor.intercept(request, respondWith(
                 response(OK)
                         .header("RespHeader", "RespHeaderValue")
-                        .cookies(ResponseCookie.cookie("RespCookie", "RespCookieValue"))
+                        .cookies(responseCookie("RespCookie", "RespCookieValue").build())
         )));
 
         String requestPattern = "request=\\{method=GET, secure=false, uri=/, origin=\"N/A\"}";

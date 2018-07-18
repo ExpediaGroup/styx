@@ -30,7 +30,6 @@ import static com.hotels.styx.api.FullHttpRequest.get;
 import static com.hotels.styx.api.FullHttpResponse.response;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.cookies.ResponseCookie.cookie;
 import static com.hotels.styx.api.cookies.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY;
@@ -62,7 +61,7 @@ public class FullHttpResponseTest {
         FullHttpResponse response = response(CREATED)
                 .version(HTTP_1_1)
                 .header("HeaderName", "HeaderValue")
-                .cookies(cookie("CookieName", "CookieValue"))
+                .cookies(responseCookie("CookieName", "CookieValue").build())
                 .body("message content", UTF_8)
                 .build();
 
@@ -75,7 +74,7 @@ public class FullHttpResponseTest {
                 header("HeaderName", "HeaderValue"),
                 header("Set-Cookie", "CookieName=CookieValue")
                 ));
-        assertThat(streaming.cookies(), contains(ResponseCookie.cookie("CookieName", "CookieValue")));
+        assertThat(streaming.cookies(), contains(responseCookie("CookieName", "CookieValue").build()));
 
         String body = streaming.toFullResponse(0x100000)
                 .asCompletableFuture()
@@ -121,15 +120,15 @@ public class FullHttpResponseTest {
     public void setsMultipleOutboundCookies() {
         FullHttpResponse response = FullHttpResponse.response()
                 .cookies(
-                        cookie("a", "b"),
-                        cookie("c", "d"))
+                        responseCookie("a", "b").build(),
+                        responseCookie("c", "d").build())
                 .build();
 
         Set<ResponseCookie> cookies = response.cookies();
 
         assertThat(cookies, containsInAnyOrder(
-                cookie("a", "b"),
-                cookie("c", "d")
+                responseCookie("a", "b").build(),
+                responseCookie("c", "d").build()
         ));
     }
 
@@ -137,11 +136,11 @@ public class FullHttpResponseTest {
     public void getASingleCookieValue() {
         FullHttpResponse response = FullHttpResponse.response()
                 .cookies(
-                        cookie("a", "b"),
-                        cookie("c", "d"))
+                        responseCookie("a", "b").build(),
+                        responseCookie("c", "d").build())
                 .build();
 
-        assertThat(response.cookie("c"), isValue(cookie("c", "d")));
+        assertThat(response.cookie("c"), isValue(responseCookie("c", "d").build()));
     }
 
     @Test
@@ -235,12 +234,12 @@ public class FullHttpResponseTest {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookieName() {
-        FullHttpResponse.response().cookies(cookie(null, "value")).build();
+        FullHttpResponse.response().cookies(responseCookie(null, "value").build()).build();
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookieValue() {
-        FullHttpResponse.response().cookies(cookie("name", null)).build();
+        FullHttpResponse.response().cookies(responseCookie("name", null).build()).build();
     }
 
     @DataProvider(name = "responses")

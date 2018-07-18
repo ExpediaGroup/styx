@@ -65,17 +65,6 @@ public final class ResponseCookie {
         this.hashCode = hash(name, value, domain, maxAge, path, secure, httpOnly);
     }
 
-    /**
-     * Constructs a cookie with a name, value and attributes.
-     *
-     * @param name  cookie name
-     * @param value cookie value
-     * @return a cookie
-     */
-    public static ResponseCookie cookie(String name, String value) {
-        return ResponseCookie.responseCookie(name, value).build();
-    }
-
     public static ResponseCookie.Builder responseCookie(String name, String value) {
         return new ResponseCookie.Builder(name, value);
     }
