@@ -26,7 +26,6 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
-import com.hotels.styx.api.cookies.RequestCookie;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
@@ -53,7 +52,7 @@ import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.client.RemoteHost.remoteHost;
-import static com.hotels.styx.api.cookies.RequestCookie.cookie;
+import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_IMPLEMENTED;
@@ -390,7 +389,7 @@ public class StyxHttpClientTest {
 
         HttpResponse response = styxHttpClient.sendRequest(
                 get("/foo")
-                        .cookies(cookie("styx_origin_" + Id.GENERIC_APP, "Origin-Y"))
+                        .cookies(requestCookie("styx_origin_" + Id.GENERIC_APP, "Origin-Y"))
                         .build())
                 .toBlocking()
                 .first();
@@ -417,7 +416,7 @@ public class StyxHttpClientTest {
 
         HttpResponse response = styxHttpClient.sendRequest(
                 get("/foo")
-                        .cookies(cookie("restrictedOrigin", "Origin-Y"))
+                        .cookies(requestCookie("restrictedOrigin", "Origin-Y"))
                         .build())
                 .toBlocking()
                 .first();
@@ -444,8 +443,8 @@ public class StyxHttpClientTest {
         HttpResponse response = styxHttpClient.sendRequest(
                 get("/foo")
                         .cookies(
-                                cookie("restrictedOrigin", "Origin-Y"),
-                                cookie("styx_origin_" + Id.GENERIC_APP, "Origin-X")
+                                requestCookie("restrictedOrigin", "Origin-Y"),
+                                requestCookie("styx_origin_" + Id.GENERIC_APP, "Origin-X")
                         )
                         .build())
                 .toBlocking()

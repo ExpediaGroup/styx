@@ -38,7 +38,7 @@ import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.cookies.RequestCookie.cookie;
+import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.api.service.StickySessionConfig.newStickySessionConfigBuilder;
@@ -122,9 +122,9 @@ public class StyxBackendServiceClientFactoryTest {
                                 .build(),
                         new OriginStatsFactory(new CodaHaleMetricRegistry()));
 
-        HttpRequest requestz = get("/some-req").cookies(cookie(STICKY_COOKIE, id("z").toString())).build();
-        HttpRequest requestx = get("/some-req").cookies(cookie(STICKY_COOKIE, id("x").toString())).build();
-        HttpRequest requesty = get("/some-req").cookies(cookie(STICKY_COOKIE, id("y").toString())).build();
+        HttpRequest requestz = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("z").toString())).build();
+        HttpRequest requestx = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("x").toString())).build();
+        HttpRequest requesty = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("y").toString())).build();
 
         HttpResponse responsez = styxHttpClient.sendRequest(requestz).toBlocking().first();
         HttpResponse responsex = styxHttpClient.sendRequest(requestx).toBlocking().first();
@@ -167,9 +167,9 @@ public class StyxBackendServiceClientFactoryTest {
                                 .build(),
                         new OriginStatsFactory(new CodaHaleMetricRegistry()));
 
-        HttpRequest requestz = get("/some-req").cookies(cookie(ORIGINS_RESTRICTION_COOKIE, id("z").toString())).build();
-        HttpRequest requestx = get("/some-req").cookies(cookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString())).build();
-        HttpRequest requesty = get("/some-req").cookies(cookie(ORIGINS_RESTRICTION_COOKIE, id("y").toString())).build();
+        HttpRequest requestz = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("z").toString())).build();
+        HttpRequest requestx = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString())).build();
+        HttpRequest requesty = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("y").toString())).build();
 
         HttpResponse responsez = styxHttpClient.sendRequest(requestz).toBlocking().first();
         HttpResponse responsex = styxHttpClient.sendRequest(requestx).toBlocking().first();

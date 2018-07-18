@@ -17,22 +17,22 @@ package com.hotels.styx.api.cookies;
 
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.cookies.RequestCookie.cookie;
+import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
 
 public class RequestCookieTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void acceptsOnlyNonEmptyName() {
-        cookie("", "value");
+        requestCookie("", "value");
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void acceptsOnlyNonNullName() {
-        cookie(null, "value");
+        requestCookie(null, "value");
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void acceptsOnlyNonNullValue() {
-        cookie("name", null);
+        requestCookie("name", null);
     }
 }

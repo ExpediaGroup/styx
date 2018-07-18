@@ -61,7 +61,7 @@ public final class RequestCookie {
      * @param value cookie value
      * @return a cookie
      */
-    public static RequestCookie cookie(String name, String value) {
+    public static RequestCookie requestCookie(String name, String value) {
         return new RequestCookie(name, value);
     }
 
@@ -95,7 +95,7 @@ public final class RequestCookie {
         String name = nettyCookie.name();
         String value = nettyCookie.wrap() ? quote(nettyCookie.value()) : nettyCookie.value();
 
-        return cookie(name, value);
+        return requestCookie(name, value);
     }
 
     /**

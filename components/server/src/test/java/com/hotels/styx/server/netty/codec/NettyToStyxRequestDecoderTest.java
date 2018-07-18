@@ -50,7 +50,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
-import static com.hotels.styx.api.cookies.RequestCookie.cookie;
+import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
 import static com.hotels.styx.server.UniqueIdSuppliers.fixedUniqueIdSupplier;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpMessageToBytes;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequest;
@@ -264,9 +264,9 @@ public class NettyToStyxRequestDecoderTest {
         com.hotels.styx.api.HttpRequest expected = new com.hotels.styx.api.HttpRequest.Builder(
                 com.hotels.styx.api.messages.HttpMethod.GET, "http://foo.com/")
                 .cookies(
-                        cookie("ABC01", "\"1\""),
-                        cookie("ABC02", "1"),
-                        cookie("guid", "xxxxx-xxx-xxx-xxx-xxxxxxx")
+                        requestCookie("ABC01", "\"1\""),
+                        requestCookie("ABC02", "1"),
+                        requestCookie("guid", "xxxxx-xxx-xxx-xxx-xxxxxxx")
                 )
                 .build();
         assertThat(newHashSet(styxRequest.cookies()), is(newHashSet(expected.cookies())));
@@ -289,9 +289,9 @@ public class NettyToStyxRequestDecoderTest {
         com.hotels.styx.api.HttpRequest expected = new com.hotels.styx.api.HttpRequest.Builder(
                 com.hotels.styx.api.messages.HttpMethod.GET, "http://foo.com/")
                 .cookies(
-                        cookie("ABC01", "\"1\""),
-                        cookie("ABC02", "1"),
-                        cookie("guid", "a,b")
+                        requestCookie("ABC01", "\"1\""),
+                        requestCookie("ABC02", "1"),
+                        requestCookie("guid", "a,b")
                 )
                 .build();
         assertThat(newHashSet(styxRequest.cookies()), is(newHashSet(expected.cookies())));

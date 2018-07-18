@@ -133,7 +133,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build
 
     val request: HttpRequest = get("/")
-      .cookies(RequestCookie.cookie("styx_origin_app", "app-02"))
+      .cookies(RequestCookie.requestCookie("styx_origin_app", "app-02"))
       .build
 
     val response1 = waitForResponse(client.sendRequest(request))
@@ -152,9 +152,9 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
 
     val request: HttpRequest = get("/")
       .cookies(
-        RequestCookie.cookie("other_cookie1", "foo"),
-        RequestCookie.cookie("styx_origin_app", "app-02"),
-        RequestCookie.cookie("other_cookie2", "bar"))
+        RequestCookie.requestCookie("other_cookie1", "foo"),
+        RequestCookie.requestCookie("styx_origin_app", "app-02"),
+        RequestCookie.requestCookie("other_cookie2", "bar"))
       .build()
 
 
@@ -173,7 +173,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build
 
     val request: HttpRequest = get("/")
-      .cookies(RequestCookie.cookie("styx_origin_app", "h3"))
+      .cookies(RequestCookie.requestCookie("styx_origin_app", "h3"))
       .build
 
     val response = waitForResponse(client.sendRequest(request))
@@ -198,7 +198,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build
 
     val request: HttpRequest = get("/")
-      .cookies(RequestCookie.cookie("styx_origin_app", "app-02"))
+      .cookies(RequestCookie.requestCookie("styx_origin_app", "app-02"))
       .build
 
     val response = waitForResponse(client.sendRequest(request))

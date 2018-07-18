@@ -26,7 +26,7 @@ import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpRequest.post;
-import static com.hotels.styx.api.cookies.RequestCookie.cookie;
+import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
@@ -393,13 +393,13 @@ public class AntlrConditionTest {
     public void cookieValueIsPresent() {
         Condition condition = condition("cookie('TheCookie')");
         HttpRequest request = newRequest()
-                .cookies(cookie("TheCookie", "foobar-foobar-baz"))
+                .cookies(requestCookie("TheCookie", "foobar-foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
         assertThat(condition.evaluate(request), is(true));
 
         request = newRequest()
-                .cookies(cookie("AnotherCookie", "foobar-foobar-baz"))
+                .cookies(requestCookie("AnotherCookie", "foobar-foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
         assertThat(condition.evaluate(request), is(false));
@@ -415,13 +415,13 @@ public class AntlrConditionTest {
     public void cookieValueMatchesWithString() {
         Condition condition = condition("cookie('TheCookie') == 'foobar-foobar-baz'");
         HttpRequest request = newRequest()
-                .cookies(cookie("TheCookie", "foobar-foobar-baz"))
+                .cookies(requestCookie("TheCookie", "foobar-foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
         assertThat(condition.evaluate(request), is(true));
 
         request = newRequest()
-                .cookies(cookie("AnotherCookie", "foobar-baz"))
+                .cookies(requestCookie("AnotherCookie", "foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
         assertThat(condition.evaluate(request), is(false));
@@ -437,13 +437,13 @@ public class AntlrConditionTest {
         Condition condition = condition("cookie('TheCookie') =~ 'foobar-.*-baz'");
 
         HttpRequest request = newRequest()
-                .cookies(cookie("TheCookie", "foobar-foobar-baz"))
+                .cookies(requestCookie("TheCookie", "foobar-foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
         assertThat(condition.evaluate(request), is(true));
 
         request = newRequest()
-                .cookies(cookie("AnotherCookie", "foobar-x-baz"))
+                .cookies(requestCookie("AnotherCookie", "foobar-x-baz"))
                 .header("App-Name", "app3")
                 .build();
         assertThat(condition.evaluate(request), is(false));

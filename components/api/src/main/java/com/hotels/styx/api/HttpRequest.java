@@ -420,7 +420,7 @@ public class HttpRequest implements StreamingHttpMessage {
             this.headers = request.headers().newBuilder();
             this.body = StyxCoreObservable.of(copiedBuffer(request.body()));
             RequestCookie.encode(headers, request.cookies().stream()
-                    .map(cookie -> RequestCookie.cookie(cookie.name(), cookie.value()))
+                    .map(cookie -> RequestCookie.requestCookie(cookie.name(), cookie.value()))
                     .collect(toSet()));
         }
 

@@ -19,7 +19,7 @@ import com.hotels.styx.api.HttpRequest;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.cookies.RequestCookie.cookie;
+import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
 import static com.hotels.styx.api.messages.HttpMethod.GET;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
@@ -33,8 +33,8 @@ public class HttpRequestOperationTest {
                 .method(GET)
                 .header("X-Forwarded-Proto", "https")
                 .cookies(
-                        cookie("HASESSION_V3", "asdasdasd"),
-                        cookie("has", "123456789")
+                        requestCookie("HASESSION_V3", "asdasdasd"),
+                        requestCookie("has", "123456789")
                 )
                 .uri("https://www.example.com/foo%2Cbar?foo,baf=2")
                 .build();

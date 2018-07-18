@@ -29,7 +29,7 @@ import org.testng.annotations.Test;
 import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
-import static com.hotels.styx.api.cookies.RequestCookie.cookie;
+import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
@@ -55,7 +55,7 @@ public class HttpMessageLoggingInterceptorTest {
     public void logsRequestsAndResponses() {
         HttpRequest request = get("/")
                 .header("ReqHeader", "ReqHeaderValue")
-                .cookies(cookie("ReqCookie", "ReqCookieValue"))
+                .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
                 .build();
 
         consume(interceptor.intercept(request, respondWith(
@@ -77,7 +77,7 @@ public class HttpMessageLoggingInterceptorTest {
         interceptor = new HttpMessageLoggingInterceptor(false);
         HttpRequest request = get("/")
                 .header("ReqHeader", "ReqHeaderValue")
-                .cookies(cookie("ReqCookie", "ReqCookieValue"))
+                .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
                 .build();
 
         consume(interceptor.intercept(request, respondWith(
@@ -99,7 +99,7 @@ public class HttpMessageLoggingInterceptorTest {
         HttpRequest request = get("/")
                 .secure(true)
                 .header("ReqHeader", "ReqHeaderValue")
-                .cookies(cookie("ReqCookie", "ReqCookieValue"))
+                .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
                 .build();
 
         consume(interceptor.intercept(request, respondWith(response(OK))));

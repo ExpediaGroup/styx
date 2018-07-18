@@ -32,7 +32,7 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.Url.Builder.url;
-import static com.hotels.styx.api.cookies.RequestCookie.cookie;
+import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
 import static com.hotels.styx.api.messages.HttpMethod.DELETE;
 import static com.hotels.styx.api.messages.HttpMethod.GET;
 import static com.hotels.styx.api.messages.HttpMethod.POST;
@@ -62,7 +62,7 @@ public class FullHttpRequestTest {
                 .secure(true)
                 .version(HTTP_1_1)
                 .header("HeaderName", "HeaderValue")
-                .cookies(cookie("CookieName", "CookieValue"))
+                .cookies(requestCookie("CookieName", "CookieValue"))
                 .build();
 
         HttpRequest streaming = fullRequest.toStreamingRequest();
@@ -75,7 +75,7 @@ public class FullHttpRequestTest {
                 header("Content-Length", "6"),
                 header("HeaderName", "HeaderValue"),
                 header("Cookie", "CookieName=CookieValue")));
-        assertThat(streaming.cookies(), contains(cookie("CookieName", "CookieValue")));
+        assertThat(streaming.cookies(), contains(requestCookie("CookieName", "CookieValue")));
 
         String body = streaming.toFullRequest(0x10000)
                 .asCompletableFuture()
@@ -139,7 +139,7 @@ public class FullHttpRequestTest {
                 .version(HTTP_1_1)
                 .id("id")
                 .header("headerName", "a")
-                .cookies(cookie("cfoo", "bar"))
+                .cookies(requestCookie("cfoo", "bar"))
                 .build();
 
         assertThat(request.toString(), is("FullHttpRequest{version=HTTP/1.1, method=PATCH, uri=https://hotels.com, " +
@@ -284,7 +284,7 @@ public class FullHttpRequestTest {
     @Test
     public void createsRequestBuilderFromRequest() {
         FullHttpRequest originalRequest = get("/home")
-                .cookies(cookie("fred", "blogs"))
+                .cookies(requestCookie("fred", "blogs"))
                 .header("some", "header")
                 .build();
 
@@ -340,23 +340,23 @@ public class FullHttpRequestTest {
     public void canExtractCookies() {
         FullHttpRequest request = get("/")
                 .cookies(
-                        cookie("cookie1", "foo"),
-                        cookie("cookie3", "baz"),
-                        cookie("cookie2", "bar"))
+                        requestCookie("cookie1", "foo"),
+                        requestCookie("cookie3", "baz"),
+                        requestCookie("cookie2", "bar"))
                 .build();
 
-        assertThat(request.cookies().firstMatch("cookie1"), isValue(cookie("cookie1", "foo")));
-        assertThat(request.cookies().firstMatch("cookie2"), isValue(cookie("cookie2", "bar")));
-        assertThat(request.cookies().firstMatch("cookie3"), isValue(cookie("cookie3", "baz")));
+        assertThat(request.cookies().firstMatch("cookie1"), isValue(requestCookie("cookie1", "foo")));
+        assertThat(request.cookies().firstMatch("cookie2"), isValue(requestCookie("cookie2", "bar")));
+        assertThat(request.cookies().firstMatch("cookie3"), isValue(requestCookie("cookie3", "baz")));
     }
 
     @Test
     public void cannotExtractNonExistentCookie() {
         FullHttpRequest request = get("/")
                 .cookies(
-                        cookie("cookie1", "foo"),
-                        cookie("cookie3", "baz"),
-                        cookie("cookie2", "bar"))
+                        requestCookie("cookie1", "foo"),
+                        requestCookie("cookie3", "baz"),
+                        requestCookie("cookie2", "bar"))
                 .build();
 
         assertThat(request.cookies().firstMatch("cookie4"), isAbsent());
@@ -366,15 +366,15 @@ public class FullHttpRequestTest {
     public void extractsAllCookies() {
         FullHttpRequest request = get("/")
                 .cookies(
-                        cookie("cookie1", "foo"),
-                        cookie("cookie3", "baz"),
-                        cookie("cookie2", "bar"))
+                        requestCookie("cookie1", "foo"),
+                        requestCookie("cookie3", "baz"),
+                        requestCookie("cookie2", "bar"))
                 .build();
 
         assertThat(request.cookies(), containsInAnyOrder(
-                cookie("cookie1", "foo"),
-                cookie("cookie2", "bar"),
-                cookie("cookie3", "baz")));
+                requestCookie("cookie1", "foo"),
+                requestCookie("cookie2", "bar"),
+                requestCookie("cookie3", "baz")));
     }
 
     @Test
@@ -431,12 +431,12 @@ public class FullHttpRequestTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void rejectsNullCookieName() {
-        get("/").cookies(cookie(null, "value")).build();
+        get("/").cookies(requestCookie(null, "value")).build();
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookieValue() {
-        get("/").cookies(cookie("name", null)).build();
+        get("/").cookies(requestCookie("name", null)).build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)

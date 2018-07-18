@@ -23,7 +23,7 @@ import org.testng.annotations.Test;
 import java.util.Map;
 
 import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.cookies.RequestCookie.cookie;
+import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -60,7 +60,7 @@ public class FunctionResolverTest {
     public void resolvesOneArgumentFunctions() {
         HttpRequest request = get("/foo")
                 .header("Host", "www.hotels.com")
-                .cookies(cookie("lang", "en_US|en-us_hotels_com"))
+                .cookies(requestCookie("lang", "en_US|en-us_hotels_com"))
                 .build();
 
         assertThat(functionResolver.resolveFunction("header", singletonList("Host")).call(request), is("www.hotels.com"));
@@ -72,7 +72,7 @@ public class FunctionResolverTest {
     public void throwsExceptionIfOneArgumentFunctionDoesNotExist() {
         HttpRequest request = get("/foo")
                 .header("Host", "www.hotels.com")
-                .cookies(cookie("lang", "en_US|en-us_hotels_com"))
+                .cookies(requestCookie("lang", "en_US|en-us_hotels_com"))
                 .build();
 
         functionResolver.resolveFunction("foobar", singletonList("barfoo")).call(request);
