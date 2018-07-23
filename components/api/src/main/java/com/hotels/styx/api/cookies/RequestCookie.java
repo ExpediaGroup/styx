@@ -75,6 +75,12 @@ public final class RequestCookie {
                 .collect(toSet());
     }
 
+    /**
+     * Encodes a collection of {@link RequestCookie} objects into a "Cookie" header value.
+     *
+     * @param cookies cookies
+     * @return "Cookie" header value
+     */
     public static String encode(Collection<RequestCookie> cookies) {
         if (cookies.isEmpty()) {
             throw new IllegalArgumentException("Cannot create cookie header value from zero cookies");
