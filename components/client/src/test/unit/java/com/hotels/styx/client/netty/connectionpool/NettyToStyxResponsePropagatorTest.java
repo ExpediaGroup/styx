@@ -243,7 +243,7 @@ public class NettyToStyxResponsePropagatorTest {
         HttpResponse styxResponse = toStyxResponse(nettyResponse).build();
 
         assertThat(styxResponse.header("Set-Cookie"), isValue("SESSID=sessId; Domain=.foo.com; Path=/; HttpOnly"));
-        assertThat(styxResponse.cookies().firstMatch("SESSID"), equalTo(
+        assertThat(styxResponse.cookie("SESSID"), equalTo(
                 Optional.of(responseCookie("SESSID", "sessId")
                         .domain(".foo.com")
                         .path("/")
@@ -258,7 +258,7 @@ public class NettyToStyxResponsePropagatorTest {
         HttpResponse styxResponse = toStyxResponse(nettyResponse).build();
 
         assertThat(styxResponse.header("Set-Cookie"), isValue("SESSID=\"sessId\"; Domain=.foo.com; Path=/; HttpOnly"));
-        assertThat(styxResponse.cookies().firstMatch("SESSID"), equalTo(
+        assertThat(styxResponse.cookie("SESSID"), equalTo(
                 Optional.of(responseCookie("SESSID", "\"sessId\"")
                         .domain(".foo.com")
                         .path("/")

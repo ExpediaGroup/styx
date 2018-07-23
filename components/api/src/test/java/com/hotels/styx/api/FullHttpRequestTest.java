@@ -125,7 +125,7 @@ public class FullHttpRequestTest {
         assertThat(request.headers("any"), is(emptyIterable()));
 
         assertThat(request.body().length, is(0));
-        assertThat(request.cookies().firstMatch("any"), isAbsent());
+        assertThat(request.cookie("any"), isAbsent());
         assertThat(request.header("any"), isAbsent());
         assertThat(request.keepAlive(), is(true));
         assertThat(request.method(), is(GET));
@@ -345,9 +345,9 @@ public class FullHttpRequestTest {
                         requestCookie("cookie2", "bar"))
                 .build();
 
-        assertThat(request.cookies().firstMatch("cookie1"), isValue(requestCookie("cookie1", "foo")));
-        assertThat(request.cookies().firstMatch("cookie2"), isValue(requestCookie("cookie2", "bar")));
-        assertThat(request.cookies().firstMatch("cookie3"), isValue(requestCookie("cookie3", "baz")));
+        assertThat(request.cookie("cookie1"), isValue(requestCookie("cookie1", "foo")));
+        assertThat(request.cookie("cookie2"), isValue(requestCookie("cookie2", "bar")));
+        assertThat(request.cookie("cookie3"), isValue(requestCookie("cookie3", "baz")));
     }
 
     @Test
@@ -359,7 +359,7 @@ public class FullHttpRequestTest {
                         requestCookie("cookie2", "bar"))
                 .build();
 
-        assertThat(request.cookies().firstMatch("cookie4"), isAbsent());
+        assertThat(request.cookie("cookie4"), isAbsent());
     }
 
     @Test

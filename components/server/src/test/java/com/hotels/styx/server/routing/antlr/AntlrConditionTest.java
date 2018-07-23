@@ -37,7 +37,7 @@ public class AntlrConditionTest {
             .registerFunction("userAgent", request -> request.header(USER_AGENT).orElse(""))
             .registerFunction("header", (request, input) -> request.header(input).orElse(""))
             .registerFunction("cookie", (request, input) ->
-                    request.cookies().firstMatch(input).map(RequestCookie::value).orElse(""))
+                    request.cookie(input).map(RequestCookie::value).orElse(""))
             .build();
 
     private static HttpRequest.Builder newRequest(String uri) {

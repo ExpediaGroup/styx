@@ -291,12 +291,12 @@ public final class StyxHttpClient implements HttpClient {
             @Override
             public Optional<String> preferredOrigins() {
                 if (nonNull(originsRestrictionCookieName)) {
-                    return rewrittenRequest.cookies().firstMatch(originsRestrictionCookieName)
+                    return rewrittenRequest.cookie(originsRestrictionCookieName)
                             .map(RequestCookie::value)
                             .map(Optional::of)
-                            .orElse(rewrittenRequest.cookies().firstMatch("styx_origin_" + id).map(RequestCookie::value));
+                            .orElse(rewrittenRequest.cookie("styx_origin_" + id).map(RequestCookie::value));
                 } else {
-                    return rewrittenRequest.cookies().firstMatch("styx_origin_" + id).map(RequestCookie::value);
+                    return rewrittenRequest.cookie("styx_origin_" + id).map(RequestCookie::value);
                 }
             }
 

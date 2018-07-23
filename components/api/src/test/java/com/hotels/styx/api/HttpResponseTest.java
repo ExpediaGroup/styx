@@ -152,7 +152,7 @@ public class HttpResponseTest {
                         responseCookie("c", "d").build())
                 .build();
 
-        assertThat(response.cookies().firstMatch("c"), isValue(responseCookie("c", "d").build()));
+        assertThat(response.cookie("c"), isValue(responseCookie("c", "d").build()));
     }
 
     @Test

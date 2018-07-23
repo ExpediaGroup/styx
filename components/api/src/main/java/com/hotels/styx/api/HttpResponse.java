@@ -17,7 +17,6 @@ package com.hotels.styx.api;
 
 import com.google.common.base.Objects;
 import com.google.common.net.MediaType;
-import com.hotels.styx.api.cookies.PseudoMap;
 import com.hotels.styx.api.cookies.ResponseCookie;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.messages.HttpVersion;
@@ -172,16 +171,14 @@ public class HttpResponse implements StreamingHttpMessage {
         }
     }
 
-    public PseudoMap<String, ResponseCookie> cookies() {
-        return wrap(decode(headers.getAll(SET_COOKIE)));
-    }
-
-    private static PseudoMap<String, ResponseCookie> wrap(Set<ResponseCookie> cookies) {
-        return new PseudoMap<>(cookies, (name, cookie) -> cookie.name().equals(name));
+    public Set<ResponseCookie> cookies() {
+        return decode(headers.getAll(SET_COOKIE));
     }
 
     public Optional<ResponseCookie> cookie(String name) {
-        return cookies().firstMatch(name);
+        return cookies().stream()
+                .filter(cookie -> cookie.name().equals(name))
+                .findFirst();
     }
 
     @Override

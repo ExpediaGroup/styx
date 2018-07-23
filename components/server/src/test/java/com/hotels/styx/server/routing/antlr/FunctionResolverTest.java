@@ -36,7 +36,7 @@ public class FunctionResolverTest {
 
     Map<String, Function1> oneArgumentFunctions = ImmutableMap.of(
             "header", (request, name) -> request.header(name).orElse(""),
-            "cookie", (request, name) -> request.cookies().firstMatch(name).map(RequestCookie::value).orElse(""));
+            "cookie", (request, name) -> request.cookie(name).map(RequestCookie::value).orElse(""));
 
     FunctionResolver functionResolver = new FunctionResolver(zeroArgumentFunctions, oneArgumentFunctions);
 
