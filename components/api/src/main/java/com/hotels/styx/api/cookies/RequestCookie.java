@@ -82,9 +82,7 @@ public final class RequestCookie {
      * @return "Cookie" header value
      */
     public static String encode(Collection<RequestCookie> cookies) {
-        if (cookies.isEmpty()) {
-            throw new IllegalArgumentException("Cannot create cookie header value from zero cookies");
-        }
+        checkArgument(!cookies.isEmpty(), "Cannot create cookie header value from zero cookies");
 
         Set<Cookie> nettyCookies = cookies.stream()
                 .map(RequestCookie::convert)
