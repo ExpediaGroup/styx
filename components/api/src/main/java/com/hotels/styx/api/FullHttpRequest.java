@@ -316,6 +316,11 @@ public class FullHttpRequest implements FullHttpMessage {
         }
     }
 
+    /**
+     * Decodes the "Cookie" header in this request and returns the cookies.
+     *
+     * @return cookies
+     */
     public Set<RequestCookie> cookies() {
         // Note: there should only be one "Cookie" header, but we check for multiples just in case
         // the alternative would be to respond with a 400 Bad Request status if multiple "Cookie" headers were detected
@@ -326,6 +331,12 @@ public class FullHttpRequest implements FullHttpMessage {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Decodes the "Cookie" header in this request and returns the specified cookie.
+     *
+     * @param name cookie name
+     * @return cookies
+     */
     public Optional<RequestCookie> cookie(String name) {
         return cookies().stream()
                 .filter(cookie -> cookie.name().equals(name))
@@ -553,11 +564,23 @@ public class FullHttpRequest implements FullHttpMessage {
             return this;
         }
 
+        /**
+         * Sets the cookies on this request by overwriting the value of the "Cookie" header.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
         public Builder cookies(RequestCookie... cookies) {
             return cookies(asList(cookies));
         }
 
-        private Builder cookies(List<RequestCookie> cookies) {
+        /**
+         * Sets the cookies on this request by overwriting the value of the "Cookie" header.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        public Builder cookies(List<RequestCookie> cookies) {
             if (!cookies.isEmpty()) {
                 header(COOKIE, encode(cookies));
             }

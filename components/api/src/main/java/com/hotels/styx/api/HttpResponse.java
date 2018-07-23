@@ -171,10 +171,21 @@ public class HttpResponse implements StreamingHttpMessage {
         }
     }
 
+    /**
+     * Decodes the "Set-Cookie" headers in this response and returns the cookies.
+     *
+     * @return cookies
+     */
     public Set<ResponseCookie> cookies() {
         return decode(headers.getAll(SET_COOKIE));
     }
 
+    /**
+     * Decodes the "Set-Cookie" headers in this response and returns the specified cookie.
+     *
+     * @param name cookie name
+     * @return cookie
+     */
     public Optional<ResponseCookie> cookie(String name) {
         return cookies().stream()
                 .filter(cookie -> cookie.name().equals(name))
@@ -310,11 +321,23 @@ public class HttpResponse implements StreamingHttpMessage {
             return this;
         }
 
+        /**
+         * Sets the cookies on this response by adding "Set-Cookie" headers.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
         public Builder cookies(ResponseCookie... cookies) {
             return cookies(asList(cookies));
         }
 
-        private Builder cookies(List<ResponseCookie> cookies) {
+        /**
+         * Sets the cookies on this response by adding "Set-Cookie" headers.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        public Builder cookies(List<ResponseCookie> cookies) {
             encode(cookies).forEach(cookie ->
                     addHeader(SET_COOKIE, cookie));
             return this;
