@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api.cookies;
 
-import static io.netty.util.internal.ObjectUtil.checkNotNull;
-
 import io.netty.handler.codec.http.HttpHeaderDateFormat;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -32,6 +30,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import static com.hotels.styx.api.cookies.CookieUtil.add;
+import static com.hotels.styx.api.cookies.CookieUtil.addQuoted;
+import static com.hotels.styx.api.cookies.CookieUtil.stringBuilder;
+import static com.hotels.styx.api.cookies.CookieUtil.stripTrailingSeparator;
+import static io.netty.util.internal.ObjectUtil.checkNotNull;
 
 /**
  * A <a href="http://tools.ietf.org/html/rfc6265">RFC6265</a> compliant cookie encoder to be used server side,
@@ -91,37 +95,37 @@ public final class ServerCookieEncoder extends CookieEncoder {
 
         validateCookie(name, value);
 
-        StringBuilder buf = CookieUtil.stringBuilder();
+        StringBuilder buf = stringBuilder();
 
         if (cookie.wrap()) {
-            CookieUtil.addQuoted(buf, name, value);
+            addQuoted(buf, name, value);
         } else {
-            CookieUtil.add(buf, name, value);
+            add(buf, name, value);
         }
 
         if (cookie.maxAge() != Long.MIN_VALUE) {
             if (cookie.maxAge() >= 0) {
-                CookieUtil.add(buf, CookieHeaderNames.MAX_AGE, cookie.maxAge());
+                add(buf, CookieHeaderNames.MAX_AGE, cookie.maxAge());
             }
             Date expires = new Date(cookie.maxAge() * 1000 + System.currentTimeMillis());
-            CookieUtil.add(buf, CookieHeaderNames.EXPIRES, HttpHeaderDateFormat.get().format(expires));
+            add(buf, CookieHeaderNames.EXPIRES, HttpHeaderDateFormat.get().format(expires));
         }
 
         if (cookie.path() != null) {
-            CookieUtil.add(buf, CookieHeaderNames.PATH, cookie.path());
+            add(buf, CookieHeaderNames.PATH, cookie.path());
         }
 
         if (cookie.domain() != null) {
-            CookieUtil.add(buf, CookieHeaderNames.DOMAIN, cookie.domain());
+            add(buf, CookieHeaderNames.DOMAIN, cookie.domain());
         }
         if (cookie.isSecure()) {
-            CookieUtil.add(buf, CookieHeaderNames.SECURE);
+            add(buf, CookieHeaderNames.SECURE);
         }
         if (cookie.isHttpOnly()) {
-            CookieUtil.add(buf, CookieHeaderNames.HTTPONLY);
+            add(buf, CookieHeaderNames.HTTPONLY);
         }
 
-        return CookieUtil.stripTrailingSeparator(buf);
+        return stripTrailingSeparator(buf);
     }
 
     /** Deduplicate a list of encoded cookies by keeping only the last instance with a given name.

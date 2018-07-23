@@ -229,7 +229,7 @@ public class FullHttpResponseTest {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookie() {
-        FullHttpResponse.response().cookies(null).build();
+        FullHttpResponse.response().cookies((ResponseCookie) null).build();
     }
 
     @Test(expectedExceptions = NullPointerException.class)

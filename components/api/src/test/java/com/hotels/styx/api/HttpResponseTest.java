@@ -241,7 +241,7 @@ public class HttpResponseTest {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookie() {
-        response().cookies(null).build();
+        response().cookies((ResponseCookie) null).build();
     }
 
     @Test(expectedExceptions = NullPointerException.class)

@@ -16,6 +16,7 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.api.cookies.RequestCookie;
 import com.hotels.styx.api.messages.HttpMethod;
 import io.netty.buffer.ByteBuf;
 import org.testng.annotations.DataProvider;
@@ -426,7 +427,7 @@ public class FullHttpRequestTest {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookie() {
-        get("/").cookies(null);
+        get("/").cookies((RequestCookie) null);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)

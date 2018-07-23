@@ -16,6 +16,7 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.api.cookies.RequestCookie;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
@@ -76,7 +77,7 @@ public class HttpRequestTest {
         assertThat(full.headers(), containsInAnyOrder(
                 header("HeaderName", "HeaderValue"),
                 header("Cookie", "CookieName=CookieValue")));
-//        assertThat(full.cookies(), contains(HttpCookie.cookie("CookieName", "CookieValue")));
+        assertThat(full.cookies(), contains(requestCookie("CookieName", "CookieValue")));
         assertThat(full.body(), is(bytes("foobar")));
     }
 
@@ -326,7 +327,7 @@ public class HttpRequestTest {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookie() {
-        get("/").cookies(null);
+        get("/").cookies((RequestCookie) null);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
