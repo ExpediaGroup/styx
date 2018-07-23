@@ -64,10 +64,23 @@ public final class ResponseCookie {
         this.hashCode = hash(name, value, domain, maxAge, path, secure, httpOnly);
     }
 
+    /**
+     * Creates a builder for response cookie.
+     *
+     * @param name  name
+     * @param value value
+     * @return builder
+     */
     public static ResponseCookie.Builder responseCookie(String name, String value) {
         return new ResponseCookie.Builder(name, value);
     }
 
+    /**
+     * Decodes a list of "Set-Cookie" header values into a set of {@link ResponseCookie} objects.
+     *
+     * @param headerValues "Set-Cookie" header values
+     * @return cookies
+     */
     public static Set<ResponseCookie> decode(List<String> headerValues) {
         return headerValues.stream()
                 .map(ClientCookieDecoder.LAX::decode)
@@ -75,6 +88,12 @@ public final class ResponseCookie {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Encodes a collection of {@link ResponseCookie} objects into a list of "Set-Cookie" header values.
+     *
+     * @param cookies cookies
+     * @return "Set-Cookie" header values
+     */
     public static List<String> encode(Collection<ResponseCookie> cookies) {
         Set<Cookie> nettyCookies = cookies.stream()
                 .map(ResponseCookie::convert)
@@ -83,6 +102,12 @@ public final class ResponseCookie {
         return ServerCookieEncoder.LAX.encode(nettyCookies);
     }
 
+    /**
+     * Encodes a {@link ResponseCookie} object into a "Set-Cookie" header value.
+     *
+     * @param cookie cookie
+     * @return "Set-Cookie" header value
+     */
     public static String encode(ResponseCookie cookie) {
         return ServerCookieEncoder.LAX.encode(convert(cookie));
     }
@@ -105,22 +130,47 @@ public final class ResponseCookie {
         return value;
     }
 
+    /**
+     * Returns the Max-Age attribute, if present.
+     *
+     * @return Max-Age attribute, if present
+     */
     public Optional<Long> maxAge() {
         return Optional.ofNullable(maxAge).filter(value -> value != UNDEFINED_MAX_AGE);
     }
 
+    /**
+     * Returns the Path attribute, if present.
+     *
+     * @return Path attribute, if present
+     */
     public Optional<String> path() {
         return Optional.ofNullable(path);
     }
 
+    /**
+     * Returns true if the HttpOnly attribute is present.
+     *
+     * @return true if the HttpOnly attribute is present
+     */
     public boolean httpOnly() {
         return httpOnly;
     }
 
+    /**
+     * Returns the Domain attribute, if present.
+     *
+     * @return Domain attribute, if present
+     */
     public Optional<String> domain() {
         return Optional.ofNullable(domain);
     }
 
+    /**
+     * Returns true if the Secure attribute is present.
+     *
+     * @return true if the Secure attribute is present
+     */
     public boolean secure() {
         return secure;
     }
@@ -208,36 +258,78 @@ public final class ResponseCookie {
             this.value = requireNonNull(value);
         }
 
+        /**
+         * Sets the cookie name.
+         *
+         * @param name cookie name
+         * @return this builder
+         */
         public Builder name(String name) {
             this.name = requireNonNull(name);
             return this;
         }
 
+        /**
+         * Sets the cookie value.
+         *
+         * @param value cookie value
+         * @return this builder
+         */
         public Builder value(String value) {
             this.value = requireNonNull(value);
             return this;
         }
 
+        /**
+         * Sets the Domain attribute.
+         *
+         * @param domain Domain attribute
+         * @return this builder
+         */
         public Builder domain(String domain) {
             this.domain = domain;
             return this;
         }
 
+        /**
+         * Sets the Max-Age attribute.
+         *
+         * @param maxAge Max-Age attribute
+         * @return this builder
+         */
         public Builder maxAge(long maxAge) {
             this.maxAge = maxAge == UNDEFINED_MAX_AGE ? null : maxAge;
             return this;
         }
 
+        /**
+         * Sets the Path attribute.
+         *
+         * @param path Path attribute
+         * @return this builder
+         */
         public Builder path(String path) {
             this.path = path;
             return this;
         }
 
+        /**
+         * Sets/unsets the HttpOnly attribute.
+         *
+         * @param httpOnly true to set the attribute, false to unset it
+         * @return this builder
+         */
         public Builder httpOnly(boolean httpOnly) {
             this.httpOnly = httpOnly;
             return this;
         }
 
+        /**
+         * Sets/unsets the Secure attribute.
+         *
+         * @param secure true to set the attribute, false to unset it
+         * @return this builder
+         */
         public Builder secure(boolean secure) {
             this.secure = secure;
             return this;

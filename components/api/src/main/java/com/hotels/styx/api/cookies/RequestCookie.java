@@ -63,6 +63,12 @@ public final class RequestCookie {
         return new RequestCookie(name, value);
     }
 
+    /**
+     * Decodes a "Cookie" header value into a set of {@link RequestCookie} objects.
+     *
+     * @param headerValue "Cookie" header value
+     * @return cookies
+     */
     public static Set<RequestCookie> decode(String headerValue) {
         return ServerCookieDecoder.LAX.decode(headerValue).stream()
                 .map(RequestCookie::convert)
