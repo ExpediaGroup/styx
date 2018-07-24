@@ -95,6 +95,7 @@ class AsyncRequestContentDelayPlugin extends PluginAdapter {
           Observable.just(byteBuf)
         })
 
+    // This was split apart as it no longer compiles without the type annotation StyxObservable[HttpRequest]
     val mapped: StyxObservable[HttpRequest] = StyxObservable.of(request)
       .map(asJavaFunction((request: HttpRequest) => request.newBuilder().body(fromRxObservable(contentTransformation)).build()))
 
