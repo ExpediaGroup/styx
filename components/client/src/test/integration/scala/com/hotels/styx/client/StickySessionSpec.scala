@@ -25,6 +25,7 @@ import com.hotels.styx.api.Id.id
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.client.{ActiveOrigins, Origin}
 import com.hotels.styx.api.cookies.RequestCookie
+import com.hotels.styx.api.cookies.RequestCookie.requestCookie
 import com.hotels.styx.api.messages.HttpResponseStatus.OK
 import com.hotels.styx.api.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
@@ -133,7 +134,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build
 
     val request: HttpRequest = get("/")
-      .cookies(RequestCookie.requestCookie("styx_origin_app", "app-02"))
+      .cookies(requestCookie("styx_origin_app", "app-02"))
       .build
 
     val response1 = waitForResponse(client.sendRequest(request))
@@ -152,9 +153,9 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
 
     val request: HttpRequest = get("/")
       .cookies(
-        RequestCookie.requestCookie("other_cookie1", "foo"),
-        RequestCookie.requestCookie("styx_origin_app", "app-02"),
-        RequestCookie.requestCookie("other_cookie2", "bar"))
+        requestCookie("other_cookie1", "foo"),
+        requestCookie("styx_origin_app", "app-02"),
+        requestCookie("other_cookie2", "bar"))
       .build()
 
 
@@ -173,7 +174,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build
 
     val request: HttpRequest = get("/")
-      .cookies(RequestCookie.requestCookie("styx_origin_app", "h3"))
+      .cookies(requestCookie("styx_origin_app", "h3"))
       .build
 
     val response = waitForResponse(client.sendRequest(request))
@@ -198,7 +199,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build
 
     val request: HttpRequest = get("/")
-      .cookies(RequestCookie.requestCookie("styx_origin_app", "app-02"))
+      .cookies(requestCookie("styx_origin_app", "app-02"))
       .build
 
     val response = waitForResponse(client.sendRequest(request))

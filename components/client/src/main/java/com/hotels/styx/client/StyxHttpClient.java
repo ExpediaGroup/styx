@@ -25,7 +25,6 @@ import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.cookies.RequestCookie;
-import com.hotels.styx.api.cookies.ResponseCookie;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.metrics.MetricRegistry;
@@ -49,7 +48,6 @@ import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
@@ -311,16 +309,12 @@ public final class StyxHttpClient implements HttpClient {
     private HttpResponse addStickySessionIdentifier(HttpResponse httpResponse, Origin origin) {
         if (this.loadBalancer instanceof StickySessionLoadBalancingStrategy) {
             int maxAge = backendService.stickySessionConfig().stickySessionTimeoutSeconds();
-            return addCookie(httpResponse, newStickySessionCookie(id, origin.id(), maxAge));
+            return httpResponse.newBuilder()
+                    .addCookies(newStickySessionCookie(id, origin.id(), maxAge))
+                    .build();
         } else {
             return httpResponse;
         }
-    }
-
-    private static HttpResponse addCookie(HttpResponse response, ResponseCookie cookie) {
-        return response.newBuilder()
-                .addHeader(SET_COOKIE, ResponseCookie.encode(cookie))
-                .build();
     }
 
     private HttpRequest rewriteUrl(HttpRequest request) {
