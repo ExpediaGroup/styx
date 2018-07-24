@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.api;
 
+import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.cookies.RequestCookie;
 import com.hotels.styx.api.messages.HttpMethod;
 import com.hotels.styx.api.messages.HttpVersion;
@@ -23,11 +24,13 @@ import io.netty.buffer.CompositeByteBuf;
 import rx.Observable;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
@@ -38,6 +41,7 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
+import static com.hotels.styx.api.cookies.RequestCookie.decode;
 import static com.hotels.styx.api.cookies.RequestCookie.encode;
 import static com.hotels.styx.api.messages.HttpMethod.DELETE;
 import static com.hotels.styx.api.messages.HttpMethod.GET;
@@ -59,6 +63,7 @@ import static java.net.InetSocketAddress.createUnresolved;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
+import static java.util.stream.Collectors.toList;
 
 /**
  * HTTP request with a fully aggregated/decoded body.
@@ -614,11 +619,76 @@ public class HttpRequest implements StreamingHttpMessage {
          * @param cookies cookies
          * @return this builder
          */
-        public Builder cookies(List<RequestCookie> cookies) {
+        public Builder cookies(Collection<RequestCookie> cookies) {
             if (!cookies.isEmpty()) {
                 header(COOKIE, encode(cookies));
             }
             return this;
+        }
+
+        /**
+         * Adds cookies into this request by overwriting the value of the "Cookie" header.
+         * <p>
+         * Note that this requires decoding the current header value before re-encoding, so it is most efficient to
+         * add all new cookies in one call to the method rather than spreading them out.
+         *
+         * @param cookies new cookies
+         * @return this builder
+         */
+        public Builder addCookies(RequestCookie... cookies) {
+            return addCookies(asList(cookies));
+        }
+
+        /**
+         * Adds cookies into this request by overwriting the value of the "Cookie" header.
+         * <p>
+         * Note that this requires decoding the current header value before re-encoding, so it is most efficient to
+         * add all new cookies in one call to the method rather than spreading them out.
+         *
+         * @param cookies new cookies
+         * @return this builder
+         */
+        public Builder addCookies(Collection<RequestCookie> cookies) {
+            Set<RequestCookie> currentCookies = decode(headers.get(COOKIE));
+
+            List<RequestCookie> combinedCookies = new ArrayList<>(currentCookies.size() + cookies.size());
+            combinedCookies.addAll(currentCookies);
+            combinedCookies.addAll(cookies);
+            return cookies(combinedCookies);
+        }
+
+        /**
+         * Removes all cookies matching one of the supplied names by overwriting the value of the "Cookie" header.
+         *
+         * @param names cookie names
+         * @return this builder
+         */
+        public Builder removeCookies(String... names) {
+            return removeCookies(asList(names));
+        }
+
+        /**
+         * Removes all cookies matching one of the supplied names by overwriting the value of the "Cookie" header.
+         *
+         * @param names cookie names
+         * @return this builder
+         */
+        public Builder removeCookies(Collection<String> names) {
+            return removeCookiesIf(toSet(names)::contains);
+        }
+
+        private Builder removeCookiesIf(Predicate<String> removeIfName) {
+            Predicate<RequestCookie> keepIf = cookie -> !removeIfName.test(cookie.name());
+
+            List<RequestCookie> newCookies = decode(headers.get(COOKIE)).stream()
+                    .filter(keepIf)
+                    .collect(toList());
+
+            return cookies(newCookies);
+        }
+
+        private static <T> Set<T> toSet(Collection<T> collection) {
+            return collection instanceof Set ? (Set<T>) collection : ImmutableSet.copyOf(collection);
         }
 
         /**

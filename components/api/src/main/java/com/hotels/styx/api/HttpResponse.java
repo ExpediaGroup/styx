@@ -16,6 +16,7 @@
 package com.hotels.styx.api;
 
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.cookies.ResponseCookie;
 import com.hotels.styx.api.messages.HttpResponseStatus;
@@ -26,9 +27,11 @@ import io.netty.util.ReferenceCountUtil;
 import rx.Observable;
 
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -52,6 +55,7 @@ import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 /**
  * HTTP response with a fully aggregated/decoded body.
@@ -322,7 +326,7 @@ public class HttpResponse implements StreamingHttpMessage {
         }
 
         /**
-         * Sets the cookies on this response by adding "Set-Cookie" headers.
+         * Sets the cookies on this response by removing existing "Set-Cookie" headers and adding new ones.
          *
          * @param cookies cookies
          * @return this builder
@@ -332,15 +336,70 @@ public class HttpResponse implements StreamingHttpMessage {
         }
 
         /**
-         * Sets the cookies on this response by adding "Set-Cookie" headers.
+         * Sets the cookies on this response by removing existing "Set-Cookie" headers and adding new ones.
          *
          * @param cookies cookies
          * @return this builder
          */
-        public Builder cookies(List<ResponseCookie> cookies) {
+        public Builder cookies(Collection<ResponseCookie> cookies) {
+            headers.remove(SET_COOKIE);
+            return addCookies(cookies);
+        }
+
+        /**
+         * Adds cookies into this response by adding "Set-Cookie" headers.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        public Builder addCookies(ResponseCookie... cookies) {
+            return addCookies(asList(cookies));
+        }
+
+        /**
+         * Adds cookies into this response by adding "Set-Cookie" headers.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        public Builder addCookies(Collection<ResponseCookie> cookies) {
             encode(cookies).forEach(cookie ->
                     addHeader(SET_COOKIE, cookie));
             return this;
+        }
+
+        /**
+         * Removes all cookies matching one of the supplied names by removing their "Set-Cookie" headers.
+         *
+         * @param names cookie names
+         * @return this builder
+         */
+        public Builder removeCookies(String... names) {
+            return removeCookies(asList(names));
+        }
+
+        /**
+         * Removes all cookies matching one of the supplied names by removing their "Set-Cookie" headers.
+         *
+         * @param names cookie names
+         * @return this builder
+         */
+        public <T> Builder removeCookies(Collection<String> names) {
+            return removeCookiesIf(toSet(names)::contains);
+        }
+
+        private Builder removeCookiesIf(Predicate<String> removeIfName) {
+            Predicate<ResponseCookie> keepIf = cookie -> !removeIfName.test(cookie.name());
+
+            List<ResponseCookie> newCookies = decode(headers.getAll(SET_COOKIE)).stream()
+                    .filter(keepIf)
+                    .collect(toList());
+
+            return cookies(newCookies);
+        }
+
+        private static <T> Set<T> toSet(Collection<T> collection) {
+            return collection instanceof Set ? (Set<T>) collection : ImmutableSet.copyOf(collection);
         }
 
         /**
