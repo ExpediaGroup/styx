@@ -30,13 +30,13 @@ import java.util.function.Function;
  * @param <T>
  */
 public interface StyxObservable<T> {
-    <U> StyxObservable<U> map(Function<T, U> transformation);
+    <U> StyxObservable<U> map(Function<? super T, ? extends U> transformation);
 
-    <U> StyxObservable<U> flatMap(Function<T, StyxObservable<U>> transformation);
+    <U> StyxObservable<U> flatMap(Function<? super T, ? extends StyxObservable<? extends U>> transformation);
 
-    <U> StyxObservable<U> reduce(BiFunction<T, U, U> accumulator, U initialValue);
+    <U> StyxObservable<U> reduce(BiFunction<? super T, U, U> accumulator, U initialValue);
 
-    StyxObservable<T> onError(Function<Throwable, StyxObservable<T>> errorHandler);
+    StyxObservable<T> onError(Function<Throwable, ? extends StyxObservable<? extends T>> errorHandler);
 
     /**
      * Converts this observable to a completable future. Note that in order to do this, it must
@@ -62,7 +62,7 @@ public interface StyxObservable<T> {
         return new StyxCoreObservable<>(Observable.just(value));
     }
 
-    static <T> StyxObservable<T> from(Iterable<T> values) {
+    static <T> StyxObservable<T> from(Iterable<? extends T> values) {
         return new StyxCoreObservable<>(Observable.from(values));
     }
 

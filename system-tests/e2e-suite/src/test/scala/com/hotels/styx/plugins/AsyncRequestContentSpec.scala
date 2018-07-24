@@ -94,8 +94,11 @@ class AsyncRequestContentDelayPlugin extends PluginAdapter {
           Thread.sleep(1000)
           Observable.just(byteBuf)
         })
-    StyxObservable.of(request)
+
+    val mapped: StyxObservable[HttpRequest] = StyxObservable.of(request)
       .map(asJavaFunction((request: HttpRequest) => request.newBuilder().body(fromRxObservable(contentTransformation)).build()))
+
+    mapped
       .flatMap(asJavaFunction((request: HttpRequest) => chain.proceed(request)))
   }
 }
