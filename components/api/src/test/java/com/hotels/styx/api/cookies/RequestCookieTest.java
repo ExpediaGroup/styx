@@ -15,9 +15,13 @@
  */
 package com.hotels.styx.api.cookies;
 
+import com.google.common.collect.ImmutableList;
 import org.testng.annotations.Test;
 
+import static com.hotels.styx.api.cookies.RequestCookie.encode;
 import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public class RequestCookieTest {
 
@@ -34,5 +38,17 @@ public class RequestCookieTest {
     @Test(expectedExceptions = NullPointerException.class)
     public void acceptsOnlyNonNullValue() {
         requestCookie("name", null);
+    }
+
+    @Test
+    public void doesNotEncodeDuplicateCookies() {
+        String encoded = encode(ImmutableList.of(
+                requestCookie("foo", "bar"),
+                requestCookie("bar", "foo"),
+                requestCookie("foo", "asjdfksdajf")
+                )
+        );
+
+        assertThat(encoded, is("bar=foo; foo=bar"));
     }
 }

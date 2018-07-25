@@ -401,6 +401,38 @@ public class HttpRequestTest {
         assertThat(shouldMatchOriginal.clientAddress(), is(address));
     }
 
+    @Test
+    public void addsCookies() {
+        HttpRequest request = HttpRequest.get("/")
+                .addCookies(requestCookie("x", "x1"), requestCookie("y", "y1"))
+                .build();
+
+        assertThat(request.cookies(), containsInAnyOrder(requestCookie("x", "x1"), requestCookie("y", "y1")));
+    }
+
+    @Test
+    public void addsCookiesToExistingCookies() {
+        HttpRequest request = HttpRequest.get("/")
+                .addCookies(requestCookie("z", "z1"))
+                .addCookies(requestCookie("x", "x1"), requestCookie("y", "y1"))
+                .build();
+
+        assertThat(request.cookies(), containsInAnyOrder(requestCookie("x", "x1"), requestCookie("y", "y1"), requestCookie("z", "z1")));
+    }
+
+    @Test
+    public void newCookiesWithDuplicateNamesOverridePreviousOnes() {
+        HttpRequest r1 = HttpRequest.get("/")
+                .cookies(requestCookie("y", "y1"))
+                .build();
+
+        HttpRequest r2 = r1.newBuilder().addCookies(
+                requestCookie("y", "y2"))
+                .build();
+
+        assertThat(r2.cookies(), containsInAnyOrder(requestCookie("y", "y2")));
+    }
+
     private static StyxObservable<ByteBuf> body(String... contents) {
         return StyxObservable.from(Stream.of(contents)
                 .map(content -> copiedBuffer(content, UTF_8))

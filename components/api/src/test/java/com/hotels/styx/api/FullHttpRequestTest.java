@@ -485,4 +485,36 @@ public class FullHttpRequestTest {
         assertThat(newRequest.version(), is(HTTP_1_0));
     }
 
+    @Test
+    public void addsCookies() {
+        FullHttpRequest request = FullHttpRequest.get("/")
+                .addCookies(requestCookie("x", "x1"), requestCookie("y", "y1"))
+                .build();
+
+        assertThat(request.cookies(), containsInAnyOrder(requestCookie("x", "x1"), requestCookie("y", "y1")));
+    }
+
+    @Test
+    public void addsCookiesToExistingCookies() {
+        FullHttpRequest request = FullHttpRequest.get("/")
+                .addCookies(requestCookie("z", "z1"))
+                .addCookies(requestCookie("x", "x1"), requestCookie("y", "y1"))
+                .build();
+
+        assertThat(request.cookies(), containsInAnyOrder(requestCookie("x", "x1"), requestCookie("y", "y1"), requestCookie("z", "z1")));
+    }
+
+    @Test
+    public void newCookiesWithDuplicateNamesOverridePreviousOnes() {
+        FullHttpRequest r1 = FullHttpRequest.get("/")
+                .cookies(requestCookie("y", "y1"))
+                .build();
+
+        FullHttpRequest r2 = r1.newBuilder().addCookies(
+                requestCookie("y", "y2"))
+                .build();
+
+        assertThat(r2.cookies(), containsInAnyOrder(requestCookie("y", "y2")));
+    }
+
 }

@@ -363,6 +363,12 @@ public class HttpResponse implements StreamingHttpMessage {
          * @return this builder
          */
         public Builder addCookies(Collection<ResponseCookie> cookies) {
+            if (cookies.isEmpty()) {
+                return this;
+            }
+
+            removeCookies(cookies.stream().map(ResponseCookie::name).collect(toList()));
+
             encode(cookies).forEach(cookie ->
                     addHeader(SET_COOKIE, cookie));
             return this;
@@ -385,6 +391,10 @@ public class HttpResponse implements StreamingHttpMessage {
          * @return this builder
          */
         public <T> Builder removeCookies(Collection<String> names) {
+            if (names.isEmpty()) {
+                return this;
+            }
+
             return removeCookiesIf(toSet(names)::contains);
         }
 

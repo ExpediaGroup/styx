@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
+import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
 import static com.hotels.styx.api.cookies.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY;
@@ -315,6 +316,38 @@ public class HttpResponseTest {
 
         assertThat(responseUtf8.body(), is("Hello, World!".getBytes(UTF_8)));
         assertThat(responseUtf16.body(), is("Hello, World!".getBytes(UTF_16)));
+    }
+
+    @Test
+    public void addsCookies() {
+        HttpResponse response = response()
+                .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
+                .build();
+
+        assertThat(response.cookies(), containsInAnyOrder(responseCookie("x", "x1").build(), responseCookie("y", "y1").build()));
+    }
+
+    @Test
+    public void addsCookiesToExistingCookies() {
+        HttpResponse response = response()
+                .addCookies(responseCookie("z", "z1").build())
+                .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
+                .build();
+
+        assertThat(response.cookies(), containsInAnyOrder(responseCookie("x", "x1").build(), responseCookie("y", "y1").build(), responseCookie("z", "z1").build()));
+    }
+
+    @Test
+    public void newCookiesWithDuplicateNamesOverridePreviousOnes() {
+        HttpResponse r1 = response()
+                .cookies(responseCookie("y", "y1").build())
+                .build();
+
+        HttpResponse r2 = r1.newBuilder().addCookies(
+                responseCookie("y", "y2").build())
+                .build();
+
+        assertThat(r2.cookies(), containsInAnyOrder(responseCookie("y", "y2").build()));
     }
 
     private static HttpResponse.Builder response() {

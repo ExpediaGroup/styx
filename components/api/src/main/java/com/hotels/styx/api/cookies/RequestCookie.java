@@ -27,6 +27,7 @@ import java.util.Set;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.hotels.styx.api.common.Strings.quote;
+import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 
@@ -70,6 +71,10 @@ public final class RequestCookie {
      * @return cookies
      */
     public static Set<RequestCookie> decode(String headerValue) {
+        if (headerValue == null) {
+            return emptySet();
+        }
+
         return ServerCookieDecoder.LAX.decode(headerValue).stream()
                 .map(RequestCookie::convert)
                 .collect(toSet());

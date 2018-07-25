@@ -461,11 +461,11 @@ public class FullHttpResponseTest {
 
     @Test
     public void transformedBodyIsNewCopy() {
-        FullHttpRequest request = get("/foo")
+        FullHttpResponse request = response()
                 .body("Original body", UTF_8)
                 .build();
 
-        FullHttpRequest newRequest = request.newBuilder()
+        FullHttpResponse newRequest = response()
                 .body("New body", UTF_8)
                 .build();
 
@@ -473,4 +473,35 @@ public class FullHttpResponseTest {
         assertThat(newRequest.bodyAs(UTF_8), is("New body"));
     }
 
+    @Test
+    public void addsCookies() {
+        FullHttpResponse response = response()
+                .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
+                .build();
+
+        assertThat(response.cookies(), containsInAnyOrder(responseCookie("x", "x1").build(), responseCookie("y", "y1").build()));
+    }
+
+    @Test
+    public void addsCookiesToExistingCookies() {
+        FullHttpResponse response = response()
+                .addCookies(responseCookie("z", "z1").build())
+                .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
+                .build();
+
+        assertThat(response.cookies(), containsInAnyOrder(responseCookie("x", "x1").build(), responseCookie("y", "y1").build(), responseCookie("z", "z1").build()));
+    }
+
+    @Test
+    public void newCookiesWithDuplicateNamesOverridePreviousOnes() {
+        FullHttpResponse r1 = response()
+                .cookies(responseCookie("y", "y1").build())
+                .build();
+
+        FullHttpResponse r2 = r1.newBuilder().addCookies(
+                responseCookie("y", "y2").build())
+                .build();
+
+        assertThat(r2.cookies(), containsInAnyOrder(responseCookie("y", "y2").build()));
+    }
 }

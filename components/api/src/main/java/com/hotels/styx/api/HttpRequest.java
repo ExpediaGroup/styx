@@ -652,8 +652,8 @@ public class HttpRequest implements StreamingHttpMessage {
             Set<RequestCookie> currentCookies = decode(headers.get(COOKIE));
 
             List<RequestCookie> combinedCookies = new ArrayList<>(currentCookies.size() + cookies.size());
-            combinedCookies.addAll(currentCookies);
             combinedCookies.addAll(cookies);
+            combinedCookies.addAll(currentCookies);
             return cookies(combinedCookies);
         }
 

@@ -212,7 +212,6 @@ public final class ResponseCookie {
         ResponseCookie that = (ResponseCookie) o;
         return httpOnly == that.httpOnly
                 && secure == that.secure
-                && hashCode == that.hashCode
                 && Objects.equals(name, that.name)
                 && Objects.equals(value, that.value)
                 && Objects.equals(domain, that.domain)
@@ -222,7 +221,7 @@ public final class ResponseCookie {
 
     @Override
     public int hashCode() {
-        return hash(name, value, domain, maxAge, path, httpOnly, secure, hashCode);
+        return hash(name, value, domain, maxAge, path, httpOnly, secure);
     }
 
     @Override
@@ -235,7 +234,6 @@ public final class ResponseCookie {
                 .add("path", path)
                 .add("httpOnly", httpOnly)
                 .add("secure", secure)
-                .add("hashCode", hashCode)
                 .toString();
     }
 
