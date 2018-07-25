@@ -629,7 +629,7 @@ public class HttpRequest implements StreamingHttpMessage {
         }
 
         /**
-         * Adds cookies into this request by overwriting the value of the "Cookie" header.
+         * Adds cookies into the "Cookie" header. If the name matches an already existing cookie, the value will be overwritten.
          * <p>
          * Note that this requires decoding the current header value before re-encoding, so it is most efficient to
          * add all new cookies in one call to the method rather than spreading them out.
@@ -642,7 +642,7 @@ public class HttpRequest implements StreamingHttpMessage {
         }
 
         /**
-         * Adds cookies into this request by overwriting the value of the "Cookie" header.
+         * Adds cookies into the "Cookie" header. If the name matches an already existing cookie, the value will be overwritten.
          * <p>
          * Note that this requires decoding the current header value before re-encoding, so it is most efficient to
          * add all new cookies in one call to the method rather than spreading them out.
