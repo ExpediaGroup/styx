@@ -517,4 +517,14 @@ public class FullHttpResponseTest {
 
         assertThat(r2.cookies(), contains(responseCookie("y", "y1").build()));
     }
+
+    @Test
+    public void removesCookiesInSameBuilder() {
+        FullHttpResponse r1 = response()
+                .addCookies(responseCookie("x", "x1").build())
+                .removeCookies("x")
+                .build();
+
+        assertThat(r1.cookie("x"), isAbsent());
+    }
 }

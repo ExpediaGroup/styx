@@ -44,6 +44,7 @@ import static com.hotels.styx.api.messages.HttpResponseStatus.SEE_OTHER;
 import static com.hotels.styx.api.messages.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -362,6 +363,16 @@ public class HttpResponseTest {
                 .build();
 
         assertThat(r2.cookies(), contains(responseCookie("y", "y1").build()));
+    }
+
+    @Test
+    public void removesCookiesInSameBuilder() {
+        HttpResponse r1 = response()
+                .addCookies(responseCookie("x", "x1").build())
+                .removeCookies("x")
+                .build();
+
+        assertThat(r1.cookie("x"), isAbsent());
     }
 
     private static HttpResponse.Builder response() {

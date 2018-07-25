@@ -620,6 +620,8 @@ public class HttpRequest implements StreamingHttpMessage {
          * @return this builder
          */
         public Builder cookies(Collection<RequestCookie> cookies) {
+            headers.remove(COOKIE);
+
             if (!cookies.isEmpty()) {
                 header(COOKIE, encode(cookies));
             }

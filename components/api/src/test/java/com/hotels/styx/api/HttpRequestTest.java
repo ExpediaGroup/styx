@@ -447,6 +447,16 @@ public class HttpRequestTest {
         assertThat(r2.cookies(), contains(requestCookie("y", "y1")));
     }
 
+    @Test
+    public void removesCookiesInSameBuilder() {
+        HttpRequest r1 = HttpRequest.get("/")
+                .addCookies(requestCookie("x", "x1"))
+                .removeCookies("x")
+                .build();
+
+        assertThat(r1.cookie("x"), isAbsent());
+    }
+
     private static StyxObservable<ByteBuf> body(String... contents) {
         return StyxObservable.from(Stream.of(contents)
                 .map(content -> copiedBuffer(content, UTF_8))

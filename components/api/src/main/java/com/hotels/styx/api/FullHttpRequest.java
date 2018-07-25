@@ -586,6 +586,8 @@ public class FullHttpRequest implements FullHttpMessage {
          * @return this builder
          */
         public Builder cookies(Collection<RequestCookie> cookies) {
+            headers.remove(COOKIE);
+
             if (!cookies.isEmpty()) {
                 header(COOKIE, encode(cookies));
             }
