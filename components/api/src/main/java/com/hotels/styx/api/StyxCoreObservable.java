@@ -25,7 +25,7 @@ import java.util.function.Function;
 /**
  * An observable that underpins the StyxObservable interface.
  *
- * @param <T>
+ * @param <T> type of object published
  */
 class StyxCoreObservable<T> implements StyxObservable<T> {
     private final Observable<T> delegate;
@@ -50,16 +50,16 @@ class StyxCoreObservable<T> implements StyxObservable<T> {
         return new StyxCoreObservable<T>(Observable.error(cause));
     }
 
-    public <U> StyxObservable<U> map(Function<? super T, ? extends U> transformation) {
+    public <R> StyxObservable<R> map(Function<? super T, ? extends R> transformation) {
         return new StyxCoreObservable<>(delegate.map(transformation::apply));
     }
 
-    public <U> StyxObservable<U> flatMap(Function<? super T, ? extends StyxObservable<? extends U>> transformation) {
+    public <R> StyxObservable<R> flatMap(Function<? super T, ? extends StyxObservable<? extends R>> transformation) {
         return new StyxCoreObservable<>(delegate.flatMap(response ->
                 toObservable(transformation.apply(response))));
     }
 
-    public <U> StyxObservable<U> reduce(BiFunction<? super T, U, U> accumulator, U seed) {
+    public <R> StyxObservable<R> reduce(BiFunction<? super T, R, R> accumulator, R seed) {
         return new StyxCoreObservable<>(delegate.reduce(seed, (result, element) -> accumulator.apply(element, result)));
     }
 
@@ -83,9 +83,9 @@ class StyxCoreObservable<T> implements StyxObservable<T> {
         return future;
     }
 
-    private static <U> Observable<? extends U> toObservable(StyxObservable<U> styxObservable) {
+    private static <T> Observable<T> toObservable(StyxObservable<T> styxObservable) {
         return styxObservable instanceof StyxCoreObservable
-                ? ((StyxCoreObservable<U>) styxObservable).delegate
+                ? ((StyxCoreObservable<T>) styxObservable).delegate
                 : toObservable(styxObservable.asCompletableFuture());
     }
 

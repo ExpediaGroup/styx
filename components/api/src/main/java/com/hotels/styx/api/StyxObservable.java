@@ -27,14 +27,14 @@ import java.util.function.Function;
  * <p>
  * This interface provides a is *not* intended for plugins to extend.
  *
- * @param <T>
+ * @param <T> type of object published
  */
 public interface StyxObservable<T> {
-    <U> StyxObservable<U> map(Function<? super T, ? extends U> transformation);
+    <R> StyxObservable<R> map(Function<? super T, ? extends R> transformation);
 
-    <U> StyxObservable<U> flatMap(Function<? super T, ? extends StyxObservable<? extends U>> transformation);
+    <R> StyxObservable<R> flatMap(Function<? super T, ? extends StyxObservable<? extends R>> transformation);
 
-    <U> StyxObservable<U> reduce(BiFunction<? super T, U, U> accumulator, U initialValue);
+    <R> StyxObservable<R> reduce(BiFunction<? super T, R, R> accumulator, R initialValue);
 
     StyxObservable<T> onError(Function<Throwable, ? extends StyxObservable<? extends T>> errorHandler);
 
