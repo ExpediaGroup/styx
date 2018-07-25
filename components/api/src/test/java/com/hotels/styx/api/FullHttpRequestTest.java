@@ -93,7 +93,7 @@ public class FullHttpRequestTest {
         TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
         subscriber.requestMore(1);
 
-        ((StyxCoreObservable<ByteBuf>)streaming.body()).delegate().subscribe(subscriber);
+        ((StyxCoreObservable<ByteBuf>) streaming.body()).delegate().subscribe(subscriber);
 
         assertThat(subscriber.getOnNextEvents().size(), is(0));
         subscriber.assertCompleted();
@@ -239,7 +239,7 @@ public class FullHttpRequestTest {
                 .body("original", UTF_8)
                 .build();
 
-        ByteBuf byteBuf = ((StyxCoreObservable<ByteBuf>)original.toStreamingRequest().body())
+        ByteBuf byteBuf = ((StyxCoreObservable<ByteBuf>) original.toStreamingRequest().body())
                 .delegate()
                 .toBlocking()
                 .first();

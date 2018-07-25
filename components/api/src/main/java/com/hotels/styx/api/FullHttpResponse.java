@@ -109,13 +109,13 @@ public class FullHttpResponse implements FullHttpMessage {
 
     /**
      * Returns the message body as a String decoded with provided character set.
-     *
+     * <p>
      * Decodes the message body into a Java String object with a provided charset.
      * The caller must ensure the provided charset is compatible with message content
      * type and encoding.
      *
-     * @param charset     Charset used to decode message body.
-     * @return            Message body as a String.
+     * @param charset Charset used to decode message body.
+     * @return Message body as a String.
      */
     @Override
     public String bodyAs(Charset charset) {
@@ -143,11 +143,11 @@ public class FullHttpResponse implements FullHttpMessage {
 
     /**
      * Converts this response to a streaming form (HttpResponse).
-     *
+     * <p>
      * Converts this response to a HttpResponse object which represents the HTTP response as a
      * stream of bytes.
      *
-     * @return   A streaming HttpResponse object.
+     * @return A streaming HttpResponse object.
      */
     public HttpResponse toStreamingResponse() {
         if (this.body.length == 0) {
@@ -253,7 +253,7 @@ public class FullHttpResponse implements FullHttpMessage {
 
         /**
          * Sets the request body.
-         *
+         * <p>
          * This method encodes a String content to a byte array using the specified
          * charset, and sets the Content-Length header accordingly.
          *
@@ -267,13 +267,13 @@ public class FullHttpResponse implements FullHttpMessage {
 
         /**
          * Sets the response body.
-         *
+         * <p>
          * This method encodes the content to a byte array using the specified
          * charset, and sets the Content-Length header *if* the setContentLength
          * argument is true.
          *
-         * @param content response body
-         * @param charset Charset used for encoding response body.
+         * @param content          response body
+         * @param charset          Charset used for encoding response body.
          * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
          * @return {@code this}
          */
@@ -285,12 +285,12 @@ public class FullHttpResponse implements FullHttpMessage {
 
         /**
          * Sets the response body.
-         *
+         * <p>
          * This method encodes the content to a byte array provided, and
          * sets the Content-Length header *if* the setContentLength
          * argument is true.
          *
-         * @param content response body
+         * @param content          response body
          * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
          * @return {@code this}
          */

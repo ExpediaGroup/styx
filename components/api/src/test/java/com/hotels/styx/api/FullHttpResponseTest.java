@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static com.hotels.styx.api.FullHttpRequest.get;
 import static com.hotels.styx.api.FullHttpResponse.response;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
@@ -73,7 +72,7 @@ public class FullHttpResponseTest {
                 header("Content-Length", "15"),
                 header("HeaderName", "HeaderValue"),
                 header("Set-Cookie", "CookieName=CookieValue")
-                ));
+        ));
         assertThat(streaming.cookies(), contains(responseCookie("CookieName", "CookieValue").build()));
 
         String body = streaming.toFullResponse(0x100000)
@@ -330,7 +329,7 @@ public class FullHttpResponseTest {
         TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
         subscriber.requestMore(1);
 
-        ((StyxCoreObservable<ByteBuf>)streaming.body()).delegate().subscribe(subscriber);
+        ((StyxCoreObservable<ByteBuf>) streaming.body()).delegate().subscribe(subscriber);
 
         assertThat(subscriber.getOnNextEvents().size(), is(0));
         subscriber.assertCompleted();
@@ -434,7 +433,7 @@ public class FullHttpResponseTest {
                 .body("original", UTF_8)
                 .build();
 
-        ByteBuf byteBuf = ((StyxCoreObservable<ByteBuf>)original.toStreamingResponse().body())
+        ByteBuf byteBuf = ((StyxCoreObservable<ByteBuf>) original.toStreamingResponse().body())
                 .delegate()
                 .toBlocking()
                 .first();
