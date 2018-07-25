@@ -430,7 +430,21 @@ public class HttpRequestTest {
                 requestCookie("y", "y2"))
                 .build();
 
-        assertThat(r2.cookies(), containsInAnyOrder(requestCookie("y", "y2")));
+        assertThat(r2.cookies(), contains(requestCookie("y", "y2")));
+    }
+
+    @Test
+    public void removesCookies() {
+        HttpRequest r1 = HttpRequest.get("/")
+                .addCookies(requestCookie("x", "x1"), requestCookie("y", "y1"))
+                .build();
+
+        HttpRequest r2 = r1.newBuilder()
+                .removeCookies("x")
+                .removeCookies("foo") // ensure that trying to remove a non-existent cookie does not cause Exception
+                .build();
+
+        assertThat(r2.cookies(), contains(requestCookie("y", "y1")));
     }
 
     private static StyxObservable<ByteBuf> body(String... contents) {

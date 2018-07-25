@@ -503,4 +503,18 @@ public class FullHttpResponseTest {
 
         assertThat(r2.cookies(), containsInAnyOrder(responseCookie("y", "y2").build()));
     }
+
+    @Test
+    public void removesCookies() {
+        FullHttpResponse r1 = response()
+                .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
+                .build();
+
+        FullHttpResponse r2 = r1.newBuilder()
+                .removeCookies("x")
+                .removeCookies("foo") // ensure that trying to remove a non-existent cookie does not cause Exception
+                .build();
+
+        assertThat(r2.cookies(), contains(responseCookie("y", "y1").build()));
+    }
 }

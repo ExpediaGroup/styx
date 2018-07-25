@@ -517,4 +517,17 @@ public class FullHttpRequestTest {
         assertThat(r2.cookies(), containsInAnyOrder(requestCookie("y", "y2")));
     }
 
+    @Test
+    public void removesCookies() {
+        FullHttpRequest r1 = FullHttpRequest.get("/")
+                .addCookies(requestCookie("x", "x1"), requestCookie("y", "y1"))
+                .build();
+
+        FullHttpRequest r2 = r1.newBuilder()
+                .removeCookies("x")
+                .removeCookies("foo") // ensure that trying to remove a non-existent cookie does not cause Exception
+                .build();
+
+        assertThat(r2.cookies(), contains(requestCookie("y", "y1")));
+    }
 }

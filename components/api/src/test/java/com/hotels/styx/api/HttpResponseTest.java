@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
+import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
 import static com.hotels.styx.api.cookies.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY;
@@ -347,6 +348,20 @@ public class HttpResponseTest {
                 .build();
 
         assertThat(r2.cookies(), containsInAnyOrder(responseCookie("y", "y2").build()));
+    }
+
+    @Test
+    public void removesCookies() {
+        HttpResponse r1 = response()
+                .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
+                .build();
+
+        HttpResponse r2 = r1.newBuilder()
+                .removeCookies("x")
+                .removeCookies("foo") // ensure that trying to remove a non-existent cookie does not cause Exception
+                .build();
+
+        assertThat(r2.cookies(), contains(responseCookie("y", "y1").build()));
     }
 
     private static HttpResponse.Builder response() {
