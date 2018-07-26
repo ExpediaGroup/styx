@@ -27,16 +27,16 @@ import java.util.function.Function;
  * <p>
  * This interface provides a is *not* intended for plugins to extend.
  *
- * @param <T>
+ * @param <T> type of object published
  */
 public interface StyxObservable<T> {
-    <U> StyxObservable<U> map(Function<T, U> transformation);
+    <R> StyxObservable<R> map(Function<? super T, ? extends R> transformation);
 
-    <U> StyxObservable<U> flatMap(Function<T, StyxObservable<U>> transformation);
+    <R> StyxObservable<R> flatMap(Function<? super T, ? extends StyxObservable<? extends R>> transformation);
 
-    <U> StyxObservable<U> reduce(BiFunction<T, U, U> accumulator, U initialValue);
+    <R> StyxObservable<R> reduce(BiFunction<? super T, R, R> accumulator, R initialValue);
 
-    StyxObservable<T> onError(Function<Throwable, StyxObservable<T>> errorHandler);
+    StyxObservable<T> onError(Function<Throwable, ? extends StyxObservable<? extends T>> errorHandler);
 
     /**
      * Converts this observable to a completable future. Note that in order to do this, it must
@@ -62,7 +62,7 @@ public interface StyxObservable<T> {
         return new StyxCoreObservable<>(Observable.just(value));
     }
 
-    static <T> StyxObservable<T> from(Iterable<T> values) {
+    static <T> StyxObservable<T> from(Iterable<? extends T> values) {
         return new StyxCoreObservable<>(Observable.from(values));
     }
 
