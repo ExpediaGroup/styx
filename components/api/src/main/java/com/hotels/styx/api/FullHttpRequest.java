@@ -586,6 +586,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * @return this builder
          */
         public Builder cookies(Collection<RequestCookie> cookies) {
+            requireNonNull(cookies);
             headers.remove(COOKIE);
 
             if (!cookies.isEmpty()) {
@@ -617,6 +618,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * @return this builder
          */
         public Builder addCookies(Collection<RequestCookie> cookies) {
+            requireNonNull(cookies);
             Set<RequestCookie> currentCookies = decode(headers.get(COOKIE));
 
             List<RequestCookie> combinedCookies = new ArrayList<>(currentCookies.size() + cookies.size());
@@ -642,6 +644,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * @return this builder
          */
         public Builder removeCookies(Collection<String> names) {
+            requireNonNull(names);
             return removeCookiesIf(toSet(names)::contains);
         }
 

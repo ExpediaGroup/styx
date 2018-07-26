@@ -355,6 +355,7 @@ public class FullHttpResponse implements FullHttpMessage {
          * @return this builder
          */
         public Builder cookies(Collection<ResponseCookie> cookies) {
+            requireNonNull(cookies);
             headers.remove(SET_COOKIE);
             return addCookies(cookies);
         }
@@ -376,6 +377,8 @@ public class FullHttpResponse implements FullHttpMessage {
          * @return this builder
          */
         public Builder addCookies(Collection<ResponseCookie> cookies) {
+            requireNonNull(cookies);
+
             if (cookies.isEmpty()) {
                 return this;
             }
@@ -404,6 +407,8 @@ public class FullHttpResponse implements FullHttpMessage {
          * @return this builder
          */
         public Builder removeCookies(Collection<String> names) {
+            requireNonNull(names);
+
             if (names.isEmpty()) {
                 return this;
             }
