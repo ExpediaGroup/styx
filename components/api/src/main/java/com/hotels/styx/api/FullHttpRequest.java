@@ -24,14 +24,13 @@ import rx.Observable;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -56,6 +55,7 @@ import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Stream.concat;
 
 /**
  * HTTP request with a fully aggregated/decoded body.
@@ -327,13 +327,9 @@ public class FullHttpRequest implements FullHttpMessage {
      * @return cookies
      */
     public Set<RequestCookie> cookies() {
-        // Note: there should only be one "Cookie" header, but we check for multiples just in case
-        // the alternative would be to respond with a 400 Bad Request status if multiple "Cookie" headers were detected
-
-        return headers.getAll(COOKIE).stream()
+        return headers.get(COOKIE)
                 .map(RequestCookie::decode)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toSet());
+                .orElseGet(Collections::emptySet);
     }
 
     /**
@@ -620,11 +616,9 @@ public class FullHttpRequest implements FullHttpMessage {
         public Builder addCookies(Collection<RequestCookie> cookies) {
             requireNonNull(cookies);
             Set<RequestCookie> currentCookies = decode(headers.get(COOKIE));
+            List<RequestCookie> newCookies = concat(cookies.stream(), currentCookies.stream()).collect(toList());
 
-            List<RequestCookie> combinedCookies = new ArrayList<>(currentCookies.size() + cookies.size());
-            combinedCookies.addAll(cookies);
-            combinedCookies.addAll(currentCookies);
-            return cookies(combinedCookies);
+            return cookies(newCookies);
         }
 
         /**
@@ -706,6 +700,7 @@ public class FullHttpRequest implements FullHttpMessage {
         public FullHttpRequest build() {
             if (validate) {
                 ensureContentLengthIsValid();
+                requireNotDuplicatedHeader(COOKIE);
                 ensureMethodIsValid();
                 setHostHeader();
             }
@@ -727,13 +722,17 @@ public class FullHttpRequest implements FullHttpMessage {
         }
 
         private void ensureContentLengthIsValid() {
-            List<String> contentLengths = headers.build().getAll(CONTENT_LENGTH);
+            requireNotDuplicatedHeader(CONTENT_LENGTH).ifPresent(contentLength ->
+                    checkArgument(isInteger(contentLength), "Invalid Content-Length found. %s", contentLength)
+            );
+        }
 
-            checkArgument(contentLengths.size() <= 1, "Duplicate Content-Length found. %s", contentLengths);
+        private Optional<String> requireNotDuplicatedHeader(CharSequence headerName) {
+            List<String> headerValues = headers.build().getAll(headerName);
 
-            if (contentLengths.size() == 1) {
-                checkArgument(isInteger(contentLengths.get(0)), "Invalid Content-Length found. %s", contentLengths.get(0));
-            }
+            checkArgument(headerValues.size() <= 1, "Duplicate %s found. %s", headerName, headerValues);
+
+            return headerValues.isEmpty() ? Optional.empty() : Optional.of(headerValues.get(0));
         }
 
         private static boolean isInteger(String contentLength) {
