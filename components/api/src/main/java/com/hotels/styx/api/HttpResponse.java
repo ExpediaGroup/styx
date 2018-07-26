@@ -16,8 +16,9 @@
 package com.hotels.styx.api;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
+import com.hotels.styx.api.cookies.ResponseCookie;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
@@ -26,30 +27,35 @@ import io.netty.util.ReferenceCountUtil;
 import rx.Observable;
 
 import java.nio.charset.Charset;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.FlowControlDisableOperator.disableFlowControl;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
+import static com.hotels.styx.api.cookies.ResponseCookie.decode;
+import static com.hotels.styx.api.cookies.ResponseCookie.encode;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.messages.HttpResponseStatus.statusWithCode;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.messages.HttpVersion.httpVersion;
-import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.compositeBuffer;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.util.ReferenceCountUtil.release;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 /**
  * HTTP response with a fully aggregated/decoded body.
@@ -59,14 +65,12 @@ public class HttpResponse implements StreamingHttpMessage {
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
     private final StyxObservable<ByteBuf> body;
-    private final List<HttpCookie> cookies;
 
     HttpResponse(Builder builder) {
         this.version = builder.version;
         this.status = builder.status;
         this.headers = builder.headers.build();
         this.body = builder.body;
-        this.cookies = ImmutableList.copyOf(builder.cookies);
     }
 
     /**
@@ -112,11 +116,6 @@ public class HttpResponse implements StreamingHttpMessage {
     @Override
     public HttpHeaders headers() {
         return headers;
-    }
-
-    @Override
-    public List<HttpCookie> cookies() {
-        return cookies;
     }
 
     @Override
@@ -176,19 +175,39 @@ public class HttpResponse implements StreamingHttpMessage {
         }
     }
 
+    /**
+     * Decodes the "Set-Cookie" headers in this response and returns the cookies.
+     *
+     * @return cookies
+     */
+    public Set<ResponseCookie> cookies() {
+        return decode(headers.getAll(SET_COOKIE));
+    }
+
+    /**
+     * Decodes the "Set-Cookie" headers in this response and returns the specified cookie.
+     *
+     * @param name cookie name
+     * @return cookie
+     */
+    public Optional<ResponseCookie> cookie(String name) {
+        return cookies().stream()
+                .filter(cookie -> cookie.name().equals(name))
+                .findFirst();
+    }
+
     @Override
     public String toString() {
         return toStringHelper(this)
                 .add("version", version)
                 .add("status", status)
                 .add("headers", headers)
-                .add("cookies", cookies)
                 .toString();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(version, status, headers, cookies);
+        return Objects.hashCode(version, status, headers);
     }
 
     @Override
@@ -202,8 +221,7 @@ public class HttpResponse implements StreamingHttpMessage {
         HttpResponse other = (HttpResponse) obj;
         return Objects.equal(this.version, other.version)
                 && Objects.equal(this.status, other.status)
-                && Objects.equal(this.headers, other.headers)
-                && Objects.equal(this.cookies, other.cookies);
+                && Objects.equal(this.headers, other.headers);
     }
 
     /**
@@ -215,12 +233,10 @@ public class HttpResponse implements StreamingHttpMessage {
         private HttpVersion version = HTTP_1_1;
         private boolean validate = true;
         private StyxObservable<ByteBuf> body;
-        private final List<HttpCookie> cookies;
 
         public Builder() {
             this.headers = new HttpHeaders.Builder();
             this.body = new StyxCoreObservable<>(Observable.empty());
-            this.cookies = new ArrayList<>();
         }
 
         public Builder(HttpResponseStatus status) {
@@ -233,7 +249,6 @@ public class HttpResponse implements StreamingHttpMessage {
             this.version = response.version();
             this.headers = response.headers().newBuilder();
             this.body = response.body();
-            this.cookies = new ArrayList<>(response.cookies());
         }
 
         public Builder(FullHttpResponse response, StyxObservable<ByteBuf> decoded) {
@@ -241,7 +256,6 @@ public class HttpResponse implements StreamingHttpMessage {
             this.version = httpVersion(response.version().toString());
             this.headers = response.headers().newBuilder();
             this.body = decoded;
-            this.cookies = new ArrayList<>(response.cookies());
         }
 
         /**
@@ -270,7 +284,7 @@ public class HttpResponse implements StreamingHttpMessage {
          * Sets the message body by encoding a {@link StyxObservable} of {@link String}s into bytes.
          *
          * @param contentObservable message body content.
-         * @param charset character set
+         * @param charset           character set
          * @return {@code this}
          */
         public Builder body(StyxObservable<String> contentObservable, Charset charset) {
@@ -312,37 +326,95 @@ public class HttpResponse implements StreamingHttpMessage {
         }
 
         /**
-         * Adds a response cookie (adds a new Set-Cookie header).
+         * Sets the cookies on this response by removing existing "Set-Cookie" headers and adding new ones.
          *
-         * @param cookie cookie to add
-         * @return {@code this}
+         * @param cookies cookies
+         * @return this builder
          */
-        public Builder addCookie(HttpCookie cookie) {
-            cookies.add(checkNotNull(cookie));
+        public Builder cookies(ResponseCookie... cookies) {
+            return cookies(asList(cookies));
+        }
+
+        /**
+         * Sets the cookies on this response by removing existing "Set-Cookie" headers and adding new ones.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        public Builder cookies(Collection<ResponseCookie> cookies) {
+            requireNonNull(cookies);
+            headers.remove(SET_COOKIE);
+            return addCookies(cookies);
+        }
+
+        /**
+         * Adds cookies into this response by adding "Set-Cookie" headers.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        public Builder addCookies(ResponseCookie... cookies) {
+            return addCookies(asList(cookies));
+        }
+
+        /**
+         * Adds cookies into this response by adding "Set-Cookie" headers.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        public Builder addCookies(Collection<ResponseCookie> cookies) {
+            requireNonNull(cookies);
+
+            if (cookies.isEmpty()) {
+                return this;
+            }
+
+            removeCookies(cookies.stream().map(ResponseCookie::name).collect(toList()));
+
+            encode(cookies).forEach(cookie ->
+                    addHeader(SET_COOKIE, cookie));
             return this;
         }
 
         /**
-         * Adds a response cookie (adds a new Set-Cookie header).
+         * Removes all cookies matching one of the supplied names by removing their "Set-Cookie" headers.
          *
-         * @param name  cookie name
-         * @param value cookie value
-         * @return {@code this}
+         * @param names cookie names
+         * @return this builder
          */
-        public Builder addCookie(String name, String value) {
-            return addCookie(HttpCookie.cookie(name, value));
+        public Builder removeCookies(String... names) {
+            return removeCookies(asList(names));
         }
 
         /**
-         * Removes a cookie if present (removes its Set-Cookie header).
+         * Removes all cookies matching one of the supplied names by removing their "Set-Cookie" headers.
          *
-         * @param name name of the cookie
-         * @return {@code this}
+         * @param names cookie names
+         * @return this builder
          */
-        public Builder removeCookie(String name) {
-            findCookie(cookies, name)
-                    .ifPresent(cookies::remove);
-            return this;
+        public <T> Builder removeCookies(Collection<String> names) {
+            requireNonNull(names);
+
+            if (names.isEmpty()) {
+                return this;
+            }
+
+            return removeCookiesIf(toSet(names)::contains);
+        }
+
+        private Builder removeCookiesIf(Predicate<String> removeIfName) {
+            Predicate<ResponseCookie> keepIf = cookie -> !removeIfName.test(cookie.name());
+
+            List<ResponseCookie> newCookies = decode(headers.getAll(SET_COOKIE)).stream()
+                    .filter(keepIf)
+                    .collect(toList());
+
+            return cookies(newCookies);
+        }
+
+        private static <T> Set<T> toSet(Collection<T> collection) {
+            return collection instanceof Set ? (Set<T>) collection : ImmutableSet.copyOf(collection);
         }
 
         /**

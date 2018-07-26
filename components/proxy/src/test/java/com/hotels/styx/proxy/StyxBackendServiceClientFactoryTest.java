@@ -18,6 +18,7 @@ package com.hotels.styx.proxy;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
@@ -37,6 +38,7 @@ import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.api.service.StickySessionConfig.newStickySessionConfigBuilder;
@@ -49,7 +51,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static rx.Observable.just;
-import com.hotels.styx.api.HttpRequest;
 
 public class StyxBackendServiceClientFactoryTest {
     private Environment environment;
@@ -121,9 +122,9 @@ public class StyxBackendServiceClientFactoryTest {
                                 .build(),
                         new OriginStatsFactory(new CodaHaleMetricRegistry()));
 
-        HttpRequest requestz = get("/some-req").addCookie(STICKY_COOKIE, id("z").toString()).build();
-        HttpRequest requestx = get("/some-req").addCookie(STICKY_COOKIE, id("x").toString()).build();
-        HttpRequest requesty = get("/some-req").addCookie(STICKY_COOKIE, id("y").toString()).build();
+        HttpRequest requestz = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("z").toString())).build();
+        HttpRequest requestx = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("x").toString())).build();
+        HttpRequest requesty = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("y").toString())).build();
 
         HttpResponse responsez = styxHttpClient.sendRequest(requestz).toBlocking().first();
         HttpResponse responsex = styxHttpClient.sendRequest(requestx).toBlocking().first();
@@ -166,9 +167,9 @@ public class StyxBackendServiceClientFactoryTest {
                                 .build(),
                         new OriginStatsFactory(new CodaHaleMetricRegistry()));
 
-        HttpRequest requestz = get("/some-req").addCookie(ORIGINS_RESTRICTION_COOKIE, id("z").toString()).build();
-        HttpRequest requestx = get("/some-req").addCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString()).build();
-        HttpRequest requesty = get("/some-req").addCookie(ORIGINS_RESTRICTION_COOKIE, id("y").toString()).build();
+        HttpRequest requestz = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("z").toString())).build();
+        HttpRequest requestx = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString())).build();
+        HttpRequest requesty = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("y").toString())).build();
 
         HttpResponse responsez = styxHttpClient.sendRequest(requestz).toBlocking().first();
         HttpResponse responsex = styxHttpClient.sendRequest(requestx).toBlocking().first();

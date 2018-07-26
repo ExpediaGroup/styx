@@ -16,29 +16,36 @@
 package com.hotels.styx.api;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
+import com.hotels.styx.api.cookies.ResponseCookie;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.messages.HttpVersion;
 import rx.Observable;
 
 import java.nio.charset.Charset;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
+import static com.hotels.styx.api.cookies.ResponseCookie.decode;
+import static com.hotels.styx.api.cookies.ResponseCookie.encode;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
-import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Integer.parseInt;
+import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 /**
  * HTTP response with a fully aggregated/decoded body.
@@ -48,14 +55,12 @@ public class FullHttpResponse implements FullHttpMessage {
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
     private final byte[] body;
-    private final List<HttpCookie> cookies;
 
     FullHttpResponse(Builder builder) {
         this.version = builder.version;
         this.status = builder.status;
         this.headers = builder.headers.build();
         this.body = requireNonNull(builder.body);
-        this.cookies = ImmutableList.copyOf(builder.cookies);
     }
 
     /**
@@ -92,11 +97,6 @@ public class FullHttpResponse implements FullHttpMessage {
         return headers;
     }
 
-    @Override
-    public List<HttpCookie> cookies() {
-        return cookies;
-    }
-
     /**
      * Returns the body of this message in its unencoded form.
      *
@@ -109,13 +109,13 @@ public class FullHttpResponse implements FullHttpMessage {
 
     /**
      * Returns the message body as a String decoded with provided character set.
-     *
+     * <p>
      * Decodes the message body into a Java String object with a provided charset.
      * The caller must ensure the provided charset is compatible with message content
      * type and encoding.
      *
-     * @param charset     Charset used to decode message body.
-     * @return            Message body as a String.
+     * @param charset Charset used to decode message body.
+     * @return Message body as a String.
      */
     @Override
     public String bodyAs(Charset charset) {
@@ -143,11 +143,11 @@ public class FullHttpResponse implements FullHttpMessage {
 
     /**
      * Converts this response to a streaming form (HttpResponse).
-     *
+     * <p>
      * Converts this response to a HttpResponse object which represents the HTTP response as a
      * stream of bytes.
      *
-     * @return   A streaming HttpResponse object.
+     * @return A streaming HttpResponse object.
      */
     public HttpResponse toStreamingResponse() {
         if (this.body.length == 0) {
@@ -157,19 +157,39 @@ public class FullHttpResponse implements FullHttpMessage {
         }
     }
 
+    /**
+     * Decodes the "Set-Cookie" headers in this response and returns the cookies.
+     *
+     * @return cookies
+     */
+    public Set<ResponseCookie> cookies() {
+        return decode(headers.getAll(SET_COOKIE));
+    }
+
+    /**
+     * Decodes the "Set-Cookie" headers in this response and returns the specified cookie.
+     *
+     * @param name cookie name
+     * @return cookie
+     */
+    public Optional<ResponseCookie> cookie(String name) {
+        return cookies().stream()
+                .filter(cookie -> cookie.name().equals(name))
+                .findFirst();
+    }
+
     @Override
     public String toString() {
         return toStringHelper(this)
                 .add("version", version)
                 .add("status", status)
                 .add("headers", headers)
-                .add("cookies", cookies)
                 .toString();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(version, status, headers, cookies);
+        return Objects.hashCode(version, status, headers);
     }
 
     @Override
@@ -183,8 +203,7 @@ public class FullHttpResponse implements FullHttpMessage {
         FullHttpResponse other = (FullHttpResponse) obj;
         return Objects.equal(this.version, other.version)
                 && Objects.equal(this.status, other.status)
-                && Objects.equal(this.headers, other.headers)
-                && Objects.equal(this.cookies, other.cookies);
+                && Objects.equal(this.headers, other.headers);
     }
 
     /**
@@ -196,12 +215,10 @@ public class FullHttpResponse implements FullHttpMessage {
         private HttpVersion version = HTTP_1_1;
         private boolean validate = true;
         private byte[] body;
-        private final List<HttpCookie> cookies;
 
         public Builder() {
             this.headers = new HttpHeaders.Builder();
             this.body = new byte[0];
-            this.cookies = new ArrayList<>();
         }
 
         public Builder(HttpResponseStatus status) {
@@ -214,7 +231,6 @@ public class FullHttpResponse implements FullHttpMessage {
             this.version = response.version();
             this.headers = response.headers().newBuilder();
             this.body = response.body();
-            this.cookies = new ArrayList<>(response.cookies());
         }
 
         public Builder(HttpResponse response, byte[] decoded) {
@@ -222,7 +238,6 @@ public class FullHttpResponse implements FullHttpMessage {
             this.version = response.version();
             this.headers = response.headers().newBuilder();
             this.body = decoded;
-            this.cookies = new ArrayList<>(response.cookies());
         }
 
         /**
@@ -238,7 +253,7 @@ public class FullHttpResponse implements FullHttpMessage {
 
         /**
          * Sets the request body.
-         *
+         * <p>
          * This method encodes a String content to a byte array using the specified
          * charset, and sets the Content-Length header accordingly.
          *
@@ -252,13 +267,13 @@ public class FullHttpResponse implements FullHttpMessage {
 
         /**
          * Sets the response body.
-         *
+         * <p>
          * This method encodes the content to a byte array using the specified
          * charset, and sets the Content-Length header *if* the setContentLength
          * argument is true.
          *
-         * @param content response body
-         * @param charset Charset used for encoding response body.
+         * @param content          response body
+         * @param charset          Charset used for encoding response body.
          * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
          * @return {@code this}
          */
@@ -270,12 +285,12 @@ public class FullHttpResponse implements FullHttpMessage {
 
         /**
          * Sets the response body.
-         *
+         * <p>
          * This method encodes the content to a byte array provided, and
          * sets the Content-Length header *if* the setContentLength
          * argument is true.
          *
-         * @param content response body
+         * @param content          response body
          * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
          * @return {@code this}
          */
@@ -324,38 +339,95 @@ public class FullHttpResponse implements FullHttpMessage {
         }
 
         /**
-         * Adds a response cookie (adds a new Set-Cookie header).
+         * Sets the cookies on this response by removing existing "Set-Cookie" headers and adding new ones.
          *
-         * @param cookie cookie to add
-         * @return {@code this}
+         * @param cookies cookies
+         * @return this builder
          */
-        public Builder addCookie(HttpCookie cookie) {
-            cookies.add(requireNonNull(cookie));
+        public Builder cookies(ResponseCookie... cookies) {
+            return cookies(asList(cookies));
+        }
+
+        /**
+         * Sets the cookies on this response by removing existing "Set-Cookie" headers and adding new ones.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        public Builder cookies(Collection<ResponseCookie> cookies) {
+            requireNonNull(cookies);
+            headers.remove(SET_COOKIE);
+            return addCookies(cookies);
+        }
+
+        /**
+         * Adds cookies into this response by adding "Set-Cookie" headers.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        public Builder addCookies(ResponseCookie... cookies) {
+            return addCookies(asList(cookies));
+        }
+
+        /**
+         * Adds cookies into this response by adding "Set-Cookie" headers.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        public Builder addCookies(Collection<ResponseCookie> cookies) {
+            requireNonNull(cookies);
+
+            if (cookies.isEmpty()) {
+                return this;
+            }
+
+            removeCookies(cookies.stream().map(ResponseCookie::name).collect(toList()));
+
+            encode(cookies).forEach(cookie ->
+                    addHeader(SET_COOKIE, cookie));
             return this;
         }
 
         /**
-         * Adds a response cookie (adds a new Set-Cookie header).
+         * Removes all cookies matching one of the supplied names by removing their "Set-Cookie" headers.
          *
-         * @param name  cookie name
-         * @param value cookie value
-         * @return {@code this}
+         * @param names cookie names
+         * @return this builder
          */
-        public Builder addCookie(String name, String value) {
-            return addCookie(HttpCookie.cookie(name, value));
+        public Builder removeCookies(String... names) {
+            return removeCookies(asList(names));
         }
 
         /**
-         * Removes a cookie if present (removes its Set-Cookie header).
+         * Removes all cookies matching one of the supplied names by removing their "Set-Cookie" headers.
          *
-         * @param name name of the cookie
-         * @return {@code this}
+         * @param names cookie names
+         * @return this builder
          */
-        public Builder removeCookie(String name) {
-            findCookie(cookies, name)
-                    .ifPresent(cookies::remove);
+        public Builder removeCookies(Collection<String> names) {
+            requireNonNull(names);
 
-            return this;
+            if (names.isEmpty()) {
+                return this;
+            }
+
+            return removeCookiesIf(toSet(names)::contains);
+        }
+
+        private Builder removeCookiesIf(Predicate<String> removeIfName) {
+            Predicate<ResponseCookie> keepIf = cookie -> !removeIfName.test(cookie.name());
+
+            List<ResponseCookie> newCookies = decode(headers.getAll(SET_COOKIE)).stream()
+                    .filter(keepIf)
+                    .collect(toList());
+
+            return cookies(newCookies);
+        }
+
+        private static <T> Set<T> toSet(Collection<T> collection) {
+            return collection instanceof Set ? (Set<T>) collection : ImmutableSet.copyOf(collection);
         }
 
         /**

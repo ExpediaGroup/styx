@@ -25,7 +25,6 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static com.hotels.styx.api.support.CookiesSupport.findCookie;
 
 /**
  * All behaviour common to both streaming requests and streaming responses.
@@ -44,13 +43,6 @@ public interface StreamingHttpMessage {
      * @return all headers
      */
     HttpHeaders headers();
-
-    /**
-     * Return all cookies in this response.
-     *
-     * @return all cookies.
-     */
-    List<HttpCookie> cookies();
 
     /**
      * Returns the body of this message in its encoded form.
@@ -77,16 +69,6 @@ public interface StreamingHttpMessage {
      */
     default List<String> headers(CharSequence name) {
         return headers().getAll(name);
-    }
-
-    /**
-     * Return the single cookie with the specified {@code name}.
-     *
-     * @param name cookie name
-     * @return the cookie if present
-     */
-    default Optional<HttpCookie> cookie(String name) {
-        return findCookie(cookies(), name);
     }
 
     /**

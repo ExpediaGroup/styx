@@ -70,7 +70,7 @@ public class HttpErrorStatusCauseLoggerTest {
     }
 
     @Test
-    public void logsInernalServerErrorWithRequest() throws Exception {
+    public void logsInternalServerErrorWithRequest() {
         HttpRequest request = HttpRequest.get("/foo").build();
         Exception exception = new Exception("This is just a test");
 
@@ -79,22 +79,10 @@ public class HttpErrorStatusCauseLoggerTest {
         assertThat(loggingTestSupport.log(), hasItem(
                 loggingEvent(
                         ERROR,
-                        "Failure status=\"500 Internal Server Error\" during request=HttpRequest\\{version=HTTP/1.1, method=GET, uri=/foo, headers=\\[\\], cookies=\\[\\], id=.*, clientAddress=.*:.*\\}",
+                        "Failure status=\"500 Internal Server Error\" during request=HttpRequest\\{version=HTTP/1.1, method=GET, uri=/foo, headers=\\[\\], id=.*, clientAddress=.*:.*\\}",
                         "java.lang.Exception",
                         "This is just a test")));
     }
-
-    /*
-    Expected: a collection containing loggingEvent(level=ERROR,
-
-    message=String matching regex: 'Failure status="500 Internal Server Error" during request=HttpRequest\{
-    version=HTTP/1.1, method=GET, uri=/foo, headers=\[\], cookies=\[\], id=.*, clientAddress=.*:.*\}' exception(class=java.lang.Exception, message=String matching regex: 'This is just a test'))
-
-     but: loggingEvent(level=ERROR,
-    message=                       'Failure status="500 Internal Server Error" during request=HttpRequest{
-    version=HTTP/1.1, method=GET, uri=/foo, headers=[], cookies=[], id=76e4d1c0-ecac-46e0-a3ac-bd9703be837c, secure=false}' exception(class=java.lang.Exception, message=This is just a test))
-
-     */
 
     @Test
     public void logsOtherExceptionsWithoutRequest() throws Exception {

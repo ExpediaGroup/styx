@@ -163,7 +163,12 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
 
     val response = waitForResponse(client.sendRequest(request))
 
-    response.cookie("styx_origin_generic-app").get().toString should fullyMatch regex "styx_origin_generic-app=HEALTHY_ORIGIN_TWO; Max-Age=.*; Path=/; HttpOnly"
+    val cookie = response.cookie("styx_origin_generic-app").get()
+
+    cookie.value() should be("HEALTHY_ORIGIN_TWO")
+    cookie.path().get() should be("/")
+    cookie.httpOnly() should be(true)
+    cookie.maxAge().isPresent should be(true)
   }
 
   private def respondWithHeadersOnly(): ResponseDefinitionBuilder = aResponse

@@ -15,24 +15,22 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.Iterables;
+import com.hotels.styx.api.cookies.ResponseCookie;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
-import static com.hotels.styx.api.HttpCookie.cookie;
-import static com.hotels.styx.api.HttpCookieAttribute.domain;
-import static com.hotels.styx.api.HttpCookieAttribute.maxAge;
-import static com.hotels.styx.api.HttpCookieAttribute.path;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpHeaderNames.LOCATION;
+import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
+import static com.hotels.styx.api.cookies.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
@@ -46,6 +44,7 @@ import static com.hotels.styx.api.messages.HttpResponseStatus.SEE_OTHER;
 import static com.hotels.styx.api.messages.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -53,6 +52,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
@@ -65,7 +65,7 @@ public class HttpResponseTest {
         HttpResponse response = response(CREATED)
                 .version(HTTP_1_0)
                 .header("HeaderName", "HeaderValue")
-                .addCookie("CookieName", "CookieValue")
+                .cookies(responseCookie("CookieName", "CookieValue").build())
                 .body(body("foo", "bar"))
                 .build();
 
@@ -75,8 +75,8 @@ public class HttpResponseTest {
 
         assertThat(full.status(), is(CREATED));
         assertThat(full.version(), is(HTTP_1_0));
-        assertThat(full.headers(), contains(header("HeaderName", "HeaderValue")));
-        assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
+        assertThat(full.headers(), containsInAnyOrder(header("HeaderName", "HeaderValue"), header("Set-Cookie", "CookieName=CookieValue")));
+        assertThat(full.cookies(), contains(responseCookie("CookieName", "CookieValue").build()));
 
         assertThat(full.body(), is(bytes("foobar")));
     }
@@ -125,34 +125,36 @@ public class HttpResponseTest {
     @Test
     public void setsASingleOutboundCookie() {
         HttpResponse response = response()
-                .addCookie(cookie("user", "QSplbl9HX1VL", domain(".hotels.com"), path("/"), maxAge(3600)))
+                .cookies(responseCookie("user", "QSplbl9HX1VL").domain(".hotels.com").path("/").maxAge(3600).build())
                 .build();
 
-        assertThat(response.cookie("user"), isValue(cookie("user", "QSplbl9HX1VL", domain(".hotels.com"), path("/"), maxAge(3600))));
+        assertThat(response.cookie("user"), isValue(responseCookie("user", "QSplbl9HX1VL").domain(".hotels.com").path("/").maxAge(3600).build()));
     }
 
     @Test
     public void setsMultipleOutboundCookies() {
         HttpResponse response = response()
-                .addCookie("a", "b")
-                .addCookie("c", "d")
+                .cookies(
+                        responseCookie("a", "b").build(),
+                        responseCookie("c", "d").build())
                 .build();
 
-        Iterable<HttpCookie> cookies = response.cookies();
-        assertThat(Iterables.size(cookies), is(2));
+        Set<ResponseCookie> cookies = response.cookies();
 
-        assertThat(Iterables.get(cookies, 0), is(cookie("a", "b")));
-        assertThat(Iterables.get(cookies, 1), is(cookie("c", "d")));
+        assertThat(cookies, containsInAnyOrder(
+                responseCookie("a", "b").build(),
+                responseCookie("c", "d").build()));
     }
 
     @Test
     public void getASingleCookieValue() {
         HttpResponse response = response()
-                .addCookie("a", "b")
-                .addCookie("c", "d")
+                .cookies(
+                        responseCookie("a", "b").build(),
+                        responseCookie("c", "d").build())
                 .build();
 
-        assertThat(response.cookie("c"), isValue(cookie("c", "d")));
+        assertThat(response.cookie("c"), isValue(responseCookie("c", "d").build()));
     }
 
     @Test
@@ -167,25 +169,6 @@ public class HttpResponseTest {
                 .build();
 
         assertThat(shouldRemoveHeader.headers(), contains(header("a", "b")));
-    }
-
-    @Test
-    public void removesACookie() {
-        HttpResponse response = new HttpResponse.Builder(seeOther("/home"))
-                .addCookie(cookie("a", "b"))
-                .addCookie(cookie("c", "d"))
-                .build();
-        HttpResponse shouldClearCookie = response.newBuilder()
-                .removeCookie("a")
-                .build();
-
-        assertThat(shouldClearCookie.cookies(), contains(cookie("c", "d")));
-    }
-
-    private static HttpResponse seeOther(String newLocation) {
-        return response(SEE_OTHER)
-                .header(LOCATION, newLocation)
-                .build();
     }
 
     @Test
@@ -260,17 +243,17 @@ public class HttpResponseTest {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookie() {
-        response().addCookie(null).build();
+        response().cookies((ResponseCookie) null).build();
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookieName() {
-        response().addCookie(null, "value").build();
+        response().cookies(responseCookie(null, "value").build()).build();
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookieValue() {
-        response().addCookie("name", null).build();
+        response().cookies(responseCookie("name", null).build()).build();
     }
 
     @DataProvider(name = "responses")
@@ -334,6 +317,62 @@ public class HttpResponseTest {
 
         assertThat(responseUtf8.body(), is("Hello, World!".getBytes(UTF_8)));
         assertThat(responseUtf16.body(), is("Hello, World!".getBytes(UTF_16)));
+    }
+
+    @Test
+    public void addsCookies() {
+        HttpResponse response = response()
+                .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
+                .build();
+
+        assertThat(response.cookies(), containsInAnyOrder(responseCookie("x", "x1").build(), responseCookie("y", "y1").build()));
+    }
+
+    @Test
+    public void addsCookiesToExistingCookies() {
+        HttpResponse response = response()
+                .addCookies(responseCookie("z", "z1").build())
+                .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
+                .build();
+
+        assertThat(response.cookies(), containsInAnyOrder(responseCookie("x", "x1").build(), responseCookie("y", "y1").build(), responseCookie("z", "z1").build()));
+    }
+
+    @Test
+    public void newCookiesWithDuplicateNamesOverridePreviousOnes() {
+        HttpResponse r1 = response()
+                .cookies(responseCookie("y", "y1").build())
+                .build();
+
+        HttpResponse r2 = r1.newBuilder().addCookies(
+                responseCookie("y", "y2").build())
+                .build();
+
+        assertThat(r2.cookies(), containsInAnyOrder(responseCookie("y", "y2").build()));
+    }
+
+    @Test
+    public void removesCookies() {
+        HttpResponse r1 = response()
+                .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
+                .build();
+
+        HttpResponse r2 = r1.newBuilder()
+                .removeCookies("x")
+                .removeCookies("foo") // ensure that trying to remove a non-existent cookie does not cause Exception
+                .build();
+
+        assertThat(r2.cookies(), contains(responseCookie("y", "y1").build()));
+    }
+
+    @Test
+    public void removesCookiesInSameBuilder() {
+        HttpResponse r1 = response()
+                .addCookies(responseCookie("x", "x1").build())
+                .removeCookies("x")
+                .build();
+
+        assertThat(r1.cookie("x"), isAbsent());
     }
 
     private static HttpResponse.Builder response() {

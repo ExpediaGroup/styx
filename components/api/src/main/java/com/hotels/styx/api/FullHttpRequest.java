@@ -15,7 +15,8 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.hotels.styx.api.cookies.RequestCookie;
 import com.hotels.styx.api.messages.HttpMethod;
 import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.Unpooled;
@@ -23,18 +24,23 @@ import rx.Observable;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
+import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
+import static com.hotels.styx.api.cookies.RequestCookie.decode;
+import static com.hotels.styx.api.cookies.RequestCookie.encode;
 import static com.hotels.styx.api.messages.HttpMethod.DELETE;
 import static com.hotels.styx.api.messages.HttpMethod.GET;
 import static com.hotels.styx.api.messages.HttpMethod.HEAD;
@@ -43,12 +49,13 @@ import static com.hotels.styx.api.messages.HttpMethod.PATCH;
 import static com.hotels.styx.api.messages.HttpMethod.POST;
 import static com.hotels.styx.api.messages.HttpMethod.PUT;
 import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
-import static com.hotels.styx.api.support.CookiesSupport.findCookie;
-import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
 import static java.lang.Integer.parseInt;
 import static java.net.InetSocketAddress.createUnresolved;
+import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Stream.concat;
 
 /**
  * HTTP request with a fully aggregated/decoded body.
@@ -63,7 +70,6 @@ public class FullHttpRequest implements FullHttpMessage {
     private final HttpHeaders headers;
     private final boolean secure;
     private final byte[] body;
-    private final List<HttpCookie> cookies;
 
     FullHttpRequest(Builder builder) {
         this.id = builder.id == null ? randomUUID() : builder.id;
@@ -74,7 +80,6 @@ public class FullHttpRequest implements FullHttpMessage {
         this.secure = builder.secure;
         this.headers = builder.headers.build();
         this.body = requireNonNull(builder.body);
-        this.cookies = ImmutableList.copyOf(builder.cookies);
     }
 
     /**
@@ -83,7 +88,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * @param uri URI
      * @return {@code this}
      */
-    public static <T> Builder get(String uri) {
+    public static Builder get(String uri) {
         return new Builder(GET, uri);
     }
 
@@ -93,7 +98,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * @param uri URI
      * @return {@code this}
      */
-    public static <T> Builder head(String uri) {
+    public static Builder head(String uri) {
         return new Builder(HEAD, uri);
     }
 
@@ -103,7 +108,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * @param uri URI
      * @return {@code this}
      */
-    public static <T> Builder post(String uri) {
+    public static Builder post(String uri) {
         return new Builder(POST, uri);
     }
 
@@ -113,7 +118,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * @param uri URI
      * @return {@code this}
      */
-    public static <T> Builder delete(String uri) {
+    public static Builder delete(String uri) {
         return new Builder(DELETE, uri);
     }
 
@@ -123,7 +128,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * @param uri URI
      * @return {@code this}
      */
-    public static <T> Builder put(String uri) {
+    public static Builder put(String uri) {
         return new Builder(PUT, uri);
     }
 
@@ -133,7 +138,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * @param uri URI
      * @return {@code this}
      */
-    public static <T> Builder patch(String uri) {
+    public static Builder patch(String uri) {
         return new Builder(PATCH, uri);
     }
 
@@ -148,11 +153,6 @@ public class FullHttpRequest implements FullHttpMessage {
     }
 
     @Override
-    public List<HttpCookie> cookies() {
-        return cookies;
-    }
-
-    @Override
     public List<String> headers(CharSequence name) {
         return headers.getAll(name);
     }
@@ -164,6 +164,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Because FullHttpRequest is an immutable object, the returned byte array
      * reference cannot be used to modify the message content.
      * <p>
+     *
      * @return Message body content
      */
     @Override
@@ -173,12 +174,12 @@ public class FullHttpRequest implements FullHttpMessage {
 
     /**
      * Returns the message body as a String decoded with provided character set.
-     *
+     * <p>
      * Decodes the message body into a Java String object with a provided charset.
      * The caller must ensure the provided charset is compatible with message content
      * type and encoding.
      *
-     * @param charset     Charset used to decode message body.
+     * @param charset Charset used to decode message body.
      * @return Message body as a String.
      */
     @Override
@@ -302,7 +303,7 @@ public class FullHttpRequest implements FullHttpMessage {
 
     /**
      * Converts this request into a streaming form (HttpRequest).
-     *
+     * <p>
      * Converts this request into a HttpRequest object which represents the HTTP request as a
      * stream of bytes.
      *
@@ -320,6 +321,29 @@ public class FullHttpRequest implements FullHttpMessage {
         }
     }
 
+    /**
+     * Decodes the "Cookie" header in this request and returns the cookies.
+     *
+     * @return cookies
+     */
+    public Set<RequestCookie> cookies() {
+        return headers.get(COOKIE)
+                .map(RequestCookie::decode)
+                .orElseGet(Collections::emptySet);
+    }
+
+    /**
+     * Decodes the "Cookie" header in this request and returns the specified cookie.
+     *
+     * @param name cookie name
+     * @return cookies
+     */
+    public Optional<RequestCookie> cookie(String name) {
+        return cookies().stream()
+                .filter(cookie -> cookie.name().equals(name))
+                .findFirst();
+    }
+
     @Override
     public String toString() {
         return toStringHelper(this)
@@ -327,7 +351,6 @@ public class FullHttpRequest implements FullHttpMessage {
                 .add("method", method)
                 .add("uri", url)
                 .add("headers", headers)
-                .add("cookies", cookies)
                 .add("id", id)
                 .add("secure", secure)
                 .toString();
@@ -348,13 +371,11 @@ public class FullHttpRequest implements FullHttpMessage {
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
         private byte[] body;
-        private final List<HttpCookie> cookies;
 
         public Builder() {
             this.url = Url.Builder.url("/").build();
             this.headers = new HttpHeaders.Builder();
             this.body = new byte[0];
-            this.cookies = new ArrayList<>();
         }
 
         public Builder(HttpMethod method, String uri) {
@@ -373,7 +394,6 @@ public class FullHttpRequest implements FullHttpMessage {
             this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = body;
-            this.cookies = new ArrayList<>(request.cookies());
         }
 
         Builder(FullHttpRequest request) {
@@ -385,7 +405,6 @@ public class FullHttpRequest implements FullHttpMessage {
             this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = request.body();
-            this.cookies = new ArrayList<>(request.cookies());
         }
 
         /**
@@ -400,7 +419,7 @@ public class FullHttpRequest implements FullHttpMessage {
 
         /**
          * Sets the request body.
-         *
+         * <p>
          * This method encodes a String content to a byte array using the specified
          * charset, and sets the Content-Length header accordingly.
          *
@@ -414,13 +433,13 @@ public class FullHttpRequest implements FullHttpMessage {
 
         /**
          * Sets the request body.
-         *
+         * <p>
          * This method encodes the content to a byte array using the specified
          * charset, and sets the Content-Length header *if* the setContentLength
          * argument is true.
          *
-         * @param content request body
-         * @param charset Charset used for encoding request body.
+         * @param content          request body
+         * @param charset          Charset used for encoding request body.
          * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
          * @return {@code this}
          */
@@ -432,12 +451,12 @@ public class FullHttpRequest implements FullHttpMessage {
 
         /**
          * Sets the request body.
-         *
+         * <p>
          * This method encodes the content to a byte array provided, and
          * sets the Content-Length header *if* the setContentLength
          * argument is true.
          *
-         * @param content request body
+         * @param content          request body
          * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
          * @return {@code this}
          */
@@ -472,7 +491,6 @@ public class FullHttpRequest implements FullHttpMessage {
          * @return {@code this}
          */
         public Builder header(CharSequence name, Object value) {
-            checkNotCookie(name);
             this.headers.set(name, value);
             return this;
         }
@@ -498,7 +516,6 @@ public class FullHttpRequest implements FullHttpMessage {
          * @return {@code this}
          */
         public Builder addHeader(CharSequence name, Object value) {
-            checkNotCookie(name);
             this.headers.add(name, value);
             return this;
         }
@@ -549,38 +566,94 @@ public class FullHttpRequest implements FullHttpMessage {
         }
 
         /**
-         * Adds a response cookie (adds a new Set-Cookie header).
+         * Sets the cookies on this request by overwriting the value of the "Cookie" header.
          *
-         * @param cookie cookie to add
-         * @return {@code this}
+         * @param cookies cookies
+         * @return this builder
          */
-        public Builder addCookie(HttpCookie cookie) {
-            cookies.add(checkNotNull(cookie));
+        public Builder cookies(RequestCookie... cookies) {
+            return cookies(asList(cookies));
+        }
+
+        /**
+         * Sets the cookies on this request by overwriting the value of the "Cookie" header.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        public Builder cookies(Collection<RequestCookie> cookies) {
+            requireNonNull(cookies);
+            headers.remove(COOKIE);
+
+            if (!cookies.isEmpty()) {
+                header(COOKIE, encode(cookies));
+            }
             return this;
         }
 
         /**
-         * Adds a response cookie (adds a new Set-Cookie header).
+         * Adds cookies into the "Cookie" header. If the name matches an already existing cookie, the value will be overwritten.
+         * <p>
+         * Note that this requires decoding the current header value before re-encoding, so it is most efficient to
+         * add all new cookies in one call to the method rather than spreading them out.
          *
-         * @param name  cookie name
-         * @param value cookie value
-         * @return {@code this}
+         * @param cookies new cookies
+         * @return this builder
          */
-        public Builder addCookie(String name, String value) {
-            return addCookie(HttpCookie.cookie(name, value));
+        public Builder addCookies(RequestCookie... cookies) {
+            return addCookies(asList(cookies));
         }
 
         /**
-         * Removes a cookie if present (removes its Set-Cookie header).
+         * Adds cookies into the "Cookie" header. If the name matches an already existing cookie, the value will be overwritten.
+         * <p>
+         * Note that this requires decoding the current header value before re-encoding, so it is most efficient to
+         * add all new cookies in one call to the method rather than spreading them out.
          *
-         * @param name name of the cookie
-         * @return {@code this}
+         * @param cookies new cookies
+         * @return this builder
          */
-        public Builder removeCookie(String name) {
-           findCookie(cookies, name)
-                    .ifPresent(cookies::remove);
+        public Builder addCookies(Collection<RequestCookie> cookies) {
+            requireNonNull(cookies);
+            Set<RequestCookie> currentCookies = decode(headers.get(COOKIE));
+            List<RequestCookie> newCookies = concat(cookies.stream(), currentCookies.stream()).collect(toList());
 
-            return this;
+            return cookies(newCookies);
+        }
+
+        /**
+         * Removes all cookies matching one of the supplied names by overwriting the value of the "Cookie" header.
+         *
+         * @param names cookie names
+         * @return this builder
+         */
+        public Builder removeCookies(String... names) {
+            return removeCookies(asList(names));
+        }
+
+        /**
+         * Removes all cookies matching one of the supplied names by overwriting the value of the "Cookie" header.
+         *
+         * @param names cookie names
+         * @return this builder
+         */
+        public Builder removeCookies(Collection<String> names) {
+            requireNonNull(names);
+            return removeCookiesIf(toSet(names)::contains);
+        }
+
+        private Builder removeCookiesIf(Predicate<String> removeIfName) {
+            Predicate<RequestCookie> keepIf = cookie -> !removeIfName.test(cookie.name());
+
+            List<RequestCookie> newCookies = decode(headers.get(COOKIE)).stream()
+                    .filter(keepIf)
+                    .collect(toList());
+
+            return cookies(newCookies);
+        }
+
+        private static <T> Set<T> toSet(Collection<T> collection) {
+            return collection instanceof Set ? (Set<T>) collection : ImmutableSet.copyOf(collection);
         }
 
         /**
@@ -627,6 +700,7 @@ public class FullHttpRequest implements FullHttpMessage {
         public FullHttpRequest build() {
             if (validate) {
                 ensureContentLengthIsValid();
+                requireNotDuplicatedHeader(COOKIE);
                 ensureMethodIsValid();
                 setHostHeader();
             }
@@ -643,22 +717,22 @@ public class FullHttpRequest implements FullHttpMessage {
             checkArgument(isMethodValid(), "Unrecognised HTTP method=%s", this.method);
         }
 
-        private static void checkNotCookie(CharSequence name) {
-            checkArgument(!isCookieHeader(name.toString()), "Cookies must be set with addCookie method");
-        }
-
         private boolean isMethodValid() {
             return METHODS.contains(this.method);
         }
 
         private void ensureContentLengthIsValid() {
-            List<String> contentLengths = headers.build().getAll(CONTENT_LENGTH);
+            requireNotDuplicatedHeader(CONTENT_LENGTH).ifPresent(contentLength ->
+                    checkArgument(isInteger(contentLength), "Invalid Content-Length found. %s", contentLength)
+            );
+        }
 
-            checkArgument(contentLengths.size() <= 1, "Duplicate Content-Length found. %s", contentLengths);
+        private Optional<String> requireNotDuplicatedHeader(CharSequence headerName) {
+            List<String> headerValues = headers.build().getAll(headerName);
 
-            if (contentLengths.size() == 1) {
-                checkArgument(isInteger(contentLengths.get(0)), "Invalid Content-Length found. %s", contentLengths.get(0));
-            }
+            checkArgument(headerValues.size() <= 1, "Duplicate %s found. %s", headerName, headerValues);
+
+            return headerValues.isEmpty() ? Optional.empty() : Optional.of(headerValues.get(0));
         }
 
         private static boolean isInteger(String contentLength) {

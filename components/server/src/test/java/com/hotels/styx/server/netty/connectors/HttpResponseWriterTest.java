@@ -40,9 +40,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.base.Charsets.UTF_8;
-import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.api.cookies.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
@@ -328,7 +328,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        HttpResponse.Builder response = response(OK).addCookie(cookie(",,,,", ",,,,"));
+        HttpResponse.Builder response = response(OK).cookies(responseCookie(",,,,", ",,,,").build());
         ch.writeInbound(response.body(fromRxObservable(contentObservable.doOnUnsubscribe(() -> unsubscribed.set(true)))).build());
         assertThat(channelRead.get(), is(true));
     }

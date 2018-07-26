@@ -16,13 +16,12 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.messages.HttpMethod;
 import com.hotels.styx.api.messages.HttpVersion;
-import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.client.Operation;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
@@ -34,9 +33,6 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpObject;
-import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
-import io.netty.handler.codec.http.cookie.Cookie;
-import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import rx.Observable;
@@ -50,7 +46,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.service.BackendService.DEFAULT_RESPONSE_TIMEOUT_MILLIS;
@@ -105,10 +100,6 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
         this.httpRequestMessageLogger = new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", longFormat);
     }
 
-    private static DefaultCookie styxCookieToNettyCookie(HttpCookie cookie) {
-        return new DefaultCookie(cookie.name(), cookie.value());
-    }
-
     @VisibleForTesting
     static DefaultHttpRequest toNettyRequest(HttpRequest request) {
         HttpVersion version = request.version();
@@ -118,14 +109,6 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
 
         request.headers().forEach((name, value) ->
                 nettyRequest.headers().add(name, value));
-
-        Cookie[] cookies = request.cookies().stream()
-                .map(HttpRequestOperation::styxCookieToNettyCookie)
-                .toArray(Cookie[]::new);
-
-        if (cookies.length > 0) {
-            nettyRequest.headers().set(COOKIE, ClientCookieEncoder.LAX.encode(cookies));
-        }
 
         return nettyRequest;
     }

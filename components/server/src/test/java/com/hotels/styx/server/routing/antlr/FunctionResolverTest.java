@@ -16,17 +16,18 @@
 package com.hotels.styx.server.routing.antlr;
 
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.api.HttpCookie;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.cookies.RequestCookie;
 import org.testng.annotations.Test;
 
 import java.util.Map;
 
 import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import com.hotels.styx.api.HttpRequest;
 
 public class FunctionResolverTest {
     Map<String, Function0> zeroArgumentFunctions = ImmutableMap.of(
@@ -35,7 +36,7 @@ public class FunctionResolverTest {
 
     Map<String, Function1> oneArgumentFunctions = ImmutableMap.of(
             "header", (request, name) -> request.header(name).orElse(""),
-            "cookie", (request, name) -> request.cookie(name).map(HttpCookie::value).orElse(""));
+            "cookie", (request, name) -> request.cookie(name).map(RequestCookie::value).orElse(""));
 
     FunctionResolver functionResolver = new FunctionResolver(zeroArgumentFunctions, oneArgumentFunctions);
 
@@ -59,7 +60,7 @@ public class FunctionResolverTest {
     public void resolvesOneArgumentFunctions() {
         HttpRequest request = get("/foo")
                 .header("Host", "www.hotels.com")
-                .addCookie("lang", "en_US|en-us_hotels_com")
+                .cookies(requestCookie("lang", "en_US|en-us_hotels_com"))
                 .build();
 
         assertThat(functionResolver.resolveFunction("header", singletonList("Host")).call(request), is("www.hotels.com"));
@@ -71,7 +72,7 @@ public class FunctionResolverTest {
     public void throwsExceptionIfOneArgumentFunctionDoesNotExist() {
         HttpRequest request = get("/foo")
                 .header("Host", "www.hotels.com")
-                .addCookie("lang", "en_US|en-us_hotels_com")
+                .cookies(requestCookie("lang", "en_US|en-us_hotels_com"))
                 .build();
 
         functionResolver.resolveFunction("foobar", singletonList("barfoo")).call(request);
