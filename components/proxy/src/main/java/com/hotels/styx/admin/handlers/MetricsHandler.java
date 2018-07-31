@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.common.MapStream;
 import rx.Observable;
@@ -33,7 +34,6 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hotels.styx.api.messages.FullHttpResponse.response;
 import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -47,12 +47,12 @@ import static rx.Observable.just;
  */
 public class MetricsHandler extends JsonHandler<MetricRegistry> {
     private static final Pattern SPECIFIC_METRICS_PATH_PATTERN = Pattern.compile(".*/metrics/(.+)/?");
-
     private static final boolean DO_NOT_SHOW_SAMPLES = false;
-    private final CodaHaleMetricRegistry metricRegistry;
 
     private final ObjectMapper metricSerialiser = new ObjectMapper()
             .registerModule(new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
+
+    private final CodaHaleMetricRegistry metricRegistry;
 
     /**
      * Constructs a new handler.
@@ -68,37 +68,39 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
 
     @Override
     public Observable<HttpResponse> handle(HttpRequest request) {
-        MetricRequest mr = new MetricRequest(request);
+        MetricRequest metricRequest = new MetricRequest(request);
 
-        return mr.fullMetrics()
+        return metricRequest.fullMetrics()
                 ? super.handle(request)
-                : restrictedMetricsResponse(mr);
+                : restrictedMetricsResponse(metricRequest);
     }
 
     private Observable<HttpResponse> restrictedMetricsResponse(MetricRequest request) {
         Map<String, Metric> metrics = search(request);
 
-        if(metrics.isEmpty()) {
-            return just(response(NOT_FOUND).build().toStreamingResponse());
-        }
-
-        String serialised = serialise(metrics, request.prettyPrint);
-
-        return just(response(OK)
-                .body(serialised, UTF_8)
-                .disableCaching()
+        HttpResponse response = response(metrics, request.prettyPrint)
                 .build()
-                .toStreamingResponse());
+                .toStreamingResponse();
+
+        return just(response);
     }
 
-    private static Optional<String> metricName(String path) {
-        Matcher matcher = SPECIFIC_METRICS_PATH_PATTERN.matcher(path);
+    private Map<String, Metric> search(MetricRequest request) {
+        return MapStream.stream(metricRegistry.getMetricRegistry().getMetrics())
+                .filter(request::satisfiesRestrictions)
+                .toMap();
+    }
 
-        if (matcher.matches()) {
-            return Optional.of(matcher.group(1));
+    private FullHttpResponse.Builder response(Map<String, Metric> metrics, boolean prettyPrint) {
+        if(metrics.isEmpty()) {
+            return FullHttpResponse.response(NOT_FOUND);
         }
 
-        return Optional.empty();
+        String body = serialise(metrics, prettyPrint);
+
+        return FullHttpResponse.response(OK)
+                .body(body, UTF_8)
+                .disableCaching();
     }
 
     private String serialise(Object object, boolean pretty) {
@@ -109,12 +111,6 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private Map<String, Metric> search(MetricRequest request) {
-        return MapStream.stream(metricRegistry.getMetricRegistry().getMetrics())
-                .filter(request::satisfiesRestrictions)
-                .toMap();
     }
 
     private static class MetricRequest {
@@ -130,8 +126,18 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
             this.prefix = root + ".";
         }
 
+        boolean fullMetrics() {
+            return root == null && searchTerm == null;
+        }
+
         boolean satisfiesRestrictions(String name, Metric metric) {
             return matchesRoot(name) && containsSearchTerm(name);
+        }
+
+        private static Optional<String> metricName(String path) {
+            return Optional.of(SPECIFIC_METRICS_PATH_PATTERN.matcher(path))
+                    .filter(Matcher::matches)
+                    .map(matcher -> matcher.group(1));
         }
 
         private boolean matchesRoot(String name) {
@@ -144,10 +150,6 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
 
         private boolean containsSearchTerm(String name) {
             return searchTerm == null || name.contains(searchTerm);
-        }
-
-        boolean fullMetrics() {
-            return root == null && searchTerm == null;
         }
     }
 
