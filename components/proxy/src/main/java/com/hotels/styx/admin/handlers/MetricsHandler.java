@@ -68,21 +68,21 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
 
     @Override
     public Observable<HttpResponse> handle(HttpRequest request) {
-        return metricName(request.path())
-                .map(metricName -> specificMetricsResponse(request, metricName))
-                .orElseGet(() -> super.handle(request));
+        MetricRequest mr = new MetricRequest(request);
+
+        return mr.fullMetrics()
+                ? super.handle(request)
+                : restrictedMetricsResponse(mr);
     }
 
-    private Observable<HttpResponse> specificMetricsResponse(HttpRequest request, String metricName) {
-        Map<String, Metric> metrics = metrics(metricName);
+    private Observable<HttpResponse> restrictedMetricsResponse(MetricRequest request) {
+        Map<String, Metric> metrics = search(request);
 
-        if (metrics.isEmpty()) {
+        if(metrics.isEmpty()) {
             return just(response(NOT_FOUND).build().toStreamingResponse());
         }
 
-        boolean pretty = request.queryParam("pretty").isPresent();
-
-        String serialised = serialise(metrics, pretty);
+        String serialised = serialise(metrics, request.prettyPrint);
 
         return just(response(OK)
                 .body(serialised, UTF_8)
@@ -111,11 +111,44 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
         }
     }
 
-    private Map<String, Metric> metrics(String metricNameStart) {
-        String prefix = metricNameStart + ".";
-
+    private Map<String, Metric> search(MetricRequest request) {
         return MapStream.stream(metricRegistry.getMetricRegistry().getMetrics())
-                .filter((name, metric) -> name.equals(metricNameStart) || name.startsWith(prefix))
+                .filter(request::satisfiesRestrictions)
                 .toMap();
     }
+
+    private static class MetricRequest {
+        private final String root;
+        private final String searchTerm;
+        private final boolean prettyPrint;
+        private final String prefix;
+
+        MetricRequest(HttpRequest request) {
+            this.root = metricName(request.path()).orElse(null);
+            this.searchTerm = request.queryParam("search").orElse(null);
+            this.prettyPrint = request.queryParam("pretty").isPresent();
+            this.prefix = root + ".";
+        }
+
+        boolean satisfiesRestrictions(String name, Metric metric) {
+            return matchesRoot(name) && containsSearchTerm(name);
+        }
+
+        private boolean matchesRoot(String name) {
+            if (root == null || name.equals(root)) {
+                return true;
+            }
+
+            return name.startsWith(prefix);
+        }
+
+        private boolean containsSearchTerm(String name) {
+            return searchTerm == null || name.contains(searchTerm);
+        }
+
+        boolean fullMetrics() {
+            return root == null && searchTerm == null;
+        }
+    }
+
 }
