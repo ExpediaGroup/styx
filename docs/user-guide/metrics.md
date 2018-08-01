@@ -21,6 +21,15 @@ For example `http://<styx-host>/admin/metrics/requests.response` would return
     requests.response.status.2xx
     ...
     
+## Searching Metrics for string
+
+To see all metrics containing a given string, a query parameter can be provided.
+This works with both specific metric roots and the set of all metrics:
+
+`http://<styx-host>/admin/metrics?search=<term>`
+
+`http://<styx-host>/admin/metrics/<metric-name>?search=<term>`
+
     
 ## Metrics Grouping
 

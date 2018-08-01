@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.hotels.styx.api.messages.FullHttpResponse.response;
 import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -72,33 +73,29 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
 
         return metricRequest.fullMetrics()
                 ? super.handle(request)
-                : restrictedMetricsResponse(metricRequest);
-    }
-
-    private Observable<HttpResponse> restrictedMetricsResponse(MetricRequest request) {
-        Map<String, Metric> metrics = search(request);
-
-        HttpResponse response = response(metrics, request.prettyPrint)
+                : just(restrictedMetricsResponse(metricRequest)
                 .build()
-                .toStreamingResponse();
-
-        return just(response);
+                .toStreamingResponse());
     }
 
-    private Map<String, Metric> search(MetricRequest request) {
-        return MapStream.stream(metricRegistry.getMetricRegistry().getMetrics())
-                .filter(request::satisfiesRestrictions)
+    private FullHttpResponse.Builder restrictedMetricsResponse(MetricRequest request) {
+        Map<String, Metric> fullMetrics = metricRegistry.getMetricRegistry().getMetrics();
+
+        Map<String, Metric> metrics = MapStream.stream(fullMetrics)
+                .filter((name, metric) -> request.matchesRoot(name))
                 .toMap();
-    }
 
-    private FullHttpResponse.Builder response(Map<String, Metric> metrics, boolean prettyPrint) {
-        if(metrics.isEmpty()) {
-            return FullHttpResponse.response(NOT_FOUND);
+        if (metrics.isEmpty()) {
+            return response(NOT_FOUND);
         }
 
-        String body = serialise(metrics, prettyPrint);
+        metrics = MapStream.stream(metrics)
+                .filter((name, metric) -> request.containsSearchTerm(name))
+                .toMap();
 
-        return FullHttpResponse.response(OK)
+        String body = serialise(metrics, request.prettyPrint);
+
+        return response(OK)
                 .body(body, UTF_8)
                 .disableCaching();
     }
@@ -130,10 +127,6 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
             return root == null && searchTerm == null;
         }
 
-        boolean satisfiesRestrictions(String name, Metric metric) {
-            return matchesRoot(name) && containsSearchTerm(name);
-        }
-
         private static Optional<String> metricName(String path) {
             return Optional.of(SPECIFIC_METRICS_PATH_PATTERN.matcher(path))
                     .filter(Matcher::matches)
@@ -152,5 +145,4 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
             return searchTerm == null || name.contains(searchTerm);
         }
     }
-
 }
