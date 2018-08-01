@@ -25,18 +25,19 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.common.MapStream;
 import rx.Observable;
 
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.hotels.styx.api.messages.FullHttpResponse.response;
 import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.common.MapStream.stream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -81,23 +82,27 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
     private FullHttpResponse.Builder restrictedMetricsResponse(MetricRequest request) {
         Map<String, Metric> fullMetrics = metricRegistry.getMetricRegistry().getMetrics();
 
-        Map<String, Metric> metrics = MapStream.stream(fullMetrics)
-                .filter((name, metric) -> request.matchesRoot(name))
-                .toMap();
+        Map<String, Metric> restricted = filter(fullMetrics, (name, metric) -> request.matchesRoot(name));
 
-        if (metrics.isEmpty()) {
+        if (restricted.isEmpty()) {
             return response(NOT_FOUND);
         }
 
-        metrics = MapStream.stream(metrics)
-                .filter((name, metric) -> request.containsSearchTerm(name))
-                .toMap();
+        return search(request, restricted);
+    }
 
-        String body = serialise(metrics, request.prettyPrint);
+    private FullHttpResponse.Builder search(MetricRequest request, Map<String, Metric> metrics) {
+        Map<String, Metric> searched = filter(metrics, (name, metric) -> request.containsSearchTerm(name));
+
+        String body = serialise(searched, request.prettyPrint);
 
         return response(OK)
                 .body(body, UTF_8)
                 .disableCaching();
+    }
+
+    private static <K, V> Map<K, V> filter(Map<K, V> map, BiPredicate<K, V> predicate) {
+        return stream(map).filter(predicate).toMap();
     }
 
     private String serialise(Object object, boolean pretty) {
