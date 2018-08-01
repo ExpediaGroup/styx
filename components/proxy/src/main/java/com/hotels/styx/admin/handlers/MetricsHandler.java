@@ -84,11 +84,9 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
 
         Map<String, Metric> restricted = filter(fullMetrics, (name, metric) -> request.matchesRoot(name));
 
-        if (restricted.isEmpty()) {
-            return response(NOT_FOUND);
-        }
-
-        return search(request, restricted);
+        return restricted.isEmpty()
+                ? response(NOT_FOUND)
+                : search(request, restricted);
     }
 
     private FullHttpResponse.Builder search(MetricRequest request, Map<String, Metric> metrics) {
@@ -139,11 +137,7 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
         }
 
         private boolean matchesRoot(String name) {
-            if (root == null || name.equals(root)) {
-                return true;
-            }
-
-            return name.startsWith(prefix);
+            return root == null || name.equals(root) || name.startsWith(prefix);
         }
 
         private boolean containsSearchTerm(String name) {
