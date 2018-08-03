@@ -17,7 +17,6 @@ package com.hotels.styx.client.connectionpool;
 
 import com.google.common.base.Objects;
 import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionDestination;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.service.TlsSettings;
 import com.hotels.styx.client.ConnectionSettings;

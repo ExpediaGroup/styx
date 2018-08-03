@@ -17,7 +17,6 @@ package com.hotels.styx.client.connectionpool;
 
 import com.codahale.metrics.Gauge;
 import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.service.ConnectionPoolSettings;

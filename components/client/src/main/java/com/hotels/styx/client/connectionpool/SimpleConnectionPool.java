@@ -20,7 +20,6 @@ import com.codahale.metrics.SlidingWindowReservoir;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.service.ConnectionPoolSettings;
 import com.hotels.styx.api.client.Origin;
 import org.slf4j.Logger;

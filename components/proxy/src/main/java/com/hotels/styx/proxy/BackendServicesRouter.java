@@ -24,7 +24,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.service.ConnectionPoolSettings;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.service.BackendService;

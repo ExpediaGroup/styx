@@ -18,7 +18,7 @@ package com.hotels.styx.client;
 import com.codahale.metrics.Gauge;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
-import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.OriginsChangeListener;

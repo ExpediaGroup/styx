@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.RemoteHost;

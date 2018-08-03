@@ -25,7 +25,7 @@ import com.hotels.styx.api.Announcer;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.OriginsChangeListener;
 import com.hotels.styx.api.client.OriginsSnapshot;
