@@ -297,7 +297,6 @@ public class DashboardDataTest {
 
     @Test
     public void unsubscribesFromEventBus() {
-
         EventBus eventBus = mock(EventBus.class);
         MemoryBackedRegistry<BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
         backendServicesRegistry.add(application("app", origin("app-01", "localhost", 9090)));
@@ -310,7 +309,7 @@ public class DashboardDataTest {
 
         dashbaord.unregister();
 
-        verify(eventBus, times(4)).register(any(DashboardData.Origin.class));
+        verify(eventBus, times(4)).unregister(any(DashboardData.Origin.class));
     }
 
 

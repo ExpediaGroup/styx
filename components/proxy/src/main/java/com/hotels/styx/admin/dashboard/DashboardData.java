@@ -175,9 +175,7 @@ public class DashboardData {
         }
 
         private List<Backend> updateBackendsFromRegistry() {
-            if (this.backends != null) {
-                this.backends.forEach(Backend::unregister);
-            }
+            unregister();
 
             return stream(backendServicesRegistry.get().spliterator(), false)
                     .map(Backend::new)
@@ -185,7 +183,9 @@ public class DashboardData {
         }
 
         void unregister() {
-            backends.forEach(Backend::unregister);
+            if (backends != null) {
+                backends.forEach(Backend::unregister);
+            }
         }
     }
 
