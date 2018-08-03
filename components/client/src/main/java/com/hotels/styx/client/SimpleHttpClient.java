@@ -22,6 +22,7 @@ import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.client.Connection;
+import com.hotels.styx.api.client.ConnectionSettings;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
@@ -47,7 +48,7 @@ public final class SimpleHttpClient implements FullHttpClient {
     private static final int DEFAULT_HTTP_PORT = 80;
 
     private final Optional<String> userAgent;
-    private final Connection.Settings connectionSettings;
+    private final com.hotels.styx.api.client.ConnectionSettings connectionSettings;
     private final int maxResponseSize;
     private final Connection.Factory connectionFactory;
 
@@ -103,13 +104,13 @@ public final class SimpleHttpClient implements FullHttpClient {
         private Connection.Factory connectionFactory;
         private TlsSettings tlsSettings;
         private String userAgent;
-        private Connection.Settings connectionSettings = new ConnectionSettings(1000);
+        private com.hotels.styx.api.client.ConnectionSettings connectionSettings = new ConnectionSettings(1000);
         private int responseTimeout = 60000;
         private int maxResponseSize = 1024 * 100;
         private int maxHeaderSize = 8192;
         private String threadName = "simple-netty-http-client";
 
-        public Builder connectionSettings(Connection.Settings connectionSettings) {
+        public Builder connectionSettings(com.hotels.styx.api.client.ConnectionSettings connectionSettings) {
             this.connectionSettings = connectionSettings;
             return this;
         }

@@ -24,12 +24,13 @@ import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.FullHttpRequest.head
 import com.hotels.styx.api.HttpHeaderNames._
 import com.hotels.styx.api.HttpResponse.response
+import com.hotels.styx.api.client.ConnectionSettings
 import com.hotels.styx.api.messages.HttpResponseStatus._
 import com.hotels.styx.api.messages.HttpVersion._
 import com.hotels.styx.api.support.HostAndPorts._
 import com.hotels.styx.api.{FullHttpClient, FullHttpResponse}
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
-import com.hotels.styx.client.{ConnectionSettings, SimpleHttpClient}
+import com.hotels.styx.client.SimpleHttpClient
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origin, Origins}
 import com.hotels.styx.support.matchers.IsOptional.{isValue, matches}

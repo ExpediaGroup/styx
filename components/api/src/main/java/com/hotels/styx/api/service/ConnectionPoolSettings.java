@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api.service;
 
-import com.hotels.styx.api.client.Connection;
-
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -26,7 +24,7 @@ import static com.google.common.base.Objects.toStringHelper;
 /**
  * Programmatically configurable connection pool settings.
  */
-public class ConnectionPoolSettings implements Connection.Settings {
+public class ConnectionPoolSettings {
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 50;
     public static final int DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST = 25;
     public static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 2000;

@@ -16,6 +16,7 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.hotels.styx.api.client.Connection;
+import com.hotels.styx.api.client.ConnectionSettings;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.support.server.FakeHttpServer;
@@ -56,7 +57,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 public class NettyConnectionFactoryTest {
-    private final Connection.Settings connectionSettings = defaultConnectionPoolSettings();
+    private final ConnectionSettings connectionSettings = new ConnectionSettings(100);
     private final FakeHttpServer server = new FakeHttpServer(0);
 
     private final NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()

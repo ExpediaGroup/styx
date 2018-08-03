@@ -18,6 +18,7 @@ package com.hotels.styx.client.connectionpool;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Connection;
+import com.hotels.styx.api.client.ConnectionSettings;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.exceptions.TransportException;
 import com.hotels.styx.api.service.ConnectionPoolSettings;
@@ -553,7 +554,7 @@ public class SimpleConnectionPoolTest {
 
     private Connection.Factory mockConnectionFactory() {
         Connection.Factory factory = mock(Connection.Factory.class);
-        when(factory.createConnection(any(Origin.class), any(Connection.Settings.class))).thenAnswer(invocation -> {
+        when(factory.createConnection(any(Origin.class), any(ConnectionSettings.class))).thenAnswer(invocation -> {
             Connection mock = mock(Connection.class);
             when(mock.isConnected()).thenReturn(true);
             return just(mock);

@@ -19,6 +19,7 @@ import com.hotels.styx.api.Announcer;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.client.Connection;
+import com.hotels.styx.api.client.ConnectionSettings;
 import com.hotels.styx.api.client.Origin;
 import rx.Observable;
 
@@ -29,7 +30,7 @@ import static com.google.common.base.Objects.toStringHelper;
  */
 public class StubConnectionFactory implements Connection.Factory {
     @Override
-    public Observable<Connection> createConnection(Origin origin, Connection.Settings connectionPoolConfiguration) {
+    public Observable<Connection> createConnection(Origin origin, ConnectionSettings connectionPoolConfiguration) {
         return Observable.create(subscriber -> {
             subscriber.onNext(new StubConnection(origin));
             subscriber.onCompleted();

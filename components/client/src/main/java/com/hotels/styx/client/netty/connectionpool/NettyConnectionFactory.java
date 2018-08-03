@@ -17,6 +17,7 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.client.Connection;
+import com.hotels.styx.api.client.ConnectionSettings;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.netty.ClientEventLoopFactory;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
@@ -64,7 +65,7 @@ public class NettyConnectionFactory implements Connection.Factory {
     }
 
     @Override
-    public Observable<Connection> createConnection(Origin origin, Connection.Settings connectionSettings) {
+    public Observable<Connection> createConnection(Origin origin, ConnectionSettings connectionSettings) {
         return Observable.create(subscriber -> {
             ChannelFuture channelFuture = openConnection(origin, connectionSettings);
 
@@ -79,13 +80,13 @@ public class NettyConnectionFactory implements Connection.Factory {
         });
     }
 
-    private ChannelFuture openConnection(Origin origin, Connection.Settings connectionSettings) {
+    private ChannelFuture openConnection(Origin origin, ConnectionSettings connectionSettings) {
         bootstrap(connectionSettings);
         HostAndPort host = origin.host();
         return bootstrap.connect(host.getHostText(), host.getPort());
     }
 
-    private synchronized void bootstrap(Connection.Settings connectionSettings) {
+    private synchronized void bootstrap(ConnectionSettings connectionSettings) {
         if (bootstrap == null) {
             bootstrap = new Bootstrap();
             bootstrap.group(eventLoopFactory.newClientWorkerEventLoopGroup())

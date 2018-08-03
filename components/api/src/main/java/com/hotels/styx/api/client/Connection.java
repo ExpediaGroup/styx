@@ -28,28 +28,6 @@ import java.util.EventListener;
 public interface Connection extends Closeable {
 
     /**
-     * Connection configuration.
-     */
-    interface Settings {
-        /**
-         * Returns Socket read/write timeout in milliseconds.
-         *
-         * @deprecated Due to be removed in a future release.
-         *
-         * @return number of milliseconds
-         */
-        @Deprecated
-        int socketTimeoutMillis();
-
-        /**
-         * Returns Socket connect timeout in milliseconds.
-         *
-         * @return number of milliseconds
-         */
-        int connectTimeoutMillis();
-    }
-
-    /**
      * A factory that creates new {@link Connection}s on demand.
      */
     interface Factory {
@@ -60,7 +38,7 @@ public interface Connection extends Closeable {
          * @param connectionSettings connection pool configuration
          * @return the newly created connection
          */
-        Observable<Connection> createConnection(Origin origin, Settings connectionSettings);
+        Observable<Connection> createConnection(Origin origin, ConnectionSettings connectionSettings);
     }
 
     /**

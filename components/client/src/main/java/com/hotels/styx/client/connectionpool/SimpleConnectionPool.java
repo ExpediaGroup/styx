@@ -20,6 +20,7 @@ import com.codahale.metrics.SlidingWindowReservoir;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.hotels.styx.api.client.Connection;
+import com.hotels.styx.api.client.ConnectionSettings;
 import com.hotels.styx.api.service.ConnectionPoolSettings;
 import com.hotels.styx.api.client.Origin;
 import org.slf4j.Logger;
@@ -193,7 +194,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
 
     private Observable<Connection> createConnection() {
         connectionAttempts.incrementAndGet();
-        return connectionFactory.createConnection(origin, connectionPoolSettings)
+        return connectionFactory.createConnection(origin, new ConnectionSettings(connectionPoolSettings.connectTimeoutMillis()))
                 .doOnError(throwable -> {
                     busyConnections.decrementAndGet();
                     connectionFailures.incrementAndGet();

@@ -26,7 +26,7 @@ import com.hotels.styx.api.service.ConnectionPoolSettings;
 /**
  * A pool of connections.
  */
-public interface ConnectionPool extends Closeable, ConnectionDestination {
+public interface ConnectionPool extends Closeable {
 
     /**
      * An object that provides statistics relating to connection pooling.
@@ -98,7 +98,7 @@ public interface ConnectionPool extends Closeable, ConnectionDestination {
     /**
      * Factory that creates connection pools for given origins.
      */
-    interface Factory extends ConnectionDestination.Factory {
+    interface Factory {
         /**
          * Create a connection pool for the given origin.
          *
