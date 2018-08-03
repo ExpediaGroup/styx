@@ -25,12 +25,13 @@ import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.Version;
-import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.client.OriginsChangeListener;
+import com.hotels.styx.api.client.OriginsSnapshot;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +90,10 @@ public class DashboardData {
         return System.currentTimeMillis();
     }
 
+    void unregister() {
+        this.downstream.unregister();
+    }
+
     /**
      * Styx-related data.
      */
@@ -112,7 +117,7 @@ public class DashboardData {
         }
 
         @JsonProperty("uptime")
-        public String uptime() {
+        String uptime() {
             return uptimeGauge == null ? null : uptimeGauge.getValue();
         }
 
@@ -130,7 +135,7 @@ public class DashboardData {
         private final Supplier<Map<String, Integer>> responsesSupplier;
 
         private Downstream() {
-            updateBackendsFromRegistry();
+            this.backends = updateBackendsFromRegistry();
 
             this.responsesSupplier = new ResponseCodeSupplier(metrics, COUNTER, "origins.response.status", false);
             backendServicesRegistry.addListener(this);
@@ -166,13 +171,21 @@ public class DashboardData {
 
         @Override
         public void onChange(Registry.Changes<BackendService> changes) {
-            updateBackendsFromRegistry();
+            this.backends = updateBackendsFromRegistry();
         }
 
-        private void updateBackendsFromRegistry() {
-            this.backends = stream(backendServicesRegistry.get().spliterator(), false)
+        private List<Backend> updateBackendsFromRegistry() {
+            if (this.backends != null) {
+                this.backends.forEach(Backend::unregister);
+            }
+
+            return stream(backendServicesRegistry.get().spliterator(), false)
                     .map(Backend::new)
                     .collect(toList());
+        }
+
+        void unregister() {
+            backends.forEach(Backend::unregister);
         }
     }
 
@@ -183,6 +196,8 @@ public class DashboardData {
         private final String id;
         private final String name;
         private final List<Origin> origin;
+        private List<Origin> registeredOrigins;
+
         private final Supplier<Map<String, Integer>> responsesSupplier;
         private final Requests requests;
         private final List<String> status;
@@ -194,8 +209,12 @@ public class DashboardData {
             this.requests = new Requests("origins." + application.id());
 
             this.origin = application.origins().stream().map(Origin::new).collect(toList());
+            this.registeredOrigins = new ArrayList<>();
 
-            this.origin.forEach(eventBus::register);
+            this.origin.forEach(origin -> {
+                eventBus.register(origin);
+                registeredOrigins.add(origin);
+            });
 
             /* IMPORTANT NOTE: We are using guava transforms here instead of java 8 stream-map-collect because
               the guava transforms are backed by the original objects and reflect changes in them. */
@@ -204,6 +223,13 @@ public class DashboardData {
 
             String prefix = format("origins.%s.requests.response.status", name);
             this.responsesSupplier = new ResponseCodeSupplier(metrics, METER, prefix, true);
+        }
+
+        void unregister() {
+            registeredOrigins.forEach(origin -> {
+                eventBus.unregister(origin);
+            });
+            registeredOrigins = new ArrayList<>();
         }
 
         @JsonProperty("id")
