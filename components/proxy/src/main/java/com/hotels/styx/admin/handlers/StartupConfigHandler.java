@@ -17,7 +17,7 @@ package com.hotels.styx.admin.handlers;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.StartupConfig;
-import com.hotels.styx.api.http.handlers.StaticBodyHttpHandler;
+import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static java.util.stream.Collectors.joining;

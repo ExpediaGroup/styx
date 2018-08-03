@@ -23,7 +23,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.OriginsChangeListener;
 import com.hotels.styx.api.client.OriginsSnapshot;
-import com.hotels.styx.api.http.handlers.BaseHttpHandler;
+import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;

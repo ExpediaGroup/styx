@@ -18,7 +18,7 @@ package com.hotels.styx.server.handlers;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.http.handlers.BaseHttpHandler;
+import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import java.util.function.Supplier;
 

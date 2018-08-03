@@ -22,7 +22,7 @@ import com.hotels.styx.admin.dashboard.JsonSupplier;
 import com.hotels.styx.admin.handlers.json.JsonReformatter;
 import com.hotels.styx.api.Clock;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.http.handlers.BaseHttpHandler;
+import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import org.slf4j.Logger;
 
 import java.time.Duration;

@@ -13,19 +13,19 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.http.handlers;
+package com.hotels.styx.common.http.handler;
 
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpRequest.post;
-import static com.hotels.styx.api.MockContext.MOCK_CONTEXT;
-import static com.hotels.styx.api.messages.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static com.hotels.styx.api.messages.HttpMethod.GET;
 import static com.hotels.styx.api.messages.HttpMethod.POST;
+import static com.hotels.styx.api.messages.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
@@ -51,7 +51,7 @@ public class HttpMethodFilteringHandlerTest {
         HttpMethodFilteringHandler post = new HttpMethodFilteringHandler(GET, handler);
 
         HttpRequest request = post("/some-uri").build();
-        HttpResponse response = post.handle(request, MOCK_CONTEXT).asCompletableFuture().get();
+        HttpResponse response = post.handle(request, HttpInterceptorContext.create()).asCompletableFuture().get();
 
         assertThat(response.status(), is(METHOD_NOT_ALLOWED));
     }

@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.http.handlers.BaseHttpHandler;
+import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 
 import java.util.Map;

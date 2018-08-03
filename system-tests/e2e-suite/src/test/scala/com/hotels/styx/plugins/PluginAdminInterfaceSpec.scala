@@ -22,7 +22,7 @@ import com.google.common.net.HostAndPort
 import com.google.common.net.HostAndPort._
 import com.google.common.net.MediaType.PLAIN_TEXT_UTF_8
 import com.hotels.styx.api._
-import com.hotels.styx.api.http.handlers.StaticBodyHttpHandler
+import com.hotels.styx.common.http.handler.StaticBodyHttpHandler
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
