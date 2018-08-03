@@ -611,7 +611,7 @@ public class SimpleConnectionPoolTest {
     }
 
     private static SimpleConnectionPool originConnectionPool(Id applicationId, HostAndPort host, Connection.Factory factory,
-                                                             ConnectionPool.Settings settings) {
+                                                             ConnectionPoolSettings settings) {
         return new SimpleConnectionPool(
                 newOriginBuilder(host)
                         .applicationId(applicationId)

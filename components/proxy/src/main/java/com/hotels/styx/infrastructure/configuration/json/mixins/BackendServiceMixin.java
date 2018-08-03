@@ -19,7 +19,6 @@ package com.hotels.styx.infrastructure.configuration.json.mixins;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.ConnectionPoolSettings;
@@ -47,7 +46,7 @@ public interface BackendServiceMixin {
     Set<Origin> origins();
 
     @JsonProperty("connectionPool")
-    ConnectionPool.Settings connectionPoolConfig();
+    ConnectionPoolSettings connectionPoolConfig();
 
     @JsonProperty("healthCheck")
     HealthCheckConfig healthCheckConfig();
@@ -92,8 +91,6 @@ public interface BackendServiceMixin {
 
         @JsonProperty("connectionPool")
         BackendService.Builder connectionPoolConfig(ConnectionPoolSettings connectionPoolSettings);
-
-        BackendService.Builder connectionPoolConfig(ConnectionPool.Settings connectionPoolSettings);
 
         @JsonProperty("stickySession")
         BackendService.Builder stickySessionConfig(StickySessionConfig stickySessionConfig);

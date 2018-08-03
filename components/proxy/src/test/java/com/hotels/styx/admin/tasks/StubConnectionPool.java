@@ -18,6 +18,7 @@ package com.hotels.styx.admin.tasks;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.service.ConnectionPoolSettings;
 import rx.Observable;
 
 /**
@@ -61,7 +62,7 @@ public class StubConnectionPool implements ConnectionPool {
     }
 
     @Override
-    public Settings settings() {
+    public ConnectionPoolSettings settings() {
         return null;
     }
 }

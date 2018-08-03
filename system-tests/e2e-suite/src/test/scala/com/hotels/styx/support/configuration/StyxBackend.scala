@@ -17,9 +17,7 @@ package com.hotels.styx.support.configuration
 
 import java.util.concurrent.TimeUnit
 
-import com.hotels.styx.api.client.ConnectionPool.Settings
 import com.hotels.styx.api.service
-import com.hotels.styx.api.service.spi
 import com.hotels.styx.server.HttpServer
 import com.hotels.styx.servers.MockOriginServer
 import com.hotels.styx.support.configuration.BackendsCommon.toOrigin
@@ -160,8 +158,8 @@ case class BackendService(appId: String = "generic-app",
 }
 
 object BackendService {
-  def fromJava(from: service.BackendService): BackendService = {
-    val config: Settings = from.connectionPoolConfig()
+  def fromJava(from: com.hotels.styx.api.service.BackendService): BackendService = {
+    val config: com.hotels.styx.api.service.ConnectionPoolSettings = from.connectionPoolConfig()
 
     BackendService(
       appId = from.id().toString,

@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 
 import java.net.URI;
@@ -56,7 +55,7 @@ public final class BackendService implements Identifiable {
 
     private final Id id;
     private final String path;
-    private final ConnectionPool.Settings connectionPoolSettings;
+    private final ConnectionPoolSettings connectionPoolSettings;
     private final Set<Origin> origins;
     private final HealthCheckConfig healthCheckConfig;
     private final StickySessionConfig stickySessionConfig;
@@ -123,7 +122,7 @@ public final class BackendService implements Identifiable {
         return this.origins;
     }
 
-    public ConnectionPool.Settings connectionPoolConfig() {
+    public ConnectionPoolSettings connectionPoolConfig() {
         return this.connectionPoolSettings;
     }
 
@@ -210,7 +209,7 @@ public final class BackendService implements Identifiable {
         private Id id = GENERIC_APP;
         private String path = "/";
         private Set<Origin> origins = emptySet();
-        private ConnectionPool.Settings connectionPoolSettings = defaultConnectionPoolSettings();
+        private ConnectionPoolSettings connectionPoolSettings = defaultConnectionPoolSettings();
         private StickySessionConfig stickySessionConfig = stickySessionDisabled();
         private HealthCheckConfig healthCheckConfig;
         private List<RewriteConfig> rewrites = emptyList();
@@ -361,17 +360,6 @@ public final class BackendService implements Identifiable {
          * @return this builder
          */
         public Builder connectionPoolConfig(ConnectionPoolSettings connectionPoolSettings) {
-            this.connectionPoolSettings = checkNotNull(connectionPoolSettings);
-            return this;
-        }
-
-        /**
-         * Sets connection pool configuration.
-         *
-         * @param connectionPoolSettings connection pool configuration
-         * @return this builder
-         */
-        public Builder connectionPoolConfig(ConnectionPool.Settings connectionPoolSettings) {
             this.connectionPoolSettings = checkNotNull(connectionPoolSettings);
             return this;
         }

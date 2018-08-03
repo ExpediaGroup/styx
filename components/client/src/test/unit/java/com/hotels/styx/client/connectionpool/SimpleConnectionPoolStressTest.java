@@ -17,7 +17,6 @@ package com.hotels.styx.client.connectionpool;
 
 
 import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.service.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
@@ -36,7 +35,7 @@ public class SimpleConnectionPoolStressTest {
     final Origin origin = Origin.newOriginBuilder("localhost", 9090)
             .build();
 
-    final ConnectionPool.Settings settings = new ConnectionPoolSettings.Builder()
+    final ConnectionPoolSettings settings = new ConnectionPoolSettings.Builder()
             .maxConnectionsPerHost(10)
             .maxPendingConnectionsPerHost(20)
             .connectTimeout(200, MILLISECONDS)

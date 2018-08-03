@@ -19,42 +19,12 @@ import rx.Observable;
 
 import java.io.Closeable;
 import java.util.function.Function;
+import com.hotels.styx.api.service.ConnectionPoolSettings;
 
 /**
  * A pool of connections.
  */
 public interface ConnectionPool extends Closeable, ConnectionDestination {
-    /**
-     * Configuration options for creating the pool.
-     */
-    interface Settings extends Connection.Settings {
-        /**
-         * Returns maximum number of connections to allocate for a single host's pool.
-         *
-         * @return maximum number of connections
-         */
-        int maxConnectionsPerHost();
-
-        /**
-         * Returns maximum number of pending connect attempts per host.
-         *
-         * @return maximum number of attempts
-         */
-        int maxPendingConnectionsPerHost();
-
-        /**
-         * Returns maximum wait time for pending consumers in milliseconds.
-         *
-         * @return timeout in milliseconds
-         */
-        int pendingConnectionTimeoutMillis();
-
-        /**
-         * Returns the the time in seconds that the connection is viable.
-         * @return time in seconds
-         */
-        long connectionExpirationSeconds();
-    }
 
     /**
      * An object that provides statistics relating to connection pooling.
@@ -191,7 +161,7 @@ public interface ConnectionPool extends Closeable, ConnectionDestination {
      *
      * @return the pool settings
      */
-    Settings settings();
+    ConnectionPoolSettings settings();
 
     default <T> Observable<T> withConnection(Function<Connection, Observable<T>> task) {
         return borrowConnection()

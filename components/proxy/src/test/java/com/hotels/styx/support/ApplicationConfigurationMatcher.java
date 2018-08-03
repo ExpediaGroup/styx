@@ -17,8 +17,8 @@ package com.hotels.styx.support;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.service.ConnectionPoolSettings;
 import com.hotels.styx.api.service.RewriteConfig;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.HealthCheckConfig;
@@ -34,7 +34,6 @@ import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_CONNECT_TIMEOUT_MILLIS;
 import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_MAX_CONNECTIONS_PER_HOST;
 import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
-import static com.hotels.styx.api.service.HealthCheckConfig.noHealthCheck;
 import static com.hotels.styx.api.service.StickySessionConfig.stickySessionDisabled;
 import static java.util.Collections.emptyList;
 
@@ -60,7 +59,7 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
         matcher.origins = backendService.origins();
         matcher.rewrites = backendService.rewrites();
 
-        ConnectionPool.Settings connectionPoolSettings = backendService.connectionPoolConfig();
+        ConnectionPoolSettings connectionPoolSettings = backendService.connectionPoolConfig();
         matcher.connectTimeout = connectionPoolSettings.connectTimeoutMillis();
         matcher.maxConnectionsPerHost = connectionPoolSettings.maxConnectionsPerHost();
         matcher.maxPendingConnectionsPerHost = connectionPoolSettings.maxPendingConnectionsPerHost();
@@ -132,7 +131,7 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
 
     @Override
     protected boolean matchesSafely(BackendService backendService) {
-        ConnectionPool.Settings settings = backendService.connectionPoolConfig();
+        ConnectionPoolSettings settings = backendService.connectionPoolConfig();
 
         return Objects.equals(id(name), backendService.id())
                 && Objects.equals(path, backendService.path())

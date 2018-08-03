@@ -25,6 +25,7 @@ import com.hotels.styx.api.Id;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.api.service.ConnectionPoolSettings;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.HealthCheckConfig;
@@ -111,7 +112,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .orElse(false);
 
             OriginStatsFactory originStatsFactory = new OriginStatsFactory(environment.metricRegistry());
-            ConnectionPool.Settings poolSettings = backendService.connectionPoolConfig();
+            ConnectionPoolSettings poolSettings = backendService.connectionPoolConfig();
 
             Connection.Factory connectionFactory = connectionFactory(
                     backendService,
@@ -197,7 +198,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             Id appId,
             MetricRegistry metricRegistry,
             Optional<TlsSettings> tlsSettings,
-            ConnectionPool.Settings connectionPoolSettings,
+            ConnectionPoolSettings connectionPoolSettings,
             HealthCheckConfig healthCheckConfig,
             String styxVersion) {
 
