@@ -18,8 +18,8 @@ package com.hotels.styx.client.connectionpool.stubs;
 import com.hotels.styx.api.Announcer;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionSettings;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.api.client.Origin;
 import rx.Observable;
 

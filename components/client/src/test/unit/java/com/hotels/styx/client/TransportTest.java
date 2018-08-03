@@ -20,7 +20,6 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.StyxObservable;
-import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import io.netty.buffer.ByteBuf;

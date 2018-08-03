@@ -17,8 +17,8 @@ package com.hotels.styx.client.connectionpool;
 
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionSettings;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.exceptions.TransportException;
 import com.hotels.styx.api.service.ConnectionPoolSettings;

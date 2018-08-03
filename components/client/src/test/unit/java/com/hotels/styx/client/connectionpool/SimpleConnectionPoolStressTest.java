@@ -16,7 +16,7 @@
 package com.hotels.styx.client.connectionpool;
 
 
-import com.hotels.styx.api.client.Connection;
+import com.hotels.styx.client.Connection;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.service.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;

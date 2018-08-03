@@ -22,7 +22,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
-import com.hotels.styx.api.client.Connection;
+import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.ConnectionPoolSettings;

@@ -21,8 +21,6 @@ import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionSettings;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.service.TlsSettings;
@@ -182,7 +180,7 @@ public class SimpleHttpClientTest {
                 .build());
 
         ArgumentCaptor<Origin> originCaptor = ArgumentCaptor.forClass(Origin.class);
-        verify(connectionFactory).createConnection(originCaptor.capture(), any(com.hotels.styx.api.client.ConnectionSettings.class));
+        verify(connectionFactory).createConnection(originCaptor.capture(), any(ConnectionSettings.class));
 
         assertThat(originCaptor.getValue().host().getPort(), is(80));
     }
@@ -201,7 +199,7 @@ public class SimpleHttpClientTest {
                 .build());
 
         ArgumentCaptor<Origin> originCaptor = ArgumentCaptor.forClass(Origin.class);
-        verify(connectionFactory).createConnection(originCaptor.capture(), any(com.hotels.styx.api.client.ConnectionSettings.class));
+        verify(connectionFactory).createConnection(originCaptor.capture(), any(ConnectionSettings.class));
 
         assertThat(originCaptor.getValue().host().getPort(), is(443));
     }
@@ -254,7 +252,7 @@ public class SimpleHttpClientTest {
 
     private Connection.Factory mockConnectionFactory(Connection connection) {
         Connection.Factory factory = mock(Connection.Factory.class);
-        when(factory.createConnection(any(Origin.class), any(com.hotels.styx.api.client.ConnectionSettings.class)))
+        when(factory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
                 .thenReturn(Observable.just(connection));
         return factory;
     }

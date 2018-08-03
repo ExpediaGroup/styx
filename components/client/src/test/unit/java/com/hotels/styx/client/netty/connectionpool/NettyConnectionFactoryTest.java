@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionSettings;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.support.server.FakeHttpServer;
@@ -42,7 +42,6 @@ import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
 import static com.hotels.styx.api.support.HostAndPorts.localhost;
-import static com.hotels.styx.api.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith;
 import static io.netty.handler.codec.http.HttpMethod.GET;
