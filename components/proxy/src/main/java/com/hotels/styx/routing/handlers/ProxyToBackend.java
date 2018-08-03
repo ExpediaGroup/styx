@@ -22,9 +22,10 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.service.ConnectionPoolSettings;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
@@ -108,7 +109,7 @@ public class ProxyToBackend implements HttpHandler {
                     .tlsSettings(backendService.tlsSettings().orElse(null))
                     .build();
 
-            ConnectionPool.Settings poolSettings = backendService.connectionPoolConfig();
+            ConnectionPoolSettings poolSettings = backendService.connectionPoolConfig();
 
             if (poolSettings.connectionExpirationSeconds() > 0) {
                 connectionFactory = new ExpiringConnectionFactory(poolSettings.connectionExpirationSeconds(), connectionFactory);

@@ -13,10 +13,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.client;
+package com.hotels.styx.client;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.client.Origin;
 import rx.Observable;
 
 import java.io.Closeable;
@@ -26,28 +27,6 @@ import java.util.EventListener;
  * A connection to an origin.
  */
 public interface Connection extends Closeable {
-
-    /**
-     * Connection configuration.
-     */
-    interface Settings {
-        /**
-         * Returns Socket read/write timeout in milliseconds.
-         *
-         * @deprecated Due to be removed in a future release.
-         *
-         * @return number of milliseconds
-         */
-        @Deprecated
-        int socketTimeoutMillis();
-
-        /**
-         * Returns Socket connect timeout in milliseconds.
-         *
-         * @return number of milliseconds
-         */
-        int connectTimeoutMillis();
-    }
 
     /**
      * A factory that creates new {@link Connection}s on demand.
@@ -60,7 +39,7 @@ public interface Connection extends Closeable {
          * @param connectionSettings connection pool configuration
          * @return the newly created connection
          */
-        Observable<Connection> createConnection(Origin origin, Settings connectionSettings);
+        Observable<Connection> createConnection(Origin origin, ConnectionSettings connectionSettings);
     }
 
     /**

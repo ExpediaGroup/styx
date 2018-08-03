@@ -23,14 +23,15 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.StyxObservable;
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.client.ConnectionSettings;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
+import com.hotels.styx.api.service.ConnectionPoolSettings;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.HealthCheckConfig;
 import com.hotels.styx.api.service.TlsSettings;
 import com.hotels.styx.api.service.spi.Registry;
-import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.SimpleHttpClient;
@@ -111,7 +112,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .orElse(false);
 
             OriginStatsFactory originStatsFactory = new OriginStatsFactory(environment.metricRegistry());
-            ConnectionPool.Settings poolSettings = backendService.connectionPoolConfig();
+            ConnectionPoolSettings poolSettings = backendService.connectionPoolConfig();
 
             Connection.Factory connectionFactory = connectionFactory(
                     backendService,
@@ -197,7 +198,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             Id appId,
             MetricRegistry metricRegistry,
             Optional<TlsSettings> tlsSettings,
-            ConnectionPool.Settings connectionPoolSettings,
+            ConnectionPoolSettings connectionPoolSettings,
             HealthCheckConfig healthCheckConfig,
             String styxVersion) {
 

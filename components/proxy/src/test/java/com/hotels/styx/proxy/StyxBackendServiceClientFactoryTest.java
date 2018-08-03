@@ -20,7 +20,8 @@ import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Connection;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetric;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
@@ -67,7 +68,7 @@ public class StyxBackendServiceClientFactoryTest {
                 .origins(newOriginBuilder("localhost", 8081).build())
                 .build();
 
-        when(connectionFactory.createConnection(any(Origin.class), any(Connection.Settings.class)))
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
                 .thenReturn(just(mock(Connection.class)));
     }
 

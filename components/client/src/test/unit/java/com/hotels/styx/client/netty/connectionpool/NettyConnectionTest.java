@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.hotels.styx.api.client.Connection;
+import com.hotels.styx.client.Connection;
 import com.hotels.styx.api.client.Origin;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;

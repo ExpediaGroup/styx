@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.client.Connection;
 import rx.Observable;
 
 /**

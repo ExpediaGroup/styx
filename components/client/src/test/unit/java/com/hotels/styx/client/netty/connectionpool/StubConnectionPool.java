@@ -16,8 +16,9 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.base.Objects;
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
+import com.hotels.styx.api.service.ConnectionPoolSettings;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import rx.Observable;
@@ -34,7 +35,7 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
     private long timeToFirstByte = 0;
     private int maxConnectionsPerHost = 1;
     private int availableConnections = 0;
-    private final Settings settings;
+    private final ConnectionPoolSettings settings;
     private int pendingConnectionCount;
 
     public StubConnectionPool(Origin origin) {
@@ -47,7 +48,7 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
         this.settings = defaultConnectionPoolSettings();
     }
 
-    public StubConnectionPool(Origin origin_one, Settings settings) {
+    public StubConnectionPool(Origin origin_one, ConnectionPoolSettings settings) {
         this.origin = origin_one;
         this.settings = settings;
     }
@@ -128,7 +129,7 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
     }
 
     @Override
-    public Settings settings() {
+    public ConnectionPoolSettings settings() {
         return settings;
     }
 

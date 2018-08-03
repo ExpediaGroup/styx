@@ -18,8 +18,7 @@ package com.hotels.styx.client;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionPool;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import rx.Observable;
 

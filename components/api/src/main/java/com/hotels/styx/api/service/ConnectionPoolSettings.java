@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api.service;
 
-import com.hotels.styx.api.client.ConnectionPool;
-
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -26,7 +24,7 @@ import static com.google.common.base.Objects.toStringHelper;
 /**
  * Programmatically configurable connection pool settings.
  */
-public class ConnectionPoolSettings implements ConnectionPool.Settings {
+public class ConnectionPoolSettings {
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 50;
     public static final int DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST = 25;
     public static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 2000;
@@ -127,33 +125,27 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
      *
      * @return a socket timeout in milliseconds.
      */
-    @Override
     @Deprecated
     public int socketTimeoutMillis() {
         return socketTimeoutMillis;
     }
 
-    @Override
     public int connectTimeoutMillis() {
         return connectTimeoutMillis;
     }
 
-    @Override
     public int maxConnectionsPerHost() {
         return maxConnectionsPerHost;
     }
 
-    @Override
     public int maxPendingConnectionsPerHost() {
         return maxPendingConnectionsPerHost;
     }
 
-    @Override
     public int pendingConnectionTimeoutMillis() {
         return pendingConnectionTimeoutMillis;
     }
 
-    @Override
     public long connectionExpirationSeconds() {
         return connectionExpirationSeconds;
     }
@@ -213,7 +205,7 @@ public class ConnectionPoolSettings implements ConnectionPool.Settings {
          *
          * @param settings settings to inherit from
          */
-        public Builder(ConnectionPool.Settings settings) {
+        public Builder(ConnectionPoolSettings settings) {
             this.maxConnectionsPerHost = settings.maxConnectionsPerHost();
             this.maxPendingConnectionsPerHost = settings.maxPendingConnectionsPerHost();
             this.connectTimeoutMillis = settings.connectTimeoutMillis();

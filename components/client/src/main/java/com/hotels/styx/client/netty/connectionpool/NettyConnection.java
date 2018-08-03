@@ -20,7 +20,7 @@ import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Announcer;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Connection;
+import com.hotels.styx.client.Connection;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.client.HttpRequestOperationFactory;
 
