@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.common;
+package com.hotels.styx.common;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;

@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.hotels.styx.api.common.Strings.quote;
 import static io.netty.handler.codec.http.cookie.Cookie.UNDEFINED_MAX_AGE;
 import static java.util.Objects.hash;
 import static java.util.Objects.requireNonNull;
@@ -199,6 +198,10 @@ public final class ResponseCookie {
                 .httpOnly(cookie.isHttpOnly())
                 .secure(cookie.isSecure())
                 .build();
+    }
+
+    private static String quote(String value) {
+        return "\"" + value + "\"";
     }
 
     @Override

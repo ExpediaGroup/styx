@@ -24,8 +24,6 @@ import java.util.NoSuchElementException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static com.hotels.styx.api.common.Strings.hasSuffix;
-
 /**
  * Iterates over resources in a JAR.
  */
@@ -78,4 +76,9 @@ public class ZipResourceIterator implements Iterator<Resource> {
             }
         }
     }
+
+    private static boolean hasSuffix(String suffix, String name) {
+        return suffix == null || name.endsWith(suffix);
+    }
+
 }

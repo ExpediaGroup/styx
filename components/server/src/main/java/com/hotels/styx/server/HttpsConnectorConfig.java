@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.common.Joiners;
+import com.hotels.styx.common.Joiners;
 
 import java.util.Collections;
 import java.util.List;

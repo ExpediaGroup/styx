@@ -26,7 +26,6 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.hotels.styx.api.common.Strings.quote;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
@@ -105,6 +104,10 @@ public final class RequestCookie {
         String value = nettyCookie.wrap() ? quote(nettyCookie.value()) : nettyCookie.value();
 
         return requestCookie(name, value);
+    }
+
+    private static String quote(String value) {
+        return "\"" + value + "\"";
     }
 
     /**
