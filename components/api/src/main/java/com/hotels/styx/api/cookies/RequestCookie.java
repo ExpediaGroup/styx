@@ -15,13 +15,14 @@
  */
 package com.hotels.styx.api.cookies;
 
-import com.google.common.base.Objects;
+
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -49,7 +50,7 @@ public final class RequestCookie {
         requireNonNull(value, "value cannot be null");
         this.name = name;
         this.value = value;
-        this.hashCode = Objects.hashCode(name, value);
+        this.hashCode = Objects.hash(name, value);
     }
 
     /**
@@ -142,7 +143,7 @@ public final class RequestCookie {
             return false;
         }
         RequestCookie other = (RequestCookie) obj;
-        return Objects.equal(name, other.name) && Objects.equal(value, other.value);
+        return Objects.equals(name, other.name) && Objects.equals(value, other.value);
     }
 
     @Override
