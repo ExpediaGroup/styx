@@ -38,7 +38,7 @@ import static com.google.common.net.MediaType.create;
 /**
  * A collection of {@link MediaType}s associated with file extensions.
  */
-public final class MediaTypes {
+final class MediaTypes {
     private MediaTypes() {
     }
 
