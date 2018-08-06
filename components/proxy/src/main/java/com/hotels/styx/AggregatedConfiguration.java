@@ -20,7 +20,7 @@ import com.hotels.styx.api.configuration.ConversionException;
 
 import java.util.Optional;
 
-import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**

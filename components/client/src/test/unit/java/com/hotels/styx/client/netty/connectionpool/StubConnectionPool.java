@@ -15,14 +15,15 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.google.common.base.Objects;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import rx.Observable;
 
-import static com.google.common.base.Objects.toStringHelper;
+import java.util.Objects;
+
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.hotels.styx.api.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static rx.Observable.just;
 
@@ -159,7 +160,7 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(origin, busyConnectionCount, pendingConnectionCount, timeToFirstByte);
+        return Objects.hash(origin, busyConnectionCount, pendingConnectionCount, timeToFirstByte);
     }
 
     @Override
@@ -171,10 +172,10 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
             return false;
         }
         StubConnectionPool other = (StubConnectionPool) obj;
-        return Objects.equal(this.origin, other.origin) &&
-                Objects.equal(this.busyConnectionCount, other.busyConnectionCount) &&
-                Objects.equal(this.pendingConnectionCount, other.pendingConnectionCount) &&
-                Objects.equal(this.timeToFirstByte, other.timeToFirstByte);
+        return Objects.equals(this.origin, other.origin) &&
+                Objects.equals(this.busyConnectionCount, other.busyConnectionCount) &&
+                Objects.equals(this.pendingConnectionCount, other.pendingConnectionCount) &&
+                Objects.equals(this.timeToFirstByte, other.timeToFirstByte);
     }
 
     @Override

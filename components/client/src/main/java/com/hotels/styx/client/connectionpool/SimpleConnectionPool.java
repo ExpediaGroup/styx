@@ -18,7 +18,6 @@ package com.hotels.styx.client.connectionpool;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.SlidingWindowReservoir;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Objects;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.client.Origin;
@@ -26,6 +25,7 @@ import org.slf4j.Logger;
 import rx.Observable;
 import rx.Subscriber;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static com.hotels.styx.client.connectionpool.ConnectionPoolStatsCounter.NULL_CONNECTION_POOL_STATS;
@@ -253,7 +253,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
             return false;
         }
         SimpleConnectionPool other = (SimpleConnectionPool) obj;
-        return Objects.equal(this.origin, other.origin);
+        return Objects.equals(this.origin, other.origin);
     }
 
     @Override

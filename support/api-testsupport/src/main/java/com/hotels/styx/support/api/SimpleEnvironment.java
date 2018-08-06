@@ -21,7 +21,7 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 
-import static com.google.common.base.Objects.firstNonNull;
+import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATION;
 
 /**

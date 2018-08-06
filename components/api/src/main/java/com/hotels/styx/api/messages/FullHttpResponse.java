@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api.messages;
 
-import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpHeaders;
@@ -26,9 +25,10 @@ import rx.Observable;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
-import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
@@ -171,7 +171,7 @@ public class FullHttpResponse implements FullHttpMessage {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(version, status, headers, cookies);
+        return Objects.hash(version, status, headers, cookies);
     }
 
     @Override
@@ -183,10 +183,10 @@ public class FullHttpResponse implements FullHttpMessage {
             return false;
         }
         FullHttpResponse other = (FullHttpResponse) obj;
-        return Objects.equal(this.version, other.version)
-                && Objects.equal(this.status, other.status)
-                && Objects.equal(this.headers, other.headers)
-                && Objects.equal(this.cookies, other.cookies);
+        return Objects.equals(this.version, other.version)
+                && Objects.equals(this.status, other.status)
+                && Objects.equals(this.headers, other.headers)
+                && Objects.equals(this.cookies, other.cookies);
     }
 
     /**

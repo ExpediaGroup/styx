@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.google.common.base.Objects;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionDestination;
 import com.hotels.styx.api.client.Origin;
@@ -26,9 +25,10 @@ import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import rx.Observable;
 
+import java.util.Objects;
 import java.util.function.Function;
 
-import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static rx.Observable.error;
 
@@ -99,7 +99,7 @@ public class CloseAfterUseConnectionDestination implements ConnectionDestination
             return false;
         }
         CloseAfterUseConnectionDestination other = (CloseAfterUseConnectionDestination) obj;
-        return Objects.equal(this.origin, other.origin);
+        return Objects.equals(this.origin, other.origin);
     }
 
     @Override

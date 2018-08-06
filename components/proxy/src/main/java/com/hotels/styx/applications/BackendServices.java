@@ -17,7 +17,6 @@ package com.hotels.styx.applications;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Origin;
@@ -26,9 +25,10 @@ import com.hotels.styx.api.service.BackendService;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 
-import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.getFirst;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
@@ -162,6 +162,6 @@ public final class BackendServices implements Iterable<BackendService> {
             return false;
         }
         BackendServices other = (BackendServices) obj;
-        return Objects.equal(this.backendServices, other.backendServices);
+        return Objects.equals(this.backendServices, other.backendServices);
     }
 }

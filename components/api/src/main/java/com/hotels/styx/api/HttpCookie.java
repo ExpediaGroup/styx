@@ -16,7 +16,7 @@
 package com.hotels.styx.api;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Objects;
+import java.util.Objects;
 
 import java.util.Collection;
 
@@ -50,7 +50,7 @@ public final class HttpCookie {
         this.name = name;
         this.value = value;
         this.attributes = checkNotNull(attributes);
-        this.hashCode = Objects.hashCode(name, value, attributes);
+        this.hashCode = Objects.hash(name, value, attributes);
     }
 
     /**
@@ -127,7 +127,7 @@ public final class HttpCookie {
             return false;
         }
         HttpCookie other = (HttpCookie) obj;
-        return Objects.equal(name, other.name) && Objects.equal(value, other.value) && Objects.equal(attributes, other.attributes);
+        return Objects.equals(name, other.name) && Objects.equals(value, other.value) && Objects.equals(attributes, other.attributes);
     }
 
     @Override

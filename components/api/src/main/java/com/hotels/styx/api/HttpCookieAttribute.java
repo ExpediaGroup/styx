@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.base.Objects;
+import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -36,7 +36,7 @@ public final class HttpCookieAttribute {
     private HttpCookieAttribute(String name, String value) {
         this.name = checkNotNull(name);
         this.value = value;
-        this.hashCode = Objects.hashCode(name, value);
+        this.hashCode = Objects.hash(name, value);
     }
 
     /**
@@ -119,7 +119,7 @@ public final class HttpCookieAttribute {
             return false;
         }
         HttpCookieAttribute other = (HttpCookieAttribute) obj;
-        return Objects.equal(name, other.name) && Objects.equal(value, other.value);
+        return Objects.equals(name, other.name) && Objects.equals(value, other.value);
     }
 
     @Override

@@ -22,7 +22,7 @@ import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.Origin;
 import rx.Observable;
 
-import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * A stub {@link Connection.Factory}.

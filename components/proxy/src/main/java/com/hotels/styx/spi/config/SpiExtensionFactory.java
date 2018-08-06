@@ -16,9 +16,10 @@
 package com.hotels.styx.spi.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Objects;
 
-import static com.google.common.base.Objects.toStringHelper;
+import java.util.Objects;
+
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -45,7 +46,7 @@ public class SpiExtensionFactory {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(factoryClass, classPath);
+        return Objects.hash(factoryClass, classPath);
     }
 
     @Override
@@ -57,8 +58,8 @@ public class SpiExtensionFactory {
             return false;
         }
         SpiExtensionFactory other = (SpiExtensionFactory) obj;
-        return Objects.equal(this.factoryClass, other.factoryClass)
-                && Objects.equal(this.classPath, other.classPath);
+        return Objects.equals(this.factoryClass, other.factoryClass)
+                && Objects.equals(this.classPath, other.classPath);
     }
 
     @Override
