@@ -48,7 +48,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class DashboardDataTest {
@@ -291,6 +294,24 @@ public class DashboardDataTest {
         assertThat(connectionsPool.busy(), is(234));
         assertThat(connectionsPool.pending(), is(345));
     }
+
+    @Test
+    public void unsubscribesFromEventBus() {
+        EventBus eventBus = mock(EventBus.class);
+        MemoryBackedRegistry<BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
+        backendServicesRegistry.add(application("app", origin("app-01", "localhost", 9090)));
+        backendServicesRegistry.add(application("test", origin("test-01", "localhost", 9090)));
+
+        DashboardData dashbaord = new DashboardData(metricRegistry, backendServicesRegistry, "styx-prod1-presentation-01", new Version("releaseTag"), eventBus);
+
+        // Twice for each backend. One during backend construction, another from BackendServicesRegistry listener callback.
+        verify(eventBus, times(4)).register(any(DashboardData.Origin.class));
+
+        dashbaord.unregister();
+
+        verify(eventBus, times(4)).unregister(any(DashboardData.Origin.class));
+    }
+
 
     // makes the generics explicit for the compiler (to avoid having a cast every time () -> value is used).
     private <T> Gauge<T> gauge(T value) {
