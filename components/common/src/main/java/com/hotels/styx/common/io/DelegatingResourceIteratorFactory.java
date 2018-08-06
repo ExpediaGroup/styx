@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.io;
+package com.hotels.styx.common.io;
 
 import com.hotels.styx.api.Resource;
 
@@ -21,7 +21,7 @@ import java.net.URL;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 
 /**
@@ -49,7 +49,7 @@ public class DelegatingResourceIteratorFactory implements ResourceIteratorFactor
      */
     public DelegatingResourceIteratorFactory(ResourceIteratorFactory fallback) {
         this.delegates = ServiceLoader.load(ResourceIteratorFactory.class);
-        this.fallback = checkNotNull(fallback);
+        this.fallback = requireNonNull(fallback);
     }
 
     @Override

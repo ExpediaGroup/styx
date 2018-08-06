@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.io;
+package com.hotels.styx.common.io;
 
 import com.hotels.styx.api.Resource;
 import org.testng.annotations.Test;
@@ -21,7 +21,7 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.nio.file.Path;
 
-import static com.hotels.styx.api.io.ResourcePathMatcher.resourceWithPath;
+import static com.hotels.styx.common.io.ResourcePathMatcher.resourceWithPath;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;

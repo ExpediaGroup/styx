@@ -13,13 +13,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.io;
+package com.hotels.styx.common.io;
 
 import com.hotels.styx.api.Resource;
 
 import java.io.File;
-
-import static com.google.common.collect.Lists.newArrayList;
+import java.util.ArrayList;
 
 /**
  * An index of file system resources.
@@ -27,6 +26,8 @@ import static com.google.common.collect.Lists.newArrayList;
 public class FileResourceIndex implements ResourceIndex {
     @Override
     public Iterable<Resource> list(String path, String suffix) {
-        return newArrayList(new FileResourceIterator(new File(path), new File(path), suffix));
+        ArrayList<Resource> list = new ArrayList<>();
+        new FileResourceIterator(new File(path), new File(path), suffix).forEachRemaining(list::add);
+        return list;
     }
 }

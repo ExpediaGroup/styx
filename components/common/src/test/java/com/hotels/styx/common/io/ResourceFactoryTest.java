@@ -13,25 +13,25 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.io;
+package com.hotels.styx.common.io;
 
 import com.hotels.styx.api.Resource;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.io.ResourceContentMatcher.contains;
+import static com.hotels.styx.common.io.ResourceContentMatcher.contains;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ResourceFactoryTest {
     @Test
     public void canAcquireClasspathResources() {
-        Resource resource = ResourceFactory.newResource("classpath:com/hotels/styx/api/io/resource.txt");
+        Resource resource = ResourceFactory.newResource("classpath:com/hotels/styx/common/io/resource.txt");
         
         assertThat(resource, contains("This is an example resource.\nIt has content to use in automated tests."));
     }
 
     @Test
     public void canAcquireFileResources() {
-        String filePath = ResourceFactoryTest.class.getResource("/com/hotels/styx/api/io/resource.txt").getPath();
+        String filePath = ResourceFactoryTest.class.getResource("/com/hotels/styx/common/io/resource.txt").getPath();
         
         Resource resource = ResourceFactory.newResource(filePath);
 

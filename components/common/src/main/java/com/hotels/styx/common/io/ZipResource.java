@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.io;
+package com.hotels.styx.common.io;
 
 import com.hotels.styx.api.Resource;
 
@@ -23,7 +23,7 @@ import java.net.URL;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A resource inside a JAR.
@@ -33,8 +33,8 @@ public class ZipResource implements Resource {
     private final ZipEntry jarEntry;
 
     public ZipResource(ZipFile jarFile, ZipEntry jarEntry) {
-        this.jarFile = checkNotNull(jarFile);
-        this.jarEntry = checkNotNull(jarEntry);
+        this.jarFile = requireNonNull(jarFile);
+        this.jarEntry = requireNonNull(jarEntry);
     }
 
     @Override

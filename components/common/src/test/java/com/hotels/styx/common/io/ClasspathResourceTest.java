@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.io;
+package com.hotels.styx.common.io;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -22,7 +22,7 @@ import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import static com.hotels.styx.api.io.ResourceContentMatcher.contains;
+import static com.hotels.styx.common.io.ResourceContentMatcher.contains;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -42,17 +42,17 @@ public class ClasspathResourceTest {
     }
 
     private static void assertThatResourceIsLoadedCorrectly(ClasspathResource resource) throws MalformedURLException {
-        assertThat(resource.path(), is("com/hotels/styx/api/io/resource.txt"));
-        assertThat(resource.absolutePath(), is(absolutePath("/com/hotels/styx/api/io/resource.txt")));
-        assertThat(resource.url(), is(new URL("file:" + absolutePath("/com/hotels/styx/api/io/resource.txt"))));
+        assertThat(resource.path(), is("com/hotels/styx/common/io/resource.txt"));
+        assertThat(resource.absolutePath(), is(absolutePath("/com/hotels/styx/common/io/resource.txt")));
+        assertThat(resource.url(), is(new URL("file:" + absolutePath("/com/hotels/styx/common/io/resource.txt"))));
         assertThat(resource, contains("This is an example resource.\nIt has content to use in automated tests."));
     }
 
     @DataProvider(name = "validPaths")
     private static Object[][] validPaths() {
         return new Object[][]{
-                {"classpath:com/hotels/styx/api/io/resource.txt"},
-                {"classpath:/com/hotels/styx/api/io/resource.txt"},
+                {"classpath:com/hotels/styx/common/io/resource.txt"},
+                {"classpath:/com/hotels/styx/common/io/resource.txt"},
         };
     }
 

@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.io;
+package com.hotels.styx.common.io;
 
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -27,7 +27,7 @@ import java.net.MalformedURLException;
 
 import static com.google.common.io.Files.createTempDir;
 import static com.google.common.io.Files.write;
-import static com.hotels.styx.api.io.ResourceContentMatcher.contains;
+import static com.hotels.styx.common.io.ResourceContentMatcher.contains;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.io.File.createTempFile;
 import static org.hamcrest.MatcherAssert.assertThat;

@@ -16,7 +16,7 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.StartupConfig;
-import com.hotels.styx.api.io.ClasspathResource;
+import com.hotels.styx.common.io.ClasspathResource;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
@@ -32,7 +32,6 @@ import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import com.hotels.styx.api.HttpRequest;
 
 public class LoggingConfigurationHandlerTest {
     @Test

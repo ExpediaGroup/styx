@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.io;
+package com.hotels.styx.common.io;
 
 import com.google.common.collect.Iterators;
 import com.hotels.styx.api.Resource;
@@ -24,7 +24,6 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Throwables.propagate;
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.Collectors.toList;
@@ -54,7 +53,7 @@ public class ClasspathResourceIndex implements ResourceIndex {
                     .collect(toList());
 
         } catch (IOException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
