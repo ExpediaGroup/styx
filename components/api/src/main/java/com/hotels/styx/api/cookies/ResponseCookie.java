@@ -228,16 +228,15 @@ public final class ResponseCookie {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ResponseCookie{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", value='").append(value).append('\'');
-        sb.append(", domain='").append(domain).append('\'');
-        sb.append(", maxAge=").append(maxAge);
-        sb.append(", path='").append(path).append('\'');
-        sb.append(", httpOnly=").append(httpOnly);
-        sb.append(", secure=").append(secure);
-        sb.append('}');
-        return sb.toString();
+        return "ResponseCookie{"
+                + "name='" + name + '\''
+                + ", value='" + value + '\''
+                + ", domain='" + domain + '\''
+                + ", maxAge=" + maxAge
+                + ", path='" + path + '\''
+                + ", httpOnly=" + httpOnly
+                + ", secure=" + secure
+                + '}';
     }
 
     /**
