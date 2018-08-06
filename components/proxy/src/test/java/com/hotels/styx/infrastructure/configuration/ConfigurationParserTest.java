@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 
-import static com.hotels.styx.api.io.ResourceFactory.newResource;
+import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.PlaceholderResolver.replacePlaceholder;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;

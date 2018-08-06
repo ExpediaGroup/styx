@@ -13,11 +13,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.io;
+package com.hotels.styx.common.io;
 
 import com.hotels.styx.api.Resource;
 
-import static com.hotels.styx.api.io.ClasspathResource.CLASSPATH_SCHEME;
+import static com.hotels.styx.common.io.ClasspathResource.CLASSPATH_SCHEME;
 
 /**
  * Factory for creating resources (file, classpath) based on prefix.

@@ -42,7 +42,7 @@ import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Throwables.propagate;
-import static com.hotels.styx.api.io.ResourceFactory.newResource;
+import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.api.service.spi.Registry.Outcome.FAILED;
 import static com.hotels.styx.applications.BackendServices.newBackendServices;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;

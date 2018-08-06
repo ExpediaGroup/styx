@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.io.Files.createTempDir;
-import static com.hotels.styx.api.io.ResourceFactory.newResource;
+import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.delete;

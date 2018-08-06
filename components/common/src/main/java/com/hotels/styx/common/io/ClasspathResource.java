@@ -13,15 +13,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.io;
+package com.hotels.styx.common.io;
 
 import com.hotels.styx.api.Resource;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URL;
-
-import static com.google.common.base.Throwables.propagate;
 
 /**
  * A {@link com.hotels.styx.api.Resource} implementation for class path resources.
@@ -75,7 +73,7 @@ public class ClasspathResource implements Resource {
         URL url = this.classLoader.getResource(this.path);
 
         if (url == null) {
-            throw propagate(new FileNotFoundException(this.path));
+            throw new RuntimeException(new FileNotFoundException(this.path));
         }
 
         return url;

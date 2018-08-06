@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 
-import static com.hotels.styx.api.io.ResourceFactory.newResource;
+import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static com.hotels.styx.api.support.HostAndPorts.freePort;
 import static com.hotels.styx.common.StyxFutures.await;

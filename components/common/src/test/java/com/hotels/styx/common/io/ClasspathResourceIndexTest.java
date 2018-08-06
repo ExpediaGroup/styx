@@ -13,12 +13,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.io;
+package com.hotels.styx.common.io;
 
 import com.hotels.styx.api.Resource;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.io.ResourcePathMatcher.resourceWithPath;
+import static com.hotels.styx.common.io.ResourcePathMatcher.resourceWithPath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
@@ -28,7 +28,7 @@ public class ClasspathResourceIndexTest {
         ClassLoader classLoader = ClasspathResourceIndexTest.class.getClassLoader();
         ClasspathResourceIndex index = new ClasspathResourceIndex(classLoader);
 
-        Iterable<Resource> resources = index.list("com/hotels/styx/api/io", ".txt");
+        Iterable<Resource> resources = index.list("com/hotels/styx/common/io", ".txt");
 
         assertThat(resources, containsInAnyOrder(
                 resourceWithPath("resource.txt"),

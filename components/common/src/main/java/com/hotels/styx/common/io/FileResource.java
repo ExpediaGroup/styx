@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.io;
+package com.hotels.styx.common.io;
 
 import com.hotels.styx.api.Resource;
 
@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-
-import static com.google.common.base.Throwables.propagate;
 
 /**
  * Resource implementation for {@link File} handles.
@@ -64,7 +62,7 @@ public class FileResource implements Resource {
         try {
             return getFile().toURI().toURL();
         } catch (MalformedURLException e) {
-            throw propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

@@ -23,7 +23,7 @@ import java.nio.file.Paths;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.hotels.styx.api.io.ResourceFactory.newResource;
+import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static java.nio.file.Files.isReadable;
 
 /**

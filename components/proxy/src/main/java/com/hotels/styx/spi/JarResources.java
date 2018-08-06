@@ -17,8 +17,8 @@ package com.hotels.styx.spi;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.io.FileResource;
-import com.hotels.styx.api.io.FileResourceIndex;
+import com.hotels.styx.common.io.FileResource;
+import com.hotels.styx.common.io.FileResourceIndex;
 
 import java.nio.file.Path;
 import java.util.Collection;
