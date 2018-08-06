@@ -16,7 +16,7 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.http.handlers.BaseHttpHandler;
+import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.FullHttpResponse.response;

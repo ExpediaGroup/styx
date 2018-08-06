@@ -22,8 +22,8 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 
-import static com.hotels.styx.api.common.MorePreconditions.checkArgument;
-import static com.hotels.styx.api.common.MorePreconditions.checkNotEmpty;
+import static com.hotels.styx.common.MorePreconditions.checkArgument;
+import static com.hotels.styx.common.MorePreconditions.checkNotEmpty;
 
 /**
  * A factory for creating Epoll-based client event loops.

@@ -17,7 +17,7 @@ package com.hotels.styx.admin.handlers;
 
 import com.google.common.io.CharStreams;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.http.handlers.StaticBodyHttpHandler;
+import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 import org.slf4j.Logger;
 
 import java.io.BufferedReader;

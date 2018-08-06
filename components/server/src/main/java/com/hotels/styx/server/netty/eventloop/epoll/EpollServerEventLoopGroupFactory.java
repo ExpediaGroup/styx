@@ -21,7 +21,7 @@ import io.netty.channel.ServerChannel;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hotels.styx.api.common.MorePreconditions.checkArgument;
+import static com.hotels.styx.common.MorePreconditions.checkArgument;
 import static com.hotels.styx.server.netty.eventloop.epoll.EpollEventLoopGroups.newEventLoopGroup;
 
 /**

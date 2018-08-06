@@ -16,7 +16,6 @@
 package com.hotels.styx.api.io;
 
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.common.Strings;
 
 import java.io.File;
 import java.util.Iterator;
@@ -50,7 +49,11 @@ public class FileResourceIterator implements Iterator<Resource> {
     }
 
     private static Predicate<File> hasSuffix(String suffix) {
-        return file -> Strings.hasSuffix(suffix, file.getPath());
+        return file -> hasSuffix(suffix, file.getPath());
+    }
+
+    private static boolean hasSuffix(String suffix, String name) {
+        return suffix == null || name.endsWith(suffix);
     }
 
     @Override
