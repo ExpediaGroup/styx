@@ -29,7 +29,7 @@ import io.netty.util.concurrent.ImmediateEventExecutor;
 import java.util.List;
 import java.util.Optional;
 
-import static com.google.common.base.Objects.firstNonNull;
+import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Lists.newCopyOnWriteArrayList;

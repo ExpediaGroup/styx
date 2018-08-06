@@ -22,7 +22,7 @@ import com.hotels.styx.api.netty.exceptions.IsRetryableException;
 
 import java.util.Optional;
 
-import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.collect.Sets.newHashSet;
 
 /**

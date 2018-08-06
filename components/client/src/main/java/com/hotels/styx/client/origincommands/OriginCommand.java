@@ -19,7 +19,7 @@ import com.hotels.styx.api.Id;
 
 import java.util.Objects;
 
-import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Objects.hash;
 

@@ -20,8 +20,8 @@ import com.hotels.styx.api.client.ConnectionPool;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Objects.firstNonNull;
-import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Programmatically configurable connection pool settings.

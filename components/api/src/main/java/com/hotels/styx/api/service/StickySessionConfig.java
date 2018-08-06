@@ -15,8 +15,7 @@
  */
 package com.hotels.styx.api.service;
 
-import com.google.common.base.Objects;
-
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -71,7 +70,7 @@ public class StickySessionConfig {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(this.enabled, this.timeoutSeconds);
+        return Objects.hash(this.enabled, this.timeoutSeconds);
     }
 
     @Override

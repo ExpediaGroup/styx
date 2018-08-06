@@ -94,7 +94,7 @@
     <netty-tcnative.classifier>linux-x86_64</netty-tcnative.classifier>
 
     <!-- General Versions -->
-    <guava.version>16.0.1</guava.version>
+    <guava.version>18.0</guava.version>
     <guice.version>3.0</guice.version>
     <jackson.version>2.7.5</jackson.version>
     <jackson.dataformat.version>2.5.1</jackson.dataformat.version>
