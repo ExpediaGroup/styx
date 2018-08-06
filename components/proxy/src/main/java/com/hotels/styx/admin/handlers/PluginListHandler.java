@@ -54,7 +54,7 @@ public class PluginListHandler implements HttpHandler {
 
         return StyxObservable.of(FullHttpResponse.response(OK)
                 .body(output, UTF_8)
-                .contentType(HTML_UTF_8)
+                .contentType(HTML_UTF_8.toString())
                 .build()
                 .toStreamingResponse());
     }

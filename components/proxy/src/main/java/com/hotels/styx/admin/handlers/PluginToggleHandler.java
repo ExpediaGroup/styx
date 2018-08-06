@@ -175,7 +175,7 @@ public class PluginToggleHandler implements HttpHandler {
     private HttpResponse responseWith(HttpResponseStatus status, String message) {
         return FullHttpResponse.response(status)
                 .body(message + "\n", UTF_8)
-                .contentType(PLAIN_TEXT_UTF_8)
+                .contentType(PLAIN_TEXT_UTF_8.toString())
                 .disableCaching()
                 .build()
                 .toStreamingResponse();

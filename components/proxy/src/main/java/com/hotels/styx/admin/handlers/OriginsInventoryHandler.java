@@ -65,7 +65,7 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsC
     @Override
     protected HttpResponse doHandle(HttpRequest request) {
         return FullHttpResponse.response(OK)
-                .contentType(JSON_UTF_8)
+                .contentType(JSON_UTF_8.toString())
                 .disableCaching()
                 .body(content(isPrettyPrint(request)), UTF_8)
                 .build()

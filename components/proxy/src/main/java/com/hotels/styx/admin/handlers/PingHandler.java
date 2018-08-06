@@ -33,7 +33,7 @@ public class PingHandler extends BaseHttpHandler {
     protected HttpResponse doHandle(HttpRequest request) {
         return response(OK)
                 .disableCaching()
-                .contentType(PLAIN_TEXT_UTF_8)
+                .contentType(PLAIN_TEXT_UTF_8.toString())
                 .body("pong", UTF_8)
                 .build()
                 .toStreamingResponse();

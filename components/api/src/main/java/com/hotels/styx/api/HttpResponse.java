@@ -17,7 +17,6 @@ package com.hotels.styx.api;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.net.MediaType;
 import com.hotels.styx.api.cookies.ResponseCookie;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.messages.HttpVersion;
@@ -445,8 +444,8 @@ public class HttpResponse implements StreamingHttpMessage {
             return this;
         }
 
-        public Builder contentType(MediaType mediaType) {
-            return addHeader(CONTENT_TYPE, mediaType);
+        public Builder contentType(String contentType) {
+            return addHeader(CONTENT_TYPE, contentType);
         }
 
         /**

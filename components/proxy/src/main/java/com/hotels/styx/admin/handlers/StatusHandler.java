@@ -49,7 +49,7 @@ public class StatusHandler implements HttpHandler {
                 .flatMap(response -> response.toFullResponse(0xffffff))
                 .map(response ->
                         response.newBuilder()
-                                .contentType(PLAIN_TEXT_UTF_8)
+                                .contentType(PLAIN_TEXT_UTF_8.toString())
                                 .body(statusContent(response.status()), UTF_8)
                                 .build())
                 .map(FullHttpResponse::toStreamingResponse);

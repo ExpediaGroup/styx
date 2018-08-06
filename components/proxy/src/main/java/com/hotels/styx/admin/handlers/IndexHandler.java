@@ -57,7 +57,7 @@ public class IndexHandler extends BaseHttpHandler {
     @Override
     protected HttpResponse doHandle(HttpRequest request) {
         return FullHttpResponse.response(OK)
-                .contentType(HTML_UTF_8)
+                .contentType(HTML_UTF_8.toString())
                 .header(CONTENT_LANGUAGE, "en")
                 .body(html, UTF_8)
                 .build()

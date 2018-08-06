@@ -93,7 +93,7 @@ public class JsonHandler<E> extends BaseHttpHandler {
 
             return response(OK)
                     .disableCaching()
-                    .contentType(JSON_UTF_8)
+                    .contentType(JSON_UTF_8.toString())
                     .body(jsonContent, UTF_8)
                     .build()
                     .toStreamingResponse();

@@ -26,8 +26,8 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import com.hotels.styx.api.messages.HttpResponseStatus;
+import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import java.util.Map;
 import java.util.SortedMap;
@@ -75,7 +75,7 @@ public class HealthCheckHandler extends BaseHttpHandler {
         SortedMap<String, HealthCheck.Result> results = runHealthChecks();
         return FullHttpResponse.response(responseStatus(results))
                 .disableCaching()
-                .contentType(JSON_UTF_8)
+                .contentType(JSON_UTF_8.toString())
                 .body(body(request, results), UTF_8)
                 .build()
                 .toStreamingResponse();

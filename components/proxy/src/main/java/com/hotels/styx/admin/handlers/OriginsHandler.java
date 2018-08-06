@@ -57,7 +57,7 @@ public class OriginsHandler extends BaseHttpHandler {
             String jsonContent = marshal(object, prettyPrint);
             return response(OK)
                     .disableCaching()
-                    .contentType(JSON_UTF_8)
+                    .contentType(JSON_UTF_8.toString())
                     .body(jsonContent, UTF_8)
                     .build()
                     .toStreamingResponse();
