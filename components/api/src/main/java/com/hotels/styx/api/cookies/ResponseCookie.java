@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Objects.toStringHelper;
 import static io.netty.handler.codec.http.cookie.Cookie.UNDEFINED_MAX_AGE;
 import static java.util.Objects.hash;
 import static java.util.Objects.requireNonNull;
@@ -224,20 +223,21 @@ public final class ResponseCookie {
 
     @Override
     public int hashCode() {
-        return hash(name, value, domain, maxAge, path, httpOnly, secure);
+        return hashCode;
     }
 
     @Override
     public String toString() {
-        return toStringHelper(this)
-                .add("name", name)
-                .add("value", value)
-                .add("domain", domain)
-                .add("maxAge", maxAge)
-                .add("path", path)
-                .add("httpOnly", httpOnly)
-                .add("secure", secure)
-                .toString();
+        final StringBuilder sb = new StringBuilder("ResponseCookie{");
+        sb.append("name='").append(name).append('\'');
+        sb.append(", value='").append(value).append('\'');
+        sb.append(", domain='").append(domain).append('\'');
+        sb.append(", maxAge=").append(maxAge);
+        sb.append(", path='").append(path).append('\'');
+        sb.append(", httpOnly=").append(httpOnly);
+        sb.append(", secure=").append(secure);
+        sb.append('}');
+        return sb.toString();
     }
 
     /**

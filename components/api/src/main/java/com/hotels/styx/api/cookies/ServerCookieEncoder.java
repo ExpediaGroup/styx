@@ -52,15 +52,7 @@ import static io.netty.util.internal.ObjectUtil.checkNotNull;
  * </pre>
  *
  */
-public final class ServerCookieEncoder extends CookieEncoder {
-
-    /**
-     * Strict encoder that validates that name and value chars are in the valid scope
-     * defined in RFC6265, and (for methods that accept multiple cookies) that only
-     * one cookie is encoded with any given name. (If multiple cookies have the same
-     * name, the last one is the one that is encoded.)
-     */
-    public static final ServerCookieEncoder STRICT = new ServerCookieEncoder(true);
+final class ServerCookieEncoder extends CookieEncoder {
 
     /**
      * Lax instance that doesn't validate name and value, and that allows multiple
