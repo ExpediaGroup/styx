@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static com.hotels.styx.api.MediaTypes.mediaTypeOf;
+import static com.hotels.styx.server.handlers.MediaTypes.mediaTypeOf;
 import static com.hotels.styx.api.messages.HttpResponseStatus.FORBIDDEN;
 import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;

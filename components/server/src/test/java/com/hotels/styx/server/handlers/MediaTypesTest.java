@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.handlers;
+package com.hotels.styx.server.handlers;
 
 import com.google.common.net.MediaType;
 import org.testng.annotations.DataProvider;
@@ -31,11 +31,11 @@ import static com.google.common.net.MediaType.OCTET_STREAM;
 import static com.google.common.net.MediaType.PDF;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.net.MediaType.PNG;
-import static com.hotels.styx.api.MediaTypes.ICON;
-import static com.hotels.styx.api.MediaTypes.MICROSOFT_ASF_VIDEO;
-import static com.hotels.styx.api.MediaTypes.MICROSOFT_MS_VIDEO;
-import static com.hotels.styx.api.MediaTypes.WAV_AUDIO;
-import static com.hotels.styx.api.MediaTypes.mediaTypeForExtension;
+import static com.hotels.styx.server.handlers.MediaTypes.ICON;
+import static com.hotels.styx.server.handlers.MediaTypes.MICROSOFT_ASF_VIDEO;
+import static com.hotels.styx.server.handlers.MediaTypes.MICROSOFT_MS_VIDEO;
+import static com.hotels.styx.server.handlers.MediaTypes.WAV_AUDIO;
+import static com.hotels.styx.server.handlers.MediaTypes.mediaTypeForExtension;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 

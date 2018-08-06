@@ -31,7 +31,7 @@ import java.util.Optional;
 
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static com.hotels.styx.api.MediaTypes.mediaTypeOf;
+import static com.hotels.styx.server.handlers.MediaTypes.mediaTypeOf;
 import static com.hotels.styx.common.http.handler.NotFoundHandler.NOT_FOUND_HANDLER;
 import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
