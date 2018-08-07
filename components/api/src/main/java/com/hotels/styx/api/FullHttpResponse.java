@@ -32,7 +32,6 @@ import java.util.function.Predicate;
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
@@ -455,10 +454,6 @@ public class FullHttpResponse implements FullHttpMessage {
         public Builder addHeader(CharSequence name, Object value) {
             headers.add(name, value);
             return this;
-        }
-
-        public Builder contentType(String contentType) {
-            return addHeader(CONTENT_TYPE, contentType);
         }
 
         /**

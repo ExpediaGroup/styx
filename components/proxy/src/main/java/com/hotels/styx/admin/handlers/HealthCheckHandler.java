@@ -23,7 +23,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.messages.HttpResponseStatus;
@@ -35,6 +34,8 @@ import java.util.concurrent.ExecutorService;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_IMPLEMENTED;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
@@ -73,9 +74,9 @@ public class HealthCheckHandler extends BaseHttpHandler {
     @Override
     protected HttpResponse doHandle(HttpRequest request) {
         SortedMap<String, HealthCheck.Result> results = runHealthChecks();
-        return FullHttpResponse.response(responseStatus(results))
+        return response(responseStatus(results))
                 .disableCaching()
-                .contentType(JSON_UTF_8.toString())
+                .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
                 .body(body(request, results), UTF_8)
                 .build()
                 .toStreamingResponse();

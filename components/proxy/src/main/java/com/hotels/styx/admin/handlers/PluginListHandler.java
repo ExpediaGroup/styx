@@ -15,9 +15,9 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
@@ -26,13 +26,14 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static com.google.common.net.MediaType.HTML_UTF_8;
+import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
-import com.hotels.styx.api.HttpRequest;
 
 /**
  * Returns a simple HTML page with a list of plugins, split into enabled and disabled.
@@ -52,9 +53,9 @@ public class PluginListHandler implements HttpHandler {
         String output = section("Enabled", enabled)
                 + section("Disabled", disabled);
 
-        return StyxObservable.of(FullHttpResponse.response(OK)
+        return StyxObservable.of(response(OK)
                 .body(output, UTF_8)
-                .contentType(HTML_UTF_8.toString())
+                .addHeader(CONTENT_TYPE, HTML_UTF_8.toString())
                 .build()
                 .toStreamingResponse());
     }

@@ -25,6 +25,7 @@ import com.hotels.styx.api.messages.HttpResponseStatus;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -47,11 +48,10 @@ public class StatusHandler implements HttpHandler {
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return handler.handle(request, context)
                 .flatMap(response -> response.toFullResponse(0xffffff))
-                .map(response ->
-                        response.newBuilder()
-                                .contentType(PLAIN_TEXT_UTF_8.toString())
-                                .body(statusContent(response.status()), UTF_8)
-                                .build())
+                .map(response -> response.newBuilder()
+                        .addHeader(CONTENT_TYPE, PLAIN_TEXT_UTF_8.toString())
+                        .body(statusContent(response.status()), UTF_8)
+                        .build())
                 .map(FullHttpResponse::toStreamingResponse);
     }
 

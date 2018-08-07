@@ -15,14 +15,15 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
-import com.hotels.styx.api.HttpRequest;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.HttpHeaders.CONTENT_LANGUAGE;
 import static com.google.common.net.MediaType.HTML_UTF_8;
+import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -56,8 +57,8 @@ public class IndexHandler extends BaseHttpHandler {
 
     @Override
     protected HttpResponse doHandle(HttpRequest request) {
-        return FullHttpResponse.response(OK)
-                .contentType(HTML_UTF_8.toString())
+        return response(OK)
+                .addHeader(CONTENT_TYPE, HTML_UTF_8.toString())
                 .header(CONTENT_LANGUAGE, "en")
                 .body(html, UTF_8)
                 .build()

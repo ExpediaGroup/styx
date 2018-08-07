@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
@@ -172,10 +173,10 @@ public class PluginToggleHandler implements HttpHandler {
                 .map(PluginEnabledState::fromBoolean);
     }
 
-    private HttpResponse responseWith(HttpResponseStatus status, String message) {
+    private static HttpResponse responseWith(HttpResponseStatus status, String message) {
         return FullHttpResponse.response(status)
                 .body(message + "\n", UTF_8)
-                .contentType(PLAIN_TEXT_UTF_8.toString())
+                .addHeader(CONTENT_TYPE, PLAIN_TEXT_UTF_8.toString())
                 .disableCaching()
                 .build()
                 .toStreamingResponse();
@@ -192,7 +193,7 @@ public class PluginToggleHandler implements HttpHandler {
         }
     }
 
-    private StyxObservable<HttpResponse> handleErrors(Throwable e, HttpInterceptor.Context context) {
+    private static StyxObservable<HttpResponse> handleErrors(Throwable e, HttpInterceptor.Context context) {
         if (e instanceof PluginNotFoundException) {
             return StyxObservable.of(responseWith(NOT_FOUND, e.getMessage()));
         }
