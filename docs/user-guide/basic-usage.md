@@ -1,5 +1,15 @@
 # Starting Styx
 
+## System Requirements
+
+Running Styx requires Java 1.8. It can be run with 1.8.0_45 or later versions. Earlier maintenance
+releases or Java 1.9 may work, but are not guaranteed to.
+
+## Downloading Styx from release
+
+In order to download styx from release go to [Styx releases](https://github.com/HotelsDotCom/styx/releases) and download the zip file for the version you want making sure you choose the file corresponding to whichever operating system you are using.
+Alternatively you can build styx from source code.
+
 ## Building Styx from source code 
  
  In order to build styx from source code, Java 8 (1.8.0_45 or later) is required. 
@@ -14,12 +24,6 @@
 git clone https://github.com/HotelsDotCom/styx.git
 cd styx && mvn package
 ```
- 
-## System Requirements
-
-Running Styx requires Java 1.8. It can be run with 1.8.0_45 or later versions. Earlier maintenance
-releases or Java 1.9 may work, but are not guaranteed to.
-
 
 ## Step 1: Installing Styx:
 
