@@ -23,19 +23,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.common.MapStream;
 import rx.Observable;
 
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.hotels.styx.api.messages.FullHttpResponse.response;
 import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.common.MapStream.stream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -47,12 +49,14 @@ import static rx.Observable.just;
  */
 public class MetricsHandler extends JsonHandler<MetricRegistry> {
     private static final Pattern SPECIFIC_METRICS_PATH_PATTERN = Pattern.compile(".*/metrics/(.+)/?");
-
     private static final boolean DO_NOT_SHOW_SAMPLES = false;
-    private final CodaHaleMetricRegistry metricRegistry;
+    private static final String FILTER_PARAM = "filter";
+    private static final String PRETTY_PRINT_PARAM = "pretty";
 
     private final ObjectMapper metricSerialiser = new ObjectMapper()
             .registerModule(new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
+
+    private final CodaHaleMetricRegistry metricRegistry;
 
     /**
      * Constructs a new handler.
@@ -68,37 +72,35 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
 
     @Override
     public Observable<HttpResponse> handle(HttpRequest request) {
-        return metricName(request.path())
-                .map(metricName -> specificMetricsResponse(request, metricName))
-                .orElseGet(() -> super.handle(request));
+        MetricRequest metricRequest = new MetricRequest(request);
+
+        return metricRequest.fullMetrics()
+                ? super.handle(request)
+                : just(restrictedMetricsResponse(metricRequest).build().toStreamingResponse());
     }
 
-    private Observable<HttpResponse> specificMetricsResponse(HttpRequest request, String metricName) {
-        Map<String, Metric> metrics = metrics(metricName);
+    private FullHttpResponse.Builder restrictedMetricsResponse(MetricRequest request) {
+        Map<String, Metric> fullMetrics = metricRegistry.getMetricRegistry().getMetrics();
 
-        if (metrics.isEmpty()) {
-            return just(response(NOT_FOUND).build().toStreamingResponse());
-        }
+        Map<String, Metric> restricted = filter(fullMetrics, (name, metric) -> request.matchesRoot(name));
 
-        boolean pretty = request.queryParam("pretty").isPresent();
-
-        String serialised = serialise(metrics, pretty);
-
-        return just(response(OK)
-                .body(serialised, UTF_8)
-                .disableCaching()
-                .build()
-                .toStreamingResponse());
+        return restricted.isEmpty()
+                ? response(NOT_FOUND)
+                : search(request, restricted);
     }
 
-    private static Optional<String> metricName(String path) {
-        Matcher matcher = SPECIFIC_METRICS_PATH_PATTERN.matcher(path);
+    private FullHttpResponse.Builder search(MetricRequest request, Map<String, Metric> metrics) {
+        Map<String, Metric> searched = filter(metrics, (name, metric) -> request.containsSearchTerm(name));
 
-        if (matcher.matches()) {
-            return Optional.of(matcher.group(1));
-        }
+        String body = serialise(searched, request.prettyPrint);
 
-        return Optional.empty();
+        return response(OK)
+                .body(body, UTF_8)
+                .disableCaching();
+    }
+
+    private static <K, V> Map<K, V> filter(Map<K, V> map, BiPredicate<K, V> predicate) {
+        return stream(map).filter(predicate).toMap();
     }
 
     private String serialise(Object object, boolean pretty) {
@@ -111,11 +113,35 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
         }
     }
 
-    private Map<String, Metric> metrics(String metricNameStart) {
-        String prefix = metricNameStart + ".";
+    private static class MetricRequest {
+        private final String root;
+        private final String searchTerm;
+        private final boolean prettyPrint;
+        private final String prefix;
 
-        return MapStream.stream(metricRegistry.getMetricRegistry().getMetrics())
-                .filter((name, metric) -> name.equals(metricNameStart) || name.startsWith(prefix))
-                .toMap();
+        MetricRequest(HttpRequest request) {
+            this.root = metricName(request.path()).orElse(null);
+            this.searchTerm = request.queryParam(FILTER_PARAM).orElse(null);
+            this.prettyPrint = request.queryParam(PRETTY_PRINT_PARAM).isPresent();
+            this.prefix = root + ".";
+        }
+
+        boolean fullMetrics() {
+            return root == null && searchTerm == null;
+        }
+
+        private static Optional<String> metricName(String path) {
+            return Optional.of(SPECIFIC_METRICS_PATH_PATTERN.matcher(path))
+                    .filter(Matcher::matches)
+                    .map(matcher -> matcher.group(1));
+        }
+
+        private boolean matchesRoot(String name) {
+            return root == null || name.equals(root) || name.startsWith(prefix);
+        }
+
+        private boolean containsSearchTerm(String name) {
+            return searchTerm == null || name.contains(searchTerm);
+        }
     }
 }

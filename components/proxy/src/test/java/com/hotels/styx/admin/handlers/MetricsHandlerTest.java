@@ -52,6 +52,7 @@ public class MetricsHandlerTest {
     public void exposesRegisteredMetrics() {
         metricRegistry.counter("foo").inc();
         FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics").build()));
+        assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), is("{\"version\":\"3.1.3\",\"gauges\":{},\"counters\":{\"foo\":{\"count\":1}},\"histograms\":{},\"meters\":{},\"timers\":{}}"));
     }
 
@@ -62,12 +63,59 @@ public class MetricsHandlerTest {
         metricRegistry.counter("foo.barx").inc(1); // should not be included
 
         FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo.bar").build()));
-        assertThat(response.bodyAs(UTF_8), is("{\"foo.bar\":{\"count\":1},\"foo.bar.baz\":{\"count\":1}}"));
+        assertThat(response.status(), is(OK));
+        assertThat(response.bodyAs(UTF_8), is("{" +
+                "\"foo.bar\":{\"count\":1}," +
+                "\"foo.bar.baz\":{\"count\":1}" +
+                "}"));
     }
 
     @Test
     public void ifNoMetricsMatchNameThen404NotFoundIsReturned() {
         FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo.bar").build()));
         assertThat(response.status(), is(NOT_FOUND));
+    }
+
+    @Test
+    public void canSearchForTermWithinMetricName() {
+        metricRegistry.counter("foo.bar.a").inc(1);
+        metricRegistry.counter("foo.bar.b").inc(1);
+        metricRegistry.counter("baz.bar.foo").inc(1);
+        metricRegistry.counter("foo.baz.a").inc(1);
+
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics?filter=bar").build()));
+        assertThat(response.status(), is(OK));
+        assertThat(response.bodyAs(UTF_8), is("{" +
+                "\"baz.bar.foo\":{\"count\":1}," +
+                "\"foo.bar.a\":{\"count\":1}," +
+                "\"foo.bar.b\":{\"count\":1}" +
+                "}"));
+    }
+
+    @Test
+    public void canRequestMetricsBeginningWithPrefixAndSearchForTermTogether() {
+        metricRegistry.counter("foo.bar.a").inc(1);
+        metricRegistry.counter("foo.bar.b").inc(1);
+        metricRegistry.counter("baz.bar.foo").inc(1);
+        metricRegistry.counter("foo.baz.a").inc(1);
+        metricRegistry.counter("foo.baz.a.bar").inc(1);
+
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo?filter=bar").build()));
+        assertThat(response.status(), is(OK));
+        assertThat(response.bodyAs(UTF_8), is("{" +
+                "\"foo.bar.a\":{\"count\":1}," +
+                "\"foo.bar.b\":{\"count\":1}," +
+                "\"foo.baz.a.bar\":{\"count\":1}" +
+                "}"));
+    }
+
+    @Test
+    public void searchReturnsEmptyJsonObjectWhenThereAreNoResults() {
+        metricRegistry.counter("foo.bar.a").inc(1);
+        metricRegistry.counter("foo.bar.b").inc(1);
+
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics?filter=notpresent").build()));
+        assertThat(response.status(), is(OK));
+        assertThat(response.bodyAs(UTF_8), is("{}"));
     }
 }
