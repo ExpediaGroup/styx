@@ -15,14 +15,15 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import com.hotels.styx.api.HttpRequest;
 
 /**
  * A simple handler that can confirm that the admin interface is available. Returns a non-caching plain-text response
@@ -33,7 +34,7 @@ public class PingHandler extends BaseHttpHandler {
     protected HttpResponse doHandle(HttpRequest request) {
         return response(OK)
                 .disableCaching()
-                .contentType(PLAIN_TEXT_UTF_8)
+                .addHeader(CONTENT_TYPE, PLAIN_TEXT_UTF_8.toString())
                 .body("pong", UTF_8)
                 .build()
                 .toStreamingResponse();

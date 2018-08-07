@@ -21,6 +21,7 @@ import com.hotels.styx.admin.CachingSupplier;
 import com.hotels.styx.admin.dashboard.JsonSupplier;
 import com.hotels.styx.admin.handlers.json.JsonReformatter;
 import com.hotels.styx.api.Clock;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import org.slf4j.Logger;
@@ -32,11 +33,11 @@ import java.util.function.Supplier;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.Clocks.systemClock;
 import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.slf4j.LoggerFactory.getLogger;
-import com.hotels.styx.api.HttpRequest;
 
 /**
  * Handler for returning JSON. If a cache expiration value is present, the JSON is not regenerated on every call, unless
@@ -93,7 +94,7 @@ public class JsonHandler<E> extends BaseHttpHandler {
 
             return response(OK)
                     .disableCaching()
-                    .contentType(JSON_UTF_8)
+                    .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
                     .body(jsonContent, UTF_8)
                     .build()
                     .toStreamingResponse();

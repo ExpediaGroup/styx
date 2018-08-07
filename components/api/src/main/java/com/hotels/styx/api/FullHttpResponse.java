@@ -17,7 +17,6 @@ package com.hotels.styx.api;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.net.MediaType;
 import com.hotels.styx.api.cookies.ResponseCookie;
 import com.hotels.styx.api.messages.HttpResponseStatus;
 import com.hotels.styx.api.messages.HttpVersion;
@@ -33,7 +32,6 @@ import java.util.function.Predicate;
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
@@ -456,10 +454,6 @@ public class FullHttpResponse implements FullHttpMessage {
         public Builder addHeader(CharSequence name, Object value) {
             headers.add(name, value);
             return this;
-        }
-
-        public Builder contentType(MediaType mediaType) {
-            return addHeader(CONTENT_TYPE, mediaType);
         }
 
         /**

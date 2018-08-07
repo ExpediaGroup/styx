@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api;
+package com.hotels.styx.server.handlers;
 
 import com.google.common.net.MediaType;
 
@@ -38,7 +38,7 @@ import static com.google.common.net.MediaType.create;
 /**
  * A collection of {@link MediaType}s associated with file extensions.
  */
-public final class MediaTypes {
+final class MediaTypes {
     private MediaTypes() {
     }
 
