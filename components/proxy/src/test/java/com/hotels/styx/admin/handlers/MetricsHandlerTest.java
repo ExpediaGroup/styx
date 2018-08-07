@@ -83,7 +83,7 @@ public class MetricsHandlerTest {
         metricRegistry.counter("baz.bar.foo").inc(1);
         metricRegistry.counter("foo.baz.a").inc(1);
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics?search=bar").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics?filter=bar").build()));
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), is("{" +
                 "\"baz.bar.foo\":{\"count\":1}," +
@@ -100,7 +100,7 @@ public class MetricsHandlerTest {
         metricRegistry.counter("foo.baz.a").inc(1);
         metricRegistry.counter("foo.baz.a.bar").inc(1);
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo?search=bar").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo?filter=bar").build()));
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), is("{" +
                 "\"foo.bar.a\":{\"count\":1}," +
@@ -114,7 +114,7 @@ public class MetricsHandlerTest {
         metricRegistry.counter("foo.bar.a").inc(1);
         metricRegistry.counter("foo.bar.b").inc(1);
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics?search=notpresent").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics?filter=notpresent").build()));
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), is("{}"));
     }

@@ -50,6 +50,8 @@ import static rx.Observable.just;
 public class MetricsHandler extends JsonHandler<MetricRegistry> {
     private static final Pattern SPECIFIC_METRICS_PATH_PATTERN = Pattern.compile(".*/metrics/(.+)/?");
     private static final boolean DO_NOT_SHOW_SAMPLES = false;
+    private static final String FILTER_PARAM = "filter";
+    private static final String PRETTY_PRINT_PARAM = "pretty";
 
     private final ObjectMapper metricSerialiser = new ObjectMapper()
             .registerModule(new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
@@ -119,8 +121,8 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
 
         MetricRequest(HttpRequest request) {
             this.root = metricName(request.path()).orElse(null);
-            this.searchTerm = request.queryParam("search").orElse(null);
-            this.prettyPrint = request.queryParam("pretty").isPresent();
+            this.searchTerm = request.queryParam(FILTER_PARAM).orElse(null);
+            this.prettyPrint = request.queryParam(PRETTY_PRINT_PARAM).isPresent();
             this.prefix = root + ".";
         }
 

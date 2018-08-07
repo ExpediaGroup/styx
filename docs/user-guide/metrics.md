@@ -23,12 +23,14 @@ For example `http://<styx-host>/admin/metrics/requests.response` would return
     
 ## Searching Metrics for string
 
-To see all metrics containing a given string, a query parameter can be provided.
-This works with both specific metric roots and the set of all metrics:
+Use a `filter` query parameter to filter for metrics names matching a given string. 
+For example `filter=count` only shows metrics whose name contains `count`. The filtering is applied to the results of the metrics query.
 
-`http://<styx-host>/admin/metrics?search=<term>`
+Examples where `term` is the string you want to filter for:
 
-`http://<styx-host>/admin/metrics/<metric-name>?search=<term>`
+`http://<styx-host>/admin/metrics?filter=<term>`
+
+`http://<styx-host>/admin/metrics/<metric-name>?filter=<term>`
 
     
 ## Metrics Grouping
