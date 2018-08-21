@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.testapi;
 
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.service.TlsSettings;
 
 import java.util.Collection;
@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
 
 import static java.util.Objects.requireNonNull;

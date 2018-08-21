@@ -15,9 +15,9 @@
  */
 package com.hotels.styx.client.stickysession;
 
-import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.extension.ActiveOrigins;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 
 import java.util.Optional;
 

@@ -13,12 +13,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.client.retrypolicy.spi;
+package com.hotels.styx.api.extension.retrypolicy.spi;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 
 import java.util.Optional;
 
@@ -98,7 +98,7 @@ public interface RetryPolicy {
      * @param context               A {@link Context} object that indicates the number of retries,
      *                              last requests results, etc
      * @param loadBalancer
-     * @return A {@link com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy.Outcome}
+     * @return A {@link com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy.Outcome}
      * whether the request should be retried and specifies the delay before the next retry
      */
     Outcome evaluate(Context context, LoadBalancer loadBalancer, LoadBalancer.Preferences lbContext);

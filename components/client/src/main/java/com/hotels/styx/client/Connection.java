@@ -17,7 +17,7 @@ package com.hotels.styx.client;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import rx.Observable;
 
 import java.io.Closeable;

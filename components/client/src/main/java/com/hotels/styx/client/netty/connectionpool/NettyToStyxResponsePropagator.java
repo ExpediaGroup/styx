@@ -18,7 +18,7 @@ package com.hotels.styx.client.netty.connectionpool;
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.client.BadHttpResponseException;

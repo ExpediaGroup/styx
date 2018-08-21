@@ -16,10 +16,10 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancerFactory;
+import com.hotels.styx.api.extension.ActiveOrigins;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancerFactory;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.MissingConfigurationException;
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy;

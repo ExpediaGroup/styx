@@ -17,8 +17,8 @@ package com.hotels.styx.infrastructure.configuration.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsSnapshot;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.OriginsSnapshot;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.Certificate;
 import com.hotels.styx.api.service.ConnectionPoolSettings;

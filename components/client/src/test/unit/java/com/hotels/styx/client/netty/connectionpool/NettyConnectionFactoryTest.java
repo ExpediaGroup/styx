@@ -17,7 +17,7 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.support.server.FakeHttpServer;
 import io.netty.channel.Channel;
@@ -39,7 +39,7 @@ import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.common.HostAndPorts.localHostAndFreePort;
 import static com.hotels.styx.common.HostAndPorts.localhost;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;

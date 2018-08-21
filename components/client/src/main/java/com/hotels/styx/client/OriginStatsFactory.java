@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.client.applications.OriginStats;
 import com.hotels.styx.client.applications.metrics.OriginMetrics;

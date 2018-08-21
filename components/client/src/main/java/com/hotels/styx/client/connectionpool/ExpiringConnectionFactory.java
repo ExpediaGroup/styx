@@ -18,7 +18,7 @@ package com.hotels.styx.client.connectionpool;
 import com.google.common.base.Ticker;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import rx.Observable;
 
 import java.util.function.Supplier;

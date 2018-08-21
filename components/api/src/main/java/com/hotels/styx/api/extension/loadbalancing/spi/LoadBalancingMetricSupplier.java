@@ -13,18 +13,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.client;
-
+package com.hotels.styx.api.extension.loadbalancing.spi;
 
 /**
- * Holds the origins that are considered ready to accept traffic.
+ * Provides load balancing metric for the load balanced hosts.
  */
-public interface ActiveOrigins {
-
-    /**
-     * Returns the list of the origins ready to accept traffic.
-     *
-     * @return a list of connection pools for each active origin
-     */
-    Iterable<RemoteHost> snapshot();
+public interface LoadBalancingMetricSupplier {
+    LoadBalancingMetric loadBalancingMetric();
 }

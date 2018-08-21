@@ -13,12 +13,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.client.loadbalancing.spi;
+package com.hotels.styx.api.extension.loadbalancing.spi;
 
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsSnapshot;
-import com.hotels.styx.api.client.OriginsChangeListener;
-import com.hotels.styx.api.client.RemoteHost;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.OriginsSnapshot;
+import com.hotels.styx.api.extension.OriginsChangeListener;
+import com.hotels.styx.api.extension.RemoteHost;
 
 import java.util.List;
 import java.util.Optional;

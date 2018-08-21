@@ -25,8 +25,8 @@ import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.Version;
-import com.hotels.styx.api.client.OriginsSnapshot;
-import com.hotels.styx.api.client.OriginsChangeListener;
+import com.hotels.styx.api.extension.OriginsSnapshot;
+import com.hotels.styx.api.extension.OriginsChangeListener;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.spi.Registry;
@@ -467,13 +467,13 @@ public class DashboardData {
      * Origin-related data.
      */
     public final class Origin implements OriginsChangeListener {
-        private final com.hotels.styx.api.client.Origin origin;
+        private final com.hotels.styx.api.extension.Origin origin;
         private final Supplier<Map<String, Integer>> responsesSupplier;
         private final Requests requests;
         private final ConnectionsPool connectionsPool;
         private String status = "unknown";
 
-        private Origin(com.hotels.styx.api.client.Origin origin) {
+        private Origin(com.hotels.styx.api.extension.Origin origin) {
             this.origin = origin;
             connectionsPool = new ConnectionsPool();
 

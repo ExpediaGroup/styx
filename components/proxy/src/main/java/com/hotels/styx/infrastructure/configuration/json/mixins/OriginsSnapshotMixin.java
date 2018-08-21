@@ -17,13 +17,13 @@ package com.hotels.styx.infrastructure.configuration.json.mixins;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 
 import java.util.Collection;
 import java.util.Set;
 
 /**
- * Jackson annotations for {@link com.hotels.styx.api.client.OriginsSnapshot}.
+ * Jackson annotations for {@link com.hotels.styx.api.extension.OriginsSnapshot}.
  */
 public abstract class OriginsSnapshotMixin {
 

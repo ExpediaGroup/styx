@@ -17,7 +17,7 @@ package com.hotels.styx.utils.handlers;
 
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import static com.google.common.base.Charsets.UTF_8;

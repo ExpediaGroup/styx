@@ -15,13 +15,13 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.healthcheck.AnomalyExcludingOriginHealthEventListener;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;

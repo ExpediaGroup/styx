@@ -16,7 +16,7 @@
 package com.hotels.styx.client.healthcheck;
 
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.service.HealthCheckConfig;
 import com.hotels.styx.api.service.spi.StyxService;
 

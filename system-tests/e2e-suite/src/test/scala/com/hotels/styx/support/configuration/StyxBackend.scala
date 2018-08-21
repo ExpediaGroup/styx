@@ -44,7 +44,7 @@ trait ImplicitOriginConversions {
     host = "localhost", port = httpServer.httpAddress().getPort
   )
 
-  implicit def java2ScalaOrigin(origin: com.hotels.styx.api.client.Origin): Origin = Origin.fromJava(origin)
+  implicit def java2ScalaOrigin(origin: com.hotels.styx.api.extension.Origin): Origin = Origin.fromJava(origin)
 }
 
 

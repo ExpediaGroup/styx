@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.client;
+package com.hotels.styx.api.extension;
 
 import com.hotels.styx.api.Id;
 
@@ -25,7 +25,7 @@ import java.util.Set;
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static java.util.stream.Collectors.toSet;
 
 /**

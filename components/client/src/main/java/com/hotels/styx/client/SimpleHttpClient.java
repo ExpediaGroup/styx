@@ -21,7 +21,7 @@ import com.hotels.styx.api.FullHttpClient;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.Url;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
@@ -34,7 +34,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
 import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
 

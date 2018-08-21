@@ -20,7 +20,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import rx.Observable;
 
 import static com.google.common.base.Objects.toStringHelper;

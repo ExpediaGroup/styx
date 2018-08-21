@@ -17,7 +17,7 @@ package com.hotels.styx.support;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.service.ConnectionPoolSettings;
 import com.hotels.styx.api.service.RewriteConfig;
 import com.hotels.styx.api.service.BackendService;

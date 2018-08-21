@@ -19,7 +19,7 @@ import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.exceptions.TransportException;
 import com.hotels.styx.api.service.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static com.hotels.styx.client.connectionpool.ConnectionPoolStatsCounter.NULL_CONNECTION_POOL_STATS;
 import static com.hotels.styx.support.OriginHosts.LOCAL_9090;

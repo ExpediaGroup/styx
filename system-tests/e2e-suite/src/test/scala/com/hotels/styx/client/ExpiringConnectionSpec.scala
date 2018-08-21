@@ -17,8 +17,8 @@ package com.hotels.styx.client
 
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
 import com.hotels.styx.api.HttpRequest._
-import com.hotels.styx.api.client.ActiveOrigins
-import com.hotels.styx.api.client.Origin.newOriginBuilder
+import com.hotels.styx.api.extension.ActiveOrigins
+import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.service.BackendService
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder

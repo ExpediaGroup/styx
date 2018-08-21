@@ -13,12 +13,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.client;
+package com.hotels.styx.api.extension;
 
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetric;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetric;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 
 import java.util.Objects;
 

@@ -19,7 +19,7 @@ package com.hotels.styx.infrastructure.configuration.json.mixins;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.service.BackendService;
 import com.hotels.styx.api.service.ConnectionPoolSettings;
 import com.hotels.styx.api.service.HealthCheckConfig;

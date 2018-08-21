@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.client.loadbalancing.strategies;
 
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.RemoteHost;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.common.HostAndPorts.localHostAndFreePort ;
 
 public class BusyConnectionsStrategyStressTest {

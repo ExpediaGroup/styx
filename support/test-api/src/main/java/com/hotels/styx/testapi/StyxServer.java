@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.metrics.MetricRegistry;

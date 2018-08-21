@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.nio.file.attribute.FileTime;
 import java.util.function.Supplier;
 
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
 import static com.hotels.styx.api.service.spi.Registry.ReloadResult.unchanged;

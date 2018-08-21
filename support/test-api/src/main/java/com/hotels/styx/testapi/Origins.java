@@ -15,11 +15,11 @@
  */
 package com.hotels.styx.testapi;
 
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 
 import static java.util.UUID.randomUUID;
 
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 
 /**
  * Provides methods for easily creating {@link Origin}s for use with Styx Test API.

@@ -17,7 +17,7 @@ package com.hotels.styx.client.healthcheck;
 
 import com.hotels.styx.api.FullHttpClient;
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.api.FullHttpResponse.response;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;

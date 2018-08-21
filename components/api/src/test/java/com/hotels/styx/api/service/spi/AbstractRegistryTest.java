@@ -18,14 +18,14 @@ package com.hotels.styx.api.service.spi;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.service.BackendService;
 import org.testng.annotations.Test;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.service.spi.AbstractRegistryTest.IdObject.idObject;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;

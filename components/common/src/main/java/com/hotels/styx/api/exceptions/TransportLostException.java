@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.api.exceptions;
 
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import io.netty.channel.Channel;
 
 import java.net.SocketAddress;

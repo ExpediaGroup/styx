@@ -13,10 +13,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.client.loadbalancing.spi;
+package com.hotels.styx.api.extension.loadbalancing.spi;
 
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.client.ActiveOrigins;
+import com.hotels.styx.api.extension.ActiveOrigins;
 import com.hotels.styx.api.configuration.Configuration;
 
 /**

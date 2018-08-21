@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 
 import com.hotels.styx.Environment
-import com.hotels.styx.api.client.Origin.newOriginBuilder
+import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.api.service.BackendService
 import com.hotels.styx.api.service.spi.{AbstractRegistry, Registry}
 import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse, HttpResponseStatus}

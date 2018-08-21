@@ -19,8 +19,8 @@ import ch.qos.logback.classic.Level
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.{HttpResponse, service}
-import com.hotels.styx.api.client.ActiveOrigins
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
+import com.hotels.styx.api.extension.ActiveOrigins
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy

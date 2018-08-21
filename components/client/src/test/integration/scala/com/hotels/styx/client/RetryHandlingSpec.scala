@@ -24,8 +24,8 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.client.Origin._
-import com.hotels.styx.api.client.{ActiveOrigins, Origin}
+import com.hotels.styx.api.extension.Origin._
+import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.common.HostAndPorts.localHostAndFreePort

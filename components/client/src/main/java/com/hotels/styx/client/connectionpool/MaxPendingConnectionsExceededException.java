@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 
 import static java.lang.String.format;
 

@@ -22,8 +22,8 @@ import com.google.common.net.HostAndPort._
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.Id._
-import com.hotels.styx.api.client.Origin
-import com.hotels.styx.api.client.Origin._
+import com.hotels.styx.api.extension.Origin
+import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.common.HostAndPorts._
 import com.hotels.styx.server.HttpServer
 import com.hotels.styx.server.netty.{NettyServerBuilder, ServerConnector}

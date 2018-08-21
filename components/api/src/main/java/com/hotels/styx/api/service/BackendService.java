@@ -19,7 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 
 import java.net.URI;
 import java.util.List;
@@ -31,7 +31,7 @@ import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.Id.GENERIC_APP;
-import static com.hotels.styx.api.client.Origin.checkThatOriginsAreDistinct;
+import static com.hotels.styx.api.extension.Origin.checkThatOriginsAreDistinct;
 import static com.hotels.styx.api.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.api.service.StickySessionConfig.stickySessionDisabled;
 import static java.lang.String.format;
