@@ -17,11 +17,11 @@ package com.hotels.styx;
 
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.eventbus.EventBus;
-import com.hotels.styx.api.metrics.HttpErrorStatusCauseLogger;
-import com.hotels.styx.api.metrics.HttpErrorStatusListener;
-import com.hotels.styx.api.metrics.HttpErrorStatusMetrics;
+import com.hotels.styx.proxy.HttpErrorStatusCauseLogger;
+import com.hotels.styx.proxy.HttpErrorStatusMetrics;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.configstore.ConfigStore;
+import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.ServerEnvironment;
 
 import java.util.function.Supplier;

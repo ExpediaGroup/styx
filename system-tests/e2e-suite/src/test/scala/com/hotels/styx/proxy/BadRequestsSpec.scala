@@ -22,7 +22,6 @@ import com.google.common.base.Charsets.{US_ASCII, UTF_8}
 import com.google.common.net.HostAndPort
 import com.hotels.styx.StyxProxySpec
 import com.hotels.styx.api.HttpHeaderNames.{CONTENT_TYPE, HOST}
-import com.hotels.styx.api.metrics.HttpErrorStatusCauseLogger
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.backends.FakeHttpServer

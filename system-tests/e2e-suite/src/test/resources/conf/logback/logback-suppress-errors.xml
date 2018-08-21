@@ -8,7 +8,7 @@
 
   <logger name="org.apache" level="WARN"/>
   <logger name="io.netty" level="WARN"/>
-  <logger name="com.hotels.styx.api.metrics.HttpErrorStatusCauseLogger" level="OFF"/>
+  <logger name="com.hotels.styx.proxy.HttpErrorStatusCauseLogger" level="OFF"/>
   <logger name="com.hotels.styx.proxy.backends.file.FileChangeMonitor" level="INFO"/>
 
   <root level="INFO">

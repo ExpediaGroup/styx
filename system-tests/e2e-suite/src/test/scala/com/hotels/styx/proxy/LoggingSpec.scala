@@ -23,7 +23,6 @@ import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.metrics.HttpErrorStatusCauseLogger
 import com.hotels.styx.api.plugins.spi.PluginException
 import com.hotels.styx.api.{HttpRequest, HttpResponse, StyxObservable}
 import com.hotels.styx.support.backends.FakeHttpServer

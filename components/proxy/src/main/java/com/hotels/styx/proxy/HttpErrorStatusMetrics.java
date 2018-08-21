@@ -13,12 +13,14 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.metrics;
+package com.hotels.styx.proxy;
 
 import com.codahale.metrics.Counter;
+import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
 
 import static com.google.common.base.Preconditions.checkNotNull;

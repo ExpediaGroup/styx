@@ -13,11 +13,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.metrics;
+package com.hotels.styx.server;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
+import com.hotels.styx.api.metrics.MetricRegistry;
 
 import java.util.HashMap;
 import java.util.Map;

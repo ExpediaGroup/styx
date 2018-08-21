@@ -13,12 +13,14 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.metrics;
+package com.hotels.styx.proxy;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricFilter;
+import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import org.testng.annotations.BeforeMethod;
@@ -53,7 +55,7 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_URI_TOO_LONG;
 import static com.hotels.styx.api.HttpResponseStatus.UNAUTHORIZED;
 import static com.hotels.styx.api.HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE;
-import static com.hotels.styx.api.metrics.HttpErrorStatusMetrics.formattedExceptionName;
+import static com.hotels.styx.proxy.HttpErrorStatusMetrics.formattedExceptionName;
 import static com.hotels.styx.api.CustomHttpResponseStatus.ORIGIN_CONNECTION_REFUSED;
 import static com.hotels.styx.api.CustomHttpResponseStatus.ORIGIN_CONNECTION_TIMED_OUT;
 import static com.hotels.styx.api.CustomHttpResponseStatus.ORIGIN_SERVER_TIMED_OUT;
