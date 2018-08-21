@@ -25,7 +25,7 @@ import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.FullHttpResponse.response
 import com.hotels.styx.api.HttpHeaderNames.HOST
-import com.hotels.styx.api.messages.HttpResponseStatus._
+import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
 import org.scalatest.FunSpec

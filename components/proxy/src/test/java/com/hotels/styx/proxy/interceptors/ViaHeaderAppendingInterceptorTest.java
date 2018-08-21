@@ -25,7 +25,7 @@ import static com.hotels.styx.api.HttpHeaderNames.VIA;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpRequest.post;
 import static com.hotels.styx.api.HttpResponse.response;
-import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_0;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
 import static com.hotels.styx.proxy.interceptors.ReturnResponseChain.returnsResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;

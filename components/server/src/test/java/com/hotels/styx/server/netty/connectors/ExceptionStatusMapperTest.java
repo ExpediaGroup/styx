@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.server.netty.connectors;
 
-import com.hotels.styx.api.messages.HttpResponseStatus;
+import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -23,9 +23,9 @@ import org.testng.annotations.Test;
 import java.util.Optional;
 
 import static ch.qos.logback.classic.Level.ERROR;
-import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY;
-import static com.hotels.styx.api.messages.HttpResponseStatus.GATEWAY_TIMEOUT;
-import static com.hotels.styx.api.messages.HttpResponseStatus.REQUEST_TIMEOUT;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
+import static com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT;
+import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;

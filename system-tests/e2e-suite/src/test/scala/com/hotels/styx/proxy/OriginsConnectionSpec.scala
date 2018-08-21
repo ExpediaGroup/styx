@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post => wmpost}
 import com.hotels.styx.api.FullHttpRequest.post
-import com.hotels.styx.api.messages.HttpResponseStatus._
+import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}

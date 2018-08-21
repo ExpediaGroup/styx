@@ -29,7 +29,7 @@ import com.hotels.styx.routing.config.RouteHandlerFactory;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hotels.styx.api.messages.HttpResponseStatus.statusWithCode;
+import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**

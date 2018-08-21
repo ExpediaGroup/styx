@@ -36,7 +36,7 @@ import java.util.concurrent.ExecutionException;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;

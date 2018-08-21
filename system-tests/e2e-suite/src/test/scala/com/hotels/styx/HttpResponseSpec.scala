@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.client.ActiveOrigins
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
-import com.hotels.styx.api.messages.HttpResponseStatus._
+import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.api.service
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient

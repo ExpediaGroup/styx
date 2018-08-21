@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.messages;
+package com.hotels.styx.api;
 
 import io.netty.buffer.ByteBuf;
 import rx.Observable;

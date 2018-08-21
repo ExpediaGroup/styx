@@ -17,7 +17,7 @@ package com.hotels.styx.api.metrics;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.messages.HttpResponseStatus;
+import com.hotels.styx.api.HttpResponseStatus;
 import org.slf4j.Logger;
 
 import static org.slf4j.LoggerFactory.getLogger;

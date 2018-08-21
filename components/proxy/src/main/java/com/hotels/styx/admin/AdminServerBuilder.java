@@ -62,7 +62,7 @@ import java.util.function.BiFunction;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;
-import static com.hotels.styx.api.messages.HttpMethod.POST;
+import static com.hotels.styx.api.HttpMethod.POST;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;

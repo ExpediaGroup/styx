@@ -33,7 +33,7 @@ import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.lang.String.format;
 import static org.hamcrest.MatcherAssert.assertThat;

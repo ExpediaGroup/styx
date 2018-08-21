@@ -22,7 +22,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
-import com.hotels.styx.api.messages.HttpResponseStatus;
+import com.hotels.styx.api.HttpResponseStatus;
 
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;

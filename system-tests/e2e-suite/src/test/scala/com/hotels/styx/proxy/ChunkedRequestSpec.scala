@@ -26,12 +26,11 @@ import com.google.common.base.{Joiner, Optional}
 import com.google.common.io.ByteStreams
 import com.google.common.io.ByteStreams._
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
-import com.hotels.styx.api.{FullHttpResponse, HttpResponse}
+import com.hotels.styx.api.{FullHttpResponse, HttpResponse, HttpResponseStatus}
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
-import com.hotels.styx.api.messages.HttpResponseStatus
 import org.scalatest.FunSpec
 
 class ChunkedRequestSpec extends FunSpec

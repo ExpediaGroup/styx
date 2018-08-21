@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Random;
 
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort ;
+import static com.hotels.styx.common.HostAndPorts.localHostAndFreePort ;
 
 public class BusyConnectionsStrategyStressTest {
     final Origin ORIGIN_ONE = newOriginBuilder(localHostAndFreePort()).id("one").build();

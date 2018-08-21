@@ -28,7 +28,7 @@ import java.util.Map;
 
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
 import static org.hamcrest.MatcherAssert.assertThat;

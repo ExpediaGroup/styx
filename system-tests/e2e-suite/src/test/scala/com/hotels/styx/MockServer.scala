@@ -22,7 +22,7 @@ import java.util.function.Supplier
 import com.google.common.util.concurrent.AbstractIdleService
 import com.hotels.styx.api._
 import com.hotels.styx.api.client.Origin.newOriginBuilder
-import com.hotels.styx.api.support.HostAndPorts._
+import com.hotels.styx.common.HostAndPorts._
 import com.hotels.styx.common.http.handler.NotFoundHandler
 import com.hotels.styx.server.handlers.ReturnResponseHandler.returnsResponse
 import com.hotels.styx.server.netty.{NettyServerBuilder, ServerConnector, WebServerConnectorFactory}

@@ -20,7 +20,7 @@ import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse, StyxObse
 import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpResponseStatus.OK
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, ShouldMatchers}
 

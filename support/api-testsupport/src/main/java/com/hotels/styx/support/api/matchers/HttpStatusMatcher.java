@@ -16,7 +16,7 @@
 package com.hotels.styx.support.api.matchers;
 
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.messages.HttpResponseStatus;
+import com.hotels.styx.api.HttpResponseStatus;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;

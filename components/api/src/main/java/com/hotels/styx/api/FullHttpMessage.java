@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.api.messages.HttpVersion;
-
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;

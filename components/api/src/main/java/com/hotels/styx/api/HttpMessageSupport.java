@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.api.messages.HttpVersion;
+import com.hotels.styx.api.HttpVersion;
 
 import java.util.Optional;
 

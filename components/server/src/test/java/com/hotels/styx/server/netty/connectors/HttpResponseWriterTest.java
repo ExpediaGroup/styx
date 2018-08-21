@@ -43,7 +43,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.cookies.ResponseCookie.responseCookie;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

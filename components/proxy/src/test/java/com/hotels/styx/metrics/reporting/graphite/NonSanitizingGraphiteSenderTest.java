@@ -24,7 +24,7 @@ import sun.net.spi.nameservice.NameService;
 
 import java.net.InetAddress;
 
-import static com.hotels.styx.api.support.HostAndPorts.freePort;
+import static com.hotels.styx.common.HostAndPorts.freePort;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;

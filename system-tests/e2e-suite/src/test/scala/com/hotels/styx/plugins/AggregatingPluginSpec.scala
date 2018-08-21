@@ -21,7 +21,7 @@ import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.StyxObservable
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{MockServer, StyxProxySpec}
 import io.netty.buffer.{ByteBuf, Unpooled}

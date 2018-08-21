@@ -22,8 +22,8 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 
-import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.util.Arrays.asList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;

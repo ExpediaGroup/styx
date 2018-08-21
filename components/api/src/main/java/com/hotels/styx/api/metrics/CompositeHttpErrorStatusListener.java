@@ -17,7 +17,7 @@ package com.hotels.styx.api.metrics;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.messages.HttpResponseStatus;
+import com.hotels.styx.api.HttpResponseStatus;
 
 import java.util.ArrayList;
 import java.util.List;

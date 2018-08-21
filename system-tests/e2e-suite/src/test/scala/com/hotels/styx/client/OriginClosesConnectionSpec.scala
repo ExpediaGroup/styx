@@ -21,7 +21,7 @@ import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.{HttpResponse, service}
 import com.hotels.styx.api.client.ActiveOrigins
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy

@@ -23,7 +23,7 @@ import com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_FOR
 import com.hotels.styx.api.HttpHeaderValues
 import com.hotels.styx.api.cookies.RequestCookie.requestCookie
 import com.hotels.styx.api.cookies.ResponseCookie.responseCookie
-import com.hotels.styx.api.messages.HttpResponseStatus._
+import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}

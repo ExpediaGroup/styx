@@ -26,7 +26,7 @@ import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.client.{ActiveOrigins, Origin}
 import com.hotels.styx.api.cookies.RequestCookie
 import com.hotels.styx.api.cookies.RequestCookie.requestCookie
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder

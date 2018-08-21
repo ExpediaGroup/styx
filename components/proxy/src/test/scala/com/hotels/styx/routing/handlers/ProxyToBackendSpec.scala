@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.routing.handlers
 
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.Environment
 import com.hotels.styx.api.Id.id
 import com.hotels.styx.api._

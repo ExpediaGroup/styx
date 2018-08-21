@@ -20,9 +20,8 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
-import com.hotels.styx.api.support.PathTrie;
 
-import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 
 /**
  * Simple Http Router.

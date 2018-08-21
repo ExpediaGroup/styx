@@ -31,17 +31,17 @@ import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.cookies.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
-import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY;
-import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
-import static com.hotels.styx.api.messages.HttpResponseStatus.CREATED;
-import static com.hotels.styx.api.messages.HttpResponseStatus.GATEWAY_TIMEOUT;
-import static com.hotels.styx.api.messages.HttpResponseStatus.MOVED_PERMANENTLY;
-import static com.hotels.styx.api.messages.HttpResponseStatus.MULTIPLE_CHOICES;
-import static com.hotels.styx.api.messages.HttpResponseStatus.NO_CONTENT;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
-import static com.hotels.styx.api.messages.HttpResponseStatus.SEE_OTHER;
-import static com.hotels.styx.api.messages.HttpResponseStatus.TEMPORARY_REDIRECT;
-import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.HttpResponseStatus.CREATED;
+import static com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT;
+import static com.hotels.styx.api.HttpResponseStatus.MOVED_PERMANENTLY;
+import static com.hotels.styx.api.HttpResponseStatus.MULTIPLE_CHOICES;
+import static com.hotels.styx.api.HttpResponseStatus.NO_CONTENT;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.SEE_OTHER;
+import static com.hotels.styx.api.HttpResponseStatus.TEMPORARY_REDIRECT;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_16;
@@ -222,7 +222,7 @@ public class FullHttpResponseTest {
     }
 
     @Test(dataProvider = "responses")
-    public void shouldCheckIfCurrentResponseIsARedirectToOtherResource(com.hotels.styx.api.messages.HttpResponseStatus status, boolean isRedirect) {
+    public void shouldCheckIfCurrentResponseIsARedirectToOtherResource(HttpResponseStatus status, boolean isRedirect) {
         assertThat(response(status).build().isRedirect(), is(isRedirect));
     }
 

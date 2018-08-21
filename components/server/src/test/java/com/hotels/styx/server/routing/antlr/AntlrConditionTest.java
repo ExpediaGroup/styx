@@ -17,7 +17,7 @@ package com.hotels.styx.server.routing.antlr;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.cookies.RequestCookie;
-import com.hotels.styx.api.messages.HttpMethod;
+import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.server.routing.Condition;
 import org.testng.annotations.Test;
 

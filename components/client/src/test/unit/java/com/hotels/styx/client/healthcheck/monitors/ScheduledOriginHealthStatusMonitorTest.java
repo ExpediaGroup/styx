@@ -23,7 +23,7 @@ import com.hotels.styx.support.DeterministicScheduler;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.support.HostAndPorts.localhost;
+import static com.hotels.styx.common.HostAndPorts.localhost;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
 import static com.hotels.styx.common.StyxFutures.await;

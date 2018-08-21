@@ -29,7 +29,7 @@ import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpResponseStatus.OK
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
 import org.scalatest.FunSpec

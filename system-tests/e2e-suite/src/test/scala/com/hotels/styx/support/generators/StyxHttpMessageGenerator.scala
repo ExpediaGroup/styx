@@ -19,8 +19,8 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.{FullHttpRequest, HttpRequest}
-import com.hotels.styx.api.messages.HttpMethod._
-import com.hotels.styx.api.messages.HttpVersion._
+import com.hotels.styx.api.HttpMethod._
+import com.hotels.styx.api.HttpVersion._
 import com.hotels.styx.support.generators.HttpHeadersGenerator.{HeaderTuple, contentTypeCharset, httpHeaders}
 import com.hotels.styx.support.generators.UrlGenerator.genUrl
 import org.scalacheck.Gen

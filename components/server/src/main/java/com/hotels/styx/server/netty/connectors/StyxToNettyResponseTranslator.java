@@ -34,7 +34,7 @@ class StyxToNettyResponseTranslator implements ResponseTranslator {
         return nettyResponse;
     }
 
-    private static HttpVersion toNettyVersion(com.hotels.styx.api.messages.HttpVersion version) {
+    private static HttpVersion toNettyVersion(com.hotels.styx.api.HttpVersion version) {
         return HttpVersion.valueOf(version.toString());
     }
 }

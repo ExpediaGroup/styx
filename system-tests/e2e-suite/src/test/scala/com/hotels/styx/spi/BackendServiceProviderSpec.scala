@@ -20,7 +20,7 @@ import com.google.common.net.HostAndPort._
 import com.hotels.styx.StyxProxySpec
 import com.hotels.styx.api.FullHttpRequest
 import com.hotels.styx.api.FullHttpRequest.get
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.StyxConfig
 import org.scalatest.FunSpec

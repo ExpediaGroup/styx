@@ -39,7 +39,7 @@ import static com.hotels.styx.api.FullHttpRequest.get;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
 import static com.hotels.styx.api.HttpResponse.response;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.client.Protocol.HTTP;
 import static com.hotels.styx.client.Protocol.HTTPS;
 import static com.hotels.styx.common.StyxFutures.await;

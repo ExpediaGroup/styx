@@ -18,12 +18,12 @@ package com.hotels.styx.proxy.interceptors;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
-import com.hotels.styx.api.messages.HttpVersion;
+import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.HttpRequest;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.hotels.styx.api.HttpHeaderNames.VIA;
-import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_0;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpHeaders.newEntity;
 
 /**

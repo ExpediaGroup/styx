@@ -20,7 +20,7 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.client.applications.OriginStats;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.support.HostAndPorts.localhost;
+import static com.hotels.styx.common.HostAndPorts.localhost;
 import static com.hotels.styx.api.client.Origin.newOriginBuilder;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;

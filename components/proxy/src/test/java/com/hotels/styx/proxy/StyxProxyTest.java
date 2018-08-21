@@ -38,8 +38,8 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
-import static com.hotels.styx.api.support.HostAndPorts.freePort;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.common.HostAndPorts.freePort;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.containsString;

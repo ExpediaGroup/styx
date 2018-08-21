@@ -37,7 +37,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.hotels.styx.api.FullHttpRequest.get;
-import static com.hotels.styx.api.support.HostAndPorts.freePort;
+import static com.hotels.styx.common.HostAndPorts.freePort;
 import static com.hotels.styx.common.StyxFutures.await;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;

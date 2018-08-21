@@ -21,8 +21,8 @@ import ch.qos.logback.classic.Level._
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.FullHttpRequest.get
-import com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.metrics.HttpErrorStatusCauseLogger
 import com.hotels.styx.api.plugins.spi.PluginException
 import com.hotels.styx.api.{HttpRequest, HttpResponse, StyxObservable}

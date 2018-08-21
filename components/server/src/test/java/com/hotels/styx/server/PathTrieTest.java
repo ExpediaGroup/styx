@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.support;
+package com.hotels.styx.server;
 
 import org.testng.annotations.Test;
 
