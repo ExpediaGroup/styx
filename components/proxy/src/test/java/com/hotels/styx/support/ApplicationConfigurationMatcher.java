@@ -18,11 +18,11 @@ package com.hotels.styx.support;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.service.ConnectionPoolSettings;
-import com.hotels.styx.api.service.RewriteConfig;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.HealthCheckConfig;
-import com.hotels.styx.api.service.StickySessionConfig;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
+import com.hotels.styx.api.extension.service.RewriteConfig;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.HealthCheckConfig;
+import com.hotels.styx.api.extension.service.StickySessionConfig;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 
@@ -31,10 +31,10 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_CONNECT_TIMEOUT_MILLIS;
-import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_MAX_CONNECTIONS_PER_HOST;
-import static com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
-import static com.hotels.styx.api.service.StickySessionConfig.stickySessionDisabled;
+import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_CONNECT_TIMEOUT_MILLIS;
+import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_MAX_CONNECTIONS_PER_HOST;
+import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST;
+import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
 import static java.util.Collections.emptyList;
 
 public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendService> {

@@ -23,7 +23,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
-import com.hotels.styx.api.service.TlsSettings;
+import com.hotels.styx.api.extension.service.TlsSettings;
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;

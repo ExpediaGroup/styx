@@ -19,10 +19,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import com.hotels.styx.api.service.HealthCheckConfig;
+import com.hotels.styx.api.extension.service.HealthCheckConfig;
 
 /**
- * Jackson annotations for {@link com.hotels.styx.api.service.HealthCheckConfig}.
+ * Jackson annotations for {@link HealthCheckConfig}.
  */
 @JsonDeserialize(builder = HealthCheckConfig.Builder.class)
 public interface HealthCheckConfigMixin {

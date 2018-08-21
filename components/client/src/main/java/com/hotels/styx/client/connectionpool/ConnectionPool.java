@@ -21,7 +21,7 @@ import rx.Observable;
 
 import java.io.Closeable;
 import java.util.function.Function;
-import com.hotels.styx.api.service.ConnectionPoolSettings;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 
 /**
  * A pool of connections.

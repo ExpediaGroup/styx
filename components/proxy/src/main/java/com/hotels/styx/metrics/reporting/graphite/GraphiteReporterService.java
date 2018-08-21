@@ -18,7 +18,7 @@ package com.hotels.styx.metrics.reporting.graphite;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.graphite.GraphiteSender;
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.service.spi.AbstractStyxService;
+import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import org.slf4j.Logger;
 
 import java.util.concurrent.CompletableFuture;

@@ -19,7 +19,7 @@ import com.github.tomakehurst.wiremock.client.ValueMatchingStrategy;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.FullHttpClient;
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.service.TlsSettings;
+import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.SimpleHttpClient;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;

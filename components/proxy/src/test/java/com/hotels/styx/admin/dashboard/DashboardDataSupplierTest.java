@@ -25,7 +25,7 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.OriginsSnapshot;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
-import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import org.testng.annotations.Test;
 
@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
-import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;

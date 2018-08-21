@@ -13,21 +13,22 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.service.spi;
+package com.hotels.styx.api.extension.service.spi;
 
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static com.hotels.styx.api.MockContext.MOCK_CONTEXT;
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.FAILED;
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.RUNNING;
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.STARTING;
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.STOPPED;
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.STOPPING;
+import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.FAILED;
+import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.RUNNING;
+import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STARTING;
+import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STOPPED;
+import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STOPPING;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;

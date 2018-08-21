@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.service.spi;
+package com.hotels.styx.api.extension.service.spi;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpHandler;
@@ -28,12 +28,6 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
 import static com.hotels.styx.api.FullHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.CREATED;
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.FAILED;
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.RUNNING;
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.STARTING;
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.STOPPED;
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.STOPPING;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -46,7 +40,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  */
 public abstract class AbstractStyxService implements StyxService {
     private final String name;
-    private final AtomicReference<StyxServiceStatus> status = new AtomicReference<>(CREATED);
+    private final AtomicReference<StyxServiceStatus> status = new AtomicReference<>(StyxServiceStatus.CREATED);
 
     public AbstractStyxService(String name) {
         this.name = name;
@@ -66,12 +60,12 @@ public abstract class AbstractStyxService implements StyxService {
 
     @Override
     public CompletableFuture<Void> start() {
-        boolean changed = status.compareAndSet(CREATED, STARTING);
+        boolean changed = status.compareAndSet(StyxServiceStatus.CREATED, StyxServiceStatus.STARTING);
 
         if (changed) {
             return startService()
                     .exceptionally(failWithMessage("Service failed to start."))
-                    .thenAccept(na -> status.compareAndSet(STARTING, RUNNING));
+                    .thenAccept(na -> status.compareAndSet(StyxServiceStatus.STARTING, StyxServiceStatus.RUNNING));
         } else {
             throw new IllegalStateException(format("Start called in %s state", status.get()));
         }
@@ -79,12 +73,12 @@ public abstract class AbstractStyxService implements StyxService {
 
     @Override
     public CompletableFuture<Void> stop() {
-        boolean changed = status.compareAndSet(RUNNING, STOPPING);
+        boolean changed = status.compareAndSet(StyxServiceStatus.RUNNING, StyxServiceStatus.STOPPING);
 
         if (changed) {
             return stopService()
                     .exceptionally(failWithMessage("Service failed to stop."))
-                    .thenAccept(na -> status.compareAndSet(STOPPING, STOPPED));
+                    .thenAccept(na -> status.compareAndSet(StyxServiceStatus.STOPPING, StyxServiceStatus.STOPPED));
         } else {
             throw new IllegalStateException(format("Stop called in %s state", status.get()));
         }
@@ -92,7 +86,7 @@ public abstract class AbstractStyxService implements StyxService {
 
     private Function<Throwable, Void> failWithMessage(String message) {
         return cause -> {
-            status.set(FAILED);
+            status.set(StyxServiceStatus.FAILED);
             throw new ServiceFailureException(message, cause);
         };
     }

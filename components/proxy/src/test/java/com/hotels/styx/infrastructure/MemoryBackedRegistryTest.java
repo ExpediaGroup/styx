@@ -16,8 +16,8 @@
 package com.hotels.styx.infrastructure;
 
 import com.hotels.styx.api.Identifiable;
-import com.hotels.styx.api.service.spi.Registry;
-import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.api.extension.service.BackendService;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 

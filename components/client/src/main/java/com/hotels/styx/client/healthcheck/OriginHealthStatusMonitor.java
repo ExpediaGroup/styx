@@ -17,8 +17,8 @@ package com.hotels.styx.client.healthcheck;
 
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.service.HealthCheckConfig;
-import com.hotels.styx.api.service.spi.StyxService;
+import com.hotels.styx.api.extension.service.HealthCheckConfig;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 
 import java.util.EventListener;
 import java.util.Set;

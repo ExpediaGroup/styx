@@ -25,8 +25,8 @@ import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicyFactory;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.configuration.ServiceFactory;
-import com.hotels.styx.api.service.spi.AbstractStyxService;
-import com.hotels.styx.api.service.spi.StyxService;
+import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.support.api.SimpleEnvironment;
 import org.testng.annotations.Test;
 

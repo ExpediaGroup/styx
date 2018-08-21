@@ -27,7 +27,7 @@ import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx._
 import com.hotels.styx.api.FullHttpResponse
 import com.hotels.styx.api.HttpResponseStatus._
-import com.hotels.styx.api.service.BackendService
+import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.proxy.resiliency.DirectBufferMetrics.directBufferMetrics
 import com.hotels.styx.server.HttpServer

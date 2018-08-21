@@ -16,7 +16,7 @@
 package com.hotels.styx.startup;
 
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.service.spi.StyxService;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 
 import java.util.Map;
 

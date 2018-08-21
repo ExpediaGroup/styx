@@ -17,9 +17,9 @@ package com.hotels.styx.infrastructure;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.service.spi.Registry;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.spi.Registry.ReloadResult;
+import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -30,8 +30,8 @@ import java.util.function.Supplier;
 
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.common.StyxFutures.await;
-import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
-import static com.hotels.styx.api.service.spi.Registry.ReloadResult.unchanged;
+import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
+import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.unchanged;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;

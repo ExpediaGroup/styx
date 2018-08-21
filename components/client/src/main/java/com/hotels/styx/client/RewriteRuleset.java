@@ -18,7 +18,7 @@ package com.hotels.styx.client;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Url;
-import com.hotels.styx.api.service.RewriteRule;
+import com.hotels.styx.api.extension.service.RewriteRule;
 
 import java.util.List;
 import java.util.Objects;

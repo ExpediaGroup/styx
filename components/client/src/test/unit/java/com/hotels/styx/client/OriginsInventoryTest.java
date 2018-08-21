@@ -44,7 +44,7 @@ import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.common.HostAndPorts.localHostAndFreePort;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
-import static com.hotels.styx.api.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
+import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.common.testing.matcher.TransformingMatcher.hasDerivedValue;
 import static com.hotels.styx.support.matchers.ContainsExactlyOneMatcher.containsExactlyOne;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;

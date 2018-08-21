@@ -18,7 +18,7 @@ package com.hotels.styx.admin.tasks;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.service.ConnectionPoolSettings;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import rx.Observable;
 
 /**

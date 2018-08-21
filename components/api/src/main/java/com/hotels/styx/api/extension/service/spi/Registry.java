@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.service.spi;
+package com.hotels.styx.api.extension.service.spi;
 
 import com.google.common.collect.Iterables;
 import com.hotels.styx.api.Environment;
@@ -27,9 +27,9 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-import static com.hotels.styx.api.service.spi.Registry.Outcome.FAILED;
-import static com.hotels.styx.api.service.spi.Registry.Outcome.RELOADED;
-import static com.hotels.styx.api.service.spi.Registry.Outcome.UNCHANGED;
+import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.FAILED;
+import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.RELOADED;
+import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.UNCHANGED;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;

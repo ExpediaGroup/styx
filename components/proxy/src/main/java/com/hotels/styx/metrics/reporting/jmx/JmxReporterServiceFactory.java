@@ -18,7 +18,7 @@ package com.hotels.styx.metrics.reporting.jmx;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ServiceFactory;
-import com.hotels.styx.api.service.spi.StyxService;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 
 import static com.hotels.styx.metrics.reporting.MetricRegistryConstraints.codaHaleMetricRegistry;
 

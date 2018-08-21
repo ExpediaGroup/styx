@@ -19,7 +19,7 @@ import com.codahale.metrics.Gauge;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.metrics.MetricRegistry;
-import com.hotels.styx.api.service.ConnectionPoolSettings;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import org.slf4j.Logger;
 import rx.Observable;
 

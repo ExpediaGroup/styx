@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.service.RewriteConfig;
-import com.hotels.styx.api.service.RewriteRule;
+import com.hotels.styx.api.extension.service.RewriteConfig;
+import com.hotels.styx.api.extension.service.RewriteRule;
 import org.testng.annotations.Test;
 
 import java.util.List;

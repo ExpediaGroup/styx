@@ -17,11 +17,11 @@ package com.hotels.styx.support.configuration
 
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
-import com.hotels.styx.api.service
-import com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_MAX_CONNECTIONS_PER_HOST
-import com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST
-import com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_CONNECT_TIMEOUT_MILLIS
-import com.hotels.styx.api.service.ConnectionPoolSettings.DEFAULT_CONNECTION_EXPIRATION_SECONDS
+import com.hotels.styx.api.extension
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_MAX_CONNECTIONS_PER_HOST
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_MAX_PENDING_CONNECTIONS_PER_HOST
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_CONNECT_TIMEOUT_MILLIS
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings.DEFAULT_CONNECTION_EXPIRATION_SECONDS
 
 
 case class ConnectionPoolSettings(maxConnectionsPerHost: Int = DEFAULT_MAX_CONNECTIONS_PER_HOST,
@@ -30,7 +30,7 @@ case class ConnectionPoolSettings(maxConnectionsPerHost: Int = DEFAULT_MAX_CONNE
                                   pendingConnectionTimeoutMillis: Int = DEFAULT_CONNECT_TIMEOUT_MILLIS,
                                   connectionExpirationSeconds: Long = DEFAULT_CONNECTION_EXPIRATION_SECONDS
                                ) {
-  def asJava: service.ConnectionPoolSettings = new service.ConnectionPoolSettings.Builder()
+  def asJava: extension.service.ConnectionPoolSettings = new extension.service.ConnectionPoolSettings.Builder()
       .maxConnectionsPerHost(maxConnectionsPerHost)
       .maxConnectionsPerHost(maxPendingConnectionsPerHost)
       .connectTimeout(connectTimeoutMillis, MILLISECONDS)
@@ -40,7 +40,7 @@ case class ConnectionPoolSettings(maxConnectionsPerHost: Int = DEFAULT_MAX_CONNE
 }
 
 object ConnectionPoolSettings {
-  def fromJava(from: com.hotels.styx.api.service.ConnectionPoolSettings): ConnectionPoolSettings =
+  def fromJava(from: extension.service.ConnectionPoolSettings): ConnectionPoolSettings =
     ConnectionPoolSettings(
       maxConnectionsPerHost = from.maxConnectionsPerHost,
       maxPendingConnectionsPerHost = from.maxPendingConnectionsPerHost,
