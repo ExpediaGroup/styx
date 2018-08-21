@@ -52,24 +52,6 @@ public class ApplicationConfigurationMatcher extends TypeSafeMatcher<BackendServ
         return new ApplicationConfigurationMatcher();
     }
 
-    public static ApplicationConfigurationMatcher matcherFor(BackendService backendService) {
-        ApplicationConfigurationMatcher matcher = new ApplicationConfigurationMatcher();
-        matcher.name = backendService.id().toString();
-        matcher.path = backendService.path();
-        matcher.origins = backendService.origins();
-        matcher.rewrites = backendService.rewrites();
-
-        ConnectionPoolSettings connectionPoolSettings = backendService.connectionPoolConfig();
-        matcher.connectTimeout = connectionPoolSettings.connectTimeoutMillis();
-        matcher.maxConnectionsPerHost = connectionPoolSettings.maxConnectionsPerHost();
-        matcher.maxPendingConnectionsPerHost = connectionPoolSettings.maxPendingConnectionsPerHost();
-
-        matcher.healthCheckConfig = backendService.healthCheckConfig();
-
-        matcher.stickySessionConfig = backendService.stickySessionConfig();
-        return matcher;
-    }
-
     public ApplicationConfigurationMatcher withName(String name) {
         this.name = name;
         return this;
