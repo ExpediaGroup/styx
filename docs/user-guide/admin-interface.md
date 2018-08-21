@@ -208,7 +208,7 @@ The document returned by this endpoint presents the configuration used to setup 
 
 #### Syntax
 
-`http://<STYX_SERVER_URL>/admin/healthcheck`
+`http://<STYX_SERVER_URL>/admin/healthcheck`heal
 
 Easy to query endpoint that returns a document with the health status of origins based on the rate of `500` errors.
 

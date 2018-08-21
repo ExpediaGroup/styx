@@ -22,7 +22,6 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.dashboard.DashboardData;
 import com.hotels.styx.admin.dashboard.DashboardDataSupplier;
-import com.hotels.styx.admin.handlers.HealthCheckHandler;
 import com.hotels.styx.admin.handlers.IndexHandler;
 import com.hotels.styx.admin.handlers.JVMMetricsHandler;
 import com.hotels.styx.admin.handlers.JsonHandler;
@@ -34,7 +33,6 @@ import com.hotels.styx.admin.handlers.PingHandler;
 import com.hotels.styx.admin.handlers.PluginListHandler;
 import com.hotels.styx.admin.handlers.PluginToggleHandler;
 import com.hotels.styx.admin.handlers.StartupConfigHandler;
-import com.hotels.styx.admin.handlers.StatusHandler;
 import com.hotels.styx.admin.handlers.StyxConfigurationHandler;
 import com.hotels.styx.admin.handlers.ThreadsHandler;
 import com.hotels.styx.admin.handlers.VersionTextHandler;
@@ -66,7 +64,6 @@ import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;
 import static com.hotels.styx.api.messages.HttpMethod.POST;
 import static java.lang.String.format;
-import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
@@ -103,7 +100,6 @@ public class AdminServerBuilder {
     public HttpServer build() {
         LOG.info("event bus that will be used is {}", environment.eventBus());
         StyxConfig styxConfig = environment.styxConfig();
-        HttpHandler healthCheckHandler = new HealthCheckHandler(environment.healthCheckRegistry(), newSingleThreadExecutor());
 
         Optional<Duration> metricsCacheExpiration = styxConfig.adminServerConfig().metricsCacheExpiration();
         AdminServerConfig adminServerConfig = styxConfig.adminServerConfig();
@@ -112,13 +108,11 @@ public class AdminServerBuilder {
         httpRouter.add("/", new IndexHandler(indexLinkPaths()));
         httpRouter.add("/version.txt", new VersionTextHandler(styxConfig.versionFiles()));
         httpRouter.add("/admin", new IndexHandler(indexLinkPaths()));
-        httpRouter.add("/admin/status", new StatusHandler(healthCheckHandler));
         httpRouter.add("/admin/ping", new PingHandler());
         httpRouter.add("/admin/threads", new ThreadsHandler());
         MetricsHandler metricsHandler = new MetricsHandler(environment.metricRegistry(), metricsCacheExpiration);
         httpRouter.add("/admin/metrics", metricsHandler);
         httpRouter.add("/admin/metrics/", metricsHandler);
-        httpRouter.add("/admin/healthcheck", healthCheckHandler);
         httpRouter.add("/admin/configuration", new StyxConfigurationHandler(staticConfiguration()));
         httpRouter.add("/admin/configuration/origins", new OriginsHandler(backendServicesRegistry));
         httpRouter.add("/admin/jvm", new JVMMetricsHandler(environment.metricRegistry(), metricsCacheExpiration));
@@ -161,11 +155,9 @@ public class AdminServerBuilder {
     private static Iterable<IndexHandler.Link> indexLinkPaths() {
         return ImmutableSortedSet.of(
                 link("version.txt", "/version.txt"),
-                link("Status", "/admin/status"),
                 link("Ping", "/admin/ping"),
                 link("Threads", "/admin/threads"),
                 link("Metrics", "/admin/metrics?pretty"),
-                link("Health Check", "/admin/healthcheck"),
                 link("Configuration", "/admin/configuration?pretty"),
                 link("Log Configuration", "/admin/configuration/logging"),
                 link("Origins Configuration", "/admin/configuration/origins?pretty"),
