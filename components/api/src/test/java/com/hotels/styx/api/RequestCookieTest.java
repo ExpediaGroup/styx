@@ -13,25 +13,42 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.cookies;
+package com.hotels.styx.api;
 
+import com.google.common.collect.ImmutableList;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.cookies.ResponseCookie.responseCookie;
+import static com.hotels.styx.api.RequestCookie.encode;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
-public class ResponseCookieTest {
+public class RequestCookieTest {
+
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void acceptsOnlyNonEmptyName() {
-        responseCookie("", "value").build();
+        requestCookie("", "value");
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void acceptsOnlyNonNullName() {
-        responseCookie(null, "value").build();
+        requestCookie(null, "value");
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void acceptsOnlyNonNullValue() {
-        responseCookie("name", null).build();
+        requestCookie("name", null);
+    }
+
+    @Test
+    public void doesNotEncodeDuplicateCookies() {
+        String encoded = encode(ImmutableList.of(
+                requestCookie("foo", "bar"),
+                requestCookie("bar", "foo"),
+                requestCookie("foo", "asjdfksdajf")
+                )
+        );
+
+        assertThat(encoded, is("bar=foo; foo=bar"));
     }
 }

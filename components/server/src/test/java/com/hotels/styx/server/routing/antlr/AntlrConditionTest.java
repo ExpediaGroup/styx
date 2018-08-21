@@ -16,7 +16,7 @@
 package com.hotels.styx.server.routing.antlr;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.cookies.RequestCookie;
+import com.hotels.styx.api.RequestCookie;
 import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.server.routing.Condition;
 import org.testng.annotations.Test;
@@ -26,7 +26,7 @@ import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpRequest.post;
-import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 

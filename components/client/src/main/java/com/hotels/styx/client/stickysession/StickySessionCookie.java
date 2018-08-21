@@ -16,9 +16,9 @@
 package com.hotels.styx.client.stickysession;
 
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.cookies.ResponseCookie;
+import com.hotels.styx.api.ResponseCookie;
 
-import static com.hotels.styx.api.cookies.ResponseCookie.responseCookie;
+import static com.hotels.styx.api.ResponseCookie.responseCookie;
 
 /**
  * Provides methods for handling sticky-session cookies used to identify which origin has "stuck".

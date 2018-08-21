@@ -17,7 +17,6 @@ package com.hotels.styx.api;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
-import com.hotels.styx.api.cookies.ResponseCookie;
 import rx.Observable;
 
 import java.nio.charset.Charset;
@@ -33,8 +32,8 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
-import static com.hotels.styx.api.cookies.ResponseCookie.decode;
-import static com.hotels.styx.api.cookies.ResponseCookie.encode;
+import static com.hotels.styx.api.ResponseCookie.decode;
+import static com.hotels.styx.api.ResponseCookie.encode;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static io.netty.buffer.Unpooled.copiedBuffer;

@@ -15,10 +15,8 @@
  */
 package com.hotels.styx.client.stickysession;
 
-import com.hotels.styx.api.cookies.ResponseCookie;
+import com.hotels.styx.api.ResponseCookie;
 import org.testng.annotations.Test;
-
-import java.util.Optional;
 
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;

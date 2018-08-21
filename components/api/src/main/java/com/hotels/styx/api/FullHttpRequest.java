@@ -16,7 +16,6 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableSet;
-import com.hotels.styx.api.cookies.RequestCookie;
 import io.netty.buffer.Unpooled;
 import rx.Observable;
 
@@ -37,8 +36,8 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
-import static com.hotels.styx.api.cookies.RequestCookie.decode;
-import static com.hotels.styx.api.cookies.RequestCookie.encode;
+import static com.hotels.styx.api.RequestCookie.decode;
+import static com.hotels.styx.api.RequestCookie.encode;
 import static com.hotels.styx.api.HttpMethod.DELETE;
 import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.api.HttpMethod.HEAD;

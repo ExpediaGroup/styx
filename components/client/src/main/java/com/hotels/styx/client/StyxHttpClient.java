@@ -24,7 +24,7 @@ import com.hotels.styx.api.client.Origin;
 import com.hotels.styx.api.client.RemoteHost;
 import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
-import com.hotels.styx.api.cookies.RequestCookie;
+import com.hotels.styx.api.RequestCookie;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.metrics.MetricRegistry;

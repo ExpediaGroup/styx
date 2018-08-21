@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package com.hotels.styx.api.cookies;
+package com.hotels.styx.api;
 
 import io.netty.handler.codec.http.HttpHeaderDateFormat;
 import io.netty.handler.codec.http.HttpRequest;
@@ -31,10 +31,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static com.hotels.styx.api.cookies.CookieUtil.add;
-import static com.hotels.styx.api.cookies.CookieUtil.addQuoted;
-import static com.hotels.styx.api.cookies.CookieUtil.stringBuilder;
-import static com.hotels.styx.api.cookies.CookieUtil.stripTrailingSeparator;
+import static com.hotels.styx.api.CookieUtil.add;
+import static com.hotels.styx.api.CookieUtil.addQuoted;
+import static com.hotels.styx.api.CookieUtil.stringBuilder;
+import static com.hotels.styx.api.CookieUtil.stripTrailingSeparator;
 import static io.netty.util.internal.ObjectUtil.checkNotNull;
 
 /**

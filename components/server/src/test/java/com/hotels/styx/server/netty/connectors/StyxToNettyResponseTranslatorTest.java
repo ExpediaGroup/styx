@@ -16,13 +16,13 @@
 package com.hotels.styx.server.netty.connectors;
 
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.cookies.ResponseCookie;
+import com.hotels.styx.api.ResponseCookie;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
-import static com.hotels.styx.api.cookies.ResponseCookie.responseCookie;
+import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static org.hamcrest.MatcherAssert.assertThat;

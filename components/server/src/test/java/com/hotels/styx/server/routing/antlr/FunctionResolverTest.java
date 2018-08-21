@@ -17,13 +17,13 @@ package com.hotels.styx.server.routing.antlr;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.cookies.RequestCookie;
+import com.hotels.styx.api.RequestCookie;
 import org.testng.annotations.Test;
 
 import java.util.Map;
 
 import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;

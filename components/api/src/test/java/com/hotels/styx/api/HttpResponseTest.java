@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.api.cookies.ResponseCookie;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
@@ -28,7 +27,7 @@ import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.cookies.ResponseCookie.responseCookie;
+import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
