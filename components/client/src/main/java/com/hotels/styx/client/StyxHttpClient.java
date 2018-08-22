@@ -99,9 +99,6 @@ public final class StyxHttpClient implements HttpClient {
         return sendRequest(rewriteUrl(request), new ArrayList<>(), 0);
     }
 
-    public boolean isHttps() {
-        return backendService.tlsSettings().isPresent();
-    }
 
     /**
      * Create a new builder.
