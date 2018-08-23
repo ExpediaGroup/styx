@@ -61,7 +61,7 @@ class ExpiringConnectionSpec extends FunSpec
       .origins(newOriginBuilder("localhost", styxServer.httpPort).build())
       .build()
 
-    pooledClient = newHttpClientBuilder(backendService)
+    pooledClient = newHttpClientBuilder(backendService.id)
       .loadBalancer(roundRobinStrategy(activeOrigins(backendService)))
       .build
   }
