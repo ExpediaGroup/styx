@@ -21,7 +21,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
 import com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_PROTO
 import com.hotels.styx.api.FullHttpRequest.get
-import com.hotels.styx.api.messages.HttpResponseStatus._
+import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._

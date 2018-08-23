@@ -22,9 +22,9 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.messages.HttpResponseStatus.FORBIDDEN;
-import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.FORBIDDEN;
+import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.UTF_8;

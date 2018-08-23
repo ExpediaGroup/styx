@@ -21,7 +21,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
-import com.hotels.styx.api.messages.HttpResponseStatus;
+import com.hotels.styx.api.HttpResponseStatus;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -29,10 +29,10 @@ import java.io.InputStream;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.server.handlers.MediaTypes.mediaTypeOf;
-import static com.hotels.styx.api.messages.HttpResponseStatus.FORBIDDEN;
-import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.FORBIDDEN;
+import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**

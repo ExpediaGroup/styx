@@ -21,8 +21,8 @@ import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
-import static com.hotels.styx.api.messages.HttpMethod.GET;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
+import static com.hotels.styx.api.HttpMethod.GET;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;

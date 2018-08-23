@@ -19,15 +19,15 @@ import java.nio.charset.Charset
 
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
-import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.{HttpRequest, RequestCookie}
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.Id.id
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
-import com.hotels.styx.api.client.{ActiveOrigins, Origin}
-import com.hotels.styx.api.cookies.RequestCookie
-import com.hotels.styx.api.cookies.RequestCookie.requestCookie
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
-import com.hotels.styx.api.service.{BackendService, StickySessionConfig}
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
+import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
+import com.hotels.styx.api.RequestCookie.requestCookie
+import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
+import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy

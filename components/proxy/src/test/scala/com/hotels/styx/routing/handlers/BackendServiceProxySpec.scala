@@ -19,13 +19,14 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 
 import com.hotels.styx.Environment
-import com.hotels.styx.api.client.Origin.newOriginBuilder
-import com.hotels.styx.api.service.BackendService
-import com.hotels.styx.api.service.spi.{AbstractRegistry, Registry}
-import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse}
+import com.hotels.styx.api.extension.Origin.newOriginBuilder
+import com.hotels.styx.api.extension.service.BackendService
+import com.hotels.styx.api.extension.service.spi.{AbstractRegistry, Registry}
+import com.hotels.styx.api.extension.service.spi.{AbstractRegistry, Registry}
+import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse, HttpResponseStatus}
 import com.hotels.styx.client.{OriginStatsFactory, OriginsInventory}
-import com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded
-import com.hotels.styx.api.service.spi.Registry.{Changes, ReloadResult}
+import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded
+import com.hotels.styx.api.extension.service.spi.Registry.{Changes, ReloadResult}
 import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.BackendServiceClientFactory
@@ -35,7 +36,7 @@ import com.hotels.styx.support.api.BlockingObservables
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, ShouldMatchers}
 import rx.Observable
-import com.hotels.styx.api.messages.HttpResponseStatus
+
 import scala.collection.JavaConversions._
 
 class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSugar {

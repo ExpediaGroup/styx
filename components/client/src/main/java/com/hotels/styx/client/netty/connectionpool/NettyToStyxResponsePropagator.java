@@ -18,7 +18,7 @@ package com.hotels.styx.client.netty.connectionpool;
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.client.BadHttpResponseException;
@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
-import static com.hotels.styx.api.messages.HttpResponseStatus.statusWithCode;
+import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
 import static io.netty.util.ReferenceCountUtil.retain;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

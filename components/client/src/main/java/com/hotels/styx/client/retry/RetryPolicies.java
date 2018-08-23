@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.client.retry;
 
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 
 import java.util.Optional;
 

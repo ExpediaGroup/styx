@@ -18,7 +18,7 @@ package com.hotels.styx.client.healthcheck;
 import com.codahale.metrics.Meter;
 import com.hotels.styx.api.FullHttpClient;
 import com.hotels.styx.api.FullHttpRequest;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.metrics.MetricRegistry;
 import com.hotels.styx.common.SimpleCache;
 import io.netty.buffer.ByteBuf;
@@ -26,7 +26,7 @@ import rx.Observer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
 import static io.netty.util.ReferenceCountUtil.release;

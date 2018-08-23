@@ -22,7 +22,7 @@ import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.api.service.spi.StyxService;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.startup.StyxServerComponents.LoggingSetUp;
 import org.testng.annotations.Test;

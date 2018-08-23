@@ -16,8 +16,8 @@
 package com.hotels.styx.client.retry;
 
 
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
-import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 
 /**
  * Skeleton implementation of {@link RetryPolicy} for setting the backoff delay and retry attempts.

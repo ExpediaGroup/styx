@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client.healthcheck.monitors;
 
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 
 import java.util.Set;

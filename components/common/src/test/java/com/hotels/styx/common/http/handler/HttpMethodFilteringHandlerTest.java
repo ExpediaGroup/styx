@@ -23,9 +23,9 @@ import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpRequest.post;
-import static com.hotels.styx.api.messages.HttpMethod.GET;
-import static com.hotels.styx.api.messages.HttpMethod.POST;
-import static com.hotels.styx.api.messages.HttpResponseStatus.METHOD_NOT_ALLOWED;
+import static com.hotels.styx.api.HttpMethod.GET;
+import static com.hotels.styx.api.HttpMethod.POST;
+import static com.hotels.styx.api.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;

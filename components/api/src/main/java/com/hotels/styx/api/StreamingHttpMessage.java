@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
 import rx.Subscriber;
 

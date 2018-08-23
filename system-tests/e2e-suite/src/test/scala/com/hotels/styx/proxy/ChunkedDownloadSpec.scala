@@ -18,7 +18,7 @@ package com.hotels.styx.proxy
 import com.google.common.base.Charsets
 import com.google.common.base.Charsets._
 import com.hotels.styx._
-import com.hotels.styx.api.messages.HttpResponseStatus._
+import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
 import com.hotels.styx.utils.HttpTestClient

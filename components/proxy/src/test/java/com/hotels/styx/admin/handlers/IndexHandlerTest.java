@@ -21,14 +21,13 @@ import org.testng.annotations.Test;
 
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;
 import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import com.hotels.styx.api.HttpRequest;
 
 public class IndexHandlerTest {
     IndexHandler handler = new IndexHandler(asList(link("Abc", "/admin/foo"), link("Xyz", "/admin/bar")));

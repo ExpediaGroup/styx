@@ -16,10 +16,10 @@
 package com.hotels.styx.proxy;
 
 import com.codahale.metrics.Histogram;
+import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.metrics.HttpErrorStatusListener;
 import com.hotels.styx.api.metrics.MetricRegistry;
-import com.hotels.styx.api.metrics.RequestStatsCollector;
+import com.hotels.styx.server.RequestStatsCollector;
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;

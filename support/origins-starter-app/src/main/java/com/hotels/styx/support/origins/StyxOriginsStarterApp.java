@@ -19,7 +19,7 @@ package com.hotels.styx.support.origins;
 import com.hotels.styx.StartupConfig;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.applications.BackendServices;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;

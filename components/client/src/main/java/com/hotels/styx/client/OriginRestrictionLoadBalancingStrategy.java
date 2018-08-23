@@ -17,9 +17,9 @@ package com.hotels.styx.client;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
-import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.extension.ActiveOrigins;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import org.slf4j.Logger;
 
 import java.util.List;

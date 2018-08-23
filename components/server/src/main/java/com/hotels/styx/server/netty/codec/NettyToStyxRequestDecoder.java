@@ -17,7 +17,7 @@ package com.hotels.styx.server.netty.codec;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Url;
-import com.hotels.styx.api.messages.HttpVersion;
+import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;
@@ -188,8 +188,8 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
         return HttpVersion.httpVersion(httpVersion.toString());
     }
 
-    private com.hotels.styx.api.messages.HttpMethod toStyxMethod(HttpMethod method) {
-        return com.hotels.styx.api.messages.HttpMethod.httpMethod(method.name());
+    private com.hotels.styx.api.HttpMethod toStyxMethod(HttpMethod method) {
+        return com.hotels.styx.api.HttpMethod.httpMethod(method.name());
     }
 
     private static Set<Cookie> decodeCookieHeader(String header, HttpRequest request) {

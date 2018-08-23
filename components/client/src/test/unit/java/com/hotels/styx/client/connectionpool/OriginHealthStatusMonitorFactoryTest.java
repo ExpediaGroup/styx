@@ -16,7 +16,7 @@
 package com.hotels.styx.client.connectionpool;
 
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.service.HealthCheckConfig;
+import com.hotels.styx.api.extension.service.HealthCheckConfig;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
 import com.hotels.styx.client.healthcheck.monitors.AnomalyExcludingOriginHealthStatusMonitor;
@@ -24,7 +24,7 @@ import com.hotels.styx.client.healthcheck.monitors.NoOriginHealthStatusMonitor;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.Id.GENERIC_APP;
-import static com.hotels.styx.api.service.HealthCheckConfig.newHealthCheckConfigBuilder;
+import static com.hotels.styx.api.extension.service.HealthCheckConfig.newHealthCheckConfigBuilder;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;

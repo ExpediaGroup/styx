@@ -19,16 +19,16 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
-import com.hotels.styx.api.service.spi.AbstractRegistry;
-import com.hotels.styx.api.service.spi.AbstractStyxService;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.extension.service.spi.AbstractRegistry;
+import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
-import static com.hotels.styx.api.service.spi.Registry.ReloadResult.unchanged;
+import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
+import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.unchanged;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static testgrp.AdminHandlers.adminHandlers;

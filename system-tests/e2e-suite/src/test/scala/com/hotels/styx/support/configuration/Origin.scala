@@ -20,8 +20,8 @@ case class Origin(host: String,
                   id: String = Origin.default.id().toString,
                   appId: String = Origin.default.applicationId().toString
                  ) {
-  def asJava(): com.hotels.styx.api.client.Origin =
-    com.hotels.styx.api.client.Origin.newOriginBuilder(host, port)
+  def asJava(): com.hotels.styx.api.extension.Origin =
+    com.hotels.styx.api.extension.Origin.newOriginBuilder(host, port)
       .applicationId(appId)
       .id(id)
       .build()
@@ -30,8 +30,8 @@ case class Origin(host: String,
 }
 
 object Origin {
-  val default = com.hotels.styx.api.client.Origin.newOriginBuilder("localhost", 0).build()
+  val default = com.hotels.styx.api.extension.Origin.newOriginBuilder("localhost", 0).build()
 
-  def fromJava(from: com.hotels.styx.api.client.Origin): Origin =
+  def fromJava(from: com.hotels.styx.api.extension.Origin): Origin =
     Origin(from.host().getHostText, from.host().getPort, from.id().toString, from.applicationId().toString)
 }

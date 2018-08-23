@@ -17,7 +17,7 @@ package com.hotels.styx.common.logging;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import org.slf4j.Logger;
 
 import static org.slf4j.LoggerFactory.getLogger;

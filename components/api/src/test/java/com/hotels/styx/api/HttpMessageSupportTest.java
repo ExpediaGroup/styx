@@ -24,8 +24,8 @@ import static com.hotels.styx.api.HttpHeaderValues.CLOSE;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
 import static com.hotels.styx.api.HttpMessageSupport.chunked;
 import static com.hotels.styx.api.HttpMessageSupport.keepAlive;
-import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_0;
-import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 

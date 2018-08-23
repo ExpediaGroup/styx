@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Jackson annotations for {@link com.hotels.styx.api.service.ConnectionPoolSettings}.
+ * Jackson annotations for {@link com.hotels.styx.api.extension.service.ConnectionPoolSettings}.
  */
 public abstract class ConnectionPoolSettingsMixin {
 

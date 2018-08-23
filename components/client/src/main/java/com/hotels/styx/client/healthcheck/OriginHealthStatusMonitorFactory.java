@@ -17,7 +17,7 @@ package com.hotels.styx.client.healthcheck;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.service.HealthCheckConfig;
+import com.hotels.styx.api.extension.service.HealthCheckConfig;
 import com.hotels.styx.client.healthcheck.monitors.AnomalyExcludingOriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.monitors.NoOriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.monitors.ScheduledOriginHealthStatusMonitor;

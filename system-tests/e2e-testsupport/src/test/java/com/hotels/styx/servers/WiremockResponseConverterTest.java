@@ -31,8 +31,8 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.github.tomakehurst.wiremock.http.HttpHeader.httpHeader;
-import static com.hotels.styx.api.messages.HttpResponseStatus.CREATED;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.CREATED;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.servers.WiremockResponseConverter.toStyxResponse;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;

@@ -16,12 +16,12 @@
 package com.hotels.styx.client.connectionpool;
 
 import com.hotels.styx.client.Connection;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import rx.Observable;
 
 import java.io.Closeable;
 import java.util.function.Function;
-import com.hotels.styx.api.service.ConnectionPoolSettings;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 
 /**
  * A pool of connections.

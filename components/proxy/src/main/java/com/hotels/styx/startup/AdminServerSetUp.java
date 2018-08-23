@@ -16,8 +16,8 @@
 package com.hotels.styx.startup;
 
 import com.hotels.styx.admin.AdminServerBuilder;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.server.HttpServer;
 
 /**

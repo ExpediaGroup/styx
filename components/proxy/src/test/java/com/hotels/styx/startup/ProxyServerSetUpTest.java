@@ -33,7 +33,7 @@ import org.testng.annotations.Test;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
-import static com.hotels.styx.api.support.HostAndPorts.freePort;
+import static com.hotels.styx.common.HostAndPorts.freePort;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;

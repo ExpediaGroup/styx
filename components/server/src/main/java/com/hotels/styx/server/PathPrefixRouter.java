@@ -17,7 +17,6 @@ package com.hotels.styx.server;
 
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.support.PathTrie;
 
 import java.util.Optional;
 

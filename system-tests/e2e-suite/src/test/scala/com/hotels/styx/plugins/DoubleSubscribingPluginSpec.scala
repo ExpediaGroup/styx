@@ -22,7 +22,7 @@ import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig,
 import com.hotels.styx.support.{ResourcePaths, TestClientSupport}
 import com.hotels.styx.{MockServer, StyxProxySpec}
 import io.netty.handler.codec.http.HttpMethod.GET
-import com.hotels.styx.api.messages.HttpResponseStatus._
+import com.hotels.styx.api.HttpResponseStatus._
 import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import io.netty.handler.codec.http.{DefaultFullHttpRequest, FullHttpResponse}
 import com.hotels.styx.api.{FullHttpResponse => StyxFullHttpResponse }

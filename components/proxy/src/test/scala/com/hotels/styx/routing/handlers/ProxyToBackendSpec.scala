@@ -15,11 +15,11 @@
  */
 package com.hotels.styx.routing.handlers
 
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.Environment
 import com.hotels.styx.api.Id.id
 import com.hotels.styx.api._
-import com.hotels.styx.api.service.BackendService
+import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.client.{OriginStatsFactory, OriginsInventory}
 import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig

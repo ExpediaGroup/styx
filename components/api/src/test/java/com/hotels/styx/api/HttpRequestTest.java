@@ -16,7 +16,6 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.api.cookies.RequestCookie;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
@@ -34,12 +33,12 @@ import static com.hotels.styx.api.HttpRequest.patch;
 import static com.hotels.styx.api.HttpRequest.post;
 import static com.hotels.styx.api.HttpRequest.put;
 import static com.hotels.styx.api.Url.Builder.url;
-import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
-import static com.hotels.styx.api.messages.HttpMethod.DELETE;
-import static com.hotels.styx.api.messages.HttpMethod.GET;
-import static com.hotels.styx.api.messages.HttpMethod.POST;
-import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_0;
-import static com.hotels.styx.api.messages.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
+import static com.hotels.styx.api.HttpMethod.DELETE;
+import static com.hotels.styx.api.HttpMethod.GET;
+import static com.hotels.styx.api.HttpMethod.POST;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;

@@ -16,7 +16,7 @@
 package com.hotels.styx.api.configuration;
 
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.client.ActiveOrigins;
+import com.hotels.styx.api.extension.ActiveOrigins;
 
 /**
  * A generic factory that can be implemented in order to facilitate creating objects whose type is not known

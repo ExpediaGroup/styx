@@ -17,7 +17,7 @@ package com.hotels.styx.metrics.reporting.jmx;
 
 import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
-import com.hotels.styx.api.service.spi.StyxService;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 
 import java.util.concurrent.CompletableFuture;
 

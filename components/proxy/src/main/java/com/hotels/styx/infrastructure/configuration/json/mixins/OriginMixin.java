@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Jackson annotations for {@link com.hotels.styx.api.client.Origin}.
+ * Jackson annotations for {@link com.hotels.styx.api.extension.Origin}.
  */
 public abstract class OriginMixin {
 

@@ -16,13 +16,13 @@
 package com.hotels.styx.infrastructure;
 
 import com.hotels.styx.api.Identifiable;
-import com.hotels.styx.api.service.spi.Registry;
-import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.api.extension.service.BackendService;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;

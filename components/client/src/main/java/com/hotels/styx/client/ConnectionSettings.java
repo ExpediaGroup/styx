@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.service.TlsSettings;
+import com.hotels.styx.api.extension.service.TlsSettings;
 
 /**
  * Connection configuration.

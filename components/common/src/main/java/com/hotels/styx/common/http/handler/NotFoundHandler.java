@@ -20,7 +20,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 
-import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**

@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Jackson annotations for {@link import com.hotels.styx.api.service.Certificate}.
+ * Jackson annotations for {@link import Certificate}.
  */
 public abstract class CertificateMixin {
     @JsonCreator

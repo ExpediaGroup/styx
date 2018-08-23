@@ -22,7 +22,7 @@ import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.HttpHandlerAdapter
 import com.hotels.styx.routing.config.{HttpHandlerFactory, RouteHandlerConfig, RouteHandlerDefinition, RouteHandlerFactory}
 import com.hotels.styx.server.HttpInterceptorContext
-import com.hotels.styx.api.messages.HttpResponseStatus.{BAD_GATEWAY, OK}
+import com.hotels.styx.api.HttpResponseStatus.{BAD_GATEWAY, OK}
 import org.mockito.Matchers.{any, eq => meq}
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.mock.MockitoSugar

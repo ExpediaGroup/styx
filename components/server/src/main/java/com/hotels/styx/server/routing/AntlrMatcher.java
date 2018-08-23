@@ -16,7 +16,7 @@
 package com.hotels.styx.server.routing;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.cookies.RequestCookie;
+import com.hotels.styx.api.RequestCookie;
 import com.hotels.styx.server.routing.antlr.AntlrConditionParser;
 
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;

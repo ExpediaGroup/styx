@@ -34,7 +34,7 @@ import java.util.Optional;
 
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;

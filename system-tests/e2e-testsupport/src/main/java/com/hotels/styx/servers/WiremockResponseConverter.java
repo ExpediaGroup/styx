@@ -19,7 +19,7 @@ import com.github.tomakehurst.wiremock.http.Response;
 import com.hotels.styx.api.HttpHeaders;
 import com.hotels.styx.api.FullHttpResponse;
 
-import static com.hotels.styx.api.messages.HttpResponseStatus.statusWithCode;
+import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
 
 final class WiremockResponseConverter {
 

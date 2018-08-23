@@ -21,7 +21,7 @@ import com.hotels.styx.api.Announcer;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.Connection;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.HttpRequestOperationFactory;
 
 import io.netty.channel.Channel;

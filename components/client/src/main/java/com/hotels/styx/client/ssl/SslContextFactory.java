@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.client.ssl;
 
-import com.hotels.styx.api.service.Certificate;
-import com.hotels.styx.api.service.TlsSettings;
+import com.hotels.styx.api.extension.service.Certificate;
+import com.hotels.styx.api.extension.service.TlsSettings;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;

@@ -36,13 +36,12 @@ import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, urlMatching}
 import com.hotels.styx._
 import com.hotels.styx.{BackendServicesRegistrySupplier, StyxClientSupplier, StyxConfiguration, StyxServerSupport}
 import com.hotels.styx.api.HttpHeaderNames.HOST
-import com.hotels.styx.api.HttpInterceptor.{Chain}
+import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.HttpResponse.response
-import com.hotels.styx.api.messages.HttpResponseStatus
-import com.hotels.styx.api._
-import com.hotels.styx.api.messages.HttpResponseStatus.{BAD_GATEWAY, INTERNAL_SERVER_ERROR, OK}
-import com.hotels.styx.api.service.BackendService
+import com.hotels.styx.api.{HttpResponseStatus, _}
+import com.hotels.styx.api.HttpResponseStatus.{BAD_GATEWAY, INTERNAL_SERVER_ERROR, OK}
+import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.support.ImplicitStyxConversions
 import com.hotels.styx.support.backends.FakeHttpServer

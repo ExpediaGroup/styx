@@ -18,7 +18,7 @@ package com.hotels.styx.server.netty.connectors;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
-import com.hotels.styx.api.messages.HttpResponseStatus;
+import com.hotels.styx.api.HttpResponseStatus;
 import org.slf4j.Logger;
 
 import java.util.List;

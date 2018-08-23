@@ -17,6 +17,7 @@ package com.hotels.styx.server.netty.codec;
 
 import com.google.common.base.Strings;
 import com.hotels.styx.api.HttpHeader;
+import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.UniqueIdSupplier;
@@ -50,7 +51,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
-import static com.hotels.styx.api.cookies.RequestCookie.requestCookie;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.server.UniqueIdSuppliers.fixedUniqueIdSupplier;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpMessageToBytes;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequest;
@@ -121,7 +122,7 @@ public class NettyToStyxRequestDecoderTest {
 
         assertThat(styxRequest.id().toString(), is("1"));
         assertThat(styxRequest.url().encodedUri(), is(originalRequest.getUri()));
-        assertThat(styxRequest.method(), is(com.hotels.styx.api.messages.HttpMethod.GET));
+        assertThat(styxRequest.method(), is(HttpMethod.GET));
         assertThatHttpHeadersAreSame(styxRequest.headers(), originalRequestHeaders);
     }
 
@@ -262,7 +263,7 @@ public class NettyToStyxRequestDecoderTest {
                 .build();
 
         com.hotels.styx.api.HttpRequest expected = new com.hotels.styx.api.HttpRequest.Builder(
-                com.hotels.styx.api.messages.HttpMethod.GET, "http://foo.com/")
+                HttpMethod.GET, "http://foo.com/")
                 .cookies(
                         requestCookie("ABC01", "\"1\""),
                         requestCookie("ABC02", "1"),
@@ -287,7 +288,7 @@ public class NettyToStyxRequestDecoderTest {
                 .build();
 
         com.hotels.styx.api.HttpRequest expected = new com.hotels.styx.api.HttpRequest.Builder(
-                com.hotels.styx.api.messages.HttpMethod.GET, "http://foo.com/")
+                HttpMethod.GET, "http://foo.com/")
                 .cookies(
                         requestCookie("ABC01", "\"1\""),
                         requestCookie("ABC02", "1"),

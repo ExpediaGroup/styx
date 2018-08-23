@@ -16,12 +16,12 @@
 package com.hotels.styx.client;
 
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.applications.OriginStats;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.support.HostAndPorts.localhost;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.common.HostAndPorts.localhost;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;

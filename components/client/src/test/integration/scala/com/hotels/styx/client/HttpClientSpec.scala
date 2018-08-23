@@ -19,12 +19,12 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.client.Origin._
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
-import com.hotels.styx.api.client.{ActiveOrigins, Origin}
+import com.hotels.styx.api.extension.Origin._
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
+import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
 import com.hotels.styx.api.exceptions.ResponseTimeoutException
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
-import com.hotels.styx.api.service.BackendService
+import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient._
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy

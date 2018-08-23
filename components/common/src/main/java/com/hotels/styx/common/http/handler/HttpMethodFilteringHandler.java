@@ -21,12 +21,12 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
-import com.hotels.styx.api.messages.HttpMethod;
+import com.hotels.styx.api.HttpMethod;
 
 import java.nio.charset.StandardCharsets;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hotels.styx.api.messages.HttpResponseStatus.METHOD_NOT_ALLOWED;
+import static com.hotels.styx.api.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static java.lang.String.format;
 
 /**

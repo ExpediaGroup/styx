@@ -31,8 +31,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
-import static com.hotels.styx.api.messages.HttpMethod.GET;
-import static com.hotels.styx.api.support.HostAndPorts.freePort;
+import static com.hotels.styx.api.HttpMethod.GET;
+import static com.hotels.styx.common.HostAndPorts.freePort;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.server.HttpServers.createHttpServer;
 import static java.nio.charset.StandardCharsets.UTF_8;

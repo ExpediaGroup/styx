@@ -16,7 +16,7 @@
 package com.hotels.styx.client.retry;
 
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.support.api.SimpleEnvironment;

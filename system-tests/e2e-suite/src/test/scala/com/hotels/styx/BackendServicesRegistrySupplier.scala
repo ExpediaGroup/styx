@@ -15,7 +15,7 @@
  */
 package com.hotels.styx
 
-import com.hotels.styx.api.service.BackendService
+import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.infrastructure.MemoryBackedRegistry
 import com.hotels.styx.support.configuration.StyxBackend
 

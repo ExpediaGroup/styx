@@ -18,13 +18,13 @@ package com.hotels.styx.client.netty.connectionpool;
 import com.google.common.base.Objects;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
-import com.hotels.styx.api.service.ConnectionPoolSettings;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import rx.Observable;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.hotels.styx.api.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
+import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static rx.Observable.just;
 
 public class StubConnectionPool implements ConnectionPool, Comparable<ConnectionPool> {
