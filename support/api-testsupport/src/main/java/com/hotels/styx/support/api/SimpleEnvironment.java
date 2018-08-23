@@ -18,7 +18,7 @@ package com.hotels.styx.support.api;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 
 import static com.google.common.base.Objects.firstNonNull;

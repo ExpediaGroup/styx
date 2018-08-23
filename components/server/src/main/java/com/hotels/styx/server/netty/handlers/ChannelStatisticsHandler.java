@@ -17,7 +17,7 @@ package com.hotels.styx.server.netty.handlers;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Histogram;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.ChannelDuplexHandler;

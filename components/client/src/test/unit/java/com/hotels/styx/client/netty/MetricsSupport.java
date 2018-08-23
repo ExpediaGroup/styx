@@ -15,21 +15,15 @@
  */
 package com.hotels.styx.client.netty;
 
-import com.codahale.metrics.Counter;
 import com.codahale.metrics.Counting;
-import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricFilter;
 import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

@@ -19,7 +19,7 @@ import com.codahale.metrics.Meter;
 import com.hotels.styx.api.FullHttpClient;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.common.SimpleCache;
 import io.netty.buffer.ByteBuf;
 import rx.Observer;

@@ -20,7 +20,7 @@ import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
 
 import static com.google.common.base.Preconditions.checkNotNull;

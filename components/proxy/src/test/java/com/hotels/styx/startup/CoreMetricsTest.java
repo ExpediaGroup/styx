@@ -17,7 +17,7 @@ package com.hotels.styx.startup;
 
 import com.codahale.metrics.Gauge;
 import com.hotels.styx.Version;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import org.testng.annotations.Test;
 

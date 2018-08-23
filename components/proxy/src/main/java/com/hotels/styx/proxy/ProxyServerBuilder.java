@@ -20,7 +20,7 @@ import com.codahale.metrics.health.HealthCheck;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.proxy.healthchecks.HealthCheckTimestamp;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.netty.NettyServerBuilderSpec;

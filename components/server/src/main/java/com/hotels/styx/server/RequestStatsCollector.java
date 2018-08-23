@@ -18,7 +18,7 @@ package com.hotels.styx.server;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 
 import java.util.HashMap;
 import java.util.Map;

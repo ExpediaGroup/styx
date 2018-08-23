@@ -18,6 +18,7 @@ package com.hotels.styx.api.metrics;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistryListener;
+import com.hotels.styx.api.MetricRegistry;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.metrics.ScopedMetricRegistry.scope;
