@@ -5,8 +5,6 @@
 
 **Implemented enhancements:**
 
-- Config validator: Support for MAP types [\#143](https://github.com/HotelsDotCom/styx/issues/143)
-- Config validator: Improve field type detection [\#142](https://github.com/HotelsDotCom/styx/issues/142)
 - Admin page shows health check configuration even when it is absent [\#122](https://github.com/HotelsDotCom/styx/issues/122)
 
 **Fixed bugs:**
