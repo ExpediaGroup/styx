@@ -23,7 +23,7 @@ Styx additional capabilities:
 - Origin health checking
 - Retry mechanisms
 - Connection pooling
-- Admin dashboard (inspired and based on [Hystix Dashboard](https://github.com/Netflix/Hystrix/wiki/Dashboard))
+- Admin dashboard (inspired and based on [Hystrix Dashboard](https://github.com/Netflix/Hystrix/wiki/Dashboard))
 - Performance and system metrics collection and reporting (Graphite compatible)
 
 Most additional features can be *extended* via the Java Service Provider Interface (SPI) model.
