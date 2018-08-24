@@ -22,8 +22,8 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A HTTP router route which proxies to Styx backend application.
@@ -32,7 +32,7 @@ public final class ProxyToBackendRoute implements HttpHandler {
     private final HttpClient client;
 
     private ProxyToBackendRoute(HttpClient client) {
-        this.client = checkNotNull(client);
+        this.client = requireNonNull(client);
     }
 
     public static ProxyToBackendRoute proxyToBackend(HttpClient client) {

@@ -29,10 +29,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.StartupConfig.defaultStartupConfig;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 
@@ -62,8 +62,8 @@ public final class StyxConfig implements Configuration {
     }
 
     public StyxConfig(StartupConfig startupConfig, Configuration configuration) {
-        this.startupConfig = checkNotNull(startupConfig);
-        this.configuration = checkNotNull(configuration);
+        this.startupConfig = requireNonNull(startupConfig);
+        this.configuration = requireNonNull(configuration);
         this.adminServerConfig = get("admin", AdminServerConfig.class).orElseGet(AdminServerConfig::new);
         this.proxyServerConfig = get("proxy", ProxyServerConfig.class).orElseGet(ProxyServerConfig::new);
 

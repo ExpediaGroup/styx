@@ -22,8 +22,8 @@ import org.HdrHistogram.Histogram;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.System.currentTimeMillis;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -215,7 +215,7 @@ public final class SlidingWindowHistogram {
         }
 
         public Builder clock(Clock clock) {
-            this.clock = checkNotNull(clock);
+            this.clock = requireNonNull(clock);
             return this;
         }
 

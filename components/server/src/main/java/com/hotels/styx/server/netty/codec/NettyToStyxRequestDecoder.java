@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.Iterables.size;
 import static com.hotels.styx.api.HttpHeaderNames.EXPECT;
@@ -55,6 +54,7 @@ import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.server.UniqueIdSuppliers.UUID_VERSION_ONE_SUPPLIER;
 import static com.hotels.styx.server.netty.codec.UnwiseCharsEncoder.IGNORE;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.StreamSupport.stream;
 
 /**
@@ -278,7 +278,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
         private UnwiseCharsEncoder unwiseCharEncoder = IGNORE;
 
         public Builder uniqueIdSupplier(UniqueIdSupplier uniqueIdSupplier) {
-            this.uniqueIdSupplier = checkNotNull(uniqueIdSupplier);
+            this.uniqueIdSupplier = requireNonNull(uniqueIdSupplier);
             return this;
         }
 
@@ -288,7 +288,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
         }
 
         public Builder unwiseCharEncoder(UnwiseCharsEncoder unwiseCharEncoder) {
-            this.unwiseCharEncoder = checkNotNull(unwiseCharEncoder);
+            this.unwiseCharEncoder = requireNonNull(unwiseCharEncoder);
             return this;
         }
 

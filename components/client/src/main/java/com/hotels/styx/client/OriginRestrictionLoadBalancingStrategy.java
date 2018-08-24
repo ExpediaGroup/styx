@@ -29,7 +29,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -54,8 +54,8 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancer {
     @VisibleForTesting
     OriginRestrictionLoadBalancingStrategy(ActiveOrigins activeOrigins, LoadBalancer delegate, Random rng) {
         this.activeOrigins = activeOrigins;
-        this.delegate = checkNotNull(delegate);
-        this.rng = checkNotNull(rng);
+        this.delegate = requireNonNull(delegate);
+        this.rng = requireNonNull(rng);
     }
 
     @Override

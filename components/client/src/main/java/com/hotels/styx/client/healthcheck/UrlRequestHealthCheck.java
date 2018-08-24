@@ -24,12 +24,12 @@ import com.hotels.styx.common.SimpleCache;
 import io.netty.buffer.ByteBuf;
 import rx.Observer;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
 import static io.netty.util.ReferenceCountUtil.release;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Health-check that works by making a request to a URL and ensuring that it gets an HTTP 200 OK code back.
@@ -48,7 +48,7 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
      */
     public UrlRequestHealthCheck(String healthCheckUri, FullHttpClient client, MetricRegistry metricRegistry) {
         this.healthCheckUri = uriWithInitialSlash(healthCheckUri);
-        this.client = checkNotNull(client);
+        this.client = requireNonNull(client);
         this.meterCache = new SimpleCache<>(origin -> metricRegistry.meter("origins.healthcheck.failure." + origin.applicationId()));
     }
 

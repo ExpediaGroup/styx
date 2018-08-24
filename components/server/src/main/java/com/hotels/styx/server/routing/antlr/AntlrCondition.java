@@ -18,7 +18,8 @@ package com.hotels.styx.server.routing.antlr;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.server.routing.Condition;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
+
 
 /**
  * ANTLR based condition.
@@ -27,7 +28,7 @@ class AntlrCondition implements Condition {
     private final Expression<Boolean> expression;
 
     AntlrCondition(Expression<Boolean> expression) {
-        this.expression = checkNotNull(expression);
+        this.expression = requireNonNull(expression);
     }
 
     @Override

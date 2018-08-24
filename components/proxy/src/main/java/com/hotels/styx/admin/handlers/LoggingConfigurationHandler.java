@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
@@ -35,6 +34,7 @@ import static com.google.common.net.MediaType.XML_UTF_8;
 import static com.hotels.styx.api.FullHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 import com.hotels.styx.api.HttpRequest;
@@ -49,7 +49,7 @@ public class LoggingConfigurationHandler implements HttpHandler {
     private final Supplier<Content> contentSupplier;
 
     public LoggingConfigurationHandler(Resource logConfigLocation) {
-        this.logConfigLocation = checkNotNull(logConfigLocation);
+        this.logConfigLocation = requireNonNull(logConfigLocation);
         this.contentSupplier = memoizeWithExpiration(this::loadContent, 1, SECONDS)::get;
     }
 

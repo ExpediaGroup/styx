@@ -17,7 +17,8 @@ package com.hotels.styx.api;
 
 import com.google.common.base.Objects;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
+
 
 /**
  * An identifier.
@@ -28,7 +29,7 @@ public final class Id {
     private final String value;
 
     private Id(String value) {
-        this.value = checkNotNull(value);
+        this.value = requireNonNull(value);
     }
 
     /**

@@ -27,9 +27,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.hotels.styx.common.io.ResourceFactory.newResource;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Https Connector configuration.
@@ -153,7 +153,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
         }
 
         public Builder sslProvider(String sslProvider) {
-            this.sslProvider = checkNotNull(sslProvider);
+            this.sslProvider = requireNonNull(sslProvider);
             return this;
         }
 
@@ -168,7 +168,7 @@ public final class HttpsConnectorConfig extends HttpConnectorConfig {
         }
 
         public Builder cipherSuites(List<String> cipherSuites) {
-            this.cipherSuites = ImmutableList.copyOf(checkNotNull(cipherSuites));
+            this.cipherSuites = ImmutableList.copyOf(requireNonNull(cipherSuites));
             return this;
         }
 

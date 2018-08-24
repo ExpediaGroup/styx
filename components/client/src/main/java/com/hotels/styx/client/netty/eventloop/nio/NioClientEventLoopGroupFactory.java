@@ -22,7 +22,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
+
 
 /**
  * A factory for creating non-blocking-I/O-based client event loops.
@@ -38,8 +39,8 @@ public class NioClientEventLoopGroupFactory implements ClientEventLoopFactory {
      * @param clientWorkerThreadsCount number of client worker threads
      */
     public NioClientEventLoopGroupFactory(String name, int clientWorkerThreadsCount) {
-        this.name = checkNotNull(name);
-        this.clientWorkerThreadsCount = checkNotNull(clientWorkerThreadsCount);
+        this.name = requireNonNull(name);
+        this.clientWorkerThreadsCount = requireNonNull(clientWorkerThreadsCount);
     }
 
     @Override

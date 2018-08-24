@@ -19,7 +19,8 @@ import com.hotels.styx.server.ServerEventLoopFactory;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
+
 
 /**
  * Static utility methods pertaining to {@code ServerEventLoopFactory} instances.
@@ -33,7 +34,7 @@ public final class ServerEventLoopFactories {
      * call to {@code newBossEventLoopGroup}, {@code newWorkerEventLoopGroup} and returns that value on subsequent calls.
      */
     public static ServerEventLoopFactory memoize(ServerEventLoopFactory serverEventLoopFactory) {
-        return new MemoizingServerEventLoopFactory(checkNotNull(serverEventLoopFactory));
+        return new MemoizingServerEventLoopFactory(requireNonNull(serverEventLoopFactory));
     }
 
     private static class MemoizingServerEventLoopFactory implements ServerEventLoopFactory {

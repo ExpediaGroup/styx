@@ -28,10 +28,10 @@ import java.util.Optional;
 
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -121,7 +121,7 @@ public class PathTrie<T> {
      */
     public void put(String path, T value) {
         checkArgument(!isNullOrEmpty(path));
-        checkNotNull(value);
+        requireNonNull(value);
 
         List<String> components = pathToComponents(Paths.get(removeAsterisk(path)));
 

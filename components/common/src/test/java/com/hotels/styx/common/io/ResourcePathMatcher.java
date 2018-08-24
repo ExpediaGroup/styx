@@ -22,13 +22,13 @@ import org.hamcrest.TypeSafeMatcher;
 import java.nio.file.Paths;
 import java.util.Objects;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class ResourcePathMatcher extends TypeSafeMatcher<Resource> {
     private final String path;
 
     private ResourcePathMatcher(String path) {
-        this.path = checkNotNull(path);
+        this.path = requireNonNull(path);
     }
 
     public static ResourcePathMatcher resourceWithPath(String path) {

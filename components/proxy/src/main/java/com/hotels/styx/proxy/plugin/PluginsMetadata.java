@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.common.Pair.pair;
 import static java.util.Objects.requireNonNull;
 
@@ -40,8 +39,8 @@ class PluginsMetadata implements Iterable<SpiExtension> {
 
     PluginsMetadata(@JsonProperty("active") String active,
                     @JsonProperty("all") Map<String, SpiExtension> plugins) {
-        checkNotNull(active, "No active plugin specified");
-        checkNotNull(plugins, "No list of all plugins specified");
+        requireNonNull(active, "No active plugin specified");
+        requireNonNull(plugins, "No list of all plugins specified");
 
         this.activePluginsNames = SPLITTER.splitToList(active);
         this.plugins = plugins;

@@ -33,7 +33,6 @@ import java.util.function.Consumer;
 import java.util.function.LongUnaryOperator;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.BUFFERING;
 import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.BUFFERING_COMPLETED;
 import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.COMPLETED;
@@ -439,7 +438,7 @@ class FlowControllingHttpContentProducer {
         private final ByteBuf chunk;
 
         ContentChunkEvent(ByteBuf chunk) {
-            this.chunk = checkNotNull(chunk);
+            this.chunk = requireNonNull(chunk);
         }
 
         @Override
@@ -462,7 +461,7 @@ class FlowControllingHttpContentProducer {
         private final Subscriber<? super ByteBuf> subscriber;
 
         ContentSubscribedEvent(Subscriber<? super ByteBuf> subscriber) {
-            this.subscriber = checkNotNull(subscriber);
+            this.subscriber = requireNonNull(subscriber);
         }
 
         @Override
@@ -500,7 +499,7 @@ class FlowControllingHttpContentProducer {
         private final Throwable cause;
 
         ChannelInactiveEvent(Throwable cause) {
-            this.cause = checkNotNull(cause);
+            this.cause = requireNonNull(cause);
         }
 
         @Override
@@ -520,7 +519,7 @@ class FlowControllingHttpContentProducer {
         private final Throwable cause;
 
         ChannelExceptionEvent(Throwable cause) {
-            this.cause = checkNotNull(cause);
+            this.cause = requireNonNull(cause);
         }
 
         @Override

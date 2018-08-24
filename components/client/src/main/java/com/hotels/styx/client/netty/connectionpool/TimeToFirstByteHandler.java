@@ -22,8 +22,8 @@ import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.Clocks.systemClock;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -41,8 +41,8 @@ class TimeToFirstByteHandler extends ChannelDuplexHandler {
     }
 
     TimeToFirstByteHandler(TimeToFirstByteListener timeToFirstByteListener, Clock clock) {
-        this.timeToFirstByteListener = checkNotNull(timeToFirstByteListener);
-        this.clock = checkNotNull(clock);
+        this.timeToFirstByteListener = requireNonNull(timeToFirstByteListener);
+        this.clock = requireNonNull(clock);
     }
 
     @Override

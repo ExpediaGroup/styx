@@ -59,11 +59,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;
 import static com.hotels.styx.api.HttpMethod.POST;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
@@ -88,12 +88,12 @@ public class AdminServerBuilder {
     }
 
     public AdminServerBuilder plugins(Iterable<NamedPlugin> plugins) {
-        this.plugins = checkNotNull(plugins);
+        this.plugins = requireNonNull(plugins);
         return this;
     }
 
     public AdminServerBuilder backendServicesRegistry(Registry<BackendService> backendServicesRegistry) {
-        this.backendServicesRegistry = checkNotNull(backendServicesRegistry);
+        this.backendServicesRegistry = requireNonNull(backendServicesRegistry);
         return this;
     }
 

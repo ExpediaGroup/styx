@@ -29,7 +29,6 @@ import java.util.Set;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.extension.Origin.checkThatOriginsAreDistinct;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
@@ -38,6 +37,7 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Represents the configuration of an application (i.e. a backend service) that Styx can proxy to.
@@ -83,13 +83,13 @@ public final class BackendService implements Identifiable {
     }
 
     private BackendService(Builder builder) {
-        this.id = checkNotNull(builder.id, "id");
-        this.path = checkNotNull(builder.path, "path");
-        this.connectionPoolSettings = checkNotNull(builder.connectionPoolSettings);
+        this.id = requireNonNull(builder.id, "id");
+        this.path = requireNonNull(builder.path, "path");
+        this.connectionPoolSettings = requireNonNull(builder.connectionPoolSettings);
         this.origins = ImmutableSet.copyOf(builder.origins);
         this.healthCheckConfig = nullIfDisabled(builder.healthCheckConfig);
-        this.stickySessionConfig = checkNotNull(builder.stickySessionConfig);
-        this.rewrites = checkNotNull(builder.rewrites);
+        this.stickySessionConfig = requireNonNull(builder.stickySessionConfig);
+        this.rewrites = requireNonNull(builder.rewrites);
         this.responseTimeoutMillis = builder.responseTimeoutMillis == 0
                 ? DEFAULT_RESPONSE_TIMEOUT_MILLIS
                 : builder.responseTimeoutMillis;
@@ -238,7 +238,7 @@ public final class BackendService implements Identifiable {
          * @return this builder
          */
         public Builder id(Id id) {
-            this.id = checkNotNull(id);
+            this.id = requireNonNull(id);
             return this;
         }
 
@@ -259,7 +259,7 @@ public final class BackendService implements Identifiable {
          * @return this builder
          */
         public Builder path(String path) {
-            this.path = checkValidPath(checkNotNull(path));
+            this.path = checkValidPath(requireNonNull(path));
             return this;
         }
 
@@ -291,7 +291,7 @@ public final class BackendService implements Identifiable {
          * @return this builder
          */
         public Builder origins(Set<Origin> origins) {
-            this.origins = checkNotNull(origins);
+            this.origins = requireNonNull(origins);
             return this;
         }
 
@@ -360,7 +360,7 @@ public final class BackendService implements Identifiable {
          * @return this builder
          */
         public Builder connectionPoolConfig(ConnectionPoolSettings connectionPoolSettings) {
-            this.connectionPoolSettings = checkNotNull(connectionPoolSettings);
+            this.connectionPoolSettings = requireNonNull(connectionPoolSettings);
             return this;
         }
 
@@ -371,7 +371,7 @@ public final class BackendService implements Identifiable {
          * @return this builder
          */
         public Builder stickySessionConfig(StickySessionConfig stickySessionConfig) {
-            this.stickySessionConfig = checkNotNull(stickySessionConfig);
+            this.stickySessionConfig = requireNonNull(stickySessionConfig);
             return this;
         }
 

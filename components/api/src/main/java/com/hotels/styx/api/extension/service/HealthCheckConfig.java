@@ -22,8 +22,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Configuration for health-checking.
@@ -219,7 +219,7 @@ public final class HealthCheckConfig {
          * @return this builder
          */
         public Builder uri(Optional<String> uri) {
-            this.uri = checkNotNull(uri);
+            this.uri = requireNonNull(uri);
             return this;
         }
 

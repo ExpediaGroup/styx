@@ -20,8 +20,8 @@ import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
 import org.slf4j.Logger;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -36,9 +36,9 @@ public class NettyServerBuilderSpec {
     private final ServerConnectorFactory connectorFactory;
 
     public NettyServerBuilderSpec(String name, ServerEnvironment environment, ServerConnectorFactory connectorFactory) {
-        this.name = checkNotNull(name);
-        this.environment = checkNotNull(environment);
-        this.connectorFactory = checkNotNull(connectorFactory);
+        this.name = requireNonNull(name);
+        this.environment = requireNonNull(environment);
+        this.connectorFactory = requireNonNull(connectorFactory);
     }
 
     public NettyServerBuilderSpec() {

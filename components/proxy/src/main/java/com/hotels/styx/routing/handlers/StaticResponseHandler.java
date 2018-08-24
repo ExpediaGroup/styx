@@ -28,9 +28,9 @@ import com.hotels.styx.routing.config.RouteHandlerFactory;
 
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A HTTP handler for returning a static response.
@@ -65,7 +65,7 @@ public class StaticResponseHandler implements HttpHandler {
      */
     public static class ConfigFactory implements HttpHandlerFactory {
         public HttpHandler build(List<String> parents, RouteHandlerFactory builders, RouteHandlerDefinition configBlock) {
-            checkNotNull(configBlock.config());
+            requireNonNull(configBlock.config());
 
             StaticResponseConfig config = new JsonNodeConfig(configBlock.config())
                     .as(StaticResponseConfig.class);

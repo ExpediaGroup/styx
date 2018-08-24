@@ -37,11 +37,11 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.transform;
 import static com.hotels.styx.admin.dashboard.ResponseCodeSupplier.StatusMetricType.COUNTER;
 import static com.hotels.styx.admin.dashboard.ResponseCodeSupplier.StatusMetricType.METER;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -60,12 +60,12 @@ public class DashboardData {
     private final Registry<BackendService> backendServicesRegistry;
 
     public DashboardData(MetricRegistry metrics, Registry<BackendService> backendServicesRegistry, String serverId, Version version, EventBus eventBus) {
-        this.backendServicesRegistry = checkNotNull(backendServicesRegistry);
+        this.backendServicesRegistry = requireNonNull(backendServicesRegistry);
 
-        this.serverId = checkNotNull(serverId);
-        this.metrics = checkNotNull(metrics);
+        this.serverId = requireNonNull(serverId);
+        this.metrics = requireNonNull(metrics);
         this.version = version.releaseVersion();
-        this.eventBus = checkNotNull(eventBus);
+        this.eventBus = requireNonNull(eventBus);
 
         this.server = new Server();
         this.downstream = new Downstream();

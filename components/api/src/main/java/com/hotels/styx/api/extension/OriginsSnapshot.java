@@ -23,9 +23,9 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -61,7 +61,7 @@ public final class OriginsSnapshot {
                            Collection<RemoteHost> activeOrigins,
                            Collection<RemoteHost> inactiveOrigins,
                            Collection<RemoteHost> disabledOrigins) {
-        this.appId = checkNotNull(appId);
+        this.appId = requireNonNull(appId);
         this.activeOrigins = mapToOrigins(activeOrigins);
         this.inactiveOrigins = mapToOrigins(inactiveOrigins);
         this.disabledOrigins = mapToOrigins(disabledOrigins);

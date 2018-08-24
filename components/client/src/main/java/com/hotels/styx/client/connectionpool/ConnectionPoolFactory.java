@@ -20,7 +20,8 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
+
 
 /**
  * A factory that creates connection pools using the connection pool settings supplied to the constructor.
@@ -33,9 +34,9 @@ public final class ConnectionPoolFactory implements ConnectionPool.Factory {
     private final MetricRegistry metricRegistry;
 
     private ConnectionPoolFactory(Builder builder) {
-        this.connectionFactory = checkNotNull(builder.connectionFactory);
-        this.poolSettings = new ConnectionPoolSettings.Builder(checkNotNull(builder.poolSettings)).build();
-        this.metricRegistry = checkNotNull(builder.metricRegistry);
+        this.connectionFactory = requireNonNull(builder.connectionFactory);
+        this.poolSettings = new ConnectionPoolSettings.Builder(requireNonNull(builder.poolSettings)).build();
+        this.metricRegistry = requireNonNull(builder.metricRegistry);
     }
 
     @Override

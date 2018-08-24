@@ -21,7 +21,7 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 
 public final class HttpStatusMatcher extends TypeSafeMatcher<HttpResponse> {
@@ -32,7 +32,7 @@ public final class HttpStatusMatcher extends TypeSafeMatcher<HttpResponse> {
     private final HttpResponseStatus status;
 
     public HttpStatusMatcher(HttpResponseStatus status) {
-        this.status = checkNotNull(status);
+        this.status = requireNonNull(status);
     }
 
     @Override

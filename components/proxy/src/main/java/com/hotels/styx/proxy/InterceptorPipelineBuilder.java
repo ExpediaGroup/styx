@@ -25,7 +25,7 @@ import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 
@@ -38,9 +38,9 @@ public class InterceptorPipelineBuilder {
     private final HttpHandler handler;
 
     public InterceptorPipelineBuilder(Environment environment, Iterable<NamedPlugin> plugins, HttpHandler handler) {
-        this.environment = checkNotNull(environment);
-        this.plugins = checkNotNull(plugins);
-        this.handler = checkNotNull(handler);
+        this.environment = requireNonNull(environment);
+        this.plugins = requireNonNull(plugins);
+        this.handler = requireNonNull(handler);
     }
 
     public HttpHandler build() {

@@ -25,9 +25,9 @@ import com.hotels.styx.api.HttpMethod;
 
 import java.nio.charset.StandardCharsets;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A handler that checks whether incoming messages have the expected HTTP method. If the method is correct, this handler
@@ -39,8 +39,8 @@ public class HttpMethodFilteringHandler implements HttpHandler {
     private final String errorBody;
 
     public HttpMethodFilteringHandler(HttpMethod method, HttpHandler httpHandler) {
-        this.method = checkNotNull(method);
-        this.httpHandler = checkNotNull(httpHandler);
+        this.method = requireNonNull(method);
+        this.httpHandler = requireNonNull(httpHandler);
         this.errorBody = format("%s. Only [%s] is allowed for this request.", METHOD_NOT_ALLOWED.description(), method);
     }
 

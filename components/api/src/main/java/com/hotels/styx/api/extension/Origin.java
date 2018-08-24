@@ -23,9 +23,9 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -70,10 +70,10 @@ public class Origin implements Comparable<Origin> {
     }
 
     private Origin(Builder builder) {
-        this.host = checkNotNull(builder.host);
+        this.host = requireNonNull(builder.host);
         this.hostAsString = this.host.toString();
-        this.applicationId = checkNotNull(builder.applicationId);
-        this.originId = checkNotNull(builder.originId);
+        this.applicationId = requireNonNull(builder.applicationId);
+        this.originId = requireNonNull(builder.originId);
         this.hashCode = Objects.hash(this.applicationId, this.host, this.originId);
     }
 

@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.function.BiConsumer;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -44,7 +43,7 @@ public class FsmEventProcessor<S> implements EventProcessor {
 
     @Override
     public void submit(Object event) {
-        checkNotNull(event);
+        requireNonNull(event);
 
         try {
             stateMachine.handle(event, loggingPrefix);

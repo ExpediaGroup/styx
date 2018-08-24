@@ -25,8 +25,8 @@ import com.hotels.styx.client.healthcheck.monitors.ScheduledOriginHealthStatusMo
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -49,7 +49,7 @@ public final class OriginHealthStatusMonitorFactory implements OriginHealthStatu
         }
 
         ScheduledExecutorService executorService = newScheduledThreadPool(1, new ThreadFactoryBuilder()
-                .setNameFormat(format("STYX-ORIGINS-MONITOR-%s", checkNotNull(id)))
+                .setNameFormat(format("STYX-ORIGINS-MONITOR-%s", requireNonNull(id)))
                 .setDaemon(true)
                 .build());
 

@@ -16,7 +16,7 @@
 package com.hotels.styx.client.healthcheck;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.concurrent.TimeUnit;
 
@@ -49,7 +49,7 @@ public class Schedule {
     public Schedule(long initialDelay, long period, TimeUnit unit) {
         this.initialDelay = atLeast(initialDelay, 0);
         this.period = atLeast(period, 1);
-        this.unit = checkNotNull(unit);
+        this.unit = requireNonNull(unit);
     }
 
     private static long atLeast(long parameter, long atLeast) {

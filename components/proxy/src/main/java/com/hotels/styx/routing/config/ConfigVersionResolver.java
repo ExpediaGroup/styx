@@ -18,9 +18,9 @@ package com.hotels.styx.routing.config;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.StyxConfig;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.routing.config.ConfigVersionResolver.Version.ROUTING_CONFIG_V1;
 import static com.hotels.styx.routing.config.ConfigVersionResolver.Version.ROUTING_CONFIG_V2;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Works out the Styx configuration version for backwards compatibility purposes.
@@ -37,7 +37,7 @@ public class ConfigVersionResolver {
     };
 
     public ConfigVersionResolver(StyxConfig config) {
-        this.config = checkNotNull(config);
+        this.config = requireNonNull(config);
     }
 
     public Version version() {

@@ -24,10 +24,10 @@ import com.hotels.styx.api.HttpResponse;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static java.util.Objects.requireNonNull;
 
 /**
  * HTTP handler that responds with a static body.
@@ -55,8 +55,8 @@ public class StaticBodyHttpHandler extends BaseHttpHandler {
      * @param charset     character set
      */
     public StaticBodyHttpHandler(MediaType contentType, String body, Charset charset) {
-        this.contentType = checkNotNull(contentType);
-        this.body = checkNotNull(body);
+        this.contentType = requireNonNull(contentType);
+        this.body = requireNonNull(body);
         this.contentLength = body.getBytes(charset).length;
     }
 

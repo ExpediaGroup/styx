@@ -22,8 +22,8 @@ import org.slf4j.Logger;
 import java.time.Duration;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.Clocks.systemClock;
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -61,9 +61,9 @@ public class CachingSupplier<E> implements Supplier<E> {
      */
     @VisibleForTesting
     public CachingSupplier(Supplier<? extends E> sourceSupplier, Duration updateInterval, Clock clock) {
-        this.sourceSupplier = checkNotNull(sourceSupplier);
+        this.sourceSupplier = requireNonNull(sourceSupplier);
         this.updateIntervalMillis = updateInterval.toMillis();
-        this.clock = checkNotNull(clock);
+        this.clock = requireNonNull(clock);
     }
 
     @Override

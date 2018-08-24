@@ -38,10 +38,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static com.hotels.styx.client.connectionpool.ConnectionPoolStatsCounter.NULL_CONNECTION_POOL_STATS;
 import static java.util.Collections.newSetFromMap;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -86,9 +86,9 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
      * @param recordStats            true if stats should be recorded
      */
     public SimpleConnectionPool(Origin origin, ConnectionPoolSettings connectionPoolSettings, Connection.Factory connectionFactory, boolean recordStats) {
-        this.connectionPoolSettings = checkNotNull(connectionPoolSettings);
-        this.origin = checkNotNull(origin);
-        this.connectionFactory = checkNotNull(connectionFactory);
+        this.connectionPoolSettings = requireNonNull(connectionPoolSettings);
+        this.origin = requireNonNull(origin);
+        this.connectionFactory = requireNonNull(connectionFactory);
         this.availableConnections = new ConcurrentLinkedDeque<>();
         this.borrowedConnections = newSetFromMap(new ConcurrentHashMap<>());
         this.waitingSubscribers = new ConcurrentLinkedDeque<>();

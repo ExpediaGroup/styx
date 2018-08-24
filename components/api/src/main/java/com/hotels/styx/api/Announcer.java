@@ -22,7 +22,8 @@ import java.util.EventListener;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
+
 
 /**
  * A listener that propagates events to a list of event listeners that can be added or removed after the Announcer is constructed.
@@ -66,7 +67,7 @@ public class Announcer<T extends EventListener> {
      * @param listener the listener to be added
      */
     public void addListener(T listener) {
-        checkNotNull(listener, "Cannot add a null listener.");
+        requireNonNull(listener, "Cannot add a null listener.");
         listeners.add(listener);
     }
 

@@ -28,10 +28,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpHeader.header;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Locale.US;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 
@@ -168,7 +168,7 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
          * @return this builder
          */
         public Builder add(CharSequence name, String value) {
-            this.nettyHeaders.add(name, checkNotNull(value));
+            this.nettyHeaders.add(name, requireNonNull(value));
             return this;
         }
 
@@ -182,7 +182,7 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
          * @return this builder
          */
         public Builder add(CharSequence name, Object value) {
-            this.nettyHeaders.add(name, checkNotNull(value));
+            this.nettyHeaders.add(name, requireNonNull(value));
             return this;
         }
 
