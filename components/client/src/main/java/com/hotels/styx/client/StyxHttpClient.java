@@ -96,7 +96,6 @@ public final class StyxHttpClient implements HttpClient {
         this.originsRestrictionCookieName = builder.originsRestrictionCookieName;
     }
 
-
     @Override
     public Observable<HttpResponse> sendRequest(HttpRequest request) {
         return sendRequest(rewriteUrl(request), new ArrayList<>(), 0);
@@ -190,7 +189,6 @@ public final class StyxHttpClient implements HttpClient {
         } else {
             return Observable.error(cause);
         }
-
     }
 
     private static final class RetryPolicyContext implements RetryPolicy.Context {
@@ -352,7 +350,6 @@ public final class StyxHttpClient implements HttpClient {
         public Builder stickySessionConfig(StickySessionConfig stickySessionConfig) {
             this.stickySessionConfig = requireNonNull(stickySessionConfig);
             return this;
-
 
         public Builder metricsRegistry(MetricRegistry metricsRegistry) {
             this.metricsRegistry = requireNonNull(metricsRegistry);
