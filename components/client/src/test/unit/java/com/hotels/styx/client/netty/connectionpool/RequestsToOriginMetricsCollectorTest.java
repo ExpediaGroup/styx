@@ -18,7 +18,7 @@ package com.hotels.styx.client.netty.connectionpool;
 import com.codahale.metrics.Timer;
 import java.util.Optional;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.applications.metrics.ApplicationMetrics;

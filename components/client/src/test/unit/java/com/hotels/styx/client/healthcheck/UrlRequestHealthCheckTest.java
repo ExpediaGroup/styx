@@ -19,7 +19,7 @@ import com.hotels.styx.api.FullHttpClient;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.HttpResponseStatus;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState;
 import org.testng.annotations.BeforeMethod;

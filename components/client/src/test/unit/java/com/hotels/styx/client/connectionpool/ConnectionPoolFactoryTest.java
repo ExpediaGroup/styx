@@ -17,7 +17,7 @@ package com.hotels.styx.client.connectionpool;
 
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import org.testng.annotations.Test;
 

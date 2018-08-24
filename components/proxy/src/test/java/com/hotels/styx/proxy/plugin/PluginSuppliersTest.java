@@ -18,7 +18,7 @@ package com.hotels.styx.proxy.plugin;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;

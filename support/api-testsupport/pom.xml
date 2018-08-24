@@ -44,6 +44,10 @@
       <artifactId>wiremock</artifactId>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>com.hotels.styx</groupId>
+      <artifactId>styx-common</artifactId>
+    </dependency>
   </dependencies>
 
 </project>

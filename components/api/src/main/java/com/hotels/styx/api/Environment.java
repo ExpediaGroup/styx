@@ -17,7 +17,6 @@ package com.hotels.styx.api;
 
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.metrics.MetricRegistry;
 
 /**
  * Styx application Environment.

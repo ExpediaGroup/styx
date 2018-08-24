@@ -26,7 +26,7 @@ import com.hotels.styx.api.NoServiceConfiguredException;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.server.HttpErrorStatusListener;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.server.RequestProgressListener;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;

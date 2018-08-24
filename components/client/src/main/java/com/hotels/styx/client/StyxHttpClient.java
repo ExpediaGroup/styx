@@ -27,7 +27,7 @@ import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.RequestCookie;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.HttpResponseStatus;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.RewriteRule;

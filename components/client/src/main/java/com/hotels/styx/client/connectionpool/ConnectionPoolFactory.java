@@ -17,7 +17,7 @@ package com.hotels.styx.client.connectionpool;
 
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 
 import static com.google.common.base.Preconditions.checkNotNull;

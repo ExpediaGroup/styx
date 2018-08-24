@@ -17,7 +17,7 @@ package com.hotels.styx.admin.dashboard;
 
 import com.codahale.metrics.Counting;
 import com.codahale.metrics.MetricFilter;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 
 import java.util.HashMap;
 import java.util.Map;

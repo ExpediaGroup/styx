@@ -23,7 +23,7 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.ScopedMetricRegistry;
 
 import java.util.Map;

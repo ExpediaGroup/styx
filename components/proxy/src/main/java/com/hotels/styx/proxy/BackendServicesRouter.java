@@ -27,7 +27,7 @@ import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
 import com.hotels.styx.api.extension.service.TlsSettings;
