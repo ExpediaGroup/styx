@@ -77,7 +77,7 @@ public final class StyxHttpClient implements HttpClient {
     private final StickySessionConfig stickySessionConfig;
 
     private StyxHttpClient(Builder builder) {
-        this.id = requireNonNull(builder.applicationId);
+        this.id = requireNonNull(builder.backendServiceId);
 
         this.stickySessionConfig = requireNonNull(builder.stickySessionConfig);
 
@@ -107,8 +107,8 @@ public final class StyxHttpClient implements HttpClient {
      *
      * @return a new builder
      */
-    public static Builder newHttpClientBuilder(Id applicationId) {
-        return new Builder(applicationId);
+    public static Builder newHttpClientBuilder(Id backendServiceId) {
+        return new Builder(backendServiceId);
     }
 
     private static boolean isError(HttpResponseStatus status) {
@@ -335,7 +335,7 @@ public final class StyxHttpClient implements HttpClient {
      */
     public static class Builder {
 
-        private final Id applicationId;
+        private final Id backendServiceId;
         private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
         private List<RewriteRule> rewriteRules = emptyList();
         private RetryPolicy retryPolicy = new RetryNTimes(3);
@@ -345,8 +345,8 @@ public final class StyxHttpClient implements HttpClient {
         private String originsRestrictionCookieName;
         private StickySessionConfig stickySessionConfig = stickySessionDisabled();
 
-        public Builder(Id applicationId) {
-            this.applicationId = requireNonNull(applicationId);
+        public Builder(Id backendServiceId) {
+            this.backendServiceId = requireNonNull(backendServiceId);
         }
 
         public Builder stickySessionConfig(StickySessionConfig stickySessionConfig) {
@@ -396,7 +396,6 @@ public final class StyxHttpClient implements HttpClient {
             }
             return new StyxHttpClient(this);
         }
-
 
     }
 }
