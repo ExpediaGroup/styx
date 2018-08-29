@@ -23,7 +23,7 @@ import com.google.common.base.Charsets
 import com.google.common.base.Charsets._
 import com.google.common.net.HostAndPort
 import com.hotels.styx.api.extension.Origin.newOriginBuilder
-import com.hotels.styx.common.HostAndPorts._
+import com.hotels.styx.common.FreePorts._
 import com.hotels.styx.server.HttpServers.createHttpServer
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig, StyxConfig}

@@ -17,14 +17,12 @@ package com.hotels.styx.support
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.google.common.net.HostAndPort
-import com.google.common.net.HostAndPort._
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.Id._
 import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.api.extension.Origin._
-import com.hotels.styx.common.HostAndPorts._
+import com.hotels.styx.common.FreePorts._
 import com.hotels.styx.server.HttpServer
 import com.hotels.styx.server.netty.{NettyServerBuilder, ServerConnector}
 import io.netty.buffer.Unpooled._
@@ -114,7 +112,7 @@ trait NettyOrigins {
     lazy val serverPort = freePort()
     val server = customResponseWebServer(serverPort, customResponseHandler)
 
-    val origin: Origin = newOriginBuilder(fromParts("localhost", serverPort)).id("NettyOrigin").build
+    val origin: Origin = newOriginBuilder("localhost", serverPort).id("NettyOrigin").build
     server.startAsync().awaitRunning()
 
     origin -> server
@@ -124,7 +122,7 @@ trait NettyOrigins {
     lazy val serverPort = freePort()
     val server = customResponseWebServer(serverPort, responseHandler)
 
-    val origin: Origin = newOriginBuilder(HostAndPort.fromParts("localhost", serverPort)).applicationId(id(appId)).id(originId).build
+    val origin: Origin = newOriginBuilder("localhost", serverPort).applicationId(id(appId)).id(originId).build
     server.startAsync().awaitRunning()
 
     origin -> server

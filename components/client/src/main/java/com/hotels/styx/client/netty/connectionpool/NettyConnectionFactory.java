@@ -15,18 +15,17 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.google.common.net.HostAndPort;
+import com.hotels.styx.api.exceptions.OriginUnreachableException;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.service.TlsSettings;
+import com.hotels.styx.api.netty.ClientEventLoopFactory;
+import com.hotels.styx.client.ChannelOptionSetting;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
-import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.netty.ClientEventLoopFactory;
-import com.hotels.styx.api.exceptions.OriginUnreachableException;
-import com.hotels.styx.client.ChannelOptionSetting;
 import com.hotels.styx.client.HttpConfig;
 import com.hotels.styx.client.HttpRequestOperationFactory;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
-import com.hotels.styx.api.extension.service.TlsSettings;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -82,8 +81,7 @@ public class NettyConnectionFactory implements Connection.Factory {
 
     private ChannelFuture openConnection(Origin origin, ConnectionSettings connectionSettings) {
         bootstrap(connectionSettings);
-        HostAndPort host = origin.host();
-        return bootstrap.connect(host.getHostText(), host.getPort());
+        return bootstrap.connect(origin.host(), origin.port());
     }
 
     private synchronized void bootstrap(ConnectionSettings connectionSettings) {

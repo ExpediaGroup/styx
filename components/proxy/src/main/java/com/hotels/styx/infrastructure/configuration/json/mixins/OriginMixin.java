@@ -29,7 +29,7 @@ public abstract class OriginMixin {
     }
 
     @JsonProperty("host")
-    public abstract String hostAsString();
+    public abstract String hostAndPortString();
 
     @JsonProperty("id")
     public abstract String idAsString();

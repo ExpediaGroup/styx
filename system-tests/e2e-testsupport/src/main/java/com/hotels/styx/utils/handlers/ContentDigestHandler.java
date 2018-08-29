@@ -42,7 +42,7 @@ public class ContentDigestHandler extends BaseHttpHandler {
         String requestBody = bodyAsString(request);
 
         String responseBody = format("Response From %s - %s, received content digest: %s",
-                origin.host(),
+                origin.hostAndPortString(),
                 randomUUID(),
                 requestBody.hashCode());
 

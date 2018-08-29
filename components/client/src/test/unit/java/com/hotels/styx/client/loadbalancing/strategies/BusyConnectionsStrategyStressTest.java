@@ -26,18 +26,18 @@ import java.util.List;
 import java.util.Random;
 
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
-import static com.hotels.styx.common.HostAndPorts.localHostAndFreePort ;
+import static com.hotels.styx.common.FreePorts.freePort;
 
 public class BusyConnectionsStrategyStressTest {
-    final Origin ORIGIN_ONE = newOriginBuilder(localHostAndFreePort()).id("one").build();
-    final Origin ORIGIN_TWO = newOriginBuilder(localHostAndFreePort()).id("two").build();
-    final Origin ORIGIN_THREE = newOriginBuilder(localHostAndFreePort()).id("three").build();
-    final Origin ORIGIN_FOUR = newOriginBuilder(localHostAndFreePort()).id("four").build();
-    final Origin ORIGIN_FIVE = newOriginBuilder(localHostAndFreePort()).id("five").build();
-    final Origin ORIGIN_SIX = newOriginBuilder(localHostAndFreePort()).id("six").build();
-    final Origin ORIGIN_SEVEN = newOriginBuilder(localHostAndFreePort()).id("seven").build();
-    final Origin ORIGIN_EIGHT = newOriginBuilder(localHostAndFreePort()).id("eight").build();
-    final Origin ORIGIN_NINE = newOriginBuilder(localHostAndFreePort()).id("nine").build();
+    final Origin ORIGIN_ONE = newOriginBuilder("localhost", freePort()).id("one").build();
+    final Origin ORIGIN_TWO = newOriginBuilder("localhost", freePort()).id("two").build();
+    final Origin ORIGIN_THREE = newOriginBuilder("localhost", freePort()).id("three").build();
+    final Origin ORIGIN_FOUR = newOriginBuilder("localhost", freePort()).id("four").build();
+    final Origin ORIGIN_FIVE = newOriginBuilder("localhost", freePort()).id("five").build();
+    final Origin ORIGIN_SIX = newOriginBuilder("localhost", freePort()).id("six").build();
+    final Origin ORIGIN_SEVEN = newOriginBuilder("localhost", freePort()).id("seven").build();
+    final Origin ORIGIN_EIGHT = newOriginBuilder("localhost", freePort()).id("eight").build();
+    final Origin ORIGIN_NINE = newOriginBuilder("localhost", freePort()).id("nine").build();
 
     CodaHaleMetricRegistry metrics;
 

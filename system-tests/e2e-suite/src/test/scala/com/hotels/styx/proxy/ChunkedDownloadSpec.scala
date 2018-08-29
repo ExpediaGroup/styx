@@ -111,11 +111,11 @@ class ChunkedDownloadSpec extends FunSpec
   }
 
   def noBusyConnectionsToOrigin(origin: Origin) = {
-    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.host.getPort}.connectionspool.busy-connections").get == 0
+    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.port}.connectionspool.busy-connections").get == 0
   }
 
   def noAvailableConnectionsInPool(origin: Origin) = {
-    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.host.getPort}.connectionspool.available-connections").get == 0
+    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.port}.connectionspool.available-connections").get == 0
   }
 
   def ensureResponseDidNotArrive(client: HttpTestClient) = {

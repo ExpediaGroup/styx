@@ -43,11 +43,11 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static com.google.common.net.HostAndPort.fromParts;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
-import static com.hotels.styx.common.HostAndPorts.localhost;
 import static com.hotels.styx.client.netty.connectionpool.NettyToStyxResponsePropagator.toStyxResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static io.netty.buffer.Unpooled.copiedBuffer;
@@ -72,7 +72,7 @@ public class NettyToStyxResponsePropagatorTest {
     private DefaultHttpResponse httpResponseHeaders = new DefaultHttpResponse(HTTP_1_1, OK);
     private DefaultHttpContent httpContentOne = new DefaultHttpContent(firstContentChunk);
     private DefaultHttpContent httpContentTwo = new DefaultHttpContent(secondContentChunk);
-    static final Origin SOME_ORIGIN = newOriginBuilder(localhost(12345)).applicationId(GENERIC_APP).build();
+    static final Origin SOME_ORIGIN = newOriginBuilder("localhost", 12345).applicationId(GENERIC_APP).build();
 
 
     @BeforeMethod

@@ -79,7 +79,7 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
 
     private FullHttpRequest newHealthCheckRequestFor(Origin origin) {
         return FullHttpRequest.get(healthCheckUri)
-                .header(HOST, origin.hostAsString())
+                .header(HOST, origin.hostAndPortString())
                 .build();
     }
 

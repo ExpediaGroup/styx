@@ -33,5 +33,5 @@ object Origin {
   val default = com.hotels.styx.api.extension.Origin.newOriginBuilder("localhost", 0).build()
 
   def fromJava(from: com.hotels.styx.api.extension.Origin): Origin =
-    Origin(from.host().getHostText, from.host().getPort, from.id().toString, from.applicationId().toString)
+    Origin(from.host, from.port, from.id().toString, from.applicationId().toString)
 }

@@ -55,7 +55,7 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
 
     @Override
     public int compareTo(ConnectionPool other) {
-        return this.connection.getOrigin().host().toString().compareTo(other.getOrigin().host().toString());
+        return this.connection.getOrigin().hostAndPortString().compareTo(other.getOrigin().hostAndPortString());
     }
 
     @Override

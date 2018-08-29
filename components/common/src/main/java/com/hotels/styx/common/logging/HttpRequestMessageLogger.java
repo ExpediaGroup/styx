@@ -68,7 +68,7 @@ public class HttpRequestMessageLogger {
                 .add("method", request.method())
                 .add("secure", request.isSecure())
                 .add("uri", request.url())
-                .add("origin", origin != null ? origin.hostAsString() : "N/A");
+                .add("origin", origin != null ? origin.hostAndPortString() : "N/A");
 
         if (longFormatEnabled) {
             info.add("headers", request.headers());

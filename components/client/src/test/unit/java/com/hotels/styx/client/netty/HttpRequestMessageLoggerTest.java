@@ -69,7 +69,7 @@ public class HttpRequestMessageLoggerTest {
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false).logRequest(styxRequest, origin);
 
         assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, request=\\{method=GET, secure=false, uri=%s, origin=\"%s\"\\}",
-                styxRequest.id(), styxRequest.url(), origin.hostAsString()))));
+                styxRequest.id(), styxRequest.url(), origin.hostAndPortString()))));
     }
 
     @Test
@@ -79,7 +79,7 @@ public class HttpRequestMessageLoggerTest {
 
         assertThat(log.lastMessage(), is(loggingEvent(INFO,
                 format("requestId=%s, request=\\{method=GET, secure=false, uri=%s, origin=\"%s\", headers=\\[Host=www.hotels.com\\]\\}",
-                        styxRequest.id(), styxRequest.url(), origin.hostAsString()))));
+                        styxRequest.id(), styxRequest.url(), origin.hostAndPortString()))));
     }
 
     @Test
