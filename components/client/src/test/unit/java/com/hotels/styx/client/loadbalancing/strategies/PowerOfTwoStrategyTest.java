@@ -30,7 +30,7 @@ import java.util.Random;
 
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
-import static com.hotels.styx.common.HostAndPorts.freePort;
+import static com.hotels.styx.common.FreePorts.freePort;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;

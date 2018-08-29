@@ -15,29 +15,16 @@
  */
 package com.hotels.styx.common;
 
-import com.google.common.net.HostAndPort;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 
 import static com.google.common.base.Throwables.propagate;
-import static com.google.common.net.HostAndPort.fromParts;
 
 /**
- * Utility class to create a {@link com.google.common.net.HostAndPort}.
+ * Utility class to find free ports.
  */
-public final class HostAndPorts {
-    private HostAndPorts() {
-    }
-
-    /**
-     * Creates a local {@link com.google.common.net.HostAndPort} from the specified {@code port}.
-     *
-     * @param port a port number from [0..65535]
-     * @return a localhost with the specified port
-     */
-    public static HostAndPort localhost(int port) {
-        return fromParts("localhost", port);
+public final class FreePorts {
+    private FreePorts() {
     }
 
     /**

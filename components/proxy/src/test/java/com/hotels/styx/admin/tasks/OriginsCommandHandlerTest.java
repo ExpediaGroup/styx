@@ -39,7 +39,7 @@ import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
-import static com.hotels.styx.common.HostAndPorts.freePort;
+import static com.hotels.styx.common.FreePorts.freePort;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
 import static com.hotels.styx.support.api.matchers.HttpResponseStatusMatcher.hasStatus;

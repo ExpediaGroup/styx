@@ -41,7 +41,7 @@ import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
-import static com.hotels.styx.common.HostAndPorts.freePort;
+import static com.hotels.styx.common.FreePorts.freePort;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;

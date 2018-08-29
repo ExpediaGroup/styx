@@ -22,7 +22,7 @@ import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.{HttpResponse, StyxInternalObservables}
 import com.hotels.styx.api.HttpResponse._
 import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
-import com.hotels.styx.common.HostAndPorts._
+import com.hotels.styx.common.FreePorts._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{MockServer, StyxProxySpec}
 import io.netty.buffer.{ByteBuf, Unpooled}

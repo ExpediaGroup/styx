@@ -41,8 +41,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
-import static com.hotels.styx.common.HostAndPorts.freePort;
-import static com.hotels.styx.common.HostAndPorts.localhost;
+import static com.hotels.styx.common.FreePorts.freePort;
 import static com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -78,7 +77,7 @@ public class NettyConnectionFactoryTest {
 
     @BeforeMethod
     public void setUp() {
-        healthyOrigin = newOriginBuilder(localhost(server.port())).build();
+        healthyOrigin = newOriginBuilder("localhost", server.port()).build();
         deadOrigin = newOriginBuilder("localhost", freePort()).build();
     }
 

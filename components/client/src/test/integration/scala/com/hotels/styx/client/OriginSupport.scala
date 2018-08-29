@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.api.extension.Origin._
-import com.hotels.styx.common.HostAndPorts._
+import com.hotels.styx.common.FreePorts._
 import com.hotels.styx.support.server.FakeHttpServer
 
 trait OriginSupport {

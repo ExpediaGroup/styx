@@ -33,7 +33,7 @@ import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.retry.RetryNTimes
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
-import com.hotels.styx.common.HostAndPorts.freePort
+import com.hotels.styx.common.FreePorts.freePort
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._

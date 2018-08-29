@@ -24,7 +24,7 @@ import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.Id._
 import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.api.extension.Origin._
-import com.hotels.styx.common.HostAndPorts._
+import com.hotels.styx.common.FreePorts._
 import com.hotels.styx.server.HttpServer
 import com.hotels.styx.server.netty.{NettyServerBuilder, ServerConnector}
 import io.netty.buffer.Unpooled._

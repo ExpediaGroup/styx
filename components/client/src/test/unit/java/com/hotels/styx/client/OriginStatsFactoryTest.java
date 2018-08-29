@@ -15,12 +15,11 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.applications.OriginStats;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.common.HostAndPorts.localhost;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -45,6 +44,6 @@ public class OriginStatsFactoryTest {
     }
 
     private static Origin newOrigin(int port) {
-        return newOriginBuilder(localhost(port)).build();
+        return newOriginBuilder("localhost", port).build();
     }
 }
