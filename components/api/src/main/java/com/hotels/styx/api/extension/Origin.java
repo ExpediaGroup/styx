@@ -108,8 +108,8 @@ public class Origin implements Comparable<Origin> {
      *
      * @return hostname and port
      */
-    public HostAndPort host() {
-        return this.host;
+    public String host() {
+        return this.host.getHostText();
     }
 
     public int port() {
