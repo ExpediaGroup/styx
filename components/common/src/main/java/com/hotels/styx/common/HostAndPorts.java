@@ -31,15 +31,6 @@ public final class HostAndPorts {
     }
 
     /**
-     * Gets localhost and a free port.
-     *
-     * @return localhost and a free port
-     */
-    public static HostAndPort localHostAndFreePort() {
-        return HostAndPort.fromParts("localhost", freePort());
-    }
-
-    /**
      * Creates a local {@link com.google.common.net.HostAndPort} from the specified {@code port}.
      *
      * @param port a port number from [0..65535]

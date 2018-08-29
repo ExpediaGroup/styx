@@ -24,17 +24,16 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.extension.Origin._
-import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
 import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
-import com.hotels.styx.api.extension.service.BackendService
-import com.hotels.styx.common.HostAndPorts.localHostAndFreePort
+import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.retry.RetryNTimes
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
+import com.hotels.styx.common.HostAndPorts.freePort
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
@@ -64,9 +63,9 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
   var originThree: Origin = _
   var originFour: Origin = _
 
-  val unhealthyOriginOne: Origin = newOriginBuilder(localHostAndFreePort()).id("UNHEALTHY_ORIGIN_ONE").build
-  val unhealthyOriginTwo: Origin = newOriginBuilder(localHostAndFreePort()).id("UNHEALTHY_ORIGIN_TWO").build
-  val unhealthyOriginThree: Origin = newOriginBuilder(localHostAndFreePort()).id("UNHEALTHY_ORIGIN_THREE").build
+  val unhealthyOriginOne: Origin = newOriginBuilder("localhost", freePort).id("UNHEALTHY_ORIGIN_ONE").build
+  val unhealthyOriginTwo: Origin = newOriginBuilder("localhost", freePort).id("UNHEALTHY_ORIGIN_TWO").build
+  val unhealthyOriginThree: Origin = newOriginBuilder("localhost", freePort).id("UNHEALTHY_ORIGIN_THREE").build
 
   var servers: List[FakeHttpServer] = _
 
