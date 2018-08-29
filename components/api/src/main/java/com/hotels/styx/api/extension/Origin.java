@@ -26,6 +26,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -33,23 +34,28 @@ import static java.util.stream.Collectors.toSet;
  */
 public class Origin implements Comparable<Origin> {
     private final Id applicationId;
-    private final HostAndPort host;
+    private final String host;
+    private final int port;
     private final String hostAsString;
     private final Id originId;
     private final int hashCode;
 
     private Origin(Builder builder) {
-        this.host = checkNotNull(builder.host);
-        this.hostAsString = this.host.toString();
+        this.host = builder.host;
+        this.port = builder.port;
+        this.hostAsString = string(host, port);
         this.applicationId = checkNotNull(builder.applicationId);
         this.originId = checkNotNull(builder.originId);
         this.hashCode = Objects.hash(this.applicationId, this.host, this.originId);
     }
 
     Origin(String originId, String host) {
+        HostAndPort hostAndPort = HostAndPort.fromString(host);
+
         this.originId = Id.id(originId);
-        this.host = HostAndPort.fromString(host);
-        this.hostAsString = this.host.toString();
+        this.host = hostAndPort.getHostText();
+        this.port = hostAndPort.getPort();
+        this.hostAsString = hostAndPort.toString();
         this.applicationId = GENERIC_APP;
         this.hashCode = Objects.hash(this.host, this.originId);
     }
@@ -77,7 +83,7 @@ public class Origin implements Comparable<Origin> {
      * @return a new Origin builder
      */
     public static Builder newOriginBuilder(String host, int port) {
-        return new Builder(HostAndPort.fromParts(host, port));
+        return new Builder(host, port);
     }
 
     /**
@@ -100,7 +106,7 @@ public class Origin implements Comparable<Origin> {
      * @return &lt;ID-HOSTANDPORT&gt;
      */
     public String applicationInfo() {
-        return applicationId.toString().toUpperCase() + "-" + host;
+        return applicationId.toString().toUpperCase() + "-" + hostAsString;
     }
 
     /**
@@ -109,11 +115,11 @@ public class Origin implements Comparable<Origin> {
      * @return hostname and port
      */
     public String host() {
-        return this.host.getHostText();
+        return host;
     }
 
     public int port() {
-        return host.getPort();
+        return port;
     }
 
     /**
@@ -167,29 +173,36 @@ public class Origin implements Comparable<Origin> {
         }
         Origin other = (Origin) obj;
         return Objects.equals(this.applicationId, other.applicationId)
-                && Objects.equals(this.host, other.host)
+                && Objects.equals(this.hostAsString, other.hostAsString)
                 && Objects.equals(this.originId, other.originId);
     }
 
     @Override
     public String toString() {
-        return format("%s:%s:%s", applicationId, originId, host);
+        return format("%s:%s:%s", applicationId, originId, hostAsString);
+    }
+
+    private static String string(String host, int port) {
+        return HostAndPort.fromParts(host, port).toString();
     }
 
     /**
      * {@link Origin} builder.
      */
     public static final class Builder {
-        private final HostAndPort host;
+        private final String host;
+        private final int port;
         private Id applicationId = GENERIC_APP;
         private Id originId = Id.id("anonymous-origin");
 
-        private Builder(HostAndPort host) {
-            this.host = host;
+        private Builder(String host, int port) {
+            this.host = requireNonNull(host);
+            this.port = port;
         }
 
         private Builder(Origin origin) {
             this.host = origin.host;
+            this.port = origin.port;
             this.applicationId = origin.applicationId;
             this.originId = origin.originId;
         }
