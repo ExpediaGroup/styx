@@ -83,7 +83,7 @@ public class NettyConnectionFactory implements Connection.Factory {
     private ChannelFuture openConnection(Origin origin, ConnectionSettings connectionSettings) {
         bootstrap(connectionSettings);
         HostAndPort host = origin.host();
-        return bootstrap.connect(host.getHostText(), host.getPort());
+        return bootstrap.connect(host.getHostText(), origin.port());
     }
 
     private synchronized void bootstrap(ConnectionSettings connectionSettings) {

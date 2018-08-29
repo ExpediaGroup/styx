@@ -69,7 +69,7 @@ public class AppHandler implements HttpHandler {
     }
 
     private static String makeAResponse(Origin origin) {
-        return format("Response From %s - %s", origin.host(), randomUUID().toString());
+        return format("Response From %s - %s", origin.hostAsString(), randomUUID().toString());
     }
 
     private HttpResponseStatus httpResponseStatus(String status) {

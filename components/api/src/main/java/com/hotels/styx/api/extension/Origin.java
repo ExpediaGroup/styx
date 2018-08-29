@@ -38,37 +38,6 @@ public class Origin implements Comparable<Origin> {
     private final Id originId;
     private final int hashCode;
 
-    /**
-     * Creates a new Origin builder.
-     *
-     * @param host host and port
-     * @return a new Origin builder
-     */
-    public static Builder newOriginBuilder(HostAndPort host) {
-        return new Builder(host);
-    }
-
-    /**
-     * Creates a new Origin builder.
-     *
-     * @param host hostname
-     * @param port port
-     * @return a new Origin builder
-     */
-    public static Builder newOriginBuilder(String host, int port) {
-        return new Builder(HostAndPort.fromParts(host, port));
-    }
-
-    /**
-     * Creates a new builder from an existing origin that will inherit the properties of that origin.
-     *
-     * @param origin an existing origin
-     * @return a new builder inheriting its properties
-     */
-    public static Builder newOriginBuilder(Origin origin) {
-        return new Builder(origin);
-    }
-
     private Origin(Builder builder) {
         this.host = checkNotNull(builder.host);
         this.hostAsString = this.host.toString();
@@ -101,6 +70,41 @@ public class Origin implements Comparable<Origin> {
     }
 
     /**
+     * Creates a new Origin builder.
+     *
+     * @param host host and port
+     * @return a new Origin builder
+     */
+    public static Builder newOriginBuilder(HostAndPort host) {
+        return new Builder(host);
+    }
+
+    /**
+     * Creates a new Origin builder.
+     *
+     * @param host hostname
+     * @param port port
+     * @return a new Origin builder
+     */
+    public static Builder newOriginBuilder(String host, int port) {
+        return new Builder(HostAndPort.fromParts(host, port));
+    }
+
+    /**
+     * Creates a new builder from an existing origin that will inherit the properties of that origin.
+     *
+     * @param origin an existing origin
+     * @return a new builder inheriting its properties
+     */
+    public static Builder newOriginBuilder(Origin origin) {
+        return new Builder(origin);
+    }
+
+    public Builder newBuilder() {
+        return newOriginBuilder(this);
+    }
+
+    /**
      * Returns a string containing application ID and host/port in the format: ID-HOSTANDPORT.
      *
      * @return &lt;ID-HOSTANDPORT&gt;
@@ -116,6 +120,10 @@ public class Origin implements Comparable<Origin> {
      */
     public HostAndPort host() {
         return this.host;
+    }
+
+    public int port() {
+        return host.getPort();
     }
 
     /**
@@ -150,6 +158,11 @@ public class Origin implements Comparable<Origin> {
     }
 
     @Override
+    public int compareTo(Origin other) {
+        return this.hostAsString.compareTo(other.hostAsString);
+    }
+
+    @Override
     public int hashCode() {
         return hashCode;
     }
@@ -171,11 +184,6 @@ public class Origin implements Comparable<Origin> {
     @Override
     public String toString() {
         return format("%s:%s:%s", applicationId, originId, host);
-    }
-
-    @Override
-    public int compareTo(Origin other) {
-        return this.host.toString().compareTo(other.host().toString());
     }
 
     /**

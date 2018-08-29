@@ -182,7 +182,7 @@ public class SimpleHttpClientTest {
         ArgumentCaptor<Origin> originCaptor = ArgumentCaptor.forClass(Origin.class);
         verify(connectionFactory).createConnection(originCaptor.capture(), any(ConnectionSettings.class));
 
-        assertThat(originCaptor.getValue().host().getPort(), is(80));
+        assertThat(originCaptor.getValue().port(), is(80));
     }
 
     @Test
@@ -201,7 +201,7 @@ public class SimpleHttpClientTest {
         ArgumentCaptor<Origin> originCaptor = ArgumentCaptor.forClass(Origin.class);
         verify(connectionFactory).createConnection(originCaptor.capture(), any(ConnectionSettings.class));
 
-        assertThat(originCaptor.getValue().host().getPort(), is(443));
+        assertThat(originCaptor.getValue().port(), is(443));
     }
 
     private SimpleHttpClient httpClient() {

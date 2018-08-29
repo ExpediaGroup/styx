@@ -57,7 +57,7 @@ class OriginClosesConnectionSpec extends FunSuite
 
   var loggingSupport: LoggingTestSupport = _
   val (originOne, originOneServer) = originAndCustomResponseWebServer("NettyOrigin")
-  val originHost: String = s"${originOne.host().getHostText}:${originOne.host().getPort}"
+  val originHost: String = originOne.hostAsString()
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

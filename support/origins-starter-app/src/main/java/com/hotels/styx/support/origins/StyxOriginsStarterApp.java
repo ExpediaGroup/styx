@@ -64,12 +64,12 @@ public class StyxOriginsStarterApp {
     }
 
     private static HttpServer createHttpServer(Origin origin) {
-        LOG.info("creating server for {}", origin.host());
+        LOG.info("creating server for {}", origin.hostAsString());
 
         return new NettyServerBuilder()
                 .name(origin.hostAsString())
                 .setServerEventLoopFactory(serverEventLoopFactory)
-                .setHttpConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(origin.host().getPort())))
+                .setHttpConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(origin.port())))
                 .httpHandler(new StandardHttpRouter().add("/*", new AppHandler(origin)))
                 .build();
     }

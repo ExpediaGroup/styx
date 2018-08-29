@@ -88,7 +88,7 @@ public class StyxHttpClientTest {
 
     private final StickySessionConfig stickySessionConfig = stickySessionDisabled();
     private MetricRegistry metricRegistry;
-    private final BackendService backendService = backendBuilderWithOrigins(SOME_ORIGIN.host().getPort())
+    private final BackendService backendService = backendBuilderWithOrigins(SOME_ORIGIN.port())
             .stickySessionConfig(stickySessionConfig)
             .build();
 
@@ -358,7 +358,7 @@ public class StyxHttpClientTest {
         PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
         StyxHostHttpClient hostClient = mockHostClient(responseSubject);
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.host().getPort()))
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.port()))
                 .loadBalancer(
                         mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)))
                 )
@@ -382,7 +382,7 @@ public class StyxHttpClientTest {
 
         LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.host().getPort()))
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.port()))
                 .loadBalancer(loadBalancer)
                 .metricsRegistry(metricRegistry)
                 .build();
@@ -408,7 +408,7 @@ public class StyxHttpClientTest {
 
         LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.host().getPort()))
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.port()))
                 .loadBalancer(loadBalancer)
                 .metricsRegistry(metricRegistry)
                 .originsRestrictionCookieName("restrictedOrigin")
@@ -434,7 +434,7 @@ public class StyxHttpClientTest {
         StyxHostHttpClient hostClient = mockHostClient(just(response(OK).build()));
         LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.host().getPort()))
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.port()))
                 .originsRestrictionCookieName("restrictedOrigin")
                 .loadBalancer(loadBalancer)
                 .metricsRegistry(metricRegistry)

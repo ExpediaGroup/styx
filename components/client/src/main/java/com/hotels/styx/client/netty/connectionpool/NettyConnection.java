@@ -16,7 +16,6 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Announcer;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
@@ -79,10 +78,6 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
         return channel;
     }
 
-    private HostAndPort getHost() {
-        return this.origin.host();
-    }
-
     @Override
     public boolean isConnected() {
         return channel.isActive();
@@ -119,7 +114,7 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
     @Override
     public String toString() {
         return toStringHelper(this)
-                .add("host", getHost())
+                .add("host", this.origin.hostAsString())
                 .add("channel", toString(channel))
                 .toString();
     }

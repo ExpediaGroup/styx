@@ -25,7 +25,7 @@ import com.hotels.styx.support.server.FakeHttpServer
 
 trait OriginSupport {
   def configureAndStart(origin: Origin): FakeHttpServer = {
-    val webServer: FakeHttpServer = new FakeHttpServer(origin.host().getPort).start()
+    val webServer: FakeHttpServer = new FakeHttpServer(origin.port()).start()
 
     webServer.stub(urlMatching("/version.txt"), aResponse
       .withStatus(200)
