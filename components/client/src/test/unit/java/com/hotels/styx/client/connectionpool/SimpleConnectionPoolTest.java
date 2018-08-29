@@ -15,13 +15,12 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.exceptions.TransportException;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
-import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.exceptions.TransportException;
-import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory.StubConnection;
 import org.testng.annotations.BeforeMethod;
@@ -35,12 +34,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
-import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static com.hotels.styx.client.connectionpool.ConnectionPoolStatsCounter.NULL_CONNECTION_POOL_STATS;
-import static com.hotels.styx.support.OriginHosts.LOCAL_9090;
+import static com.hotels.styx.support.api.BlockingObservables.getFirst;
+import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
@@ -70,7 +68,7 @@ public class SimpleConnectionPoolTest {
     @BeforeMethod
     public void makeHostConnectPool() {
         config = connectionPoolConfig().build();
-        connectionPool = originConnectionPool(ORIGIN, LOCAL_9090, connectionFactory, config);
+        connectionPool = originConnectionPool(ORIGIN, "localhost", 9090, connectionFactory, config);
     }
 
     @Test
@@ -242,7 +240,7 @@ public class SimpleConnectionPoolTest {
         Connection connection = mock(Connection.class);
         when(connection.isConnected()).thenReturn(true);
 
-        connectionPool = originConnectionPool(ORIGIN, LOCAL_9090, connectionFactory, config);
+        connectionPool = originConnectionPool(ORIGIN, "localhost", 9090, connectionFactory, config);
         connectionPool.returnConnection(connection);
         verify(connection, never()).close();
     }
@@ -376,14 +374,14 @@ public class SimpleConnectionPoolTest {
         when(connection.isConnected()).thenReturn(true);
         when(connection.getTimeToFirstByteMillis()).thenReturn(0L);
 
-        connectionPool = originConnectionPool(ORIGIN, LOCAL_9090, connectionFactory, config);
+        connectionPool = originConnectionPool(ORIGIN, "localhost", 9090, connectionFactory, config);
         connectionPool.returnConnection(connection);
         verify(connection, never()).close();
     }
 
     @Test
     public void shouldCreateAPoolWithoutStats() {
-        Origin anyOrigin = newOriginBuilder(LOCAL_9090)
+        Origin anyOrigin = newOriginBuilder("localhost", 9090)
                 .build();
         ConnectionPool pool = new SimpleConnectionPool(
                 anyOrigin, new ConnectionPoolSettings.Builder().build(), new StubConnectionFactory(), false);
@@ -393,7 +391,7 @@ public class SimpleConnectionPoolTest {
 
     @Test
     public void willNotRecordNegativeLatencyValues() {
-        Origin anyOrigin = newOriginBuilder(LOCAL_9090)
+        Origin anyOrigin = newOriginBuilder("localhost", 9090)
                 .build();
         Connection.Factory factory = (origin, connectionPoolConfiguration) -> {
             Connection stubConnection = new StubConnection(origin) {
@@ -567,7 +565,7 @@ public class SimpleConnectionPoolTest {
     }
 
     private SimpleConnectionPool connectionPool(ConnectionPoolSettings.Builder configuration) {
-        return originConnectionPool(ORIGIN, LOCAL_9090, connectionFactory, configuration.build());
+        return originConnectionPool(ORIGIN, "localhost", 9090, connectionFactory, configuration.build());
     }
 
     private List<Connection> populatePool(ConnectionPool hostConnectionPool, int numConnections) {
@@ -607,20 +605,20 @@ public class SimpleConnectionPoolTest {
     }
 
     private static SimpleConnectionPool connectionPool(ConnectionPoolSettings.Builder configuration, Connection.Factory connectionFactory) {
-        return originConnectionPool(ORIGIN, LOCAL_9090, connectionFactory, configuration.build());
+        return originConnectionPool(ORIGIN, "localhost", 9090, connectionFactory, configuration.build());
     }
 
-    private static SimpleConnectionPool originConnectionPool(Id applicationId, HostAndPort host, Connection.Factory factory,
+    private static SimpleConnectionPool originConnectionPool(Id applicationId, String host, int port, Connection.Factory factory,
                                                              ConnectionPoolSettings settings) {
         return new SimpleConnectionPool(
-                newOriginBuilder(host)
+                newOriginBuilder(host, port)
                         .applicationId(applicationId)
                         .id("h1")
                         .build(), settings, factory);
     }
 
     private static Origin origin() {
-        return newOriginBuilder(LOCAL_9090)
+        return newOriginBuilder("localhost", 9090)
                 .applicationId(ORIGIN)
                 .id("h1")
                 .build();

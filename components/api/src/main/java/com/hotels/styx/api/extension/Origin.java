@@ -72,16 +72,6 @@ public class Origin implements Comparable<Origin> {
     /**
      * Creates a new Origin builder.
      *
-     * @param host host and port
-     * @return a new Origin builder
-     */
-    public static Builder newOriginBuilder(HostAndPort host) {
-        return new Builder(host);
-    }
-
-    /**
-     * Creates a new Origin builder.
-     *
      * @param host hostname
      * @param port port
      * @return a new Origin builder
