@@ -54,6 +54,7 @@ class ChunkedDownloadSpec extends FunSpec
   }
 
   override protected def afterAll(): Unit = {
+    println("metrics: " + styxServer.metricsSnapshot)
     originOneServer.stopAsync().awaitTerminated()
     super.afterAll()
   }
@@ -85,6 +86,9 @@ class ChunkedDownloadSpec extends FunSpec
     }
 
     it("Cancels the HTTP download request when browser closes the connection.") {
+      assert(noBusyConnectionsToOrigin, "Connection remains busy.")
+      assert(noAvailableConnectionsInPool, "Connection was not closed.")
+
       val messageBody = "Foo bar 0123456789012345678901234567890123456789\\n" * 100
       originRespondingWith(response200OkWithSlowChunkedMessageBody(messageBody))
 
