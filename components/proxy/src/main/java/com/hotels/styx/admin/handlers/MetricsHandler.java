@@ -21,22 +21,24 @@ import com.codahale.metrics.json.MetricsModule;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.common.MapStream;
 
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.hotels.styx.api.FullHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.common.MapStream.stream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -47,12 +49,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class MetricsHandler extends JsonHandler<MetricRegistry> {
     private static final Pattern SPECIFIC_METRICS_PATH_PATTERN = Pattern.compile(".*/metrics/(.+)/?");
-
     private static final boolean DO_NOT_SHOW_SAMPLES = false;
-    private final CodaHaleMetricRegistry metricRegistry;
+    private static final String FILTER_PARAM = "filter";
+    private static final String PRETTY_PRINT_PARAM = "pretty";
 
     private final ObjectMapper metricSerialiser = new ObjectMapper()
             .registerModule(new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
+
+    private final CodaHaleMetricRegistry metricRegistry;
 
     /**
      * Constructs a new handler.
@@ -68,37 +72,35 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
 
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return metricName(request.path())
-                .map(metricName -> specificMetricsResponse(request, metricName))
-                .orElseGet(() -> super.handle(request, context));
+        MetricRequest metricRequest = new MetricRequest(request);
+
+        return metricRequest.fullMetrics()
+                ? super.handle(request, context)
+                : StyxObservable.of(restrictedMetricsResponse(metricRequest).build().toStreamingResponse());
     }
 
-    private StyxObservable<HttpResponse> specificMetricsResponse(HttpRequest request, String metricName) {
-        Map<String, Metric> metrics = metrics(metricName);
+    private FullHttpResponse.Builder restrictedMetricsResponse(MetricRequest request) {
+        Map<String, Metric> fullMetrics = metricRegistry.getMetricRegistry().getMetrics();
 
-        if (metrics.isEmpty()) {
-            return StyxObservable.of(response(NOT_FOUND).build().toStreamingResponse());
-        }
+        Map<String, Metric> restricted = filter(fullMetrics, (name, metric) -> request.matchesRoot(name));
 
-        boolean pretty = request.queryParam("pretty").isPresent();
-
-        String serialised = serialise(metrics, pretty);
-
-        return StyxObservable.of(response(OK)
-                .body(serialised, UTF_8)
-                .disableCaching()
-                .build()
-                .toStreamingResponse());
+        return restricted.isEmpty()
+                ? response(NOT_FOUND)
+                : search(request, restricted);
     }
 
-    private static Optional<String> metricName(String path) {
-        Matcher matcher = SPECIFIC_METRICS_PATH_PATTERN.matcher(path);
+    private FullHttpResponse.Builder search(MetricRequest request, Map<String, Metric> metrics) {
+        Map<String, Metric> searched = filter(metrics, (name, metric) -> request.containsSearchTerm(name));
 
-        if (matcher.matches()) {
-            return Optional.of(matcher.group(1));
-        }
+        String body = serialise(searched, request.prettyPrint);
 
-        return Optional.empty();
+        return response(OK)
+                .body(body, UTF_8)
+                .disableCaching();
+    }
+
+    private static <K, V> Map<K, V> filter(Map<K, V> map, BiPredicate<K, V> predicate) {
+        return stream(map).filter(predicate).toMap();
     }
 
     private String serialise(Object object, boolean pretty) {
@@ -111,11 +113,35 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
         }
     }
 
-    private Map<String, Metric> metrics(String metricNameStart) {
-        String prefix = metricNameStart + ".";
+    private static class MetricRequest {
+        private final String root;
+        private final String searchTerm;
+        private final boolean prettyPrint;
+        private final String prefix;
 
-        return MapStream.stream(metricRegistry.getMetricRegistry().getMetrics())
-                .filter((name, metric) -> name.equals(metricNameStart) || name.startsWith(prefix))
-                .toMap();
+        MetricRequest(HttpRequest request) {
+            this.root = metricName(request.path()).orElse(null);
+            this.searchTerm = request.queryParam(FILTER_PARAM).orElse(null);
+            this.prettyPrint = request.queryParam(PRETTY_PRINT_PARAM).isPresent();
+            this.prefix = root + ".";
+        }
+
+        boolean fullMetrics() {
+            return root == null && searchTerm == null;
+        }
+
+        private static Optional<String> metricName(String path) {
+            return Optional.of(SPECIFIC_METRICS_PATH_PATTERN.matcher(path))
+                    .filter(Matcher::matches)
+                    .map(matcher -> matcher.group(1));
+        }
+
+        private boolean matchesRoot(String name) {
+            return root == null || name.equals(root) || name.startsWith(prefix);
+        }
+
+        private boolean containsSearchTerm(String name) {
+            return searchTerm == null || name.contains(searchTerm);
+        }
     }
 }

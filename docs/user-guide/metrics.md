@@ -21,6 +21,17 @@ For example `http://<styx-host>/admin/metrics/requests.response` would return
     requests.response.status.2xx
     ...
     
+## Searching Metrics for string
+
+Use a `filter` query parameter to filter for metrics names matching a given string. 
+For example `filter=count` only shows metrics whose name contains `count`. The filtering is applied to the results of the metrics query.
+
+Examples where `term` is the string you want to filter for:
+
+`http://<styx-host>/admin/metrics?filter=<term>`
+
+`http://<styx-host>/admin/metrics/<metric-name>?filter=<term>`
+
     
 ## Metrics Grouping
 
