@@ -1,5 +1,57 @@
 # Change Log
 
+## [styx-0.7.7](https://github.com/HotelsDotCom/styx/tree/styx-0.7.7) (2018-05-17)
+[Full Changelog](https://github.com/HotelsDotCom/styx/compare/styx-0.7.6...styx-0.7.7)
+
+**Implemented enhancements:**
+
+- Admin page shows health check configuration even when it is absent [\#122](https://github.com/HotelsDotCom/styx/issues/122)
+
+**Fixed bugs:**
+
+- Graphite Reporter: retries too often [\#152](https://github.com/HotelsDotCom/styx/issues/152)
+- Graphite Reporter: The graphite IP address gets cached. [\#151](https://github.com/HotelsDotCom/styx/issues/151)
+- socketTimeoutMillis property in the connection pool configuration is not honoured.  [\#105](https://github.com/HotelsDotCom/styx/issues/105)
+- Plugin cannot consist of multiple JAR files [\#56](https://github.com/HotelsDotCom/styx/issues/56)
+
+**Closed issues:**
+
+- Do not allow backend services to load or reload when path prefix is duplicated [\#139](https://github.com/HotelsDotCom/styx/issues/139)
+- Move unique ID supplier class from styx-api into styx-server module [\#134](https://github.com/HotelsDotCom/styx/issues/134)
+- Add 4xx server response codes to styx documentation [\#130](https://github.com/HotelsDotCom/styx/issues/130)
+
+**Merged pull requests:**
+
+- Deletes a file that does not belong to the project. [\#164](https://github.com/HotelsDotCom/styx/pull/164) ([mikkokar](https://github.com/mikkokar))
+- Refactor YamlReader [\#163](https://github.com/HotelsDotCom/styx/pull/163) ([kvosper](https://github.com/kvosper))
+- Improve log messages when origin reload fails. [\#159](https://github.com/HotelsDotCom/styx/pull/159) ([mikkokar](https://github.com/mikkokar))
+- Dont show health check if absent [\#158](https://github.com/HotelsDotCom/styx/pull/158) ([kvosper](https://github.com/kvosper))
+- Mock dns server [\#156](https://github.com/HotelsDotCom/styx/pull/156) ([mikkokar](https://github.com/mikkokar))
+- Fixes \#152: GraphiteReporter retries connection to the server too often. [\#155](https://github.com/HotelsDotCom/styx/pull/155) ([dvlato](https://github.com/dvlato))
+- Prevent Graphite IP address from being cached. [\#153](https://github.com/HotelsDotCom/styx/pull/153) ([mikkokar](https://github.com/mikkokar))
+- Fixes issue \#105: Remove unused `socketTimeoutMillis` option. [\#150](https://github.com/HotelsDotCom/styx/pull/150) ([mikkokar](https://github.com/mikkokar))
+- Move UniqueIdSupplier\(s\) from styx-api module into styx-server module. [\#149](https://github.com/HotelsDotCom/styx/pull/149) ([mikkokar](https://github.com/mikkokar))
+- Implements \#143: Add map types to schema [\#148](https://github.com/HotelsDotCom/styx/pull/148) ([mikkokar](https://github.com/mikkokar))
+- Remove fasterxml annotations from api with mixins\#132 [\#147](https://github.com/HotelsDotCom/styx/pull/147) ([alobodzki](https://github.com/alobodzki))
+- Fix for \#142: Improve type detection for config validator. [\#146](https://github.com/HotelsDotCom/styx/pull/146) ([mikkokar](https://github.com/mikkokar))
+- Improve warning message regarding idle persistent connections. [\#145](https://github.com/HotelsDotCom/styx/pull/145) ([mikkokar](https://github.com/mikkokar))
+- Prevent duplicate backend service paths [\#140](https://github.com/HotelsDotCom/styx/pull/140) ([kvosper](https://github.com/kvosper))
+- Multiple jar plugin [\#138](https://github.com/HotelsDotCom/styx/pull/138) ([kvosper](https://github.com/kvosper))
+- Schema based server config validator [\#137](https://github.com/HotelsDotCom/styx/pull/137) ([mikkokar](https://github.com/mikkokar))
+- Add extra documentation [\#135](https://github.com/HotelsDotCom/styx/pull/135) ([kvosper](https://github.com/kvosper))
+- Additional argument for gpg plugin  [\#133](https://github.com/HotelsDotCom/styx/pull/133) ([alobodzki](https://github.com/alobodzki))
+
+## [styx-0.7.6](https://github.com/HotelsDotCom/styx/tree/styx-0.7.6) (2018-04-12)
+[Full Changelog](https://github.com/HotelsDotCom/styx/compare/styx-0.7.5...styx-0.7.6)
+
+**Merged pull requests:**
+
+- Origins file monitor [\#97](https://github.com/HotelsDotCom/styx/pull/97) ([mikkokar](https://github.com/mikkokar))
+- Add response codes diagram and page [\#104](https://github.com/HotelsDotCom/styx/pull/104) ([kvosper](https://github.com/kvosper))
+- Document origin configuration and improve user guide. [\#106](https://github.com/HotelsDotCom/styx/pull/106) ([dvlato](https://github.com/dvlato))
+- Improve origins reload visibility [\#108](https://github.com/HotelsDotCom/styx/pull/108) ([mikkokar](https://github.com/mikkokar))
+
+
 ## [styx-0.7.5](https://github.com/HotelsDotCom/styx/tree/styx-0.7.5) (2018-03-13)
 [Full Changelog](https://github.com/HotelsDotCom/styx/compare/styx-0.7.4...styx-0.7.5)
 
@@ -57,55 +109,3 @@
 **Merged pull requests:**
 
 - Tidy up tests: Use new FullHttpRequest/Response message API [\#42](https://github.com/HotelsDotCom/styx/pull/42) ([mikkokar](https://github.com/mikkokar))
-- Add initial changelog file and make rule for changelog generation [\#41](https://github.com/HotelsDotCom/styx/pull/41) ([alobodzki](https://github.com/alobodzki))
-- Add FullHttpRequest and FullHttpResponse classes to Styx API [\#40](https://github.com/HotelsDotCom/styx/pull/40) ([kvosper](https://github.com/kvosper))
-- Pretty print admin interface pages by default. [\#35](https://github.com/HotelsDotCom/styx/pull/35) ([mikkokar](https://github.com/mikkokar))
-- Don't try to parse the inbound request paths [\#15](https://github.com/HotelsDotCom/styx/pull/15) ([taer](https://github.com/taer))
-
-## [styx-0.7.3](https://github.com/HotelsDotCom/styx/tree/styx-0.7.3) (2017-11-27)
-[Full Changelog](https://github.com/HotelsDotCom/styx/compare/styx-0.7.1...styx-0.7.3)
-
-**Closed issues:**
-
-- Out of direct memory exception from Netty is sometimes mapped to 502 Bad Gateway [\#24](https://github.com/HotelsDotCom/styx/issues/24)
-- Provide a metric for direct memory monitoring [\#17](https://github.com/HotelsDotCom/styx/issues/17)
-
-**Merged pull requests:**
-
-- Added developers section in parent pom [\#39](https://github.com/HotelsDotCom/styx/pull/39) ([alobodzki](https://github.com/alobodzki))
-- Version bumped up to 0.7.3-SNAPSHOT [\#38](https://github.com/HotelsDotCom/styx/pull/38) ([alobodzki](https://github.com/alobodzki))
-- Maven central publishing profile added [\#37](https://github.com/HotelsDotCom/styx/pull/37) ([alobodzki](https://github.com/alobodzki))
-- Change file headers to expected format [\#34](https://github.com/HotelsDotCom/styx/pull/34) ([kvosper](https://github.com/kvosper))
-- Issue28: Specify TLS protocol version for backend services [\#33](https://github.com/HotelsDotCom/styx/pull/33) ([mikkokar](https://github.com/mikkokar))
-- Create ISSUE\_TEMPLATE.md [\#31](https://github.com/HotelsDotCom/styx/pull/31) ([kainee](https://github.com/kainee))
-- Add link to styx-user Google Groups forum. [\#30](https://github.com/HotelsDotCom/styx/pull/30) ([mikkokar](https://github.com/mikkokar))
-- Implement Wiremock API on top of Styx/Netty HTTP servers. [\#29](https://github.com/HotelsDotCom/styx/pull/29) ([mikkokar](https://github.com/mikkokar))
-- Styx server tls protocol [\#27](https://github.com/HotelsDotCom/styx/pull/27) ([mikkokar](https://github.com/mikkokar))
-- Map OutOfDirectMemoryError to 500 Internal Server Error status code. [\#26](https://github.com/HotelsDotCom/styx/pull/26) ([mikkokar](https://github.com/mikkokar))
-- Enable Maven quality profile for Travis builds [\#25](https://github.com/HotelsDotCom/styx/pull/25) ([mikkokar](https://github.com/mikkokar))
-- Set of metrics that are tracking netty pooled memory allocator [\#23](https://github.com/HotelsDotCom/styx/pull/23) ([alobodzki](https://github.com/alobodzki))
-- Added code of conduct [\#22](https://github.com/HotelsDotCom/styx/pull/22) ([massdosage](https://github.com/massdosage))
-- Log file changes when file backed registry fails at notifying listene… [\#21](https://github.com/HotelsDotCom/styx/pull/21) ([kvosper](https://github.com/kvosper))
-- Change styx version format. [\#20](https://github.com/HotelsDotCom/styx/pull/20) ([mikkokar](https://github.com/mikkokar))
-- Add styx load test script [\#18](https://github.com/HotelsDotCom/styx/pull/18) ([mikkokar](https://github.com/mikkokar))
-- Add getOptional to Http context [\#16](https://github.com/HotelsDotCom/styx/pull/16) ([taer](https://github.com/taer))
-- Make sure we don't end up with 0 threads [\#14](https://github.com/HotelsDotCom/styx/pull/14) ([taer](https://github.com/taer))
-- fix documentation [\#13](https://github.com/HotelsDotCom/styx/pull/13) ([ggaeta1](https://github.com/ggaeta1))
-- Update pom files [\#12](https://github.com/HotelsDotCom/styx/pull/12) ([mikkokar](https://github.com/mikkokar))
-
-## [styx-0.7.1](https://github.com/HotelsDotCom/styx/tree/styx-0.7.1) (2017-10-19)
-**Merged pull requests:**
-
-- Release styx-0.7.1. [\#11](https://github.com/HotelsDotCom/styx/pull/11) ([mikkokar](https://github.com/mikkokar))
-- Improve distribution zip file: [\#10](https://github.com/HotelsDotCom/styx/pull/10) ([mikkokar](https://github.com/mikkokar))
-- Adding guides to get started with Styx quickly [\#7](https://github.com/HotelsDotCom/styx/pull/7) ([kvosper](https://github.com/kvosper))
-- Adding sections of pom requested by central repository [\#6](https://github.com/HotelsDotCom/styx/pull/6) ([alobodzki](https://github.com/alobodzki))
-- Reduce test logging [\#5](https://github.com/HotelsDotCom/styx/pull/5) ([mikkokar](https://github.com/mikkokar))
-- Apache license shield added [\#4](https://github.com/HotelsDotCom/styx/pull/4) ([alobodzki](https://github.com/alobodzki))
-- Add Travis build badge to README.md. [\#3](https://github.com/HotelsDotCom/styx/pull/3) ([mikkokar](https://github.com/mikkokar))
-- Add .travis.yml. [\#2](https://github.com/HotelsDotCom/styx/pull/2) ([mikkokar](https://github.com/mikkokar))
-- Fixed image reference to Styx overview diagram. [\#1](https://github.com/HotelsDotCom/styx/pull/1) ([iamchrisrice](https://github.com/iamchrisrice))
-
-
-
-\* *This Change Log was automatically generated by [github_changelog_generator](https://github.com/skywinder/Github-Changelog-Generator)*
