@@ -1,5 +1,7 @@
 
-# STYX
+<h1 align="left">
+  <img width="420" alt="STYX" src="./docs/assets/styx-logo.svg">
+</h1>
 
 [![Build Status](https://travis-ci.org/HotelsDotCom/styx.svg?branch=master)](https://travis-ci.org/HotelsDotCom/styx)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
