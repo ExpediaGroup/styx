@@ -11,7 +11,7 @@ It is non-blocking, fully asynchronous and event driven therefore very scalable.
 
 ### Upcoming Release Note
 
-Styx 1.0 will be publicly released soon. The `master` is now the bleeding edge for Styx 1.0.
+[Styx 1.0](https://github.com/HotelsDotCom/styx/wiki/Styx-1.0-Release) will be publicly released soon. The `master` is now the bleeding edge for Styx 1.0.
 Styx 0.7 code is available in the `styx-0.7` branch which is in maintenance mode (bug fixes only).
 Follow the [Styx Wiki](https://github.com/HotelsDotCom/styx/wiki) for the latest developments.
 
