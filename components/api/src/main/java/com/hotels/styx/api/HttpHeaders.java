@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 
 import static com.hotels.styx.api.HttpHeader.header;
@@ -51,11 +52,11 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
     }
 
     /**
-     * Returns an {@link ImmutableSet} that contains the names of all headers in this object.
+     * Returns a set that contains the names of all headers in this object.
      *
      * @return header names
      */
-    public ImmutableSet<String> names() {
+    public Set<String> names() {
         return ImmutableSet.copyOf(nettyHeaders.names());
     }
 
@@ -72,13 +73,13 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
     }
 
     /**
-     * Returns an {@link ImmutableList} of header values with the specified {@code name}.
+     * Returns a list of header values with the specified {@code name}.
      *
      * @param name The name of the headers
-     * @return a {@link ImmutableList} of header values which will be empty if no values
+     * @return a list of header values which will be empty if no values
      * are found
      */
-    public ImmutableList<String> getAll(CharSequence name) {
+    public List<String> getAll(CharSequence name) {
         return ImmutableList.copyOf(nettyHeaders.getAll(name));
     }
 
