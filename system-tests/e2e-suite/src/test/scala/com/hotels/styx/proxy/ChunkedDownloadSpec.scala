@@ -34,6 +34,8 @@ import io.netty.handler.codec.http._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.extension.Origin
+
 import scala.concurrent.duration.{Duration, _}
 
 
@@ -56,7 +58,6 @@ class ChunkedDownloadSpec extends FunSpec
   }
 
   override protected def afterAll(): Unit = {
-    println("metrics: " + styxServer.metricsSnapshot)
     originOneServer.stopAsync().awaitTerminated()
     super.afterAll()
   }
@@ -88,8 +89,8 @@ class ChunkedDownloadSpec extends FunSpec
     }
 
     it("Cancels the HTTP download request when browser closes the connection.") {
-      assert(noBusyConnectionsToOrigin, "Connection remains busy.")
-      assert(noAvailableConnectionsInPool, "Connection was not closed.")
+      assert(noBusyConnectionsToOrigin(originTwo), "Connection remains busy.")
+      assert(noAvailableConnectionsInPool(originTwo), "Connection was not closed.")
 
       val messageBody = "Foo bar 0123456789012345678901234567890123456789\\n" * 100
       originRespondingWith(response200OkWithSlowChunkedMessageBody(messageBody))
@@ -103,18 +104,18 @@ class ChunkedDownloadSpec extends FunSpec
       client.disconnect()
 
       eventually(timeout(5 seconds)) {
-        assert(noBusyConnectionsToOrigin, "Connection remains busy.")
-        assert(noAvailableConnectionsInPool, "Connection was not closed.")
+        assert(noBusyConnectionsToOrigin(originTwo), "Connection remains busy.")
+        assert(noAvailableConnectionsInPool(originTwo), "Connection was not closed.")
       }
     }
   }
 
-  def noBusyConnectionsToOrigin = {
-    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${originTwo.host.getPort}.connectionspool.busy-connections").get == 0
+  def noBusyConnectionsToOrigin(origin: Origin) = {
+    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.host.getPort}.connectionspool.busy-connections").get == 0
   }
 
-  def noAvailableConnectionsInPool = {
-    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${originTwo.host.getPort}.connectionspool.available-connections").get == 0
+  def noAvailableConnectionsInPool(origin: Origin) = {
+    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.host.getPort}.connectionspool.available-connections").get == 0
   }
 
   def ensureResponseDidNotArrive(client: HttpTestClient) = {
