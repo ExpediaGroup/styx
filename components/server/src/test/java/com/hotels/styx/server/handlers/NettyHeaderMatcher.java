@@ -24,9 +24,9 @@ import org.hamcrest.TypeSafeMatcher;
 
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpHeader.header;
+import static java.util.Objects.requireNonNull;
 
 public final class NettyHeaderMatcher<T extends HttpMessage> extends TypeSafeMatcher<T> {
     private final HttpHeader expected;
@@ -42,7 +42,7 @@ public final class NettyHeaderMatcher<T extends HttpMessage> extends TypeSafeMat
     }
 
     private NettyHeaderMatcher(HttpHeader expected) {
-        this.expected = checkNotNull(expected);
+        this.expected = requireNonNull(expected);
     }
 
     @Override

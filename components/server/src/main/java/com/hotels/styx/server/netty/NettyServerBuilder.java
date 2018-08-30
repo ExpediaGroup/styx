@@ -33,11 +33,11 @@ import java.util.Optional;
 
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Lists.newCopyOnWriteArrayList;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
 import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A builder of {@link NettyServer} instances.
@@ -92,7 +92,7 @@ public final class NettyServerBuilder {
     }
 
     public NettyServerBuilder register(String name, HealthCheck healthCheck) {
-        this.healthCheckRegistry.register(name, checkNotNull(healthCheck));
+        this.healthCheckRegistry.register(name, requireNonNull(healthCheck));
         return this;
     }
 

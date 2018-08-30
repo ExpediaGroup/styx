@@ -29,8 +29,8 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Lists.newArrayList;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A Metric Registry that prefixes all its metrics with the scope.
@@ -46,8 +46,8 @@ public class ScopedMetricRegistry implements MetricRegistry {
      * @param parent the metric registry to delegate
      */
     public ScopedMetricRegistry(String scope, MetricRegistry parent) {
-        this.scope = checkNotNull(scope);
-        this.parent = checkNotNull(parent);
+        this.scope = requireNonNull(scope);
+        this.parent = requireNonNull(parent);
     }
 
     /**

@@ -27,8 +27,8 @@ import java.util.Set;
 
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Collections.emptySet;
+import static java.util.Objects.requireNonNull;
 
 /**
  * SSL settings for a connection or pool.
@@ -49,8 +49,8 @@ public class TlsSettings {
     private final List<String> cipherSuites;
 
     private TlsSettings(Builder builder) {
-        this.trustAllCerts = checkNotNull(builder.trustAllCerts);
-        this.sslProvider = checkNotNull(builder.sslProvider);
+        this.trustAllCerts = requireNonNull(builder.trustAllCerts);
+        this.sslProvider = requireNonNull(builder.sslProvider);
         this.additionalCerts = builder.additionalCerts;
         this.trustStorePath = builder.trustStorePath;
         this.trustStorePassword = toCharArray(builder.trustStorePassword);

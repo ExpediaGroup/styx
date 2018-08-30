@@ -32,7 +32,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.hash.HashCode.fromLong;
 import static com.google.common.hash.Hashing.md5;
@@ -62,7 +61,7 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     private FileBackedRegistry(Resource configurationFile, Reader<T> reader, Supplier<FileTime> modifyTimeSupplier, Predicate<Collection<T>> resourceConstraint) {
         super(resourceConstraint);
         this.configurationFile = requireNonNull(configurationFile);
-        this.reader = checkNotNull(reader);
+        this.reader = requireNonNull(reader);
         this.modifyTimeSupplier = modifyTimeSupplier;
     }
 

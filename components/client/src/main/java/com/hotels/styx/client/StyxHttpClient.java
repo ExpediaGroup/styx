@@ -45,7 +45,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
@@ -346,16 +345,16 @@ public final class StyxHttpClient implements HttpClient {
         private String originsRestrictionCookieName;
 
         public Builder(BackendService backendService) {
-            this.backendService = checkNotNull(backendService);
+            this.backendService = requireNonNull(backendService);
         }
 
         public Builder metricsRegistry(MetricRegistry metricsRegistry) {
-            this.metricsRegistry = checkNotNull(metricsRegistry);
+            this.metricsRegistry = requireNonNull(metricsRegistry);
             return this;
         }
 
         public Builder retryPolicy(RetryPolicy retryPolicy) {
-            this.retryPolicy = checkNotNull(retryPolicy);
+            this.retryPolicy = requireNonNull(retryPolicy);
             return this;
         }
 

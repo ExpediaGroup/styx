@@ -26,10 +26,10 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.Clocks.systemClock;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -55,8 +55,8 @@ public class SlidingWindowHistogramReservoir implements Reservoir {
     }
 
     public SlidingWindowHistogramReservoir(SlidingWindowHistogram histogram, Clock clock) {
-        this.histogram = checkNotNull(histogram);
-        this.clock = checkNotNull(clock);
+        this.histogram = requireNonNull(histogram);
+        this.clock = requireNonNull(clock);
         this.snapshotCreationTime = clock.tickMillis();
     }
 

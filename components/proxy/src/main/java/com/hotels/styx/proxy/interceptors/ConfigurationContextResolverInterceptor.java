@@ -21,8 +21,9 @@ import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationContextResolver;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import com.hotels.styx.api.HttpRequest;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Interceptor that populates the chain with configuration context.
@@ -31,7 +32,7 @@ public class ConfigurationContextResolverInterceptor implements HttpInterceptor 
     private final ConfigurationContextResolver configurationContextResolver;
 
     public ConfigurationContextResolverInterceptor(ConfigurationContextResolver configurationContextResolver) {
-        this.configurationContextResolver = checkNotNull(configurationContextResolver);
+        this.configurationContextResolver = requireNonNull(configurationContextResolver);
     }
 
     @Override

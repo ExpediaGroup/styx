@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Represents the key to value relationship in an HTTP header.
@@ -44,7 +44,7 @@ public final class HttpHeader {
     public static HttpHeader header(String name, String... values) {
         checkArgument(values.length > 0, "must give at least one value");
 
-        return new HttpHeader(checkNotNull(name), ImmutableList.copyOf(values));
+        return new HttpHeader(requireNonNull(name), ImmutableList.copyOf(values));
     }
 
     private HttpHeader(String name, List<String> values) {

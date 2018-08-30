@@ -23,8 +23,8 @@ import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static java.util.Objects.requireNonNull;
 
 /**
  * An error listener that reports error metrics to a {@link MetricRegistry}.
@@ -38,7 +38,7 @@ public class HttpErrorStatusMetrics implements HttpErrorStatusListener {
      * @param metricRegistry registry to report to
      */
     public HttpErrorStatusMetrics(MetricRegistry metricRegistry) {
-        this.metricRegistry = checkNotNull(metricRegistry);
+        this.metricRegistry = requireNonNull(metricRegistry);
     }
 
     @Override

@@ -27,9 +27,10 @@ import com.hotels.styx.server.netty.NettyServerBuilderSpec;
 
 import static com.codahale.metrics.health.HealthCheck.Result.healthy;
 import static com.codahale.metrics.health.HealthCheck.Result.unhealthy;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
+
 import com.hotels.styx.api.HttpRequest;
 
 /**
@@ -45,7 +46,7 @@ public final class ProxyServerBuilder {
     };
 
     public ProxyServerBuilder(Environment environment) {
-        this.environment = checkNotNull(environment);
+        this.environment = requireNonNull(environment);
         this.responseInfoFormat = new ResponseInfoFormat(environment);
         this.styxInfoHeaderName = environment.styxConfig().styxHeaderConfig().styxInfoHeaderName();
     }

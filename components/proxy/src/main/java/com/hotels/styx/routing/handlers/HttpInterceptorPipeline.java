@@ -36,10 +36,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
+import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static java.util.stream.StreamSupport.stream;
@@ -84,7 +84,7 @@ public class HttpInterceptorPipeline implements HttpHandler {
                 String name = ofNullable(jsonNode.get("name"))
                         .map(JsonNode::asText)
                         .orElse("");
-                String type = checkNotNull(jsonNode.get("type").asText());
+                String type = requireNonNull(jsonNode.get("type").asText());
                 JsonNode conf = jsonNode.get("config");
                 return new RouteHandlerDefinition(name, type, conf);
             }

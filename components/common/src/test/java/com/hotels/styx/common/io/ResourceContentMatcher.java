@@ -25,15 +25,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Objects;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Throwables.propagate;
 import static java.lang.System.lineSeparator;
+import static java.util.Objects.requireNonNull;
 
 public class ResourceContentMatcher extends TypeSafeMatcher<Resource> {
     private final String expected;
 
     private ResourceContentMatcher(String expected) {
-        this.expected = checkNotNull(expected);
+        this.expected = requireNonNull(expected);
     }
 
     /**

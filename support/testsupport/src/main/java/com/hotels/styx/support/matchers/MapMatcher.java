@@ -21,8 +21,8 @@ import org.hamcrest.TypeSafeMatcher;
 
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Maps.difference;
+import static java.util.Objects.requireNonNull;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -36,7 +36,7 @@ public class MapMatcher<K, V> extends TypeSafeMatcher<Map<K, V>> {
     private final Matcher<Map<K, V>> matcher;
 
     private MapMatcher(Map<K, V> expected) {
-        this.expected = checkNotNull(expected);
+        this.expected = requireNonNull(expected);
         matcher = is(expected);
     }
 

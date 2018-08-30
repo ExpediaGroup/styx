@@ -19,7 +19,7 @@ package com.hotels.styx.api.extension.service;
 import java.util.Objects;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * SSL certificate.
@@ -29,8 +29,8 @@ public class Certificate {
     private String certificatePath;
 
     Certificate(String alias, String certificatePath) {
-        this.alias = checkNotNull(alias);
-        this.certificatePath = checkNotNull(certificatePath);
+        this.alias = requireNonNull(alias);
+        this.certificatePath = requireNonNull(certificatePath);
     }
 
     public static Certificate certificate(String alias, String certificatePath) {

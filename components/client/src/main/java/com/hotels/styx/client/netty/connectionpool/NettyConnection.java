@@ -31,7 +31,7 @@ import rx.Observable;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A connection using a netty channel.
@@ -56,8 +56,8 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
      */
     @VisibleForTesting
     public NettyConnection(Origin origin, Channel channel, HttpRequestOperationFactory requestOperationFactory) {
-        this.origin = checkNotNull(origin);
-        this.channel = checkNotNull(channel);
+        this.origin = requireNonNull(origin);
+        this.channel = requireNonNull(channel);
         this.requestOperationFactory = requestOperationFactory;
         this.channel.pipeline().addLast(new TimeToFirstByteHandler(this));
         this.channel.closeFuture().addListener(future ->

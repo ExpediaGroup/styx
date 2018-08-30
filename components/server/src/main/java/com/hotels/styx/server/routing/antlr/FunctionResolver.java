@@ -20,17 +20,17 @@ import com.hotels.styx.api.HttpRequest;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
 import static java.lang.String.join;
+import static java.util.Objects.requireNonNull;
 
 class FunctionResolver {
     private final Map<String, Function0> zeroArgumentFunctions;
     private final Map<String, Function1> oneArgumentFunctions;
 
     public FunctionResolver(Map<String, Function0> zeroArgumentFunctions, Map<String, Function1> oneArgumentFunctions) {
-        this.zeroArgumentFunctions = checkNotNull(zeroArgumentFunctions);
-        this.oneArgumentFunctions = checkNotNull(oneArgumentFunctions);
+        this.zeroArgumentFunctions = requireNonNull(zeroArgumentFunctions);
+        this.oneArgumentFunctions = requireNonNull(oneArgumentFunctions);
     }
 
     PartialFunction resolveFunction(String name, List<String> arguments) {

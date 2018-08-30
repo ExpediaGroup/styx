@@ -37,9 +37,9 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Maps.newHashMap;
 import static com.hotels.styx.infrastructure.configuration.yaml.JsonTreeTraversal.traverseJsonTree;
+import static java.util.Objects.requireNonNull;
 import static java.util.regex.Pattern.compile;
 import static java.util.regex.Pattern.quote;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -57,7 +57,7 @@ public class PlaceholderResolver {
     private final Map<String, String> externalProperties;
 
     public PlaceholderResolver(ObjectNode rootNode, Map<String, String> externalProperties) {
-        this.rootNode = checkNotNull(rootNode);
+        this.rootNode = requireNonNull(rootNode);
         this.externalProperties = ImmutableMap.copyOf(externalProperties);
     }
 

@@ -31,7 +31,6 @@ import rx.schedulers.Schedulers;
 
 import java.util.concurrent.ExecutorService;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
@@ -42,6 +41,7 @@ import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.RELOADE
 import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.UNCHANGED;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -58,7 +58,7 @@ public class OriginsReloadCommandHandler implements HttpHandler {
     private final Registry<BackendService> backendServicesRegistry;
 
     public OriginsReloadCommandHandler(Registry<BackendService> backendServicesRegistry) {
-        this.backendServicesRegistry = checkNotNull(backendServicesRegistry);
+        this.backendServicesRegistry = requireNonNull(backendServicesRegistry);
     }
 
     @Override

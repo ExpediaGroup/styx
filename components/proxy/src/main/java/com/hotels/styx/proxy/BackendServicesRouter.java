@@ -52,12 +52,12 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.concat;
 import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -72,7 +72,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     private final int clientWorkerThreadsCount;
 
     public BackendServicesRouter(BackendServiceClientFactory clientFactory, Environment environment) {
-        this.clientFactory = checkNotNull(clientFactory);
+        this.clientFactory = requireNonNull(clientFactory);
         this.environment = environment;
         this.routes = new ConcurrentSkipListMap<>(
                 comparingInt(String::length).reversed()
@@ -224,7 +224,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         private final OriginsInventory originsInventory;
 
         ProxyToClientPipeline(HttpHandler httpClient, OriginsInventory originsInventory) {
-            this.client = checkNotNull(httpClient);
+            this.client = requireNonNull(httpClient);
             this.originsInventory = originsInventory;
         }
 

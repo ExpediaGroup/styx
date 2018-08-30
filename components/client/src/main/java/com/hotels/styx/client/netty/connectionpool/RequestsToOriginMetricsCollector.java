@@ -25,7 +25,8 @@ import io.netty.handler.codec.http.LastHttpContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
+
 
 /**
  * A netty channel handler that collects statistics on outbound requests.
@@ -44,7 +45,7 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
      * @param originStats object to record statistics in
      */
     public RequestsToOriginMetricsCollector(OriginStats originStats) {
-        this.originStats = checkNotNull(originStats);
+        this.originStats = requireNonNull(originStats);
     }
 
     @Override

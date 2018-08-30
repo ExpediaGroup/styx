@@ -24,10 +24,10 @@ import org.slf4j.Logger;
 
 import java.util.Objects;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.escape.Escapers.nullEscaper;
 import static java.lang.Integer.toHexString;
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -53,7 +53,7 @@ public class ConfigurableUnwiseCharsEncoder implements UnwiseCharsEncoder {
 
     public ConfigurableUnwiseCharsEncoder(String unwiseChars, Logger logger) {
         this.escaper = newEscaper(unwiseChars);
-        this.logger = checkNotNull(logger);
+        this.logger = requireNonNull(logger);
     }
 
     @Override

@@ -24,10 +24,10 @@ import rx.Observable;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static rx.Observable.create;
 import com.hotels.styx.api.HttpRequest;
 
@@ -43,8 +43,8 @@ class StandardHttpPipeline implements HttpHandler {
     }
 
     public StandardHttpPipeline(List<HttpInterceptor> interceptors, HttpHandler handler) {
-        this.interceptors = checkNotNull(interceptors);
-        this.handler = checkNotNull(handler);
+        this.interceptors = requireNonNull(interceptors);
+        this.handler = requireNonNull(handler);
     }
 
     @Override

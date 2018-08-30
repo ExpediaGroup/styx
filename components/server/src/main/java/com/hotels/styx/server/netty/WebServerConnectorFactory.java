@@ -25,8 +25,8 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.server.netty.SslContexts.newSSLContext;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Creates connectors for web servers.
@@ -46,7 +46,7 @@ public class WebServerConnectorFactory implements ServerConnectorFactory {
         private final HttpConnectorConfig config;
 
         private WebServerConnector(HttpConnectorConfig config) {
-            this.config = checkNotNull(config);
+            this.config = requireNonNull(config);
         }
 
         @Override

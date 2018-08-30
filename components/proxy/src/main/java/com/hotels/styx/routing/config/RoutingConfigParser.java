@@ -18,8 +18,8 @@ package com.hotels.styx.routing.config;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 
 /**
@@ -43,7 +43,7 @@ public class RoutingConfigParser {
         if (!jsonNode.has(attributeName)) {
             throw new IllegalArgumentException(message);
         }
-        return checkNotNull(jsonNode.get(attributeName).asText());
+        return requireNonNull(jsonNode.get(attributeName).asText());
     }
 
     private static String getOrElse(JsonNode jsonNode, String attributeName, String defaultValue) {
