@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.codahale.metrics.health.HealthCheckRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 
 /**
@@ -35,11 +34,4 @@ public interface Environment {
      * @return metric registry
      */
     MetricRegistry metricRegistry();
-
-    /**
-     * Returns the application's {@link HealthCheckRegistry}.
-     *
-     * @return health check registry
-     */
-    HealthCheckRegistry healthCheckRegistry();
 }

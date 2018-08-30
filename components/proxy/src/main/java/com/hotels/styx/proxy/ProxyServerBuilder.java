@@ -15,23 +15,15 @@
  */
 package com.hotels.styx.proxy;
 
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.health.HealthCheck;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.proxy.healthchecks.HealthCheckTimestamp;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.netty.NettyServerBuilderSpec;
 
-import static com.codahale.metrics.health.HealthCheck.Result.healthy;
-import static com.codahale.metrics.health.HealthCheck.Result.unhealthy;
 import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
-import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
-
-import com.hotels.styx.api.HttpRequest;
 
 /**
  * A builder for a ProxyServer.
@@ -60,8 +52,6 @@ public final class ProxyServerBuilder {
                 .toNettyServerBuilder(proxyConfig)
                 .httpHandler(httpHandler)
                 // register health check
-                .register(HealthCheckTimestamp.NAME, new HealthCheckTimestamp())
-                .register("errors-rate-500", new ErrorsRateHealthCheck(environment.metricRegistry()))
                 .doOnStartUp(onStartupAction)
                 .build();
     }
@@ -78,22 +68,5 @@ public final class ProxyServerBuilder {
     public ProxyServerBuilder onStartup(Runnable startupAction) {
         this.onStartupAction = startupAction;
         return this;
-    }
-
-    private static final class ErrorsRateHealthCheck extends HealthCheck {
-        private final MetricRegistry metricRegistry;
-
-        ErrorsRateHealthCheck(MetricRegistry metricRegistry) {
-            this.metricRegistry = metricRegistry;
-        }
-
-        @Override
-        protected Result check() throws Exception {
-            Meter errorRate = metricRegistry.meter("requests.error-rate.500");
-            double oneMinuteRate = errorRate.getOneMinuteRate();
-            return oneMinuteRate > 1.0
-                    ? unhealthy(format("error count=%d m1_rate=%s is greater than %s", errorRate.getCount(), oneMinuteRate, 1.0))
-                    : healthy(format("error count=%d m1_rate=%.2f", errorRate.getCount(), oneMinuteRate));
-        }
     }
 }

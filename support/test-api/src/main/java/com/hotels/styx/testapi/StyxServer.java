@@ -15,16 +15,15 @@
  */
 package com.hotels.styx.testapi;
 
-import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
-import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
@@ -164,11 +163,6 @@ public final class StyxServer {
             @Override
             public MetricRegistry metricRegistry() {
                 return environment.metricRegistry();
-            }
-
-            @Override
-            public HealthCheckRegistry healthCheckRegistry() {
-                return environment.healthCheckRegistry();
             }
 
             @Override
