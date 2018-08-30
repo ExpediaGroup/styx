@@ -9,8 +9,7 @@ Besides Styx extensions, the API can be used as a library in other software proj
 `styx-server` module makes it really easy to start Styx based HTTP(s) servers with just a 
 few lines of code. The `styx-client` can be used as a reactive HTTP client.
 
-The `styx-api-testsupport` provides helpers for unit testing Styx extensions.
- 
+The `styx-api-testsupport` provides helpers for unit testing Styx extensions. 
 
 The relevant modules are available in Maven Central:
 

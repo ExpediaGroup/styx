@@ -7,10 +7,10 @@
 Transforming a request object synchronously is trivial. By "synchronously" we mean in the 
 same thread, in non-blocking fashion. 
 
-Just call `request.newBuilder()` to
-create a new `HttpRequest.Builder` object. It has already been initialised with the copy of
-the original `request`. Modify the builder as desired, construct a new version, and pass
-it to the `chain.proceed()`, as the example demonstrates:
+Just call `request.newBuilder()` to create a new `HttpRequest.Builder` object. 
+It has already been initialised with the copy of the original `request`. Modify 
+the builder as desired, construct a new version, and pass it to the `chain.proceed()`, 
+as the example demonstrates:
 
 ```java
 import com.hotels.styx.api.HttpRequest;

@@ -21,7 +21,7 @@ package com.hotels.styx.api.plugins.spi;
 public interface PluginFactory {
     /**
      * Provides global configuration objects for plugins. An example of a configuration object could be a shared
-     * {@link com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry}.
+     * {@link com.hotels.styx.api.MetricRegistry}.
      */
     interface Environment extends com.hotels.styx.api.Environment {
         /**
