@@ -44,12 +44,14 @@ class ChunkedDownloadSpec extends FunSpec
   with TestClientSupport
   with Eventually {
 
-  val (originOne, originOneServer) = originAndCustomResponseWebServer("NettyOrigin")
+  val (originOne, originOneServer) = originAndCustomResponseWebServer("NettyOrigin-01")
+  val (originTwo, originTwoServer) = originAndCustomResponseWebServer("NettyOrigin-02")
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     styxServer.setBackends(
-      "/chunkedDownloadSpec/" -> HttpBackend("appOne", Origins(originOneServer))
+      "/chunkedDownloadSpec/a/" -> HttpBackend("appOne", Origins(originOneServer)),
+      "/chunkedDownloadSpec/b/" -> HttpBackend("appTwo", Origins(originTwoServer))
     )
   }
 
@@ -64,7 +66,7 @@ class ChunkedDownloadSpec extends FunSpec
     it("Proxies a response with chunked HTTP content.") {
       originRespondingWith(response200OkWithThreeChunks("a" * 10, "b" * 20, "c" * 30))
 
-      val request = get(styxServer.routerURL("/chunkedDownloadSpec/1")).build()
+      val request = get(styxServer.routerURL("/chunkedDownloadSpec/a/1")).build()
       val response = decodedRequest(request)
 
       response.status() should be(OK)
@@ -77,7 +79,7 @@ class ChunkedDownloadSpec extends FunSpec
       val messageBody = "Foo bar 0123456789012345678901234567890123456789\\n" * 100
       originRespondingWith(response200OkWithSlowChunkedMessageBody(messageBody))
 
-      val request = get(styxServer.routerURL("/chunkedDownloadSpec/2")).build()
+      val request = get(styxServer.routerURL("/chunkedDownloadSpec/a/2")).build()
       val response = decodedRequest(request)
 
       response.status() should be(OK)
@@ -92,7 +94,7 @@ class ChunkedDownloadSpec extends FunSpec
       val messageBody = "Foo bar 0123456789012345678901234567890123456789\\n" * 100
       originRespondingWith(response200OkWithSlowChunkedMessageBody(messageBody))
 
-      val request: DefaultFullHttpRequest = nettyGetRequest("/chunkedDownloadSpec/3")
+      val request: DefaultFullHttpRequest = nettyGetRequest("/chunkedDownloadSpec/b/3")
 
       val client = newTestClientInstance("localhost", styxServer.httpPort)
       client.write(request)
@@ -108,11 +110,11 @@ class ChunkedDownloadSpec extends FunSpec
   }
 
   def noBusyConnectionsToOrigin = {
-    styxServer.metricsSnapshot.gauge(s"origins.appOne.localhost:${originOne.host.getPort}.connectionspool.busy-connections").get == 0
+    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${originTwo.host.getPort}.connectionspool.busy-connections").get == 0
   }
 
   def noAvailableConnectionsInPool = {
-    styxServer.metricsSnapshot.gauge(s"origins.appOne.localhost:${originOne.host.getPort}.connectionspool.available-connections").get == 0
+    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${originTwo.host.getPort}.connectionspool.available-connections").get == 0
   }
 
   def ensureResponseDidNotArrive(client: HttpTestClient) = {
