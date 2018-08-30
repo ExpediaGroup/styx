@@ -9,15 +9,13 @@ Styx is a programmable reverse proxy for JVM (Java Virtual Machine). It can be u
 as a stand-alone application, or as a platform to build custom networking applications. 
 It is non-blocking, fully asynchronous and event driven therefore very scalable.
 
-### A Quick Release Note
+### Upcoming Release Note
+ [Styx 1.0](https://github.com/HotelsDotCom/styx/wiki/Styx-1.0-API) is coming to 
+ public release soon. `master` is now following bleeding edge for Styx 1.0.
+ Styx 0.7 code is available in `styx-0.7` branch which is in maintenance 
+ mode for bug fixes only. Follow the [Styx Wiki](https://github.com/HotelsDotCom/styx/wiki) 
+ for latest developments.
 
-New Styx 1.0 is coming soon. The `master` branch is now following a bleeding edge, 
-soon to be released Styx 1.0. 
-
-Styx 0.7 code is in `styx-0.7` branch. It is in maintenance mode and will be receiving 
-bug fixes only. 
-
-Follow the [Styx Wiki](https://github.com/HotelsDotCom/styx/wiki) for latest developments.
 
 ### Features
 
