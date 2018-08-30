@@ -10,12 +10,12 @@ as a stand-alone application, or as a platform to build custom networking applic
 It is non-blocking, fully asynchronous and event driven therefore very scalable.
 
 ### Upcoming Release Note
- [Styx 1.0](https://github.com/HotelsDotCom/styx/wiki/Styx-1.0-API) is coming to 
- public release soon. `master` is now following bleeding edge for Styx 1.0.
- Styx 0.7 code is available in `styx-0.7` branch which is in maintenance 
- mode for bug fixes only. Follow the [Styx Wiki](https://github.com/HotelsDotCom/styx/wiki) 
- for latest developments.
 
+[Styx 1.0](https://github.com/HotelsDotCom/styx/wiki/Styx-1.0-API) is coming to 
+public release soon. `master` is now following bleeding edge for Styx 1.0.
+Styx 0.7 code is available in `styx-0.7` branch which is in maintenance 
+mode for bug fixes only. Follow the [Styx Wiki](https://github.com/HotelsDotCom/styx/wiki) 
+for latest developments.
 
 ### Features
 
