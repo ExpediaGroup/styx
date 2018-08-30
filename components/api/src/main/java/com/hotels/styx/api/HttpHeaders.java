@@ -52,7 +52,7 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
     }
 
     /**
-     * Returns a set that contains the names of all headers in this object.
+     * Returns an immutable set that contains the names of all headers in this object.
      *
      * @return header names
      */
@@ -73,7 +73,7 @@ public final class HttpHeaders implements Iterable<HttpHeader> {
     }
 
     /**
-     * Returns a list of header values with the specified {@code name}.
+     * Returns an immutable list of header values with the specified {@code name}.
      *
      * @param name The name of the headers
      * @return a list of header values which will be empty if no values
