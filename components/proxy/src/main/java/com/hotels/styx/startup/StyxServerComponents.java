@@ -50,7 +50,7 @@ public class StyxServerComponents {
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
 
-        this.environment = newEnvironment(styxConfig);
+        this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
 
         this.plugins = builder.pluginsLoader.load(environment);
@@ -73,10 +73,10 @@ public class StyxServerComponents {
         return plugins;
     }
 
-    private static Environment newEnvironment(StyxConfig styxConfig) {
+    private static Environment newEnvironment(StyxConfig styxConfig, CodaHaleMetricRegistry metricRegistry) {
         return new Environment.Builder()
                 .configuration(styxConfig)
-                .metricsRegistry(new CodaHaleMetricRegistry())
+                .metricsRegistry(metricRegistry)
                 .buildInfo(readBuildInfo())
                 .eventBus(new AsyncEventBus("styx", newSingleThreadExecutor()))
                 .build();
@@ -109,11 +109,17 @@ public class StyxServerComponents {
         private LoggingSetUp loggingSetUp = DO_NOT_MODIFY;
         private PluginsLoader pluginsLoader = PLUGINS_FROM_CONFIG;
         private ServicesLoader servicesLoader = SERVICES_FROM_CONFIG;
+        private CodaHaleMetricRegistry metricRegistry = new CodaHaleMetricRegistry();
 
         private final Map<String, StyxService> additionalServices = new HashMap<>();
 
         public Builder styxConfig(StyxConfig styxConfig) {
             this.styxConfig = requireNonNull(styxConfig);
+            return this;
+        }
+
+        public Builder metricsRegistry(CodaHaleMetricRegistry metricRegistry) {
+            this.metricRegistry = requireNonNull(metricRegistry);
             return this;
         }
 
