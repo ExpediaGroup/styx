@@ -16,6 +16,7 @@
 package com.hotels.styx.client
 
 import java.nio.charset.Charset
+import java.util.concurrent.TimeUnit
 
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
@@ -97,9 +98,13 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
 
   def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, roundRobinStrategy(activeOrigins))
 
+
   test("Responds with sticky session cookie when STICKY_SESSION_ENABLED=true") {
+    val stickySessionConfig = StickySessionConfig.newStickySessionConfigBuilder().timeout(100, TimeUnit.SECONDS).build()
+
     val client = newHttpClientBuilder(backendService.id)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
+      .stickySessionConfig(stickySessionConfig)
       .build
 
     val request: HttpRequest = HttpRequest.get("/")
@@ -113,6 +118,8 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
     cookie.path().get() should be("/")
     cookie.httpOnly() should be(true)
     cookie.maxAge().isPresent should be(true)
+
+    cookie.maxAge().get() should be (100L)
   }
 
   test("Responds without sticky session cookie when sticky session is not enabled") {
