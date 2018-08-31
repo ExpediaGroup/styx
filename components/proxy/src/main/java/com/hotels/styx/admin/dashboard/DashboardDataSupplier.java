@@ -59,6 +59,10 @@ public class DashboardDataSupplier implements Supplier<DashboardData>, Registry.
     }
 
     private DashboardData updateDashboardData(Registry<BackendService> backendServices) {
+        if (this.data != null) {
+            this.data.unregister();
+        }
+
         return new DashboardData(environment.metricRegistry(), backendServices, jvmRouteName, buildInfo, environment.eventBus());
     }
 
