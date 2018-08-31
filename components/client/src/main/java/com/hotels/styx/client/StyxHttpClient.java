@@ -350,6 +350,7 @@ public final class StyxHttpClient implements HttpClient {
         public Builder stickySessionConfig(StickySessionConfig stickySessionConfig) {
             this.stickySessionConfig = requireNonNull(stickySessionConfig);
             return this;
+        }
 
         public Builder metricsRegistry(MetricRegistry metricsRegistry) {
             this.metricsRegistry = requireNonNull(metricsRegistry);
