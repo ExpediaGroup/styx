@@ -28,6 +28,7 @@ import com.google.common.base.Predicate;
 import com.hotels.styx.api.MetricRegistry;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -157,6 +158,11 @@ public class JVMMetricsHandler extends JsonHandler<MetricRegistry> {
         @Override
         public SortedMap<String, Timer> getTimers(MetricFilter filter) {
             return null;
+        }
+
+        @Override
+        public Map<String, Metric> getMetrics() {
+            return filterKeys(original.getMetrics(), STARTS_WITH_JVM);
         }
     }
 }

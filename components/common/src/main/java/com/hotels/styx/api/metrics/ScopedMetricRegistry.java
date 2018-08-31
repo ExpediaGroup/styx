@@ -26,6 +26,7 @@ import com.codahale.metrics.Timer;
 import com.hotels.styx.api.MetricRegistry;
 
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
@@ -182,5 +183,10 @@ public class ScopedMetricRegistry implements MetricRegistry {
     @Override
     public SortedMap<String, Timer> getTimers(MetricFilter filter) {
         return this.parent.getTimers(filter);
+    }
+
+    @Override
+    public Map<String, Metric> getMetrics() {
+        return this.parent.getMetrics();
     }
 }

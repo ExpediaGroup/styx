@@ -16,10 +16,11 @@
 package com.hotels.styx;
 
 import com.google.common.eventbus.EventBus;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.configstore.ConfigStore;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.proxy.HttpErrorStatusCauseLogger;
 import com.hotels.styx.proxy.HttpErrorStatusMetrics;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.ServerEnvironment;
 
@@ -76,7 +77,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
     }
 
     @Override
-    public CodaHaleMetricRegistry metricRegistry() {
+    public MetricRegistry metricRegistry() {
         return serverEnvironment.metricRegistry();
     }
 
@@ -94,7 +95,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
      */
     public static class Builder {
         private AggregatedConfiguration aggregatedConfiguration;
-        private CodaHaleMetricRegistry metricRegistry;
+        private MetricRegistry metricRegistry;
         private Version version;
         private EventBus eventBus;
 
@@ -114,7 +115,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
             return this;
         }
 
-        public Builder metricsRegistry(CodaHaleMetricRegistry metricRegistry) {
+        public Builder metricsRegistry(MetricRegistry metricRegistry) {
             this.metricRegistry = metricRegistry;
             return this;
         }

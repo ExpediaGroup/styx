@@ -24,6 +24,7 @@ import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
 
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
@@ -192,5 +193,13 @@ public interface MetricRegistry {
      * @return all the timers in the registry
      */
     SortedMap<String, Timer> getTimers(MetricFilter filter);
+
+
+    /**
+     * A map of metric names to metrics.
+     *
+     * @return the metrics
+     */
+    Map<String, Metric> getMetrics();
 
 }

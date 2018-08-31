@@ -16,19 +16,20 @@
 package com.hotels.styx.server;
 
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 
 public final class ServerEnvironment {
-    private final CodaHaleMetricRegistry metricRegistry;
+    private final MetricRegistry metricRegistry;
 
     public ServerEnvironment() {
         this(new CodaHaleMetricRegistry());
     }
 
-    public ServerEnvironment(CodaHaleMetricRegistry metricRegistry) {
+    public ServerEnvironment(MetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry;
     }
 
-    public CodaHaleMetricRegistry metricRegistry() {
+    public MetricRegistry metricRegistry() {
         return metricRegistry;
     }
 }

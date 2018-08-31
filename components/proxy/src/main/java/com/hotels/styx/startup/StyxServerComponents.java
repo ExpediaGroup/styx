@@ -22,6 +22,7 @@ import com.google.common.eventbus.AsyncEventBus;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.Version;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
@@ -73,7 +74,7 @@ public class StyxServerComponents {
         return plugins;
     }
 
-    private static Environment newEnvironment(StyxConfig styxConfig, CodaHaleMetricRegistry metricRegistry) {
+    private static Environment newEnvironment(StyxConfig styxConfig, MetricRegistry metricRegistry) {
         return new Environment.Builder()
                 .configuration(styxConfig)
                 .metricsRegistry(metricRegistry)
@@ -109,7 +110,7 @@ public class StyxServerComponents {
         private LoggingSetUp loggingSetUp = DO_NOT_MODIFY;
         private PluginsLoader pluginsLoader = PLUGINS_FROM_CONFIG;
         private ServicesLoader servicesLoader = SERVICES_FROM_CONFIG;
-        private CodaHaleMetricRegistry metricRegistry = new CodaHaleMetricRegistry();
+        private MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
 
         private final Map<String, StyxService> additionalServices = new HashMap<>();
 
@@ -118,7 +119,7 @@ public class StyxServerComponents {
             return this;
         }
 
-        public Builder metricsRegistry(CodaHaleMetricRegistry metricRegistry) {
+        public Builder metricsRegistry(MetricRegistry metricRegistry) {
             this.metricRegistry = requireNonNull(metricRegistry);
             return this;
         }
