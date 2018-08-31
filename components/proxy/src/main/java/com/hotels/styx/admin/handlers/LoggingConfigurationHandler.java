@@ -17,26 +17,27 @@ package com.hotels.styx.admin.handlers;
 
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Resource;
+import com.hotels.styx.api.StyxObservable;
 import org.slf4j.Logger;
-import rx.Observable;
 
 import java.io.IOException;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.net.MediaType.XML_UTF_8;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.Observable.just;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Displays contents of logging configuration file.
@@ -48,13 +49,13 @@ public class LoggingConfigurationHandler implements HttpHandler {
     private final Supplier<Content> contentSupplier;
 
     public LoggingConfigurationHandler(Resource logConfigLocation) {
-        this.logConfigLocation = checkNotNull(logConfigLocation);
+        this.logConfigLocation = requireNonNull(logConfigLocation);
         this.contentSupplier = memoizeWithExpiration(this::loadContent, 1, SECONDS)::get;
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
-        return just(generateResponse());
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return StyxObservable.of(generateResponse());
     }
 
     private HttpResponse generateResponse() {
@@ -63,8 +64,9 @@ public class LoggingConfigurationHandler implements HttpHandler {
         return response(OK)
                 .header(CONTENT_TYPE, content.type)
                 .header(CONTENT_LENGTH, content.length)
-                .body(content.content)
-                .build();
+                .body(content.content, UTF_8)
+                .build()
+                .toStreamingResponse();
     }
 
     private Content loadContent() {

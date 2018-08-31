@@ -17,14 +17,25 @@ package com.hotels.styx.server.netty.codec;
 
 import com.google.common.base.Strings;
 import com.hotels.styx.api.HttpHeader;
-import com.hotels.styx.server.UniqueIdSupplier;
+import com.hotels.styx.api.HttpMethod;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.server.BadRequestException;
+import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.DecoderException;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.DefaultHttpRequest;
+import io.netty.handler.codec.http.DefaultLastHttpContent;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
 import org.hamcrest.Matchers;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -39,11 +50,16 @@ import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Sets.newHashSet;
-import static com.hotels.styx.api.HttpCookie.cookie;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.server.UniqueIdSuppliers.fixedUniqueIdSupplier;
-import static com.hotels.styx.support.netty.HttpMessageSupport.*;
+import static com.hotels.styx.support.netty.HttpMessageSupport.httpMessageToBytes;
+import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequest;
+import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequestAsBuf;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static io.netty.handler.codec.http.HttpHeaders.Names.EXPECT;
+import static io.netty.handler.codec.http.HttpHeaders.Names.HOST;
+import static io.netty.handler.codec.http.HttpHeaders.Names.TRANSFER_ENCODING;
 import static io.netty.handler.codec.http.HttpHeaders.Values.CHUNKED;
 import static io.netty.handler.codec.http.HttpHeaders.Values.CONTINUE;
 import static io.netty.handler.codec.http.HttpMethod.GET;
@@ -52,7 +68,9 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class NettyToStyxRequestDecoderTest {
     private final UniqueIdSupplier uniqueIdSupplier = fixedUniqueIdSupplier("1");
@@ -104,7 +122,7 @@ public class NettyToStyxRequestDecoderTest {
 
         assertThat(styxRequest.id().toString(), is("1"));
         assertThat(styxRequest.url().encodedUri(), is(originalRequest.getUri()));
-        assertThat(styxRequest.method(), is(originalRequest.getMethod()));
+        assertThat(styxRequest.method(), is(HttpMethod.GET));
         assertThatHttpHeadersAreSame(styxRequest.headers(), originalRequestHeaders);
     }
 
@@ -124,7 +142,7 @@ public class NettyToStyxRequestDecoderTest {
         channel.writeInbound(chunkedRequestHeaders);
         com.hotels.styx.api.HttpRequest request = (com.hotels.styx.api.HttpRequest) channel.readInbound();
 
-        StringBuilder content = subscribeToContent(request.body().content(), bodyCompletedLatch);
+        StringBuilder content = subscribeToContent(request.body(), bodyCompletedLatch);
 
         channel.writeInbound(contentChunkOne);
         channel.writeInbound(contentChunkTwo);
@@ -143,7 +161,7 @@ public class NettyToStyxRequestDecoderTest {
         channel.writeInbound(contentChunkTwo);
         channel.writeInbound(contentChunkThree);
 
-        String content = subscribeAndRead(request.body().content());
+        String content = subscribeAndRead(request.body());
         assertThat(content, is("content chunk 1 content chunk 2 content chunk 3"));
     }
 
@@ -152,7 +170,7 @@ public class NettyToStyxRequestDecoderTest {
         channel.writeInbound(chunkedRequestHeaders);
         com.hotels.styx.api.HttpRequest request = (com.hotels.styx.api.HttpRequest) channel.readInbound();
 
-        TestSubscriber<?> contentSubscriber = subscribeTo(request.body().content());
+        TestSubscriber<?> contentSubscriber = subscribeTo(request.body());
         assertThat(contentSubscriber.getOnCompletedEvents().size(), is(0));
 
         channel.writeInbound(EMPTY_LAST_CONTENT);
@@ -244,10 +262,13 @@ public class NettyToStyxRequestDecoderTest {
         com.hotels.styx.api.HttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Observable.<ByteBuf>empty())
                 .build();
 
-        com.hotels.styx.api.HttpRequest expected = new com.hotels.styx.api.HttpRequest.Builder(GET, "http://foo.com/")
-                .addCookie(cookie("ABC01", "\"1\""))
-                .addCookie(cookie("ABC02", "1"))
-                .addCookie(cookie("guid", "xxxxx-xxx-xxx-xxx-xxxxxxx"))
+        com.hotels.styx.api.HttpRequest expected = new com.hotels.styx.api.HttpRequest.Builder(
+                HttpMethod.GET, "http://foo.com/")
+                .cookies(
+                        requestCookie("ABC01", "\"1\""),
+                        requestCookie("ABC02", "1"),
+                        requestCookie("guid", "xxxxx-xxx-xxx-xxx-xxxxxxx")
+                )
                 .build();
         assertThat(newHashSet(styxRequest.cookies()), is(newHashSet(expected.cookies())));
     }
@@ -266,10 +287,13 @@ public class NettyToStyxRequestDecoderTest {
         com.hotels.styx.api.HttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Observable.<ByteBuf>empty())
                 .build();
 
-        com.hotels.styx.api.HttpRequest expected = new com.hotels.styx.api.HttpRequest.Builder(GET, "http://foo.com/")
-                .addCookie(cookie("ABC01", "\"1\""))
-                .addCookie(cookie("ABC02", "1"))
-                .addCookie(cookie("guid", "a,b"))
+        com.hotels.styx.api.HttpRequest expected = new com.hotels.styx.api.HttpRequest.Builder(
+                HttpMethod.GET, "http://foo.com/")
+                .cookies(
+                        requestCookie("ABC01", "\"1\""),
+                        requestCookie("ABC02", "1"),
+                        requestCookie("guid", "a,b")
+                )
                 .build();
         assertThat(newHashSet(styxRequest.cookies()), is(newHashSet(expected.cookies())));
     }
@@ -321,13 +345,13 @@ public class NettyToStyxRequestDecoderTest {
     }
 
 
-    private TestSubscriber<ByteBuf> subscribeTo(Observable<ByteBuf> contentObservable) {
+    private TestSubscriber<ByteBuf> subscribeTo(StyxObservable<ByteBuf> contentObservable) {
         TestSubscriber<ByteBuf> subscriber = new TestSubscriber<>();
-        contentObservable.subscribe(subscriber);
+        toRxObservable(contentObservable).subscribe(subscriber);
         return subscriber;
     }
 
-    private String subscribeAndRead(Observable<ByteBuf> contentObservable) throws InterruptedException {
+    private String subscribeAndRead(StyxObservable<ByteBuf> contentObservable) throws InterruptedException {
         CountDownLatch bodyCompletedLatch = new CountDownLatch(1);
 
         StringBuilder contentBuilder = subscribeToContent(contentObservable, bodyCompletedLatch);
@@ -336,9 +360,9 @@ public class NettyToStyxRequestDecoderTest {
         return contentBuilder.toString();
     }
 
-    private static StringBuilder subscribeToContent(Observable<ByteBuf> content, CountDownLatch onCompleteLatch) {
+    private static StringBuilder subscribeToContent(StyxObservable<ByteBuf> content, CountDownLatch onCompleteLatch) {
         StringBuilder builder = new StringBuilder();
-        content.subscribe(new Subscriber<ByteBuf>() {
+        toRxObservable(content).subscribe(new Subscriber<ByteBuf>() {
             @Override
             public void onCompleted() {
                 // no-op

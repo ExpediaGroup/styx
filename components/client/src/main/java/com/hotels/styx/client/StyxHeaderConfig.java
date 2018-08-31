@@ -17,9 +17,8 @@ package com.hotels.styx.client;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Objects;
 import io.netty.util.AsciiString;
-
-import static com.google.common.base.MoreObjects.toStringHelper;
 
 /**
  * Contains the names for the headers that Styx will add to proxied requests/responses.
@@ -84,7 +83,7 @@ public class StyxHeaderConfig {
 
     @Override
     public String toString() {
-        return toStringHelper(this)
+        return Objects.toStringHelper(this)
                 .add("styxInfoHeaderName", styxInfoHeaderName)
                 .add("originIdHeaderName", originIdHeaderName)
                 .add("requestIdHeaderName", requestIdHeaderName)

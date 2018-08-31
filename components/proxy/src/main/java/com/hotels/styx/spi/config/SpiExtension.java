@@ -21,12 +21,12 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.base.Objects;
 
 import java.io.IOException;
-import java.util.Objects;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Throwables.propagate;
 import static java.util.Objects.requireNonNull;
 
@@ -85,7 +85,7 @@ public class SpiExtension {
             return false;
         }
         SpiExtension other = (SpiExtension) obj;
-        return Objects.equals(this.factory, other.factory);
+        return Objects.equal(this.factory, other.factory);
     }
 
     @Override

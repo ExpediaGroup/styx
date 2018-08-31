@@ -15,15 +15,16 @@
  */
 package com.hotels.styx.plugins;
 
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import io.netty.buffer.ByteBuf;
-import rx.Observable;
 
 import java.util.function.Function;
 
 import static com.google.common.base.Charsets.UTF_8;
+import com.hotels.styx.api.HttpRequest;
 
 public class ContentDecodeFailurePlugin implements Plugin {
     private final int maxContentBytes;
@@ -33,16 +34,18 @@ public class ContentDecodeFailurePlugin implements Plugin {
     }
 
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request)
-                .flatMap(response -> response.decode(decodeOrFailOperation(request), maxContentBytes))
-                .map(decodedResponse -> decodedResponse.responseBuilder()
+                .flatMap(response -> response.toFullResponse(maxContentBytes))
+                .map(fullResponse -> fullResponse.newBuilder()
                         .header("ContentDecodeFailurePlugin", "yes")
-                        .header("bytes_aggregated", decodedResponse.body().getBytes(UTF_8).length)
-                        .body(decodedResponse.body())
-                        .build());
+                        .header("bytes_aggregated", fullResponse.body().length)
+                        .body(fullResponse.body(), true)
+                        .build())
+                .map(FullHttpResponse::toStreamingResponse);
     }
 
+    // TODO: See https://github.com/HotelsDotCom/styx/issues/202
     private Function<ByteBuf, String> decodeOrFailOperation(HttpRequest request) {
         return (byteBuf) -> {
             if (request.header("Fail_during_decoder").isPresent()) {

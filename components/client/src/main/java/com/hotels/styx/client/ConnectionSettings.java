@@ -15,13 +15,12 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.service.TlsSettings;
+import com.hotels.styx.api.extension.service.TlsSettings;
 
 /**
- * Connections settings.
+ * Connection configuration.
  */
-public final class ConnectionSettings implements Connection.Settings {
+public class ConnectionSettings {
     private final int connectTimeoutMillis;
 
     /**
@@ -65,7 +64,6 @@ public final class ConnectionSettings implements Connection.Settings {
         this.connectTimeoutMillis = connectTimeoutMillis;
     }
 
-    @Override
     public int connectTimeoutMillis() {
         return connectTimeoutMillis;
     }
@@ -76,9 +74,7 @@ public final class ConnectionSettings implements Connection.Settings {
      * @return Always returns a constant 0.
      */
     @Deprecated
-    @Override
     public int socketTimeoutMillis() {
         return 0;
     }
-
 }

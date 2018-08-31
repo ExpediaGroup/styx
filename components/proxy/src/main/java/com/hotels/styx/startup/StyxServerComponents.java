@@ -25,7 +25,7 @@ import com.hotels.styx.StyxConfig;
 import com.hotels.styx.Version;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.service.spi.StyxService;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 
 import java.util.HashMap;
@@ -140,7 +140,6 @@ public class StyxServerComponents {
             List<NamedPlugin> list = ImmutableList.copyOf(plugins);
             return plugins(env -> list);
         }
-
 
         public Builder plugins(PluginsLoader pluginsLoader) {
             this.pluginsLoader = requireNonNull(pluginsLoader);

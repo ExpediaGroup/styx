@@ -19,13 +19,15 @@ import java.nio.charset.Charset
 
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
-import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.{HttpRequest, RequestCookie}
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.Id.id
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
-import com.hotels.styx.api.client.{ActiveOrigins, Origin}
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
-import com.hotels.styx.api.service.{BackendService, StickySessionConfig}
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
+import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
+import com.hotels.styx.api.RequestCookie.requestCookie
+import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
+import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
@@ -100,12 +102,17 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
-    val request: HttpRequest = HttpRequest.Builder.get("/")
+    val request: HttpRequest = HttpRequest.get("/")
       .build
 
     val response = waitForResponse(client.sendRequest(request))
     response.status() should be(OK)
-    response.cookie("styx_origin_app").get().toString should fullyMatch regex "styx_origin_app=app-0[12]; Max-Age=.*; Path=/; HttpOnly"
+    val cookie = response.cookie("styx_origin_app").get()
+    cookie.value() should fullyMatch regex "app-0[12]"
+
+    cookie.path().get() should be("/")
+    cookie.httpOnly() should be(true)
+    cookie.maxAge().isPresent should be(true)
   }
 
   test("Responds without sticky session cookie when sticky session is not enabled") {
@@ -127,7 +134,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build
 
     val request: HttpRequest = get("/")
-      .addCookie("styx_origin_app", "app-02")
+      .cookies(requestCookie("styx_origin_app", "app-02"))
       .build
 
     val response1 = waitForResponse(client.sendRequest(request))
@@ -145,9 +152,10 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build
 
     val request: HttpRequest = get("/")
-      .addCookie("other_cookie1", "foo")
-      .addCookie("styx_origin_app", "app-02")
-      .addCookie("other_cookie2", "bar")
+      .cookies(
+        requestCookie("other_cookie1", "foo"),
+        requestCookie("styx_origin_app", "app-02"),
+        requestCookie("other_cookie2", "bar"))
       .build()
 
 
@@ -166,14 +174,21 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build
 
     val request: HttpRequest = get("/")
-      .addCookie("styx_origin_app", "h3")
+      .cookies(requestCookie("styx_origin_app", "h3"))
       .build
 
     val response = waitForResponse(client.sendRequest(request))
 
     response.status() should be(OK)
     response.cookies().asScala should have size (1)
-    response.cookie("styx_origin_app").get().toString should fullyMatch regex "styx_origin_app=app-0[12]; Max-Age=.*; Path=/; HttpOnly"
+
+    val cookie = response.cookie("styx_origin_app").get()
+
+    cookie.value() should fullyMatch regex "app-0[12]"
+
+    cookie.path().get() should be("/")
+    cookie.httpOnly() should be(true)
+    cookie.maxAge().isPresent should be(true)
   }
 
   test("Routes to new origin when the origin indicated by sticky session cookie is no longer available.") {
@@ -184,14 +199,20 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
       .build
 
     val request: HttpRequest = get("/")
-      .addCookie("styx_origin_app", "app-02")
+      .cookies(requestCookie("styx_origin_app", "app-02"))
       .build
 
     val response = waitForResponse(client.sendRequest(request))
 
     response.status() should be(OK)
-    response.cookies() should have size (1)
-    response.cookie("styx_origin_app").get().toString should fullyMatch regex "styx_origin_app=app-02; Max-Age=.*; Path=/; HttpOnly"
+    response.cookies() should have size 1
+    val cookie = response.cookie("styx_origin_app").get()
+
+    cookie.value() should be("app-02")
+
+    cookie.path().get() should be("/")
+    cookie.httpOnly() should be(true)
+    cookie.maxAge().isPresent should be(true)
   }
 
   private def healthCheckIntervalFor(appId: String) = 1000

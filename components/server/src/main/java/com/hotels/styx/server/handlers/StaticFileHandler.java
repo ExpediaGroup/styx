@@ -17,11 +17,13 @@ package com.hotels.styx.server.handlers;
 
 import com.google.common.io.Files;
 import com.google.common.net.MediaType;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import org.slf4j.Logger;
-import rx.Observable;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,13 +31,11 @@ import java.util.Optional;
 
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.api.MediaTypes.mediaTypeOf;
-import static com.hotels.styx.api.http.handlers.NotFoundHandler.NOT_FOUND_HANDLER;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.server.handlers.MediaTypes.mediaTypeOf;
+import static com.hotels.styx.common.http.handler.NotFoundHandler.NOT_FOUND_HANDLER;
+import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.Observable.just;
 
 /**
  * HTTP handler that provides a static file.
@@ -54,18 +54,19 @@ public class StaticFileHandler implements HttpHandler {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         try {
             return resolveFile(request.path())
                     .map(ResolvedFile::new)
-                    .map(resolvedFile -> response()
+                    .map(resolvedFile -> FullHttpResponse.response()
                             .addHeader(CONTENT_TYPE, resolvedFile.mediaType)
-                            .body(resolvedFile.content)
-                            .build())
-                    .map(Observable::just)
-                    .orElseGet(() -> NOT_FOUND_HANDLER.handle(request));
+                            .body(resolvedFile.content, UTF_8)
+                            .build()
+                            .toStreamingResponse())
+                    .map(StyxObservable::of)
+                    .orElseGet(() -> NOT_FOUND_HANDLER.handle(request, context));
         } catch (IOException e) {
-            return just(response(INTERNAL_SERVER_ERROR).build());
+            return StyxObservable.of(FullHttpResponse.response(INTERNAL_SERVER_ERROR).build().toStreamingResponse());
         }
     }
 

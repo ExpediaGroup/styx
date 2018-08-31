@@ -15,11 +15,12 @@
  */
 package com.hotels.styx.client.healthcheck;
 
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
+
 
 /**
  * An origin status monitor listener that fires originHealthy/originUnhealthy events to another listener once it receives more than a given minimum number of such events itself.
@@ -38,7 +39,7 @@ public class AnomalyExcludingOriginHealthEventListener implements OriginHealthSt
      * @param unhealthyThreshold minimum number of unhealthy events before an unhealthy event will be propagated to the wrapped listener
      */
     public AnomalyExcludingOriginHealthEventListener(OriginHealthStatusMonitor.Listener listener, int healthyThreshold, int unhealthyThreshold) {
-        this.listener = checkNotNull(listener);
+        this.listener = requireNonNull(listener);
         this.healthyThreshold = healthyThreshold;
         this.unhealthyThreshold = unhealthyThreshold;
         this.originHealthStatusCounter = new ConcurrentHashMap<>();

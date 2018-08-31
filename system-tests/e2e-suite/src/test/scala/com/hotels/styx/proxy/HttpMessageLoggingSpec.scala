@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import ch.qos.logback.classic.Level._
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
-import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -30,7 +30,7 @@ import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{StyxClientSupplier, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpResponseStatus.OK
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
 import org.scalatest.FunSpec
@@ -113,10 +113,10 @@ class HttpMessageLoggingSpec extends FunSpec
         assertThat(logger.log.size(), is(2))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, request=\\{method=GET, secure=false, uri=http://localhost:[0-9]+/foobar, origin=\"N/A\", headers=\\[Host=localhost:[0-9]+\\], cookies=\\[\\]}")))
+          "requestId=[-a-z0-9]+, request=\\{method=GET, secure=false, uri=http://localhost:[0-9]+/foobar, origin=\"N/A\", headers=\\[Host=localhost:[0-9]+\\]}")))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, response=\\{status=200 OK, headers=\\[Server=Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + "=generic-app-01, Via=1.1 styx\\], cookies=\\[\\]\\}")))
+          "requestId=[-a-z0-9]+, response=\\{status=200 OK, headers=\\[Server=Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + "=generic-app-01, Via=1.1 styx\\]\\}")))
       }
     }
 
@@ -131,10 +131,10 @@ class HttpMessageLoggingSpec extends FunSpec
         assertThat(logger.log.size(), is(2))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, request=\\{method=GET, secure=true, uri=/foobar, origin=\"N/A\", headers=.*, cookies=\\[\\]}")))
+          "requestId=[-a-z0-9]+, request=\\{method=GET, secure=true, uri=https://localhost:[0-9]+/foobar, origin=\"N/A\", headers=.*}")))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, response=\\{status=200 OK, headers=\\[Server=Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + "=generic-app-01, Via=1.1 styx\\], cookies=\\[\\]\\}")))
+          "requestId=[-a-z0-9]+, response=\\{status=200 OK, headers=\\[Server=Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + "=generic-app-01, Via=1.1 styx\\]\\}")))
       }
     }
   }

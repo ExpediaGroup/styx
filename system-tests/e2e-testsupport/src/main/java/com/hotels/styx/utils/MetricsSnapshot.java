@@ -20,10 +20,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.UrlConnectionHttpClient;
+import com.hotels.styx.api.FullHttpClient;
+import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.client.SimpleHttpClient;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -33,9 +32,10 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.FullHttpRequest.get;
+import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 
@@ -48,11 +48,9 @@ public class MetricsSnapshot {
     }
 
     public static MetricsSnapshot downloadFrom(String host, int port) throws IOException {
-        HttpClient client = new UrlConnectionHttpClient(1000, 3000);
-        HttpRequest request = get(format("http://%s:%d/admin/metrics", host, port)).build();
-        HttpResponse response = client.sendRequest(request).toBlocking().first();
-        String body = bodyAsString(response);
-        return new MetricsSnapshot(decodeToMap(body));
+        FullHttpClient client = new SimpleHttpClient.Builder().build();
+        FullHttpResponse response = await(client.sendRequest(get(format("http://%s:%d/admin/metrics", host, port)).build()));
+        return new MetricsSnapshot(decodeToMap(response.bodyAs(UTF_8)));
     }
 
     public static MetricsSnapshot fromString(String json) throws IOException {

@@ -18,7 +18,7 @@ package com.hotels.styx.server.netty.connectors;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import com.hotels.styx.api.HttpResponseStatus;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static java.util.Arrays.asList;
+import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -44,10 +45,9 @@ final class ExceptionStatusMapper {
     Optional<HttpResponseStatus> statusFor(Throwable throwable) {
         List<HttpResponseStatus> matchingStatuses = this.multimap.entries().stream()
                 .filter(entry -> entry.getValue().isInstance(throwable))
+                .sorted(comparing(entry -> entry.getKey().code()))
                 .map(Map.Entry::getKey)
                 .collect(toList());
-
-
 
         if (matchingStatuses.size() > 1) {
             LOG.error("Multiple matching statuses for throwable={} statuses={}", throwable, matchingStatuses);

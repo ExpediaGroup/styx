@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.applications.yaml;
 
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.RewriteConfig;
-import com.hotels.styx.api.service.TlsSettings;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.RewriteConfig;
+import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.applications.ApplicationsProvider;
 import com.hotels.styx.applications.BackendServices;
 import org.hamcrest.CoreMatchers;
@@ -32,12 +32,12 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.service.BackendService.Protocol.HTTP;
-import static com.hotels.styx.api.service.BackendService.Protocol.HTTPS;
-import static com.hotels.styx.api.service.Certificate.certificate;
-import static com.hotels.styx.api.service.HealthCheckConfig.newHealthCheckConfigBuilder;
-import static com.hotels.styx.api.service.StickySessionConfig.newStickySessionConfigBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.service.BackendService.Protocol.HTTP;
+import static com.hotels.styx.api.extension.service.BackendService.Protocol.HTTPS;
+import static com.hotels.styx.api.extension.service.Certificate.certificate;
+import static com.hotels.styx.api.extension.service.HealthCheckConfig.newHealthCheckConfigBuilder;
+import static com.hotels.styx.api.extension.service.StickySessionConfig.newStickySessionConfigBuilder;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadApplicationsFrom;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadFromPath;
 import static com.hotels.styx.support.ApplicationConfigurationMatcher.anApplication;

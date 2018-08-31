@@ -15,15 +15,17 @@
  */
 package com.hotels.styx.routing.handlers
 
-import _root_.io.netty.handler.codec.http.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.Environment
 import com.hotels.styx.api.Id.id
 import com.hotels.styx.api._
-import com.hotels.styx.api.service.BackendService
+import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.client.{OriginStatsFactory, OriginsInventory}
+import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.config.RouteHandlerDefinition
+import com.hotels.styx.server.HttpInterceptorContext
 import org.scalatest.{FunSpec, ShouldMatchers}
 import rx.Observable
 
@@ -53,8 +55,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
   it("builds ProxyToBackend handler") {
     val handler = new ProxyToBackend.ConfigFactory(environment, clientFactory()).build(List(), null, config)
 
-    val response = handler.handle(HttpRequest.Builder.get("/foo")
-      .build(), null).toBlocking.first()
+    val response = StyxFutures.await(handler.handle(HttpRequest.get("/foo").build(), HttpInterceptorContext.create).asCompletableFuture())
     response.status should be (OK)
   }
 
@@ -111,7 +112,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
         backendService.origins().head.id() should be(id("ba1"))
         backendService.origins().head.host().getPort should be(9094)
         Observable
-          .just(HttpResponse.Builder
+          .just(HttpResponse
             .response(OK)
             .addHeader("X-Backend-Service", backendService.id())
             .build()

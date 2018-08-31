@@ -18,15 +18,15 @@ package com.hotels.styx;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Service;
 import com.hotels.styx.admin.AdminServerConfig;
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.spi.Registry;
-import com.hotels.styx.api.service.spi.StyxService;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.proxy.ProxyServerConfig;
@@ -39,7 +39,6 @@ import io.netty.util.ResourceLeakDetector;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -49,7 +48,7 @@ import static ch.qos.logback.classic.Level.ERROR;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.util.concurrent.Service.State.FAILED;
 import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATION;
-import static com.hotels.styx.api.support.HostAndPorts.freePort;
+import static com.hotels.styx.common.HostAndPorts.freePort;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
@@ -253,7 +252,7 @@ public class StyxServerTest {
         }
 
         @Override
-        public Observable<HttpResponse> intercept(HttpRequest request, HttpInterceptor.Chain chain) {
+        public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
             return null;
         }
 

@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.server.routing;
 
-import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.RequestCookie;
 import com.hotels.styx.server.routing.antlr.AntlrConditionParser;
 
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
@@ -31,7 +31,7 @@ public final class AntlrMatcher implements Matcher {
             .registerFunction("userAgent", request -> request.header(USER_AGENT).orElse(""))
             .registerFunction("protocol", request -> request.isSecure() ? "https" : "http")
             .registerFunction("header", (request, input) -> request.header(input).orElse(""))
-            .registerFunction("cookie", (request, input) -> request.cookie(input).map(HttpCookie::value).orElse(""))
+            .registerFunction("cookie", (request, input) -> request.cookie(input).map(RequestCookie::value).orElse(""))
             .build();
     private final Condition condition;
 

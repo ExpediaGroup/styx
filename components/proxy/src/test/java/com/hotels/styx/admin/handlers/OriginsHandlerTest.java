@@ -17,19 +17,20 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hotels.styx.api.messages.FullHttpResponse;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.applications.BackendServices.newBackendServices;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadFromPath;
 import static com.hotels.styx.common.StyxFutures.await;
@@ -53,7 +54,7 @@ public class OriginsHandlerTest {
         Iterable<BackendService> expected = loadFromPath(originsFile).get();
 
         withOriginsHandler(originsFile, handler -> {
-            FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
+            FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create()));
 
             assertThat(response.status(), is(OK));
             assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
@@ -69,7 +70,7 @@ public class OriginsHandlerTest {
         Registry<BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
         OriginsHandler handler = new OriginsHandler(backendServicesRegistry);
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(OK));
         assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
@@ -84,7 +85,7 @@ public class OriginsHandlerTest {
         Iterable<BackendService> expected = loadFromPath(originsFile).get();
 
         withOriginsHandler(originsFile, handler -> {
-            FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build()));
+            FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create()));
 
             assertThat(response.status(), is(OK));
             assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));

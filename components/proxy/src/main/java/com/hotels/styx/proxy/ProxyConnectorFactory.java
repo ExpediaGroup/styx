@@ -16,10 +16,10 @@
 package com.hotels.styx.proxy;
 
 import com.codahale.metrics.Histogram;
-import com.hotels.styx.api.HttpHandler2;
-import com.hotels.styx.api.metrics.HttpErrorStatusListener;
-import com.hotels.styx.api.metrics.MetricRegistry;
-import com.hotels.styx.api.metrics.RequestStatsCollector;
+import com.hotels.styx.server.HttpErrorStatusListener;
+import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.server.RequestStatsCollector;
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
@@ -37,8 +37,7 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.handler.codec.http.HttpRequestDecoder;
-import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
@@ -132,7 +131,7 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
         }
 
         @Override
-        public void configure(Channel channel, HttpHandler2 httpPipeline) {
+        public void configure(Channel channel, HttpHandler httpPipeline) {
             sslContext.ifPresent(ssl -> {
                 SslHandler sslHandler = ssl.newHandler(channel.alloc());
                 channel.pipeline().addLast(sslHandler);
@@ -143,11 +142,8 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
                     .addLast("idle-handler", new IdleStateHandler(serverConfig.requestTimeoutMillis(), 0, serverConfig.keepAliveTimeoutMillis(), MILLISECONDS))
                     .addLast("channel-stats", channelStatsHandler)
 
-                    // Outbound
-                    .addLast("encoder", new HttpResponseEncoder())
-
-                    // Inbound
-                    .addLast("decoder", new HttpRequestDecoder(serverConfig.maxInitialLineLength(), serverConfig.maxHeaderSize(), serverConfig.maxChunkSize(), true))
+                    // Http Server Codec
+                    .addLast("http-server-codec", new HttpServerCodec(serverConfig.maxInitialLineLength(), serverConfig.maxHeaderSize(), serverConfig.maxChunkSize(), true))
 
                     // idle-handler and timeout-handler must be before aggregator. Otherwise
                     // timeout handler cannot see the incoming HTTP chunks.

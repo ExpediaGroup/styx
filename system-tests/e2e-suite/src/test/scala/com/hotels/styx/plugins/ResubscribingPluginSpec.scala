@@ -17,15 +17,17 @@ package com.hotels.styx.plugins
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
-import com.hotels.styx.api.HttpRequest.Builder.get
+import com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING
+import com.hotels.styx.api.HttpHeaderValues.CHUNKED
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
-import io.netty.handler.codec.http.HttpHeaders.Names._
-import io.netty.handler.codec.http.HttpHeaders.Values._
-import io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.is
 import org.scalatest.FunSpec
+
+// TODO: Mikko no longer necessary?
 
 class ResubscribingPluginSpec extends FunSpec
   with StyxProxySpec
@@ -57,14 +59,14 @@ class ResubscribingPluginSpec extends FunSpec
     it("Returns connections back to pool when plugin performs tasks on separate thread pool") {
       mockServer.stub(urlStartingWith("/foobar"), aResponse
         .withStatus(200)
-        .withHeader(TRANSFER_ENCODING, CHUNKED)
+        .withHeader(TRANSFER_ENCODING.toString, CHUNKED.toString)
       )
 
       val request = get(styxServer.routerURL("/foobar"))
         .addHeader("Content-Length", "0")
         .build()
 
-      val response = client.sendRequest(request).toBlocking.single()
+      val response = decodedRequest(request)
 
       assertThat(response.status(), is(INTERNAL_SERVER_ERROR))
 

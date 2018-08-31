@@ -16,8 +16,8 @@
 package com.hotels.styx.startup;
 
 import com.hotels.styx.admin.AdminServerBuilder;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.server.HttpServer;
 
 /**
@@ -28,10 +28,6 @@ public final class AdminServerSetUp {
     }
 
     public static HttpServer createAdminServer(StyxServerComponents config) {
-        // This comment was originally in the class StyxServer
-        // TODO: Pass all backend Service Registries to AdminServerBuilder:
-        // - only one backendServicesRegistry is passed in to the admin interface. Instead we
-        //   should pass all of them:
         return new AdminServerBuilder(config.environment())
                 .backendServicesRegistry((Registry<BackendService>) config.services().get("backendServiceRegistry"))
                 .plugins(config.plugins())

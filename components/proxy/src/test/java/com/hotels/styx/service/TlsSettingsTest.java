@@ -18,8 +18,8 @@ package com.hotels.styx.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.hotels.styx.api.service.Certificate;
-import com.hotels.styx.api.service.TlsSettings;
+import com.hotels.styx.api.extension.service.Certificate;
+import com.hotels.styx.api.extension.service.TlsSettings;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.hotels.styx.api.service.Certificate.certificate;
+import static com.hotels.styx.api.extension.service.Certificate.certificate;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;

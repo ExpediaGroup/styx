@@ -18,14 +18,15 @@ package com.hotels.styx.client.connectionpool;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.SlidingWindowReservoir;
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.client.Origin;
+import com.google.common.base.Objects;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.client.ConnectionSettings;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
+import com.hotels.styx.api.extension.Origin;
 import org.slf4j.Logger;
 import rx.Observable;
 import rx.Subscriber;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -36,11 +37,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static com.hotels.styx.client.connectionpool.ConnectionPoolStatsCounter.NULL_CONNECTION_POOL_STATS;
 import static java.util.Collections.newSetFromMap;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -52,7 +53,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
 
     private final Origin origin;
 
-    private final Settings connectionPoolSettings;
+    private final ConnectionPoolSettings connectionPoolSettings;
     private final Connection.Factory connectionFactory;
     private final Queue<Subscriber<? super Connection>> waitingSubscribers;
     private final Queue<Connection> availableConnections;
@@ -72,7 +73,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
      * @param connectionPoolSettings connection pool configuration
      * @param connectionFactory      connection factory
      */
-    public SimpleConnectionPool(Origin origin, Settings connectionPoolSettings, Connection.Factory connectionFactory) {
+    public SimpleConnectionPool(Origin origin, ConnectionPoolSettings connectionPoolSettings, Connection.Factory connectionFactory) {
         this(origin, connectionPoolSettings, connectionFactory, true);
     }
 
@@ -84,10 +85,10 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
      * @param connectionFactory      connection factory
      * @param recordStats            true if stats should be recorded
      */
-    public SimpleConnectionPool(Origin origin, Settings connectionPoolSettings, Connection.Factory connectionFactory, boolean recordStats) {
-        this.connectionPoolSettings = checkNotNull(connectionPoolSettings);
-        this.origin = checkNotNull(origin);
-        this.connectionFactory = checkNotNull(connectionFactory);
+    public SimpleConnectionPool(Origin origin, ConnectionPoolSettings connectionPoolSettings, Connection.Factory connectionFactory, boolean recordStats) {
+        this.connectionPoolSettings = requireNonNull(connectionPoolSettings);
+        this.origin = requireNonNull(origin);
+        this.connectionFactory = requireNonNull(connectionFactory);
         this.availableConnections = new ConcurrentLinkedDeque<>();
         this.borrowedConnections = newSetFromMap(new ConcurrentHashMap<>());
         this.waitingSubscribers = new ConcurrentLinkedDeque<>();
@@ -193,7 +194,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
 
     private Observable<Connection> createConnection() {
         connectionAttempts.incrementAndGet();
-        return connectionFactory.createConnection(origin, connectionPoolSettings)
+        return connectionFactory.createConnection(origin, new ConnectionSettings(connectionPoolSettings.connectTimeoutMillis()))
                 .doOnError(throwable -> {
                     busyConnections.decrementAndGet();
                     connectionFailures.incrementAndGet();
@@ -253,7 +254,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
             return false;
         }
         SimpleConnectionPool other = (SimpleConnectionPool) obj;
-        return Objects.equals(this.origin, other.origin);
+        return Objects.equal(this.origin, other.origin);
     }
 
     @Override
@@ -265,7 +266,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
                 .toString();
     }
 
-    public ConnectionPool.Settings settings() {
+    public ConnectionPoolSettings settings() {
         return connectionPoolSettings;
     }
 
@@ -279,7 +280,7 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
             this.waitingSubscribers = waitingSubscribers;
         }
 
-        public Observable<Connection> create(ConnectionPool.Stats stats, Settings connectionPoolSettings) {
+        public Observable<Connection> create(ConnectionPool.Stats stats, ConnectionPoolSettings connectionPoolSettings) {
             Observable.OnSubscribe<Connection> onSubscribe = subscriber -> {
                 waitingSubscriber = subscriber;
                 if (stats.pendingConnectionCount() >= connectionPoolSettings.maxPendingConnectionsPerHost()) {
@@ -374,11 +375,11 @@ public class SimpleConnectionPool implements ConnectionPool, Comparable<Connecti
      * Factory to construct instances.
      */
     public static class Factory implements ConnectionPool.Factory {
-        private Settings connectionPoolSettings;
+        private ConnectionPoolSettings connectionPoolSettings;
         private Connection.Factory connectionFactory;
         private boolean recordStats = true;
 
-        public Factory connectionPoolSettings(Settings connectionPoolSettings) {
+        public Factory connectionPoolSettings(ConnectionPoolSettings connectionPoolSettings) {
             this.connectionPoolSettings = connectionPoolSettings;
             return this;
         }

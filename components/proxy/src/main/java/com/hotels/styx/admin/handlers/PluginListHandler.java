@@ -16,22 +16,24 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import rx.Observable;
 
 import java.util.List;
 import java.util.stream.Stream;
 
 import static com.google.common.net.MediaType.HTML_UTF_8;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
-import static rx.Observable.just;
 
 /**
  * Returns a simple HTML page with a list of plugins, split into enabled and disabled.
@@ -44,17 +46,18 @@ public class PluginListHandler implements HttpHandler {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         Stream<NamedPlugin> enabled = plugins.stream().filter(NamedPlugin::enabled);
         Stream<NamedPlugin> disabled = plugins.stream().filter(plugin -> !plugin.enabled());
 
         String output = section("Enabled", enabled)
                 + section("Disabled", disabled);
 
-        return just(response(OK)
-                .body(output)
-                .contentType(HTML_UTF_8)
-                .build());
+        return StyxObservable.of(response(OK)
+                .body(output, UTF_8)
+                .addHeader(CONTENT_TYPE, HTML_UTF_8.toString())
+                .build()
+                .toStreamingResponse());
     }
 
     private String section(String toggleState, Stream<NamedPlugin> plugins) {

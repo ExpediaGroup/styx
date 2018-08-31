@@ -15,18 +15,18 @@
  */
 package com.hotels.styx.proxy;
 
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.NoServiceConfiguredException;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.server.HttpRouter;
-import rx.Observable;
 
 /**
- * A {@link HttpHandler2} implementation.
+ * A {@link HttpHandler} implementation.
  */
-public class RouteHandlerAdapter implements HttpHandler2 {
+public class RouteHandlerAdapter implements HttpHandler {
     private final HttpRouter router;
 
     public RouteHandlerAdapter(HttpRouter router) {
@@ -34,12 +34,9 @@ public class RouteHandlerAdapter implements HttpHandler2 {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return router.route(request)
                 .map(pipeline -> pipeline.handle(request, context))
-                // TODO: NoServiceConfiguredException happens *after* routing. Therefore it doesn't contain
-                // any helpful information about the state of the router as to why service was not configured.
-                // It might be useful to think if there is a better way of addressing this issue.
-                .orElse(Observable.error(new NoServiceConfiguredException(request.path())));
+                .orElse(StyxObservable.error(new NoServiceConfiguredException(request.path())));
     }
 }

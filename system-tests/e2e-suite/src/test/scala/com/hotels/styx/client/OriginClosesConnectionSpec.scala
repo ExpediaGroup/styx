@@ -17,13 +17,11 @@ package com.hotels.styx.client
 
 import ch.qos.logback.classic.Level
 import com.google.common.base.Charsets._
-import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.{HttpResponse, service}
-import com.hotels.styx.api.client.ActiveOrigins
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
-import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException
-import com.hotels.styx.api.service.spi
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.{HttpResponse, extension}
+import com.hotels.styx.api.extension.ActiveOrigins
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
@@ -43,6 +41,8 @@ import io.netty.handler.codec.http._
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import rx.observers.TestSubscriber
+import com.hotels.styx.api.StyxInternalObservables.toRxObservable
+import com.hotels.styx.api.exceptions.ResponseTimeoutException
 
 import scala.compat.java8.StreamConverters._
 import scala.concurrent.duration._
@@ -98,7 +98,7 @@ class OriginClosesConnectionSpec extends FunSuite
     errorCount should be(0)
   }
 
-  def activeOrigins(backendService: service.BackendService): ActiveOrigins = newOriginsInventoryBuilder(backendService).build()
+  def activeOrigins(backendService: extension.service.BackendService): ActiveOrigins = newOriginsInventoryBuilder(backendService).build()
 
   def busyConnectionStrategy(activeOrigins: ActiveOrigins): LoadBalancer = new BusyConnectionsStrategy(activeOrigins)
 
@@ -123,10 +123,11 @@ class OriginClosesConnectionSpec extends FunSuite
     val responseObservable = styxClient.sendRequest(
       get("/foo/3")
         .addHeader(HOST, originHost)
-        .build())
+        .build()
+        .toStreamingRequest)
 
     responseObservable
-      .doOnNext((t: HttpResponse) => t.body().content().subscribe(contentSubscriber))
+      .doOnNext((t: HttpResponse) => toRxObservable(t.body()).subscribe(contentSubscriber))
       .subscribe(responseSubscriber)
 
     responseSubscriber.awaitTerminalEvent()

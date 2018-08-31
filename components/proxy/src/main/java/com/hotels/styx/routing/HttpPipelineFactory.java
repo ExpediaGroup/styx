@@ -15,11 +15,11 @@
  */
 package com.hotels.styx.routing;
 
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 
 /**
  * A base type for HTTP pipeline builders.
  */
 public interface HttpPipelineFactory {
-    HttpHandler2 build();
+    HttpHandler build();
 }

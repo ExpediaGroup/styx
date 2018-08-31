@@ -19,12 +19,12 @@ import java.util.concurrent.atomic.AtomicReference
 
 import com.google.common.net.HostAndPort
 import com.google.common.net.HostAndPort._
-import com.hotels.styx.api.HttpHandler2
+import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.Id._
-import com.hotels.styx.api.client.Origin
-import com.hotels.styx.api.client.Origin._
-import com.hotels.styx.api.support.HostAndPorts._
+import com.hotels.styx.api.extension.Origin
+import com.hotels.styx.api.extension.Origin._
+import com.hotels.styx.common.HostAndPorts._
 import com.hotels.styx.server.HttpServer
 import com.hotels.styx.server.netty.{NettyServerBuilder, ServerConnector}
 import io.netty.buffer.Unpooled._
@@ -36,7 +36,7 @@ import io.netty.handler.codec.http._
 class NettyHttpServerConnector(serverPort: Int, handler: ChannelInboundHandlerAdapter) extends ServerConnector {
   override def `type`(): String = "http"
 
-  override def configure(channel: Channel, httpController: HttpHandler2): Unit = {
+  override def configure(channel: Channel, httpController: HttpHandler): Unit = {
     val pipeline: ChannelPipeline = channel.pipeline()
     pipeline.addLast("encoder", new HttpResponseEncoder)
     pipeline.addLast("decoder", new HttpRequestDecoder())
@@ -48,7 +48,7 @@ class NettyHttpServerConnector(serverPort: Int, handler: ChannelInboundHandlerAd
 
 trait NettyOrigins {
 
-  case class HttpHeader(name: String, value: String)
+  case class HttpHeader(name: CharSequence, value: String)
 
   val customResponseHandler = new CustomResponseHandler()
 

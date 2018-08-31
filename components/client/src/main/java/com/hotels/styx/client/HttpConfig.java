@@ -18,7 +18,7 @@ package com.hotels.styx.client;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.google.common.base.Objects.firstNonNull;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 

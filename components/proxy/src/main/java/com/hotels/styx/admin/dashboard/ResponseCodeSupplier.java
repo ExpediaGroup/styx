@@ -17,18 +17,18 @@ package com.hotels.styx.admin.dashboard;
 
 import com.codahale.metrics.Counting;
 import com.codahale.metrics.MetricFilter;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.admin.dashboard.ResponseCodeSupplier.StatusMetricType.COUNTER;
 import static com.hotels.styx.admin.dashboard.ResponseCodeSupplier.StatusMetricType.METER;
 import static java.lang.Character.isDigit;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.fill;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Response code supplier.
@@ -44,10 +44,10 @@ final class ResponseCodeSupplier implements Supplier<Map<String, Integer>> {
     private final boolean includeNonErrorCodes;
 
     ResponseCodeSupplier(MetricRegistry metrics, StatusMetricType statusMetricType, String prefix, boolean includeNonErrorCodes) {
-        this.metrics = checkNotNull(metrics);
-        this.statusMetricType = checkNotNull(statusMetricType);
+        this.metrics = requireNonNull(metrics);
+        this.statusMetricType = requireNonNull(statusMetricType);
         this.includeNonErrorCodes = includeNonErrorCodes;
-        checkNotNull(prefix);
+        requireNonNull(prefix);
         this.prefixFilter = (name, metric) -> name.startsWith(prefix);
     }
 

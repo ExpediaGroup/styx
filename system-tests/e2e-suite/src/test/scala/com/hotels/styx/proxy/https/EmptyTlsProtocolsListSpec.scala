@@ -16,10 +16,9 @@
 package com.hotels.styx.proxy.https
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.api.HttpClient
-import com.hotels.styx.api.HttpRequest.Builder
-import com.hotels.styx.api.client.UrlConnectionHttpClient
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.{FullHttpClient, FullHttpRequest}
+import com.hotels.styx.client.SimpleHttpClient
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -27,6 +26,8 @@ import com.hotels.styx.support.configuration._
 import com.hotels.styx.{SSLSetup, StyxProxySpec}
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import org.scalatest.{FunSpec, ShouldMatchers}
+
+import scala.concurrent.Await
 
 class EmptyTlsProtocolsListSpec extends FunSpec
   with StyxProxySpec
@@ -36,8 +37,8 @@ class EmptyTlsProtocolsListSpec extends FunSpec
 
   val crtFile = fixturesHome(this.getClass, "/ssl/testCredentials.crt").toString
   val keyFile = fixturesHome(this.getClass, "/ssl/testCredentials.key").toString
-  val clientV12 = newClient("TLSv1.2")
-  val clientV11 = newClient("TLSv1.1")
+  val clientV12 : FullHttpClient = newClient(Seq("TLSv1.2"))
+  val clientV11 : FullHttpClient = newClient(Seq("TLSv1.1"))
 
   override val styxConfig = StyxConfig(
     ProxyConfig(
@@ -66,25 +67,30 @@ class EmptyTlsProtocolsListSpec extends FunSpec
     super.afterAll()
   }
 
+  import scala.concurrent.duration._
+  import scala.compat.java8.FutureConverters.CompletionStageOps
+
   describe("Empty TLS protocols list") {
     recordingBackend.stub(urlPathEqualTo("/secure"), aResponse.withStatus(OK.code()))
 
     it("Empty TLS protocols list activates all supported protocols") {
-      val req = Builder.get(styxServer.secureRouterURL("/secure"))
+      val req = FullHttpRequest.get(styxServer.secureRouterURL("/secure"))
         .header(HOST, styxServer.httpsProxyHost)
         .secure(true)
         .build()
 
-      val resp1 = decodedRequestWithClient(clientV11, req)
+      val resp1 = Await.result(clientV11.sendRequest(req).toScala, 3.seconds)
       resp1.status() should be(OK)
 
-      val resp2 = decodedRequestWithClient(clientV12, req)
+      val resp2 = Await.result(clientV12.sendRequest(req).toScala, 3.seconds)
       resp2.status() should be(OK)
     }
   }
 
-  def newClient(supportedProtocols: String): HttpClient = {
-    new UrlConnectionHttpClient(TWO_SECONDS, FIVE_SECONDS, supportedProtocols)
+  def newClient(supportedProtocols: Seq[String]): FullHttpClient = {
+    new SimpleHttpClient.Builder()
+      .tlsSettings(TlsSettings(protocols = supportedProtocols).asJava)
+      .build()
   }
 
 }

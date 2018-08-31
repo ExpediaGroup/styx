@@ -47,7 +47,7 @@ This creates a subdirectory called `styx-<VERSION>` that contains Styx binaries 
 * `logback.xml`      - Logging configuration file. There are more examples in the `conf/logback`
                       subdirectory.
                       
-* `styx-env.sh`     - JVM settings file. See <TODO> section below.
+* `styx-env.sh`     - JVM settings file. See "Configuring JVM Settings" section below.
 
 
 

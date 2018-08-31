@@ -19,11 +19,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.spi.Registry;
-import com.hotels.styx.api.service.spi.StyxService;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
 import com.hotels.styx.proxy.interceptors.ConfigurationContextResolverInterceptor;
 import com.hotels.styx.proxy.interceptors.HopByHopHeadersRemovingInterceptor;
@@ -59,7 +59,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
     }
 
     @Override
-    public HttpHandler2 create(StyxServerComponents config) {
+    public HttpHandler create(StyxServerComponents config) {
         BuiltinInterceptorsFactory builtinInterceptorsFactory = new BuiltinInterceptorsFactory(
                 ImmutableMap.of("Rewrite", new RewriteInterceptor.ConfigFactory()));
 
@@ -76,7 +76,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
                 configuredPipeline(config.environment(), config.services(), config.plugins(), routeHandlerFactory));
     }
 
-    private static HttpHandler2 styxHttpPipeline(StyxConfig config, HttpHandler2 interceptorsPipeline) {
+    private static HttpHandler styxHttpPipeline(StyxConfig config, HttpHandler interceptorsPipeline) {
         ImmutableList.Builder<HttpInterceptor> builder = ImmutableList.builder();
 
         boolean loggingEnabled = config.get("request-logging.inbound.enabled", Boolean.class)
@@ -99,7 +99,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
         return new HttpInterceptorPipeline(builder.build(), interceptorsPipeline);
     }
 
-    private static HttpHandler2 configuredPipeline(
+    private static HttpHandler configuredPipeline(
             Environment environment,
             Map<String, StyxService> servicesFromConfig,
             Iterable<NamedPlugin> plugins,

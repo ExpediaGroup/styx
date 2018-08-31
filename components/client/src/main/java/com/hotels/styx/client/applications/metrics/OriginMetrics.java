@@ -18,16 +18,16 @@ package com.hotels.styx.client.applications.metrics;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.client.applications.AggregateTimer;
 import com.hotels.styx.client.applications.OriginStats;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.client.applications.metrics.StatusCodes.statusCodeName;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Reports metrics about origins to a {@link MetricRegistry}.
@@ -64,10 +64,10 @@ public class OriginMetrics implements OriginStats {
      * @param origin             an origin
      */
     public OriginMetrics(ApplicationMetrics applicationMetrics, Origin origin) {
-        this.applicationMetrics = checkNotNull(applicationMetrics);
+        this.applicationMetrics = requireNonNull(applicationMetrics);
 
         this.registry = this.applicationMetrics.metricRegistry();
-        this.requestMetricPrefix = requestMetricPrefix(checkNotNull(origin));
+        this.requestMetricPrefix = requestMetricPrefix(requireNonNull(origin));
 
         this.requestSuccessMeter = this.registry.meter(name(this.requestMetricPrefix, "success-rate"));
         this.requestErrorMeter = this.registry.meter(name(this.requestMetricPrefix, "error-rate"));

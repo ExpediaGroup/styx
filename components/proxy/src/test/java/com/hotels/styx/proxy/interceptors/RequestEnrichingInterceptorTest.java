@@ -22,8 +22,8 @@ import org.testng.annotations.Test;
 
 import static com.google.common.net.HttpHeaders.X_FORWARDED_FOR;
 import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.client.StyxHeaderConfig.REQUEST_ID_DEFAULT;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
 import static com.hotels.styx.proxy.interceptors.ReturnResponseChain.returnsResponse;

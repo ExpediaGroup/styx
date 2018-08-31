@@ -15,15 +15,16 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.client.applications.OriginStats;
 import com.hotels.styx.client.applications.metrics.OriginMetrics;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
+
 
 /**
  * A factory that creates {@link OriginStats} instances using a metric registry it wraps. If an {@link OriginStats} already
@@ -39,7 +40,7 @@ public class OriginStatsFactory {
      * @param metricRegistry a metric registry
      */
     public OriginStatsFactory(MetricRegistry metricRegistry) {
-        this.metricRegistry = checkNotNull(metricRegistry);
+        this.metricRegistry = requireNonNull(metricRegistry);
     }
 
     /**

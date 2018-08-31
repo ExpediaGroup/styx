@@ -15,17 +15,17 @@
  */
 package com.hotels.styx.server.handlers;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.messages.HttpResponseStatus.FORBIDDEN;
-import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponseStatus.FORBIDDEN;
+import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
-import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.is;
@@ -37,7 +37,7 @@ public class ClassPathResourceHandlerTest {
     @Test
     public void readsClassPathResources() {
         HttpRequest request = get("/admin/dashboard/expected.txt").build();
-        FullHttpResponse response = waitForResponse(handler.handle(request));
+        FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(OK));
         assertThat(body(response), is("Foo\nBar\n"));
@@ -50,7 +50,7 @@ public class ClassPathResourceHandlerTest {
     @Test
     public void returns404IfResourceDoesNotExist() {
         HttpRequest request = get("/admin/dashboard/unexpected.txt").build();
-        FullHttpResponse response = waitForResponse(handler.handle(request));
+        FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(NOT_FOUND));
     }
@@ -68,7 +68,7 @@ public class ClassPathResourceHandlerTest {
     @Test(dataProvider = "forbiddenPaths")
     public void returns403IfTryingToAccessResourcesOutsidePermittedRoot(String path) {
         HttpRequest request = get(path).build();
-        FullHttpResponse response = waitForResponse(handler.handle(request));
+        FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(FORBIDDEN));
     }

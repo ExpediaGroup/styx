@@ -16,13 +16,13 @@
 package com.hotels.styx.client.retry;
 
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.configuration.Configuration;
 
 /**
  * Factory for creating retry policy based on configuration settings.
  */
-public final class RetryPolicyFactory implements com.hotels.styx.api.client.retrypolicy.spi.RetryPolicyFactory {
+public final class RetryPolicyFactory implements com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicyFactory {
     @Override
     public RetryPolicy create(Environment environment, Configuration retryPolicyConfiguration) {
         int retriesCount = retryPolicyConfiguration.get("count", Integer.class)

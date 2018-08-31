@@ -20,9 +20,9 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hotels.styx.api.common.MorePreconditions.checkArgument;
+import static com.hotels.styx.common.MorePreconditions.checkArgument;
 import static com.hotels.styx.server.netty.eventloop.epoll.EpollEventLoopGroups.newEventLoopGroup;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A factory for creating Epoll based server event loop.
@@ -33,7 +33,7 @@ public class EpollServerEventLoopGroupFactory implements ServerEventLoopFactory 
     private final int workerThreadsCount;
 
     public EpollServerEventLoopGroupFactory(String name, int bossThreadsCount, int workerThreadsCount) {
-        this.name = checkNotNull(name);
+        this.name = requireNonNull(name);
         this.bossThreadsCount = checkArgument(bossThreadsCount, bossThreadsCount > -1);
         this.workerThreadsCount = checkArgument(workerThreadsCount, workerThreadsCount > -1);
     }

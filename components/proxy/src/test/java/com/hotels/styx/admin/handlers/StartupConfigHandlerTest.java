@@ -16,12 +16,13 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.StartupConfig;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -39,7 +40,7 @@ public class StartupConfigHandlerTest {
 
         StartupConfigHandler handler = new StartupConfigHandler(startupConfig);
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), matchesRegex("<html><body>" +

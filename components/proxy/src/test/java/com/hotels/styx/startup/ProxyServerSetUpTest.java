@@ -16,7 +16,7 @@
 package com.hotels.styx.startup;
 
 import com.hotels.styx.StyxConfig;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -33,7 +33,7 @@ import org.testng.annotations.Test;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
-import static com.hotels.styx.api.support.HostAndPorts.freePort;
+import static com.hotels.styx.common.HostAndPorts.freePort;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
@@ -219,7 +219,7 @@ public class ProxyServerSetUpTest {
 
     private static PipelineFactory mockPipelineFactory(StyxServerComponents components) {
         PipelineFactory pipelineFactory = mock(PipelineFactory.class);
-        HttpHandler2 pipeline = mock(HttpHandler2.class);
+        HttpHandler pipeline = mock(HttpHandler.class);
         when(pipelineFactory.create(components)).thenReturn(pipeline);
         return pipelineFactory;
     }

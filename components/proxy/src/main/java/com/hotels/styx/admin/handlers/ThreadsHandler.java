@@ -16,15 +16,16 @@
 package com.hotels.styx.admin.handlers;
 
 import com.codahale.metrics.jvm.ThreadDump;
-import com.hotels.styx.api.http.handlers.BaseHttpHandler;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import java.io.ByteArrayOutputStream;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.lang.management.ManagementFactory.getThreadMXBean;
 
 /**
@@ -42,11 +43,12 @@ public class ThreadsHandler extends BaseHttpHandler {
 
     @Override
     public HttpResponse doHandle(HttpRequest request) {
-        return response(OK)
+        return FullHttpResponse.response(OK)
                 .disableCaching()
-                .contentType(PLAIN_TEXT_UTF_8)
-                .body(threadDumpContent())
-                .build();
+                .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
+                .body(threadDumpContent(), true)
+                .build()
+                .toStreamingResponse();
     }
 
     private byte[] threadDumpContent() {

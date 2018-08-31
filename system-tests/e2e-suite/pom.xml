@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.hotels.styx</groupId>
     <artifactId>styx-tests</artifactId>
-    <version>0.7-SNAPSHOT</version>
+    <version>0.9-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -14,6 +14,7 @@
 
   <properties>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <jackson.module.scala.version>2.7.3</jackson.module.scala.version>
   </properties>
 
   <dependencies>
@@ -21,6 +22,12 @@
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-api</artifactId>
       <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.module</groupId>
+      <artifactId>jackson-module-scala_${scala.version}</artifactId>
+      <version>${jackson.module.scala.version}</version>
     </dependency>
 
     <dependency>

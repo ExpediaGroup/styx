@@ -15,14 +15,14 @@
  */
 package com.hotels.styx.routing.interceptors
 
-import com.hotels.styx.api.HttpResponse.Builder.response
-import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse}
+import com.hotels.styx.api.HttpResponse.response
+import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse, StyxObservable}
+import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition
-import io.netty.handler.codec.http.HttpResponseStatus.OK
+import com.hotels.styx.api.HttpResponseStatus.OK
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, ShouldMatchers}
-import rx.Observable
 
 class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSugar {
 
@@ -43,7 +43,7 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
     val interceptor = new RewriteInterceptor.ConfigFactory().build(config)
     val capturingChain = new CapturingChain
 
-    val response = interceptor.intercept(HttpRequest.Builder.get("/foo").build(), capturingChain).toBlocking.first()
+    val response = StyxFutures.await(interceptor.intercept(HttpRequest.get("/foo").build(), capturingChain).asCompletableFuture())
     capturingChain.request().path() should be ("/app/foo")
   }
 
@@ -60,7 +60,7 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
     val interceptor = new RewriteInterceptor.ConfigFactory().build(config)
     val capturingChain = new CapturingChain
 
-    val response = interceptor.intercept(HttpRequest.Builder.get("/foo").build(), capturingChain).toBlocking.first()
+    val response = StyxFutures.await(interceptor.intercept(HttpRequest.get("/foo").build(), capturingChain).asCompletableFuture())
     capturingChain.request().path() should be ("/foo")
   }
 
@@ -71,9 +71,9 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
   class CapturingChain extends HttpInterceptor.Chain {
     var storedRequest: HttpRequest = _
 
-    override def proceed(request: HttpRequest): Observable[HttpResponse] = {
+    override def proceed(request: HttpRequest): StyxObservable[HttpResponse] = {
       storedRequest = request
-      Observable.just(response(OK).build())
+      StyxObservable.of(response(OK).build())
     }
 
     def request() = storedRequest

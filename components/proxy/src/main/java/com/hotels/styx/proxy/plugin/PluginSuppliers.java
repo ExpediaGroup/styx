@@ -27,10 +27,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -50,8 +50,8 @@ public class PluginSuppliers {
 
     public PluginSuppliers(Environment environment, PluginFactoryLoader pluginFactoryLoader) {
         this.configuration = environment.configuration();
-        this.pluginFactoryLoader = checkNotNull(pluginFactoryLoader);
-        this.environment = checkNotNull(environment);
+        this.pluginFactoryLoader = requireNonNull(pluginFactoryLoader);
+        this.environment = requireNonNull(environment);
     }
 
     private Optional<PluginsMetadata> readPluginsConfig() {

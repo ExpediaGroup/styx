@@ -17,22 +17,23 @@ package com.hotels.styx.client;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpCookie;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
-import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.api.RequestCookie;
+import com.hotels.styx.api.exceptions.NoAvailableHostsException;
+import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.netty.exceptions.NoAvailableHostsException;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.RewriteRule;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.RewriteRule;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.slf4j.Logger;
 import rx.Observable;
 
@@ -44,10 +45,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
 import static io.netty.handler.codec.http.HttpMethod.HEAD;
 import static java.util.Collections.emptyList;
@@ -148,8 +149,7 @@ public final class StyxHttpClient implements HttpClient {
             newPreviousOrigins.add(remoteHost.get());
             AtomicBoolean completed = new AtomicBoolean(false);
 
-            return host.hostClient()
-                    .sendRequest(request)
+            return toRxObservable(host.hostClient().handle(request, HttpInterceptorContext.create()))
                     .map(response -> addStickySessionIdentifier(response, host.origin()))
                     .doOnError(throwable -> logError(request, throwable))
                     .doOnCompleted(() -> completed.set(true))
@@ -289,11 +289,11 @@ public final class StyxHttpClient implements HttpClient {
             public Optional<String> preferredOrigins() {
                 if (nonNull(originsRestrictionCookieName)) {
                     return rewrittenRequest.cookie(originsRestrictionCookieName)
-                            .map(HttpCookie::value)
+                            .map(RequestCookie::value)
                             .map(Optional::of)
-                            .orElse(rewrittenRequest.cookie("styx_origin_" + id).map(HttpCookie::value));
+                            .orElse(rewrittenRequest.cookie("styx_origin_" + id).map(RequestCookie::value));
                 } else {
-                    return rewrittenRequest.cookie("styx_origin_" + id).map(HttpCookie::value);
+                    return rewrittenRequest.cookie("styx_origin_" + id).map(RequestCookie::value);
                 }
             }
 
@@ -309,7 +309,7 @@ public final class StyxHttpClient implements HttpClient {
         if (this.loadBalancer instanceof StickySessionLoadBalancingStrategy) {
             int maxAge = backendService.stickySessionConfig().stickySessionTimeoutSeconds();
             return httpResponse.newBuilder()
-                    .addCookie(newStickySessionCookie(id, origin.id(), maxAge))
+                    .addCookies(newStickySessionCookie(id, origin.id(), maxAge))
                     .build();
         } else {
             return httpResponse;
@@ -345,16 +345,16 @@ public final class StyxHttpClient implements HttpClient {
         private String originsRestrictionCookieName;
 
         public Builder(BackendService backendService) {
-            this.backendService = checkNotNull(backendService);
+            this.backendService = requireNonNull(backendService);
         }
 
         public Builder metricsRegistry(MetricRegistry metricsRegistry) {
-            this.metricsRegistry = checkNotNull(metricsRegistry);
+            this.metricsRegistry = requireNonNull(metricsRegistry);
             return this;
         }
 
         public Builder retryPolicy(RetryPolicy retryPolicy) {
-            this.retryPolicy = checkNotNull(retryPolicy);
+            this.retryPolicy = requireNonNull(retryPolicy);
             return this;
         }
 

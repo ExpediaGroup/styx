@@ -15,16 +15,16 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.client.Origin;
+import com.google.common.base.Objects;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import rx.Observable;
 
-import java.util.Objects;
-
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.hotels.styx.api.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
+import static com.google.common.base.Objects.toStringHelper;
+import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static rx.Observable.just;
 
 public class StubConnectionPool implements ConnectionPool, Comparable<ConnectionPool> {
@@ -35,7 +35,7 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
     private long timeToFirstByte = 0;
     private int maxConnectionsPerHost = 1;
     private int availableConnections = 0;
-    private final Settings settings;
+    private final ConnectionPoolSettings settings;
     private int pendingConnectionCount;
 
     public StubConnectionPool(Origin origin) {
@@ -48,7 +48,7 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
         this.settings = defaultConnectionPoolSettings();
     }
 
-    public StubConnectionPool(Origin origin_one, Settings settings) {
+    public StubConnectionPool(Origin origin_one, ConnectionPoolSettings settings) {
         this.origin = origin_one;
         this.settings = settings;
     }
@@ -129,7 +129,7 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
     }
 
     @Override
-    public Settings settings() {
+    public ConnectionPoolSettings settings() {
         return settings;
     }
 
@@ -160,7 +160,7 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
 
     @Override
     public int hashCode() {
-        return Objects.hash(origin, busyConnectionCount, pendingConnectionCount, timeToFirstByte);
+        return Objects.hashCode(origin, busyConnectionCount, pendingConnectionCount, timeToFirstByte);
     }
 
     @Override
@@ -172,10 +172,10 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
             return false;
         }
         StubConnectionPool other = (StubConnectionPool) obj;
-        return Objects.equals(this.origin, other.origin) &&
-                Objects.equals(this.busyConnectionCount, other.busyConnectionCount) &&
-                Objects.equals(this.pendingConnectionCount, other.pendingConnectionCount) &&
-                Objects.equals(this.timeToFirstByte, other.timeToFirstByte);
+        return Objects.equal(this.origin, other.origin) &&
+                Objects.equal(this.busyConnectionCount, other.busyConnectionCount) &&
+                Objects.equal(this.pendingConnectionCount, other.pendingConnectionCount) &&
+                Objects.equal(this.timeToFirstByte, other.timeToFirstByte);
     }
 
     @Override

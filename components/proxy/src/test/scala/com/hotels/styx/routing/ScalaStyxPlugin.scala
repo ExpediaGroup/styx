@@ -15,15 +15,15 @@
  */
 package com.hotels.styx.routing
 
+import com.hotels.styx.api.HttpInterceptor.Context
 import com.hotels.styx.api._
 import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.routing.ImplicitScalaRxConversions.toJavaObservable
-import rx.lang.scala.JavaConversions.toScalaObservable
 import rx.lang.scala.Observable
 import rx.{Observable => JavaObservable}
 
 private class ChainAdapter(javaChain: HttpInterceptor.Chain) {
-  def proceed(request: HttpRequest): Observable[HttpResponse] = javaChain.proceed(request)
+  def proceed(request: HttpRequest): StyxObservable[HttpResponse] = javaChain.proceed(request)
 }
 
 private trait ScalaInterceptor {
@@ -38,9 +38,9 @@ object ImplicitScalaRxConversions {
   implicit def toJavaObservable[T](s: rx.lang.scala.Observable[T]): rx.Observable[T] = rx.lang.scala.JavaConversions.toJavaObservable(s).asInstanceOf[rx.Observable[T]]
 }
 
-class PluginAdapter(scalaInterceptor: (HttpRequest, ChainAdapter) => Observable[HttpResponse]) extends Plugin {
-  def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): JavaObservable[HttpResponse] =
-    toJavaObservable(scalaInterceptor(request, new ChainAdapter(chain)))
+class PluginAdapter(scalaInterceptor: (HttpRequest, ChainAdapter) => StyxObservable[HttpResponse]) extends Plugin {
+  def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): StyxObservable[HttpResponse] =
+    scalaInterceptor(request, new ChainAdapter(chain))
 }
 
 class HttpClientAdapter(sendRequest: HttpRequest => Observable[HttpResponse]) extends HttpClient {
@@ -48,6 +48,6 @@ class HttpClientAdapter(sendRequest: HttpRequest => Observable[HttpResponse]) ex
     toJavaObservable(sendRequest(request))
 }
 
-class HttpHandlerAdapter(handler: HttpRequest => Observable[HttpResponse]) extends HttpHandler {
-  override def handle(request: HttpRequest): JavaObservable[HttpResponse] = toJavaObservable(handler(request))
+class HttpHandlerAdapter(handler: (HttpRequest, Context) => StyxObservable[HttpResponse]) extends HttpHandler {
+  override def handle(request: HttpRequest, context: Context): StyxObservable[HttpResponse] = handler(request, context)
 }

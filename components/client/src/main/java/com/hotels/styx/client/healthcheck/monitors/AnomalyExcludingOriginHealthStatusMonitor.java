@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client.healthcheck.monitors;
 
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.healthcheck.AnomalyExcludingOriginHealthEventListener;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 
@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * An {@link OriginHealthStatusMonitor} that wraps a {@link ScheduledOriginHealthStatusMonitor} but only propagates
@@ -42,7 +42,7 @@ public class AnomalyExcludingOriginHealthStatusMonitor implements OriginHealthSt
      * @param unhealthyThreshold  minimum number of unhealthy events that must be received before one will be propagated
      */
     public AnomalyExcludingOriginHealthStatusMonitor(OriginHealthStatusMonitor healthStatusMonitor, int healthyThreshold, int unhealthyThreshold) {
-        this.healthStatusMonitor = checkNotNull(healthStatusMonitor);
+        this.healthStatusMonitor = requireNonNull(healthStatusMonitor);
         this.healthyThreshold = greaterThanZero(healthyThreshold);
         this.unhealthyThreshold = greaterThanZero(unhealthyThreshold);
     }

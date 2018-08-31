@@ -15,12 +15,10 @@
  */
 package com.hotels.styx.plugins;
 
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import rx.Observable;
-
-import static com.google.common.base.Charsets.UTF_8;
+import com.hotels.styx.api.HttpRequest;
 
 public class AggregationTesterPlugin implements Plugin {
     private final int maxContentBytes;
@@ -30,13 +28,16 @@ public class AggregationTesterPlugin implements Plugin {
     }
 
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(request)
-                .flatMap(response -> response.decode((byteBuf) -> byteBuf.toString(UTF_8), maxContentBytes))
-                .map(decodedResponse -> decodedResponse.responseBuilder()
-                        .header("test_plugin", "yes")
-                        .header("bytes_aggregated", decodedResponse.body().getBytes(UTF_8).length)
-                        .body(decodedResponse.body())
-                        .build());
+                .flatMap(response ->
+                        response.toFullResponse(maxContentBytes)
+                        .map(fullHttpResponse ->
+                                fullHttpResponse.newBuilder()
+                                        .addHeader("test_plugin", "yes")
+                                        .addHeader("bytes_aggregated", fullHttpResponse.body().length)
+                                        .build()
+                                        .toStreamingResponse()
+                        ));
     }
 }

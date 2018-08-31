@@ -18,6 +18,7 @@ package com.hotels.styx.proxy
 import com.google.common.base.Charsets
 import com.google.common.base.Charsets._
 import com.hotels.styx._
+import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
 import com.hotels.styx.utils.HttpTestClient
@@ -27,12 +28,13 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import io.netty.handler.codec.http.HttpMethod.GET
-import com.hotels.styx.api.messages.HttpResponseStatus._
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT
 import io.netty.handler.codec.http._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.extension.Origin
 
 import scala.concurrent.duration.{Duration, _}
 
@@ -44,12 +46,14 @@ class ChunkedDownloadSpec extends FunSpec
   with TestClientSupport
   with Eventually {
 
-  val (originOne, originOneServer) = originAndCustomResponseWebServer("NettyOrigin")
+  val (originOne, originOneServer) = originAndCustomResponseWebServer("NettyOrigin-01")
+  val (originTwo, originTwoServer) = originAndCustomResponseWebServer("NettyOrigin-02")
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     styxServer.setBackends(
-      "/chunkedDownloadSpec/" -> HttpBackend("appOne", Origins(originOneServer))
+      "/chunkedDownloadSpec/a/" -> HttpBackend("appOne", Origins(originOneServer)),
+      "/chunkedDownloadSpec/b/" -> HttpBackend("appTwo", Origins(originTwoServer))
     )
   }
 
@@ -63,7 +67,7 @@ class ChunkedDownloadSpec extends FunSpec
     it("Proxies a response with chunked HTTP content.") {
       originRespondingWith(response200OkWithThreeChunks("a" * 10, "b" * 20, "c" * 30))
 
-      val request = api.HttpRequest.Builder.get(styxServer.routerURL("/chunkedDownloadSpec/1")).build()
+      val request = get(styxServer.routerURL("/chunkedDownloadSpec/a/1")).build()
       val response = decodedRequest(request)
 
       response.status() should be(OK)
@@ -76,7 +80,7 @@ class ChunkedDownloadSpec extends FunSpec
       val messageBody = "Foo bar 0123456789012345678901234567890123456789\\n" * 100
       originRespondingWith(response200OkWithSlowChunkedMessageBody(messageBody))
 
-      val request = api.HttpRequest.Builder.get(styxServer.routerURL("/chunkedDownloadSpec/2")).build()
+      val request = get(styxServer.routerURL("/chunkedDownloadSpec/a/2")).build()
       val response = decodedRequest(request)
 
       response.status() should be(OK)
@@ -85,10 +89,13 @@ class ChunkedDownloadSpec extends FunSpec
     }
 
     it("Cancels the HTTP download request when browser closes the connection.") {
+      assert(noBusyConnectionsToOrigin(originTwo), "Connection remains busy.")
+      assert(noAvailableConnectionsInPool(originTwo), "Connection was not closed.")
+
       val messageBody = "Foo bar 0123456789012345678901234567890123456789\\n" * 100
       originRespondingWith(response200OkWithSlowChunkedMessageBody(messageBody))
 
-      val request: DefaultFullHttpRequest = nettyGetRequest("/chunkedDownloadSpec/3")
+      val request: DefaultFullHttpRequest = nettyGetRequest("/chunkedDownloadSpec/b/3")
 
       val client = newTestClientInstance("localhost", styxServer.httpPort)
       client.write(request)
@@ -97,18 +104,18 @@ class ChunkedDownloadSpec extends FunSpec
       client.disconnect()
 
       eventually(timeout(5 seconds)) {
-        assert(noBusyConnectionsToOrigin, "Connection remains busy.")
-        assert(noAvailableConnectionsInPool, "Connection was not closed.")
+        assert(noBusyConnectionsToOrigin(originTwo), "Connection remains busy.")
+        assert(noAvailableConnectionsInPool(originTwo), "Connection was not closed.")
       }
     }
   }
 
-  def noBusyConnectionsToOrigin = {
-    styxServer.metricsSnapshot.gauge(s"origins.appOne.localhost:${originOne.host.getPort}.connectionspool.busy-connections").get == 0
+  def noBusyConnectionsToOrigin(origin: Origin) = {
+    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.host.getPort}.connectionspool.busy-connections").get == 0
   }
 
-  def noAvailableConnectionsInPool = {
-    styxServer.metricsSnapshot.gauge(s"origins.appOne.localhost:${originOne.host.getPort}.connectionspool.available-connections").get == 0
+  def noAvailableConnectionsInPool(origin: Origin) = {
+    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.host.getPort}.connectionspool.available-connections").get == 0
   }
 
   def ensureResponseDidNotArrive(client: HttpTestClient) = {

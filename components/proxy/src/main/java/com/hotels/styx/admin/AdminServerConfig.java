@@ -25,7 +25,7 @@ import com.hotels.styx.server.netty.NettyServerConfig;
 import java.time.Duration;
 import java.util.Optional;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.google.common.base.Objects.firstNonNull;
 
 /**
  * xConfigurations for the Admin Server.

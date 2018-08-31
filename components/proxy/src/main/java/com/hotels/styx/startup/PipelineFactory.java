@@ -15,11 +15,11 @@
  */
 package com.hotels.styx.startup;
 
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 
 /**
  * Factory that makes an HTTP pipeline.
  */
 public interface PipelineFactory {
-    HttpHandler2 create(StyxServerComponents config);
+    HttpHandler create(StyxServerComponents config);
 }

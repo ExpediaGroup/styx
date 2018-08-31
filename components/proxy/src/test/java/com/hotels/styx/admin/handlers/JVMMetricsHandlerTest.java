@@ -16,7 +16,6 @@
 package com.hotels.styx.admin.handlers;
 
 import com.codahale.metrics.Gauge;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.server.HttpInterceptorContext;
@@ -31,17 +30,18 @@ import java.util.Optional;
 
 import static com.google.common.collect.Iterables.all;
 import static com.hotels.styx.admin.handlers.JVMMetricsHandlerTest.StringsContains.containsStrings;
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
 import static com.hotels.styx.support.api.matchers.HttpResponseStatusMatcher.hasStatus;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import com.hotels.styx.api.HttpRequest;
 
 public class JVMMetricsHandlerTest {
     JVMMetricsHandler handler;
@@ -90,7 +90,7 @@ public class JVMMetricsHandlerTest {
     }
 
     private HttpResponse call(HttpRequest request) {
-        return getFirst(handler.handle(request));
+        return getFirst(handler.handle(request, HttpInterceptorContext.create()));
     }
 
     static class StringsContains extends TypeSafeMatcher<String> {

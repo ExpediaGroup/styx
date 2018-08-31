@@ -17,8 +17,9 @@ package com.hotels.styx.proxy
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames._
-import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.messages.HttpResponseStatus._
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.RequestCookie.requestCookie
+import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
@@ -52,9 +53,9 @@ class OriginRestrictionSpec extends FunSpec
 
   describe("Routes correctly") {
     it("Routes to origin indicated by cookie.") {
-      val request = HttpRequest.Builder.get("/app/")
+      val request = get("/app/")
         .header(HOST, styxServer.proxyHost)
-        .addCookie("originRestrictionCookie", "h2")
+        .cookies(requestCookie("originRestrictionCookie", "h2"))
         .build()
 
       val response = decodedRequest(request)
@@ -64,9 +65,9 @@ class OriginRestrictionSpec extends FunSpec
     }
 
     it("Routes to range of origins indicated by cookie.") {
-      val request = HttpRequest.Builder.get("/app/")
+      val request = get("/app/")
         .header(HOST, styxServer.proxyHost)
-        .addCookie("originRestrictionCookie", "h(2|3)")
+        .cookies(requestCookie("originRestrictionCookie", "h(2|3)"))
         .build()
 
       val response = decodedRequest(request)
@@ -75,9 +76,9 @@ class OriginRestrictionSpec extends FunSpec
     }
 
     it("If nothing matches treat as no hosts available") {
-      val request = HttpRequest.Builder.get("/app/")
+      val request = get("/app/")
         .header(HOST, styxServer.proxyHost)
-        .addCookie("originRestrictionCookie", "(?!)")
+        .cookies(requestCookie("originRestrictionCookie", "(?!)"))
         .build()
 
       val response = decodedRequest(request)
@@ -86,9 +87,9 @@ class OriginRestrictionSpec extends FunSpec
     }
 
     it("Routes to list of origins indicated by cookie.") {
-      val request = HttpRequest.Builder.get("/app/")
+      val request = get("/app/")
         .header(HOST, styxServer.proxyHost)
-        .addCookie("originRestrictionCookie", "h2,h[3-4]")
+        .cookies(requestCookie("originRestrictionCookie", "h2,h[3-4]"))
         .build()
 
       val response = decodedRequest(request)

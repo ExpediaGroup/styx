@@ -15,21 +15,21 @@
  */
 package com.hotels.styx.client.stickysession;
 
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
-import com.hotels.styx.client.StyxHostHttpClient;
+import com.hotels.styx.api.extension.ActiveOrigins;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.collect.Iterables.getFirst;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.client.RemoteHost.remoteHost;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
 import static java.util.Arrays.asList;
 import static java.util.Collections.EMPTY_LIST;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -43,9 +43,9 @@ public class StickySessionLoadBalancingStrategyTest {
     private static final Origin origin1 = newOriginBuilder("localhost", 1).id("o1").build();
     private static final Origin origin2 = newOriginBuilder("localhost", 2).id("o2").build();
 
-    static final RemoteHost ORIGIN_0 = remoteHost(origin0, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class));
-    static final RemoteHost ORIGIN_1 = remoteHost(origin1, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class));
-    static final RemoteHost ORIGIN_2 = remoteHost(origin2, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class));
+    static final RemoteHost ORIGIN_0 = remoteHost(origin0, mock(HttpHandler.class), mock(LoadBalancingMetricSupplier.class));
+    static final RemoteHost ORIGIN_1 = remoteHost(origin1, mock(HttpHandler.class), mock(LoadBalancingMetricSupplier.class));
+    static final RemoteHost ORIGIN_2 = remoteHost(origin2, mock(HttpHandler.class), mock(LoadBalancingMetricSupplier.class));
 
     final ActiveOrigins activeOrigins = mock(ActiveOrigins.class);
 

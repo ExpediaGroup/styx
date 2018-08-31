@@ -15,13 +15,13 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.metrics.MetricRegistry;
-import com.hotels.styx.api.service.ConnectionPoolSettings;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
+
 
 /**
  * A factory that creates connection pools using the connection pool settings supplied to the constructor.
@@ -30,13 +30,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class ConnectionPoolFactory implements ConnectionPool.Factory {
     private final Connection.Factory connectionFactory;
-    private final ConnectionPool.Settings poolSettings;
+    private final ConnectionPoolSettings poolSettings;
     private final MetricRegistry metricRegistry;
 
     private ConnectionPoolFactory(Builder builder) {
-        this.connectionFactory = checkNotNull(builder.connectionFactory);
-        this.poolSettings = new ConnectionPoolSettings.Builder(checkNotNull(builder.poolSettings)).build();
-        this.metricRegistry = checkNotNull(builder.metricRegistry);
+        this.connectionFactory = requireNonNull(builder.connectionFactory);
+        this.poolSettings = new ConnectionPoolSettings.Builder(requireNonNull(builder.poolSettings)).build();
+        this.metricRegistry = requireNonNull(builder.metricRegistry);
     }
 
     @Override
@@ -49,7 +49,7 @@ public final class ConnectionPoolFactory implements ConnectionPool.Factory {
      */
     public static final class Builder {
         private Connection.Factory connectionFactory;
-        private ConnectionPool.Settings poolSettings;
+        private ConnectionPoolSettings poolSettings;
         private MetricRegistry metricRegistry;
 
         public Builder connectionFactory(Connection.Factory connectionFactory) {
@@ -57,7 +57,7 @@ public final class ConnectionPoolFactory implements ConnectionPool.Factory {
             return this;
         }
 
-        public Builder connectionPoolSettings(ConnectionPool.Settings poolSettings) {
+        public Builder connectionPoolSettings(ConnectionPoolSettings poolSettings) {
             this.poolSettings = poolSettings;
             return this;
         }

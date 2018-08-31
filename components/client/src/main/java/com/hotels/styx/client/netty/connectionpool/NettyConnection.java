@@ -20,8 +20,8 @@ import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Announcer;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.HttpRequestOperationFactory;
 
 import io.netty.channel.Channel;
@@ -30,8 +30,8 @@ import rx.Observable;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Objects.toStringHelper;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A connection using a netty channel.
@@ -56,8 +56,8 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
      */
     @VisibleForTesting
     public NettyConnection(Origin origin, Channel channel, HttpRequestOperationFactory requestOperationFactory) {
-        this.origin = checkNotNull(origin);
-        this.channel = checkNotNull(channel);
+        this.origin = requireNonNull(origin);
+        this.channel = requireNonNull(channel);
         this.requestOperationFactory = requestOperationFactory;
         this.channel.pipeline().addLast(new TimeToFirstByteHandler(this));
         this.channel.closeFuture().addListener(future ->

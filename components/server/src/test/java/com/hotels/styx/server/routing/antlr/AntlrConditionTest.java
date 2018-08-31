@@ -15,23 +15,18 @@
  */
 package com.hotels.styx.server.routing.antlr;
 
-import com.hotels.styx.api.HttpCookie;
-import com.hotels.styx.api.HttpCookieAttribute;
 import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.RequestCookie;
+import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.server.routing.Condition;
-import io.netty.handler.codec.http.HttpMethod;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpCookie.cookie;
-import static com.hotels.styx.api.HttpCookieAttribute.domain;
-import static com.hotels.styx.api.HttpCookieAttribute.httpOnly;
-import static com.hotels.styx.api.HttpCookieAttribute.maxAge;
-import static com.hotels.styx.api.HttpCookieAttribute.path;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpRequest.Builder.post;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.post;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
@@ -41,9 +36,8 @@ public class AntlrConditionTest {
             .registerFunction("path", HttpRequest::path)
             .registerFunction("userAgent", request -> request.header(USER_AGENT).orElse(""))
             .registerFunction("header", (request, input) -> request.header(input).orElse(""))
-            .registerFunction("cookie", (request, input) -> {
-                return request.cookie(input).map(HttpCookie::value).orElse("");
-            })
+            .registerFunction("cookie", (request, input) ->
+                    request.cookie(input).map(RequestCookie::value).orElse(""))
             .build();
 
     private static HttpRequest.Builder newRequest(String uri) {
@@ -399,21 +393,13 @@ public class AntlrConditionTest {
     public void cookieValueIsPresent() {
         Condition condition = condition("cookie('TheCookie')");
         HttpRequest request = newRequest()
-                .addCookie(cookie("TheCookie", "foobar-foobar-baz",
-                        domain("localhost"),
-                        httpOnly(),
-                        path("/path"),
-                        maxAge(365)))
+                .cookies(requestCookie("TheCookie", "foobar-foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
         assertThat(condition.evaluate(request), is(true));
 
         request = newRequest()
-                .addCookie(cookie("AnotherCookie", "foobar-foobar-baz",
-                        domain("localhost"),
-                        httpOnly(),
-                        path("/path"),
-                        maxAge(365)))
+                .cookies(requestCookie("AnotherCookie", "foobar-foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
         assertThat(condition.evaluate(request), is(false));
@@ -429,21 +415,13 @@ public class AntlrConditionTest {
     public void cookieValueMatchesWithString() {
         Condition condition = condition("cookie('TheCookie') == 'foobar-foobar-baz'");
         HttpRequest request = newRequest()
-                .addCookie(cookie("TheCookie", "foobar-foobar-baz",
-                        HttpCookieAttribute.domain("localhost"),
-                        HttpCookieAttribute.httpOnly(),
-                        HttpCookieAttribute.path("/path"),
-                        HttpCookieAttribute.maxAge(365)))
+                .cookies(requestCookie("TheCookie", "foobar-foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
         assertThat(condition.evaluate(request), is(true));
 
         request = newRequest()
-                .addCookie(cookie("AnotherCookie", "foobar-baz",
-                        HttpCookieAttribute.domain("localhost"),
-                        HttpCookieAttribute.httpOnly(),
-                        HttpCookieAttribute.path("/path"),
-                        HttpCookieAttribute.maxAge(365)))
+                .cookies(requestCookie("AnotherCookie", "foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
         assertThat(condition.evaluate(request), is(false));
@@ -459,13 +437,13 @@ public class AntlrConditionTest {
         Condition condition = condition("cookie('TheCookie') =~ 'foobar-.*-baz'");
 
         HttpRequest request = newRequest()
-                .addCookie(cookie("TheCookie", "foobar-foobar-baz"))
+                .cookies(requestCookie("TheCookie", "foobar-foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
         assertThat(condition.evaluate(request), is(true));
 
         request = newRequest()
-                .addCookie(cookie("AnotherCookie", "foobar-x-baz"))
+                .cookies(requestCookie("AnotherCookie", "foobar-x-baz"))
                 .header("App-Name", "app3")
                 .build();
         assertThat(condition.evaluate(request), is(false));

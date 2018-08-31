@@ -20,14 +20,14 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.service.spi.AbstractRegistry;
-import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.extension.service.spi.AbstractRegistry;
+import com.hotels.styx.api.extension.service.spi.Registry;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
+import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**

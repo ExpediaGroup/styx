@@ -15,59 +15,108 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.api.messages.FullHttpRequest;
-import com.hotels.styx.api.messages.HttpMethod;
-import com.hotels.styx.api.messages.HttpVersion;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import java.net.InetSocketAddress;
-import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
-import static com.hotels.styx.api.HttpCookie.cookie;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpRequest.Builder.patch;
-import static com.hotels.styx.api.HttpRequest.Builder.post;
-import static com.hotels.styx.api.HttpRequest.Builder.put;
-import static com.hotels.styx.api.TestSupport.bodyAsString;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.patch;
+import static com.hotels.styx.api.HttpRequest.post;
+import static com.hotels.styx.api.HttpRequest.put;
 import static com.hotels.styx.api.Url.Builder.url;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
+import static com.hotels.styx.api.HttpMethod.DELETE;
+import static com.hotels.styx.api.HttpMethod.GET;
+import static com.hotels.styx.api.HttpMethod.POST;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
+import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
-import static io.netty.handler.codec.http.HttpMethod.DELETE;
-import static io.netty.handler.codec.http.HttpMethod.GET;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-import static io.netty.handler.codec.http.multipart.HttpPostRequestDecoder.ErrorDataDecoderException;
-import static java.lang.String.valueOf;
+import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyIterable;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
-import static rx.Observable.empty;
-import static rx.Observable.just;
+import static org.hamcrest.Matchers.notNullValue;
 
 public class HttpRequestTest {
+    @Test
+    public void decodesToFullHttpRequest() throws Exception {
+        HttpRequest streamingRequest = post("/foo/bar", body("foo", "bar"))
+                .secure(true)
+                .version(HTTP_1_0)
+                .header("HeaderName", "HeaderValue")
+                .cookies(requestCookie("CookieName", "CookieValue"))
+                .build();
+
+        FullHttpRequest full = streamingRequest.toFullRequest(0x1000)
+                .asCompletableFuture()
+                .get();
+
+        assertThat(full.method(), is(POST));
+        assertThat(full.url(), is(url("/foo/bar").build()));
+        assertThat(full.isSecure(), is(true));
+        assertThat(full.version(), is(HTTP_1_0));
+        assertThat(full.headers(), containsInAnyOrder(
+                header("HeaderName", "HeaderValue"),
+                header("Cookie", "CookieName=CookieValue")));
+        assertThat(full.cookies(), contains(requestCookie("CookieName", "CookieValue")));
+        assertThat(full.body(), is(bytes("foobar")));
+    }
+
+    @Test(expectedExceptions = io.netty.util.IllegalReferenceCountException.class)
+    public void toFullRequestReleasesOriginalReferenceCountedBuffers() throws ExecutionException, InterruptedException {
+        ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
+
+        HttpRequest original = HttpRequest.get("/foo")
+                .body(StyxObservable.of(content))
+                .build();
+
+        FullHttpRequest fullRequest = original.toFullRequest(100)
+                .asCompletableFuture()
+                .get();
+
+        content.array()[0] = 'A';
+
+        assertThat(fullRequest.bodyAs(UTF_8), is("original"));
+    }
+
+    @Test(dataProvider = "emptyBodyRequests")
+    public void encodesToStreamingHttpRequestWithEmptyBody(HttpRequest streamingRequest) throws Exception {
+        FullHttpRequest full = streamingRequest.toFullRequest(0x1000)
+                .asCompletableFuture()
+                .get();
+
+        assertThat(full.body(), is(new byte[0]));
+    }
+
+    // We want to ensure that these are all considered equivalent
+    @DataProvider(name = "emptyBodyRequests")
+    private Object[][] emptyBodyRequests() {
+        return new Object[][]{
+                {get("/foo/bar").build()},
+                {post("/foo/bar", StyxCoreObservable.empty()).build()},
+        };
+    }
 
     @Test
-    public void createsARequestWithDefaultValues() {
+    public void createsARequestWithDefaultValues() throws Exception {
         HttpRequest request = get("/index").build();
         assertThat(request.version(), is(HTTP_1_1));
         assertThat(request.url().toString(), is("/index"));
@@ -79,7 +128,7 @@ public class HttpRequestTest {
         assertThat(request.headers(), is(emptyIterable()));
         assertThat(request.headers("any"), is(emptyIterable()));
 
-        assertThat(request.body().content().isEmpty().toBlocking().first(), is(true));
+        assertThat(bytesToString(request.body()), is(""));
         assertThat(request.cookie("any"), isAbsent());
         assertThat(request.header("any"), isAbsent());
         assertThat(request.keepAlive(), is(true));
@@ -93,17 +142,14 @@ public class HttpRequestTest {
         HttpRequest request = patch("https://hotels.com")
                 .version(HTTP_1_0)
                 .id("id")
-                .header("singleValue", "a")
-                .header("multipleValue", asList("a", "b"))
-                .header("singleValueObject", (Object) "a")
-                .addCookie("cfoo", "bar")
+                .header("headerName", "a")
+                .cookies(requestCookie("cfoo", "bar"))
                 .build();
 
-        assertThat(request.toString(), is("HttpRequest{version=HTTP/1.0, method=PATCH, uri=https://hotels.com, " +
-                "headers=[singleValue=a, multipleValue=a, multipleValue=b, singleValueObject=a, Host=hotels.com], cookies=[cfoo=bar], id=id, clientAddress=127.0.0.1:0}"));
+        assertThat(request.toString(), is("HttpRequest{version=HTTP/1.0, method=PATCH, uri=https://hotels.com, headers=[headerName=a, Cookie=cfoo=bar, Host=hotels.com]," +
+                " id=id, secure=true, clientAddress=127.0.0.1:0}"));
 
-        assertThat(request.headers("singleValue"), is(singletonList("a")));
-        assertThat(request.headers("multipleValue"), is(asList("a", "b")));
+        assertThat(request.headers("headerName"), is(singletonList("a")));
     }
 
     @Test
@@ -116,13 +162,11 @@ public class HttpRequestTest {
                 .method(DELETE)
                 .uri("/home")
                 .header("remove", "notanymore")
-                .clientAddress(new InetSocketAddress("localhost", 80))
                 .build();
 
         assertThat(newRequest.method(), is(DELETE));
         assertThat(newRequest.url().path(), is("/home"));
         assertThat(newRequest.headers(), hasItem(header("remove", "notanymore")));
-        assertThat(newRequest.clientAddress(), is(new InetSocketAddress("localhost", 80)));
     }
 
     @Test
@@ -135,107 +179,36 @@ public class HttpRequestTest {
     public void decodesQueryParams() {
         HttpRequest request = get("http://example.com/?foo=bar")
                 .build();
-        assertThat(request.queryParam("foo").get(), is("bar"));
+        assertThat(request.queryParam("foo"), isValue("bar"));
     }
 
     @Test
     public void decodesQueryParamsContainingEncodedEquals() {
         HttpRequest request = get("http://example.com/?foo=a%2Bb%3Dc")
                 .build();
-        assertThat(request.queryParam("foo").get(), is("a+b=c"));
-    }
-
-    @Test
-    public void decodesPostParams() {
-        HttpRequest request = post("http://example.com/")
-                .body("foo=bar")
-                .build();
-        HttpRequest.DecodedRequest<FormData> formData = request.decodePostParams(100).toBlocking().first();
-        assertThat(formData.body().postParam("foo"), is(Optional.of("bar")));
-    }
-
-    @Test
-    public void decodesMultipleParameters() {
-        HttpRequest request = post("http://example.com/")
-                .body("foo=bar&baz=qux")
-                .build();
-        HttpRequest.DecodedRequest<FormData> decodedFormData = request.decodePostParams(100).toBlocking().first();
-        assertThat(decodedFormData.body().postParam("foo"), is(Optional.of("bar")));
-        assertThat(decodedFormData.body().postParam("baz"), is(Optional.of("qux")));
-    }
-
-    @Test
-    public void decodesPostParamsWithOnlyKey() {
-        HttpRequest request = post("http://example.com/")
-                .body("foo")
-                .build();
-        HttpRequest.DecodedRequest<FormData> decodedFormData = request.decodePostParams(100).toBlocking().first();
-        assertThat(decodedFormData.body().postParam("foo"), is(Optional.empty()));
-    }
-
-    @Test
-    public void decodesApplicationJsonData() {
-        String jsonObject = "{ \"foo\": \"bar\" }";
-        HttpRequest request = post("http://example.com/")
-                .body(jsonObject)
-                .build();
-        HttpRequest.DecodedRequest<String> decodedRequest = request.decode((bb) -> bb.toString(Charsets.UTF_8), 100).toBlocking().first();
-        assertThat(decodedRequest.body(), is(jsonObject));
-    }
-
-    @Test(expectedExceptions = ErrorDataDecoderException.class)
-    public void handlesIncompletePostParamsWithNoKey() {
-        HttpRequest request = post("http://example.com/")
-                .body("=bar")
-                .build();
-        request.decodePostParams(100).toBlocking().first();
-    }
-
-    @Test(expectedExceptions = ErrorDataDecoderException.class)
-    public void handlesIncompletePostParamsWithNoKeyAndNoValue() {
-        HttpRequest request = post("http://example.com/")
-                .body("=")
-                .build();
-        request.decodePostParams(100).toBlocking().first();
-    }
-
-    @Test
-    public void handlesIncompletePostParamsWithExtraDelimiter() {
-        HttpRequest request = post("http://example.com/")
-                .body("foo=bar&")
-                .build();
-        HttpRequest.DecodedRequest<FormData> decodedFormData = request.decodePostParams(100).toBlocking().first();
-        assertThat(decodedFormData.body().postParam("foo"), is(Optional.of("bar")));
-    }
-
-    @Test(expectedExceptions = ContentOverflowException.class)
-    public void raiseExceptionWhenContentOverflows() {
-        HttpRequest request = post("http://example.com/")
-                .body("foo=bar")
-                .build();
-        request.decodePostParams(1).toBlocking().first();
+        assertThat(request.queryParam("foo"), isValue("a+b=c"));
     }
 
     @Test
     public void createsRequestBuilderFromRequest() {
         HttpRequest originalRequest = get("/home")
-                .addCookie(cookie("fred", "blogs"))
+                .cookies(requestCookie("fred", "blogs"))
                 .header("some", "header")
                 .build();
 
         HttpRequest clonedRequest = originalRequest.newBuilder().build();
 
-        assertThat(clonedRequest.method(), is(equalTo(originalRequest.method())));
-        assertThat(clonedRequest.url(), is(equalTo(originalRequest.url())));
-        assertThat(clonedRequest.headers().toString(), is(equalTo(originalRequest.headers().toString())));
-        assertThat(clonedRequest.body().toString(), is(equalTo(originalRequest.body().toString())));
+        assertThat(clonedRequest.method(), is(originalRequest.method()));
+        assertThat(clonedRequest.url(), is(originalRequest.url()));
+        assertThat(clonedRequest.headers().toString(), is(originalRequest.headers().toString()));
+        assertThat(clonedRequest.body(), is(originalRequest.body()));
     }
 
     @Test
     public void extractsSingleQueryParameter() {
         HttpRequest req = get("http://host.com:8080/path?fish=cod&fruit=orange")
                 .build();
-        assertThat(req.queryParam("fish").get(), is("cod"));
+        assertThat(req.queryParam("fish"), isValue("cod"));
     }
 
     @Test
@@ -274,22 +247,24 @@ public class HttpRequestTest {
     @Test
     public void canExtractCookies() {
         HttpRequest request = get("/")
-                .addCookie("cookie1", "foo")
-                .addCookie("cookie3", "baz")
-                .addCookie("cookie2", "bar")
+                .cookies(
+                        requestCookie("cookie1", "foo"),
+                        requestCookie("cookie3", "baz"),
+                        requestCookie("cookie2", "bar"))
                 .build();
 
-        assertThat(request.cookie("cookie1").get(), is(cookie("cookie1", "foo")));
-        assertThat(request.cookie("cookie2").get(), is(cookie("cookie2", "bar")));
-        assertThat(request.cookie("cookie3").get(), is(cookie("cookie3", "baz")));
+        assertThat(request.cookie("cookie1"), isValue(requestCookie("cookie1", "foo")));
+        assertThat(request.cookie("cookie2"), isValue(requestCookie("cookie2", "bar")));
+        assertThat(request.cookie("cookie3"), isValue(requestCookie("cookie3", "baz")));
     }
 
     @Test
     public void cannotExtractNonExistentCookie() {
         HttpRequest request = get("/")
-                .addCookie("cookie1", "foo")
-                .addCookie("cookie3", "baz")
-                .addCookie("cookie2", "bar")
+                .cookies(
+                        requestCookie("cookie1", "foo"),
+                        requestCookie("cookie3", "baz"),
+                        requestCookie("cookie2", "bar"))
                 .build();
 
         assertThat(request.cookie("cookie4"), isAbsent());
@@ -298,15 +273,16 @@ public class HttpRequestTest {
     @Test
     public void extractsAllCookies() {
         HttpRequest request = get("/")
-                .addCookie("cookie1", "foo")
-                .addCookie("cookie3", "baz")
-                .addCookie("cookie2", "bar")
+                .cookies(
+                        requestCookie("cookie1", "foo"),
+                        requestCookie("cookie3", "baz"),
+                        requestCookie("cookie2", "bar"))
                 .build();
 
         assertThat(request.cookies(), containsInAnyOrder(
-                cookie("cookie1", "foo"),
-                cookie("cookie2", "bar"),
-                cookie("cookie3", "baz")));
+                requestCookie("cookie1", "foo"),
+                requestCookie("cookie2", "bar"),
+                requestCookie("cookie3", "baz")));
     }
 
     @Test
@@ -329,77 +305,9 @@ public class HttpRequestTest {
         assertThat(shouldRemoveHeader.headers(), contains(header("a", "b")));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "cookieHeaderName")
-    public void willNotAllowCookieHeaderToBeSet(CharSequence cookieHeaderName) {
-        get("/").header(cookieHeaderName, "Value");
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "cookieHeaderName")
-    public void willNotAllowCookieHeaderToBeSetAsObject(CharSequence cookieHeaderName) {
-        get("/").header(cookieHeaderName, (Object) "Value");
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "cookieHeaderName")
-    public void willNotAllowCookieHeaderToBeSetAsIterable(CharSequence cookieHeaderName) {
-        get("/").header(cookieHeaderName, asList("Value1", "Value2"));
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "cookieHeaderName")
-    public void willNotAllowCookieHeaderToBeSetInHttpHeaders(CharSequence cookieHeaderName) {
-        get("/").headers(header(cookieHeaderName.toString(), "value"));
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "cookieHeaderName")
-    public void willNotAllowCookieHeaderToBeAdded(CharSequence cookieHeaderName) {
-        get("/").addHeader(cookieHeaderName, "Value");
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "cookieHeaderName")
-    public void willNotAllowCookieHeaderToBeAddedAsObject(CharSequence cookieHeaderName) {
-        get("/").addHeader(cookieHeaderName, (Object) "Value");
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "cookieHeaderName")
-    public void willNotAllowCookieHeaderToBeAddedAsIterable(CharSequence cookieHeaderName) {
-        get("/").addHeader(cookieHeaderName, asList("Value1", "Value2"));
-    }
-
-    @DataProvider(name = "cookieHeaderName")
-    private Object[][] cookieHeaderName() {
-        return new Object[][]{
-                {COOKIE},
-                {"Cookie"},
-                {"cookie"},
-                {"COOKIE"}
-        };
-    }
-
     @Test
-    public void removesCookies() throws Exception {
-        HttpRequest request = get("/")
-                .addCookie("lang", "en_US|en-us_hotels_com")
-                .addCookie("styx_origin_hpt", "hpt1")
-                .removeCookie("lang")
-                .build();
-        assertThat(request.cookies(), contains(cookie("styx_origin_hpt", "hpt1")));
-    }
-
-    @Test
-    public void removesACookieSetInCookie() throws Exception {
-        HttpRequest request = get("/")
-                .addCookie("lang", "en_US|en-us_hotels_com")
-                .addCookie("styx_origin_hpt", "hpt1")
-                .removeCookie("lang")
-                .build();
-        assertThat(request.cookies(), contains(cookie("styx_origin_hpt", "hpt1")));
-    }
-
-    @Test
-    public void shouldSetsContentLengthForNonStreamingBodyMessage() throws Exception {
-        assertThat(put("/home").body("").build().header(CONTENT_LENGTH).get(), equalTo("0"));
-        assertThat(put("/home").body("Hello").build().header(CONTENT_LENGTH).get(), equalTo(valueOf(bytes("Hello").length)));
-        assertThat(put("/home").body(bytes("Hello")).build().header(CONTENT_LENGTH).get(), equalTo(valueOf(bytes("Hello").length)));
-        assertThat(put("/home").body(just(Unpooled.copiedBuffer("Hello", UTF_8))).build().header(CONTENT_LENGTH), isAbsent());
+    public void shouldSetsContentLengthForNonStreamingBodyMessage() {
+        assertThat(put("/home").body(StyxObservable.of(copiedBuffer("Hello", UTF_8))).build().header(CONTENT_LENGTH), isAbsent());
     }
 
     @Test
@@ -409,43 +317,37 @@ public class HttpRequestTest {
         assertThat(get("/index").version(HTTP_1_0).build().keepAlive(), is(false));
     }
 
-    private static byte[] bytes(String content) {
-        return content.getBytes(UTF_8);
-    }
-
     @Test
-    public void builderSetsRequestContent() {
-        HttpRequest request = post("/foo/bar")
-                .body("Foo bar")
-                .build();
+    public void builderSetsRequestContent() throws Exception {
+        HttpRequest request = post("/foo/bar", body("Foo bar")).build();
 
-        assertThat(bodyAsString(request.body()), is("Foo bar"));
+        assertThat(bytesToString(request.body()), is("Foo bar"));
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookie() {
-        get("/").addCookie(null).build();
+        get("/").cookies((RequestCookie) null);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void rejectsNullCookieName() {
-        get("/").addCookie(null, "value").build();
+        get("/").cookies(requestCookie(null, "value")).build();
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookieValue() {
-        get("/").addCookie("name", null).build();
+        get("/").cookies(requestCookie("name", null)).build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void rejectsMultipleContentLengthInSingleHeader() throws Exception {
+    public void rejectsMultipleContentLengthInSingleHeader() {
         get("/foo")
                 .addHeader(CONTENT_LENGTH, "15, 16")
                 .build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void rejectsMultipleContentLengthHeaders() throws Exception {
+    public void rejectsMultipleContentLengthHeaders() {
         get("/foo")
                 .addHeader(CONTENT_LENGTH, "15")
                 .addHeader(CONTENT_LENGTH, "16")
@@ -453,27 +355,24 @@ public class HttpRequestTest {
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void rejectsInvalidContentLength() throws Exception {
+    public void rejectsInvalidContentLength() {
         get("/foo")
                 .addHeader(CONTENT_LENGTH, "foo")
                 .build();
     }
 
     @Test
-    public void createARequestWithFullUrl() throws Exception {
-        HttpRequest request = get("http://www.hotels.com")
-                .build();
+    public void createARequestWithStreamingUrl() {
+        HttpRequest request = get("http://www.hotels.com").build();
 
         assertThat(request.url(), is(url("http://www.hotels.com").build()));
     }
 
     @Test
-    public void setsHostHeaderFromAuthorityIfSet() throws Exception {
-        HttpRequest request = get("http://www.hotels.com")
-                .build();
+    public void setsHostHeaderFromAuthorityIfSet() {
+        HttpRequest request = get("http://www.hotels.com").build();
 
-        assertThat(request.header(HOST).get(), is("www.hotels.com"));
-
+        assertThat(request.header(HOST), isValue("www.hotels.com"));
     }
 
     @Test
@@ -485,113 +384,91 @@ public class HttpRequestTest {
         assertThat(newRequest.version(), is(HTTP_1_0));
     }
 
+    // Make tests to ensure conversion from HttpRequest and back again preserves clientAddress - do it for Fullhttprequest too
     @Test
-    public void shouldCreateAChunkedResponse() {
-        assertThat(post("/foo").build().chunked(), is(false));
-        assertThat(post("/foo").chunked().build().chunked(), is(true));
-    }
-
-    @Test
-    public void shouldRemoveContentLengthFromChunkedMessages() {
-        HttpRequest request = post("/foo").header(CONTENT_LENGTH, 5).build();
-        HttpRequest chunkedRequest = request.newBuilder().chunked().build();
-
-        assertThat(chunkedRequest.chunked(), is(true));
-        assertThat(chunkedRequest.header(CONTENT_LENGTH).isPresent(), is(false));
-    }
-
-    @Test
-    public void shouldNotFailToRemoveNonExistentContentLength() {
-        HttpRequest request = post("/foo").build();
-        HttpRequest chunkedRequest = request.newBuilder().chunked().build();
-
-        assertThat(chunkedRequest.chunked(), is(true));
-        assertThat(chunkedRequest.header(CONTENT_LENGTH).isPresent(), is(false));
-    }
-
-    @Test
-    public void builderCopiesClientIpAddress() throws Exception {
+    public void conversionPreservesClientAddress() throws Exception {
         InetSocketAddress address = InetSocketAddress.createUnresolved("styx.io", 8080);
-        HttpRequest request = post("/foo").clientAddress(address).build();
+        HttpRequest original = HttpRequest.post("/foo").clientAddress(address).build();
 
-        HttpRequest newRequest = request.newBuilder().build();
+        HttpRequest streaming = new HttpRequest.Builder(original).build();
 
-        assertThat(newRequest.clientAddress(), is(address));
+        HttpRequest shouldMatchOriginal = streaming.toFullRequest(0x100)
+                .asCompletableFuture()
+                .get()
+                .toStreamingRequest();
+
+        assertThat(shouldMatchOriginal.clientAddress(), is(address));
     }
 
     @Test
-    public void decodesToFullHttpRequest() throws Exception {
-        HttpRequest request = post("/foo/bar")
-                .clientAddress(InetSocketAddress.createUnresolved("example.org", 8080))
-                .secure(true)
-                .version(HTTP_1_0)
-                .header("HeaderName", "HeaderValue")
-                .addCookie("CookieName", "CookieValue")
-                .body(stream("foo", "bar", "baz"))
+    public void addsCookies() {
+        HttpRequest request = HttpRequest.get("/")
+                .addCookies(requestCookie("x", "x1"), requestCookie("y", "y1"))
                 .build();
 
-        FullHttpRequest full = request.toFullRequest(0x100000)
-                .toBlocking()
-                .single();
-
-        assertThat(full.method(), is(HttpMethod.POST));
-        assertThat(full.isSecure(), is(true));
-        assertThat(full.version(), is(HttpVersion.HTTP_1_0));
-        assertThat(full.headers(), contains(header("HeaderName", "HeaderValue")));
-        assertThat(full.cookies(), contains(cookie("CookieName", "CookieValue")));
-        assertThat(full.url().toString(), is("/foo/bar"));
-        assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
+        assertThat(request.cookies(), containsInAnyOrder(requestCookie("x", "x1"), requestCookie("y", "y1")));
     }
 
     @Test
-    public void decodesToFullHttpRequestWithEmptyBody() throws Exception {
-        HttpRequest request = get("/foo/bar")
-                .body(empty())
+    public void addsCookiesToExistingCookies() {
+        HttpRequest request = HttpRequest.get("/")
+                .addCookies(requestCookie("z", "z1"))
+                .addCookies(requestCookie("x", "x1"), requestCookie("y", "y1"))
                 .build();
 
-        FullHttpRequest full = request.toFullRequest(0x100000)
-                .toBlocking()
-                .single();
-
-        assertThat(full.url().toString(), is("/foo/bar"));
-        assertThat(full.bodyAs(UTF_8), is(""));
+        assertThat(request.cookies(), containsInAnyOrder(requestCookie("x", "x1"), requestCookie("y", "y1"), requestCookie("z", "z1")));
     }
 
     @Test
-    public void decodingToFullHttpRequestDefaultsToUTF8() throws Exception {
-        HttpRequest request = get("/foo/bar")
-                .body(stream("foo", "bar", "baz"))
+    public void newCookiesWithDuplicateNamesOverridePreviousOnes() {
+        HttpRequest r1 = HttpRequest.get("/")
+                .cookies(requestCookie("y", "y1"))
                 .build();
 
-        FullHttpRequest full = request.toFullRequest(0x100000)
-                .toBlocking()
-                .single();
+        HttpRequest r2 = r1.newBuilder().addCookies(
+                requestCookie("y", "y2"))
+                .build();
 
-        assertThat(full.url().toString(), is("/foo/bar"));
-        assertThat(full.bodyAs(UTF_8), is("foobarbaz"));
+        assertThat(r2.cookies(), contains(requestCookie("y", "y2")));
     }
 
     @Test
-    public void retainsClientAddressAfterConversionToFullHttpMessage() {
-        InetSocketAddress address = InetSocketAddress.createUnresolved("styx.io", 8080);
-        HttpRequest original = HttpRequest.Builder.get("/")
-                .clientAddress(address)
+    public void removesCookies() {
+        HttpRequest r1 = HttpRequest.get("/")
+                .addCookies(requestCookie("x", "x1"), requestCookie("y", "y1"))
                 .build();
 
-        FullHttpRequest fullRequest = original
-                .toFullRequest(100)
-                .toBlocking()
-                .first();
+        HttpRequest r2 = r1.newBuilder()
+                .removeCookies("x")
+                .removeCookies("foo") // ensure that trying to remove a non-existent cookie does not cause Exception
+                .build();
 
-        HttpRequest streaming = fullRequest.toStreamingRequest();
-
-        assertThat(streaming.clientAddress().getHostName(), is("styx.io"));
-        assertThat(streaming.clientAddress().getPort(), is(8080));
+        assertThat(r2.cookies(), contains(requestCookie("y", "y1")));
     }
 
-    private static Observable<ByteBuf> stream(String... strings) {
-        return Observable.from(Stream.of(strings)
-                .map(string -> Unpooled.copiedBuffer(string, UTF_8))
+    @Test
+    public void removesCookiesInSameBuilder() {
+        HttpRequest r1 = HttpRequest.get("/")
+                .addCookies(requestCookie("x", "x1"))
+                .removeCookies("x")
+                .build();
+
+        assertThat(r1.cookie("x"), isAbsent());
+    }
+
+    private static StyxObservable<ByteBuf> body(String... contents) {
+        return StyxObservable.from(Stream.of(contents)
+                .map(content -> copiedBuffer(content, UTF_8))
                 .collect(toList()));
+    }
+
+    private static String bytesToString(StyxObservable<ByteBuf> body) throws ExecutionException, InterruptedException {
+        return body.reduce((byteBuf, result) -> result + byteBuf.toString(UTF_8), "")
+                .asCompletableFuture()
+                .get();
+    }
+
+    private static byte[] bytes(String content) {
+        return content.getBytes(UTF_8);
     }
 }

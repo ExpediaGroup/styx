@@ -15,65 +15,53 @@
  */
 package com.hotels.styx
 
-import com.hotels.styx.api.client.UrlConnectionHttpClient
-import com.hotels.styx.api.messages.FullHttpResponse
-import com.hotels.styx.api.{HttpClient, HttpRequest, HttpResponse}
-import com.hotels.styx.client.HttpConfig.newHttpConfigBuilder
-import com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder
-import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination
-import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory
-import com.hotels.styx.client.{ConnectionSettings, SimpleNettyHttpClient}
-import rx.lang.scala.JavaConversions.toScalaObservable
-import rx.lang.scala.Observable
+import com.hotels.styx.api._
+import com.hotels.styx.api.extension.service.TlsSettings
+import com.hotels.styx.client.{ConnectionSettings, SimpleHttpClient}
 
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.compat.java8.FutureConverters.CompletionStageOps
+import scala.concurrent.ExecutionContext.Implicits.global
 
 trait StyxClientSupplier {
   val TWO_SECONDS: Int = 2 * 1000
   val FIVE_SECONDS: Int = 5 * 1000
 
-  val client: HttpClient = new SimpleNettyHttpClient.Builder()
-    .connectionDestinationFactory(new CloseAfterUseConnectionDestination.Factory()
-      .connectionSettings(new ConnectionSettings(1000))
-      .connectionFactory(new NettyConnectionFactory.Builder()
-        .name("scalatest-e2e-client")
-        .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(2 * 8192).build())
-          .httpRequestOperationFactory(httpRequestOperationFactoryBuilder().build())
-        .build())
-    )
-    .build
+  val client: FullHttpClient = new SimpleHttpClient.Builder()
+    .threadName("scalatest-e2e-client")
+    .connectionSettings(new ConnectionSettings(1000))
+    .maxHeaderSize(2 * 8192)
+    .build()
 
-  val httpsClient: HttpClient = new UrlConnectionHttpClient(TWO_SECONDS, FIVE_SECONDS)
+  val httpsClient: FullHttpClient = new SimpleHttpClient.Builder()
+    .threadName("scalatest-e2e-secure-client")
+    .connectionSettings(new ConnectionSettings(1000))
+    .maxHeaderSize(2 * 8192)
+    .tlsSettings(new TlsSettings.Builder().build())
+    .build()
 
-  private def doHttpRequest(request: HttpRequest, debug: Boolean = false): Observable[HttpResponse] = toScalaObservable(client.sendRequest(request))
 
-  private def doSecureRequest(request: HttpRequest): Observable[HttpResponse] = httpsClient.sendRequest(request)
+  private def doHttpRequest(request: FullHttpRequest, debug: Boolean = false): Future[FullHttpResponse] = client.sendRequest(request).toScala
 
-  private def doRequest(request: HttpRequest, debug: Boolean = false): Observable[HttpResponse] = if (request.isSecure)
+  private def doSecureRequest(request: FullHttpRequest): Future[FullHttpResponse] = httpsClient.sendRequest(request).toScala
+
+  private def doRequest(request: FullHttpRequest, debug: Boolean = false): Future[FullHttpResponse] = if (request.isSecure)
     doSecureRequest(request)
   else
     doHttpRequest(request, debug = debug)
 
-  def decodedRequest(request: HttpRequest,
+  def decodedRequest(request: FullHttpRequest,
                      debug: Boolean = false,
                      maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds): FullHttpResponse = {
-    doRequest(request, debug = debug)
-      .doOnNext(response => if (debug) println("StyxClientSupplier: received response for: " + request.url().path()))
-      .flatMap(response => response.toFullResponse(maxSize))
-      .timeout(timeout)
-      .toBlocking
-      .first
+    val future = doRequest(request, debug = debug)
+      .map(response => {
+        if (debug) {
+          println("StyxClientSupplier: received response for: " + request.url().path())
+        }
+        response
+      })
+    Await.result(future, timeout)
   }
 
-  def decodedRequestWithClient(client: HttpClient,
-                               request: HttpRequest,
-                               debug: Boolean = false,
-                               maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds): FullHttpResponse = {
-    toScalaObservable(client.sendRequest(request))
-      .doOnNext(response => if (debug) println("StyxClientSupplier: received response for: " + request.url().path()))
-      .flatMap(response => response.toFullResponse(maxSize))
-      .timeout(timeout)
-      .toBlocking
-      .first
-  }
 }

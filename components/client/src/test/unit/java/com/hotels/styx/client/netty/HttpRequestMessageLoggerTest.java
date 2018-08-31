@@ -19,7 +19,7 @@ import ch.qos.logback.classic.Level;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.AfterMethod;
@@ -29,12 +29,12 @@ import org.testng.annotations.Test;
 
 import static ch.qos.logback.classic.Level.INFO;
 import static ch.qos.logback.classic.Level.WARN;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -78,7 +78,7 @@ public class HttpRequestMessageLoggerTest {
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", true).logRequest(styxRequest, origin);
 
         assertThat(log.lastMessage(), is(loggingEvent(INFO,
-                format("requestId=%s, request=\\{method=GET, secure=false, uri=%s, origin=\"%s\", headers=\\[Host=www.hotels.com\\], cookies=\\[\\]\\}",
+                format("requestId=%s, request=\\{method=GET, secure=false, uri=%s, origin=\"%s\", headers=\\[Host=www.hotels.com\\]\\}",
                         styxRequest.id(), styxRequest.url(), origin.hostAsString()))));
     }
 
@@ -97,7 +97,7 @@ public class HttpRequestMessageLoggerTest {
         HttpResponse styxResponse = response(OK).build();
         new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", true).logResponse(styxRequest, styxResponse);
 
-        assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, response=\\{status=200 OK\\, headers=\\[\\], cookies=\\[\\]}", styxRequest.id()))));
+        assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, response=\\{status=200 OK\\, headers=\\[\\]}", styxRequest.id()))));
     }
 
     @Test

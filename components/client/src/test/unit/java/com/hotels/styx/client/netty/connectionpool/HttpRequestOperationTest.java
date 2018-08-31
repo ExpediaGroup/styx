@@ -16,35 +16,46 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import io.netty.handler.codec.http.DefaultHttpRequest;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
+import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import org.testng.annotations.Test;
 
-import static io.netty.handler.codec.http.HttpMethod.GET;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
+import static com.hotels.styx.api.HttpMethod.GET;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 
 public class HttpRequestOperationTest {
     @Test
     public void shouldTransformStyxRequestToNettyRequestWithAllRelevantInformation() {
-        HttpRequest request = new HttpRequest.Builder(GET)
+        HttpRequest request = new HttpRequest.Builder()
+                .method(GET)
                 .header("X-Forwarded-Proto", "https")
-                .addCookie("HASESSION_V3", "asdasdasd")
-                .addCookie("has", "123456789")
+                .cookies(
+                        requestCookie("HASESSION_V3", "asdasdasd"),
+                        requestCookie("has", "123456789")
+                )
                 .uri("https://www.example.com/foo%2Cbar?foo,baf=2")
                 .build();
 
         DefaultHttpRequest nettyRequest = HttpRequestOperation.toNettyRequest(request);
-        assertThat(nettyRequest.getMethod(), is(GET));
-        assertThat(nettyRequest.getUri(), is("https://www.example.com/foo%2Cbar?foo%2Cbaf=2"));
+        assertThat(nettyRequest.method(), is(io.netty.handler.codec.http.HttpMethod.GET));
+        assertThat(nettyRequest.uri(), is("https://www.example.com/foo%2Cbar?foo%2Cbaf=2"));
         assertThat(nettyRequest.headers().get("X-Forwarded-Proto"), is("https"));
-        assertThat(nettyRequest.headers().getAll("Cookie"), contains("HASESSION_V3=asdasdasd; has=123456789"));
+
+        assertThat(ServerCookieDecoder.LAX.decode(nettyRequest.headers().get("Cookie")),
+                containsInAnyOrder(
+                        new DefaultCookie("HASESSION_V3", "asdasdasd"),
+                        new DefaultCookie("has", "123456789")));
+
     }
 
     @Test
     public void shouldTransformUrlQueryParametersToNettyRequest() {
-        HttpRequest request = new HttpRequest.Builder(GET)
+        HttpRequest request = new HttpRequest.Builder()
+                .method(GET)
                 .header("X-Forwarded-Proto", "https")
                 .uri("https://www.example.com/foo?some=value&blah=blah")
                 .build();
@@ -58,8 +69,8 @@ public class HttpRequestOperationTest {
                 .build();
 
         DefaultHttpRequest nettyRequest = HttpRequestOperation.toNettyRequest(newRequest);
-        assertThat(nettyRequest.getMethod(), is(GET));
-        assertThat(nettyRequest.getUri(), is("https://www.example.com/foo?some=value&blah=blah&format=json"));
+        assertThat(nettyRequest.method(), is(io.netty.handler.codec.http.HttpMethod.GET));
+        assertThat(nettyRequest.uri(), is("https://www.example.com/foo?some=value&blah=blah&format=json"));
         assertThat(nettyRequest.headers().get("X-Forwarded-Proto"), is("https"));
     }
 }

@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.admin.dashboard;
 
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;

@@ -16,21 +16,22 @@
 package com.hotels.styx.admin.tasks;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.hotels.styx.api.messages.FullHttpResponse;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.spi.Registry;
-import com.hotels.styx.api.service.spi.Registry.ReloadResult;
+import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
-import static com.hotels.styx.api.messages.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
-import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
-import static com.hotels.styx.api.service.spi.Registry.ReloadResult.unchanged;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
+import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.unchanged;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -54,7 +55,7 @@ public class OriginsReloadCommandHandlerTest {
     public void returnsWithConfirmationWhenChangesArePerformed() {
         mockRegistryReload(completedFuture(reloaded("ok")));
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build(), mock(HttpInterceptor.Context.class)));
 
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), is("Origins reloaded successfully.\n"));
@@ -64,7 +65,7 @@ public class OriginsReloadCommandHandlerTest {
     public void returnsWithInformationWhenChangesAreUnnecessary() {
         mockRegistryReload(completedFuture(unchanged("this test returns 'no meaningful changes'")));
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build(), mock(HttpInterceptor.Context.class)));
 
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), is("Origins were not reloaded because this test returns 'no meaningful changes'.\n"));
@@ -74,7 +75,7 @@ public class OriginsReloadCommandHandlerTest {
     public void returnsWithInformationWhenJsonErrorOccursDuringReload() {
         mockRegistryReload(failedFuture(new RuntimeException(new JsonMappingException("simulated error"))));
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build(), mock(HttpInterceptor.Context.class)));
 
         assertThat(response.status(), is(BAD_REQUEST));
         assertThat(response.bodyAs(UTF_8), is(matchesRegex("There was an error processing your request. It has been logged \\(ID [0-9a-f-]+\\)\\.\n")));
@@ -84,7 +85,7 @@ public class OriginsReloadCommandHandlerTest {
     public void returnsWithInformationWhenErrorDuringReload() {
         mockRegistryReload(failedFuture(new RuntimeException(new RuntimeException("simulated error"))));
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build(), mock(HttpInterceptor.Context.class)));
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
         assertThat(response.bodyAs(UTF_8), is(matchesRegex("There was an error processing your request. It has been logged \\(ID [0-9a-f-]+\\)\\.\n")));

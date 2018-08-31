@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.Properties;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.hotels.styx.api.io.ResourceFactory.newResource;
+import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.common.Logging.sanitise;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static java.util.Collections.emptyMap;

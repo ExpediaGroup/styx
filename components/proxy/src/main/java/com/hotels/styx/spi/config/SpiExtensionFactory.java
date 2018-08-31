@@ -16,11 +16,10 @@
 package com.hotels.styx.spi.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Objects;
 
-import java.util.Objects;
-
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Objects.toStringHelper;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Factory for objects of a given class.
@@ -32,8 +31,8 @@ public class SpiExtensionFactory {
 
     public SpiExtensionFactory(@JsonProperty("class") String factoryClass,
                                @JsonProperty("classPath") String classPath) {
-        this.factoryClass = checkNotNull(factoryClass);
-        this.classPath = checkNotNull(classPath);
+        this.factoryClass = requireNonNull(factoryClass);
+        this.classPath = requireNonNull(classPath);
     }
 
     public String factoryClass() {
@@ -46,7 +45,7 @@ public class SpiExtensionFactory {
 
     @Override
     public int hashCode() {
-        return Objects.hash(factoryClass, classPath);
+        return Objects.hashCode(factoryClass, classPath);
     }
 
     @Override
@@ -58,8 +57,8 @@ public class SpiExtensionFactory {
             return false;
         }
         SpiExtensionFactory other = (SpiExtensionFactory) obj;
-        return Objects.equals(this.factoryClass, other.factoryClass)
-                && Objects.equals(this.classPath, other.classPath);
+        return Objects.equal(this.factoryClass, other.factoryClass)
+                && Objects.equal(this.classPath, other.classPath);
     }
 
     @Override

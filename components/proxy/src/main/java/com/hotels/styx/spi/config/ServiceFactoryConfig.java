@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Objects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 /**

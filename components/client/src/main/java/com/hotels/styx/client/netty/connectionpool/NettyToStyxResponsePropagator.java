@@ -16,13 +16,11 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.HttpCookie;
-import com.hotels.styx.api.HttpCookieAttribute;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
-import com.hotels.styx.api.netty.exceptions.TransportLostException;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.exceptions.ResponseTimeoutException;
+import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
 import io.netty.buffer.ByteBuf;
@@ -32,29 +30,19 @@ import io.netty.channel.EventLoop;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
-import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import rx.Observable;
 import rx.Producer;
 import rx.Subscriber;
 
-import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.hotels.styx.api.HttpCookieAttribute.domain;
-import static com.hotels.styx.api.HttpCookieAttribute.httpOnly;
-import static com.hotels.styx.api.HttpCookieAttribute.maxAge;
-import static com.hotels.styx.api.HttpCookieAttribute.path;
-import static com.hotels.styx.api.HttpCookieAttribute.secure;
-import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.api.common.Strings.quote;
-import static com.hotels.styx.api.support.CookiesSupport.isCookieHeader;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
 import static io.netty.util.ReferenceCountUtil.retain;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -224,16 +212,10 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
 
     @VisibleForTesting
     static HttpResponse.Builder toStyxResponse(io.netty.handler.codec.http.HttpResponse nettyResponse) {
-        HttpResponse.Builder responseBuilder = response(nettyResponse.getStatus());
+        HttpResponse.Builder responseBuilder = response(statusWithCode(nettyResponse.getStatus().code()));
 
         stream(nettyResponse.headers().spliterator(), false)
-                .filter(header -> !isCookieHeader(header.getKey()))
                 .forEach(header -> responseBuilder.addHeader(header.getKey(), header.getValue()));
-
-        nettyResponse.headers().getAll(SET_COOKIE).stream()
-                .map(ClientCookieDecoder.LAX::decode)
-                .map(NettyToStyxResponsePropagator::nettyCookieToStyxCookie)
-                .forEach(responseBuilder::addCookie);
 
         return responseBuilder;
     }
@@ -241,36 +223,11 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     private static HttpResponse toStyxResponse(io.netty.handler.codec.http.HttpResponse nettyResponse, Observable<ByteBuf> contentObservable, Origin origin) {
         try {
             return toStyxResponse(nettyResponse)
-                    .body(contentObservable)
-                    .validateContentLength()
+                    .body(fromRxObservable(contentObservable))
                     .build();
         } catch (IllegalArgumentException e) {
             throw new BadHttpResponseException(origin, e);
         }
-    }
-
-    private static HttpCookie nettyCookieToStyxCookie(Cookie cookie) {
-        Iterable<HttpCookieAttribute> attributes = new ArrayList<HttpCookieAttribute>() {
-            {
-                if (!isNullOrEmpty(cookie.domain())) {
-                    add(domain(cookie.domain()));
-                }
-                if (!isNullOrEmpty(cookie.path())) {
-                    add(path(cookie.path()));
-                }
-                if (cookie.maxAge() != Long.MIN_VALUE) {
-                    add(maxAge((int) cookie.maxAge()));
-                }
-                if (cookie.isHttpOnly()) {
-                    add(httpOnly());
-                }
-                if (cookie.isSecure()) {
-                    add(secure());
-                }
-            }
-        };
-        String value = cookie.wrap() ? quote(cookie.value()) : cookie.value();
-        return HttpCookie.cookie(cookie.name(), value, attributes);
     }
 
     private static class InitializeNettyContentProducerOnSubscribe implements Observable.OnSubscribe<ByteBuf> {

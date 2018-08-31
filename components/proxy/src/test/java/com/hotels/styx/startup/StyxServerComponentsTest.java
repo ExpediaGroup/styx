@@ -19,9 +19,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.api.service.spi.StyxService;
+import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.startup.StyxServerComponents.LoggingSetUp;
 import org.testng.annotations.Test;
@@ -29,9 +30,10 @@ import org.testng.annotations.Test;
 import java.util.List;
 import java.util.Map;
 
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.FullHttpResponse.response;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -41,7 +43,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static rx.Observable.just;
 
 public class StyxServerComponentsTest {
     @Test
@@ -119,6 +120,6 @@ public class StyxServerComponentsTest {
     }
 
     private static Plugin stubPlugin(String response) {
-        return (request, chain) -> just(response().body(response).build());
+        return (request, chain) -> StyxObservable.of(response().body(response, UTF_8).build().toStreamingResponse());
     }
 }

@@ -27,7 +27,7 @@ public final class MetricRegistryConstraints {
     }
 
     /**
-     * If the {@link com.hotels.styx.api.metrics.MetricRegistry} is a {@link com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry},
+     * If the {@link com.hotels.styx.api.MetricRegistry} is a {@link com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry},
      * extracts and returns the  {@link com.codahale.metrics.MetricRegistry}, otherwise throws an exception.
      *
      * @param environment environment
@@ -35,7 +35,7 @@ public final class MetricRegistryConstraints {
      * @throws IllegalStateException if the metrics registry is not codahale-based
      */
     public static MetricRegistry codaHaleMetricRegistry(Environment environment) throws IllegalStateException {
-        com.hotels.styx.api.metrics.MetricRegistry metricRegistry = environment.metricRegistry();
+        com.hotels.styx.api.MetricRegistry metricRegistry = environment.metricRegistry();
 
         if (!(metricRegistry instanceof CodaHaleMetricRegistry)) {
             throw new IllegalStateException("Metric Registry " + metricRegistry.getClass() + " not supported");

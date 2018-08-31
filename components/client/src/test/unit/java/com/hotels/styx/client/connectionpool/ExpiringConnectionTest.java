@@ -16,7 +16,7 @@
 package com.hotels.styx.client.connectionpool;
 
 import com.google.common.base.Ticker;
-import com.hotels.styx.api.client.Connection;
+import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import org.testng.annotations.Test;
 

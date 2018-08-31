@@ -23,10 +23,10 @@ import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.OriginsChangeListener;
-import com.hotels.styx.api.client.OriginsSnapshot;
-import com.hotels.styx.api.http.handlers.BaseHttpHandler;
+import com.hotels.styx.api.extension.OriginsChangeListener;
+import com.hotels.styx.api.extension.OriginsSnapshot;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
+import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -35,9 +35,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -64,10 +66,11 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsC
     @Override
     protected HttpResponse doHandle(HttpRequest request) {
         return response(OK)
-                .contentType(JSON_UTF_8)
+                .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
                 .disableCaching()
-                .body(content(isPrettyPrint(request)))
-                .build();
+                .body(content(isPrettyPrint(request)), UTF_8)
+                .build()
+                .toStreamingResponse();
     }
 
     private String content(boolean pretty) {

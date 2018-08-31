@@ -17,9 +17,9 @@ package com.hotels.styx.client;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
-import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.extension.ActiveOrigins;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -29,7 +29,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -54,8 +54,8 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancer {
     @VisibleForTesting
     OriginRestrictionLoadBalancingStrategy(ActiveOrigins activeOrigins, LoadBalancer delegate, Random rng) {
         this.activeOrigins = activeOrigins;
-        this.delegate = checkNotNull(delegate);
-        this.rng = checkNotNull(rng);
+        this.delegate = requireNonNull(delegate);
+        this.rng = requireNonNull(rng);
     }
 
     @Override

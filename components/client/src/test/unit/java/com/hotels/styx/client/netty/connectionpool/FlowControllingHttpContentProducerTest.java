@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
-import com.hotels.styx.api.netty.exceptions.TransportLostException;
+import com.hotels.styx.api.exceptions.ResponseTimeoutException;
+import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.buffer.ByteBuf;
@@ -33,7 +33,7 @@ import java.util.function.Consumer;
 
 import static ch.qos.logback.classic.Level.WARN;
 import static com.google.common.base.Charsets.UTF_8;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.BUFFERING;
 import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.BUFFERING_COMPLETED;
 import static com.hotels.styx.client.netty.connectionpool.FlowControllingHttpContentProducer.ProducerState.COMPLETED;

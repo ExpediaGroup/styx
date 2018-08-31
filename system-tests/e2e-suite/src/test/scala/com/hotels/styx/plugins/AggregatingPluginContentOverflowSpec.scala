@@ -18,20 +18,22 @@ package com.hotels.styx.plugins
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.MockServer.responseSupplier
-import com.hotels.styx.api.HttpRequest.Builder._
-import com.hotels.styx.api.HttpResponse.Builder._
-import com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY
-import com.hotels.styx.api.support.HostAndPorts._
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.{HttpResponse, StyxInternalObservables}
+import com.hotels.styx.api.HttpResponse._
+import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
+import com.hotels.styx.common.HostAndPorts._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{MockServer, StyxProxySpec}
 import io.netty.buffer.{ByteBuf, Unpooled}
-import io.netty.handler.codec.http.HttpResponseStatus._
+import com.hotels.styx.api.HttpResponseStatus._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 import rx.Observable
 import rx.lang.scala.JavaConversions._
 
 import scala.concurrent.duration._
+import com.hotels.styx.api.StyxInternalObservables.fromRxObservable
 
 class AggregatingPluginContentOverflowSpec extends FunSpec
   with StyxProxySpec
@@ -65,8 +67,8 @@ class AggregatingPluginContentOverflowSpec extends FunSpec
 
       mockServer.stub("/body", responseSupplier(
         () => {
-          response(OK).body(
-            toJavaObservable(
+          HttpResponse.response(OK).body(
+            StyxInternalObservables.fromRxObservable(toJavaObservable(
               delay(500.millis,
                 Seq(
                   buf("a" * 1000),
@@ -75,7 +77,7 @@ class AggregatingPluginContentOverflowSpec extends FunSpec
                   buf("d" * 1000),
                   buf("e" * 1000),
                   buf("f" * 1000))))
-              .asInstanceOf[Observable[ByteBuf]]).build()
+              .asInstanceOf[Observable[ByteBuf]])).build()
         }))
 
       val request = get(styxServer.routerURL("/body"))

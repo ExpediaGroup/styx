@@ -15,20 +15,24 @@
  */
 package com.hotels.styx.plugins;
 
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import rx.Observable;
+
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
+import com.hotels.styx.api.HttpRequest;
 
 public class OnCompleteErrorPlugin implements Plugin {
 
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-        return chain.proceed(request)
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+
+        return fromRxObservable(toRxObservable(chain.proceed(request))
                 .doOnCompleted(() -> {
                     if (request.header("Fail_at_onCompleted").isPresent()) {
                         throw new RuntimeException("foobar");
                     }
-                });
+                }));
     }
 }

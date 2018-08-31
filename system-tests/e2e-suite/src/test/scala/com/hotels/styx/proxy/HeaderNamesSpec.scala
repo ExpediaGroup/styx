@@ -16,19 +16,17 @@
 package com.hotels.styx.proxy
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.{MockServer, StyxConfiguration, StyxProxySpec}
-import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.support.HostAndPorts.freePort
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpHeaderNames.HOST
+import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.matchers.IsOptional.matches
 import com.hotels.styx.support.matchers.RegExMatcher.matchesRegex
-import io.netty.handler.codec.http.HttpHeaders.Names.HOST
-import io.netty.handler.codec.http.HttpMethod.GET
+import com.hotels.styx.{MockServer, StyxConfiguration, StyxProxySpec}
 import org.hamcrest.MatcherAssert.assertThat
-import org.scalatest.{BeforeAndAfter, FunSpec}
-import com.hotels.styx.api.messages.HttpResponseStatus._
 import org.hamcrest.Matchers.is
+import org.scalatest.{BeforeAndAfter, FunSpec}
 
 /**
   *
@@ -62,7 +60,7 @@ class HeaderNamesSpec  extends FunSpec
   }
   describe("Proxied responses have expected headers added") {
     it("should add response headers") {
-      val req = new HttpRequest.Builder(GET, "/")
+      val req = get("/")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
       val resp = decodedRequest(req)

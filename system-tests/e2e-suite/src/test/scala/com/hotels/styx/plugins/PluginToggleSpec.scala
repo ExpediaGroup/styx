@@ -17,16 +17,13 @@ package com.hotels.styx.plugins
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import com.hotels.styx.api.HttpRequest.Builder.{get, put}
-import com.hotels.styx.api.HttpResponse.Builder.response
-import com.hotels.styx.api._
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.FullHttpRequest.{get, put}
+import com.hotels.styx.api.{FullHttpResponse, _}
+import HttpResponseStatus.OK
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec
-import rx.Observable
-import rx.Observable.just
 
 class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplier {
   val normalBackend = FakeHttpServer.HttpStartupConfig().start()
@@ -42,11 +39,11 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
     setPluginEnabled("true")
 
     val resp1 = decodedRequest(get(styxServer.adminURL("/admin/plugins")).build())
-    resp1.status() should be (OK)
+    resp1.status() should be(OK)
     resp1.bodyAs(UTF_8) should include("<h3>Enabled</h3><a href='/admin/plugins/pluginUnderTest'>pluginUnderTest</a><br /><h3>Disabled</h3>")
 
     val resp2 = decodedRequest(get(styxServer.routerURL("/")).build())
-    resp2.status() should be (OK)
+    resp2.status() should be(OK)
     resp2.bodyAs(UTF_8) should include("response-from-plugin")
 
     checkPluginEnabled().trim should be("enabled")
@@ -63,7 +60,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
 
       val resp = decodedRequest(get(styxServer.adminURL("/admin/plugins")).build())
 
-      resp.status() should be (OK)
+      resp.status() should be(OK)
       resp.bodyAs(UTF_8) should include("<h3>Enabled</h3><h3>Disabled</h3><a href='/admin/plugins/pluginUnderTest'>pluginUnderTest</a><br />")
     }
 
@@ -72,7 +69,7 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
 
       val resp = decodedRequest(get(styxServer.routerURL("/")).build())
 
-      resp.status() should be (OK)
+      resp.status() should be(OK)
     }
 
     it("Plugin can be re-enabled") {
@@ -92,13 +89,13 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
     checkPluginEnabled().trim should be("disabled")
   }
 
-  private def setPluginEnabled(enabled : String): String = {
+  private def setPluginEnabled(enabled: String): String = {
     val resp = decodedRequest(
       put(styxServer.adminURL("/admin/tasks/plugin/pluginUnderTest/enabled"))
-        .body(enabled)
+        .body(enabled, UTF_8)
         .build())
 
-    resp.status() should be (OK)
+    resp.status() should be(OK)
     resp.bodyAs(UTF_8)
   }
 
@@ -112,7 +109,9 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
   }
 
   private class PluginUnderTest extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): Observable[HttpResponse] =
-      just(response().body("response-from-plugin").build())
+    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): StyxObservable[HttpResponse] =
+      StyxObservable.of(FullHttpResponse.response().body("response-from-plugin", UTF_8).build().toStreamingResponse)
   }
+
 }
+

@@ -19,11 +19,11 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.client.applications.metrics.StatusCodes.statusCodeName;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Reports metrics about applications to a {@link MetricRegistry}.
@@ -45,8 +45,8 @@ public class ApplicationMetrics {
      * @param metricRegistry metrics registry
      */
     public ApplicationMetrics(Id appId, MetricRegistry metricRegistry) {
-        checkNotNull(appId);
-        checkNotNull(metricRegistry);
+        requireNonNull(appId);
+        requireNonNull(metricRegistry);
 
         this.applicationMetrics = metricRegistry.scope(appId.toString());
 

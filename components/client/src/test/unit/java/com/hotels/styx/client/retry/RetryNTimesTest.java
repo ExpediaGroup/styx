@@ -15,13 +15,13 @@
  */
 package com.hotels.styx.client.retry;
 
-import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
-import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
-import com.hotels.styx.api.netty.exceptions.IsRetryableException;
+import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
+import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.api.exceptions.IsRetryableException;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -47,7 +47,7 @@ public class RetryNTimesTest {
         when(retryPolicyContext.currentRetryCount()).thenReturn(0);
         when(retryPolicyContext.lastException()).thenReturn(empty());
 
-        this.remoteHost = RemoteHost.remoteHost(mock(Origin.class), mock(HttpClient.class), mock(LoadBalancingMetricSupplier.class));
+        this.remoteHost = RemoteHost.remoteHost(mock(Origin.class), mock(HttpHandler.class), mock(LoadBalancingMetricSupplier.class));
         this.loadBalancer = mock(LoadBalancer.class);
 
     }

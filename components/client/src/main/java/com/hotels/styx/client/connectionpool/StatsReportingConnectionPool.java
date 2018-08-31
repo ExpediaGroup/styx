@@ -16,10 +16,10 @@
 package com.hotels.styx.client.connectionpool;
 
 import com.codahale.metrics.Gauge;
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import org.slf4j.Logger;
 import rx.Observable;
 
@@ -71,7 +71,7 @@ class StatsReportingConnectionPool implements ConnectionPool {
     }
 
     @Override
-    public Settings settings() {
+    public ConnectionPoolSettings settings() {
         return connectionPool.settings();
     }
 

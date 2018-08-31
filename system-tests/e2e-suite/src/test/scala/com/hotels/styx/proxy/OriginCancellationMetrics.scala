@@ -15,15 +15,15 @@
  */
 package com.hotels.styx.proxy
 
-import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec, api}
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-import com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY
-import io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH
+import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
+import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 
 class OriginCancellationMetrics extends FunSpec
   with StyxProxySpec

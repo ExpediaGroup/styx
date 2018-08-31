@@ -16,23 +16,25 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.support.api.HttpMessageBodies;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.support.api.HttpMessageBodies;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import static ch.qos.logback.classic.Level.INFO;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
+import static com.hotels.styx.api.ResponseCookie.responseCookie;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static rx.Observable.just;
 
 public class HttpMessageLoggingInterceptorTest {
     private LoggingTestSupport responseLogSupport;
@@ -53,17 +55,17 @@ public class HttpMessageLoggingInterceptorTest {
     public void logsRequestsAndResponses() {
         HttpRequest request = get("/")
                 .header("ReqHeader", "ReqHeaderValue")
-                .addCookie("ReqCookie", "ReqCookieValue")
+                .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
                 .build();
 
         consume(interceptor.intercept(request, respondWith(
                 response(OK)
                 .header("RespHeader", "RespHeaderValue")
-                .addCookie("RespCookie", "RespCookieValue")
+                .cookies(responseCookie("RespCookie", "RespCookieValue").build())
         )));
 
-        String requestPattern = "request=\\{method=GET, secure=false, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue\\], cookies=\\[ReqCookie=ReqCookieValue\\]\\}";
-        String responsePattern = "response=\\{status=200 OK, headers=\\[RespHeader=RespHeaderValue\\], cookies=\\[RespCookie=RespCookieValue\\]\\}";
+        String requestPattern = "request=\\{method=GET, secure=false, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\]\\}";
+        String responsePattern = "response=\\{status=200 OK, headers=\\[RespHeader=RespHeaderValue\\, Set-Cookie=RespCookie=RespCookieValue]\\}";
 
         assertThat(responseLogSupport.log(), contains(
                 loggingEvent(INFO, "requestId=" + request.id() + ", " + requestPattern),
@@ -75,13 +77,13 @@ public class HttpMessageLoggingInterceptorTest {
         interceptor = new HttpMessageLoggingInterceptor(false);
         HttpRequest request = get("/")
                 .header("ReqHeader", "ReqHeaderValue")
-                .addCookie("ReqCookie", "ReqCookieValue")
+                .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
                 .build();
 
         consume(interceptor.intercept(request, respondWith(
                 response(OK)
                         .header("RespHeader", "RespHeaderValue")
-                        .addCookie("RespCookie", "RespCookieValue")
+                        .cookies(responseCookie("RespCookie", "RespCookieValue").build())
         )));
 
         String requestPattern = "request=\\{method=GET, secure=false, uri=/, origin=\"N/A\"}";
@@ -97,13 +99,13 @@ public class HttpMessageLoggingInterceptorTest {
         HttpRequest request = get("/")
                 .secure(true)
                 .header("ReqHeader", "ReqHeaderValue")
-                .addCookie("ReqCookie", "ReqCookieValue")
+                .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
                 .build();
 
         consume(interceptor.intercept(request, respondWith(response(OK))));
 
-        String requestPattern = "request=\\{method=GET, secure=true, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue\\], cookies=\\[ReqCookie=ReqCookieValue\\]\\}";
-        String responsePattern = "response=\\{status=200 OK, headers=\\[\\], cookies=\\[\\]\\}";
+        String requestPattern = "request=\\{method=GET, secure=true, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\]\\}";
+        String responsePattern = "response=\\{status=200 OK, headers=\\[\\]\\}";
 
         assertThat(responseLogSupport.log(), contains(
                 loggingEvent(INFO, "requestId=" + request.id() + ", " + requestPattern),
@@ -111,10 +113,10 @@ public class HttpMessageLoggingInterceptorTest {
     }
 
     private static HttpInterceptor.Chain respondWith(HttpResponse.Builder resp) {
-        return request -> just(resp.request(request).build());
+        return request -> StyxObservable.of(resp.build());
     }
 
-    private static void consume(Observable<HttpResponse> resp) {
-        resp.map(HttpMessageBodies::bodyAsString).toBlocking().single();
+    private static void consume(StyxObservable<HttpResponse> resp) {
+        await(resp.map(HttpMessageBodies::bodyAsString).asCompletableFuture());
     }
 }

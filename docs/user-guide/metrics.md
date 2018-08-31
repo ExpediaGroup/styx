@@ -281,18 +281,6 @@ Here is an example configuration:
   * `intervalMillis` - A metrics reporting interval, in milliseconds.
 
 
-## JMX Reporter
-
-TODO: Is this still supported, or ever used? Perhaps it is better to leave undocumented for now?
-
-    services:
-      factories:
-        jmx:
-          class: "com.hotels.styx.metrics.reporting.jmx.JmxReporterServiceFactory"
-          config:
-            domain: "com.hotels.styx"
-
-
 # Styx Metrics Reference
 
 A [Styx Metrics Reference](./metrics-reference.md) has a detailed description for each metric.

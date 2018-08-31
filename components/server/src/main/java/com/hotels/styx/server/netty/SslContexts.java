@@ -16,7 +16,7 @@
 package com.hotels.styx.server.netty;
 
 import com.codahale.metrics.Gauge;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.server.HttpsConnectorConfig;
 import io.netty.handler.ssl.OpenSslSessionContext;
 import io.netty.handler.ssl.OpenSslSessionStats;

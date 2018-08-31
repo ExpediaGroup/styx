@@ -16,20 +16,22 @@
 package com.hotels.styx.client;
 
 import com.google.common.net.HostAndPort;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
-import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.StyxInternalObservables;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.netty.exceptions.NoAvailableHostsException;
-import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.StickySessionConfig;
+import com.hotels.styx.api.exceptions.NoAvailableHostsException;
+import com.hotels.styx.api.exceptions.OriginUnreachableException;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.StickySessionConfig;
 import org.hamcrest.Matchers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -45,18 +47,19 @@ import java.util.Optional;
 import static com.hotels.styx.api.HttpHeaderNames.CHUNKED;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.Id.GENERIC_APP;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.client.RemoteHost.remoteHost;
-import static com.hotels.styx.api.support.HostAndPorts.localhost;
-import static com.hotels.styx.api.service.StickySessionConfig.stickySessionDisabled;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_IMPLEMENTED;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.HttpResponseStatus.NOT_IMPLEMENTED;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.UNAUTHORIZED;
+import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
+import static com.hotels.styx.common.HostAndPorts.localhost;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -102,7 +105,7 @@ public class StyxHttpClientTest {
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
                         mockLoadBalancer(
-                                Optional.of(remoteHost(SOME_ORIGIN, hostClient, hostClient))
+                                Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient))
                         ))
                 .build();
 
@@ -122,7 +125,7 @@ public class StyxHttpClientTest {
                 .loadBalancer(
                         mockLoadBalancer(
                                 Optional.empty(),
-                                Optional.of(remoteHost(SOME_ORIGIN, hostClient, hostClient))))
+                                Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient))))
                 .retryPolicy(retryPolicy)
                 .build();
 
@@ -159,8 +162,8 @@ public class StyxHttpClientTest {
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
                         mockLoadBalancer(
-                                Optional.of(remoteHost(ORIGIN_1, firstClient, firstClient)),
-                                Optional.of(remoteHost(ORIGIN_2, secondClient, secondClient))
+                                Optional.of(remoteHost(ORIGIN_1, toHandler(firstClient), firstClient)),
+                                Optional.of(remoteHost(ORIGIN_2, toHandler(secondClient), secondClient))
                         ))
                 .retryPolicy(retryPolicy)
                 .build();
@@ -199,9 +202,9 @@ public class StyxHttpClientTest {
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
                         mockLoadBalancer(
-                                Optional.of(remoteHost(ORIGIN_1, firstClient, firstClient)),
-                                Optional.of(remoteHost(ORIGIN_2, secondClient, secondClient)),
-                                Optional.of(remoteHost(ORIGIN_3, thirdClient, thirdClient))
+                                Optional.of(remoteHost(ORIGIN_1, toHandler(firstClient), firstClient)),
+                                Optional.of(remoteHost(ORIGIN_2, toHandler(secondClient), secondClient)),
+                                Optional.of(remoteHost(ORIGIN_3, toHandler(thirdClient), thirdClient))
                         ))
                 .retryPolicy(mockRetryPolicy(true, false))
                 .build();
@@ -231,10 +234,10 @@ public class StyxHttpClientTest {
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
                         mockLoadBalancer(
-                                Optional.of(remoteHost(ORIGIN_1, firstClient, firstClient)),
-                                Optional.of(remoteHost(ORIGIN_2, secondClient, secondClient)),
-                                Optional.of(remoteHost(ORIGIN_3, thirdClient, thirdClient)),
-                                Optional.of(remoteHost(ORIGIN_4, fourthClient, fourthClient))
+                                Optional.of(remoteHost(ORIGIN_1, toHandler(firstClient), firstClient)),
+                                Optional.of(remoteHost(ORIGIN_2, toHandler(secondClient), secondClient)),
+                                Optional.of(remoteHost(ORIGIN_3, toHandler(thirdClient), thirdClient)),
+                                Optional.of(remoteHost(ORIGIN_4, toHandler(fourthClient), fourthClient))
                         ))
                 .retryPolicy(
                         mockRetryPolicy(true, true, true, true))
@@ -262,7 +265,7 @@ public class StyxHttpClientTest {
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
-                        mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, hostClient, hostClient))))
+                        mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient))))
                 .build();
 
         HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
@@ -279,7 +282,7 @@ public class StyxHttpClientTest {
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
-                        mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, hostClient, hostClient)))
+                        mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient)))
                 )
                 .build();
 
@@ -297,7 +300,7 @@ public class StyxHttpClientTest {
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
-                        mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, hostClient, hostClient)))
+                        mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient)))
                 )
                 .build();
 
@@ -315,7 +318,7 @@ public class StyxHttpClientTest {
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
-                        mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, hostClient, hostClient)))
+                        mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient)))
                 )
                 .build();
 
@@ -336,7 +339,7 @@ public class StyxHttpClientTest {
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
-                        mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, hostClient, hostClient)))
+                        mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient)))
                 )
                 .enableContentValidation()
                 .build();
@@ -357,7 +360,7 @@ public class StyxHttpClientTest {
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.host().getPort()))
                 .loadBalancer(
-                        mockLoadBalancer(Optional.of(remoteHost(origin, hostClient, hostClient)))
+                        mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)))
                 )
                 .metricsRegistry(metricRegistry)
                 .build();
@@ -377,7 +380,7 @@ public class StyxHttpClientTest {
         Origin origin = originWithId("localhost:234", "App-X", "Origin-Y");
         StyxHostHttpClient hostClient = mockHostClient(just(response(OK).build()));
 
-        LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost(origin, hostClient, hostClient)));
+        LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)));
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.host().getPort()))
                 .loadBalancer(loadBalancer)
@@ -385,7 +388,9 @@ public class StyxHttpClientTest {
                 .build();
 
         HttpResponse response = styxHttpClient.sendRequest(
-                get("/foo").addCookie("styx_origin_" + Id.GENERIC_APP, "Origin-Y").build())
+                get("/foo")
+                        .cookies(requestCookie("styx_origin_" + Id.GENERIC_APP, "Origin-Y"))
+                        .build())
                 .toBlocking()
                 .first();
 
@@ -401,7 +406,7 @@ public class StyxHttpClientTest {
         Origin origin = originWithId("localhost:234", "App-X", "Origin-Y");
         StyxHostHttpClient hostClient = mockHostClient(just(response(OK).build()));
 
-        LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost(origin, hostClient, hostClient)));
+        LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)));
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.host().getPort()))
                 .loadBalancer(loadBalancer)
@@ -410,7 +415,9 @@ public class StyxHttpClientTest {
                 .build();
 
         HttpResponse response = styxHttpClient.sendRequest(
-                get("/foo").addCookie("restrictedOrigin", "Origin-Y").build())
+                get("/foo")
+                        .cookies(requestCookie("restrictedOrigin", "Origin-Y"))
+                        .build())
                 .toBlocking()
                 .first();
 
@@ -425,7 +432,7 @@ public class StyxHttpClientTest {
     public void prefersRestrictedOriginsOverStickyOriginsWhenBothAreConfigured() {
         Origin origin = originWithId("localhost:234", "App-X", "Origin-Y");
         StyxHostHttpClient hostClient = mockHostClient(just(response(OK).build()));
-        LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost(origin, hostClient, hostClient)));
+        LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)));
 
         StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.host().getPort()))
                 .originsRestrictionCookieName("restrictedOrigin")
@@ -435,8 +442,10 @@ public class StyxHttpClientTest {
 
         HttpResponse response = styxHttpClient.sendRequest(
                 get("/foo")
-                        .addCookie("restrictedOrigin", "Origin-Y")
-                        .addCookie("styx_origin_" + Id.GENERIC_APP, "Origin-X")
+                        .cookies(
+                                requestCookie("restrictedOrigin", "Origin-Y"),
+                                requestCookie("styx_origin_" + Id.GENERIC_APP, "Origin-X")
+                        )
                         .build())
                 .toBlocking()
                 .first();
@@ -446,6 +455,10 @@ public class StyxHttpClientTest {
         ArgumentCaptor<LoadBalancer.Preferences> argPreferences = ArgumentCaptor.forClass(LoadBalancer.Preferences.class);
         verify(loadBalancer).choose(argPreferences.capture());
         assertThat(argPreferences.getValue().preferredOrigins(), is(Optional.of("Origin-Y")));
+    }
+
+    private HttpHandler toHandler(StyxHostHttpClient hostClient) {
+        return (request, ctx) -> StyxInternalObservables.fromRxObservable(hostClient.sendRequest(request));
     }
 
     private RetryPolicy mockRetryPolicy(Boolean first, Boolean... outcomes) {

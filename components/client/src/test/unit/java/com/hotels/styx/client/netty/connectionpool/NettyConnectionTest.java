@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.api.extension.Origin;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.testng.annotations.BeforeMethod;
@@ -25,7 +25,7 @@ import org.testng.annotations.Test;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static org.hamcrest.MatcherAssert.assertThat;

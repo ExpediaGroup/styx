@@ -19,31 +19,31 @@ import com.google.common.collect.ImmutableList;
 import com.hotels.styx.AggregatedConfiguration;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static rx.Observable.just;
+import com.hotels.styx.api.HttpRequest;
 
 public class InterceptorPipelineBuilderTest {
     private Environment environment;
     private Iterable<NamedPlugin> plugins;
-    private HttpHandler2 handler;
+    private HttpHandler handler;
 
     @BeforeMethod
     public void setUp() {
@@ -65,14 +65,14 @@ public class InterceptorPipelineBuilderTest {
                                                 .build()))
         );
 
-        handler = mock(HttpHandler2.class);
-        when(handler.handle(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(just(response(OK).build()));
+        handler = mock(HttpHandler.class);
+        when(handler.handle(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(StyxObservable.of(response(OK).build()));
     }
 
     @Test
-    public void buildsPipelineWithInterceptors() {
-        HttpHandler2 pipeline = new InterceptorPipelineBuilder(environment, plugins, handler).build();
-        HttpResponse response = pipeline.handle(get("/foo").build(), HttpInterceptorContext.create()).toBlocking().first();
+    public void buildsPipelineWithInterceptors() throws Exception {
+        HttpHandler pipeline = new InterceptorPipelineBuilder(environment, plugins, handler).build();
+        HttpResponse response = pipeline.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
 
         assertThat(response.header("plug1"), isValue("1"));
         assertThat(response.header("plug2"), isValue("1"));

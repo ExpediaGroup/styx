@@ -23,12 +23,13 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.client.Origin._
-import com.hotels.styx.api.client.{ActiveOrigins, Origin}
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
-import com.hotels.styx.api.service.{BackendService, StickySessionConfig}
-import com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort
+import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.extension.Origin._
+import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
+import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
+import com.hotels.styx.api.extension.service.BackendService
+import com.hotels.styx.common.HostAndPorts.localHostAndFreePort
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
@@ -163,7 +164,12 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
 
     val response = waitForResponse(client.sendRequest(request))
 
-    response.cookie("styx_origin_generic-app").get().toString should fullyMatch regex "styx_origin_generic-app=HEALTHY_ORIGIN_TWO; Max-Age=.*; Path=/; HttpOnly"
+    val cookie = response.cookie("styx_origin_generic-app").get()
+
+    cookie.value() should be("HEALTHY_ORIGIN_TWO")
+    cookie.path().get() should be("/")
+    cookie.httpOnly() should be(true)
+    cookie.maxAge().isPresent should be(true)
   }
 
   private def respondWithHeadersOnly(): ResponseDefinitionBuilder = aResponse

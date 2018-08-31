@@ -18,15 +18,15 @@ package com.hotels.styx.infrastructure.configuration.json.mixins;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import com.hotels.styx.api.service.Certificate;
-import com.hotels.styx.api.service.TlsSettings;
+import com.hotels.styx.api.extension.service.Certificate;
+import com.hotels.styx.api.extension.service.TlsSettings;
 
 import java.util.List;
 import java.util.Set;
 
 
 /**
- * Jackson annotations for {@link com.hotels.styx.api.service.TlsSettings}.
+ * Jackson annotations for {@link TlsSettings}.
  */
 @JsonDeserialize(builder = TlsSettings.Builder.class)
 public interface TlsSettingsMixin {

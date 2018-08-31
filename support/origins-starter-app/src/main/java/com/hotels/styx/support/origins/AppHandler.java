@@ -16,12 +16,13 @@
 package com.hotels.styx.support.origins;
 
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.http.handlers.StaticBodyHttpHandler;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import rx.Observable;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
+import com.hotels.styx.api.HttpResponseStatus;
 
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
@@ -29,6 +30,7 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.fill;
 import static java.util.UUID.randomUUID;
 
@@ -42,8 +44,8 @@ public class AppHandler implements HttpHandler {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
-        return handler.handle(request)
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return handler.handle(request, context)
                 .map(response -> {
                     HttpResponse.Builder responseBuilder = response.newBuilder()
                             .headers(request.headers())
@@ -55,11 +57,11 @@ public class AppHandler implements HttpHandler {
                     request.queryParam("status").ifPresent(status ->
                             responseBuilder
                                     .status(httpResponseStatus(status))
-                                    .body("Returning requested status (" + status + ")")
+                                    .body(StyxObservable.of("Returning requested status (" + status + ")"), UTF_8)
                     );
 
                     request.queryParam("length").ifPresent(length ->
-                            responseBuilder.body(generateContent(parseInt(length)))
+                            responseBuilder.body(StyxObservable.of(generateContent(parseInt(length))), UTF_8)
                     );
 
                     return responseBuilder.build();
@@ -71,7 +73,7 @@ public class AppHandler implements HttpHandler {
     }
 
     private HttpResponseStatus httpResponseStatus(String status) {
-        return HttpResponseStatus.valueOf(Integer.valueOf(status));
+        return HttpResponseStatus.statusWithCode(Integer.valueOf(status));
     }
 
     private String generateContent(int contentLength) {

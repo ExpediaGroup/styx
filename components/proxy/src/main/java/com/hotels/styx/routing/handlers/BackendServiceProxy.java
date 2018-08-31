@@ -17,12 +17,12 @@ package com.hotels.styx.routing.handlers;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.BackendServicesRouter;
@@ -31,7 +31,7 @@ import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RouteHandlerDefinition;
 import com.hotels.styx.routing.config.RouteHandlerFactory;
-import rx.Observable;
+import com.hotels.styx.api.HttpRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -44,7 +44,7 @@ import static java.lang.String.join;
 /**
  * A HTTP handler that proxies requests to backend services based on the path prefix.
  */
-public class BackendServiceProxy implements HttpHandler2 {
+public class BackendServiceProxy implements HttpHandler {
 
     private final RouteHandlerAdapter handler;
 
@@ -55,7 +55,7 @@ public class BackendServiceProxy implements HttpHandler2 {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return handler.handle(request, context);
     }
 
@@ -85,7 +85,7 @@ public class BackendServiceProxy implements HttpHandler2 {
         }
 
         @Override
-        public HttpHandler2 build(List<String> parents, RouteHandlerFactory x, RouteHandlerDefinition configBlock) {
+        public HttpHandler build(List<String> parents, RouteHandlerFactory x, RouteHandlerDefinition configBlock) {
             JsonNodeConfig config = new JsonNodeConfig(configBlock.config());
             String provider = config.get("backendProvider")
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "backendProvider"));

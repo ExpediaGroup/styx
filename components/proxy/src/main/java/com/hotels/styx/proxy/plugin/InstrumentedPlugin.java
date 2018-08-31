@@ -20,18 +20,20 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.common.SimpleCache;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
-import rx.Observable;
 
 import java.util.Map;
 
 import static com.google.common.base.Throwables.propagate;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 import static rx.Observable.error;
@@ -82,15 +84,16 @@ public class InstrumentedPlugin implements Plugin {
     }
 
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain originalChain) {
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain originalChain) {
         StatusRecordingChain chain = new StatusRecordingChain(originalChain);
         try {
-            return plugin.intercept(request, chain)
-                    .doOnNext(response -> recordStatusCode(chain, response))
-                    .onErrorResumeNext(error -> error(recordAndWrapError(chain, error)));
+            return fromRxObservable(
+                    toRxObservable(plugin.intercept(request, chain))
+                            .doOnNext(response -> recordStatusCode(chain, response))
+                            .onErrorResumeNext(error -> error(recordAndWrapError(chain, error))));
         } catch (Throwable e) {
             recordException(e);
-            return error(new PluginException(e, plugin.name()));
+            return StyxObservable.error(new PluginException(e, plugin.name()));
         }
     }
 
@@ -137,11 +140,11 @@ public class InstrumentedPlugin implements Plugin {
         }
 
         @Override
-        public Observable<HttpResponse> proceed(HttpRequest request) {
+        public StyxObservable<HttpResponse> proceed(HttpRequest request) {
             try {
-                return chain.proceed(request)
+                return fromRxObservable(toRxObservable(chain.proceed(request))
                         .doOnNext(response -> upstreamStatus = response.status())
-                        .doOnError(error -> upstreamException = true);
+                        .doOnError(error -> upstreamException = true));
             } catch (Throwable e) {
                 upstreamException = true;
                 throw propagate(e);

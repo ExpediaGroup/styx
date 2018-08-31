@@ -16,16 +16,16 @@
 package com.hotels.styx.client.loadbalancing.strategies;
 
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsSnapshot;
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetric;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
+import com.hotels.styx.api.extension.ActiveOrigins;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.OriginsSnapshot;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetric;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -33,8 +33,8 @@ import org.testng.annotations.Test;
 import java.util.Optional;
 
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.client.RemoteHost.remoteHost;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -57,7 +57,7 @@ public class RoundRobinStrategyTest {
         LoadBalancingMetricSupplier metric = mock(LoadBalancingMetricSupplier.class);
         when(metric.loadBalancingMetric()).thenReturn(new LoadBalancingMetric(45));
 
-        return remoteHost(origin, mock(StyxHostHttpClient.class), metric);
+        return remoteHost(origin, mock(HttpHandler.class), metric);
     }
 
     private LoadBalancer strategy;

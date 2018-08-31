@@ -18,18 +18,21 @@ package com.hotels.styx.server.netty.connectors;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.ContentOverflowException;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.NoServiceConfiguredException;
-import com.hotels.styx.api.metrics.HttpErrorStatusListener;
-import com.hotels.styx.api.metrics.MetricRegistry;
-import com.hotels.styx.api.metrics.RequestProgressListener;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.server.HttpErrorStatusListener;
+import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.server.RequestProgressListener;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.netty.exceptions.NoAvailableHostsException;
-import com.hotels.styx.api.netty.exceptions.OriginUnreachableException;
-import com.hotels.styx.api.netty.exceptions.ResponseTimeoutException;
-import com.hotels.styx.api.netty.exceptions.TransportLostException;
+import com.hotels.styx.api.exceptions.NoAvailableHostsException;
+import com.hotels.styx.api.exceptions.OriginUnreachableException;
+import com.hotels.styx.api.exceptions.ResponseTimeoutException;
+import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
@@ -39,25 +42,34 @@ import com.hotels.styx.common.FsmEventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
 import com.hotels.styx.common.StateMachine;
 import com.hotels.styx.server.BadRequestException;
-import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.RequestTimeoutException;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.TooLongFrameException;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.api.metrics.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
-import static com.hotels.styx.api.metrics.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT;
+import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
+import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
+import static com.hotels.styx.api.HttpResponseStatus.SERVICE_UNAVAILABLE;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.server.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
+import static com.hotels.styx.server.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE_CLIENT_CLOSED;
@@ -65,16 +77,9 @@ import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.WAITING_FOR_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.ResponseEnhancer.DO_NOT_MODIFY_RESPONSE;
 import static io.netty.channel.ChannelFutureListener.CLOSE;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static io.netty.handler.codec.http.HttpResponseStatus.GATEWAY_TIMEOUT;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
-import static io.netty.handler.codec.http.HttpResponseStatus.REQUEST_TIMEOUT;
-import static io.netty.handler.codec.http.HttpResponseStatus.SERVICE_UNAVAILABLE;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -100,7 +105,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
             .add(INTERNAL_SERVER_ERROR, StyxClientException.class)
             .build();
 
-    private final HttpHandler2 httpPipeline;
+    private final HttpHandler httpPipeline;
     private final HttpErrorStatusListener httpErrorStatusListener;
     private final HttpResponseWriterFactory responseWriterFactory;
 
@@ -245,7 +250,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         // the same call stack as "onLegitimateRequest" handler. This happens when a plugin
         // generates a response.
         try {
-            Observable<HttpResponse> responseObservable = httpPipeline.handle(v11Request, HttpInterceptorContext.create());
+            Observable<HttpResponse> responseObservable = toRxObservable(httpPipeline.handle(v11Request, new HttpInterceptorContext()));
             subscription = responseObservable
                     .subscribe(new Subscriber<HttpResponse>() {
                                    @Override
@@ -439,7 +444,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
 
         cancelSubscription();
         statsSink.onTerminate(ongoingRequest.id());
-        responseWriterFactory.create(ctx).write(response(INTERNAL_SERVER_ERROR).build())
+        responseWriterFactory.create(ctx).write(HttpResponse.response(INTERNAL_SERVER_ERROR).build())
                 .handle((dontCare, ignore) -> ctx.close());
         return TERMINATED;
     }
@@ -453,8 +458,11 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
                 ? exception.getCause()
                 : exception);
 
-        return responseEnhancer.enhance(response(status), request)
-                .body(status.code() >= 500 ? "Site temporarily unavailable." : status.reasonPhrase())
+        String message = status.code() >= 500 ? "Site temporarily unavailable." : status.description();
+
+        return responseEnhancer.enhance(HttpResponse.response(status), request)
+                .header(CONTENT_LENGTH, message.getBytes(UTF_8).length)
+                .body(StyxObservable.of(message), UTF_8)
                 .build();
     }
 
@@ -572,7 +580,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
      * Builds instances of HttpPipelineHandler.
      */
     public static class Builder {
-        private final HttpHandler2 httpPipeline;
+        private final HttpHandler httpPipeline;
 
         private ResponseEnhancer responseEnhancer = DO_NOT_MODIFY_RESPONSE;
         private HttpErrorStatusListener httpErrorStatusListener = IGNORE_ERROR_STATUS;
@@ -585,7 +593,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
          *
          * @param httpPipeline the HTTP pipeline
          */
-        public Builder(HttpHandler2 httpPipeline) {
+        public Builder(HttpHandler httpPipeline) {
             this.httpPipeline = requireNonNull(httpPipeline);
         }
 
@@ -661,6 +669,20 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
                     throw new IOException("Connection reset by peer");
                 }
             };
+        }
+    }
+
+    private final class HttpInterceptorContext implements HttpInterceptor.Context {
+        private final Map<String, Object> context = new ConcurrentHashMap<>();
+
+        @Override
+        public void add(String key, Object value) {
+            context.put(key, value);
+        }
+
+        @Override
+        public <T> T get(String key, Class<T> clazz) {
+            return (T) context.get(key);
         }
     }
 }

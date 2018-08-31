@@ -15,21 +15,21 @@
  */
 package com.hotels.styx.client.loadbalancing.strategies;
 
-import com.hotels.styx.api.client.ActiveOrigins;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetric;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
-import com.hotels.styx.client.StyxHostHttpClient;
+import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.extension.ActiveOrigins;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetric;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.client.RemoteHost.remoteHost;
-import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
+import static com.hotels.styx.common.HostAndPorts.localHostAndFreePort;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
@@ -48,9 +48,9 @@ public class BusyConnectionsStrategyTest {
 
     @Test
     public void tieBreaksOriginsWithEqualMetric() {
-        RemoteHost hostOne = remoteHost(ORIGIN_ONE, mock(StyxHostHttpClient.class), lbMetrics(3));
-        RemoteHost hostTwo = remoteHost(ORIGIN_TWO, mock(StyxHostHttpClient.class), lbMetrics(3));
-        RemoteHost hostThree = remoteHost(ORIGIN_THREE, mock(StyxHostHttpClient.class), lbMetrics(3));
+        RemoteHost hostOne = remoteHost(ORIGIN_ONE, mock(HttpHandler.class), lbMetrics(3));
+        RemoteHost hostTwo = remoteHost(ORIGIN_TWO, mock(HttpHandler.class), lbMetrics(3));
+        RemoteHost hostThree = remoteHost(ORIGIN_THREE, mock(HttpHandler.class), lbMetrics(3));
 
         when(activeOrigins.snapshot()).thenReturn(asList(hostOne, hostTwo, hostThree));
 
@@ -66,9 +66,9 @@ public class BusyConnectionsStrategyTest {
 
     @Test
     public void favoursOriginsWithLessBusyConnectionCount() {
-        RemoteHost hostOne = remoteHost(ORIGIN_ONE, mock(StyxHostHttpClient.class), lbMetrics(4));
-        RemoteHost hostTwo = remoteHost(ORIGIN_TWO, mock(StyxHostHttpClient.class), lbMetrics(3));
-        RemoteHost hostThree = remoteHost(ORIGIN_THREE, mock(StyxHostHttpClient.class), lbMetrics(6));
+        RemoteHost hostOne = remoteHost(ORIGIN_ONE, mock(HttpHandler.class), lbMetrics(4));
+        RemoteHost hostTwo = remoteHost(ORIGIN_TWO, mock(HttpHandler.class), lbMetrics(3));
+        RemoteHost hostThree = remoteHost(ORIGIN_THREE, mock(HttpHandler.class), lbMetrics(6));
 
         when(activeOrigins.snapshot()).thenReturn(asList(hostOne, hostTwo, hostThree));
 
@@ -78,7 +78,7 @@ public class BusyConnectionsStrategyTest {
 
     @Test
     public void copesWithOnlyOneActiveOrigin() {
-        RemoteHost hostOne = remoteHost(ORIGIN_ONE, mock(StyxHostHttpClient.class), lbMetrics(4));
+        RemoteHost hostOne = remoteHost(ORIGIN_ONE, mock(HttpHandler.class), lbMetrics(4));
 
         when(activeOrigins.snapshot()).thenReturn(asList(hostOne));
 

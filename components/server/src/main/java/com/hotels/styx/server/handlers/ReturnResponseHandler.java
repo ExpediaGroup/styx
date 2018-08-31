@@ -15,14 +15,15 @@
  */
 package com.hotels.styx.server.handlers;
 
-import com.hotels.styx.api.http.handlers.BaseHttpHandler;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import java.util.function.Supplier;
 
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.FullHttpResponse.response;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A handler that return whatever response returned from the passed in handler.
@@ -40,7 +41,7 @@ public final class ReturnResponseHandler extends BaseHttpHandler {
     }
 
     public static HttpHandler returnsResponse(String response) {
-        return returnsResponse(() -> response().body(response).build());
+        return returnsResponse(() -> response().body(response, UTF_8).build().toStreamingResponse());
     }
 
     public static HttpHandler returnsResponse(Supplier<HttpResponse> responseSupplier) {

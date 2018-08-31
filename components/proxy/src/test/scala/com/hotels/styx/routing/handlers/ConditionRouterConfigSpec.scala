@@ -15,25 +15,26 @@
  */
 package com.hotels.styx.routing.handlers
 
-import com.hotels.styx.api.HttpResponse.Builder.response
-import com.hotels.styx.api.{HttpHandler2, HttpRequest}
+import com.hotels.styx.api.HttpResponse.response
+import com.hotels.styx.api.{HttpHandler, HttpRequest, StyxObservable}
+import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.HttpHandlerAdapter
 import com.hotels.styx.routing.config.{HttpHandlerFactory, RouteHandlerConfig, RouteHandlerDefinition, RouteHandlerFactory}
-import io.netty.handler.codec.http.HttpResponseStatus.{BAD_GATEWAY, OK}
+import com.hotels.styx.server.HttpInterceptorContext
+import com.hotels.styx.api.HttpResponseStatus.{BAD_GATEWAY, OK}
 import org.mockito.Matchers.{any, eq => meq}
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, ShouldMatchers}
-import rx.lang.scala.Observable.just
 
 import scala.collection.JavaConversions._
 
 class ConditionRouterConfigSpec extends FunSpec with ShouldMatchers with MockitoSugar {
 
-  private val httpsRequest = HttpRequest.Builder.get("/foo").secure(true).build
-  private val httpRequest = HttpRequest.Builder.get("/foo").secure(false).build
-  private val routeHandlerFactory = new RouteHandlerFactory(Map("StaticResponseHandler" -> new StaticResponseHandler.ConfigFactory), Map[String, HttpHandler2]())
+  private val httpsRequest = HttpRequest.get("/foo").secure(true).build
+  private val httpRequest = HttpRequest.get("/foo").secure(false).build
+  private val routeHandlerFactory = new RouteHandlerFactory(Map("StaticResponseHandler" -> new StaticResponseHandler.ConfigFactory), Map[String, HttpHandler]())
 
   private val config = configBlock(
     """
@@ -72,18 +73,15 @@ class ConditionRouterConfigSpec extends FunSpec with ShouldMatchers with Mockito
 
   it("Builds an instance with fallback handler") {
     val router = new ConditionRouter.ConfigFactory().build(List(), routeHandlerFactory, config)
-    val response = router.handle(httpsRequest, null)
-      .toBlocking
-      .first()
+    val response = StyxFutures.await(router.handle(httpsRequest, HttpInterceptorContext.create)
+    .asCompletableFuture())
 
     response.status() should be(OK)
   }
 
   it("Builds condition router instance routes") {
     val router = new ConditionRouter.ConfigFactory().build(List(), routeHandlerFactory, config)
-    val response = router.handle(httpRequest, null)
-      .toBlocking
-      .first()
+    val response = StyxFutures.await(router.handle(httpRequest, HttpInterceptorContext.create).asCompletableFuture())
 
     response.status().code() should be(301)
   }
@@ -92,15 +90,13 @@ class ConditionRouterConfigSpec extends FunSpec with ShouldMatchers with Mockito
     val routeHandlerFactory = new RouteHandlerFactory(
       Map[String, HttpHandlerFactory](),
       Map(
-      "secureHandler" -> new HttpHandlerAdapter(_ => just(response(OK).header("source", "secure").build())),
-      "fallbackHandler" -> new HttpHandlerAdapter(_ => just(response(OK).header("source", "fallback").build()))
+      "secureHandler" -> new HttpHandlerAdapter((_, _) => StyxObservable.of(response(OK).header("source", "secure").build())),
+      "fallbackHandler" -> new HttpHandlerAdapter((_, _) => StyxObservable.of(response(OK).header("source", "fallback").build()))
     ))
 
     val router = new ConditionRouter.ConfigFactory().build(List(), routeHandlerFactory, configWithReferences)
 
-    val resp = router.handle(httpRequest, null)
-      .toBlocking
-      .first()
+    val resp = StyxFutures.await(router.handle(httpRequest, HttpInterceptorContext.create).asCompletableFuture())
 
     resp.header("source").get() should be("fallback")
   }
@@ -109,8 +105,8 @@ class ConditionRouterConfigSpec extends FunSpec with ShouldMatchers with Mockito
     val routeHandlerFactory = new RouteHandlerFactory(
       Map[String, HttpHandlerFactory](),
       Map(
-        "secureHandler" -> new HttpHandlerAdapter(_ => just(response(OK).header("source", "secure").build())),
-        "fallbackHandler" -> new HttpHandlerAdapter(_ => just(response(OK).header("source", "fallback").build()))
+        "secureHandler" -> new HttpHandlerAdapter((_, _) => StyxObservable.of(response(OK).header("source", "secure").build())),
+        "fallbackHandler" -> new HttpHandlerAdapter((_, _) => StyxObservable.of(response(OK).header("source", "fallback").build()))
       ))
 
     val router = new ConditionRouter.ConfigFactory().build(
@@ -119,9 +115,7 @@ class ConditionRouterConfigSpec extends FunSpec with ShouldMatchers with Mockito
       configWithReferences
       )
 
-    val resp = router.handle(httpsRequest, null)
-      .toBlocking
-      .first()
+    val resp = StyxFutures.await(router.handle(httpsRequest, HttpInterceptorContext.create).asCompletableFuture())
 
     resp.header("source").get() should be("secure")
   }
@@ -166,9 +160,7 @@ class ConditionRouterConfigSpec extends FunSpec with ShouldMatchers with Mockito
         |""".stripMargin)
 
     val router = new ConditionRouter.ConfigFactory().build(List(), routeHandlerFactory, config)
-    val resp = router.handle(httpRequest, null)
-      .toBlocking
-      .first()
+    val resp = StyxFutures.await(router.handle(httpRequest, HttpInterceptorContext.create).asCompletableFuture())
 
     resp.status() should be(BAD_GATEWAY)
   }
@@ -251,7 +243,7 @@ class ConditionRouterConfigSpec extends FunSpec with ShouldMatchers with Mockito
 
     val builtinsFactory = mock[RouteHandlerFactory]
     when(builtinsFactory.build(any[java.util.List[String]], any[RouteHandlerConfig]))
-      .thenReturn(new HttpHandlerAdapter(_ => just(response(OK).build())))
+      .thenReturn(new HttpHandlerAdapter((_, _) => StyxObservable.of(response(OK).build())))
 
     val router = new ConditionRouter.ConfigFactory().build(List("config", "config"), builtinsFactory, config)
 

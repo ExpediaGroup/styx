@@ -17,11 +17,11 @@ package com.hotels.styx.client.connectionpool;
 
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.netty.exceptions.TransportException;
-import com.hotels.styx.api.service.ConnectionPoolSettings;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.client.ConnectionSettings;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.exceptions.TransportException;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory.StubConnection;
 import org.testng.annotations.BeforeMethod;
@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static com.hotels.styx.client.connectionpool.ConnectionPoolStatsCounter.NULL_CONNECTION_POOL_STATS;
 import static com.hotels.styx.support.OriginHosts.LOCAL_9090;
@@ -554,7 +554,7 @@ public class SimpleConnectionPoolTest {
 
     private Connection.Factory mockConnectionFactory() {
         Connection.Factory factory = mock(Connection.Factory.class);
-        when(factory.createConnection(any(Origin.class), any(Connection.Settings.class))).thenAnswer(invocation -> {
+        when(factory.createConnection(any(Origin.class), any(ConnectionSettings.class))).thenAnswer(invocation -> {
             Connection mock = mock(Connection.class);
             when(mock.isConnected()).thenReturn(true);
             return just(mock);
@@ -611,7 +611,7 @@ public class SimpleConnectionPoolTest {
     }
 
     private static SimpleConnectionPool originConnectionPool(Id applicationId, HostAndPort host, Connection.Factory factory,
-                                                             ConnectionPool.Settings settings) {
+                                                             ConnectionPoolSettings settings) {
         return new SimpleConnectionPool(
                 newOriginBuilder(host)
                         .applicationId(applicationId)

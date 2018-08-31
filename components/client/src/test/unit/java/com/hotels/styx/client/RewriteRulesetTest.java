@@ -15,12 +15,12 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.service.RewriteConfig;
-import com.hotels.styx.api.service.RewriteRule;
+import com.hotels.styx.api.extension.service.RewriteConfig;
+import com.hotels.styx.api.extension.service.RewriteRule;
 import org.testng.annotations.Test;
 
 import java.util.List;
+import com.hotels.styx.api.HttpRequest;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -88,6 +88,6 @@ public class RewriteRulesetTest {
     }
 
     private HttpRequest requestWithUrl(String url) {
-        return HttpRequest.Builder.get(url).build();
+        return HttpRequest.get(url).build();
     }
 }

@@ -17,8 +17,9 @@
     <maven.compiler.target>1.8</maven.compiler.target>
 
     <!-- Styx Version -->
-    <styx.version>0.7-SNAPSHOT</styx.version>
+    <styx.version>0.9-SNAPSHOT</styx.version>
     <rxjava.version>1.1.6</rxjava.version>
+    <jackson.version>2.7.5</jackson.version>
     <!--Testing-->
     <testng.version>6.8</testng.version>
 
@@ -43,6 +44,24 @@
       <artifactId>rxjava</artifactId>
       <version>${rxjava.version}</version>
       <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>${jackson.version}</version>
     </dependency>
 
     <dependency>

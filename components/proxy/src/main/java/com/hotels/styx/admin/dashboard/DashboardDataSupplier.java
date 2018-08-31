@@ -18,15 +18,15 @@ package com.hotels.styx.admin.dashboard;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.Version;
-import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
-import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.extension.service.spi.Registry;
 import org.slf4j.Logger;
 
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.StyxConfig.NO_JVM_ROUTE_SET;
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -42,8 +42,8 @@ public class DashboardDataSupplier implements Supplier<DashboardData>, Registry.
     private final Version buildInfo;
 
     public DashboardDataSupplier(Registry<BackendService> backendServicesRegistry, Environment environment, StyxConfig styxConfig) {
-        this.backendServicesRegistry = checkNotNull(backendServicesRegistry);
-        this.environment = checkNotNull(environment);
+        this.backendServicesRegistry = requireNonNull(backendServicesRegistry);
+        this.environment = requireNonNull(environment);
         this.jvmRouteName = styxConfig.get("jvmRouteName", String.class).orElse(NO_JVM_ROUTE_SET);
         this.buildInfo = environment.buildInfo();
         this.data = updateDashboardData(backendServicesRegistry);

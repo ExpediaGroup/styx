@@ -19,10 +19,9 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
-import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.UrlConnectionHttpClient;
+import com.hotels.styx.api.FullHttpClient;
+import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.client.SimpleHttpClient;
 import com.hotels.styx.support.Meter;
 import com.hotels.styx.utils.MetricsSnapshot;
 
@@ -38,9 +37,10 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.FullHttpRequest.get;
+import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyMap;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
@@ -159,10 +159,9 @@ public class StyxMetrics {
     }
 
     private static String downloadJsonString(String host, int port) {
-        HttpClient client = new UrlConnectionHttpClient(1000, 3000);
-        HttpRequest request = get(format("http://%s:%d/admin/metrics", host, port)).build();
-        HttpResponse response = client.sendRequest(request).toBlocking().first();
-        return bodyAsString(response);
+        FullHttpClient client = new SimpleHttpClient.Builder().build();
+        FullHttpResponse response = await(client.sendRequest(get(format("http://%s:%d/admin/metrics", host, port)).build()));
+        return response.bodyAs(UTF_8);
     }
 
     private static Map<String, Object> decodeToMap(String body) throws IOException {

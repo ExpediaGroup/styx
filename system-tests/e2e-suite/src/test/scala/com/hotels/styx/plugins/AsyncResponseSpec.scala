@@ -20,8 +20,8 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
-import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.{HttpRequest, HttpResponse}
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse, StyxObservable}
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -32,6 +32,8 @@ import org.scalatest.{FunSpec, ShouldMatchers}
 import rx.Observable
 import rx.schedulers.Schedulers
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class AsyncPluginResponseSpec extends FunSpec
@@ -68,24 +70,28 @@ class AsyncPluginResponseSpec extends FunSpec
         .addHeader("Content-Length", "0")
         .build()
 
-      val response = waitForResponse(client.sendRequest(request))
+      val response = decodedRequest(request)
 
       mockServer.verify(1, getRequestedFor(urlStartingWith("/foobar")))
-      response.bodyAs(UTF_8) should be ("I should be here!")
+      response.bodyAs(UTF_8) should be("I should be here!")
     }
   }
 }
 
 import rx.lang.scala.ImplicitFunctionConversions._
+import scala.compat.java8.FutureConverters.FutureOps
+import scala.compat.java8.FunctionConverters.asJavaFunction
+
 
 class AsyncContentDelayPlugin extends PluginAdapter {
-  override def intercept(request: HttpRequest, chain: Chain): rx.Observable[HttpResponse] = {
+  override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
     chain.proceed(request)
-      .observeOn(Schedulers.computation())
-      .flatMap((response: HttpResponse) => {
-        Thread.sleep(1000)
-        Observable.just(response)
-      })
-
+      .flatMap(asJavaFunction((response: HttpResponse) => {
+        StyxObservable.from(
+          Future {
+            Thread.sleep(1000)
+            response
+          }.toJava)
+      }))
   }
 }

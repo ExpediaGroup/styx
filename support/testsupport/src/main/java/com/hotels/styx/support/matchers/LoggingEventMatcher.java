@@ -22,8 +22,8 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static org.hamcrest.Matchers.equalTo;
 
 public final class LoggingEventMatcher extends TypeSafeMatcher<ILoggingEvent> {
@@ -32,13 +32,13 @@ public final class LoggingEventMatcher extends TypeSafeMatcher<ILoggingEvent> {
     private final LoggedExceptionMatcher exception;
 
     private LoggingEventMatcher(Level level, String message) {
-        this.level = checkNotNull(level);
+        this.level = requireNonNull(level);
         this.message = new RegExMatcher(message);
         this.exception = null;
     }
 
     private LoggingEventMatcher(Level level, String message, String exceptionClass, String exceptionMessage) {
-        this.level = checkNotNull(level);
+        this.level = requireNonNull(level);
         this.message = new RegExMatcher(message);
         this.exception = new LoggedExceptionMatcher(exceptionClass, new RegExMatcher(exceptionMessage));
     }

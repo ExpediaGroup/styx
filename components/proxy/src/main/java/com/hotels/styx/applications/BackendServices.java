@@ -17,22 +17,22 @@ package com.hotels.styx.applications;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.service.BackendService;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Set;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.getFirst;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
@@ -41,7 +41,7 @@ import static java.util.stream.Collectors.toSet;
  * <br />
  * When loaded from YAML or JSON, it also sets some derived attributes that are not included in the YAML/JSON due to redundancy:
  * <br />
- * For each origin in {@link BackendService#origins()}, it derives {@link com.hotels.styx.api.client.Origin#applicationId()} from {@link BackendService#id()}
+ * For each origin in {@link BackendService#origins()}, it derives {@link com.hotels.styx.api.extension.Origin#applicationId()} from {@link BackendService#id()}
  */
 public final class BackendServices implements Iterable<BackendService> {
     private final Collection<BackendService> backendServices;
@@ -162,6 +162,6 @@ public final class BackendServices implements Iterable<BackendService> {
             return false;
         }
         BackendServices other = (BackendServices) obj;
-        return Objects.equals(this.backendServices, other.backendServices);
+        return Objects.equal(this.backendServices, other.backendServices);
     }
 }

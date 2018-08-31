@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy;
 
 import com.codahale.metrics.Meter;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.common.SimpleCache;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;

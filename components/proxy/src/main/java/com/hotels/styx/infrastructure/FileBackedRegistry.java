@@ -19,7 +19,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.hash.HashCode;
 import com.hotels.styx.api.Identifiable;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.service.spi.AbstractRegistry;
+import com.hotels.styx.api.extension.service.spi.AbstractRegistry;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -32,14 +32,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.hash.HashCode.fromLong;
 import static com.google.common.hash.Hashing.md5;
 import static com.google.common.io.ByteStreams.toByteArray;
-import static com.hotels.styx.api.service.spi.Registry.ReloadResult.failed;
-import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
-import static com.hotels.styx.api.service.spi.Registry.ReloadResult.unchanged;
+import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.failed;
+import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
+import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.unchanged;
 import static java.lang.String.format;
 import static java.nio.file.Files.getLastModifiedTime;
 import static java.util.Objects.requireNonNull;
@@ -62,7 +61,7 @@ public class FileBackedRegistry<T extends Identifiable> extends AbstractRegistry
     private FileBackedRegistry(Resource configurationFile, Reader<T> reader, Supplier<FileTime> modifyTimeSupplier, Predicate<Collection<T>> resourceConstraint) {
         super(resourceConstraint);
         this.configurationFile = requireNonNull(configurationFile);
-        this.reader = checkNotNull(reader);
+        this.reader = requireNonNull(reader);
         this.modifyTimeSupplier = modifyTimeSupplier;
     }
 

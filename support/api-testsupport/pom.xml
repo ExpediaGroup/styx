@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.hotels.styx</groupId>
     <artifactId>styx-support</artifactId>
-    <version>0.7-SNAPSHOT</version>
+    <version>0.9-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -42,8 +42,11 @@
     <dependency>
       <groupId>com.github.tomakehurst</groupId>
       <artifactId>wiremock</artifactId>
-      <!-- TODO find out why this was necessary -->
       <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.hotels.styx</groupId>
+      <artifactId>styx-common</artifactId>
     </dependency>
   </dependencies>
 

@@ -16,16 +16,15 @@
 package com.hotels.styx.proxy
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpHeaderNames._
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.matchers.IsOptional.matches
 import com.hotels.styx.support.matchers.RegExMatcher.matchesRegex
 import com.hotels.styx.{MockServer, StyxConfiguration, StyxProxySpec}
-import io.netty.handler.codec.http.HttpHeaders.Names._
-import io.netty.handler.codec.http.HttpMethod._
 import org.hamcrest.MatcherAssert.assertThat
 import org.scalatest.{BeforeAndAfter, FunSpec}
 
@@ -53,7 +52,7 @@ class VersionPresentInResponseHeaderSpec extends FunSpec
   }
   describe("Styx Info response header configured to contain version") {
     it("should respond with version in response header") {
-      val req = new HttpRequest.Builder(GET, "/")
+      val req = get("/")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
       val resp = decodedRequest(req)
@@ -84,7 +83,7 @@ class VersionAbsentFromResponseHeaderSpec extends FunSpec
 
   describe("Styx Info response header default format") {
     it("should respond without version in response header") {
-      val req = new HttpRequest.Builder(GET, "/")
+      val req = get("/")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
       val resp = decodedRequest(req)

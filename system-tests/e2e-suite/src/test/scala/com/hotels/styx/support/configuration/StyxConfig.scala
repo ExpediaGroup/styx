@@ -19,13 +19,13 @@ import java.nio.file.Path
 import java.util
 
 import com.hotels.styx.StyxServerSupport._
-import com.hotels.styx.api.service.spi.StyxService
 import com.hotels.styx.config.Config
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration
 import com.hotels.styx.proxy.ProxyServerConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.support.ResourcePaths
 import com.hotels.styx.StyxServer
+import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.startup.StyxServerComponents
 
 import scala.collection.JavaConverters._

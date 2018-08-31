@@ -16,7 +16,7 @@
 package com.hotels.styx.routing.config;
 
 import com.google.common.base.Preconditions;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 
 import java.util.List;
 import java.util.Map;
@@ -29,14 +29,14 @@ import static java.util.Objects.requireNonNull;
  */
 public class RouteHandlerFactory {
     private final Map<String, HttpHandlerFactory> factories;
-    private Map<String, HttpHandler2> handlers;
+    private Map<String, HttpHandler> handlers;
 
-    public RouteHandlerFactory(Map<String, HttpHandlerFactory> factories, Map<String, HttpHandler2> handlers) {
+    public RouteHandlerFactory(Map<String, HttpHandlerFactory> factories, Map<String, HttpHandler> handlers) {
         this.factories = requireNonNull(factories);
         this.handlers = requireNonNull(handlers);
     }
 
-    public HttpHandler2 build(List<String> parents, RouteHandlerConfig configNode) {
+    public HttpHandler build(List<String> parents, RouteHandlerConfig configNode) {
         if (configNode instanceof RouteHandlerDefinition) {
             RouteHandlerDefinition configBlock = (RouteHandlerDefinition) configNode;
             String type = configBlock.type();
@@ -48,7 +48,7 @@ public class RouteHandlerFactory {
         } else if (configNode instanceof RouteHandlerReference) {
             RouteHandlerReference reference = (RouteHandlerReference) configNode;
 
-            HttpHandler2 handler = handlers.get(reference.name());
+            HttpHandler handler = handlers.get(reference.name());
             if (handler == null) {
                 throw new IllegalArgumentException(format("Non-existent handler instance: '%s'", reference.name()));
             }

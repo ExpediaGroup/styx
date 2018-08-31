@@ -15,12 +15,13 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.plugins.spi.Plugin.PASS_THROUGH;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
@@ -44,7 +45,7 @@ public class PluginListHandlerTest {
 
         PluginListHandler handler = new PluginListHandler(plugins);
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), is("" +

@@ -15,33 +15,30 @@
  */
 package com.hotels.styx.server;
 
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.support.PathTrie;
-import rx.Observable;
+import com.hotels.styx.api.StyxObservable;
 
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
-import static rx.Observable.just;
+import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 
 /**
  * Simple Http Router.
  */
-public class StandardHttpRouter implements HttpHandler2 {
-    private static final HttpHandler2 NOT_FOUND_HANDLER = (request, context) -> just(response(NOT_FOUND).build());
+public class StandardHttpRouter implements HttpHandler {
+    private static final HttpHandler NOT_FOUND_HANDLER = (request, context) -> StyxObservable.of(HttpResponse.response(NOT_FOUND).build());
 
-    private final PathTrie<HttpHandler2> routes = new PathTrie<>();
+    private final PathTrie<HttpHandler> routes = new PathTrie<>();
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return routes.get(request.path())
                 .orElse(NOT_FOUND_HANDLER)
                 .handle(request, context);
     }
 
-    public StandardHttpRouter add(String path, HttpHandler2 httpHandler) {
+    public StandardHttpRouter add(String path, HttpHandler httpHandler) {
         routes.put(path, httpHandler);
         return this;
     }

@@ -16,13 +16,14 @@
 package com.hotels.styx.proxy
 
 import com.google.common.base.Charsets.UTF_8
-import com.hotels.styx.api.messages.HttpResponseStatus.BAD_GATEWAY
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.matchers.IsOptional.matches
 import com.hotels.styx.support.matchers.RegExMatcher.matchesRegex
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
-import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec, api}
+import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names.{CONTENT_LENGTH, HOST, TRANSFER_ENCODING}
@@ -102,7 +103,7 @@ class BadResponseFromOriginSpec extends FunSpec
         ))
 
 
-      val request = api.HttpRequest.Builder.get(styxServer.routerURL("/badResponseFromOriginSpec/3")).build()
+      val request = get(styxServer.routerURL("/badResponseFromOriginSpec/3")).build()
       val response = decodedRequest(request)
       response.status() should be(BAD_GATEWAY)
       assertThat(response.headers().get(STYX_INFO_DEFAULT), matches(matchesRegex("noJvmRouteSet;[0-9a-f-]+")))

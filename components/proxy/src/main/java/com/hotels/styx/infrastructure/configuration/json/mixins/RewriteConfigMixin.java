@@ -17,10 +17,10 @@ package com.hotels.styx.infrastructure.configuration.json.mixins;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hotels.styx.api.service.RewriteRule;
+import com.hotels.styx.api.extension.service.RewriteRule;
 
 /**
- * Jackson annotations for {@link com.hotels.styx.api.service.RewriteConfig}.
+ * Jackson annotations for {@link com.hotels.styx.api.extension.service.RewriteConfig}.
  */
 public abstract class RewriteConfigMixin implements RewriteRule {
     @JsonCreator

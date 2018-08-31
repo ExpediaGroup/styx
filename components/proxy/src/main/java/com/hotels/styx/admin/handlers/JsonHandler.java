@@ -23,7 +23,7 @@ import com.hotels.styx.admin.handlers.json.JsonReformatter;
 import com.hotels.styx.api.Clock;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.http.handlers.BaseHttpHandler;
+import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -32,16 +32,18 @@ import java.util.function.Supplier;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.Clocks.systemClock;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Handler for returning JSON. If a cache expiration value is present, the JSON is not regenerated on every call, unless
  * the specified duration has passed since the last generation.
  *
- * @param <E> type of object to transform into JSON
+ * @param <E> type of object to map into JSON
  */
 public class JsonHandler<E> extends BaseHttpHandler {
     private static final Logger LOG = getLogger(JsonHandler.class);
@@ -92,14 +94,16 @@ public class JsonHandler<E> extends BaseHttpHandler {
 
             return response(OK)
                     .disableCaching()
-                    .contentType(JSON_UTF_8)
-                    .body(jsonContent)
-                    .build();
+                    .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
+                    .body(jsonContent, UTF_8)
+                    .build()
+                    .toStreamingResponse();
 
         } catch (Exception e) {
             return response(INTERNAL_SERVER_ERROR)
-                    .body(e.getMessage())
-                    .build();
+                    .body(e.getMessage(), UTF_8)
+                    .build()
+                    .toStreamingResponse();
         }
     }
 

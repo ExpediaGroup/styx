@@ -15,20 +15,26 @@
  */
 package com.hotels.styx.client.stickysession;
 
-import com.hotels.styx.api.HttpCookie;
-import com.hotels.styx.client.stickysession.StickySessionCookie;
+import com.hotels.styx.api.ResponseCookie;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
+import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class StickySessionCookieTest {
     @Test
     public void createsCookieFromApplicationOriginAndMaxAge() {
-        HttpCookie cookie = newStickySessionCookie(id("app"), id("app-01"), 86400);
-        assertThat(cookie.toString(), is("styx_origin_app=app-01; Max-Age=86400; Path=/; HttpOnly"));
+        ResponseCookie cookie = newStickySessionCookie(id("app"), id("app-01"), 86400);
+
+        assertThat(cookie.name(), is("styx_origin_app"));
+        assertThat(cookie.value(), is("app-01"));
+
+        assertThat(cookie.maxAge(), isValue(86400L));
+        assertThat(cookie.path(), isValue("/"));
+        assertThat(cookie.httpOnly(), is(true));
     }
 
     @Test

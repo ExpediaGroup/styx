@@ -17,8 +17,9 @@ package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hotels.styx.api.HttpHandler2;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
@@ -29,37 +30,36 @@ import com.hotels.styx.server.HttpRouter;
 import com.hotels.styx.server.routing.AntlrMatcher;
 import com.hotels.styx.server.routing.antlr.DslFunctionResolutionError;
 import com.hotels.styx.server.routing.antlr.DslSyntaxError;
-import rx.Observable;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode;
 import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
 import static java.lang.String.format;
 import static java.lang.String.join;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Condition predicate based HTTP router.
  */
 public class ConditionRouter implements HttpRouter {
     private final List<Route> routes;
-    private final HttpHandler2 fallback;
+    private final HttpHandler fallback;
 
-    private ConditionRouter(List<Route> routes, HttpHandler2 fallback) {
+    private ConditionRouter(List<Route> routes, HttpHandler fallback) {
         this.routes = routes;
         this.fallback = fallback;
     }
 
     @Override
-    public Optional<HttpHandler2> route(HttpRequest request) {
+    public Optional<HttpHandler> route(HttpRequest request) {
         for (Route route : routes) {
-            HttpHandler2 handler = route.match(request);
+            HttpHandler handler = route.match(request);
             if (handler != null) {
                 return Optional.of(handler);
             }
@@ -70,14 +70,14 @@ public class ConditionRouter implements HttpRouter {
 
     private static class Route {
         private final AntlrMatcher matcher;
-        private final HttpHandler2 handler;
+        private final HttpHandler handler;
 
-        Route(String condition, HttpHandler2 handler) {
+        Route(String condition, HttpHandler handler) {
             this.matcher = AntlrMatcher.antlrMatcher(condition);
             this.handler = handler;
         }
 
-        public HttpHandler2 match(HttpRequest request) {
+        public HttpHandler match(HttpRequest request) {
             return matcher.apply(request) ? handler : null;
         }
     }
@@ -109,7 +109,7 @@ public class ConditionRouter implements HttpRouter {
             }
         }
 
-        public HttpHandler2 build(List<String> parents,
+        public HttpHandler build(List<String> parents,
                                   RouteHandlerFactory routeHandlerFactory,
                                   RouteHandlerDefinition configBlock
         ) {
@@ -126,9 +126,9 @@ public class ConditionRouter implements HttpRouter {
             return new RouteHandlerAdapter(new ConditionRouter(routes, buildFallbackHandler(parents, routeHandlerFactory, config)));
         }
 
-        private static HttpHandler2 buildFallbackHandler(List<String> parents, RouteHandlerFactory routeHandlerFactory, ConditionRouterConfig config) {
+        private static HttpHandler buildFallbackHandler(List<String> parents, RouteHandlerFactory routeHandlerFactory, ConditionRouterConfig config) {
             if (config.fallback == null) {
-                return (request, dontcare) -> Observable.just(response(BAD_GATEWAY).build());
+                return (request, context) -> StyxObservable.of(HttpResponse.response(BAD_GATEWAY).build());
             } else {
                 return routeHandlerFactory.build(append(parents, "fallback"), config.fallback);
             }
@@ -137,7 +137,7 @@ public class ConditionRouter implements HttpRouter {
         private static Route buildRoute(List<String> parents, RouteHandlerFactory routeHandlerFactory, int index, String condition, RouteHandlerConfig destination) {
             try {
                 String attribute = format("destination[%d]", index);
-                HttpHandler2 handler = routeHandlerFactory.build(append(parents, attribute), destination);
+                HttpHandler handler = routeHandlerFactory.build(append(parents, attribute), destination);
                 return new Route(condition, handler);
             } catch (DslSyntaxError | DslFunctionResolutionError e) {
                 String attribute = format("condition[%d]", index);

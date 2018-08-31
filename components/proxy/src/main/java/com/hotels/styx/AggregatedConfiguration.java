@@ -20,8 +20,8 @@ import com.hotels.styx.api.configuration.ConversionException;
 
 import java.util.Optional;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Objects.toStringHelper;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Aggregate of StyxConfig and a Configuration object.
@@ -38,8 +38,8 @@ public final class AggregatedConfiguration implements Configuration {
     }
 
     AggregatedConfiguration(StyxConfig styxConfig, Configuration configuration) {
-        this.styxConfig = checkNotNull(styxConfig);
-        this.configuration = checkNotNull(configuration);
+        this.styxConfig = requireNonNull(styxConfig);
+        this.configuration = requireNonNull(configuration);
     }
 
     public StyxConfig styxConfig() {

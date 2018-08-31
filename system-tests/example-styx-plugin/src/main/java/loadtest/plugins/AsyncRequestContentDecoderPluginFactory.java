@@ -17,11 +17,13 @@ package loadtest.plugins;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import rx.Observable;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import java.util.concurrent.CompletableFuture;
+
+import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static rx.Observable.timer;
 
@@ -41,12 +43,21 @@ public class AsyncRequestContentDecoderPluginFactory implements PluginFactory {
         }
 
         @Override
-        public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-            return request.decode(buf -> buf.toString(UTF_8), config.maxContentLength())
-                    .map(decodedRequest -> decodedRequest.requestBuilder().body(decodedRequest.body()).build())
-                    .flatMap(newRequest -> timer(config.delayMillis(), MILLISECONDS)
-                            .map(x -> newRequest))
-                    .flatMap(chain::proceed);
+        public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+            return request.toFullRequest(config.maxContentLength())
+                            .flatMap(fullHttpRequest -> StyxObservable.from(asyncOperation(config.delayMillis())))
+                            .map(outcome -> request.newBuilder().header("X-Outcome", outcome.result()))
+                            .flatMap(x -> chain.proceed(request));
+        }
+    }
+
+    private static CompletableFuture<Outcome> asyncOperation(long delay) {
+        return fromSingleObservable(timer(delay, MILLISECONDS)).thenApply(x -> new Outcome());
+    }
+
+    private static class Outcome {
+        int result() {
+            return 1;
         }
     }
 

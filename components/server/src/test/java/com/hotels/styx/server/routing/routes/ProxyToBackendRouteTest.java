@@ -16,20 +16,20 @@
 package com.hotels.styx.server.routing.routes;
 
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 import rx.Observable;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.hotels.styx.api.HttpRequest;
 
 public class ProxyToBackendRouteTest {
     @Test
@@ -39,7 +39,7 @@ public class ProxyToBackendRouteTest {
 
         ProxyToBackendRoute proxy = ProxyToBackendRoute.proxyToBackend(client);
 
-        HttpResponse response = proxy.handle(get("/foo").build(), HttpInterceptorContext.create()).toBlocking().first();
+        HttpResponse response = proxy.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
         assertThat(response.status(), is(OK));
     }
 }

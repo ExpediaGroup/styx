@@ -40,10 +40,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.base.Charsets.UTF_8;
-import static com.hotels.styx.api.HttpCookie.cookie;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.api.ResponseCookie.responseCookie;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -84,7 +85,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(contentObservable).build());
+        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable)).build());
         assertThat(channelRead.get(), is(true));
     }
 
@@ -116,7 +117,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(contentObservable).build());
+        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable)).build());
         assertThat(channelRead.get(), is(true));
     }
 
@@ -171,7 +172,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(contentObservable).build());
+        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable)).build());
         assertThat(channelRead.get(), is(true));
     }
 
@@ -193,7 +194,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(contentObservable).build());
+        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable)).build());
     }
 
 
@@ -224,7 +225,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(contentObservable).build());
+        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable)).build());
     }
 
     @Test
@@ -254,7 +255,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(contentObservable).build());
+        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable)).build());
         assertThat(channelRead.get(), is(true));
 
         List<Object> writeEvents = writeEventsCollector.writeEvents();
@@ -290,7 +291,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(contentObservable.doOnUnsubscribe(() -> unsubscribed.set(true))).build());
+        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable.doOnUnsubscribe(() -> unsubscribed.set(true)))).build());
         assertThat(channelRead.get(), is(true));
     }
 
@@ -327,8 +328,8 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        HttpResponse.Builder response = response(OK).addCookie(cookie(",,,,", ",,,,"));
-        ch.writeInbound(response.body(contentObservable.doOnUnsubscribe(() -> unsubscribed.set(true))).build());
+        HttpResponse.Builder response = response(OK).cookies(responseCookie(",,,,", ",,,,").build());
+        ch.writeInbound(response.body(fromRxObservable(contentObservable.doOnUnsubscribe(() -> unsubscribed.set(true)))).build());
         assertThat(channelRead.get(), is(true));
     }
 
@@ -370,7 +371,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(contentObservable.doOnRequest(requested::addAndGet)).build());
+        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable.doOnRequest(requested::addAndGet))).build());
         assertThat(channelRead.get(), is(true));
     }
 

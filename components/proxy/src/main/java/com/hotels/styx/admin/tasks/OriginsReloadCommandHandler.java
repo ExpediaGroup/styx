@@ -16,12 +16,14 @@
 package com.hotels.styx.admin.tasks;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.spi.Registry;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
 import org.slf4j.Logger;
 import rx.Observable;
 import rx.Subscriber;
@@ -29,18 +31,21 @@ import rx.schedulers.Schedulers;
 
 import java.util.concurrent.ExecutorService;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.api.service.spi.Registry.Outcome.RELOADED;
-import static com.hotels.styx.api.service.spi.Registry.Outcome.UNCHANGED;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.RELOADED;
+import static com.hotels.styx.api.extension.service.spi.Registry.Outcome.UNCHANGED;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.slf4j.LoggerFactory.getLogger;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Handler for the origins reloading command.
@@ -53,13 +58,13 @@ public class OriginsReloadCommandHandler implements HttpHandler {
     private final Registry<BackendService> backendServicesRegistry;
 
     public OriginsReloadCommandHandler(Registry<BackendService> backendServicesRegistry) {
-        this.backendServicesRegistry = checkNotNull(backendServicesRegistry);
+        this.backendServicesRegistry = requireNonNull(backendServicesRegistry);
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
-        return Observable.<HttpResponse>create(this::reload)
-                .subscribeOn(Schedulers.from(executor));
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return fromRxObservable(Observable.<HttpResponse>create(this::reload)
+                .subscribeOn(Schedulers.from(executor)));
     }
 
     private void reload(Subscriber<? super HttpResponse> subscriber) {
@@ -92,10 +97,11 @@ public class OriginsReloadCommandHandler implements HttpHandler {
     }
 
     private HttpResponse okResponse(String content) {
-        return response(OK)
-                .contentType(PLAIN_TEXT_UTF_8)
-                .body(content)
-                .build();
+        return FullHttpResponse.response(OK)
+                .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
+                .body(content, UTF_8)
+                .build()
+                .toStreamingResponse();
     }
 
     private HttpResponse errorResponse(Throwable cause) {
@@ -124,10 +130,11 @@ public class OriginsReloadCommandHandler implements HttpHandler {
     }
 
     private HttpResponse errorResponse(HttpResponseStatus code, String content) {
-        return response(code)
-                .contentType(PLAIN_TEXT_UTF_8)
-                .body(content)
-                .build();
+        return FullHttpResponse.response(code)
+                .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
+                .body(content, UTF_8)
+                .build()
+                .toStreamingResponse();
     }
 
 }

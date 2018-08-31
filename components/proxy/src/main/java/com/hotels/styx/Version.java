@@ -25,7 +25,7 @@ import java.io.Reader;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Objects.toStringHelper;
 import static java.lang.Integer.parseInt;
 import static org.slf4j.LoggerFactory.getLogger;
 

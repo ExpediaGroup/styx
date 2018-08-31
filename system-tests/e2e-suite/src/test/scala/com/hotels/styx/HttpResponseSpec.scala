@@ -17,14 +17,15 @@ package com.hotels.styx
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.client.ActiveOrigins
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer
-import com.hotels.styx.api.messages.HttpResponseStatus._
+import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.extension.ActiveOrigins
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
+import com.hotels.styx.api.HttpResponseStatus._
+import com.hotels.styx.api.extension.service
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.client.StyxHttpClient._
-import com.hotels.styx.client.loadbalancing.strategies.{BusyConnectionsStrategy, RoundRobinStrategy}
+import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.support.NettyOrigins
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
@@ -36,7 +37,6 @@ import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
 import rx.observers.TestSubscriber
-import com.hotels.styx.api.service
 
 import scala.concurrent.duration._
 

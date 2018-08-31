@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.client.healthcheck;
 
-import com.hotels.styx.api.service.HealthCheckConfig;
+import com.hotels.styx.api.extension.service.HealthCheckConfig;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.service.HealthCheckConfig.newHealthCheckConfigBuilder;
+import static com.hotels.styx.api.extension.service.HealthCheckConfig.newHealthCheckConfigBuilder;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;

@@ -19,15 +19,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
-import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsSnapshot;
-import com.hotels.styx.api.client.RemoteHost;
-import static com.hotels.styx.api.client.RemoteHost.remoteHost;
-
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
-import com.hotels.styx.client.StyxHostHttpClient;
-import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.OriginsSnapshot;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
+import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import org.testng.annotations.Test;
 
@@ -35,8 +33,9 @@ import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
+import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -97,7 +96,7 @@ public class DashboardDataSupplierTest {
     private Collection<RemoteHost> pools(Origin... origins) {
         return asList(origins).stream()
                 .map(this::pool)
-                .map(pool -> remoteHost(pool.getOrigin(), mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)))
+                .map(pool -> remoteHost(pool.getOrigin(), mock(HttpHandler.class), mock(LoadBalancingMetricSupplier.class)))
                 .collect(toList());
     }
 

@@ -17,7 +17,7 @@ package com.hotels.styx
 
 import java.nio.file.Paths
 
-import com.hotels.styx.api.service.BackendService
+import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.plugins.PluginPipelineSpec
 import com.hotels.styx.support.configuration.{ImplicitOriginConversions, StyxBackend, StyxBaseConfig}

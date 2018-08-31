@@ -16,26 +16,26 @@
 package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RouteHandlerDefinition;
 import com.hotels.styx.routing.config.RouteHandlerFactory;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import rx.Observable;
 
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A HTTP handler for returning a static response.
  */
-public class StaticResponseHandler implements HttpHandler2 {
+public class StaticResponseHandler implements HttpHandler {
     private final int status;
     private final String text;
 
@@ -45,8 +45,8 @@ public class StaticResponseHandler implements HttpHandler2 {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return Observable.just(response(HttpResponseStatus.valueOf(status)).body(text).build());
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return StyxObservable.of(HttpResponse.response(statusWithCode(status)).body(StyxObservable.of(text), UTF_8).build());
     }
 
     private static class StaticResponseConfig {
@@ -64,8 +64,8 @@ public class StaticResponseHandler implements HttpHandler2 {
      * Builds a static response handler from Yaml configuration.
      */
     public static class ConfigFactory implements HttpHandlerFactory {
-        public HttpHandler2 build(List<String> parents, RouteHandlerFactory builders, RouteHandlerDefinition configBlock) {
-            checkNotNull(configBlock.config());
+        public HttpHandler build(List<String> parents, RouteHandlerFactory builders, RouteHandlerDefinition configBlock) {
+            requireNonNull(configBlock.config());
 
             StaticResponseConfig config = new JsonNodeConfig(configBlock.config())
                     .as(StaticResponseConfig.class);

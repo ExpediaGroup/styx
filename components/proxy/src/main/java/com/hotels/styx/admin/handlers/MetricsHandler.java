@@ -21,11 +21,12 @@ import com.codahale.metrics.json.MetricsModule;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import rx.Observable;
 
 import java.time.Duration;
 import java.util.Map;
@@ -34,15 +35,14 @@ import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hotels.styx.api.messages.FullHttpResponse.response;
-import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.MapStream.stream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static rx.Observable.just;
 
 /**
  * Handler for showing all registered metrics for styx server. Can cache page content.
@@ -71,12 +71,12 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         MetricRequest metricRequest = new MetricRequest(request);
 
         return metricRequest.fullMetrics()
-                ? super.handle(request)
-                : just(restrictedMetricsResponse(metricRequest).build().toStreamingResponse());
+                ? super.handle(request, context)
+                : StyxObservable.of(restrictedMetricsResponse(metricRequest).build().toStreamingResponse());
     }
 
     private FullHttpResponse.Builder restrictedMetricsResponse(MetricRequest request) {

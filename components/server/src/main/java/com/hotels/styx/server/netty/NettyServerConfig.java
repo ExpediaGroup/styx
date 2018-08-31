@@ -26,7 +26,8 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.google.common.base.Objects.firstNonNull;
+
 import static java.lang.Math.max;
 import static java.lang.Runtime.getRuntime;
 import static java.lang.String.format;

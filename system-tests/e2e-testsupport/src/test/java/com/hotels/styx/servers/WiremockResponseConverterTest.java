@@ -21,7 +21,7 @@ import com.github.tomakehurst.wiremock.http.Response;
 import com.github.tomakehurst.wiremock.http.ResponseDefinition;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpHeader;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.api.FullHttpResponse;
 import org.testng.annotations.Test;
 
 import java.util.Map;
@@ -31,8 +31,8 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.github.tomakehurst.wiremock.http.HttpHeader.httpHeader;
-import static com.hotels.styx.api.messages.HttpResponseStatus.CREATED;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.CREATED;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.servers.WiremockResponseConverter.toStyxResponse;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.nio.charset.StandardCharsets.UTF_8;

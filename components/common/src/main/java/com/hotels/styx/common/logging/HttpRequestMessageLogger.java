@@ -17,7 +17,7 @@ package com.hotels.styx.common.logging;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import org.slf4j.Logger;
 
 import static org.slf4j.LoggerFactory.getLogger;
@@ -55,11 +55,10 @@ public class HttpRequestMessageLogger {
     }
 
     private static Info information(HttpResponse response, boolean longFormatEnabled) {
-        Info info = new Info()
-                .add("status", response.status());
+        Info info = new Info().add("status", response.status());
+
         if (longFormatEnabled) {
-            info.add("headers", response.headers())
-                    .add("cookies", response.cookies());
+            info.add("headers", response.headers());
         }
         return info;
     }
@@ -70,9 +69,9 @@ public class HttpRequestMessageLogger {
                 .add("secure", request.isSecure())
                 .add("uri", request.url())
                 .add("origin", origin != null ? origin.hostAsString() : "N/A");
+
         if (longFormatEnabled) {
-            info.add("headers", request.headers())
-                    .add("cookies", request.cookies());
+            info.add("headers", request.headers());
         }
         return info;
     }

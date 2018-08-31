@@ -15,12 +15,13 @@
  */
 package com.hotels.styx.client;
 
+import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.netty.exceptions.NoAvailableHostsException;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
+import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import io.netty.buffer.ByteBuf;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -31,10 +32,10 @@ import rx.subjects.PublishSubject;
 
 import java.util.Optional;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.Id.id;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -58,7 +59,7 @@ public class TransportTest {
     @BeforeMethod
     public void setUp() {
         request = get("/").build();
-        response = HttpResponse.Builder.response(OK).build();
+        response = HttpResponse.response(OK).build();
         transport = new Transport(id("x"), X_STYX_ORIGIN_ID);
         responseProvider = PublishSubject.create();
         subscriber = new TestSubscriber<>();
@@ -196,7 +197,7 @@ public class TransportTest {
         ByteBuf chunk2 = copiedBuffer("y", UTF_8);
         ByteBuf chunk3 = copiedBuffer("z", UTF_8);
 
-        Observable<ByteBuf> contentStream = just(chunk1, chunk2, chunk3);
+        StyxObservable<ByteBuf> contentStream = StyxObservable.from(ImmutableList.of(chunk1, chunk2, chunk3));
 
         HttpRequest aRequest = request
                 .newBuilder()

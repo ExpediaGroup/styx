@@ -22,7 +22,7 @@ import io.netty.channel.group.ChannelGroup;
 import org.slf4j.Logger;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -36,7 +36,7 @@ public class ExcessConnectionRejector extends ChannelInboundHandlerAdapter {
 
     public ExcessConnectionRejector(ChannelGroup channelGroup, int maxConnectionsCount) {
         checkArgument(maxConnectionsCount > 0);
-        this.channelGroup = checkNotNull(channelGroup);
+        this.channelGroup = requireNonNull(channelGroup);
         this.maxConnectionsCount = maxConnectionsCount;
     }
 

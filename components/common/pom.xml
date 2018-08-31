@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.hotels.styx</groupId>
     <artifactId>styx-components</artifactId>
-    <version>0.7-SNAPSHOT</version>
+    <version>0.9-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -28,12 +28,6 @@
     <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.hotels.styx</groupId>
-      <artifactId>styx-api-testsupport</artifactId>
-      <scope>test</scope>
     </dependency>
 
     <dependency>

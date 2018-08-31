@@ -15,12 +15,13 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.io.ResourceFactory;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.common.io.ResourceFactory;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
@@ -33,7 +34,7 @@ public class VersionTextHandlerTest {
     public void canProvideASingleVersionTextFile() {
         VersionTextHandler handler = new VersionTextHandler(resources("classpath:/versions/version1.txt"));
 
-        FullHttpResponse response = waitForResponse(handler.handle( get("/version.txt").build()));
+        FullHttpResponse response = waitForResponse(handler.handle( get("/version.txt").build(), HttpInterceptorContext.create()));
 
         assertThat(response.bodyAs(UTF_8), is("foo\n"));
     }
@@ -42,7 +43,7 @@ public class VersionTextHandlerTest {
     public void canCombineVersionTextFiles() {
         VersionTextHandler handler = new VersionTextHandler(resources("classpath:/versions/version1.txt", "classpath:/versions/version2.txt"));
 
-        FullHttpResponse response = waitForResponse(handler.handle( get("/version.txt").build()));
+        FullHttpResponse response = waitForResponse(handler.handle( get("/version.txt").build(), HttpInterceptorContext.create()));
 
         assertThat(response.bodyAs(UTF_8), is("foo\nbar\n"));
     }
@@ -51,7 +52,7 @@ public class VersionTextHandlerTest {
     public void nonExistentFilesAreIgnored() {
         VersionTextHandler handler = new VersionTextHandler(resources("classpath:/versions/version1.txt", "version-nonexistent.txt"));
 
-        FullHttpResponse response = waitForResponse(handler.handle( get("/version.txt").build()));
+        FullHttpResponse response = waitForResponse(handler.handle( get("/version.txt").build(), HttpInterceptorContext.create()));
 
         assertThat(response.bodyAs(UTF_8), is("foo\n"));
     }
@@ -60,7 +61,7 @@ public class VersionTextHandlerTest {
     public void returnsUnknownVersionIfNoFilesAreFound() {
         VersionTextHandler handler = new VersionTextHandler(resources("version-nonexistent1.txt", "version-nonexistent2.txt"));
 
-        FullHttpResponse response = waitForResponse(handler.handle( get("/version.txt").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/version.txt").build(), HttpInterceptorContext.create()));
 
         assertThat(response.bodyAs(UTF_8), is("Unknown version\n"));
     }

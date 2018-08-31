@@ -16,15 +16,15 @@
 package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import rx.Observable;
 
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * Represents a plugin that has been loaded into styx under its configured name.
@@ -88,7 +88,7 @@ public final class NamedPlugin implements Plugin {
     }
 
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         if (enabled) {
             return plugin.intercept(request, chain);
         }

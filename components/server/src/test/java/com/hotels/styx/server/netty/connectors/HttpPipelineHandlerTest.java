@@ -17,12 +17,13 @@ package com.hotels.styx.server.netty.connectors;
 
 import com.google.common.collect.ObjectArrays;
 import com.hotels.styx.api.ContentOverflowException;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.metrics.HttpErrorStatusListener;
-import com.hotels.styx.api.metrics.RequestStatsCollector;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.server.HttpErrorStatusListener;
+import com.hotels.styx.server.RequestStatsCollector;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.server.BadRequestException;
@@ -46,6 +47,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 import rx.subjects.PublishSubject;
+import com.hotels.styx.api.HttpRequest;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -58,8 +60,15 @@ import static com.google.common.collect.Iterables.toArray;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderValues.CLOSE;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
+import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE_CLIENT_CLOSED;
@@ -71,12 +80,7 @@ import static com.hotels.styx.support.netty.HttpMessageSupport.httpMessageToByte
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequest;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpRequestAsBuf;
 import static io.netty.handler.codec.http.HttpMethod.GET;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
-import static io.netty.handler.codec.http.HttpResponseStatus.REQUEST_TIMEOUT;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -92,19 +96,18 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
-import static rx.Observable.just;
 
 public class HttpPipelineHandlerTest {
-    private final HttpHandler2 respondingHandler = (request, context) -> just(response(OK).build());
-    private final HttpHandler2 doNotRespondHandler = (request, context) -> Observable.never();
+    private final HttpHandler respondingHandler = (request, context) -> StyxObservable.of(response(OK).build());
+    private final HttpHandler doNotRespondHandler = (request, context) -> fromRxObservable(Observable.never());
 
     private HttpErrorStatusListener errorListener;
     private CodaHaleMetricRegistry metrics;
 
     // Cannot use lambda expression below, because spy() does not understand them.
-    private final HttpHandler2 respondingPipeline = spy(new HttpHandler2() {
+    private final HttpHandler respondingPipeline = spy(new HttpHandler() {
         @Override
-        public Observable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
             return respondingHandler.handle(request, context);
         }
     });
@@ -115,7 +118,7 @@ public class HttpPipelineHandlerTest {
     private CompletableFuture<Void> writerFuture;
     private HttpResponseWriter responseWriter;
     private HttpPipelineHandler handler;
-    private HttpHandler2 pipeline;
+    private HttpHandler pipeline;
     private HttpResponseWriterFactory responseWriterFactory;
     private RequestStatsCollector statsCollector;
     private HttpRequest request;
@@ -144,8 +147,8 @@ public class HttpPipelineHandlerTest {
         when(responseWriterFactory.create(anyObject()))
                 .thenReturn(responseWriter);
 
-        pipeline = mock(HttpHandler2.class);
-        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true)));
+        pipeline = mock(HttpHandler.class);
+        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(fromRxObservable(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true))));
 
         request = get("/foo").id("REQUEST-1-ID").build();
         response = response().build();
@@ -171,17 +174,17 @@ public class HttpPipelineHandlerTest {
                 .thenReturn(responseWriter)
                 .thenReturn(responseWriter2);
 
-        pipeline = mock(HttpHandler2.class);
+        pipeline = mock(HttpHandler.class);
         when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class)))
-                .thenReturn(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true)))
-                .thenReturn(responseObservable2.doOnUnsubscribe(() -> responseUnsubscribed2.set(true)));
+                .thenReturn(fromRxObservable(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true))))
+                .thenReturn(fromRxObservable(responseObservable2.doOnUnsubscribe(() -> responseUnsubscribed2.set(true))));
 
         request2 = get("/bar").id("REQUEST-2-ID").build();
 
         setupHandlerTo(ACCEPTING_REQUESTS);
     }
 
-    private HttpPipelineHandler createHandler(HttpHandler2 pipeline) throws Exception {
+    private HttpPipelineHandler createHandler(HttpHandler pipeline) throws Exception {
         metrics = new CodaHaleMetricRegistry();
         HttpPipelineHandler handler = handlerWithMocks(pipeline)
                 .responseWriterFactory(responseWriterFactory)
@@ -215,14 +218,14 @@ public class HttpPipelineHandlerTest {
         channel.writeInbound(httpMessageToBytes(httpRequest(GET, badUri)));
         DefaultHttpResponse response = (DefaultHttpResponse) channel.readOutbound();
 
-        assertThat(response.getStatus(), is(BAD_REQUEST));
+        assertThat(response.getStatus(), is(io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST));
         verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), eq(null));
         verify(errorListener, only()).proxyErrorOccurred(eq(BAD_REQUEST), any(BadRequestException.class));
     }
 
     @Test
     public void mapsUnrecoverableInternalErrorsToInternalServerError500ResponseCode() {
-        HttpHandler2 handler = (request, context) -> {
+        HttpHandler handler = (request, context) -> {
             throw new RuntimeException("Forced exception for testing");
         };
         EmbeddedChannel channel = buildEmbeddedChannel(handlerWithMocks(handler));
@@ -230,7 +233,7 @@ public class HttpPipelineHandlerTest {
         channel.writeInbound(httpRequestAsBuf(GET, "http://foo.com/"));
         DefaultHttpResponse response = (DefaultHttpResponse) channel.readOutbound();
 
-        assertThat(response.getStatus(), is(INTERNAL_SERVER_ERROR));
+        assertThat(response.status(), is(io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR));
         verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), any(HttpRequest.class));
         verify(errorListener, only()).proxyErrorOccurred(any(HttpRequest.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
     }
@@ -424,7 +427,7 @@ public class HttpPipelineHandlerTest {
         requestProxiedOnlyOnce(pipeline, request);
     }
 
-    private static void requestProxiedOnlyOnce(HttpHandler2 pipeline, HttpRequest request) {
+    private static void requestProxiedOnlyOnce(HttpHandler pipeline, HttpRequest request) {
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(pipeline).handle(captor.capture(), any(HttpInterceptor.Context.class));
         assertThat(captor.getValue().id(), is(request.id()));
@@ -456,7 +459,7 @@ public class HttpPipelineHandlerTest {
         requestProxiedTwice(pipeline, request, request2);
     }
 
-    private static void requestProxiedTwice(HttpHandler2 pipeline, HttpRequest request1, HttpRequest request2) {
+    private static void requestProxiedTwice(HttpHandler pipeline, HttpRequest request1, HttpRequest request2) {
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(pipeline, times(2)).handle(captor.capture(), any(HttpInterceptor.Context.class));
         assertThat(captor.getAllValues().get(0).id(), is(request1.id()));
@@ -516,8 +519,8 @@ public class HttpPipelineHandlerTest {
     }
 
     private void setupIdleHandlerWithPluginResponse() throws Exception {
-        pipeline = mock(HttpHandler2.class);
-        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(just(response));
+        pipeline = mock(HttpHandler.class);
+        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(StyxObservable.of(response));
         handler = createHandler(pipeline);
     }
 
@@ -578,17 +581,18 @@ public class HttpPipelineHandlerTest {
     public void pluginPipelineThrowsAnExceptionInAcceptingRequestsState() throws Exception {
         Throwable cause = new RuntimeException("Simulated Styx plugin exception");
 
-        pipeline = mock(HttpHandler2.class);
+        pipeline = mock(HttpHandler.class);
         when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenThrow(cause);
         handler = createHandler(pipeline);
         assertThat(handler.state(), is(ACCEPTING_REQUESTS));
 
         handler.channelRead0(ctx, request);
 
-        verify(responseWriter).write(response(INTERNAL_SERVER_ERROR)
+        verify(responseWriter).write(FullHttpResponse.response(INTERNAL_SERVER_ERROR)
                 .header(CONTENT_LENGTH, 29)
-                .body("Site temporarily unavailable.")
-                .build());
+                .body("Site temporarily unavailable.", UTF_8)
+                .build()
+                .toStreamingResponse());
 
         verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), eq(request));
         verify(errorListener).proxyErrorOccurred(request, INTERNAL_SERVER_ERROR, cause);
@@ -662,10 +666,11 @@ public class HttpPipelineHandlerTest {
         responseObservable.onError(new ContentOverflowException("Request Send Error"));
 
         assertThat(responseUnsubscribed.get(), is(true));
-        verify(responseWriter).write(response(BAD_GATEWAY)
+        verify(responseWriter).write(FullHttpResponse.response(BAD_GATEWAY)
                 .header(CONTENT_LENGTH, "29")
-                .body("Site temporarily unavailable.")
-                .build());
+                .body("Site temporarily unavailable.", UTF_8)
+                .build()
+                .toStreamingResponse());
         verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), eq(request));
 
         writerFuture.complete(null);
@@ -687,10 +692,11 @@ public class HttpPipelineHandlerTest {
         responseObservable.onError(new StyxClientException("Client error occurred", new RuntimeException("Something went wrong")));
 
         assertThat(responseUnsubscribed.get(), is(true));
-        verify(responseWriter).write(response(INTERNAL_SERVER_ERROR)
+        verify(responseWriter).write(FullHttpResponse.response(INTERNAL_SERVER_ERROR)
                 .header(CONTENT_LENGTH, "29")
-                .body("Site temporarily unavailable.")
-                .build());
+                .body("Site temporarily unavailable.", UTF_8)
+                .build()
+                .toStreamingResponse());
 
         writerFuture.complete(null);
         verify(statsCollector).onComplete(request.id(), 500);
@@ -929,7 +935,7 @@ public class HttpPipelineHandlerTest {
         return handlerWithMocks(pipeline);
     }
 
-    private HttpPipelineHandler.Builder handlerWithMocks(HttpHandler2 pipeline) {
+    private HttpPipelineHandler.Builder handlerWithMocks(HttpHandler pipeline) {
         return new HttpPipelineHandler.Builder(pipeline)
                 .errorStatusListener(errorListener)
                 .responseEnhancer(responseEnhancer)

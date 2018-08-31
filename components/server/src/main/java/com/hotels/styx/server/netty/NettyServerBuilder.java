@@ -17,8 +17,10 @@ package com.hotels.styx.server.netty;
 
 import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
-import com.hotels.styx.api.HttpHandler2;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
@@ -29,15 +31,13 @@ import io.netty.util.concurrent.ImmediateEventExecutor;
 import java.util.List;
 import java.util.Optional;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Lists.newCopyOnWriteArrayList;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static java.util.Arrays.asList;
-import static rx.Observable.just;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A builder of {@link NettyServer} instances.
@@ -53,7 +53,7 @@ public final class NettyServerBuilder {
     private Optional<ServerConnector> httpConnector = Optional.empty();
     private Optional<ServerConnector> httpsConnector = Optional.empty();
     private final List<Runnable> startupActions = newCopyOnWriteArrayList();
-    private HttpHandler2 httpHandler = (request, context) -> just(response(NOT_FOUND).build());
+    private HttpHandler httpHandler = (request, context) -> StyxObservable.of(HttpResponse.response(NOT_FOUND).build());
 
     public static NettyServerBuilder newBuilder() {
         return new NettyServerBuilder();
@@ -92,7 +92,7 @@ public final class NettyServerBuilder {
     }
 
     public NettyServerBuilder register(String name, HealthCheck healthCheck) {
-        this.healthCheckRegistry.register(name, checkNotNull(healthCheck));
+        this.healthCheckRegistry.register(name, requireNonNull(healthCheck));
         return this;
     }
 
@@ -109,12 +109,12 @@ public final class NettyServerBuilder {
         return this.channelGroup;
     }
 
-    public NettyServerBuilder httpHandler(HttpHandler2 httpHandler) {
+    public NettyServerBuilder httpHandler(HttpHandler httpHandler) {
         this.httpHandler = httpHandler;
         return this;
     }
 
-    HttpHandler2 httpHandler() {
+    HttpHandler httpHandler() {
         return this.httpHandler;
     }
 

@@ -15,17 +15,16 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -35,7 +34,7 @@ public class IndexHandlerTest {
 
     @Test
     public void printsTheRegisteredPaths() {
-        HttpResponse response = handle(get("/admin").build());
+        HttpResponse response = getFirst(handler.handle(get("/admin").build(), HttpInterceptorContext.create()));
         assertThat(response, hasStatus(OK));
         assertThat(response.contentType().get(), is("text/html; charset=utf-8"));
         assertThat(response, hasBody(
@@ -46,7 +45,4 @@ public class IndexHandlerTest {
         ));
     }
 
-    private HttpResponse handle(HttpRequest request) {
-        return getFirst(handler.handle(request));
-    }
 }

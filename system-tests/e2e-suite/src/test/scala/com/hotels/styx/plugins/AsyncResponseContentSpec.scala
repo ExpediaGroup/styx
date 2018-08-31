@@ -19,17 +19,18 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpInterceptor.Chain
-import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.{HttpRequest, HttpResponse}
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api._
 import com.hotels.styx.support._
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
-import io.netty.buffer.ByteBuf
-import io.netty.handler.codec.http.HttpHeaders.Names._
-import io.netty.handler.codec.http.HttpHeaders.Values._
+import _root_.io.netty.buffer.ByteBuf
+import _root_.io.netty.handler.codec.http.HttpHeaders.Names._
+import _root_.io.netty.handler.codec.http.HttpHeaders.Values._
+import com.hotels.styx.api.StyxInternalObservables.{fromRxObservable, toRxObservable}
 import org.scalatest.FunSpec
 import rx.Observable
 import rx.schedulers.Schedulers
@@ -71,7 +72,7 @@ class AsyncResponseContentSpec extends FunSpec
         .addHeader("Content-Length", "0")
         .build()
 
-      val response = waitForResponse(client.sendRequest(request))
+      val response = decodedRequest(request)
 
       mockServer.verify(1, getRequestedFor(urlStartingWith("/foobar")))
       response.bodyAs(UTF_8) should be("I should be here!")
@@ -80,19 +81,21 @@ class AsyncResponseContentSpec extends FunSpec
 }
 
 import rx.lang.scala.ImplicitFunctionConversions._
+import scala.compat.java8.FunctionConverters.asJavaFunction
 
 class AsyncDelayPlugin extends PluginAdapter {
-  override def intercept(request: HttpRequest, chain: Chain): rx.Observable[HttpResponse] = {
+  override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
     chain.proceed(request)
-      .flatMap((response: HttpResponse) => {
-        val transformedContent = response.body().content()
+      .flatMap(asJavaFunction((response: HttpResponse) => {
+
+        val transformedContent: Observable[ByteBuf] = toRxObservable(response.body())
           .observeOn(Schedulers.computation())
           .flatMap((byteBuf: ByteBuf) => {
             Thread.sleep(1000)
             Observable.just(byteBuf)
           })
 
-        Observable.just(response.newBuilder().body(transformedContent).build())
-      })
+        StyxObservable.of(response.newBuilder().body(fromRxObservable(transformedContent)).build())
+      }))
   }
 }

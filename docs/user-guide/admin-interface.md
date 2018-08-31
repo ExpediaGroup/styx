@@ -208,19 +208,6 @@ The document returned by this endpoint presents the configuration used to setup 
 
 #### Syntax
 
-`http://<STYX_SERVER_URL>/admin/healthcheck`
-
-Easy to query endpoint that returns a document with the health status of origins based on the rate of `500` errors.
-
-#### Syntax
-
-`http://<STYX_SERVER_URL>/admin/status`
-
-Deprecated endpoint, it returns a short `OK` / `NOT_OK` based on the information returned
-by the health-check endpoint.
-
-#### Syntax
-
 `http://<STYX_SERVER_URL>/admin/ping`
 
 This endpoint returns `pong` when the server is running, without performing any checks regarding the status.

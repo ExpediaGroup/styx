@@ -21,8 +21,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.google.common.net.HttpHeaders.CONTENT_LENGTH
 import com.hotels.styx.api._
-import com.hotels.styx.api.messages.FullHttpResponse
-import com.hotels.styx.api.messages.HttpResponseStatus.{BAD_GATEWAY, METHOD_NOT_ALLOWED}
+import HttpResponseStatus.{BAD_GATEWAY, METHOD_NOT_ALLOWED}
 import com.hotels.styx.support.backends.FakeHttpServer.HttpStartupConfig
 import com.hotels.styx.support.configuration.{HealthCheckConfig, HttpBackend, Origins}
 import com.hotels.styx.support.server.FakeHttpServer
@@ -171,11 +170,11 @@ class OriginsCommandsSpec extends FeatureSpec
   def getStyxMetricsSnapshot: String = get(styxServer.adminURL("/admin/metrics")).bodyAs(UTF_8)
 
   private def get(url: String): FullHttpResponse = {
-    decodedRequest(HttpRequest.Builder.get(url).build())
+    decodedRequest(FullHttpRequest.get(url).build())
   }
 
   private def post(url: String, content: String) = {
-    decodedRequest(HttpRequest.Builder.post(url).body(content).build())
+    decodedRequest(FullHttpRequest.post(url).body(content, UTF_8).build())
   }
 
   def configureAndStart(appId: String, originId: String): FakeHttpServer = {

@@ -16,31 +16,31 @@
 package com.hotels.styx.http;
 
 import com.google.common.io.Files;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.client.SimpleNettyHttpClient;
-import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
+import com.hotels.styx.api.FullHttpRequest;
+import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.client.SimpleHttpClient;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.handlers.StaticFileHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import com.hotels.styx.api.FullHttpClient;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
-import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
-import static com.hotels.styx.api.support.HostAndPorts.freePort;
+import static com.hotels.styx.api.HttpMethod.GET;
+import static com.hotels.styx.common.HostAndPorts.freePort;
+import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.server.HttpServers.createHttpServer;
-import static io.netty.handler.codec.http.HttpMethod.GET;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public class StaticFileOnRealServerIT {
-    private final com.hotels.styx.api.HttpClient client = new SimpleNettyHttpClient.Builder()
-            .connectionDestinationFactory(new CloseAfterUseConnectionDestination.Factory())
-            .build();
+    private final FullHttpClient client = new SimpleHttpClient.Builder().build();
 
     private HttpServer webServer;
     private File dir;
@@ -72,15 +72,12 @@ public class StaticFileOnRealServerIT {
         mkdir("some/dir");
         writeFile("some/dir/content1.txt", "some txt");
 
-        HttpRequest request = new HttpRequest.Builder(GET, "/index.html")
+        FullHttpRequest request = new FullHttpRequest.Builder(GET, "/index.html")
                 .header("Host", serverEndpoint)
                 .build();
-        HttpResponse response = execute(request);
-        assertThat(response, hasBody("Hello World"));
-    }
 
-    private HttpResponse execute(HttpRequest request) {
-        return client.sendRequest(request).toBlocking().first();
+        FullHttpResponse response = await(client.sendRequest(request));
+        assertThat(response.bodyAs(UTF_8), is("Hello World"));
     }
 
     private void mkdir(String path) {

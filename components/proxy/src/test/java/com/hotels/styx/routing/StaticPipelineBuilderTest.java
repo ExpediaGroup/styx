@@ -17,26 +17,26 @@ package com.hotels.styx.routing;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.HttpHandler2;
-import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.spi.AbstractRegistry;
-import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.AbstractRegistry;
+import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
-import static com.hotels.styx.api.service.spi.Registry.ReloadResult.reloaded;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -61,24 +61,23 @@ public class StaticPipelineBuilderTest {
     }
 
     @Test
-    public void buildsInterceptorPipelineForBackendServices() {
+    public void buildsInterceptorPipelineForBackendServices() throws Exception {
 
-        HttpHandler2 handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of()).build();
-
-        HttpResponse response = handler.handle(get("/foo").build(), HttpInterceptor.Context.EMPTY).toBlocking().first();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of()).build();
+        HttpResponse response = handler.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
         assertThat(response.status(), is(OK));
     }
 
     @Test
-    public void appliesPluginsInOrderTheyAreConfigured() {
+    public void appliesPluginsInOrderTheyAreConfigured() throws Exception {
         Iterable<NamedPlugin> plugins = ImmutableList.of(
                 interceptor("Test-A", appendResponseHeader("X-From-Plugin", "A")),
                 interceptor("Test-B", appendResponseHeader("X-From-Plugin", "B"))
         );
 
-        HttpHandler2 handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins).build();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins).build();
 
-        HttpResponse response = handler.handle(get("/foo").build(), HttpInterceptor.Context.EMPTY).toBlocking().first();
+        HttpResponse response = handler.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
         assertThat(response.status(), is(OK));
         assertThat(response.headers("X-From-Plugin"), hasItems("B", "A"));
     }

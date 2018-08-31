@@ -15,15 +15,10 @@
  */
 package com.hotels.styx.client.stickysession;
 
-import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.HttpCookie;
-import com.hotels.styx.api.HttpCookieAttribute;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.ResponseCookie;
 
-import static com.hotels.styx.api.HttpCookie.cookie;
-import static com.hotels.styx.api.HttpCookieAttribute.httpOnly;
-import static com.hotels.styx.api.HttpCookieAttribute.maxAge;
-import static com.hotels.styx.api.HttpCookieAttribute.path;
+import static com.hotels.styx.api.ResponseCookie.responseCookie;
 
 /**
  * Provides methods for handling sticky-session cookies used to identify which origin has "stuck".
@@ -40,8 +35,12 @@ public final class StickySessionCookie {
      * @param maxAge maxAge attribute for cookie
      * @return a new cookie
      */
-    public static HttpCookie newStickySessionCookie(Id applicationId, Id originId, int maxAge) {
-        return cookie(stickySessionCookieName(applicationId), originId.toString(), attributes(maxAge));
+    public static ResponseCookie newStickySessionCookie(Id applicationId, Id originId, int maxAge) {
+        return responseCookie(stickySessionCookieName(applicationId), originId.toString())
+                .maxAge(maxAge)
+                .path("/")
+                .httpOnly(true)
+                .build();
     }
 
     /**
@@ -52,9 +51,5 @@ public final class StickySessionCookie {
      */
     public static String stickySessionCookieName(Id applicationId) {
         return "styx_origin_" + applicationId;
-    }
-
-    private static Iterable<HttpCookieAttribute> attributes(int maxAge) {
-        return ImmutableList.of(maxAge(maxAge), path("/"), httpOnly());
     }
 }

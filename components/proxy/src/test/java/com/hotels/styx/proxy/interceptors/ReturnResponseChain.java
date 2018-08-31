@@ -15,13 +15,13 @@
  */
 package com.hotels.styx.proxy.interceptors;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpInterceptor.Chain;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import rx.Observable;
+import com.hotels.styx.api.StyxObservable;
 
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static rx.Observable.just;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import com.hotels.styx.api.HttpRequest;
 
 /**
  * A handler that return whatever response returned from the passed in handler.
@@ -39,7 +39,7 @@ public final class ReturnResponseChain implements Chain {
     }
 
     public static ReturnResponseChain returnsResponse(String response) {
-        return returnsResponse(response().body(response));
+        return returnsResponse(FullHttpResponse.response().body(response, UTF_8).build().toStreamingResponse());
     }
 
     public static ReturnResponseChain returnsResponse(HttpResponse.Builder builder) {
@@ -47,7 +47,7 @@ public final class ReturnResponseChain implements Chain {
     }
 
     @Override
-    public Observable<HttpResponse> proceed(HttpRequest request) {
-        return just(response);
+    public StyxObservable<HttpResponse> proceed(HttpRequest request) {
+        return StyxObservable.of(response);
     }
 }

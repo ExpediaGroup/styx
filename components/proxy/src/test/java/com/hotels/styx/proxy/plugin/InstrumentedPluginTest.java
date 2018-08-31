@@ -17,27 +17,30 @@ package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.HttpInterceptor.Chain;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.support.api.SimpleEnvironment;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import com.hotels.styx.support.api.SimpleEnvironment;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import rx.Observable;
 import rx.observers.TestSubscriber;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import java.util.concurrent.ExecutionException;
+import com.hotels.styx.api.HttpRequest;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
+import static com.hotels.styx.api.StyxObservable.error;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
+import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.plugins.spi.Plugin.PASS_THROUGH;
 import static com.hotels.styx.proxy.plugin.InstrumentedPlugin.formattedExceptionName;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -45,8 +48,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static rx.Observable.error;
-import static rx.Observable.just;
 
 public class InstrumentedPluginTest {
     private static final String SOME_EXCEPTION = formattedExceptionName(SomeException.class);
@@ -69,14 +70,14 @@ public class InstrumentedPluginTest {
     }
 
     @Test
-    public void metricIsRecordedWhenResponseIsMappedToErrorStatus() {
+    public void metricIsRecordedWhenResponseIsMappedToErrorStatus() throws ExecutionException, InterruptedException {
         Chain chain = request -> aResponse(OK);
 
         InstrumentedPlugin plugin = instrumentedPlugin("replaceStatusCode", (request, aChain) ->
                 aChain.proceed(request)
                         .map(response -> responseWithNewStatusCode(response, INTERNAL_SERVER_ERROR)));
 
-        HttpResponse response = plugin.intercept(someRequest, chain).toBlocking().single();
+        HttpResponse response = plugin.intercept(someRequest, chain).asCompletableFuture().get();
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
         assertThat(metricRegistry.meter("plugins.replaceStatusCode.response.status.500").getCount(), is(1L));
@@ -84,11 +85,11 @@ public class InstrumentedPluginTest {
     }
 
     @Test
-    public void metricIsRecordedWhenPluginReturnsErrorStatusEarly() {
+    public void metricIsRecordedWhenPluginReturnsErrorStatusEarly() throws ExecutionException, InterruptedException {
         InstrumentedPlugin plugin = instrumentedPlugin("returnEarly",
                 (request, chain) -> aResponse(INTERNAL_SERVER_ERROR));
 
-        HttpResponse response = plugin.intercept(someRequest, chain).toBlocking().single();
+        HttpResponse response = plugin.intercept(someRequest, chain).asCompletableFuture().get();
 
         verify(chain, never()).proceed(any(HttpRequest.class));
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
@@ -97,12 +98,12 @@ public class InstrumentedPluginTest {
     }
 
     @Test
-    public void metricIsNotRecordedWhenErrorStatusIsReturnedByChain() {
+    public void metricIsNotRecordedWhenErrorStatusIsReturnedByChain() throws ExecutionException, InterruptedException {
         Chain chain = request -> aResponse(INTERNAL_SERVER_ERROR);
 
         InstrumentedPlugin plugin = instrumentedPlugin("doNotRecordMe", PASS_THROUGH);
 
-        HttpResponse response = plugin.intercept(someRequest, chain).toBlocking().single();
+        HttpResponse response = plugin.intercept(someRequest, chain).asCompletableFuture().get();
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
         assertThat(metricRegistry.meter("plugins.doNotRecordMe.response.status.500").getCount(), is(0L));
@@ -110,14 +111,14 @@ public class InstrumentedPluginTest {
     }
 
     @Test
-    public void errorsMetricIsNotRecordedWhenResponseIsMappedToNon5005xxStatus() {
+    public void errorsMetricIsNotRecordedWhenResponseIsMappedToNon5005xxStatus() throws ExecutionException, InterruptedException {
         Chain chain = request -> aResponse(OK);
 
         InstrumentedPlugin plugin = instrumentedPlugin("replaceStatusCode", (request, aChain) ->
                 aChain.proceed(request)
                         .map(response -> responseWithNewStatusCode(response, BAD_GATEWAY)));
 
-        HttpResponse response = plugin.intercept(someRequest, chain).toBlocking().single();
+        HttpResponse response = plugin.intercept(someRequest, chain).asCompletableFuture().get();
 
         assertThat(response.status(), is(BAD_GATEWAY));
         assertThat(metricRegistry.meter("plugins.replaceStatusCode.response.status.502").getCount(), is(1L));
@@ -125,11 +126,11 @@ public class InstrumentedPluginTest {
     }
 
     @Test
-    public void errorsMetricIsNotRecordedWhenPluginReturnsNon5005xxStatusEarly() {
+    public void errorsMetricIsNotRecordedWhenPluginReturnsNon5005xxStatusEarly() throws ExecutionException, InterruptedException {
         InstrumentedPlugin plugin = instrumentedPlugin("returnEarly",
                 (request, chain) -> aResponse(BAD_GATEWAY));
 
-        HttpResponse response = plugin.intercept(someRequest, chain).toBlocking().single();
+        HttpResponse response = plugin.intercept(someRequest, chain).asCompletableFuture().get();
 
         verify(chain, never()).proceed(any(HttpRequest.class));
         assertThat(response.status(), is(BAD_GATEWAY));
@@ -195,14 +196,14 @@ public class InstrumentedPluginTest {
         assertThat(metricRegistry.meter("plugins.passThrough.errors").getCount(), is(0L));
     }
 
-    private static Observable<HttpResponse> aResponse(HttpResponseStatus status) {
-        return just(response(status).build());
+    private static StyxObservable<HttpResponse> aResponse(HttpResponseStatus status) {
+        return StyxObservable.of(response(status).build());
     }
 
-    private static <T> void assertThatObservableHasErrorOnly(Class<? extends Throwable> type, Observable<T> observable) {
+    private static <T> void assertThatObservableHasErrorOnly(Class<? extends Throwable> type, StyxObservable<T> observable) {
         TestSubscriber<T> testSubscriber = new TestSubscriber<>();
 
-        observable.subscribe(testSubscriber);
+        toRxObservable(observable).subscribe(testSubscriber);
 
         testSubscriber.awaitTerminalEvent();
         testSubscriber.assertNoValues();

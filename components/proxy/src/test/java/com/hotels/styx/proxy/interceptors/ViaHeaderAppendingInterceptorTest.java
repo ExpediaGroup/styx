@@ -20,15 +20,15 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpRequest.Builder.post;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.support.matchers.IsOptional.isValue;
+import static com.hotels.styx.api.HttpHeaderNames.HOST;
+import static com.hotels.styx.api.HttpHeaderNames.VIA;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.post;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
 import static com.hotels.styx.proxy.interceptors.ReturnResponseChain.returnsResponse;
-import static io.netty.handler.codec.http.HttpHeaders.Names.HOST;
-import static io.netty.handler.codec.http.HttpHeaders.Names.VIA;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
+import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ViaHeaderAppendingInterceptorTest {
@@ -74,7 +74,7 @@ public class ViaHeaderAppendingInterceptorTest {
 
     @Test
     public void appendsHttp10RequestVersionInResponseViaHeader() throws Exception {
-        HttpResponse response = interceptor.intercept(get("/foo").build(), ANY_RESPONSE_HANDLER).toBlocking().first();
+        HttpResponse response = interceptor.intercept(get("/foo").build(), ANY_RESPONSE_HANDLER).asCompletableFuture().get();
         assertThat(response.headers().get(VIA), isValue("1.1 styx"));
     }
 
@@ -93,7 +93,7 @@ public class ViaHeaderAppendingInterceptorTest {
         HttpResponse response = interceptor.intercept(get("/foo").build(), returnsResponse(response()
                         .header(VIA, "1.0 ricky, 1.1 mertz, 1.0 lucy")
                         .build())
-        ).toBlocking().first();
+        ).asCompletableFuture().get();
 
         assertThat(response.headers().get(VIA), isValue("1.0 ricky, 1.1 mertz, 1.0 lucy, 1.1 styx"));
     }

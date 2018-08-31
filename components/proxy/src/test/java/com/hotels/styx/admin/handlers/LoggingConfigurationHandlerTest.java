@@ -16,15 +16,16 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.StartupConfig;
-import com.hotels.styx.api.io.ClasspathResource;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.hotels.styx.common.io.ClasspathResource;
+import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
 
 import static com.hotels.styx.StartupConfig.newStartupConfigBuilder;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
@@ -40,7 +41,7 @@ public class LoggingConfigurationHandlerTest {
                 .build();
         LoggingConfigurationHandler handler = new LoggingConfigurationHandler(startupConfig.logConfigLocation());
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), matchesRegex("Could not load resource=.*foo[\\\\/]bar'"));
@@ -53,7 +54,7 @@ public class LoggingConfigurationHandlerTest {
                 .build();
         LoggingConfigurationHandler handler = new LoggingConfigurationHandler(startupConfig.logConfigLocation());
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
 
         String expected = Resources.load(new ClasspathResource("conf/environment/styx-config-test.yml", LoggingConfigurationHandlerTest.class));
 

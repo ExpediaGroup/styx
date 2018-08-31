@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.testapi;
 
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.service.TlsSettings;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.service.TlsSettings;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -24,8 +24,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
@@ -102,7 +102,7 @@ public class BackendService {
     }
 
     // for internal use
-    com.hotels.styx.api.service.BackendService createBackendService(String path) {
+    com.hotels.styx.api.extension.service.BackendService createBackendService(String path) {
         requireNonNull(path, "path must not be null");
         checkArgument(!origins.isEmpty(), "A backend service must have at least one origin");
 
@@ -115,7 +115,7 @@ public class BackendService {
                         .build())
                 .collect(toSet());
 
-        com.hotels.styx.api.service.BackendService.Builder builder = newBackendServiceBuilder()
+        com.hotels.styx.api.extension.service.BackendService.Builder builder = newBackendServiceBuilder()
                 .id(appId)
                 .responseTimeoutMillis(responseTimeoutMillis)
                 .origins(adaptedOrigins)

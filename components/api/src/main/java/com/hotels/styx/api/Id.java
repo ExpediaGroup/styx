@@ -15,9 +15,10 @@
  */
 package com.hotels.styx.api;
 
-import java.util.Objects;
+import com.google.common.base.Objects;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
+
 
 /**
  * An identifier.
@@ -28,7 +29,7 @@ public final class Id {
     private final String value;
 
     private Id(String value) {
-        this.value = checkNotNull(value);
+        this.value = requireNonNull(value);
     }
 
     /**
@@ -48,7 +49,7 @@ public final class Id {
 
     @Override
     public int hashCode() {
-        return Objects.hash(value);
+        return Objects.hashCode(value);
     }
 
     @Override
@@ -60,6 +61,6 @@ public final class Id {
             return false;
         }
         Id other = (Id) obj;
-        return Objects.equals(this.value, other.value);
+        return Objects.equal(this.value, other.value);
     }
 }

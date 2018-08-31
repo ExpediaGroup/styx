@@ -15,19 +15,20 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.messages.FullHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.List;
 
-import static com.hotels.styx.api.HttpRequest.Builder.put;
-import static com.hotels.styx.api.messages.HttpResponseStatus.BAD_REQUEST;
-import static com.hotels.styx.api.messages.HttpResponseStatus.NOT_FOUND;
-import static com.hotels.styx.api.messages.HttpResponseStatus.OK;
+import static com.hotels.styx.api.FullHttpRequest.put;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -56,9 +57,9 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void enablesDisabledPlugin() {
-        HttpRequest request = put("/foo/off/enabled").body("true").build();
+        HttpRequest request = put("/foo/off/enabled").body("true", UTF_8).build().toStreamingRequest();
 
-        FullHttpResponse response = waitForResponse(handler.handle(request));
+        FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(OK));
         assertThat(body(response), is("{\"message\":\"State of 'off' changed to 'enabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"enabled\"}}"));
@@ -68,9 +69,9 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void disablesEnabledPlugin() {
-        HttpRequest request = put("/foo/on/enabled").body("false").build();
+        HttpRequest request = put("/foo/on/enabled").body("false", UTF_8).build().toStreamingRequest();
 
-        FullHttpResponse response = waitForResponse(handler.handle(request));
+        FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(OK));
         assertThat(body(response), is("{\"message\":\"State of 'on' changed to 'disabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"disabled\"}}"));
@@ -80,9 +81,9 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void notifiesWhenPluginAlreadyDisabled() {
-        HttpRequest request = put("/foo/off/enabled").body("false").build();
+        HttpRequest request = put("/foo/off/enabled").body("false", UTF_8).build().toStreamingRequest();
 
-        FullHttpResponse response = waitForResponse(handler.handle(request));
+        FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(OK));
         assertThat(body(response), is("{\"message\":\"State of 'off' was already 'disabled'\",\"plugin\":{\"name\":\"off\",\"state\":\"disabled\"}}"));
@@ -92,9 +93,9 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void notifiesWhenPluginAlreadyEnabled() {
-        HttpRequest request = put("/foo/on/enabled").body("true").build();
+        HttpRequest request = put("/foo/on/enabled").body("true", UTF_8).build().toStreamingRequest();
 
-        FullHttpResponse response = waitForResponse(handler.handle(request));
+        FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(OK));
         assertThat(body(response), is("{\"message\":\"State of 'on' was already 'enabled'\",\"plugin\":{\"name\":\"on\",\"state\":\"enabled\"}}"));
@@ -104,9 +105,9 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void saysBadRequestWhenUrlIsInvalid() {
-        HttpRequest request = put("/foo//enabled").body("true").build();
+        HttpRequest request = put("/foo//enabled").body("true", UTF_8).build().toStreamingRequest();
 
-        FullHttpResponse response = waitForResponse(handler.handle(request));
+        FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(BAD_REQUEST));
         assertThat(body(response), is("Invalid URL"));
@@ -116,9 +117,9 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void saysBadRequestWhenNoStateSpecified() {
-        HttpRequest request = put("/foo/on/enabled").build();
+        HttpRequest request = put("/foo/on/enabled").build().toStreamingRequest();
 
-        FullHttpResponse response = waitForResponse(handler.handle(request));
+        FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(BAD_REQUEST));
         assertThat(body(response), is("No such state: only 'true' and 'false' are valid."));
@@ -128,9 +129,9 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void saysBadRequestWhenPluginDoesNotExist() {
-        HttpRequest request = put("/foo/nonexistent/enabled").body("true").build();
+        HttpRequest request = put("/foo/nonexistent/enabled").body("true", UTF_8).build().toStreamingRequest();
 
-        FullHttpResponse response = waitForResponse(handler.handle(request));
+        FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(NOT_FOUND));
         assertThat(body(response), is("No such plugin"));
@@ -140,9 +141,9 @@ public class PluginToggleHandlerTest {
 
     @Test
     public void saysBadRequestWhenValueIsInvalid() {
-        HttpRequest request = put("/foo/off/enabled").body("invalid").build();
+        HttpRequest request = put("/foo/off/enabled").body("invalid", UTF_8).build().toStreamingRequest();
 
-        FullHttpResponse response = waitForResponse(handler.handle(request));
+        FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(BAD_REQUEST));
         assertThat(body(response), is("No such state: only 'true' and 'false' are valid."));

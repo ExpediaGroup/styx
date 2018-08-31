@@ -24,9 +24,9 @@ import com.google.common.collect.ImmutableMap
 import com.hotels.styx.admin.AdminServerConfig
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration
+import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.api.plugins.spi.Plugin
-import com.hotels.styx.api.service.spi.StyxService
-import com.hotels.styx.api.{HttpHandler, HttpRequest, HttpResponse}
+import com.hotels.styx.api.{HttpHandler, HttpRequest, HttpResponse, StyxObservable}
 import com.hotels.styx.config.Config
 import com.hotels.styx.metrics.StyxMetrics
 import com.hotels.styx.proxy.ProxyServerConfig
@@ -35,7 +35,6 @@ import com.hotels.styx.server.netty.NettyServerConfig.Connectors
 import com.hotels.styx.server.{HttpConnectorConfig, HttpsConnectorConfig}
 import com.hotels.styx.startup.StyxServerComponents
 import com.hotels.styx.support.CodaHaleMetricsFacade
-import rx.Observable
 
 import scala.collection.JavaConverters._
 
@@ -153,7 +152,7 @@ trait StyxServerSupplements {
 class PluginAdapter extends Plugin {
   override def adminInterfaceHandlers(): util.Map[String, HttpHandler] = emptyMap()
 
-  override def intercept(request: HttpRequest, chain: Chain): Observable[HttpResponse] = chain.proceed(request)
+  override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = chain.proceed(request)
 
   override def styxStarting(): Unit = Unit
 

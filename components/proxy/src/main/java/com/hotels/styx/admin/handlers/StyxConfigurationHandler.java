@@ -17,11 +17,12 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.http.handlers.StaticBodyHttpHandler;
-import rx.Observable;
+import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 
 import java.util.Map;
 
@@ -49,9 +50,9 @@ public class StyxConfigurationHandler implements HttpHandler {
     }
 
     @Override
-    public Observable<HttpResponse> handle(HttpRequest request) {
+    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return configHandler(request.queryParam("pretty").isPresent())
-                .handle(request)
+                .handle(request, context)
                 .map(StyxConfigurationHandler::disableCaching);
     }
 

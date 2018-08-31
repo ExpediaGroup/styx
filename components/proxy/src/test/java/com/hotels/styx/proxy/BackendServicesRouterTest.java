@@ -17,29 +17,29 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.spi.Registry;
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
-import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
@@ -51,6 +51,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static rx.Observable.just;
+import com.hotels.styx.api.HttpRequest;
 
 public class BackendServicesRouterTest {
     private static final String APP_A = "appA";
@@ -81,7 +82,7 @@ public class BackendServicesRouterTest {
     }
 
     @Test
-    public void selectsServiceBasedOnPath() {
+    public void selectsServiceBasedOnPath() throws Exception {
         Registry.Changes<BackendService> changes = added(
                 appA().newCopy().path("/").build(),
                 appB().newCopy().path("/appB/hotel/details.html").build());
@@ -90,13 +91,13 @@ public class BackendServicesRouterTest {
         router.onChange(changes);
 
         HttpRequest request = get("/appB/hotel/details.html").build();
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
 
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
     }
 
     @Test
-    public void selectsApplicationBasedOnPathIfAppsAreProvidedInOppositeOrder() {
+    public void selectsApplicationBasedOnPathIfAppsAreProvidedInOppositeOrder() throws Exception {
         Registry.Changes<BackendService> changes = added(
                 appB().newCopy().path("/appB/hotel/details.html").build(),
                 appA().newCopy().path("/").build());
@@ -105,14 +106,14 @@ public class BackendServicesRouterTest {
         router.onChange(changes);
 
         HttpRequest request = get("/appB/hotel/details.html").build();
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
 
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
     }
 
 
     @Test
-    public void selectsUsingSingleSlashPath() {
+    public void selectsUsingSingleSlashPath() throws Exception {
         Registry.Changes<BackendService> changes = added(
                 appA().newCopy().path("/").build(),
                 appB().newCopy().path("/appB/hotel/details.html").build());
@@ -121,13 +122,13 @@ public class BackendServicesRouterTest {
         router.onChange(changes);
 
         HttpRequest request = get("/").build();
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
 
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_A));
     }
 
     @Test
-    public void selectsUsingSingleSlashPathIfAppsAreProvidedInOppositeOrder() {
+    public void selectsUsingSingleSlashPathIfAppsAreProvidedInOppositeOrder() throws Exception {
         Registry.Changes<BackendService> changes = added(
                 appB().newCopy().path("/appB/hotel/details.html").build(),
                 appA().newCopy().path("/").build());
@@ -136,13 +137,13 @@ public class BackendServicesRouterTest {
         router.onChange(changes);
 
         HttpRequest request = get("/").build();
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
 
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_A));
     }
 
     @Test
-    public void selectsUsingPathWithNoSubsequentCharacters() {
+    public void selectsUsingPathWithNoSubsequentCharacters() throws Exception {
         Registry.Changes<BackendService> changes = added(
                 appA().newCopy().path("/").build(),
                 appB().newCopy().path("/appB/").build());
@@ -151,7 +152,7 @@ public class BackendServicesRouterTest {
         router.onChange(changes);
 
         HttpRequest request = get("/appB/").build();
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
 
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
     }
@@ -162,7 +163,7 @@ public class BackendServicesRouterTest {
         router.onChange(added(appB().newCopy().path("/appB/hotel/details.html").build()));
 
         HttpRequest request = get("/ba/").build();
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
         System.out.println("route: " + route);
 
         assertThat(route, is(Optional.empty()));
@@ -178,7 +179,7 @@ public class BackendServicesRouterTest {
     }
 
     @Test
-    public void removesExistingServicesBeforeAddingNewOnes() {
+    public void removesExistingServicesBeforeAddingNewOnes() throws Exception {
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(added(appB()));
 
@@ -188,29 +189,29 @@ public class BackendServicesRouterTest {
                 .build());
 
         HttpRequest request = get("/appB/").build();
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue("X"));
     }
 
     @Test
-    public void updatesRoutesOnBackendServicesChange() {
+    public void updatesRoutesOnBackendServicesChange() throws Exception {
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
 
         HttpRequest request = get("/appB/").build();
 
         router.onChange(added(appB()));
 
-        Optional<HttpHandler2> route = router.route(request);
+        Optional<HttpHandler> route = router.route(request);
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
 
         router.onChange(new Registry.Changes.Builder<BackendService>().build());
 
-        Optional<HttpHandler2> route2 = router.route(request);
+        Optional<HttpHandler> route2 = router.route(request);
         assertThat(proxyTo(route2, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
     }
 
-    private HttpResponse proxyTo(Optional<HttpHandler2> pipeline, HttpRequest request) {
-        return pipeline.get().handle(request, context).toBlocking().first();
+    private HttpResponse proxyTo(Optional<HttpHandler> pipeline, HttpRequest request) throws ExecutionException, InterruptedException {
+        return pipeline.get().handle(request, context).asCompletableFuture().get();
     }
 
     @Test

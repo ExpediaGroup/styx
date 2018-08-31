@@ -37,9 +37,8 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 
 import com.google.common.io.Files.createTempDir
-import com.hotels.styx.api.messages.FullHttpRequest.get
-import com.hotels.styx.api.messages.HttpResponseStatus
-import com.hotels.styx.support.api.BlockingObservables.waitForResponse
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpResponseStatus
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.{StyxClientSupplier, StyxServerSupport}
@@ -110,15 +109,15 @@ class FileBasedOriginsFileChangeMonitorSpec extends FunSpec
   }
 
   it("Automatically detects changes in origins file.") {
-    waitForResponse(client.sendRequest(reqToApp01.toStreamingRequest)).status() should be (HttpResponseStatus.OK)
-    waitForResponse(client.sendRequest(reqToApp02.toStreamingRequest)).status() should be (HttpResponseStatus.BAD_GATEWAY)
+    decodedRequest(reqToApp01).status() should be (HttpResponseStatus.OK)
+    decodedRequest(reqToApp02).status() should be (HttpResponseStatus.BAD_GATEWAY)
 
     writeConfig(styxOriginsFile, configTemplate.format("appv2", "/app02/", origin.port()))
 
     Thread.sleep(2000)
 
-    waitForResponse(client.sendRequest(reqToApp01.toStreamingRequest)).status() should be (HttpResponseStatus.BAD_GATEWAY)
-    waitForResponse(client.sendRequest(reqToApp02.toStreamingRequest)).status() should be (HttpResponseStatus.OK)
+    decodedRequest(reqToApp01).status() should be (HttpResponseStatus.BAD_GATEWAY)
+    decodedRequest(reqToApp02).status() should be (HttpResponseStatus.OK)
   }
 
   def writeConfig(path: Path, text: String): Unit = {

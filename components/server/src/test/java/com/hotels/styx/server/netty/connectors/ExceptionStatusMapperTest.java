@@ -15,20 +15,21 @@
  */
 package com.hotels.styx.server.netty.connectors;
 
+import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.Optional;
 
 import static ch.qos.logback.classic.Level.ERROR;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
+import static com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT;
+import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
-import static io.netty.handler.codec.http.HttpResponseStatus.GATEWAY_TIMEOUT;
-import static io.netty.handler.codec.http.HttpResponseStatus.REQUEST_TIMEOUT;
+import static java.lang.String.format;
 import static java.util.regex.Pattern.quote;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;

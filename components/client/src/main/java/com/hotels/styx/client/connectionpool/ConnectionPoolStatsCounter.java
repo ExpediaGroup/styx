@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.hotels.styx.api.client.ConnectionPool;
-
 /**
  * Accumulates statistics during the operation of on {@link ConnectionPool}.
  */

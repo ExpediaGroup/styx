@@ -19,8 +19,8 @@ import com.google.common.base.Stopwatch;
 import com.google.common.base.Ticker;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.api.extension.Origin;
 import rx.Observable;
 
 import java.util.function.Supplier;

@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.applications.ApplicationsProvider;
 import com.hotels.styx.applications.BackendServices;
 
@@ -29,7 +29,7 @@ import java.io.InputStream;
 import java.util.List;
 
 import static com.google.common.base.Throwables.propagate;
-import static com.hotels.styx.api.io.ResourceFactory.newResource;
+import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.applications.BackendServices.newBackendServices;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.lang.String.format;

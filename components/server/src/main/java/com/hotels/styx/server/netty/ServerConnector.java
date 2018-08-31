@@ -16,7 +16,7 @@
 package com.hotels.styx.server.netty;
 
 
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import io.netty.channel.Channel;
 
 
@@ -29,6 +29,6 @@ public interface ServerConnector {
 
     int port();
 
-    void configure(Channel channel, HttpHandler2 httpPipeline);
+    void configure(Channel channel, HttpHandler httpPipeline);
 
 }

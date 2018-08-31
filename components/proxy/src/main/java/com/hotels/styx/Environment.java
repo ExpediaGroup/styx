@@ -17,10 +17,11 @@ package com.hotels.styx;
 
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.eventbus.EventBus;
-import com.hotels.styx.api.metrics.HttpErrorStatusCauseLogger;
-import com.hotels.styx.api.metrics.HttpErrorStatusListener;
-import com.hotels.styx.api.metrics.HttpErrorStatusMetrics;
+import com.hotels.styx.proxy.HttpErrorStatusCauseLogger;
+import com.hotels.styx.proxy.HttpErrorStatusMetrics;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.configstore.ConfigStore;
+import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.ServerEnvironment;
 
 import java.util.function.Supplier;
@@ -33,12 +34,14 @@ import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATIO
 public final class Environment implements com.hotels.styx.api.Environment {
     private final Version version;
     private final EventBus eventBus;
+    private final ConfigStore configStore;
     private final AggregatedConfiguration aggregatedConfiguration;
     private final HttpErrorStatusListener httpErrorStatusListener;
     private final ServerEnvironment serverEnvironment;
 
     private Environment(Builder builder) {
         this.eventBus = firstNonNull(builder.eventBus, () -> new EventBus("Styx"));
+        this.configStore = new ConfigStore();
 
         this.aggregatedConfiguration = firstNonNull(builder.aggregatedConfiguration, () -> new AggregatedConfiguration(new StyxConfig()));
         this.version = firstNonNull(builder.version, Version::newVersion);
@@ -56,6 +59,10 @@ public final class Environment implements com.hotels.styx.api.Environment {
 
     public EventBus eventBus() {
         return eventBus;
+    }
+
+    public ConfigStore configStore() {
+        return configStore;
     }
 
     public Version buildInfo() {
@@ -80,7 +87,6 @@ public final class Environment implements com.hotels.styx.api.Environment {
     public HealthCheckRegistry healthCheckRegistry() {
         return serverEnvironment.healthCheckRegistry();
     }
-
 
     public StyxConfig styxConfig() {
         return aggregatedConfiguration.styxConfig();

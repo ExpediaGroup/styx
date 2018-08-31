@@ -17,12 +17,11 @@ package com.hotels.styx.infrastructure.configuration.json.mixins;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hotels.styx.api.client.ConnectionPool;
 
 /**
- * Jackson annotations for {@link com.hotels.styx.api.service.ConnectionPoolSettings}.
+ * Jackson annotations for {@link com.hotels.styx.api.extension.service.ConnectionPoolSettings}.
  */
-public abstract class ConnectionPoolSettingsMixin implements ConnectionPool.Settings {
+public abstract class ConnectionPoolSettingsMixin {
 
     @JsonCreator
     ConnectionPoolSettingsMixin(@JsonProperty("maxConnectionsPerHost") Integer maxConnectionsPerHost,

@@ -17,17 +17,18 @@ package com.hotels.styx.admin.tasks;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsSnapshot;
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.OriginsSnapshot;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.client.OriginsCommandsListener;
-import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.origincommands.DisableOrigin;
 import com.hotels.styx.client.origincommands.EnableOrigin;
 import com.hotels.styx.client.origincommands.GetOriginsInventorySnapshot;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -35,13 +36,13 @@ import org.testng.annotations.Test;
 import java.util.Set;
 
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.client.RemoteHost.remoteHost;
-import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
+import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
+import static com.hotels.styx.common.HostAndPorts.localHostAndFreePort;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
 import static com.hotels.styx.support.api.matchers.HttpResponseStatusMatcher.hasStatus;
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -50,13 +51,13 @@ import static org.mockito.Mockito.mock;
 
 public class OriginsCommandHandlerTest {
     final Origin activeOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("activeOriginId").build();
-    final Set<RemoteHost> activeOrigins = singleton(remoteHost(activeOrigin, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)));
+    final Set<RemoteHost> activeOrigins = singleton(remoteHost(activeOrigin, mock(HttpHandler.class), mock(LoadBalancingMetricSupplier.class)));
 
     final Origin disabledOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("disabledOriginId").build();
-    final Set<RemoteHost> disabledOrigins = singleton(remoteHost(disabledOrigin, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)));
+    final Set<RemoteHost> disabledOrigins = singleton(remoteHost(disabledOrigin, mock(HttpHandler.class), mock(LoadBalancingMetricSupplier.class)));
 
     final Origin inactiveOrigin = newOriginBuilder(localHostAndFreePort()).applicationId("activeAppId").id("inactiveOriginId").build();
-    final Set<RemoteHost> inactiveOrigins = singleton(remoteHost(inactiveOrigin, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)));
+    final Set<RemoteHost> inactiveOrigins = singleton(remoteHost(inactiveOrigin, mock(HttpHandler.class), mock(LoadBalancingMetricSupplier.class)));
 
     final EventBus eventBus = new EventBus();
     final OriginsCommandHandler originsCommand = new OriginsCommandHandler(eventBus);
@@ -123,8 +124,8 @@ public class OriginsCommandHandlerTest {
     }
 
     private HttpResponse post(String path) {
-        HttpRequest request = HttpRequest.Builder.post(path).build();
-        return getFirst(originsCommand.handle(request));
+        HttpRequest request = HttpRequest.post(path).build();
+        return getFirst(originsCommand.handle(request, HttpInterceptorContext.create()));
     }
 
     static class RecordingOriginsCommandsListener implements OriginsCommandsListener {

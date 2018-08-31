@@ -17,50 +17,51 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
+import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.HealthCheckConfig;
+import com.hotels.styx.api.extension.service.TlsSettings;
+import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.client.SimpleNettyHttpClient;
+import com.hotels.styx.client.SimpleHttpClient;
 import com.hotels.styx.client.StyxHeaderConfig;
 import com.hotels.styx.client.StyxHostHttpClient;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
-import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
 import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
-import com.hotels.styx.api.service.HealthCheckConfig;
+import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
 import com.hotels.styx.client.healthcheck.UrlRequestHealthCheck;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
-import com.hotels.styx.api.service.TlsSettings;
-import com.hotels.styx.api.service.spi.Registry;
 import com.hotels.styx.server.HttpRouter;
 import org.slf4j.Logger;
-import rx.Observable;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.concat;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * A {@link HttpHandler2} implementation.
+ * A {@link HttpHandler} implementation.
  */
 public class BackendServicesRouter implements HttpRouter, Registry.ChangeListener<BackendService> {
     private static final Logger LOG = getLogger(BackendServicesRouter.class);
@@ -71,7 +72,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     private final int clientWorkerThreadsCount;
 
     public BackendServicesRouter(BackendServiceClientFactory clientFactory, Environment environment) {
-        this.clientFactory = checkNotNull(clientFactory);
+        this.clientFactory = requireNonNull(clientFactory);
         this.environment = environment;
         this.routes = new ConcurrentSkipListMap<>(
                 comparingInt(String::length).reversed()
@@ -84,7 +85,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     }
 
     @Override
-    public Optional<HttpHandler2> route(HttpRequest request) {
+    public Optional<HttpHandler> route(HttpRequest request) {
         String path = request.path();
 
         return routes.entrySet().stream()
@@ -111,7 +112,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .orElse(false);
 
             OriginStatsFactory originStatsFactory = new OriginStatsFactory(environment.metricRegistry());
-            ConnectionPool.Settings poolSettings = backendService.connectionPoolConfig();
+            ConnectionPoolSettings poolSettings = backendService.connectionPoolConfig();
 
             Connection.Factory connectionFactory = connectionFactory(
                     backendService,
@@ -143,7 +144,6 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                 return StyxHostHttpClient.create(backendService.id(), connectionPool.getOrigin().id(), headerConfig.originIdHeaderName(), connectionPool);
             };
 
-            //TODO: origins inventory builder assumes that appId/originId tuple is unique and it will fail on metrics registration.
             OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(environment.eventBus())
                     .metricsRegistry(environment.metricRegistry())
@@ -189,31 +189,27 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         }
     }
 
-    private HttpClient newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
-        return clientFactory.createClient(backendService, originsInventory, originStatsFactory);
+    private HttpHandler newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
+        HttpClient client = clientFactory.createClient(backendService, originsInventory, originStatsFactory);
+        return (request, context) -> fromRxObservable(client.sendRequest(request));
     }
 
     private static OriginHealthCheckFunction originHealthCheckFunction(
             Id appId,
             MetricRegistry metricRegistry,
             Optional<TlsSettings> tlsSettings,
-            ConnectionPool.Settings connectionPoolSettings,
+            ConnectionPoolSettings connectionPoolSettings,
             HealthCheckConfig healthCheckConfig,
             String styxVersion) {
-        NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
-                .name("Health-Check-Monitor-" + appId)
-                .tlsSettings(tlsSettings.orElse(null))
-                .build();
 
         ConnectionSettings connectionSettings = new ConnectionSettings(
                 connectionPoolSettings.connectTimeoutMillis());
 
-        HttpClient client = new SimpleNettyHttpClient.Builder()
+        SimpleHttpClient client = new SimpleHttpClient.Builder()
+                .connectionSettings(connectionSettings)
+                .threadName("Health-Check-Monitor-" + appId)
                 .userAgent("Styx/" + styxVersion)
-                .connectionDestinationFactory(
-                        new CloseAfterUseConnectionDestination.Factory()
-                                .connectionSettings(connectionSettings)
-                                .connectionFactory(connectionFactory))
+                .tlsSettings(tlsSettings.orElse(null))
                 .build();
 
         String healthCheckUri = healthCheckConfig
@@ -223,28 +219,22 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         return new UrlRequestHealthCheck(healthCheckUri, client, metricRegistry);
     }
 
-    private static class ProxyToClientPipeline implements HttpHandler2 {
-        private final HttpClient client;
+    private static class ProxyToClientPipeline implements HttpHandler {
+        private final HttpHandler client;
         private final OriginsInventory originsInventory;
 
-        ProxyToClientPipeline(HttpClient httpClient, OriginsInventory originsInventory) {
-            this.client = checkNotNull(httpClient);
+        ProxyToClientPipeline(HttpHandler httpClient, OriginsInventory originsInventory) {
+            this.client = requireNonNull(httpClient);
             this.originsInventory = originsInventory;
         }
 
         @Override
-        public Observable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-            return client.sendRequest(request)
-                    .doOnError(throwable -> handleError(request, throwable));
+        public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+            return client.handle(request, context);
         }
 
         public void close() {
             originsInventory.close();
         }
-
-        private static void handleError(HttpRequest request, Throwable throwable) {
-            LOG.error("Error proxying request={} exceptionClass={} exceptionMessage=\"{}\"", new Object[]{request, throwable.getClass().getName(), throwable.getMessage()});
-        }
-
     }
 }

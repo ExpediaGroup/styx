@@ -17,25 +17,25 @@ package com.hotels.styx.proxy.interceptors;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.configuration.ConfigurationContextResolver;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.configuration.ConfigurationContextResolver;
+import com.hotels.styx.api.StyxObservable;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static rx.Observable.just;
+import com.hotels.styx.api.HttpRequest;
 
 public class ConfigurationContextResolverInterceptorTest {
     @Test
@@ -49,9 +49,9 @@ public class ConfigurationContextResolverInterceptorTest {
 
         TestChain chain = new TestChain();
 
-        Observable<HttpResponse> responseObservable = interceptor.intercept(request, chain);
+        StyxObservable<HttpResponse> responseObservable = interceptor.intercept(request, chain);
 
-        assertThat(responseObservable.toBlocking().first(), hasStatus(OK));
+        assertThat(await(responseObservable.asCompletableFuture()), hasStatus(OK));
         assertThat(chain.proceedWasCalled, is(true));
         assertThat(chain.context.get("config.context", Configuration.Context.class), is(context));
     }
@@ -78,10 +78,10 @@ public class ConfigurationContextResolverInterceptorTest {
         }
 
         @Override
-        public Observable<HttpResponse> proceed(HttpRequest request) {
+        public StyxObservable<HttpResponse> proceed(HttpRequest request) {
             proceedWasCalled = true;
 
-            return just(response(OK).build());
+            return StyxObservable.of(response(OK).build());
         }
 
         private class TestChainContext implements HttpInterceptor.Context {

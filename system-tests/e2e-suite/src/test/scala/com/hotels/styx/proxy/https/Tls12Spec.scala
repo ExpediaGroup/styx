@@ -16,17 +16,21 @@
 package com.hotels.styx.proxy.https
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.api.client.UrlConnectionHttpClient
-import com.hotels.styx.api.messages.HttpResponseStatus.OK
-import com.hotels.styx.api.{HttpClient, HttpRequest}
+import com.hotels.styx.api.HttpHeaderNames._
+import com.hotels.styx.api.HttpMethod.GET
+import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.{FullHttpClient, FullHttpRequest}
+import com.hotels.styx.client.SimpleHttpClient
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.{SSLSetup, StyxProxySpec}
-import io.netty.handler.codec.http.HttpHeaders.Names._
-import io.netty.handler.codec.http.HttpMethod._
 import org.scalatest.{FunSpec, ShouldMatchers}
+
+import scala.compat.java8.FutureConverters.CompletionStageOps
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class Tls12Spec extends FunSpec
   with StyxProxySpec
@@ -36,8 +40,8 @@ class Tls12Spec extends FunSpec
 
   val crtFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.crt").toString
   val keyFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.key").toString
-  val clientV12 = newClient("TLSv1.2")
-  val clientV11 = newClient("TLSv1.1")
+  val clientV12 = newClient(Seq("TLSv1.2"))
+  val clientV11 = newClient(Seq("TLSv1.1"))
 
   override val styxConfig = StyxYamlConfig(
     yamlConfig =
@@ -78,30 +82,31 @@ class Tls12Spec extends FunSpec
     recordingBackend.stub(urlPathEqualTo("/secure"), aResponse.withStatus(200))
 
     it("Accepts TLS 1.2 only") {
-      val req = new HttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
+      val req = new FullHttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
         .header(HOST, styxServer.httpsProxyHost)
         .secure(true)
         .build()
 
-      val resp = decodedRequestWithClient(clientV12, req)
+      val resp = Await.result(clientV12.sendRequest(req).toScala, 3.seconds)
 
       resp.status() should be(OK)
     }
 
     it("Refuses TLS 1.1 when TLS 1.2 is required") {
-      val req = new HttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
+      val req = new FullHttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
         .header(HOST, styxServer.httpsProxyHost)
         .secure(true)
         .build()
 
       an[RuntimeException] should be thrownBy {
-        decodedRequestWithClient(clientV11, req)
+        Await.result(clientV11.sendRequest(req).toScala, 3.seconds)
       }
     }
   }
 
-  def newClient(supportedProtocols: String): HttpClient = {
-    new UrlConnectionHttpClient(TWO_SECONDS, FIVE_SECONDS, supportedProtocols)
-  }
+  def newClient(supportedProtocols: Seq[String]): FullHttpClient =
+    new SimpleHttpClient.Builder()
+      .tlsSettings(TlsSettings(protocols = supportedProtocols).asJava)
+      .build()
 
 }

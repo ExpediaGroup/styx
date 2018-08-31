@@ -19,15 +19,14 @@ import ch.qos.logback.classic.Level._
 import com.github.tomakehurst.wiremock.client.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
+import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.HttpHeaderNames.HOST
-import com.hotels.styx.api.HttpRequest.Builder
-import com.hotels.styx.support.matchers.LoggingEventMatcher._
-import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
+import com.hotels.styx.support.matchers.LoggingEventMatcher._
+import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.support.server.UrlMatchingStrategies._
-import io.netty.handler.codec.http.HttpMethod._
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers.hasItem
 import org.scalatest._
@@ -60,7 +59,7 @@ class UnwiseCharactersSpec extends FunSpec with StyxProxySpec {
     it("Should escape all unwise characters in URL as per styx configuration") {
       val logger = new LoggingTestSupport(classOf[ConfigurableUnwiseCharsEncoder])
 
-      val req = new Builder(GET, "/url/unwiseQQblah")
+      val req = get("/url/unwiseQQblah")
         .header(HOST, styxServer.proxyHost)
         .build()
 

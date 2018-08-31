@@ -18,11 +18,11 @@ package com.hotels.styx.client;
 import com.codahale.metrics.Gauge;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
-import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsSnapshot;
-import com.hotels.styx.api.client.OriginsChangeListener;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.OriginsSnapshot;
+import com.hotels.styx.api.extension.OriginsChangeListener;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
@@ -40,11 +40,11 @@ import java.util.Optional;
 import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.support.HostAndPorts.localHostAndFreePort;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.common.HostAndPorts.localHostAndFreePort;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
-import static com.hotels.styx.api.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
+import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.common.testing.matcher.TransformingMatcher.hasDerivedValue;
 import static com.hotels.styx.support.matchers.ContainsExactlyOneMatcher.containsExactlyOne;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
@@ -261,10 +261,6 @@ public class OriginsInventoryTest {
 
         verify(pool1).close();
     }
-
-
-
-    // TODO: Mikko: ignore any origin updates with wrong application-ID.
 
     @Test
     public void willNotDisableOriginsNotBelongingToTheApp() {

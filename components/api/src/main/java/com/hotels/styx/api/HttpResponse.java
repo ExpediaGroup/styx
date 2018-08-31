@@ -15,311 +15,194 @@
  */
 package com.hotels.styx.api;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.net.MediaType;
-import com.hotels.styx.api.messages.FullHttpResponse;
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableSet;
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.util.ReferenceCountUtil;
 import rx.Observable;
 
-import java.util.ArrayList;
+import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.Predicate;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.Sets.newHashSet;
+import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.hotels.styx.api.FlowControlDisableOperator.disableFlowControl;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static com.hotels.styx.api.HttpMessageBody.NO_BODY;
-import static com.hotels.styx.api.support.CookiesSupport.findCookie;
+import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
+import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
+import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
+import static com.hotels.styx.api.ResponseCookie.decode;
+import static com.hotels.styx.api.ResponseCookie.encode;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.HttpVersion.httpVersion;
+import static io.netty.buffer.ByteBufUtil.getBytes;
+import static io.netty.buffer.Unpooled.compositeBuffer;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static io.netty.handler.codec.http.HttpResponseStatus.FOUND;
-import static io.netty.handler.codec.http.HttpResponseStatus.MOVED_PERMANENTLY;
-import static io.netty.handler.codec.http.HttpResponseStatus.MULTIPLE_CHOICES;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpResponseStatus.SEE_OTHER;
-import static io.netty.handler.codec.http.HttpResponseStatus.TEMPORARY_REDIRECT;
+import static io.netty.util.ReferenceCountUtil.release;
+import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 /**
- * Represents an HTTP response.
- * <p/>
- * You can build a {@link HttpResponse} using a {@link HttpResponse.Builder}.
+ * HTTP response with a fully aggregated/decoded body.
  */
-public final class HttpResponse implements HttpMessage {
-    private static final Set<HttpResponseStatus> REDIRECT_STATUS = newHashSet(
-            FOUND,
-            SEE_OTHER,
-            TEMPORARY_REDIRECT,
-            MULTIPLE_CHOICES,
-            MOVED_PERMANENTLY,
-            TEMPORARY_REDIRECT);
-
-    private final HttpRequest request;
+public class HttpResponse implements StreamingHttpMessage {
     private final HttpVersion version;
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
-    private final HttpMessageBody body;
+    private final StyxObservable<ByteBuf> body;
 
-    private final ImmutableList<HttpCookie> cookies;
-
-    private HttpResponse(Builder builder) {
-        this.request = builder.request;
-        this.version = builder.version();
+    HttpResponse(Builder builder) {
+        this.version = builder.version;
         this.status = builder.status;
-        this.headers = builder.headers().build();
-        this.cookies = ImmutableList.copyOf(builder.cookies);
-        this.body = builder.body();
+        this.headers = builder.headers.build();
+        this.body = builder.body;
     }
 
     /**
-     * Returns the request that this response is responding to.
+     * Creates an HTTP response builder with a status of 200 OK and empty body.
      *
-     * @return the request
+     * @return a new builder
      */
-    public HttpRequest request() {
-        return request;
+    public static Builder response() {
+        return new Builder();
     }
 
     /**
-     * Returns the protocol version of this {@link HttpResponse}.
+     * Creates an HTTP response builder with a given status and empty body.
      *
-     * @return the protocol version
+     * @param status response status
+     * @return a new builder
      */
+    public static Builder response(HttpResponseStatus status) {
+        return new Builder(status);
+    }
+
+    /**
+     * Creates an HTTP response builder with a given status and body.
+     *
+     * @param status response status
+     * @param body   response body
+     * @return a new builder
+     */
+    public static Builder response(HttpResponseStatus status, StyxObservable<ByteBuf> body) {
+        return new Builder(status).body(body);
+    }
+
     @Override
-    public HttpVersion version() {
-        return version;
-    }
-
-    /**
-     * Returns the HTTP response status.
-     *
-     * @return HTTP response status
-     */
-    public HttpResponseStatus status() {
-        return status;
-    }
-
-    /**
-     * Returns the value of the header with the specified {@code name}.
-     * If there is more than one header value for the specified header name, the first value is returned.
-     *
-     * @return the value of the header with the specified {@code name} if present
-     */
     public Optional<String> header(CharSequence name) {
         return headers.get(name);
     }
 
-    /**
-     * Returns the values of the headers with the specified {@code name}.
-     *
-     * @param name the name of the headers
-     * @return A {@link List} of header values which will be empty if no values
-     * are found
-     */
-    public ImmutableList<String> headers(CharSequence name) {
+    @Override
+    public List<String> headers(CharSequence name) {
         return headers.getAll(name);
     }
 
-    /**
-     * Return all the headers in this response.
-     *
-     * @return all headers
-     */
     @Override
     public HttpHeaders headers() {
         return headers;
     }
 
-    /**
-     * Return all cookies in this response.
-     *
-     * @return all cookies.
-     */
-    public ImmutableList<HttpCookie> cookies() {
-        return cookies;
-    }
-
-    /**
-     * Return the single cookie with the specified {@code name}.
-     *
-     * @param name cookie name
-     * @return the cookie if present
-     */
-    public Optional<HttpCookie> cookie(String name) {
-        return findCookie(cookies, name);
-    }
-
-    /**
-     * Return the body of the response.
-     *
-     * @return the body of the response
-     */
-    public HttpMessageBody body() {
+    @Override
+    public StyxObservable<ByteBuf> body() {
         return body;
     }
 
-    /**
-     * Return a new {@link HttpResponse.Builder} that will inherit properties from this response.
-     * This allows a new response to be made that will be identical to this one except for the properties
-     * overridden by the builder methods.
-     *
-     * @return new builder based on this response
-     */
+    @Override
+    public HttpVersion version() {
+        return version;
+    }
+
     public Builder newBuilder() {
         return new Builder(this);
     }
 
-    /**
-     * Returns {@code true} if this HttpResponse redirects to another resource.
-     *
-     * @return true if a redirect
-     */
+    public HttpResponseStatus status() {
+        return status;
+    }
+
     public boolean isRedirect() {
-        return REDIRECT_STATUS.contains(status);
+        return status.code() >= 300 && status.code() < 400;
+    }
+
+    public StyxObservable<FullHttpResponse> toFullResponse(int maxContentBytes) {
+        CompositeByteBuf byteBufs = compositeBuffer();
+
+        Observable<FullHttpResponse> delegate = ((StyxCoreObservable<ByteBuf>) body)
+                .delegate()
+                .lift(disableFlowControl())
+                .doOnError(e -> byteBufs.release())
+                .collect(() -> byteBufs, (composite, part) -> {
+                    long newSize = composite.readableBytes() + part.readableBytes();
+
+                    if (newSize > maxContentBytes) {
+                        release(composite);
+                        release(part);
+
+                        throw new ContentOverflowException(format("Maximum content size exceeded. Maximum size allowed is %d bytes.", maxContentBytes));
+                    }
+                    composite.addComponent(part);
+                    composite.writerIndex(composite.writerIndex() + part.readableBytes());
+                })
+                .map(HttpResponse::decodeAndRelease)
+                .map(decoded -> new FullHttpResponse.Builder(this, decoded)
+                        .disableValidation()
+                        .build());
+
+        return new StyxCoreObservable<>(delegate);
+    }
+
+    private static byte[] decodeAndRelease(CompositeByteBuf aggregate) {
+        try {
+            return getBytes(aggregate);
+        } finally {
+            aggregate.release();
+        }
     }
 
     /**
-     * Returns the value of the {@code 'Content-Type'} header.
+     * Decodes the "Set-Cookie" headers in this response and returns the cookies.
      *
-     * @return content-type if present
+     * @return cookies
      */
-    public Optional<String> contentType() {
-        return header(CONTENT_TYPE);
+    public Set<ResponseCookie> cookies() {
+        return decode(headers.getAll(SET_COOKIE));
     }
 
     /**
-     * Returns the value of the {@code 'Content-Length'} header.
+     * Decodes the "Set-Cookie" headers in this response and returns the specified cookie.
      *
-     * @return content-length if present
+     * @param name cookie name
+     * @return cookie
      */
-    public Optional<Integer> contentLength() {
-        return header(CONTENT_LENGTH).map(Integer::valueOf);
-    }
-
-    /**
-     * Return {@code true} if the response is chunked.
-     *
-     * @return {@code true} if the response is chunked
-     */
-    public boolean chunked() {
-        return HttpMessageSupport.chunked(headers);
-    }
-
-    /**
-     * Decodes HTTP content into a business object of type T, using the provided decoder function.
-     * <p>
-     * The method aggregates HTTP response content fully into a composed byte buffer, and applies the provided
-     * decoder function to the composed buffer. Finally, the composed buffer is released. The
-     * decoded business domain object is returned within DecodedResponse instance.
-     * <p>
-     * Along with decoded business domain object, the DecodedResponse instance contains a response
-     * builder object which allows further transformations on the HTTP response object using the decoded
-     * representation as a body. The decoded representation would have to be re-encoded into a byte buffer
-     * or a string prior to using it as a body.
-     * <p>
-     * Note that the builder object is initialised with an empty HTTP body object. In order to turn
-     * DecodedBody back into an HttpResponse, you must add a new HTTP body content by call the
-     * body() method on the response builder, and finally build the response by calling the build()
-     * method on the response builder provided therein.
-     * For example:
-     * <pre>
-     * {@code
-     *
-     * chain.proceed(request)
-     *   .flatMap(request -> decode((bytebuf) -> byteBuf.toString(UTF_8), 10000))
-     *   .map(decode -> decode.responseBuilder()
-     *     .header("bytes_aggregated", decode.body().readableBytes())
-     *     .body("Newly encoded body")
-     *     .build());
-     * }
-     * </pre>
-     * NOTE: It is important to realise the composed buffer given to the decoder function will
-     * be released by styx after decoding completes.
-     * Therefore it is important to copy the composed buffer, either by directly decoding it to another
-     * object, or by other means. Specifically, it is not possible to modify the aggregated buffer in-place.
-     * For example consider the following invalid decoder function:
-     * <p>
-     * <pre>
-     *     {@code (byteBuf) -> byteBuf}
-     * </pre>
-     * <p>
-     * This is supposed to return the full HTTP response content aggregated into a single byteBuf.
-     * However this implementation is seriously flawed because the byteBuf will be released when the
-     * decoder returns.
-     * <p>
-     * However, consider another decoder function:
-     * <pre>
-     *     {@code (byteBuf) -> byteBuf.toString(UTF_8)}
-     * </pre>
-     * <p>
-     * This version returns a string representation of the byteBuf. In doing so the byteBuf is effectively
-     * copied into a String object in heap. Since the heap copy is retained as a decoded
-     * representation, Styx can safely release the original direct memory byteBuf.
-     * <p>
-     * If in-place modification is absolutely necessary for the performance reasons, the decoder function
-     * must retain the contents manually.z Like so:
-     *
-     * <pre>
-     *     {@code (byteBuf) -> { byteBuf.retain(); return byteBuf }}
-     * </pre>
-     *
-     * @param decoder decoder function that decodes the aggregated HTTP response content into desired
-     * business domain object
-     * <p>
-     * @param maxContentBytes maximum allowed size for the aggregated content. If the content exceeds
-     *  this amount, an exception is raised
-     *
-     * @return an observable that provides an object representing an aggregated response
-     */
-    public <T> Observable<DecodedResponse<T>> decode(Function<ByteBuf, T> decoder, int maxContentBytes) {
-        return body.aggregate(maxContentBytes)
-                .map(bytes -> decoder.apply(copiedBuffer(bytes)))
-                .map(content -> new DecodedResponse<>(this, content));
-    }
-
-    /**
-     * Aggregates and converts this streaming request FullHttpResponse.
-     * <p>
-     * Aggregates up to maxContentLength bytes of HTTP response content stream. Once content is
-     * aggregated, this streaming HttpResponse instance is converted to a FullHttpResponse object
-     * with the aggregated content set as a message body.
-     * <p>
-     * This method aggregates the content stream asynchronously. Once the FullHttpResponse is
-     * available, it will be emitted as an Observable onNext event. If the number of content bytes
-     * exceeds maxContentLength an exception is emitted as Observable onError event.
-     * <p>
-     * Performance considerations: An instantiation of FullHttpResponse takes a copy of the aggregated
-     * HTTP message content.
-     *
-     * @param maxContentLength Maximum content bytes accepted from the HTTP content stream.
-     * @return An {Observable} that emits the FullHttpResponse once it is available.
-     */
-    public Observable<FullHttpResponse> toFullResponse(int maxContentLength) {
-        return body.aggregate(maxContentLength)
-                .map(decoded -> new FullHttpResponse.Builder(this, decoded.copy().array()))
-                .map(FullHttpResponse.Builder::build);
+    public Optional<ResponseCookie> cookie(String name) {
+        return cookies().stream()
+                .filter(cookie -> cookie.name().equals(name))
+                .findFirst();
     }
 
     @Override
     public String toString() {
         return toStringHelper(this)
-                .add("request", request)
                 .add("version", version)
                 .add("status", status)
                 .add("headers", headers)
-                .add("cookies", cookies)
                 .toString();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(request, version, status, headers, cookies);
+        return Objects.hashCode(version, status, headers);
     }
 
     @Override
@@ -331,140 +214,49 @@ public final class HttpResponse implements HttpMessage {
             return false;
         }
         HttpResponse other = (HttpResponse) obj;
-        return Objects.equals(this.request, other.request)
-                && Objects.equals(this.version, other.version)
-                && Objects.equals(this.status, other.status)
-                && Objects.equals(this.headers, other.headers)
-                && Objects.equals(this.cookies, other.cookies);
+        return Objects.equal(this.version, other.version)
+                && Objects.equal(this.status, other.status)
+                && Objects.equal(this.headers, other.headers);
     }
 
     /**
-     * The class exists as a helper for aggregating response bodies and modifying the response
-     * based on the result in an asynchronous way. It is only available via the
-     * {@link #decode(Function, int)} method.
-     * <p>
-     * The class provides:
-     * <ul>
-     * <li>the aggregated body.</li>
-     * <li>a response builder that may be used to create a new response based on the original.</li>
-     * </ul>
-     * <p>
-     * The documentation for the {@link #decode(Function, int)} method contains a code example.
-     * <p>
-     * Type parameters:
-     *
-     * @param <T> Type of the decoded content type.
+     * Builder.
      */
-    public static final class DecodedResponse<T> {
-        private final Builder responseBuilder;
-        private final T content;
-
-        private DecodedResponse(HttpResponse response, T content) {
-            this.responseBuilder = response.newBuilder().body(NO_BODY);
-            this.content = content;
-        }
-
-        /**
-         * A builder that inherits properties from the original response.
-         *
-         * @return response builder
-         */
-        public Builder responseBuilder() {
-            return responseBuilder;
-        }
-
-        /**
-         * The aggregated body of the original response.
-         *
-         * @return aggregated body
-         */
-        public T body() {
-            return content;
-        }
-    }
-
-    /**
-     * A builder for {@link HttpResponse}.
-     */
-    public static class Builder extends HttpMessageBuilder<Builder, HttpResponse> {
-        private HttpRequest request;
+    public static final class Builder {
         private HttpResponseStatus status = OK;
+        private HttpHeaders.Builder headers;
+        private HttpVersion version = HTTP_1_1;
         private boolean validate = true;
-        private List<HttpCookie> cookies = new ArrayList<>();
+        private StyxObservable<ByteBuf> body;
 
-        /**
-         * Creates a builder with a status code.
-         *
-         * @param status status code
-         */
+        public Builder() {
+            this.headers = new HttpHeaders.Builder();
+            this.body = new StyxCoreObservable<>(Observable.empty());
+        }
+
         public Builder(HttpResponseStatus status) {
+            this();
             this.status = status;
-            headers(new HttpHeaders.Builder());
         }
 
-        private Builder(HttpResponse response) {
-            this.request = response.request;
-            this.status = response.status;
-            headers(response.headers.newBuilder());
-            this.cookies = new ArrayList<>(response.cookies);
-            version(response.version);
-            body(response.body);
+        public Builder(HttpResponse response) {
+            this.status = response.status();
+            this.version = response.version();
+            this.headers = response.headers().newBuilder();
+            this.body = response.body();
         }
 
-        public Builder(FullHttpResponse response, Observable<ByteBuf> body) {
-            this.status = HttpResponseStatus.valueOf(response.status().code());
-            headers(response.headers().newBuilder());
-            this.cookies = new ArrayList<>(response.cookies());
-            version(HttpVersion.valueOf(response.version().toString()));
-            body(body);
+        public Builder(FullHttpResponse response, StyxObservable<ByteBuf> decoded) {
+            this.status = statusWithCode(response.status().code());
+            this.version = httpVersion(response.version().toString());
+            this.headers = response.headers().newBuilder();
+            this.body = decoded;
         }
 
         /**
-         * Return a new {@link HttpResponse.Builder} that will inherit properties from this response.
-         * This allows a new response to be made that will be identical to this one except for the properties
-         * overridden by the builder methods.
+         * Sets the response status.
          *
-         * @param response a response
-         * @return new builder based on the given response
-         */
-        public static Builder newBuilder(HttpResponse response) {
-            return new Builder(response);
-        }
-
-        /**
-         * Creates a builder with status set to 200 OK.
-         *
-         * @return {@code this}
-         */
-        public static Builder response() {
-            return response(OK);
-        }
-
-        /**
-         * Creates a builder with a given HTTP status code.
-         *
-         * @param status status code
-         * @return {@code this}
-         */
-        public static Builder response(HttpResponseStatus status) {
-            return new Builder(status);
-        }
-
-        /**
-         * Sets the request that this response is responding to.
-         *
-         * @param request a request
-         * @return {@code this}
-         */
-        public Builder request(HttpRequest request) {
-            this.request = request;
-            return this;
-        }
-
-        /**
-         * Sets HTTP response status code.
-         *
-         * @param status status code
+         * @param status response status
          * @return {@code this}
          */
         public Builder status(HttpResponseStatus status) {
@@ -473,7 +265,40 @@ public final class HttpResponse implements HttpMessage {
         }
 
         /**
-         * Adds the necessary header to make the current request not cache-able by the client.
+         * Sets the response body.
+         *
+         * @param content response body
+         * @return {@code this}
+         */
+        public Builder body(StyxObservable<ByteBuf> content) {
+            this.body = content;
+            return this;
+        }
+
+        /**
+         * Sets the message body by encoding a {@link StyxObservable} of {@link String}s into bytes.
+         *
+         * @param contentObservable message body content.
+         * @param charset           character set
+         * @return {@code this}
+         */
+        public Builder body(StyxObservable<String> contentObservable, Charset charset) {
+            return body(contentObservable.map(content -> copiedBuffer(content, charset)));
+        }
+
+        /**
+         * Sets the HTTP version.
+         *
+         * @param version HTTP version
+         * @return {@code this}
+         */
+        public Builder version(HttpVersion version) {
+            this.version = requireNonNull(version);
+            return this;
+        }
+
+        /**
+         * Disables client-side caching of this response.
          *
          * @return {@code this}
          */
@@ -485,81 +310,219 @@ public final class HttpResponse implements HttpMessage {
         }
 
         /**
-         * Adds a response cookie (adds a new Set-Cookie header).
+         * Makes this response chunked.
          *
-         * @param cookie cookie to add
          * @return {@code this}
          */
-        public Builder addCookie(HttpCookie cookie) {
-            cookies.add(checkNotNull(cookie));
-            return this;
-        }
-
-
-        /**
-         * Adds a response cookie (adds a new Set-Cookie header).
-         *
-         * @param name  cookie name
-         * @param value cookie value
-         * @return {@code this}
-         */
-        public Builder addCookie(String name, String value) {
-            return addCookie(HttpCookie.cookie(name, value));
-        }
-
-        /**
-         * Removes a cookie if present (removes its Set-Cookie header).
-         *
-         * @param name name of the cookie
-         * @return {@code this}
-         */
-        public Builder removeCookie(String name) {
-            findCookie(cookies, name)
-                    .ifPresent(cookie -> cookies.remove(cookie));
+        public Builder setChunked() {
+            headers.add(TRANSFER_ENCODING, CHUNKED);
+            headers.remove(CONTENT_LENGTH);
             return this;
         }
 
         /**
-         * Sets the 'Content-Type' header to the specified {@code contentType}.
+         * Sets the cookies on this response by removing existing "Set-Cookie" headers and adding new ones.
          *
-         * @param contentType the content type to set
-         * @return {@code this}
+         * @param cookies cookies
+         * @return this builder
          */
-        public Builder contentType(MediaType contentType) {
-            header(CONTENT_TYPE, contentType.toString());
+        public Builder cookies(ResponseCookie... cookies) {
+            return cookies(asList(cookies));
+        }
+
+        /**
+         * Sets the cookies on this response by removing existing "Set-Cookie" headers and adding new ones.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        public Builder cookies(Collection<ResponseCookie> cookies) {
+            requireNonNull(cookies);
+            headers.remove(SET_COOKIE);
+            return addCookies(cookies);
+        }
+
+        /**
+         * Adds cookies into this response by adding "Set-Cookie" headers.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        public Builder addCookies(ResponseCookie... cookies) {
+            return addCookies(asList(cookies));
+        }
+
+        /**
+         * Adds cookies into this response by adding "Set-Cookie" headers.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        public Builder addCookies(Collection<ResponseCookie> cookies) {
+            requireNonNull(cookies);
+
+            if (cookies.isEmpty()) {
+                return this;
+            }
+
+            removeCookies(cookies.stream().map(ResponseCookie::name).collect(toList()));
+
+            encode(cookies).forEach(cookie ->
+                    addHeader(SET_COOKIE, cookie));
             return this;
         }
 
         /**
-         * Sets an empty body on this response.
+         * Removes all cookies matching one of the supplied names by removing their "Set-Cookie" headers.
+         *
+         * @param names cookie names
+         * @return this builder
+         */
+        public Builder removeCookies(String... names) {
+            return removeCookies(asList(names));
+        }
+
+        /**
+         * Removes all cookies matching one of the supplied names by removing their "Set-Cookie" headers.
+         *
+         * @param names cookie names
+         * @return this builder
+         */
+        public <T> Builder removeCookies(Collection<String> names) {
+            requireNonNull(names);
+
+            if (names.isEmpty()) {
+                return this;
+            }
+
+            return removeCookiesIf(toSet(names)::contains);
+        }
+
+        private Builder removeCookiesIf(Predicate<String> removeIfName) {
+            Predicate<ResponseCookie> keepIf = cookie -> !removeIfName.test(cookie.name());
+
+            List<ResponseCookie> newCookies = decode(headers.getAll(SET_COOKIE)).stream()
+                    .filter(keepIf)
+                    .collect(toList());
+
+            return cookies(newCookies);
+        }
+
+        private static <T> Set<T> toSet(Collection<T> collection) {
+            return collection instanceof Set ? (Set<T>) collection : ImmutableSet.copyOf(collection);
+        }
+
+        /**
+         * Sets the (only) value for the header with the specified name.
+         * <p/>
+         * All existing values for the same header will be removed.
+         *
+         * @param name  The name of the header
+         * @param value The value of the header
+         * @return {@code this}
+         */
+        public Builder header(CharSequence name, Object value) {
+            this.headers.set(name, value);
+            return this;
+        }
+
+        /**
+         * Adds a new header with the specified {@code name} and {@code value}.
+         * <p/>
+         * Will not replace any existing values for the header.
+         *
+         * @param name  The name of the header
+         * @param value The value of the header
+         * @return {@code this}
+         */
+        public Builder addHeader(CharSequence name, Object value) {
+            headers.add(name, value);
+            return this;
+        }
+
+        /**
+         * Removes the header with the specified name.
+         *
+         * @param name The name of the header to remove
+         * @return {@code this}
+         */
+        public Builder removeHeader(CharSequence name) {
+            headers.remove(name);
+            return this;
+        }
+
+        /**
+         * Removes body of the request.
          *
          * @return {@code this}
          */
+        // TODO: See https://github.com/HotelsDotCom/styx/issues/201
         public Builder removeBody() {
-            return body(body.content()
+            Observable<ByteBuf> delegate = ((StyxCoreObservable<ByteBuf>) body)
+                    .delegate()
                     .doOnNext(ReferenceCountUtil::release)
-                    .ignoreElements()
-            );
+                    .ignoreElements();
+
+            return body(new StyxCoreObservable<>(delegate));
         }
 
+
         /**
-         * Throws an exception if there are multiple content-length or if the content-length is not an integer.
+         * Sets the headers.
          *
+         * @param headers headers
          * @return {@code this}
          */
-        public Builder validateContentLength() {
-            ensureContentLengthIsValid();
-
+        public Builder headers(HttpHeaders headers) {
+            this.headers = headers.newBuilder();
             return this;
         }
 
         /**
-         * Builds a response.
+         * Enable validation of uri and some headers.
          *
-         * @return a response
+         * @return {@code this}
+         */
+        public Builder disableValidation() {
+            this.validate = false;
+            return this;
+        }
+
+        /**
+         * Builds a new full response based on the settings configured in this builder.
+         * If {@code validate} is set to true:
+         * <ul>
+         * <li>an exception will be thrown if the content length is not an integer, or more than one content length exists</li>
+         * </ul>
+         *
+         * @return a new full response
          */
         public HttpResponse build() {
+            if (validate) {
+                ensureContentLengthIsValid();
+            }
+
             return new HttpResponse(this);
+        }
+
+        Builder ensureContentLengthIsValid() {
+            List<String> contentLengths = headers.build().getAll(CONTENT_LENGTH);
+
+            checkArgument(contentLengths.size() <= 1, "Duplicate Content-Length found. %s", contentLengths);
+
+            if (contentLengths.size() == 1) {
+                checkArgument(isInteger(contentLengths.get(0)), "Invalid Content-Length found. %s", contentLengths.get(0));
+            }
+            return this;
+        }
+
+        private static boolean isInteger(String contentLength) {
+            try {
+                parseInt(contentLength);
+                return true;
+            } catch (NumberFormatException e) {
+                return false;
+            }
         }
     }
 }

@@ -15,11 +15,9 @@
  */
 package com.hotels.styx.server.routing;
 
-import com.hotels.styx.api.HttpRequest;
-import io.netty.handler.codec.http.HttpMethod;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 

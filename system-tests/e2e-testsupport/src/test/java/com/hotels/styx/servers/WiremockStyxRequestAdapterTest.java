@@ -18,7 +18,7 @@ package com.hotels.styx.servers;
 import com.github.tomakehurst.wiremock.http.ContentTypeHeader;
 import com.github.tomakehurst.wiremock.http.QueryParameter;
 import com.google.common.base.Optional;
-import com.hotels.styx.api.messages.FullHttpRequest;
+import com.hotels.styx.api.FullHttpRequest;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 

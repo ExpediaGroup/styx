@@ -16,30 +16,27 @@
 package com.hotels.styx.client.healthcheck;
 
 import com.codahale.metrics.Meter;
-import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.FullHttpClient;
+import com.hotels.styx.api.FullHttpRequest;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.common.SimpleCache;
 import io.netty.buffer.ByteBuf;
 import rx.Observer;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.util.ReferenceCountUtil.release;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Health-check that works by making a request to a URL and ensuring that it gets an HTTP 200 OK code back.
  */
 public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
-    private static final Observer<ByteBuf> RELEASE_BUFFER = new DoNothingObserver();
-
     private final String healthCheckUri;
-    private final HttpClient client;
+    private final FullHttpClient client;
     private final SimpleCache<Origin, Meter> meterCache;
 
     /**
@@ -49,9 +46,9 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
      * @param client         HTTP client to make health-check requests with
      * @param metricRegistry metric registry
      */
-    public UrlRequestHealthCheck(String healthCheckUri, HttpClient client, MetricRegistry metricRegistry) {
+    public UrlRequestHealthCheck(String healthCheckUri, FullHttpClient client, MetricRegistry metricRegistry) {
         this.healthCheckUri = uriWithInitialSlash(healthCheckUri);
-        this.client = checkNotNull(client);
+        this.client = requireNonNull(client);
         this.meterCache = new SimpleCache<>(origin -> metricRegistry.meter("origins.healthcheck.failure." + origin.applicationId()));
     }
 
@@ -61,25 +58,27 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
 
     @Override
     public void check(Origin origin, OriginHealthCheckFunction.Callback responseCallback) {
-        HttpRequest request = newHealthCheckRequestFor(origin);
+        FullHttpRequest request = newHealthCheckRequestFor(origin);
 
-        client.sendRequest(request).subscribe(response -> {
-            if (response.status().equals(OK)) {
-                responseCallback.originStateResponse(HEALTHY);
-            } else {
-                meterCache.get(origin).mark();
-                responseCallback.originStateResponse(UNHEALTHY);
-            }
-
-            response.body().content().subscribe(RELEASE_BUFFER);
-        }, error -> {
-            meterCache.get(origin).mark();
-            responseCallback.originStateResponse(UNHEALTHY);
-        });
+        client.sendRequest(request)
+                .handle((response, cause) -> {
+                    if (response != null) {
+                        if (response.status().equals(OK)) {
+                            responseCallback.originStateResponse(HEALTHY);
+                        } else {
+                            meterCache.get(origin).mark();
+                            responseCallback.originStateResponse(UNHEALTHY);
+                        }
+                    } else if (cause != null) {
+                        meterCache.get(origin).mark();
+                        responseCallback.originStateResponse(UNHEALTHY);
+                    }
+                    return null;
+                });
     }
 
-    private HttpRequest newHealthCheckRequestFor(Origin origin) {
-        return get(healthCheckUri)
+    private FullHttpRequest newHealthCheckRequestFor(Origin origin) {
+        return FullHttpRequest.get(healthCheckUri)
                 .header(HOST, origin.hostAsString())
                 .build();
     }

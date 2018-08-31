@@ -16,21 +16,24 @@
 package com.hotels.styx.server.handlers;
 
 import com.google.common.io.ByteStreams;
-import com.hotels.styx.api.http.handlers.BaseHttpHandler;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.common.http.handler.BaseHttpHandler;
+import com.hotels.styx.api.HttpResponseStatus;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static com.hotels.styx.api.MediaTypes.mediaTypeOf;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpResponseStatus.FORBIDDEN;
-import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static com.hotels.styx.server.handlers.MediaTypes.mediaTypeOf;
+import static com.hotels.styx.api.HttpResponseStatus.FORBIDDEN;
+import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Handler for class path resources.
@@ -55,10 +58,11 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
                 return error(FORBIDDEN);
             }
 
-            return new HttpResponse.Builder(OK)
-                    .body(resourceBody(path))
+            return new FullHttpResponse.Builder(OK)
+                    .body(resourceBody(path), true)
                     .header(CONTENT_TYPE, mediaTypeOf(path))
-                    .build();
+                    .build()
+                    .toStreamingResponse();
         } catch (FileNotFoundException e) {
             return error(NOT_FOUND);
         } catch (IOException e) {
@@ -74,7 +78,7 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
 
     private static HttpResponse error(HttpResponseStatus status) {
         return new HttpResponse.Builder(status)
-                .body(status.reasonPhrase())
+                .body(StyxObservable.of(status.description()), UTF_8)
                 .build();
     }
 

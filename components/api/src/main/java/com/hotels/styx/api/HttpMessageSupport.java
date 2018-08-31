@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.api;
 
-import io.netty.handler.codec.http.HttpVersion;
+import com.hotels.styx.api.HttpVersion;
 
 import java.util.Optional;
 
@@ -42,20 +42,6 @@ public final class HttpMessageSupport {
     }
 
     public static boolean keepAlive(HttpHeaders headers, HttpVersion version) {
-        Optional<String> connection = headers.get(CONNECTION);
-
-        if (connection.isPresent()) {
-            if (CLOSE.toString().equalsIgnoreCase(connection.get())) {
-                return false;
-            }
-            if (KEEP_ALIVE.toString().equalsIgnoreCase(connection.get())) {
-                return true;
-            }
-        }
-        return version.isKeepAliveDefault();
-    }
-
-    public static boolean keepAlive(HttpHeaders headers, com.hotels.styx.api.messages.HttpVersion version) {
         Optional<String> connection = headers.get(CONNECTION);
 
         if (connection.isPresent()) {

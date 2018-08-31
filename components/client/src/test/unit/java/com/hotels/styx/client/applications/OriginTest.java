@@ -15,13 +15,13 @@
  */
 package com.hotels.styx.client.applications;
 
-import com.hotels.styx.api.client.Origin;
+import com.hotels.styx.api.extension.Origin;
 import org.testng.annotations.Test;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.checkThatOriginsAreDistinct;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.checkThatOriginsAreDistinct;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 

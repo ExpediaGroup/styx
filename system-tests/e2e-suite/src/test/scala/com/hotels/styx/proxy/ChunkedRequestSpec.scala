@@ -26,12 +26,11 @@ import com.google.common.base.{Joiner, Optional}
 import com.google.common.io.ByteStreams
 import com.google.common.io.ByteStreams._
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
-import com.hotels.styx.api.HttpResponse
-import com.hotels.styx.api.HttpResponse.Builder.response
+import com.hotels.styx.api.{FullHttpResponse, HttpResponse, HttpResponseStatus}
+import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
-import io.netty.handler.codec.http.HttpResponseStatus
 import org.scalatest.FunSpec
 
 class ChunkedRequestSpec extends FunSpec
@@ -91,11 +90,11 @@ class ChunkedRequestSpec extends FunSpec
   @throws(classOf[IOException])
   def readResponse(connection: HttpURLConnection): HttpResponse = {
     val status: Int = connection.getResponseCode
-    var responseBuilder: HttpResponse.Builder = null
+    var responseBuilder: FullHttpResponse.Builder = null
 
     val stream: InputStream = getInputStream(connection, status)
     try {
-      responseBuilder = response(HttpResponseStatus.valueOf(status)).body(toByteArray(stream))
+      responseBuilder = FullHttpResponse.response(HttpResponseStatus.statusWithCode(status)).body(toByteArray(stream), true)
       import scala.collection.JavaConversions._
       for (entry <- connection.getHeaderFields.entrySet) {
         if (!isNullOrEmpty(entry.getKey)) {
@@ -106,7 +105,7 @@ class ChunkedRequestSpec extends FunSpec
       if (stream != null) stream.close()
     }
 
-    responseBuilder.build
+    responseBuilder.build().toStreamingResponse
   }
 
   @throws(classOf[IOException])

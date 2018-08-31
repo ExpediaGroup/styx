@@ -18,18 +18,18 @@ package com.hotels.styx.admin.dashboard;
 import com.codahale.metrics.Gauge;
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.Version;
-import com.hotels.styx.api.client.ConnectionPool;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsSnapshot;
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.OriginsSnapshot;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.client.StyxHostHttpClient;
-import com.hotels.styx.api.service.BackendService;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.applications.BackendServices;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
-import com.hotels.styx.api.service.spi.Registry;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -37,9 +37,9 @@ import java.util.Map;
 
 import static com.google.common.collect.Sets.newHashSet;
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.client.RemoteHost.remoteHost;
-import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
+import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.applications.BackendServices.newBackendServices;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
@@ -227,7 +227,7 @@ public class DashboardDataTest {
     private RemoteHost pool(Origin origin) {
         ConnectionPool pool = mock(ConnectionPool.class);
         when(pool.getOrigin()).thenReturn(origin);
-        return remoteHost(origin, mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class));
+        return remoteHost(origin, mock(HttpHandler.class), mock(LoadBalancingMetricSupplier.class));
     }
 
     @Test

@@ -25,15 +25,15 @@ import com.google.common.base.Charsets._
 import com.google.common.io.Files
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx._
-import com.hotels.styx.api.HttpResponse.Builder._
-import com.hotels.styx.api.service.BackendService
+import com.hotels.styx.api.FullHttpResponse
+import com.hotels.styx.api.HttpResponseStatus._
+import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
 import com.hotels.styx.proxy.resiliency.DirectBufferMetrics.directBufferMetrics
 import com.hotels.styx.server.HttpServer
 import com.hotels.styx.support.DownloadClient._
 import com.hotels.styx.support.configuration.{HttpBackend, ImplicitOriginConversions, Origins, StyxConfig}
 import com.hotels.styx.support.{DownloadClient, NettyOrigins, TestClientSupport}
-import io.netty.handler.codec.http.HttpResponseStatus._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, SequentialNestedSuiteExecution, ShouldMatchers}
 import org.slf4j.LoggerFactory
@@ -180,10 +180,12 @@ object SharedOrigins extends NettyOrigins {
     fileServer.startAsync().awaitRunning()
 
     fileServer.stub("/download",
-      responseSupplier(() => response(OK)
+      responseSupplier(() => FullHttpResponse.response(OK)
         .header("X-File-Server", "true")
-        .body(bigFileContent)
-        .build()))
+        .body(bigFileContent, UTF_8)
+        .build()
+        .toStreamingResponse
+      ))
 
     fileServer
   }

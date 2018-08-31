@@ -16,12 +16,13 @@
 package com.hotels.styx.proxy;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.api.FullHttpClient;
+import com.hotels.styx.api.FullHttpRequest;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.client.SimpleNettyHttpClient;
-import com.hotels.styx.client.connectionpool.CloseAfterUseConnectionDestination;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.client.SimpleHttpClient;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.server.HttpConnectorConfig;
@@ -33,28 +34,20 @@ import com.hotels.styx.server.netty.NettyServerConfig;
 import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import java.io.IOException;
 
-import static com.hotels.styx.api.HttpResponse.Builder.response;
-import static com.hotels.styx.api.io.ResourceFactory.newResource;
-import static com.hotels.styx.api.support.HostAndPorts.freePort;
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static java.nio.charset.Charset.defaultCharset;
+import static com.hotels.styx.common.io.ResourceFactory.newResource;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.common.HostAndPorts.freePort;
+import static com.hotels.styx.common.StyxFutures.await;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static rx.Observable.just;
 
 public class StyxProxyTest extends SSLSetup {
-    final HttpClient client = new SimpleNettyHttpClient.Builder()
-            .connectionDestinationFactory(new CloseAfterUseConnectionDestination.Factory())
+    final FullHttpClient client = new SimpleHttpClient.Builder()
             .build();
-
-    private static String content(HttpResponse response) {
-        return getFirst(response.body().content()).toString(defaultCharset());
-    }
 
     public static void main(String[] args) {
         NettyServerConfig config = new YamlConfig(newResource("classpath:default.yaml"))
@@ -68,7 +61,7 @@ public class StyxProxyTest extends SSLSetup {
     }
 
     @Test
-    public void startsAndStopsAServer() throws Exception {
+    public void startsAndStopsAServer() {
         HttpServer server = new NettyServerBuilder()
                 .setHttpConnector(connector(freePort()))
                 .build();
@@ -81,7 +74,7 @@ public class StyxProxyTest extends SSLSetup {
     }
 
     @Test
-    public void startsServerWithHttpConnector() throws Exception {
+    public void startsServerWithHttpConnector() {
         HttpInterceptor echoInterceptor = (request, chain) -> textResponse("Response from http connector");
 
         int port = freePort();
@@ -92,17 +85,18 @@ public class StyxProxyTest extends SSLSetup {
         server.startAsync().awaitRunning();
         assertThat("Server should be running", server.isRunning());
 
-        HttpResponse secureResponse = get("http://localhost:" + port);
-        assertThat(content(secureResponse), containsString("Response from http connector"));
+        FullHttpResponse secureResponse = get("http://localhost:" + port);
+        assertThat(secureResponse.bodyAs(UTF_8), containsString("Response from http connector"));
 
         server.stopAsync().awaitTerminated();
         assertThat("Server should not be running", !server.isRunning());
     }
 
-    private Observable<HttpResponse> textResponse(String body) {
-        return just(response(OK)
-                .body("Response from http connector")
-                .build());
+    private StyxObservable<HttpResponse> textResponse(String body) {
+        return StyxObservable.of(FullHttpResponse.response(OK)
+                .body("Response from http connector", UTF_8)
+                .build()
+                .toStreamingResponse());
     }
 
     private ServerConnector connector(int port) {
@@ -153,23 +147,23 @@ public class StyxProxyTest extends SSLSetup {
 
         System.out.println("server is running: " + server.isRunning());
 
-        HttpResponse clearResponse = get("http://localhost:8080/search?q=fanta");
-        assertThat(content(clearResponse), containsString("Response from http Connector"));
+        FullHttpResponse clearResponse = get("http://localhost:8080/search?q=fanta");
+        assertThat(clearResponse.bodyAs(UTF_8), containsString("Response from http Connector"));
 
-        HttpResponse secureResponse = get("https://localhost:8443/secure");
-        assertThat(content(secureResponse), containsString("Response from https Connector"));
+        FullHttpResponse secureResponse = get("https://localhost:8443/secure");
+        assertThat(secureResponse.bodyAs(UTF_8), containsString("Response from https Connector"));
 
 
         server.stopAsync().awaitTerminated();
         assertThat("Server should not be running", !server.isRunning());
     }
 
-    private HttpResponse get(String uri) throws IOException {
-        HttpRequest secureRequest = HttpRequest.Builder.get(uri).build();
+    private FullHttpResponse get(String uri) {
+        FullHttpRequest secureRequest = FullHttpRequest.get(uri).build();
         return execute(secureRequest);
     }
 
-    private HttpResponse execute(HttpRequest request) {
-        return client.sendRequest(request).toBlocking().first();
+    private FullHttpResponse execute(FullHttpRequest request) {
+        return await(client.sendRequest(request));
     }
 }

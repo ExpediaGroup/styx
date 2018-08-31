@@ -15,17 +15,18 @@
  */
 package loadtest.plugins;
 
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static rx.Observable.timer;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
 
 public class AsyncResponseContentDecoderPluginFactory implements PluginFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(AsyncResponseContentDecoder.class);
@@ -49,16 +50,26 @@ public class AsyncResponseContentDecoderPluginFactory implements PluginFactory {
         }
 
         @Override
-        public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
             return chain.proceed(request)
-                    .flatMap(response ->
-                            response.decode(buf -> buf.toString(UTF_8), this.maxContentLength)
-                                    .flatMap(decodedResponse -> timer(this.delayMillis, MILLISECONDS)
-                                            .map(x -> decodedResponse.responseBuilder()
-                                                    .body(decodedResponse.body())
-                                                    .build())
-                                    )
-                    );
+                    .flatMap(response ->  response.toFullResponse(this.maxContentLength))
+                    .flatMap(fullResponse -> StyxObservable.from(asyncEvent(this.delayMillis))
+                            .map(x -> fullResponse))
+                    .map(FullHttpResponse::toStreamingResponse);
+        }
+
+        static CompletableFuture<Void> asyncEvent(int delayMillis) {
+            CompletableFuture<Void> result = new CompletableFuture<>();
+
+            new Timer().schedule(new TimerTask() {
+                                     @Override
+                                     public void run() {
+                                         result.complete(null);
+                                     }
+                                 },
+                    delayMillis);
+
+            return result;
         }
     }
 }

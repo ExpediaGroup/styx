@@ -21,9 +21,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Throwables.propagate;
 import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A supplier that serialises the output of another supplier into JSON. It will call the source supplier each time it
@@ -56,7 +56,7 @@ public class JsonSupplier implements Supplier<String> {
     }
 
     private JsonSupplier(Supplier<?> objectSupplier, boolean pretty, Module... modules) {
-        this.objectSupplier = checkNotNull(objectSupplier);
+        this.objectSupplier = requireNonNull(objectSupplier);
         this.pretty = pretty;
 
         this.mapper = new ObjectMapper();

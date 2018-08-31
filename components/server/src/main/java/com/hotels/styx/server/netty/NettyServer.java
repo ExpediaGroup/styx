@@ -18,7 +18,7 @@ package com.hotels.styx.server.netty;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
-import com.hotels.styx.api.HttpHandler2;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import io.netty.bootstrap.ServerBootstrap;
@@ -41,7 +41,6 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Throwables.propagate;
 import static io.netty.channel.ChannelOption.ALLOCATOR;
 import static io.netty.channel.ChannelOption.SO_BACKLOG;
@@ -49,6 +48,7 @@ import static io.netty.channel.ChannelOption.SO_KEEPALIVE;
 import static io.netty.channel.ChannelOption.SO_REUSEADDR;
 import static io.netty.channel.ChannelOption.TCP_NODELAY;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -66,7 +66,7 @@ final class NettyServer extends AbstractService implements HttpServer {
     private final Optional<ServerConnector> httpsConnector;
 
     private final Iterable<Runnable> startupActions;
-    private final HttpHandler2 httpHandler;
+    private final HttpHandler httpHandler;
     private final ServerSocketBinder httpServerSocketBinder;
     private final ServerSocketBinder httpsServerSocketBinder;
 
@@ -74,9 +74,9 @@ final class NettyServer extends AbstractService implements HttpServer {
 
     NettyServer(NettyServerBuilder nettyServerBuilder) {
         this.host = nettyServerBuilder.host();
-        this.channelGroup = checkNotNull(nettyServerBuilder.channelGroup());
-        this.serverEventLoopFactory = checkNotNull(nettyServerBuilder.serverEventLoopFactory(), "serverEventLoopFactory cannot be null");
-        this.httpHandler = checkNotNull(nettyServerBuilder.httpHandler());
+        this.channelGroup = requireNonNull(nettyServerBuilder.channelGroup());
+        this.serverEventLoopFactory = requireNonNull(nettyServerBuilder.serverEventLoopFactory(), "serverEventLoopFactory cannot be null");
+        this.httpHandler = requireNonNull(nettyServerBuilder.httpHandler());
 
         this.httpConnector = nettyServerBuilder.httpConnector();
         this.httpsConnector = nettyServerBuilder.httpsConnector();

@@ -25,11 +25,11 @@ import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.Version;
-import com.hotels.styx.api.client.OriginsChangeListener;
-import com.hotels.styx.api.client.OriginsSnapshot;
-import com.hotels.styx.api.metrics.MetricRegistry;
-import com.hotels.styx.api.service.BackendService;
-import com.hotels.styx.api.service.spi.Registry;
+import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.extension.OriginsChangeListener;
+import com.hotels.styx.api.extension.OriginsSnapshot;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,11 +38,11 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.transform;
 import static com.hotels.styx.admin.dashboard.ResponseCodeSupplier.StatusMetricType.COUNTER;
 import static com.hotels.styx.admin.dashboard.ResponseCodeSupplier.StatusMetricType.METER;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -61,12 +61,12 @@ public class DashboardData {
     private final Registry<BackendService> backendServicesRegistry;
 
     public DashboardData(MetricRegistry metrics, Registry<BackendService> backendServicesRegistry, String serverId, Version version, EventBus eventBus) {
-        this.backendServicesRegistry = checkNotNull(backendServicesRegistry);
+        this.backendServicesRegistry = requireNonNull(backendServicesRegistry);
 
-        this.serverId = checkNotNull(serverId);
-        this.metrics = checkNotNull(metrics);
+        this.serverId = requireNonNull(serverId);
+        this.metrics = requireNonNull(metrics);
         this.version = version.releaseVersion();
-        this.eventBus = checkNotNull(eventBus);
+        this.eventBus = requireNonNull(eventBus);
 
         this.server = new Server();
         this.downstream = new Downstream();
@@ -493,13 +493,13 @@ public class DashboardData {
      * Origin-related data.
      */
     public final class Origin implements OriginsChangeListener {
-        private final com.hotels.styx.api.client.Origin origin;
+        private final com.hotels.styx.api.extension.Origin origin;
         private final Supplier<Map<String, Integer>> responsesSupplier;
         private final Requests requests;
         private final ConnectionsPool connectionsPool;
         private String status = "unknown";
 
-        private Origin(com.hotels.styx.api.client.Origin origin) {
+        private Origin(com.hotels.styx.api.extension.Origin origin) {
             this.origin = origin;
             connectionsPool = new ConnectionsPool();
 

@@ -17,8 +17,8 @@ package com.hotels.styx.client.healthcheck.monitors;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Announcer;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.service.spi.AbstractStyxService;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.Schedule;
@@ -29,9 +29,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableSet.copyOf;
-import static com.hotels.styx.api.service.spi.StyxServiceStatus.RUNNING;
+import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.RUNNING;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
@@ -57,9 +57,9 @@ public class ScheduledOriginHealthStatusMonitor extends AbstractStyxService impl
     public ScheduledOriginHealthStatusMonitor(ScheduledExecutorService hostHealthMonitorExecutor, OriginHealthCheckFunction healthCheckingFunction,
                                               Schedule schedule) {
         super("ScheduledOriginHealthStatusMonitor");
-        this.hostHealthMonitorExecutor = checkNotNull(hostHealthMonitorExecutor);
-        this.healthCheckingFunction = checkNotNull(healthCheckingFunction);
-        this.schedule = checkNotNull(schedule);
+        this.hostHealthMonitorExecutor = requireNonNull(hostHealthMonitorExecutor);
+        this.healthCheckingFunction = requireNonNull(healthCheckingFunction);
+        this.schedule = requireNonNull(schedule);
         this.origins = new ConcurrentSkipListSet<>();
     }
 

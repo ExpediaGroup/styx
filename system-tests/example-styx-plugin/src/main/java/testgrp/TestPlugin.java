@@ -16,15 +16,15 @@
 package testgrp;
 
 import com.google.common.base.Charsets;
+import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpMessage;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StreamingHttpMessage;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import io.netty.buffer.ByteBuf;
-import rx.Observable;
-import rx.schedulers.Schedulers;
 
 import java.util.Collections;
 import java.util.Map;
@@ -44,7 +44,7 @@ public class TestPlugin implements Plugin {
 
 
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
         String header = xHcomPluginsHeader(request);
 
         final String configPath = environment.pluginConfig(String.class);
@@ -61,22 +61,19 @@ public class TestPlugin implements Plugin {
         Function<ByteBuf, String> byteBufStringFunction = byteBuf -> byteBuf.toString(Charsets.UTF_8);
 
         return chain.proceed(newRequest)
-                .observeOn(Schedulers.computation())
-                .flatMap(response ->
-                        response.decode(byteBufStringFunction, 1 * 1024 * 1024)
-                        .map(decodedResponse -> decodedResponse.responseBuilder()
+                .flatMap(response -> response.toFullResponse(1 * 1024 * 1024))
+                .map(response ->
+                        response.newBuilder()
                                 .header(X_HCOM_PLUGINS_HEADER, header)
                                 .header(X_HCOM_PLUGINS_CONFIGURATION_PATH, configPath)
                                 .header(X_HCOM_PLUGINS_LIST, pluginsList)
                                 .header("X-Hcom-Styx-Started", styxStarted)
                                 .header("X-Hcom-Styx-Stopped", styxStopped)
-                                .body(decodedResponse.body())
-                                .build()
-                        )
-                );
+                                .build())
+                .map(FullHttpResponse::toStreamingResponse);
     }
 
-    private String xHcomPluginsHeader(HttpMessage message) {
+    private String xHcomPluginsHeader(StreamingHttpMessage message) {
         return message.headers().get(X_HCOM_PLUGINS_HEADER).orElse("")
                 .concat(" test-plugin-a")
                 .trim();

@@ -16,16 +16,15 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpMessage;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import io.netty.handler.codec.http.HttpVersion;
-import rx.Observable;
+import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.HttpVersion;
+import com.hotels.styx.api.HttpRequest;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static io.netty.handler.codec.http.HttpHeaders.Names.VIA;
+import static com.hotels.styx.api.HttpHeaderNames.VIA;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static io.netty.handler.codec.http.HttpHeaders.newEntity;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_0;
 
 /**
  * Add support for "Via" header as per described in Chapter 9.9 in the HTTP/1.1 specification.
@@ -36,26 +35,26 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
     private static final CharSequence VIA_STYX_1_1 = newEntity("1.1 styx");
 
     @Override
-    public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-        HttpRequest newRequest = requestWithAppendedViaHeader(request);
-
-        return chain.proceed(newRequest)
-                .map(this::responseWithAppendedViaHeader);
-    }
-
-    private HttpResponse responseWithAppendedViaHeader(HttpResponse response) {
-        return response.newBuilder()
-                .header(VIA, viaHeader(response))
-                .build();
-    }
-
-    private HttpRequest requestWithAppendedViaHeader(HttpRequest request) {
-        return request.newBuilder()
+    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        HttpRequest newRequest = request.newBuilder()
                 .header(VIA, viaHeader(request))
                 .build();
+
+        return chain.proceed(newRequest)
+                .map(response -> response.newBuilder()
+                        .header(VIA, viaHeader(response))
+                        .build());
     }
 
-    private static CharSequence viaHeader(HttpMessage httpMessage) {
+    private static CharSequence viaHeader(HttpRequest httpMessage) {
+        CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
+
+        return httpMessage.headers().get(VIA)
+                .map(viaHeader -> !isNullOrEmpty(viaHeader) ? viaHeader + ", " + styxViaEntry : styxViaEntry)
+                .orElse(styxViaEntry);
+    }
+
+    private static CharSequence viaHeader(HttpResponse httpMessage) {
         CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
 
         return httpMessage.headers().get(VIA)

@@ -22,7 +22,7 @@ import com.github.tomakehurst.wiremock.http.QueryParameter;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.RequestMethod;
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.messages.FullHttpRequest;
+import com.hotels.styx.api.FullHttpRequest;
 
 import java.util.HashSet;
 import java.util.List;

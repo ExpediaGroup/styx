@@ -19,9 +19,9 @@ import com.hotels.styx.api.Id;
 
 import java.util.Objects;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Objects.toStringHelper;
 import static java.util.Objects.hash;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Abstract parent class for origin-related commands. Takes two parameters: application ID and origin ID.
@@ -31,8 +31,8 @@ abstract class OriginCommand {
     private final Id originId;
 
     public OriginCommand(Id appId, Id originId) {
-        this.appId = checkNotNull(appId);
-        this.originId = checkNotNull(originId);
+        this.appId = requireNonNull(appId);
+        this.originId = requireNonNull(originId);
     }
 
     public Id appId() {

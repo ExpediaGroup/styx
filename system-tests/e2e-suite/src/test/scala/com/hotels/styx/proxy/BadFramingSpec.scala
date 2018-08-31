@@ -21,7 +21,8 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets.UTF_8
 import com.google.common.net.HostAndPort._
 import com.hotels.styx._
-import com.hotels.styx.api.messages.HttpResponseStatus.{BAD_REQUEST, OK}
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpResponseStatus.{BAD_REQUEST, OK}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
@@ -84,7 +85,7 @@ class BadFramingSpec extends FunSpec
 
     it("Returns BAD_REQUEST Bad Request if client request contains multiple differing content-length headers.") {
       originRespondingWith(status200OkResponse)
-      val request = api.HttpRequest.Builder.get(styxServer.routerURL("/badFramingSpec/one/foo/e"))
+      val request = get(styxServer.routerURL("/badFramingSpec/one/foo/e"))
         .disableValidation()
         .addHeader(CONTENT_LENGTH, "50")
         .addHeader(CONTENT_LENGTH, "60")
@@ -97,7 +98,7 @@ class BadFramingSpec extends FunSpec
 
     it("Returns BAD_REQUEST Bad Request if client request contains multiple differing content-length values.") {
       originRespondingWith(status200OkResponse)
-      val request = api.HttpRequest.Builder.get(styxServer.routerURL("/badFramingSpec/one/foo/f"))
+      val request = get(styxServer.routerURL("/badFramingSpec/one/foo/f"))
         .disableValidation()
         .header(CONTENT_LENGTH, "50, 60")
         .build()
@@ -109,7 +110,7 @@ class BadFramingSpec extends FunSpec
 
     it("Returns BAD_REQUEST Bad Request if client request contains multiple identical content-length values.") {
       originRespondingWith(status200OkResponse)
-      val request = api.HttpRequest.Builder.get(styxServer.routerURL("/badFramingSpec/one/foo/g"))
+      val request = get(styxServer.routerURL("/badFramingSpec/one/foo/g"))
         .disableValidation()
         .header(CONTENT_LENGTH, "50, 50")
         .build()
@@ -131,7 +132,7 @@ class BadFramingSpec extends FunSpec
           ctx.writeAndFlush(new DefaultLastHttpContent(copiedBuffer("c" * 30, UTF_8)))
         }
       })
-      val request = api.HttpRequest.Builder.get(styxServer.routerURL("/badFramingSpec/one/foo/i"))
+      val request = get(styxServer.routerURL("/badFramingSpec/one/foo/i"))
         .build()
       val response = decodedRequest(request)
       response.status() should be(OK)

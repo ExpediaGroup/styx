@@ -17,18 +17,17 @@ package com.hotels.styx.proxy.plugin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.metrics.MetricRegistry;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.support.api.SimpleEnvironment;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import rx.Observable;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -45,6 +44,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import com.hotels.styx.api.HttpRequest;
 
 public class PluginSuppliersTest {
     Path FIXTURES_CLASS_PATH = fixturesHome(PluginSuppliersTest.class, "/plugins");
@@ -318,7 +318,7 @@ public class PluginSuppliersTest {
         }
 
         @Override
-        public Observable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
             return null;
         }
     }

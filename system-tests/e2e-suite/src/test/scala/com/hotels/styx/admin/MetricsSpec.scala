@@ -17,8 +17,8 @@ package com.hotels.styx.admin
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import com.hotels.styx.api.HttpRequest.Builder.get
-import com.hotels.styx.api.messages.HttpResponseStatus.{NOT_FOUND, OK}
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpResponseStatus.{NOT_FOUND, OK}
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec

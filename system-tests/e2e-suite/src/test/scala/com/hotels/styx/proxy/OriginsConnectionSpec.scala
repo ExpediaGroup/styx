@@ -18,10 +18,9 @@ package com.hotels.styx.proxy
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post => wmpost}
-import com.hotels.styx.api.HttpRequest.Builder.post
-import com.hotels.styx.api.messages.HttpResponseStatus._
+import com.hotels.styx.api.FullHttpRequest.post
+import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.client.StyxHttpClient
-import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.support.matchers.LoggingTestSupport
@@ -63,7 +62,7 @@ class OriginsConnectionSpec extends FunSpec
           .addHeader("Content-Length", "0")
           .build()
 
-        val response = waitForResponse(client.sendRequest(request))
+        val response = decodedRequest(request)
 
         response.status() should be(OK)
         response.bodyAs(UTF_8) should be("")
@@ -85,7 +84,7 @@ class OriginsConnectionSpec extends FunSpec
           .addHeader("Content-Length", "0")
           .build()
 
-        val response = waitForResponse(client.sendRequest(request))
+        val response = decodedRequest(request)
 
         response.status() should be(NO_CONTENT)
         response.bodyAs(UTF_8) should be("")

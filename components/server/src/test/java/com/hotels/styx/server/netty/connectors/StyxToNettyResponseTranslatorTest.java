@@ -15,22 +15,19 @@
  */
 package com.hotels.styx.server.netty.connectors;
 
-import com.hotels.styx.api.HttpCookieAttribute;
 import com.hotels.styx.api.HttpResponse;
-import org.testng.annotations.DataProvider;
+import com.hotels.styx.api.ResponseCookie;
+import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
+import io.netty.handler.codec.http.cookie.Cookie;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpCookie.cookie;
-import static com.hotels.styx.api.HttpCookieAttribute.domain;
-import static com.hotels.styx.api.HttpCookieAttribute.httpOnly;
-import static com.hotels.styx.api.HttpCookieAttribute.maxAge;
-import static com.hotels.styx.api.HttpCookieAttribute.path;
-import static com.hotels.styx.api.HttpCookieAttribute.secure;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-import static java.util.Collections.singleton;
+import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
+import static com.hotels.styx.api.ResponseCookie.responseCookie;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.testng.Assert.assertTrue;
 
 public class StyxToNettyResponseTranslatorTest {
@@ -42,8 +39,8 @@ public class StyxToNettyResponseTranslatorTest {
                 .version(HTTP_1_1)
                 .build();
         io.netty.handler.codec.http.HttpResponse nettyResponse = translator.toNettyResponse(styxResponse);
-        assertThat(nettyResponse.status(), equalTo(OK));
-        assertThat(nettyResponse.protocolVersion(), equalTo(HTTP_1_1));
+        assertThat(nettyResponse.status(), equalTo(io.netty.handler.codec.http.HttpResponseStatus.OK));
+        assertThat(nettyResponse.protocolVersion(), equalTo(io.netty.handler.codec.http.HttpVersion.HTTP_1_1));
     }
 
     @Test
@@ -55,32 +52,31 @@ public class StyxToNettyResponseTranslatorTest {
         assertTrue(nettyResponse.headers().containsValue("Host", "localhost", false));
     }
 
-    @Test(dataProvider = "attributes")
-    public void shouldCreateNettyResponseWithCookieWithAttributes(HttpCookieAttribute attribute, String attributeString) {
-        HttpResponse styxResponse = new HttpResponse.Builder(OK)
-                .addCookie(cookie("cookie-test", "cookie-value", singleton(attribute)))
+    @Test
+    public void shouldCreateNettyResponseWithCookieWithAttributes() {
+        ResponseCookie cookie = responseCookie("cookie-test", "cookie-value")
+                .domain("cookie-domain")
+                .path("cookie-path")
+                .maxAge(1234)
+                .httpOnly(true)
+                .secure(true)
                 .build();
-        io.netty.handler.codec.http.HttpResponse nettyResponse = translator.toNettyResponse(styxResponse);
-        assertTrue(nettyResponse.headers().containsValue("Set-Cookie", "cookie-test=cookie-value; " + attributeString,
-                false));
-    }
 
-    @DataProvider
-    public static Object[][] attributes() {
-        return new Object[][]{
-                { domain("cookie-domain"), domain("cookie-domain").toString()},
-                { path("cookie-path"), path("cookie-path").toString()},
-                { secure(), secure().toString() },
-                { httpOnly(), "HTTPOnly" }
-        };
-    }
-
-    @Test()
-    public void shouldCreateNettyResponseWithCookieWithMaxAge() {
         HttpResponse styxResponse = new HttpResponse.Builder(OK)
-                .addCookie(cookie("cookie-test", "cookie-value", singleton(maxAge(1))))
+                .cookies(cookie)
                 .build();
+
         io.netty.handler.codec.http.HttpResponse nettyResponse = translator.toNettyResponse(styxResponse);
-        assertTrue(nettyResponse.headers().get("Set-Cookie").startsWith("cookie-test=cookie-value; Max-Age=1; Expires="));
+
+        String setCookie = nettyResponse.headers().get(SET_COOKIE);
+
+        Cookie nettyCookie = ClientCookieDecoder.LAX.decode(setCookie);
+
+        assertThat(nettyCookie.name(), is("cookie-test"));
+        assertThat(nettyCookie.value(), is("cookie-value"));
+        assertThat(nettyCookie.domain(), is("cookie-domain"));
+        assertThat(nettyCookie.maxAge(), is(1234L));
+        assertThat(nettyCookie.isHttpOnly(), is(true));
+        assertThat(nettyCookie.isSecure(), is(true));
     }
 }

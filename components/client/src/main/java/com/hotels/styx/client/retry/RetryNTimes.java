@@ -15,14 +15,14 @@
  */
 package com.hotels.styx.client.retry;
 
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancer;
-import com.hotels.styx.api.client.retrypolicy.spi.RetryPolicy;
-import com.hotels.styx.api.netty.exceptions.IsRetryableException;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
+import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.api.exceptions.IsRetryableException;
 
 import java.util.Optional;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.collect.Sets.newHashSet;
 
 /**

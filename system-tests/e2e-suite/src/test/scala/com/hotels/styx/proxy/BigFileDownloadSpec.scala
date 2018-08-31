@@ -13,6 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+
 package com.hotels.styx.proxy
 
 import java.io.{File, IOException, RandomAccessFile}
@@ -21,13 +22,12 @@ import com.google.common.base.Charsets.UTF_8
 import com.google.common.io.Files
 import com.google.common.io.Files._
 import com.hotels.styx.MockServer.responseSupplier
-import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.HttpResponse.Builder._
+import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.FullHttpResponse.response
+import com.hotels.styx.api.HttpHeaderNames.HOST
+import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
-import io.netty.handler.codec.http.HttpHeaders.Names.HOST
-import io.netty.handler.codec.http.HttpMethod._
-import io.netty.handler.codec.http.HttpResponseStatus._
 import org.scalatest.FunSpec
 
 import scala.concurrent.duration._
@@ -50,7 +50,7 @@ class BigFileDownloadSpec extends FunSpec
     )
 
     val bigFile: File = newBigFile("big_file.dat")
-    fileServer.stub("/download", responseSupplier(() => response(OK).body(Files.toString(bigFile, UTF_8)).build()))
+    fileServer.stub("/download", responseSupplier(() => response(OK).body(Files.toString(bigFile, UTF_8), UTF_8).build().toStreamingResponse))
   }
 
   override protected def afterAll(): Unit = {
@@ -64,13 +64,13 @@ class BigFileDownloadSpec extends FunSpec
 
   ignore("Big file requests") {
     it("should proxy big file requests") {
-      val req = new HttpRequest.Builder(GET, "/download")
+      val req = get("/download")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
       // Note: It is very important to consume the body. Otherwise
       // it won't get transmitted over the TCP connection:
-      val resp = decodedRequest(req, maxSize = 2*ONE_HUNDRED_MB.toInt, timeout = 60.seconds)
+      val resp = decodedRequest(req, maxSize = 2 * ONE_HUNDRED_MB.toInt, timeout = 60.seconds)
 
       assert(resp.status() == OK)
       val actualContentSize = resp.body.length

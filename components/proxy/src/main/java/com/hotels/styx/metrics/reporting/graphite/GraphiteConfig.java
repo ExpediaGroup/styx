@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Optional;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Objects.toStringHelper;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**

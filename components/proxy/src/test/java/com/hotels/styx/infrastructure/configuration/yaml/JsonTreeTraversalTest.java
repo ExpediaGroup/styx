@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.databind.node.ValueNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.base.Objects;
 import com.hotels.styx.support.matchers.IsOptional;
 import org.hamcrest.Description;
 import org.hamcrest.MatcherAssert;
@@ -33,10 +34,9 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.infrastructure.configuration.yaml.JsonTreeTraversal.traverseJsonTree;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -111,13 +111,13 @@ public class JsonTreeTraversalTest {
         protected boolean matchesSafely(PathElement item) {
             if (item instanceof ArrayIndex) {
                 ArrayIndex arrayIndex = (ArrayIndex) item;
-                return Objects.equals(arrayIndex.index(), expected);
+                return Objects.equal(arrayIndex.index(), expected);
             }
 
             if (item instanceof ObjectField) {
                 ObjectField objectField = (ObjectField) item;
 
-                return Objects.equals(objectField.name(), expected);
+                return Objects.equal(objectField.name(), expected);
             }
 
             return false;

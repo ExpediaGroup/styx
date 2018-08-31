@@ -20,29 +20,31 @@ import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.client.Connection;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetric;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.client.ConnectionSettings;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetric;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.StyxHttpClient;
-import com.hotels.styx.api.service.BackendService;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
-import static com.hotels.styx.api.HttpResponse.Builder.response;
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
+import static com.hotels.styx.api.extension.service.StickySessionConfig.newStickySessionConfigBuilder;
 import static com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder;
-import static com.hotels.styx.api.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.client.connectionpool.ConnectionPools.simplePoolFactory;
-import static com.hotels.styx.api.service.StickySessionConfig.newStickySessionConfigBuilder;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -66,7 +68,7 @@ public class StyxBackendServiceClientFactoryTest {
                 .origins(newOriginBuilder("localhost", 8081).build())
                 .build();
 
-        when(connectionFactory.createConnection(any(Origin.class), any(Connection.Settings.class)))
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
                 .thenReturn(just(mock(Connection.class)));
     }
 
@@ -121,9 +123,9 @@ public class StyxBackendServiceClientFactoryTest {
                                 .build(),
                         new OriginStatsFactory(new CodaHaleMetricRegistry()));
 
-        HttpRequest requestz = get("/some-req").addCookie(STICKY_COOKIE, id("z").toString()).build();
-        HttpRequest requestx = get("/some-req").addCookie(STICKY_COOKIE, id("x").toString()).build();
-        HttpRequest requesty = get("/some-req").addCookie(STICKY_COOKIE, id("y").toString()).build();
+        HttpRequest requestz = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("z").toString())).build();
+        HttpRequest requestx = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("x").toString())).build();
+        HttpRequest requesty = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("y").toString())).build();
 
         HttpResponse responsez = styxHttpClient.sendRequest(requestz).toBlocking().first();
         HttpResponse responsex = styxHttpClient.sendRequest(requestx).toBlocking().first();
@@ -166,9 +168,9 @@ public class StyxBackendServiceClientFactoryTest {
                                 .build(),
                         new OriginStatsFactory(new CodaHaleMetricRegistry()));
 
-        HttpRequest requestz = get("/some-req").addCookie(ORIGINS_RESTRICTION_COOKIE, id("z").toString()).build();
-        HttpRequest requestx = get("/some-req").addCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString()).build();
-        HttpRequest requesty = get("/some-req").addCookie(ORIGINS_RESTRICTION_COOKIE, id("y").toString()).build();
+        HttpRequest requestz = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("z").toString())).build();
+        HttpRequest requestx = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString())).build();
+        HttpRequest requesty = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("y").toString())).build();
 
         HttpResponse responsez = styxHttpClient.sendRequest(requestz).toBlocking().first();
         HttpResponse responsex = styxHttpClient.sendRequest(requestx).toBlocking().first();

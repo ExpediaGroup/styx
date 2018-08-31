@@ -17,17 +17,17 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.MapType;
 import com.google.common.base.Charsets;
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.admin.tasks.StubConnectionPool;
+import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.client.Origin;
-import com.hotels.styx.api.client.OriginsSnapshot;
-import com.hotels.styx.api.client.RemoteHost;
-import com.hotels.styx.api.client.loadbalancing.spi.LoadBalancingMetricSupplier;
-import com.hotels.styx.api.messages.FullHttpResponse;
-import com.hotels.styx.client.StyxHostHttpClient;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.OriginsSnapshot;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -36,10 +36,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hotels.styx.api.HttpRequest.Builder.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.Id.id;
-import static com.hotels.styx.api.client.Origin.newOriginBuilder;
-import static com.hotels.styx.api.client.RemoteHost.remoteHost;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
@@ -67,7 +67,7 @@ public class OriginsInventoryHandlerTest {
 
         eventBus.post(new OriginsSnapshot(APP_ID, pool(activeOrigins), pool(inactiveOrigins), pool(disabledOrigins)));
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
         assertThat(response.bodyAs(UTF_8).split("\n").length, is(1));
 
         Map<Id, OriginsSnapshot> output = deserialiseJson(response.bodyAs(UTF_8));
@@ -91,7 +91,7 @@ public class OriginsInventoryHandlerTest {
 
         eventBus.post(new OriginsSnapshot(APP_ID, pool(emptySet()), pool(emptySet()), pool(disabledOrigins)));
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/?pretty=1").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/?pretty=1").build(), HttpInterceptorContext.create()));
         assertThat(body(response).replace("\r\n", "\n"),
                 matchesRegex("\\{\n" +
                         "  \"" + APP_ID + "\" : \\{\n" +
@@ -113,7 +113,7 @@ public class OriginsInventoryHandlerTest {
     public void returnsEmptyObjectWhenNoOrigins() {
         OriginsInventoryHandler handler = new OriginsInventoryHandler(new EventBus());
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/").build()));
+        FullHttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
 
         assertThat(response.bodyAs(UTF_8), is("{}"));
     }
@@ -136,7 +136,7 @@ public class OriginsInventoryHandlerTest {
     private static List<RemoteHost> pool(Set<Origin> origins) {
         return origins.stream()
                 .map(StubConnectionPool::new)
-                .map(pool -> remoteHost(pool.getOrigin(), mock(StyxHostHttpClient.class), mock(LoadBalancingMetricSupplier.class)))
+                .map(pool -> remoteHost(pool.getOrigin(), mock(HttpHandler.class), mock(LoadBalancingMetricSupplier.class)))
                 .collect(toList());
     }
 
