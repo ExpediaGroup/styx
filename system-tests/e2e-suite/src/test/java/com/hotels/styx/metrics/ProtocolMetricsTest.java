@@ -37,8 +37,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.hotels.styx.api.FullHttpRequest.get;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
@@ -82,7 +82,7 @@ public class ProtocolMetricsTest {
 
         FullHttpResponse response = doGet("/");
 
-        assertThat(response.status().code(), is(OK.code()));
+        assertThat(response.status(), is(OK));
 
         assertThat(styxServer.metrics().meter("styx.server.http.requests").getCount(), is(1L));
         assertThat(styxServer.metrics().meter("styx.server.https.requests").getCount(), is(0L));
