@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import static com.hotels.styx.api.HttpMethod.GET;
-import static com.hotels.styx.common.FreePorts.freePort;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.server.HttpServers.createHttpServer;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -53,7 +52,7 @@ public class StaticFileOnRealServerIT {
     @BeforeClass
     public void startServer() {
         dir = Files.createTempDir();
-        webServer = createHttpServer(freePort(), new StaticFileHandler(dir));
+        webServer = createHttpServer(0, new StaticFileHandler(dir));
         webServer.startAsync().awaitRunning();
         serverEndpoint = toHostAndPort(webServer.httpAddress());
     }

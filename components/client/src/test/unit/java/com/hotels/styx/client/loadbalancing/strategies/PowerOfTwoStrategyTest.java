@@ -30,7 +30,6 @@ import java.util.Random;
 
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
-import static com.hotels.styx.common.FreePorts.freePort;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -38,10 +37,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class PowerOfTwoStrategyTest {
-    final Origin ORIGIN_ONE = newOriginBuilder("localhost", freePort()).id("one").build();
-    final Origin ORIGIN_TWO = newOriginBuilder("localhost", freePort()).id("two").build();
-    final Origin ORIGIN_THREE = newOriginBuilder("localhost", freePort()).id("three").build();
-    final Origin ORIGIN_FOUR = newOriginBuilder("localhost", freePort()).id("four").build();
+    final Origin ORIGIN_ONE = newOriginBuilder("localhost", 8001).id("one").build();
+    final Origin ORIGIN_TWO = newOriginBuilder("localhost", 8002).id("two").build();
+    final Origin ORIGIN_THREE = newOriginBuilder("localhost", 8003).id("three").build();
+    final Origin ORIGIN_FOUR = newOriginBuilder("localhost", 8004).id("four").build();
 
     private final RemoteHost HOST_ONE = remoteHost(ORIGIN_ONE, mock(HttpHandler.class), lbMetrics(5));
     private final RemoteHost HOST_TWO = remoteHost(ORIGIN_TWO, mock(HttpHandler.class), lbMetrics(6));

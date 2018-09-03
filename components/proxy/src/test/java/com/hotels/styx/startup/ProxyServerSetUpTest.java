@@ -33,7 +33,6 @@ import org.testng.annotations.Test;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
-import static com.hotels.styx.common.FreePorts.freePort;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
@@ -49,13 +48,11 @@ import static org.mockito.Mockito.when;
 import static org.testng.Assert.fail;
 
 public class ProxyServerSetUpTest {
-    private final int httpPort = freePort();
-    private final int httpsPort = freePort();
 
     private final ProxyServerConfig proxyServerConfig = new ProxyServerConfig.Builder()
-            .setHttpConnector(new HttpConnectorConfig(httpPort))
+            .setHttpConnector(new HttpConnectorConfig(0))
             .setHttpsConnector(new HttpsConnectorConfig.Builder()
-                    .port(httpsPort)
+                    .port(0)
                     .build())
             .build();
 
@@ -98,8 +95,8 @@ public class ProxyServerSetUpTest {
 
         server.startAsync().awaitRunning(3, SECONDS);
 
-        assertThat(server.httpAddress().getPort(), is(httpPort));
-        assertThat(server.httpsAddress().getPort(), is(httpsPort));
+        assertThat(server.httpAddress().getPort(), is(server.httpAddress().getPort()));
+        assertThat(server.httpsAddress().getPort(), is(server.httpsAddress().getPort()));
     }
 
     @Test

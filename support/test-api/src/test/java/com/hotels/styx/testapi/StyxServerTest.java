@@ -23,9 +23,9 @@ import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.SimpleHttpClient;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -42,7 +42,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.hotels.styx.api.FullHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.common.FreePorts.freePort;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.testapi.Origins.origin;
@@ -71,13 +70,13 @@ public class StyxServerTest {
     @BeforeMethod
     public void startOrigins() {
         originServer1 = new WireMockServer(wireMockConfig()
-                .port(freePort()));
+                .dynamicPort());
 
         originServer2 = new WireMockServer(wireMockConfig()
-                .port(freePort()));
+                .dynamicPort());
 
         secureOriginServer = new WireMockServer(wireMockConfig()
-                .httpsPort(freePort())
+                .dynamicHttpsPort()
         );
 
         originServer1.start();
@@ -128,36 +127,32 @@ public class StyxServerTest {
 
     @Test
     public void startsProxyOnSpecifiedHttpPort() {
-        int proxyPort = freePort();
         styxServer = new StyxServer.Builder()
-                .proxyHttpPort(proxyPort)
+                .proxyHttpPort(0)
                 .addRoute("/", originServer1.port())
                 .start();
 
-        FullHttpResponse response = await(client.sendRequest(get(format("https://localhost:%d/", proxyPort)).build()));
+        FullHttpResponse response = await(client.sendRequest(get(format("https://localhost:%d/", styxServer.proxyHttpPort())).build()));
 
         assertThat(response.status(), is(OK));
     }
 
     @Test
     public void startsAdminOnSpecifiedHttpPort() {
-        int adminPort = freePort();
         styxServer = new StyxServer.Builder()
-                .adminHttpPort(adminPort)
+                .adminHttpPort(0)
                 .addRoute("/", originServer1.port())
                 .start();
 
-        FullHttpResponse response = await(client.sendRequest(get(format("https://localhost:%d/admin", adminPort)).build()));
+        FullHttpResponse response = await(client.sendRequest(get(format("https://localhost:%d/admin", styxServer.adminPort())).build()));
 
         assertThat(response.status(), is(OK));
     }
 
     @Test
     public void startsProxyOnSpecifiedHttpsPort() {
-        int httpsPort = freePort();
-
         styxServer = new StyxServer.Builder()
-                .proxyHttpsPort(httpsPort)
+                .proxyHttpsPort(0)
                 .addRoute("/", originServer1.port())
                 .start();
 
@@ -165,7 +160,7 @@ public class StyxServerTest {
                 .tlsSettings(new TlsSettings.Builder().build())
                 .build();
 
-        FullHttpResponse response = await(tlsClient.sendRequest(get(format("https://localhost:%d/", httpsPort)).build()));
+        FullHttpResponse response = await(tlsClient.sendRequest(get(format("https://localhost:%d/", styxServer.proxyHttpsPort())).build()));
 
         assertThat(response.status(), is(OK));
     }
