@@ -43,7 +43,7 @@ class BadClientSpec extends FunSpec
 
   override protected def beforeAll() = {
     super.beforeAll()
-    println("Orign port is: [%d]".format(originOne.host.getPort))
+    println("Orign port is: [%d]".format(originOne.port))
     styxServer.setBackends("/badClientSpec/" -> HttpBackend("app-1", Origins(originOneServer)))
   }
 

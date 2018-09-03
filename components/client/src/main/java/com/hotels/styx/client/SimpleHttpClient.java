@@ -92,7 +92,7 @@ public final class SimpleHttpClient implements FullHttpClient {
             host = host.withDefaultPort(request.isSecure() ? DEFAULT_HTTPS_PORT : DEFAULT_HTTP_PORT);
         }
 
-        return newOriginBuilder(host).build();
+        return newOriginBuilder(host.getHostText(), host.getPort()).build();
     }
 
     /**

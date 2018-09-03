@@ -41,7 +41,7 @@ import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
-import static com.hotels.styx.common.HostAndPorts.localHostAndFreePort;
+import static com.hotels.styx.common.FreePorts.freePort;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
@@ -61,8 +61,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class OriginsInventoryTest {
-    private static final Origin ORIGIN_1 = newOriginBuilder(localHostAndFreePort()).applicationId(GENERIC_APP).id("app-01").build();
-    private static final Origin ORIGIN_2 = newOriginBuilder(localHostAndFreePort()).applicationId(GENERIC_APP).id("app-02").build();
+    private static final Origin ORIGIN_1 = newOriginBuilder("localhost", freePort()).applicationId(GENERIC_APP).id("app-01").build();
+    private static final Origin ORIGIN_2 = newOriginBuilder("localhost", freePort()).applicationId(GENERIC_APP).id("app-02").build();
 
     private final ConnectionPool.Factory connectionFactory = connectionPoolFactory();
 

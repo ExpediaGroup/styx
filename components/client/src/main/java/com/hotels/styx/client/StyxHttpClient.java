@@ -245,7 +245,7 @@ public final class StyxHttpClient implements HttpClient {
 
         private static String hosts(Iterable<RemoteHost> origins) {
             return stream(origins.spliterator(), false)
-                    .map(host -> host.origin().hostAsString())
+                    .map(host -> host.origin().hostAndPortString())
                     .collect(joining(", "));
         }
     }

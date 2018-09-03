@@ -22,8 +22,8 @@ import com.hotels.styx.client.healthcheck.Schedule;
 import com.hotels.styx.support.DeterministicScheduler;
 import org.testng.annotations.Test;
 
+import static com.google.common.net.HostAndPort.fromParts;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
-import static com.hotels.styx.common.HostAndPorts.localhost;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
 import static com.hotels.styx.common.StyxFutures.await;
@@ -35,9 +35,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 public class ScheduledOriginHealthStatusMonitorTest {
-    static final Origin LIVE_ORIGIN = newOriginBuilder(localhost(8080)).build();
-    static final Origin DEAD_ORIGIN = newOriginBuilder(localhost(9090)).build();
-    static final Origin DEAD_ORIGIN_2 = newOriginBuilder(localhost(9091)).build();
+    static final Origin LIVE_ORIGIN = newOriginBuilder("localhost", 8080).build();
+    static final Origin DEAD_ORIGIN = newOriginBuilder("localhost", 9090).build();
+    static final Origin DEAD_ORIGIN_2 = newOriginBuilder("localhost", 9091).build();
 
     final OriginHealthStatusMonitor.Listener listener = mock(OriginHealthStatusMonitor.Listener.class);
     final DeterministicScheduler scheduler = new DeterministicScheduler();

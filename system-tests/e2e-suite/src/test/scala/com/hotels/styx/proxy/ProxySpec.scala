@@ -26,7 +26,7 @@ import com.hotels.styx.api.HttpHeaderNames._
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.api.HttpVersion._
-import com.hotels.styx.common.HostAndPorts._
+import com.hotels.styx.common.FreePorts._
 import com.hotels.styx.api.{FullHttpClient, FullHttpResponse}
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
 import com.hotels.styx.client.{ConnectionSettings, SimpleHttpClient}

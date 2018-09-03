@@ -110,7 +110,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
         backendService.connectionPoolConfig().maxPendingConnectionsPerHost() should be (15)
         backendService.responseTimeoutMillis() should be (60000)
         backendService.origins().head.id() should be(id("ba1"))
-        backendService.origins().head.host().getPort should be(9094)
+        backendService.origins().head.port should be(9094)
         Observable
           .just(HttpResponse
             .response(OK)

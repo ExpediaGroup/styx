@@ -109,7 +109,7 @@ public class BackendService {
         String appId = newId();
 
         Set<Origin> adaptedOrigins = this.origins.stream()
-                .map(origin -> newOriginBuilder(origin.host().getHostText(), origin.host().getPort())
+                .map(origin -> origin.newBuilder()
                         .applicationId(appId)
                         .id(newId())
                         .build())
