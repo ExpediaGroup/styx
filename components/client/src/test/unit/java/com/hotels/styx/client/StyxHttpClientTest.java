@@ -101,7 +101,7 @@ public class StyxHttpClientTest {
     public void sendsRequestToHostChosenByLoadBalancer() {
         StyxHostHttpClient hostClient = mockHostClient(just(response(OK).build()));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
                         mockLoadBalancer(
@@ -120,7 +120,7 @@ public class StyxHttpClientTest {
         RetryPolicy retryPolicy = mockRetryPolicy(true, true, true);
         StyxHostHttpClient hostClient = mockHostClient(just(response(OK).build()));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
                         mockLoadBalancer(
@@ -158,7 +158,7 @@ public class StyxHttpClientTest {
 
         StyxHostHttpClient secondClient = mockHostClient(just(response(OK).build()));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
                         mockLoadBalancer(
@@ -198,7 +198,7 @@ public class StyxHttpClientTest {
         StyxHostHttpClient secondClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
         StyxHostHttpClient thirdClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
                         mockLoadBalancer(
@@ -230,7 +230,7 @@ public class StyxHttpClientTest {
         StyxHostHttpClient thirdClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_3, new RuntimeException("An error occurred"))));
         StyxHostHttpClient fourthClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_4, new RuntimeException("An error occurred"))));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
                         mockLoadBalancer(
@@ -262,7 +262,7 @@ public class StyxHttpClientTest {
     public void incrementsResponseStatusMetricsForBadResponse() {
         StyxHostHttpClient hostClient = mockHostClient(just(response(BAD_REQUEST).build()));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
                         mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient))))
@@ -279,7 +279,7 @@ public class StyxHttpClientTest {
     public void incrementsResponseStatusMetricsFor401() {
         StyxHostHttpClient hostClient = mockHostClient(just(response(UNAUTHORIZED).build()));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
                         mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient)))
@@ -297,7 +297,7 @@ public class StyxHttpClientTest {
     public void incrementsResponseStatusMetricsFor500() {
         StyxHostHttpClient hostClient = mockHostClient(just(response(INTERNAL_SERVER_ERROR).build()));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
                         mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient)))
@@ -315,7 +315,7 @@ public class StyxHttpClientTest {
     public void incrementsResponseStatusMetricsFor501() {
         StyxHostHttpClient hostClient = mockHostClient(just(response(NOT_IMPLEMENTED).build()));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
                         mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient)))
@@ -336,7 +336,7 @@ public class StyxHttpClientTest {
                         .addHeader(TRANSFER_ENCODING, CHUNKED)
                         .build()));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService)
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
                 .loadBalancer(
                         mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient)))
@@ -358,7 +358,7 @@ public class StyxHttpClientTest {
         PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
         StyxHostHttpClient hostClient = mockHostClient(responseSubject);
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.host().getPort()))
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService.id())
                 .loadBalancer(
                         mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)))
                 )
@@ -382,7 +382,7 @@ public class StyxHttpClientTest {
 
         LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.host().getPort()))
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService.id())
                 .loadBalancer(loadBalancer)
                 .metricsRegistry(metricRegistry)
                 .build();
@@ -408,7 +408,7 @@ public class StyxHttpClientTest {
 
         LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.host().getPort()))
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService.id())
                 .loadBalancer(loadBalancer)
                 .metricsRegistry(metricRegistry)
                 .originsRestrictionCookieName("restrictedOrigin")
@@ -434,7 +434,7 @@ public class StyxHttpClientTest {
         StyxHostHttpClient hostClient = mockHostClient(just(response(OK).build()));
         LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)));
 
-        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendWithOrigins(origin.host().getPort()))
+        StyxHttpClient styxHttpClient = new StyxHttpClient.Builder(backendService.id())
                 .originsRestrictionCookieName("restrictedOrigin")
                 .loadBalancer(loadBalancer)
                 .metricsRegistry(metricRegistry)

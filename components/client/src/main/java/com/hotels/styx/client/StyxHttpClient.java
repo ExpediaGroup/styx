@@ -29,8 +29,8 @@ import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.RewriteRule;
+import com.hotels.styx.api.extension.service.StickySessionConfig;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
 import com.hotels.styx.server.HttpInterceptorContext;
@@ -49,6 +49,7 @@ import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
+import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
 import static io.netty.handler.codec.http.HttpMethod.HEAD;
 import static java.util.Collections.emptyList;
@@ -70,14 +71,15 @@ public final class StyxHttpClient implements HttpClient {
     private final LoadBalancer loadBalancer;
     private final RetryPolicy retryPolicy;
     private final OriginStatsFactory originStatsFactory;
-    private final BackendService backendService;
     private final MetricRegistry metricsRegistry;
     private final boolean contentValidation;
     private final String originsRestrictionCookieName;
+    private final StickySessionConfig stickySessionConfig;
 
     private StyxHttpClient(Builder builder) {
-        this.backendService = requireNonNull(builder.backendService);
-        this.id = backendService.id();
+        this.id = requireNonNull(builder.backendServiceId);
+
+        this.stickySessionConfig = requireNonNull(builder.stickySessionConfig);
 
         this.originStatsFactory = requireNonNull(builder.originStatsFactory);
 
@@ -99,17 +101,13 @@ public final class StyxHttpClient implements HttpClient {
         return sendRequest(rewriteUrl(request), new ArrayList<>(), 0);
     }
 
-    public boolean isHttps() {
-        return backendService.tlsSettings().isPresent();
-    }
-
     /**
      * Create a new builder.
      *
      * @return a new builder
      */
-    public static Builder newHttpClientBuilder(BackendService backendService) {
-        return new Builder(backendService);
+    public static Builder newHttpClientBuilder(Id backendServiceId) {
+        return new Builder(backendServiceId);
     }
 
     private static boolean isError(HttpResponseStatus status) {
@@ -191,7 +189,6 @@ public final class StyxHttpClient implements HttpClient {
         } else {
             return Observable.error(cause);
         }
-
     }
 
     private static final class RetryPolicyContext implements RetryPolicy.Context {
@@ -307,7 +304,7 @@ public final class StyxHttpClient implements HttpClient {
 
     private HttpResponse addStickySessionIdentifier(HttpResponse httpResponse, Origin origin) {
         if (this.loadBalancer instanceof StickySessionLoadBalancingStrategy) {
-            int maxAge = backendService.stickySessionConfig().stickySessionTimeoutSeconds();
+            int maxAge = stickySessionConfig.stickySessionTimeoutSeconds();
             return httpResponse.newBuilder()
                     .addCookies(newStickySessionCookie(id, origin.id(), maxAge))
                     .build();
@@ -324,7 +321,7 @@ public final class StyxHttpClient implements HttpClient {
     public String toString() {
         return toStringHelper(this)
                 .add("id", id)
-                .add("stickySessionConfig", backendService.stickySessionConfig())
+                .add("stickySessionConfig", stickySessionConfig)
                 .add("retryPolicy", retryPolicy)
                 .add("rewriteRuleset", rewriteRuleset)
                 .add("loadBalancingStrategy", loadBalancer)
@@ -335,7 +332,8 @@ public final class StyxHttpClient implements HttpClient {
      * A builder for {@link com.hotels.styx.client.StyxHttpClient}.
      */
     public static class Builder {
-        private final BackendService backendService;
+
+        private final Id backendServiceId;
         private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
         private List<RewriteRule> rewriteRules = emptyList();
         private RetryPolicy retryPolicy = new RetryNTimes(3);
@@ -343,9 +341,15 @@ public final class StyxHttpClient implements HttpClient {
         private boolean contentValidation;
         private OriginStatsFactory originStatsFactory;
         private String originsRestrictionCookieName;
+        private StickySessionConfig stickySessionConfig = stickySessionDisabled();
 
-        public Builder(BackendService backendService) {
-            this.backendService = requireNonNull(backendService);
+        public Builder(Id backendServiceId) {
+            this.backendServiceId = requireNonNull(backendServiceId);
+        }
+
+        public Builder stickySessionConfig(StickySessionConfig stickySessionConfig) {
+            this.stickySessionConfig = requireNonNull(stickySessionConfig);
+            return this;
         }
 
         public Builder metricsRegistry(MetricRegistry metricsRegistry) {
@@ -390,5 +394,6 @@ public final class StyxHttpClient implements HttpClient {
             }
             return new StyxHttpClient(this);
         }
+
     }
 }

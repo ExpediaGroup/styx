@@ -71,8 +71,9 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
                 originRestrictionCookie
         );
 
-        return new StyxHttpClient.Builder(backendService)
+        return new StyxHttpClient.Builder(backendService.id())
                 .loadBalancer(loadBalancingStrategy)
+                .stickySessionConfig(backendService.stickySessionConfig())
                 .metricsRegistry(environment.metricRegistry())
                 .retryPolicy(retryPolicy)
                 .enableContentValidation()

@@ -126,7 +126,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree, healthyOriginTwo)
       .build()
 
-    val client: StyxHttpClient = newHttpClientBuilder(backendService)
+    val client: StyxHttpClient = newHttpClientBuilder(backendService.id)
       .retryPolicy(new RetryNTimes(3))
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
@@ -139,7 +139,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
     val backendService = new BackendService.Builder()
       .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree)
       .build()
-    val client: StyxHttpClient = newHttpClientBuilder(backendService)
+    val client: StyxHttpClient = newHttpClientBuilder(backendService.id)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .retryPolicy(new RetryNTimes(2))
       .build
@@ -155,7 +155,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .stickySessionConfig(StickySessionEnabled)
       .build()
 
-    val client: StyxHttpClient = newHttpClientBuilder(backendService)
+    val client: StyxHttpClient = newHttpClientBuilder(backendService.id)
       .retryPolicy(new RetryNTimes(3))
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build

@@ -18,6 +18,7 @@ package com.hotels.styx
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.Id.id
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.HttpResponseStatus._
@@ -67,7 +68,7 @@ class HttpResponseSpec extends FunSuite
       origins = Origins(originOne),
       responseTimeout = responseTimeout)
 
-    client = newHttpClientBuilder(backendService.asJava)
+    client = newHttpClientBuilder(id(backendService.appId))
       .loadBalancer(busyConnectionStrategy(activeOrigins(backendService.asJava)))
       .build
   }

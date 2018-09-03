@@ -74,7 +74,7 @@ class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers
       .responseTimeoutMillis(responseTimeout)
       .build()
 
-    client = newHttpClientBuilder(backendService)
+    client = newHttpClientBuilder(backendService.id())
       .loadBalancer(busyConnectionStrategy(activeOrigins(backendService)))
       .build
   }

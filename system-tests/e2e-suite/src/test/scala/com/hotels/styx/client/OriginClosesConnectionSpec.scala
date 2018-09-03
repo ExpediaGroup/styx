@@ -112,7 +112,7 @@ class OriginClosesConnectionSpec extends FunSuite
       origins = Origins(originOne),
       responseTimeout = timeout.milliseconds).asJava
     val styxClient = com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder(
-      backendService)
+      backendService.id)
         .loadBalancer(busyConnectionStrategy(activeOrigins(backendService)))
       .build
 
