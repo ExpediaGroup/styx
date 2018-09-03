@@ -15,27 +15,20 @@
  */
 package com.hotels.styx.server;
 
-import com.codahale.metrics.health.HealthCheckRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 
 public final class ServerEnvironment {
     private final CodaHaleMetricRegistry metricRegistry;
-    private final HealthCheckRegistry healthCheckRegistry;
 
     public ServerEnvironment() {
-        this(new CodaHaleMetricRegistry(), new HealthCheckRegistry());
+        this(new CodaHaleMetricRegistry());
     }
 
-    public ServerEnvironment(CodaHaleMetricRegistry metricRegistry, HealthCheckRegistry healthCheckRegistry) {
+    public ServerEnvironment(CodaHaleMetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry;
-        this.healthCheckRegistry = healthCheckRegistry;
     }
 
     public CodaHaleMetricRegistry metricRegistry() {
         return metricRegistry;
-    }
-
-    public HealthCheckRegistry healthCheckRegistry() {
-        return healthCheckRegistry;
     }
 }

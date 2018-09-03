@@ -50,7 +50,6 @@ public class NettyServerBuilderSpec {
 
         NettyServerBuilder builder = NettyServerBuilder.newBuilder()
                 .setMetricsRegistry(environment.metricRegistry())
-                .setHealthCheckRegistry(environment.healthCheckRegistry())
                 .setServerEventLoopFactory(serverEventLoopFactory(serverConfig));
 
         serverConfig.httpConnectorConfig().ifPresent(httpConnector ->

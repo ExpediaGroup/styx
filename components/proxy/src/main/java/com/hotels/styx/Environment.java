@@ -15,12 +15,11 @@
  */
 package com.hotels.styx;
 
-import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.eventbus.EventBus;
-import com.hotels.styx.proxy.HttpErrorStatusCauseLogger;
-import com.hotels.styx.proxy.HttpErrorStatusMetrics;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.configstore.ConfigStore;
+import com.hotels.styx.proxy.HttpErrorStatusCauseLogger;
+import com.hotels.styx.proxy.HttpErrorStatusMetrics;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.ServerEnvironment;
 
@@ -45,9 +44,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
 
         this.aggregatedConfiguration = firstNonNull(builder.aggregatedConfiguration, () -> new AggregatedConfiguration(new StyxConfig()));
         this.version = firstNonNull(builder.version, Version::newVersion);
-        this.serverEnvironment = new ServerEnvironment(
-                firstNonNull(builder.metricRegistry, CodaHaleMetricRegistry::new),
-                firstNonNull(builder.healthCheckRegistry, HealthCheckRegistry::new));
+        this.serverEnvironment = new ServerEnvironment(firstNonNull(builder.metricRegistry, CodaHaleMetricRegistry::new));
 
         this.httpErrorStatusListener = HttpErrorStatusListener.compose(new HttpErrorStatusCauseLogger(), new HttpErrorStatusMetrics(serverEnvironment.metricRegistry()));
     }
@@ -83,11 +80,6 @@ public final class Environment implements com.hotels.styx.api.Environment {
         return serverEnvironment.metricRegistry();
     }
 
-    @Override
-    public HealthCheckRegistry healthCheckRegistry() {
-        return serverEnvironment.healthCheckRegistry();
-    }
-
     public StyxConfig styxConfig() {
         return aggregatedConfiguration.styxConfig();
     }
@@ -103,7 +95,6 @@ public final class Environment implements com.hotels.styx.api.Environment {
     public static class Builder {
         private AggregatedConfiguration aggregatedConfiguration;
         private CodaHaleMetricRegistry metricRegistry;
-        private HealthCheckRegistry healthCheckRegistry;
         private Version version;
         private EventBus eventBus;
 
@@ -125,11 +116,6 @@ public final class Environment implements com.hotels.styx.api.Environment {
 
         public Builder metricsRegistry(CodaHaleMetricRegistry metricRegistry) {
             this.metricRegistry = metricRegistry;
-            return this;
-        }
-
-        public Builder healthChecksRegistry(HealthCheckRegistry healthCheckRegistry) {
-            this.healthCheckRegistry = healthCheckRegistry;
             return this;
         }
 

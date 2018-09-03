@@ -15,10 +15,9 @@
  */
 package com.hotels.styx.support.api;
 
-import com.codahale.metrics.health.HealthCheckRegistry;
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 
 import static com.google.common.base.Objects.firstNonNull;
@@ -29,16 +28,13 @@ import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATIO
  */
 public final class SimpleEnvironment implements Environment {
     private static final CodaHaleMetricRegistry DEFAULT_METRIC_REGISTRY = new CodaHaleMetricRegistry();
-    private static final HealthCheckRegistry DEFAULT_HEALTH_CHECK_REGISTRY = new HealthCheckRegistry();
 
     private final Configuration config;
     private final MetricRegistry metricRegistry;
-    private final HealthCheckRegistry healthCheckRegistry;
 
     private SimpleEnvironment(Builder builder) {
         this.config = firstNonNull(builder.config, EMPTY_CONFIGURATION);
         this.metricRegistry = firstNonNull(builder.metricRegistry, DEFAULT_METRIC_REGISTRY);
-        this.healthCheckRegistry = firstNonNull(builder.healthCheckRegistry, DEFAULT_HEALTH_CHECK_REGISTRY);
     }
 
     @Override
@@ -51,18 +47,12 @@ public final class SimpleEnvironment implements Environment {
         return metricRegistry;
     }
 
-    @Override
-    public HealthCheckRegistry healthCheckRegistry() {
-        return healthCheckRegistry;
-    }
-
     /**
      * Builder for {@link SimpleEnvironment}.
      */
     public static final class Builder {
         private Configuration config;
         private MetricRegistry metricRegistry;
-        private HealthCheckRegistry healthCheckRegistry;
 
         /**
          * Set configuration.
@@ -83,17 +73,6 @@ public final class SimpleEnvironment implements Environment {
          */
         public Builder metricRegistry(MetricRegistry metricRegistry) {
             this.metricRegistry = metricRegistry;
-            return this;
-        }
-
-        /**
-         * Set health check registry.
-         *
-         * @param healthCheckRegistry health check registry
-         * @return this builder
-         */
-        public Builder healthCheckRegistry(HealthCheckRegistry healthCheckRegistry) {
-            this.healthCheckRegistry = healthCheckRegistry;
             return this;
         }
 

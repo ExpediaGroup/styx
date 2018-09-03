@@ -15,10 +15,9 @@
  */
 package com.hotels.styx.proxy.plugin;
 
-import com.codahale.metrics.health.HealthCheckRegistry;
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.spi.config.SpiExtension;
 
@@ -44,11 +43,6 @@ class PluginEnvironment implements PluginFactory.Environment {
     @Override
     public MetricRegistry metricRegistry() {
         return pluginMetricsScope;
-    }
-
-    @Override
-    public HealthCheckRegistry healthCheckRegistry() {
-        return environment.healthCheckRegistry();
     }
 
     @Override

@@ -15,12 +15,10 @@
  */
 package com.hotels.styx.server.netty;
 
-import com.codahale.metrics.health.HealthCheck;
-import com.codahale.metrics.health.HealthCheckRegistry;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
@@ -37,7 +35,6 @@ import static com.google.common.collect.Lists.newCopyOnWriteArrayList;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
 import static java.util.Arrays.asList;
-import static java.util.Objects.requireNonNull;
 
 /**
  * A builder of {@link NettyServer} instances.
@@ -48,7 +45,6 @@ public final class NettyServerBuilder {
 
     private String host;
     private MetricRegistry metricRegistry;
-    private HealthCheckRegistry healthCheckRegistry;
     private String name = "styx";
     private Optional<ServerConnector> httpConnector = Optional.empty();
     private Optional<ServerConnector> httpsConnector = Optional.empty();
@@ -80,20 +76,6 @@ public final class NettyServerBuilder {
 
     MetricRegistry metricsRegistry() {
         return this.metricRegistry;
-    }
-
-    public NettyServerBuilder setHealthCheckRegistry(HealthCheckRegistry healthCheckRegistry) {
-        this.healthCheckRegistry = healthCheckRegistry;
-        return this;
-    }
-
-    HealthCheckRegistry healthCheckRegistry() {
-        return this.healthCheckRegistry;
-    }
-
-    public NettyServerBuilder register(String name, HealthCheck healthCheck) {
-        this.healthCheckRegistry.register(name, requireNonNull(healthCheck));
-        return this;
     }
 
     public NettyServerBuilder setServerEventLoopFactory(ServerEventLoopFactory serverEventLoopFactory) {

@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.startup;
 
-import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -24,8 +23,8 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.Version;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 
 import java.util.HashMap;
@@ -78,7 +77,6 @@ public class StyxServerComponents {
         return new Environment.Builder()
                 .configuration(styxConfig)
                 .metricsRegistry(new CodaHaleMetricRegistry())
-                .healthChecksRegistry(new HealthCheckRegistry())
                 .buildInfo(readBuildInfo())
                 .eventBus(new AsyncEventBus("styx", newSingleThreadExecutor()))
                 .build();
