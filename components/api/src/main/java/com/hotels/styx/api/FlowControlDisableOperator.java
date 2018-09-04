@@ -24,7 +24,7 @@ import rx.Subscriber;
  *
  * @param <E> event type
  */
-public final class FlowControlDisableOperator<E> implements Observable.Operator<E, E> {
+final class FlowControlDisableOperator<E> implements Observable.Operator<E, E> {
     public static <T> FlowControlDisableOperator<T> disableFlowControl() {
         return new FlowControlDisableOperator<T>();
     }
