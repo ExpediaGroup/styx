@@ -23,7 +23,6 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.annotation.JsonValue;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.ScopedMetricRegistry;
 
@@ -55,7 +54,6 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
         this(new com.codahale.metrics.MetricRegistry());
     }
 
-    @JsonValue
     public com.codahale.metrics.MetricRegistry getMetricRegistry() {
         return metricRegistry;
     }

@@ -20,12 +20,15 @@ import com.codahale.metrics.json.MetricsModule;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.infrastructure.configuration.json.mixins.CodaHaleMetricRegistryMixin;
 
 import java.time.Duration;
 import java.util.Map;
@@ -53,7 +56,8 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
     private static final String PRETTY_PRINT_PARAM = "pretty";
 
     private final ObjectMapper metricSerialiser = new ObjectMapper()
-            .registerModule(new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
+            .registerModule(new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES))
+            .addMixIn(CodaHaleMetricRegistry.class, CodaHaleMetricRegistryMixin.class);
 
     private final MetricRegistry metricRegistry;
 
@@ -64,11 +68,17 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
      * @param cacheExpiration duration for which generated page content should be cached
      */
     public MetricsHandler(MetricRegistry metricRegistry, Optional<Duration> cacheExpiration) {
-        super(requireNonNull(metricRegistry), cacheExpiration, new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
+        super(requireNonNull(metricRegistry), cacheExpiration,
+            new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES),
+            new FullMetricsModule());
 
         this.metricRegistry = metricRegistry;
     }
-
+    private static class FullMetricsModule extends SimpleModule{
+        FullMetricsModule(){
+            setMixInAnnotation(CodaHaleMetricRegistry.class, CodaHaleMetricRegistryMixin.class);
+        }
+    }
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         MetricRequest metricRequest = new MetricRequest(request);
