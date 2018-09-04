@@ -17,7 +17,7 @@ package com.hotels.styx.api.extension.service.spi;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapDifference;
-import com.hotels.styx.api.Announcer;
+import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
 import org.slf4j.Logger;

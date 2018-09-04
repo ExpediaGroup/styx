@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.hotels.styx.api.Announcer;
+import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.ActiveOrigins;

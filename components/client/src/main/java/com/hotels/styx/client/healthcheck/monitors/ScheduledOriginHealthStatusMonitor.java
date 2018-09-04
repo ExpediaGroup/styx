@@ -16,7 +16,7 @@
 package com.hotels.styx.client.healthcheck.monitors;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.Announcer;
+import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
