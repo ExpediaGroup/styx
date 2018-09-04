@@ -24,7 +24,6 @@ import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistryListener;
 import com.codahale.metrics.Timer;
 
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.SortedSet;
 

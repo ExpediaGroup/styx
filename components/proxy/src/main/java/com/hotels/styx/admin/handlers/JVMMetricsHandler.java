@@ -28,7 +28,6 @@ import com.google.common.base.Predicate;
 import com.hotels.styx.api.MetricRegistry;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.SortedSet;

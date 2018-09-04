@@ -26,7 +26,6 @@ import com.codahale.metrics.Timer;
 import com.hotels.styx.api.MetricRegistry;
 
 import java.util.List;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
