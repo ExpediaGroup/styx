@@ -74,11 +74,13 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
 
         this.metricRegistry = metricRegistry;
     }
-    private static class FullMetricsModule extends SimpleModule{
-        FullMetricsModule(){
+
+    private static class FullMetricsModule extends SimpleModule {
+        FullMetricsModule() {
             setMixInAnnotation(CodaHaleMetricRegistry.class, CodaHaleMetricRegistryMixin.class);
         }
     }
+
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         MetricRequest metricRequest = new MetricRequest(request);
