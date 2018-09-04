@@ -98,7 +98,7 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
   }
 
   private def connectorOnFreePort: ServerConnector = {
-    new WebServerConnectorFactory().create(new HttpConnectorConfig(freePort))
+    new WebServerConnectorFactory().create(new HttpConnectorConfig(0))
   }
 
   def httpPort() = Option(server.httpAddress()).map(_.getPort).getOrElse(0)

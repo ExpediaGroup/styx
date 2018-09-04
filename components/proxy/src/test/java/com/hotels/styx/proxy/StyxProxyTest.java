@@ -37,10 +37,9 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 
-import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.common.FreePorts.freePort;
 import static com.hotels.styx.common.StyxFutures.await;
+import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -63,7 +62,7 @@ public class StyxProxyTest extends SSLSetup {
     @Test
     public void startsAndStopsAServer() {
         HttpServer server = new NettyServerBuilder()
-                .setHttpConnector(connector(freePort()))
+                .setHttpConnector(connector(0))
                 .build();
 
         server.startAsync().awaitRunning();
@@ -77,15 +76,14 @@ public class StyxProxyTest extends SSLSetup {
     public void startsServerWithHttpConnector() {
         HttpInterceptor echoInterceptor = (request, chain) -> textResponse("Response from http connector");
 
-        int port = freePort();
         HttpServer server = NettyServerBuilder.newBuilder()
-                .setHttpConnector(connector(port))
+                .setHttpConnector(connector(0))
                 .httpHandler(new HttpInterceptorPipeline(ImmutableList.of(echoInterceptor), new StandardHttpRouter()))
                 .build();
         server.startAsync().awaitRunning();
         assertThat("Server should be running", server.isRunning());
 
-        FullHttpResponse secureResponse = get("http://localhost:" + port);
+        FullHttpResponse secureResponse = get("http://localhost:" + server.httpAddress().getPort());
         assertThat(secureResponse.bodyAs(UTF_8), containsString("Response from http connector"));
 
         server.stopAsync().awaitTerminated();
@@ -107,39 +105,10 @@ public class StyxProxyTest extends SSLSetup {
         return new WebServerConnectorFactory().create(config);
     }
 
-//    @Test(enabled = false)
-//    public void proxyRequestsWithTheConfiguredClient() throws IOException {
-//        HttpRouter proxyRouter = new DynamicHttpProxyRouter(new ServiceClientFactory(new Environment()))
-//                .addRoute("/", new HttpHandler() {
-//                    @Override
-//                    public Observable<HttpResponse> handle(HttpRequest request) {
-//                        return null;
-//                    }
-//                });
-//
-//        HttpServer server = NettyServerBuilder.newBuilder()
-//                .setHttpConnectorConfig(new HttpConnectorConfig(freePort()))
-//                .setHttpsConnectorConfig(new HttpsConnectorConfig(freePort(), tlsConfig))
-//                .httpHandler(proxyRouter)
-//                .build();
-//
-//        server.startAsync().awaitRunning();
-//
-//        HttpResponse clearResponse = execute(new HttpRequest.Builder(GET, "/search?q=fanta")
-//                .addHeader(HOST, "www.google.com:80")
-//                .build());
-//
-//        assertThat(content(clearResponse), containsString("Response from http Connector"));
-//
-//        server.stopAsync().awaitTerminated();
-//
-//        assertThat("Server should not be running", !server.isRunning());
-//    }
-
     @Test(enabled = false)
     public void startsServerWithBothHttpAndHttpsConnectors() throws IOException {
         HttpServer server = NettyServerBuilder.newBuilder()
-                .setHttpConnector(connector(freePort()))
+                .setHttpConnector(connector(0))
                 .build();
 
         server.startAsync().awaitRunning();

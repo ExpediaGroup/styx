@@ -29,7 +29,6 @@ import java.util.Optional;
 
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
-import static com.hotels.styx.common.FreePorts.freePort;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
@@ -38,9 +37,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class BusyConnectionsStrategyTest {
-    private static final Origin ORIGIN_ONE = newOriginBuilder("localhost", freePort()).id("one").build();
-    private static final Origin ORIGIN_TWO = newOriginBuilder("localhost", freePort()).id("two").build();
-    private static final Origin ORIGIN_THREE = newOriginBuilder("localhost", freePort()).id("three").build();
+    private static final Origin ORIGIN_ONE = newOriginBuilder("localhost", 8001).id("one").build();
+    private static final Origin ORIGIN_TWO = newOriginBuilder("localhost", 8002).id("two").build();
+    private static final Origin ORIGIN_THREE = newOriginBuilder("localhost", 8003).id("three").build();
 
     private final ActiveOrigins activeOrigins = mock(ActiveOrigins.class);
     private final BusyConnectionsStrategy strategy = new BusyConnectionsStrategy(activeOrigins);

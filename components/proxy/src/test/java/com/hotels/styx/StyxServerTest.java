@@ -48,7 +48,6 @@ import static ch.qos.logback.classic.Level.ERROR;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.util.concurrent.Service.State.FAILED;
 import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATION;
-import static com.hotels.styx.common.FreePorts.freePort;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
@@ -220,11 +219,11 @@ public class StyxServerTest {
 
     private static StyxConfig styxConfig(Configuration baseConfiguration) {
         ProxyServerConfig proxyConfig = new ProxyServerConfig.Builder()
-                .setHttpConnector(new HttpConnectorConfig(freePort()))
+                .setHttpConnector(new HttpConnectorConfig(0))
                 .build();
 
         AdminServerConfig adminConfig = new AdminServerConfig.Builder()
-                .setHttpConnector(new HttpConnectorConfig(freePort()))
+                .setHttpConnector(new HttpConnectorConfig(0))
                 .build();
 
         Configuration config = new MapBackedConfiguration(baseConfiguration)

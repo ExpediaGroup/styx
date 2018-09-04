@@ -20,7 +20,6 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import com.hotels.styx.api.extension.Origin
 import com.hotels.styx.api.extension.Origin._
-import com.hotels.styx.common.FreePorts._
 import com.hotels.styx.support.server.FakeHttpServer
 
 trait OriginSupport {
@@ -33,7 +32,7 @@ trait OriginSupport {
   }
 
   def originAndWireMockServer(applicationId: String, originId: String): (Origin, WireMockServer) = {
-    val server = new WireMockServer(wireMockConfig.port(freePort()))
+    val server = new WireMockServer(wireMockConfig.dynamicPort())
     server.start()
 
     val origin = newOriginBuilder("localhost", server.port()).applicationId(applicationId).id(originId).build()

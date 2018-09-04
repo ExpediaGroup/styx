@@ -36,7 +36,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.hotels.styx.api.FullHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.common.FreePorts.freePort;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -67,10 +66,7 @@ public class MockOriginServerTest {
 
     @Test
     public void configuresEndpoints() throws Exception {
-        int adminPort = freePort();
-        int serverPort = freePort();
-
-        server = MockOriginServer.create("", "", adminPort, new HttpConnectorConfig(serverPort))
+        server = MockOriginServer.create("", "", 0, new HttpConnectorConfig(0))
                 .start()
                 .stub(WireMock.get(urlMatching("/.*")), aResponse()
                         .withStatus(200)
@@ -92,12 +88,9 @@ public class MockOriginServerTest {
 
     @Test
     public void configuresTlsEndpoints() throws Exception {
-        int adminPort = freePort();
-        int serverPort = freePort();
-
-        server = MockOriginServer.create("", "", adminPort,
+        server = MockOriginServer.create("", "", 0,
                 new HttpsConnectorConfig.Builder()
-                        .port(serverPort)
+                        .port(0)
                         .build())
                 .start()
                 .stub(WireMock.get(urlMatching("/.*")), aResponse()

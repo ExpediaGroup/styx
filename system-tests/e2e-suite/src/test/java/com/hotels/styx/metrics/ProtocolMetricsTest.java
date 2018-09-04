@@ -37,9 +37,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.hotels.styx.api.FullHttpRequest.get;
-import static com.hotels.styx.common.FreePorts.freePort;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
@@ -51,29 +50,16 @@ public class ProtocolMetricsTest {
 
     private StyxServer styxServer;
 
-    private WireMockServer nonSslOrigin;
-    private WireMockServer sslOrigin;
+    private WireMockServer origin;
 
     @BeforeMethod
     public void startOrigins() {
-        nonSslOrigin = new WireMockServer(wireMockConfig()
-                .port(freePort()));
+        origin = new WireMockServer(wireMockConfig().dynamicPort());
+        origin.start();
 
-        sslOrigin = new WireMockServer(wireMockConfig()
-                .httpsPort(freePort()));
-
-        nonSslOrigin.start();
-        sslOrigin.start();
-
-        configureFor(nonSslOrigin.port());
+        configureFor(origin.port());
         stubFor(WireMock.get(urlPathEqualTo("/")).willReturn(aResponse()
                 .withHeader("origin", "first")
-                .withBody("foo")
-                .withStatus(OK.code())));
-
-        configureFor(sslOrigin.port());
-        stubFor(WireMock.get(urlPathEqualTo("/")).willReturn(aResponse()
-                .withHeader("origin", "second")
                 .withBody("foo")
                 .withStatus(OK.code())));
     }
@@ -85,14 +71,13 @@ public class ProtocolMetricsTest {
 
     @AfterMethod
     public void stopOrigins() {
-        nonSslOrigin.stop();
-        sslOrigin.stop();
+        origin.stop();
     }
 
     @Test
     public void recordsServerSideHttp() {
         styxServer = new StyxServer.Builder()
-                .addRoute("/", nonSslOrigin.port())
+                .addRoute("/", origin.port())
                 .start();
 
         FullHttpResponse response = doGet("/");
@@ -109,7 +94,7 @@ public class ProtocolMetricsTest {
     @Test
     public void recordsServerSideHttps() {
         styxServer = new StyxServer.Builder()
-                .addRoute("/", nonSslOrigin.port())
+                .addRoute("/", origin.port())
                 .start();
 
         FullHttpResponse response = doHttpsGet("/");
