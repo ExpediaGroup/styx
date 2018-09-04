@@ -30,6 +30,7 @@ import com.hotels.styx.api.metrics.ScopedMetricRegistry;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.SortedSet;
+import java.util.TreeMap;
 
 /**
  * A {@link MetricRegistry} that acts as an adapter for Codahale's {@link com.codahale.metrics.MetricRegistry}.
@@ -231,7 +232,7 @@ public class CodaHaleMetricRegistry implements MetricRegistry {
     }
 
     @Override
-    public Map<String, Metric> getMetrics() {
-        return metricRegistry.getMetrics();
+    public SortedMap<String, Metric> getMetrics() {
+        return new TreeMap<>(metricRegistry.getMetrics());
     }
 }

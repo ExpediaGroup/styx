@@ -161,7 +161,7 @@ public class JVMMetricsHandler extends JsonHandler<MetricRegistry> {
         }
 
         @Override
-        public Map<String, Metric> getMetrics() {
+        public SortedMap<String, Metric> getMetrics() {
             return filterKeys(original.getMetrics(), STARTS_WITH_JVM);
         }
     }

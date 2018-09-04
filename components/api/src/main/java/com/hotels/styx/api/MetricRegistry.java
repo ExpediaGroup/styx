@@ -200,6 +200,6 @@ public interface MetricRegistry {
      *
      * @return the metrics
      */
-    Map<String, Metric> getMetrics();
+    SortedMap<String, Metric> getMetrics();
 
 }

@@ -186,7 +186,7 @@ public class ScopedMetricRegistry implements MetricRegistry {
     }
 
     @Override
-    public Map<String, Metric> getMetrics() {
+    public SortedMap<String, Metric> getMetrics() {
         return this.parent.getMetrics();
     }
 }
