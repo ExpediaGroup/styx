@@ -53,7 +53,38 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 /**
- * HTTP response with a fully aggregated/decoded body.
+ * A HTTP response object with a byte stream body.
+ * <p>
+ * A {@code HttpResponse} is used in {@link HttpInterceptor} where each content
+ * chunk must be processed as they arrive. It is also useful for dealing with
+ * very large content sizes, and in situations where content size is not known
+ * upfront.
+ * <p>
+ * A {@code HttpResponse} object is immutable with respect to the response
+ * attributes and HTTP headers. Once an instance is created, they cannot change.
+ *
+ * A {@code HttpResponse} body is a byte buffer stream that can be consumed
+ * as sequence of asynchronous events. Once consumed, stream is exhausted and
+ * can not be reused. Conceptually each {@code HttpResponse} object has an
+ * associated producer object that publishes data to the stream. For example,
+ * a Styx Server implements a content producer for {@link HttpInterceptor}
+ * extensions. The producer receives data chunks from a network socket and
+ * publishes them to an appropriate content stream.
+ *
+ * HTTP responses are created via {@code Builder} object, which can be created
+ * with static helper methods:
+ *
+ * <ul>
+ *     <li>{@code response()}</li>
+ *     <li>{@code response(HttpResponseStatus)}</li>
+ *     <li>{@code response(HttpResponseStatus, StyxObservable<ByteBuf>)}</li>
+ * </ul>
+ *
+ * A builder can also be created with one of the {@code Builder} constructors.
+ *
+ * A special method {@code newBuilder} creates a prepopulated {@code Builder}
+ * from the current response object. It is useful for transforming a response
+ * to another one my modifying one or more of its attributes.
  */
 public class HttpResponse implements StreamingHttpMessage {
     private final HttpVersion version;
