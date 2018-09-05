@@ -16,19 +16,28 @@
 
 
 /**
- * A programming interface for Styx extensions. This includes a Styx
+ * A programming interface for implementing Styx extensions. This includes
  * {@code HttpInterceptor} interface for intercepting HTTP traffic, and classes
  * to represent HTTP Request and Response messages.
  * <p></p>
  *
- * Styx exposes intercepted traffic to custom extensions via {@code HttpInterceptor}
- * class.
+ * Styx exposes intercepted traffic to custom extensions by {@code HttpInterceptor}
+ * interface. A Styx plugin extends this interface to provide additional features
+ * for shaping or modifying proxied HTTP messages, including requests and responses.
  * <p></p>
- * The intercepted live traffic is represented as {@code HttpRequest} and
- * {@code HttpResponse} classes.
+ * Styx represents proxied life traffic as instances of {@code HttpRequest} and
+ * {@code HttpResponse} classes. They offer an interface for processing
+ * a HTTP message content as a stream of network events. These classes are used
+ * (1) from HttpInterceptors to process live traffic or (2) to deal with arbitrarily
+ * large HTTP content.
  * <p></p>
- * The API also has aggregated {@code FullHttpRequest} and {@code FullHttpResponse}
- * classes. They are useful for most situations apart from intercepting live traffic.
+ * {@code FullHttpRequest} and {@code FullHttpResponse} classes provide an immutable
+ * aggregate view of a HTTP messages with full headers and content.
+ * They are useful for dealing with HTTP messages with limited content sizes,
+ * such as most RESTful API endpoints, or when "real-time" content processing
+ * is not relevant.
+ *
+ * The API provides methods to convert between the streaming and full representations.
  *
  */
 package com.hotels.styx.api;
