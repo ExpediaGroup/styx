@@ -16,7 +16,12 @@
 package com.hotels.styx.api;
 
 /**
- * An exception that indicates that a content-aggregation operation exceeded the maximum permitted amount of content.
+ * Thrown when HTTP content aggregation fails because received more data than excepted.
+ * <p>
+ * A streaming HTTP message can  be aggregated and converted (aggregated) to a
+ * full message. Normally the aggregator methods ({@code HttpRequest.toFullRequest}, {@code HttpResponse.toFullResponse})
+ * receive data from the network. The {@code ContentOverflowException}
+ * is thrown when more data is received than the aggregator expected.
  */
 public class ContentOverflowException extends RuntimeException {
     public ContentOverflowException(String message) {
