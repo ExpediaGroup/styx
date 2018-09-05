@@ -55,7 +55,34 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 
 /**
- * HTTP request with a fully aggregated/decoded body.
+ * An immutable HTTP request object containing a finite size content body in full.
+ * <p>
+ * A {@code FullHttpRequest} is useful for HTTP request messages with
+ * finite body content such as PUT or POST for creating or modifying a RESTful
+ * object.
+ * <p>
+ * FullHttpRequest is immutable. Once created, it is impossible to modify any
+ * request attributes, including body content. However the request can
+ * be transformed to another via {@code FullHttpRequest.Builder}.
+ * <p>
+ * A FullHttpRequest is created via {@code FullHttpRequest.Builder}. A new builder
+ * can be obtained by a call to following static methods:
+ *
+ * <ul>
+ *     <li>{@code get}</li>
+ *     <li>{@code head}</li>
+ *     <li>{@code post}</li>
+ *     <li>{@code put}</li>
+ *     <li>{@code delete}</li>
+ *     <li>{@code patch}</li>
+ * </ul>
+ *
+ * A builder can also be created with one of the {@code Builder} constructors.
+ *
+ * A special method {@code newBuilder} creates a prepopulated {@code Builder}
+ * from the current request object. It is useful for transforming a request
+ * to another one my modifying one or more of its attributes.
+ *
  */
 public class FullHttpRequest implements FullHttpMessage {
     private final Object id;

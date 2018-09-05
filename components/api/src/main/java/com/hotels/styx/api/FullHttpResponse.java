@@ -43,7 +43,29 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 /**
- * HTTP response with a fully aggregated/decoded body.
+ * An immutable HTTP response object containing a finite size content body in full.
+ * <p>
+ * A {@code FullHttpResponse} is useful for HTTP response messages with
+ * finite body content such as returning a REST object.
+ * <p>
+ * FullHttpResponse is immutable. Once created, it is impossible to modify any
+ * response attributes, including body content. However a response can
+ * be transformed to another via {@code FullHttpResponse.Builder}.
+ * <p>
+ * A FullHttpResponse is created via {@code FullHttpResponse.Builder}. A new builder
+ * can be obtained by a call to following static methods:
+ *
+ * <ul>
+ *     <li>{@code response()}</li>
+ *     <li>{@code response(HttpResponseStatus)}</li>
+ * </ul>
+ *
+ * A builder can also be created with one of the {@code Builder} constructors.
+ *
+ * A special method {@code newBuilder} creates a prepopulated {@code Builder}
+ * from the current response object. It is useful for transforming a response
+ * to another one my modifying one or more of its attributes.
+ *
  */
 public class FullHttpResponse implements FullHttpMessage {
     private final HttpVersion version;
