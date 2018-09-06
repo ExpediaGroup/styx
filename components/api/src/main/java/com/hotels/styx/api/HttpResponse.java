@@ -36,12 +36,12 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
-import static com.hotels.styx.api.ResponseCookie.decode;
-import static com.hotels.styx.api.ResponseCookie.encode;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.HttpVersion.httpVersion;
+import static com.hotels.styx.api.ResponseCookie.decode;
+import static com.hotels.styx.api.ResponseCookie.encode;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.compositeBuffer;
 import static io.netty.buffer.Unpooled.copiedBuffer;
@@ -129,43 +129,115 @@ public class HttpResponse implements StreamingHttpMessage {
         return new Builder(status).body(body);
     }
 
+    /**
+     * Returns a HTTP header value.
+     * <p>
+     * When the header has been set multiple times, this still returns
+     * just one value.
+     *
+     * @param name header name
+     * @return An optional of value, or empty if not present.
+     */
     @Override
     public Optional<String> header(CharSequence name) {
         return headers.get(name);
     }
 
-    @Override
-    public List<String> headers(CharSequence name) {
-        return headers.getAll(name);
-    }
-
+    /**
+     * Returns all HTTP headers as {@link HttpHeaders} instance.
+     *
+     * @return {@link HttpHeaders} object.
+     */
     @Override
     public HttpHeaders headers() {
         return headers;
     }
 
+    /**
+     * Returns all values for a given HTTP header name.
+     *
+     * Returns an empty list if header is not present.
+     *
+     * @param name header name
+     * @return A list of all header names.
+     */
+    @Override
+    public List<String> headers(CharSequence name) {
+        return headers.getAll(name);
+    }
+
+    /**
+     * Returns the body as a byte stream.
+     * <p>
+     * The byte stream returned as a {@link StyxObservable}.
+     *
+     * @return
+     */
     @Override
     public StyxObservable<ByteBuf> body() {
         return body;
     }
 
+    /**
+     * Returns the HTTP protocol version.
+     *
+     * @return A {@link HttpVersion}.
+     */
     @Override
     public HttpVersion version() {
         return version;
     }
 
+    /**
+     * Return a new {@link HttpResponse.Builder} that will inherit properties from this response.
+     * <p>
+     * This allows a new response to be made that is identical to this one
+     * except for the properties overridden by the builder methods.
+     *
+     * @return new builder based on this response
+     */
     public Builder newBuilder() {
         return new Builder(this);
     }
 
+    /**
+     * Returns the HTTP status.
+     *
+     * @return
+     */
     public HttpResponseStatus status() {
         return status;
     }
 
+    /**
+     * Returns true if the response is a HTTP redirect.
+     *
+     * @return
+     */
     public boolean isRedirect() {
         return status.code() >= 300 && status.code() < 400;
     }
 
+    /**
+     * Aggregates content stream and converts this response to a {@link FullHttpResponse}.
+     * <p>
+     * Returns a {@link StyxObservable<FullHttpResponse>} that eventually produces a
+     * {@link FullHttpResponse}. The resulting full response object has the same
+     * response line, headers, and content as this response.
+     *
+     * The content stream is aggregated asynchronously. The stream may be connected
+     * to a network socket or some other content producer. Once aggregated, a
+     * FullHttpResponse object is emitted on the returned {@link StyxObservable}.
+     *
+     * A sole {@code maxContentBytes} argument is a backstop defence against excessively
+     * long content streams. The {@code maxContentBytes} should be set to a sensible
+     * value according to your application requirements and heap size. When the content
+     * size stream exceeds the {@code maxContentBytes}, a @{link ContentOverflowException}
+     * is emitted on the returned observable.
+     *
+     * @param maxContentBytes Maximum allowed content size.
+     * @return a {@link StyxObservable}.
+     */
     public StyxObservable<FullHttpResponse> toFullResponse(int maxContentBytes) {
         CompositeByteBuf byteBufs = compositeBuffer();
 
@@ -202,7 +274,7 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     /**
-     * Decodes the "Set-Cookie" headers in this response and returns the cookies.
+     * Returns "Set-Cookie" headers decoded as {@link ResponseCookie} set.
      *
      * @return cookies
      */
@@ -211,7 +283,7 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     /**
-     * Decodes the "Set-Cookie" headers in this response and returns the specified cookie.
+     * Returns a specified cookie decoded as {@link ResponseCookie}.
      *
      * @param name cookie name
      * @return cookie
@@ -251,7 +323,7 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     /**
-     * Builder.
+     * A HTTP response builder.
      */
     public static final class Builder {
         private HttpResponseStatus status = OK;
@@ -260,16 +332,26 @@ public class HttpResponse implements StreamingHttpMessage {
         private boolean validate = true;
         private StyxObservable<ByteBuf> body;
 
+        /**
+         * Creates a new {@link Builder} object with default attributes.
+         */
         public Builder() {
             this.headers = new HttpHeaders.Builder();
             this.body = new StyxCoreObservable<>(Observable.empty());
         }
 
+        /**
+         * Creates a new {@link Builder} object with specified response status.
+         */
         public Builder(HttpResponseStatus status) {
             this();
             this.status = status;
         }
 
+        /**
+         * Creates a new {@link Builder} object from an existing {@link HttpResponse} object.
+         * Similar to {@link this.newBuilder} method.
+         */
         public Builder(HttpResponse response) {
             this.status = response.status();
             this.version = response.version();
@@ -277,6 +359,9 @@ public class HttpResponse implements StreamingHttpMessage {
             this.body = response.body();
         }
 
+        /**
+         * Creates a new {@link Builder} object from a response code and a content stream.
+         */
         public Builder(FullHttpResponse response, StyxObservable<ByteBuf> decoded) {
             this.status = statusWithCode(response.status().code());
             this.version = httpVersion(response.version().toString());
@@ -483,7 +568,15 @@ public class HttpResponse implements StreamingHttpMessage {
         }
 
         /**
-         * Removes body of the request.
+         * (UNSTABLE) Removes body stream from this request.
+         * <p>
+         * This method is unstable until Styx 1.0 API is frozen.
+         * <p>
+         * Inappropriate use can lead to stability issues. These issues
+         * will be addressed before Styx 1.0 API is frozen. Therefore
+         * it is best to avoid until then. Consult
+         * https://github.com/HotelsDotCom/styx/issues/201 for more
+         * details.
          *
          * @return {@code this}
          */
@@ -510,7 +603,15 @@ public class HttpResponse implements StreamingHttpMessage {
         }
 
         /**
-         * Enable validation of uri and some headers.
+         * Disables automatic validation of some HTTP headers.
+         * <p>
+         * Normally the {@link Builder} validates the message when {@code build}
+         * method is invoked. Specifically that:
+         *
+         * <li>
+         *     <ul> There is maximum of only one {@code Content-Length} header
+         *     <ul> The {@code Content-Length} header is zero or positive integer
+         * </li>
          *
          * @return {@code this}
          */
@@ -521,12 +622,19 @@ public class HttpResponse implements StreamingHttpMessage {
 
         /**
          * Builds a new full response based on the settings configured in this builder.
-         * If {@code validate} is set to true:
-         * <ul>
-         * <li>an exception will be thrown if the content length is not an integer, or more than one content length exists</li>
-         * </ul>
+         * <p>
+         * Validates and builds a {link HttpResponse} object. Object validation can be
+         * disabled with {@link this.disableValidation} method.
          *
-         * @return a new full response
+         * When validation is enabled (by default), ensures that:
+         *
+         * <li>
+         *     <ul> There is maximum of only one {@code Content-Length} header
+         *     <ul> The {@code Content-Length} header is zero or positive integer
+         * </li>
+         *
+         * @throws IllegalArgumentException when validation fails.
+         * @return A new full response.
          */
         public HttpResponse build() {
             if (validate) {

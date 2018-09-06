@@ -37,8 +37,6 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
-import static com.hotels.styx.api.RequestCookie.decode;
-import static com.hotels.styx.api.RequestCookie.encode;
 import static com.hotels.styx.api.HttpMethod.DELETE;
 import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.api.HttpMethod.HEAD;
@@ -49,6 +47,8 @@ import static com.hotels.styx.api.HttpMethod.PUT;
 import static com.hotels.styx.api.HttpMethod.httpMethod;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.HttpVersion.httpVersion;
+import static com.hotels.styx.api.RequestCookie.decode;
+import static com.hotels.styx.api.RequestCookie.encode;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.compositeBuffer;
 import static io.netty.buffer.Unpooled.copiedBuffer;
@@ -217,21 +217,45 @@ public class HttpRequest implements StreamingHttpMessage {
         return new Builder(PATCH, uri).body(body);
     }
 
+    /**
+     * Returns the HTTP protocol version.
+     * @return
+     */
     @Override
     public HttpVersion version() {
         return this.version;
     }
 
+    /**
+     * Returns all HTTP headers as {@link HttpHeaders} instance.
+     *
+     * @return {@link HttpHeaders} object.
+     */
     @Override
     public HttpHeaders headers() {
         return headers;
     }
 
+    /**
+     * Returns all values for a given HTTP header name.
+     *
+     * Returns an empty list if header is not present.
+     *
+     * @param name header name
+     * @return A list of all header names.
+     */
     @Override
     public List<String> headers(CharSequence name) {
         return headers.getAll(name);
     }
 
+    /**
+     * Returns the body as a byte stream.
+     * <p>
+     * The byte stream returned as a {@link StyxObservable}.
+     *
+     * @return
+     */
     @Override
     public StyxObservable<ByteBuf> body() {
         return body;
@@ -286,16 +310,22 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * Checks if the request has been transferred over a secure connection. If the protocol is HTTPS and the
-     * content is delivered over SSL then the request is considered to be secure.
+     * Checks if the request has been transferred over a secure connection.
+     * If the protocol is HTTPS then the request is considered to be secure.
      *
-     * @return true if the request is transferred securely
+     * @return true if protocol is set to "https".
      */
     public boolean isSecure() {
         return secure;
     }
 
+    /**
+     * Will be removed in due course.
+     * @return
+     */
+
     // Relic of old API, kept only for conversions
+    @Deprecated
     public InetSocketAddress clientAddress() {
         return this.clientAddress;
     }
@@ -340,8 +370,9 @@ public class HttpRequest implements StreamingHttpMessage {
 
     /**
      * Return a new {@link Builder} that will inherit properties from this request.
-     * This allows a new request to be made that will be identical to this one except for the properties
-     * overridden by the builder methods.
+     * <p>
+     * This allows a new request to be made that is identical to this one
+     * except for the properties overridden by the builder methods.
      *
      * @return new builder based on this request
      */
@@ -349,6 +380,26 @@ public class HttpRequest implements StreamingHttpMessage {
         return new Builder(this);
     }
 
+    /**
+     * Aggregates content stream and converts this request to a {@link FullHttpRequest}.
+     * <p>
+     * Returns a {@link StyxObservable<FullHttpRequest>} that eventually produces a
+     * {@link FullHttpRequest}. The resulting full request object has the same
+     * request line, headers, and content as this request.
+     *
+     * The content stream is aggregated asynchronously. The stream may be connected
+     * to a network socket or some other content producer. Once aggregated, a
+     * FullHttpRequest object is emitted on the returned {@link StyxObservable}.
+     *
+     * A sole {@code maxContentBytes} argument is a backstop defence against excessively
+     * long content streams. The {@code maxContentBytes} should be set to a sensible
+     * value according to your application requirements and heap size. When the content
+     * size stream exceeds the {@code maxContentBytes}, a @{link ContentOverflowException}
+     * is emitted on the returned observable.
+     *
+     * @param maxContentBytes Maximum allowed content size.
+     * @return a {@link StyxObservable}.
+     */
     public StyxObservable<FullHttpRequest> toFullRequest(int maxContentBytes) {
         CompositeByteBuf byteBufs = compositeBuffer();
 
@@ -418,7 +469,7 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * Builder.
+     * A HTTP request builder.
      */
     public static final class Builder {
         private static final InetSocketAddress LOCAL_HOST = createUnresolved("127.0.0.1", 0);
@@ -433,12 +484,18 @@ public class HttpRequest implements StreamingHttpMessage {
         private HttpVersion version = HTTP_1_1;
         private StyxObservable<ByteBuf> body;
 
+        /**
+         * Creates a new {@link Builder} object with default attributes.
+         */
         public Builder() {
             this.url = Url.Builder.url("/").build();
             this.headers = new HttpHeaders.Builder();
             this.body = new StyxCoreObservable<>(Observable.empty());
         }
 
+        /**
+         * Creates a new {@link Builder} with specified HTTP method and URI.
+         */
         public Builder(HttpMethod method, String uri) {
             this();
             this.method = requireNonNull(method);
@@ -446,6 +503,9 @@ public class HttpRequest implements StreamingHttpMessage {
             this.secure = url.isSecure();
         }
 
+        /**
+         * Creates a new {@link Builder} from an existing request with a new body content stream..
+         */
         public Builder(HttpRequest request, StyxObservable<ByteBuf> body) {
             this.id = request.id();
             this.method = httpMethod(request.method().name());
@@ -595,17 +655,25 @@ public class HttpRequest implements StreamingHttpMessage {
             return this;
         }
 
+        /**
+         * Deprecated. Do not use in any new code.
+         *
+         * @param clientAddress
+         * @return
+         */
+        @Deprecated
         public Builder clientAddress(InetSocketAddress clientAddress) {
             this.clientAddress = clientAddress;
             return this;
         }
 
         /**
-         * Sets whether the request is be secure.
+         * Don't use. Will be removed soon.
          *
          * @param secure true if secure
          * @return {@code this}
          */
+        @Deprecated
         public Builder secure(boolean secure) {
             this.secure = secure;
             return this;
