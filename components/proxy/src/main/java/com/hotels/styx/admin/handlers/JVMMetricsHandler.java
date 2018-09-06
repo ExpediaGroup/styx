@@ -158,5 +158,10 @@ public class JVMMetricsHandler extends JsonHandler<MetricRegistry> {
         public SortedMap<String, Timer> getTimers(MetricFilter filter) {
             return null;
         }
+
+        @Override
+        public SortedMap<String, Metric> getMetrics() {
+            return filterKeys(original.getMetrics(), STARTS_WITH_JVM);
+        }
     }
 }

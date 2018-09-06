@@ -183,4 +183,9 @@ public class ScopedMetricRegistry implements MetricRegistry {
     public SortedMap<String, Timer> getTimers(MetricFilter filter) {
         return this.parent.getTimers(filter);
     }
+
+    @Override
+    public SortedMap<String, Metric> getMetrics() {
+        return this.parent.getMetrics();
+    }
 }

@@ -16,17 +16,19 @@
 package com.hotels.styx.admin.handlers;
 
 import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.json.MetricsModule;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.infrastructure.configuration.json.mixins.CodaHaleMetricRegistryMixin;
 
 import java.time.Duration;
 import java.util.Map;
@@ -54,9 +56,10 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
     private static final String PRETTY_PRINT_PARAM = "pretty";
 
     private final ObjectMapper metricSerialiser = new ObjectMapper()
-            .registerModule(new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
+            .registerModule(new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES))
+            .addMixIn(CodaHaleMetricRegistry.class, CodaHaleMetricRegistryMixin.class);
 
-    private final CodaHaleMetricRegistry metricRegistry;
+    private final MetricRegistry metricRegistry;
 
     /**
      * Constructs a new handler.
@@ -64,10 +67,18 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
      * @param metricRegistry  metrics registry
      * @param cacheExpiration duration for which generated page content should be cached
      */
-    public MetricsHandler(CodaHaleMetricRegistry metricRegistry, Optional<Duration> cacheExpiration) {
-        super(requireNonNull(metricRegistry.getMetricRegistry()), cacheExpiration, new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES));
+    public MetricsHandler(MetricRegistry metricRegistry, Optional<Duration> cacheExpiration) {
+        super(requireNonNull(metricRegistry), cacheExpiration,
+            new MetricsModule(SECONDS, MILLISECONDS, DO_NOT_SHOW_SAMPLES),
+            new FullMetricsModule());
 
         this.metricRegistry = metricRegistry;
+    }
+
+    private static class FullMetricsModule extends SimpleModule {
+        FullMetricsModule() {
+            setMixInAnnotation(CodaHaleMetricRegistry.class, CodaHaleMetricRegistryMixin.class);
+        }
     }
 
     @Override
@@ -80,7 +91,7 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
     }
 
     private FullHttpResponse.Builder restrictedMetricsResponse(MetricRequest request) {
-        Map<String, Metric> fullMetrics = metricRegistry.getMetricRegistry().getMetrics();
+        Map<String, Metric> fullMetrics = metricRegistry.getMetrics();
 
         Map<String, Metric> restricted = filter(fullMetrics, (name, metric) -> request.matchesRoot(name));
 

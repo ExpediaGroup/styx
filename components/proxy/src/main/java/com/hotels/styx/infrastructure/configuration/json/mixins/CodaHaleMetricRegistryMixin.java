@@ -13,23 +13,16 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.server;
+package com.hotels.styx.infrastructure.configuration.json.mixins;
 
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.MetricRegistry;
+import com.fasterxml.jackson.annotation.JsonValue;
 
-public final class ServerEnvironment {
-    private final MetricRegistry metricRegistry;
+/**
+ * Jackson annotations for {@link com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry}.
+ */
+public abstract class CodaHaleMetricRegistryMixin {
 
-    public ServerEnvironment() {
-        this(new CodaHaleMetricRegistry());
-    }
+    @JsonValue
+    public abstract com.codahale.metrics.MetricRegistry getMetricRegistry();
 
-    public ServerEnvironment(MetricRegistry metricRegistry) {
-        this.metricRegistry = metricRegistry;
-    }
-
-    public MetricRegistry metricRegistry() {
-        return metricRegistry;
-    }
 }

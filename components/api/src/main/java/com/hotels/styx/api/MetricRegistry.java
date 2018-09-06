@@ -193,4 +193,12 @@ public interface MetricRegistry {
      */
     SortedMap<String, Timer> getTimers(MetricFilter filter);
 
+
+    /**
+     * A map of metric names to metrics.
+     *
+     * @return the metrics
+     */
+    SortedMap<String, Metric> getMetrics();
+
 }
