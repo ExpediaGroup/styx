@@ -53,7 +53,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 /**
- * A HTTP response object with a byte stream body.
+ * An response object with a byte stream body.
  * <p>
  * A {@code HttpResponse} is used in {@link HttpInterceptor} where each content
  * chunk must be processed as they arrive. It is also useful for dealing with
@@ -130,7 +130,7 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     /**
-     * Returns a HTTP header value.
+     * Returns an HTTP header value.
      * <p>
      * When the header has been set multiple times, this still returns
      * just one value.
@@ -144,7 +144,7 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     /**
-     * Returns all HTTP headers as {@link HttpHeaders} instance.
+     * Returns all HTTP headers as an {@link HttpHeaders} instance.
      *
      * @return {@link HttpHeaders} object.
      */
@@ -210,7 +210,7 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     /**
-     * Returns true if the response is a HTTP redirect.
+     * Returns true if the response is an HTTP redirect.
      *
      * @return
      */
@@ -323,7 +323,7 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     /**
-     * A HTTP response builder.
+     * An HTTP response builder.
      */
     public static final class Builder {
         private HttpResponseStatus status = OK;

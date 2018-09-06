@@ -63,7 +63,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 
 /**
- * A HTTP request object with a byte stream body.
+ * An HTTP request object with a byte stream body.
  * <p>
  * A {@code HttpRequest} is used in {@link HttpInterceptor} where each content
  * chunk must be processed as they arrive. It is also useful for dealing with
@@ -383,7 +383,7 @@ public class HttpRequest implements StreamingHttpMessage {
     /**
      * Aggregates content stream and converts this request to a {@link FullHttpRequest}.
      * <p>
-     * Returns a {@link StyxObservable<FullHttpRequest>} that eventually produces a
+     * Returns a {@link StyxObservable} that eventually produces a
      * {@link FullHttpRequest}. The resulting full request object has the same
      * request line, headers, and content as this request.
      *
@@ -469,7 +469,7 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * A HTTP request builder.
+     * An HTTP request builder.
      */
     public static final class Builder {
         private static final InetSocketAddress LOCAL_HOST = createUnresolved("127.0.0.1", 0);

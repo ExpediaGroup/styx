@@ -55,17 +55,13 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 
 /**
- * An immutable HTTP request object containing a finite size content body in full.
+ * An immutable HTTP request object including full body content.
  * <p>
- * A {@code FullHttpRequest} is useful for HTTP request messages with
- * finite body content such as PUT or POST for creating or modifying a RESTful
- * object.
+ * A {@link FullHttpRequest} is useful for request messages with a
+ * finite body content, such as when PUT or POST are used to create or
+ * modify a RESTful object.
  * <p>
- * FullHttpRequest is immutable. Once created, it is impossible to modify any
- * request attributes, including body content. However the request can
- * be transformed to another via {@code FullHttpRequest.Builder}.
- * <p>
- * A FullHttpRequest is created via {@code FullHttpRequest.Builder}. A new builder
+ * A FullHttpRequest is created via {@link FullHttpRequest.Builder}. A new builder
  * can be obtained by a call to following static methods:
  *
  * <ul>
@@ -79,10 +75,10 @@ import static java.util.stream.Stream.concat;
  *
  * A builder can also be created with one of the {@code Builder} constructors.
  *
- * A special method {@code newBuilder} creates a prepopulated {@code Builder}
- * from the current request object. It is useful for transforming a request
- * to another one my modifying one or more of its attributes.
- *
+ * FullHttpRequest is immutable. Once created it cannot be modified.
+ * However a request can be transformed to another using the {@link this#newBuilder}
+ * method. It creates a new {@link Builder} with all message properties and
+ * body content cloned in.
  */
 public class FullHttpRequest implements FullHttpMessage {
     private final Object id;
@@ -328,7 +324,7 @@ public class FullHttpRequest implements FullHttpMessage {
     /**
      * Converts this request into a streaming form (HttpRequest).
      * <p>
-     * Converts this request into a HttpRequest object which represents the HTTP request as a
+     * Converts this request into an HttpRequest object which represents the HTTP request as a
      * stream of bytes.
      *
      * @return A streaming HttpRequest object.

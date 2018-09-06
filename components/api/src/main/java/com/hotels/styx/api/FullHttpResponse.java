@@ -43,16 +43,13 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 /**
- * An immutable HTTP response object containing a finite size content body in full.
+ * An immutable HTTP response object including full body content.
  * <p>
- * A {@code FullHttpResponse} is useful for HTTP response messages with
- * finite body content such as returning a REST object.
+ * A {@link FullHttpResponse} is useful for response messages with a
+ * finite body content, such as when a REST API object is returned as a
+ * response to a GET request.
  * <p>
- * FullHttpResponse is immutable. Once created, it is impossible to modify any
- * response attributes, including body content. However a response can
- * be transformed to another via {@code FullHttpResponse.Builder}.
- * <p>
- * A FullHttpResponse is created via {@code FullHttpResponse.Builder}. A new builder
+ * A FullHttpResponse is created via {@link FullHttpResponse.Builder}. A new builder
  * can be obtained by a call to following static methods:
  *
  * <ul>
@@ -62,10 +59,10 @@ import static java.util.stream.Collectors.toList;
  *
  * A builder can also be created with one of the {@code Builder} constructors.
  *
- * A special method {@code newBuilder} creates a prepopulated {@code Builder}
- * from the current response object. It is useful for transforming a response
- * to another one my modifying one or more of its attributes.
- *
+ * FullHttpResponse is immutable. Once created it cannot be modified.
+ * However a response can be transformed to another using the {@link this#newBuilder}
+ * method. It creates a new {@link Builder} with all message properties and
+ * body content cloned in.
  */
 public class FullHttpResponse implements FullHttpMessage {
     private final HttpVersion version;
@@ -161,7 +158,7 @@ public class FullHttpResponse implements FullHttpMessage {
     /**
      * Converts this response to a streaming form (HttpResponse).
      * <p>
-     * Converts this response to a HttpResponse object which represents the HTTP response as a
+     * Converts this response to an HttpResponse object which represents the HTTP response as a
      * stream of bytes.
      *
      * @return A streaming HttpResponse object.
