@@ -20,7 +20,6 @@ import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StreamingHttpMessage;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
@@ -73,7 +72,7 @@ public class TestPlugin implements Plugin {
                 .map(FullHttpResponse::toStreamingResponse);
     }
 
-    private String xHcomPluginsHeader(StreamingHttpMessage message) {
+    private String xHcomPluginsHeader(HttpRequest message) {
         return message.headers().get(X_HCOM_PLUGINS_HEADER).orElse("")
                 .concat(" test-plugin-a")
                 .trim();
