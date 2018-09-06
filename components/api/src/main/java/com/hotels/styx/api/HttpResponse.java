@@ -609,8 +609,8 @@ public class HttpResponse implements StreamingHttpMessage {
          * method is invoked. Specifically that:
          *
          * <li>
-         *     <ul> There is maximum of only one {@code Content-Length} header
-         *     <ul> The {@code Content-Length} header is zero or positive integer
+         *     <ul>There is maximum of only one {@code Content-Length} header</ul>
+         *     <ul>The {@code Content-Length} header is zero or positive integer</ul>
          * </li>
          *
          * @return {@code this}

@@ -321,9 +321,11 @@ public class HttpRequest implements StreamingHttpMessage {
 
     /**
      * Will be removed in due course.
+     *
+     * @deprecated will not appear in 1.0 interface.
+     *
      * @return
      */
-
     // Relic of old API, kept only for conversions
     @Deprecated
     public InetSocketAddress clientAddress() {
@@ -656,7 +658,9 @@ public class HttpRequest implements StreamingHttpMessage {
         }
 
         /**
-         * Deprecated. Do not use in any new code.
+         * Do not use in any new code.
+         *
+         * @deprecated Will not appear in 1.0 API.
          *
          * @param clientAddress
          * @return
@@ -669,6 +673,8 @@ public class HttpRequest implements StreamingHttpMessage {
 
         /**
          * Don't use. Will be removed soon.
+         *
+         * @deprecated Will not appear in 1.0 API.
          *
          * @param secure true if secure
          * @return {@code this}

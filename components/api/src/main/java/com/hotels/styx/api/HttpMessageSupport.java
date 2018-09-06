@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.api.HttpVersion;
-
 import java.util.Optional;
 
 import static com.hotels.styx.api.HttpHeaderNames.CHUNKED;
