@@ -16,7 +16,7 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.Announcer;
+import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.Connection;
