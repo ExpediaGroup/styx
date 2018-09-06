@@ -38,6 +38,15 @@ public class HttpVersion {
         this.version = version;
     }
 
+    /**
+     * Creates a HttpVersion from String.
+     *
+     * Accepted strings are "HTTP/1.0" and "HTTP/1.1".
+     * Otherwise throws an {@link IllegalArgumentException}.
+     *
+     * @param version
+     * @return
+     */
     public static HttpVersion httpVersion(String version) {
         checkArgument(VERSIONS.containsKey(version), "No such HTTP version %s", version);
 
