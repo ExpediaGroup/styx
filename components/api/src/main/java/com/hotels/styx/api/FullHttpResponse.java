@@ -45,7 +45,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * An immutable HTTP response object including full body content.
  * <p>
- * A {@link FullHttpResponse} is useful for response messages with a
+ * A {@link FullHttpResponse} is useful for responses with a
  * finite body content, such as when a REST API object is returned as a
  * response to a GET request.
  * <p>

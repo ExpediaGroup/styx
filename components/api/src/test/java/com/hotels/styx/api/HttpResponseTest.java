@@ -286,16 +286,6 @@ public class HttpResponseTest {
                 .build();
     }
 
-    @Test
-    public void headerValues() {
-        HttpResponse r = response()
-                .addHeader("X-Styx", "14, 16")
-                .addHeader("X-Styx", "15")
-                .build();
-
-        System.out.println("headers: " + r.header("X-Styx"));
-    }
-
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void rejectsInvalidContentLength() {
         response()

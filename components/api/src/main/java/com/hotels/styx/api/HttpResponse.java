@@ -53,18 +53,18 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 /**
- * An response object with a byte stream body.
+ * An HTTP response object with a byte stream body.
  * <p>
- * A {@code HttpResponse} is used in {@link HttpInterceptor} where each content
+ * An {@code HttpResponse} is used in {@link HttpInterceptor} where each content
  * chunk must be processed as they arrive. It is also useful for dealing with
  * very large content sizes, and in situations where content size is not known
  * upfront.
  * <p>
- * A {@code HttpResponse} object is immutable with respect to the response
+ * An {@code HttpResponse} object is immutable with respect to the response
  * attributes and HTTP headers. Once an instance is created, they cannot change.
  *
- * A {@code HttpResponse} body is a byte buffer stream that can be consumed
- * as sequence of asynchronous events. Once consumed, stream is exhausted and
+ * An {@code HttpResponse} body is a byte buffer stream that can be consumed
+ * as sequence of asynchronous events. Once consumed, the stream is exhausted and
  * can not be reused. Conceptually each {@code HttpResponse} object has an
  * associated producer object that publishes data to the stream. For example,
  * a Styx Server implements a content producer for {@link HttpInterceptor}

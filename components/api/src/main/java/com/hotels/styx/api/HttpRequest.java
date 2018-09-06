@@ -65,16 +65,16 @@ import static java.util.stream.Stream.concat;
 /**
  * An HTTP request object with a byte stream body.
  * <p>
- * A {@code HttpRequest} is used in {@link HttpInterceptor} where each content
+ * An {@code HttpRequest} is used in {@link HttpInterceptor} where each content
  * chunk must be processed as they arrive. It is also useful for dealing with
  * very large content sizes, and in situations where content size is not known
  * upfront.
  * <p>
- * A {@code HttpRequest} object is immutable with respect to the request line
+ * An {@code HttpRequest} object is immutable with respect to the request line
  * attributes and HTTP headers. Once an instance is created, they cannot change.
  *
- * A {@code HttpRequest} body is a byte buffer stream that can be consumed
- * as sequence of asynchronous events. Once consumed, stream is exhausted and
+ * An {@code HttpRequest} body is a byte buffer stream that can be consumed
+ * as sequence of asynchronous events. Once consumed, the stream is exhausted and
  * can not be reused. Conceptually each {@code HttpRequest} object
  * has an associated producer object that publishes data to the stream.
  * For example, a Styx Server implements a content producer for {@link HttpInterceptor}

@@ -57,7 +57,7 @@ import static java.util.stream.Stream.concat;
 /**
  * An immutable HTTP request object including full body content.
  * <p>
- * A {@link FullHttpRequest} is useful for request messages with a
+ * A {@link FullHttpRequest} is useful for requests with a
  * finite body content, such as when PUT or POST are used to create or
  * modify a RESTful object.
  * <p>
