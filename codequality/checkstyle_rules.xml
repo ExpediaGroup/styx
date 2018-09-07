@@ -24,7 +24,7 @@
     </module>
     <module name="JavadocStyle">
       <property name="severity" value="error"/>
-      <property name="checkEmptyJavadoc" value="true"/>
+      <property name="checkEmptyJavadoc" value="false"/>
     </module>
     <module name="ConstantName">
       <property name="severity" value="error"/>
