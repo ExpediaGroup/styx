@@ -13,7 +13,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api;
+package com.hotels.styx;
+
+import com.hotels.styx.api.HttpResponseStatus;
+
+import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
 
 /**
  * Custom HTTP response status codes.
@@ -22,17 +26,17 @@ public final class CustomHttpResponseStatus {
     /**
      * 520 - Origin server timed out. This typically happens when the origin host is not serving pages. Please check your origin servers.
      */
-    public static final HttpResponseStatus ORIGIN_SERVER_TIMED_OUT = new HttpResponseStatus(520, "Origin server timed out");
+    public static final HttpResponseStatus ORIGIN_SERVER_TIMED_OUT = statusWithCode(520);
 
     /**
      * 521 - Indicates that the origin server refused the connection.
      */
-    public static final HttpResponseStatus ORIGIN_CONNECTION_REFUSED = new HttpResponseStatus(521, "Origin refused the connection");
+    public static final HttpResponseStatus ORIGIN_CONNECTION_REFUSED = statusWithCode(521);
 
     /**
      * 522 - Indicated that a server connection timed out.
      */
-    public static final HttpResponseStatus ORIGIN_CONNECTION_TIMED_OUT = new HttpResponseStatus(522, "Connection to origin timed out");
+    public static final HttpResponseStatus ORIGIN_CONNECTION_TIMED_OUT = statusWithCode(522);
 
     private CustomHttpResponseStatus() {
     }

@@ -22,7 +22,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.NoServiceConfiguredException;
+import com.hotels.styx.server.NoServiceConfiguredException;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.server.HttpErrorStatusListener;
