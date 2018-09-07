@@ -130,23 +130,7 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     /**
-     * Returns an HTTP header value.
-     * <p>
-     * When the header has been set multiple times, this still returns
-     * just one value.
-     *
-     * @param name header name
-     * @return An optional of value, or empty if not present.
-     */
-    @Override
-    public Optional<String> header(CharSequence name) {
-        return headers.get(name);
-    }
-
-    /**
-     * Returns all HTTP headers as an {@link HttpHeaders} instance.
-     *
-     * @return {@link HttpHeaders} object.
+     * @return all HTTP headers as an {@link HttpHeaders} object
      */
     @Override
     public HttpHeaders headers() {
@@ -154,24 +138,7 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     /**
-     * Returns all values for a given HTTP header name.
-     *
-     * Returns an empty list if header is not present.
-     *
-     * @param name header name
-     * @return A list of all header names.
-     */
-    @Override
-    public List<String> headers(CharSequence name) {
-        return headers.getAll(name);
-    }
-
-    /**
-     * Returns the body as a byte stream.
-     * <p>
-     * The byte stream returned as a {@link StyxObservable}.
-     *
-     * @return
+     * @return the response body as a byte stream
      */
     @Override
     public StyxObservable<ByteBuf> body() {
@@ -179,9 +146,7 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     /**
-     * Returns the HTTP protocol version.
-     *
-     * @return A {@link HttpVersion}.
+     * @return a HTTP protocol version
      */
     @Override
     public HttpVersion version() {
@@ -201,18 +166,14 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     /**
-     * Returns the HTTP status.
-     *
-     * @return
+     * @return an HTTP response status
      */
     public HttpResponseStatus status() {
         return status;
     }
 
     /**
-     * Returns true if the response is an HTTP redirect.
-     *
-     * @return
+     * @return true if this response is a redirect
      */
     public boolean isRedirect() {
         return status.code() >= 300 && status.code() < 400;
@@ -235,8 +196,8 @@ public class HttpResponse implements StreamingHttpMessage {
      * size stream exceeds the {@code maxContentBytes}, a @{link ContentOverflowException}
      * is emitted on the returned observable.
      *
-     * @param maxContentBytes Maximum allowed content size.
-     * @return a {@link StyxObservable}.
+     * @param maxContentBytes maximum expected content size
+     * @return a {@link StyxObservable}
      */
     public StyxObservable<FullHttpResponse> toFullResponse(int maxContentBytes) {
         CompositeByteBuf byteBufs = compositeBuffer();
@@ -274,19 +235,20 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     /**
-     * Returns "Set-Cookie" headers decoded as {@link ResponseCookie} set.
+     * Decodes "Set-Cookie" header values and returns them as set of {@link ResponseCookie} objects.
      *
-     * @return cookies
+     * @return a set of {@link ResponseCookie} objects
      */
     public Set<ResponseCookie> cookies() {
         return decode(headers.getAll(SET_COOKIE));
     }
 
     /**
-     * Returns a specified cookie decoded as {@link ResponseCookie}.
+     * Decodes a specified Set-Cookie header and returns it as a {@link ResponseCookie} object.
      *
      * @param name cookie name
-     * @return cookie
+     * @return an optional {@link ResponseCookie} value if corresponding cookie name is present,
+     *         or {@link Optional#empty} if not.
      */
     public Optional<ResponseCookie> cookie(String name) {
         return cookies().stream()
@@ -342,6 +304,8 @@ public class HttpResponse implements StreamingHttpMessage {
 
         /**
          * Creates a new {@link Builder} object with specified response status.
+         *
+         * @param status a HTTP response status
          */
         public Builder(HttpResponseStatus status) {
             this();
@@ -351,6 +315,8 @@ public class HttpResponse implements StreamingHttpMessage {
         /**
          * Creates a new {@link Builder} object from an existing {@link HttpResponse} object.
          * Similar to {@link this.newBuilder} method.
+         *
+         * @param response a response object for which the builder is based on
          */
         public Builder(HttpResponse response) {
             this.status = response.status();
@@ -361,12 +327,18 @@ public class HttpResponse implements StreamingHttpMessage {
 
         /**
          * Creates a new {@link Builder} object from a response code and a content stream.
+         * <p>
+         * Builder's response status line parameters and the HTTP headers are populated from
+         * the given {@code response} object, but the content stream is set to {@code contentStream}.
+         *
+         * @param response a full response for which the builder is based on
+         * @param contentStream a content byte stream
          */
-        public Builder(FullHttpResponse response, StyxObservable<ByteBuf> decoded) {
+        public Builder(FullHttpResponse response, StyxObservable<ByteBuf> contentStream) {
             this.status = statusWithCode(response.status().code());
             this.version = httpVersion(response.version().toString());
             this.headers = response.headers().newBuilder();
-            this.body = decoded;
+            this.body = contentStream;
         }
 
         /**
@@ -440,7 +412,7 @@ public class HttpResponse implements StreamingHttpMessage {
          * Sets the cookies on this response by removing existing "Set-Cookie" headers and adding new ones.
          *
          * @param cookies cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder cookies(ResponseCookie... cookies) {
             return cookies(asList(cookies));
@@ -450,7 +422,7 @@ public class HttpResponse implements StreamingHttpMessage {
          * Sets the cookies on this response by removing existing "Set-Cookie" headers and adding new ones.
          *
          * @param cookies cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder cookies(Collection<ResponseCookie> cookies) {
             requireNonNull(cookies);
@@ -462,7 +434,7 @@ public class HttpResponse implements StreamingHttpMessage {
          * Adds cookies into this response by adding "Set-Cookie" headers.
          *
          * @param cookies cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder addCookies(ResponseCookie... cookies) {
             return addCookies(asList(cookies));
@@ -472,7 +444,7 @@ public class HttpResponse implements StreamingHttpMessage {
          * Adds cookies into this response by adding "Set-Cookie" headers.
          *
          * @param cookies cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder addCookies(Collection<ResponseCookie> cookies) {
             requireNonNull(cookies);
@@ -492,7 +464,7 @@ public class HttpResponse implements StreamingHttpMessage {
          * Removes all cookies matching one of the supplied names by removing their "Set-Cookie" headers.
          *
          * @param names cookie names
-         * @return this builder
+         * @return {@code this}
          */
         public Builder removeCookies(String... names) {
             return removeCookies(asList(names));
@@ -502,7 +474,7 @@ public class HttpResponse implements StreamingHttpMessage {
          * Removes all cookies matching one of the supplied names by removing their "Set-Cookie" headers.
          *
          * @param names cookie names
-         * @return this builder
+         * @return {@code this}
          */
         public <T> Builder removeCookies(Collection<String> names) {
             requireNonNull(names);
@@ -633,8 +605,8 @@ public class HttpResponse implements StreamingHttpMessage {
          *     <ul> The {@code Content-Length} header is zero or positive integer
          * </li>
          *
-         * @throws IllegalArgumentException when validation fails.
-         * @return A new full response.
+         * @throws IllegalArgumentException when validation fails
+         * @return a new full response.
          */
         public HttpResponse build() {
             if (validate) {

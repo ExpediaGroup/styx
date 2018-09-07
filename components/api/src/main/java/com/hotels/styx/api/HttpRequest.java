@@ -218,8 +218,7 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * Returns the HTTP protocol version.
-     * @return
+     * @return HTTP protocol version
      */
     @Override
     public HttpVersion version() {
@@ -227,9 +226,7 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * Returns all HTTP headers as {@link HttpHeaders} instance.
-     *
-     * @return {@link HttpHeaders} object.
+     * @return all HTTP headers as an {@link HttpHeaders} instance
      */
     @Override
     public HttpHeaders headers() {
@@ -237,12 +234,8 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * Returns all values for a given HTTP header name.
-     *
-     * Returns an empty list if header is not present.
-     *
      * @param name header name
-     * @return A list of all header names.
+     * @return all values for a given HTTP header name or an empty list if the header is not present
      */
     @Override
     public List<String> headers(CharSequence name) {
@@ -250,11 +243,7 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * Returns the body as a byte stream.
-     * <p>
-     * The byte stream returned as a {@link StyxObservable}.
-     *
-     * @return
+     * @return request body as a byte stream
      */
     @Override
     public StyxObservable<ByteBuf> body() {
@@ -262,17 +251,13 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * Gets the unique ID for this request.
-     *
-     * @return request ID
+     * @return an unique request ID
      */
     public Object id() {
         return id;
     }
 
     /**
-     * Returns the HTTP method of this request.
-     *
      * @return the HTTP method
      */
     public HttpMethod method() {
@@ -280,18 +265,14 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * Returns the requested URI (or alternatively, path).
-     *
-     * @return The URI being requested
+     * @return the request URL
      */
     public Url url() {
         return url;
     }
 
     /**
-     * Returns the requested path.
-     *
-     * @return the path being requested
+     * @return the request URL path component
      */
     public String path() {
         return url.path();
@@ -310,11 +291,9 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * Checks if the request has been transferred over a secure connection.
-     * If the protocol is HTTPS then the request is considered to be secure.
-     *
-     * @return true if protocol is set to "https".
+     * @deprecated will be removed from the final 1.0 API release
      */
+    @Deprecated
     public boolean isSecure() {
         return secure;
     }
@@ -322,7 +301,7 @@ public class HttpRequest implements StreamingHttpMessage {
     /**
      * Will be removed in due course.
      *
-     * @deprecated will not appear in 1.0 interface.
+     * @deprecated will not appear in 1.0 interface
      *
      * @return
      */
@@ -364,7 +343,7 @@ public class HttpRequest implements StreamingHttpMessage {
     /**
      * Get the names of all query parameters.
      *
-     * @return the names of all query parameters.
+     * @return the names of all query parameters
      */
     public Iterable<String> queryParamNames() {
         return url.queryParamNames();
@@ -399,8 +378,8 @@ public class HttpRequest implements StreamingHttpMessage {
      * size stream exceeds the {@code maxContentBytes}, a @{link ContentOverflowException}
      * is emitted on the returned observable.
      *
-     * @param maxContentBytes Maximum allowed content size.
-     * @return a {@link StyxObservable}.
+     * @param maxContentBytes maximum expected content size
+     * @return a {@link StyxObservable}
      */
     public StyxObservable<FullHttpRequest> toFullRequest(int maxContentBytes) {
         CompositeByteBuf byteBufs = compositeBuffer();
@@ -437,7 +416,7 @@ public class HttpRequest implements StreamingHttpMessage {
     /**
      * Decodes the "Cookie" header in this request and returns the cookies.
      *
-     * @return cookies
+     * @return a set of cookies
      */
     public Set<RequestCookie> cookies() {
         return headers.get(COOKIE)
@@ -449,7 +428,7 @@ public class HttpRequest implements StreamingHttpMessage {
      * Decodes the "Cookie" header in this request and returns the specified cookie.
      *
      * @param name cookie name
-     * @return cookies
+     * @return an optional cookie
      */
     public Optional<RequestCookie> cookie(String name) {
         return cookies().stream()
@@ -497,6 +476,9 @@ public class HttpRequest implements StreamingHttpMessage {
 
         /**
          * Creates a new {@link Builder} with specified HTTP method and URI.
+         *
+         * @param method a HTTP method
+         * @param uri a HTTP URI
          */
         public Builder(HttpMethod method, String uri) {
             this();
@@ -506,9 +488,12 @@ public class HttpRequest implements StreamingHttpMessage {
         }
 
         /**
-         * Creates a new {@link Builder} from an existing request with a new body content stream..
+         * Creates a new {@link Builder} from an existing request with a new body content stream.
+         *
+         * @param request a HTTP request object
+         * @param contentStream a body content stream
          */
-        public Builder(HttpRequest request, StyxObservable<ByteBuf> body) {
+        public Builder(HttpRequest request, StyxObservable<ByteBuf> contentStream) {
             this.id = request.id();
             this.method = httpMethod(request.method().name());
             this.clientAddress = request.clientAddress();
@@ -663,7 +648,7 @@ public class HttpRequest implements StreamingHttpMessage {
          * @deprecated Will not appear in 1.0 API.
          *
          * @param clientAddress
-         * @return
+         * @return {@code this}
          */
         @Deprecated
         public Builder clientAddress(InetSocketAddress clientAddress) {

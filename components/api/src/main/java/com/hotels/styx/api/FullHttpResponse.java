@@ -128,8 +128,8 @@ public class FullHttpResponse implements FullHttpMessage {
      * The caller must ensure the provided charset is compatible with message content
      * type and encoding.
      *
-     * @param charset Charset used to decode message body.
-     * @return Message body as a String.
+     * @param charset Charset used to decode message body
+     * @return message body as a String
      */
     @Override
     public String bodyAs(Charset charset) {
@@ -138,19 +138,36 @@ public class FullHttpResponse implements FullHttpMessage {
         // CHECKSTYLE:ON
     }
 
+    /**
+     * @return a HTTP protocol version
+     */
     @Override
     public HttpVersion version() {
         return version;
     }
 
+    /**
+     * Return a new {@link FullHttpResponse.Builder} that will inherit properties from this response.
+     * <p>
+     * This allows a new response to be made that is identical to this one
+     * except for the properties overridden by the builder methods.
+     *
+     * @return new builder based on this response
+     */
     public Builder newBuilder() {
         return new Builder(this);
     }
 
+    /**
+     * @return an HTTP response status
+     */
     public HttpResponseStatus status() {
         return status;
     }
 
+    /**
+     * @return true if this response is a redirect
+     */
     public boolean isRedirect() {
         return status.code() >= 300 && status.code() < 400;
     }
@@ -161,7 +178,7 @@ public class FullHttpResponse implements FullHttpMessage {
      * Converts this response to an HttpResponse object which represents the HTTP response as a
      * stream of bytes.
      *
-     * @return A streaming HttpResponse object.
+     * @return A streaming HttpResponse object
      */
     public HttpResponse toStreamingResponse() {
         if (this.body.length == 0) {
@@ -174,7 +191,7 @@ public class FullHttpResponse implements FullHttpMessage {
     /**
      * Decodes the "Set-Cookie" headers in this response and returns the cookies.
      *
-     * @return cookies
+     * @return a set of cookies
      */
     public Set<ResponseCookie> cookies() {
         return decode(headers.getAll(SET_COOKIE));
@@ -184,7 +201,7 @@ public class FullHttpResponse implements FullHttpMessage {
      * Decodes the "Set-Cookie" headers in this response and returns the specified cookie.
      *
      * @param name cookie name
-     * @return cookie
+     * @return an optional cookie
      */
     public Optional<ResponseCookie> cookie(String name) {
         return cookies().stream()
@@ -230,16 +247,30 @@ public class FullHttpResponse implements FullHttpMessage {
         private boolean validate = true;
         private byte[] body;
 
+        /**
+         * Creates a new {@link Builder} object with default attributes.
+         */
         public Builder() {
             this.headers = new HttpHeaders.Builder();
             this.body = new byte[0];
         }
 
+        /**
+         * Creates a new {@link Builder} object with specified response status.
+         *
+         * @param status an HTTP response status
+         */
         public Builder(HttpResponseStatus status) {
             this();
             this.status = status;
         }
 
+        /**
+         * Creates a new {@link Builder} object from an existing {@link HttpResponse} object.
+         * Similar to {@link this.newBuilder} method.
+         *
+         * @param response a full HTTP response instance
+         */
         public Builder(FullHttpResponse response) {
             this.status = response.status();
             this.version = response.version();
@@ -247,11 +278,17 @@ public class FullHttpResponse implements FullHttpMessage {
             this.body = response.body();
         }
 
-        public Builder(HttpResponse response, byte[] decoded) {
+        /**
+         * Creates a new {@link Builder} object from a response code and a content byte array.
+         *
+         * @param response a streaming HTTP response instance
+         * @param body a HTTP message body
+         */
+        public Builder(HttpResponse response, byte[] body) {
             this.status = response.status();
             this.version = response.version();
             this.headers = response.headers().newBuilder();
-            this.body = decoded;
+            this.body = body;
         }
 
         /**
@@ -272,7 +309,7 @@ public class FullHttpResponse implements FullHttpMessage {
          * charset, and sets the Content-Length header accordingly.
          *
          * @param content request body
-         * @param charset Charset for string encoding.
+         * @param charset charset for string encoding
          * @return {@code this}
          */
         public Builder body(String content, Charset charset) {
@@ -287,7 +324,7 @@ public class FullHttpResponse implements FullHttpMessage {
          * argument is true.
          *
          * @param content          response body
-         * @param charset          Charset used for encoding response body.
+         * @param charset          charset used for encoding response body
          * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
          * @return {@code this}
          */
@@ -356,7 +393,7 @@ public class FullHttpResponse implements FullHttpMessage {
          * Sets the cookies on this response by removing existing "Set-Cookie" headers and adding new ones.
          *
          * @param cookies cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder cookies(ResponseCookie... cookies) {
             return cookies(asList(cookies));
@@ -366,7 +403,7 @@ public class FullHttpResponse implements FullHttpMessage {
          * Sets the cookies on this response by removing existing "Set-Cookie" headers and adding new ones.
          *
          * @param cookies cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder cookies(Collection<ResponseCookie> cookies) {
             requireNonNull(cookies);
@@ -378,7 +415,7 @@ public class FullHttpResponse implements FullHttpMessage {
          * Adds cookies into this response by adding "Set-Cookie" headers.
          *
          * @param cookies cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder addCookies(ResponseCookie... cookies) {
             return addCookies(asList(cookies));
@@ -388,7 +425,7 @@ public class FullHttpResponse implements FullHttpMessage {
          * Adds cookies into this response by adding "Set-Cookie" headers.
          *
          * @param cookies cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder addCookies(Collection<ResponseCookie> cookies) {
             requireNonNull(cookies);
@@ -408,7 +445,7 @@ public class FullHttpResponse implements FullHttpMessage {
          * Removes all cookies matching one of the supplied names by removing their "Set-Cookie" headers.
          *
          * @param names cookie names
-         * @return this builder
+         * @return {@code this}
          */
         public Builder removeCookies(String... names) {
             return removeCookies(asList(names));
@@ -418,7 +455,7 @@ public class FullHttpResponse implements FullHttpMessage {
          * Removes all cookies matching one of the supplied names by removing their "Set-Cookie" headers.
          *
          * @param names cookie names
-         * @return this builder
+         * @return {@code this}
          */
         public Builder removeCookies(Collection<String> names) {
             requireNonNull(names);
