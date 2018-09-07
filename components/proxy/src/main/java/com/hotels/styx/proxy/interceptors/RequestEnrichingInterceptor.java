@@ -16,19 +16,26 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.client.StyxHeaderConfig;
+import org.slf4j.Logger;
+
+import java.net.InetSocketAddress;
+import java.util.Optional;
 
 import static com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_FOR;
 import static com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_PROTO;
-import com.hotels.styx.api.HttpRequest;
+import static org.slf4j.LoggerFactory.getLogger;
 
 
 /**
  * Adds X-Forwarded-For, X-Forwarded-Proto and X-Hcom-Request-Id headers to requests.
  */
 public class RequestEnrichingInterceptor implements HttpInterceptor {
+    private static final Logger LOGGER = getLogger(RequestEnrichingInterceptor.class);
+
     private final CharSequence requestIdHeaderName;
 
     public RequestEnrichingInterceptor(StyxHeaderConfig styxHeaderConfig) {
@@ -37,28 +44,42 @@ public class RequestEnrichingInterceptor implements HttpInterceptor {
 
     @Override
     public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-        return chain.proceed(enrich(request, chain.context().isSecure()));
+        return chain.proceed(enrich(request, chain));
     }
 
-    private HttpRequest enrich(HttpRequest request, boolean secure) {
-        return request.newBuilder()
+    private HttpRequest enrich(HttpRequest request, Chain chain) {
+        HttpRequest.Builder builder = request.newBuilder();
+
+        xForwardedFor(request, chain.context())
+                .ifPresent(headerValue -> builder.header(X_FORWARDED_FOR, headerValue));
+
+        return builder
                 .header(requestIdHeaderName, request.id())
-                .header(X_FORWARDED_FOR, xForwardedFor(request))
-                .header(X_FORWARDED_PROTO, xForwardedProto(request, secure))
+                .header(X_FORWARDED_PROTO, xForwardedProto(request, chain.context().isSecure()))
                 .build();
+    }
+
+    private static Optional<String> xForwardedFor(HttpRequest request, HttpInterceptor.Context context) {
+        return clientAddress(request, context)
+                .map(InetSocketAddress::getHostString)
+                .map(hostName -> request.header(X_FORWARDED_FOR)
+                        .map(xForwardedFor -> xForwardedFor + ", " + hostName)
+                        .orElse(hostName));
+    }
+
+    private static Optional<InetSocketAddress> clientAddress(HttpRequest request, Context context) {
+        Optional<InetSocketAddress> clientAddress = context.clientAddress();
+
+        if (!clientAddress.isPresent()) {
+            LOGGER.warn("No clientAddress in context url={}", request.url());
+        }
+
+        return clientAddress;
     }
 
     private static CharSequence xForwardedProto(HttpRequest request, boolean secure) {
         return request
                 .header(X_FORWARDED_PROTO)
                 .orElse(secure ? "https" : "http");
-    }
-
-    private static String xForwardedFor(HttpRequest request) {
-        String hostName = request.clientAddress().getHostString();
-
-        return request.header(X_FORWARDED_FOR)
-                .map(xForwardedFor -> xForwardedFor + ", " + hostName)
-                .orElse(hostName);
     }
 }

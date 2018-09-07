@@ -21,24 +21,23 @@ import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
+import static com.hotels.styx.api.HttpMethod.DELETE;
+import static com.hotels.styx.api.HttpMethod.GET;
+import static com.hotels.styx.api.HttpMethod.POST;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpRequest.patch;
 import static com.hotels.styx.api.HttpRequest.post;
 import static com.hotels.styx.api.HttpRequest.put;
-import static com.hotels.styx.api.Url.Builder.url;
-import static com.hotels.styx.api.RequestCookie.requestCookie;
-import static com.hotels.styx.api.HttpMethod.DELETE;
-import static com.hotels.styx.api.HttpMethod.GET;
-import static com.hotels.styx.api.HttpMethod.POST;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
+import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
@@ -119,7 +118,6 @@ public class HttpRequestTest {
         assertThat(request.version(), is(HTTP_1_1));
         assertThat(request.url().toString(), is("/index"));
         assertThat(request.path(), is("/index"));
-        assertThat(request.clientAddress().getHostName(), is("127.0.0.1"));
         assertThat(request.id(), is(notNullValue()));
         assertThat(request.cookies(), is(emptyIterable()));
         assertThat(request.headers(), is(emptyIterable()));
@@ -143,8 +141,7 @@ public class HttpRequestTest {
                 .cookies(requestCookie("cfoo", "bar"))
                 .build();
 
-        assertThat(request.toString(), is("HttpRequest{version=HTTP/1.0, method=PATCH, uri=https://hotels.com, headers=[headerName=a, Cookie=cfoo=bar, Host=hotels.com]," +
-                " id=id, clientAddress=127.0.0.1:0}"));
+        assertThat(request.toString(), is("HttpRequest{version=HTTP/1.0, method=PATCH, uri=https://hotels.com, headers=[headerName=a, Cookie=cfoo=bar, Host=hotels.com], id=id}"));
 
         assertThat(request.headers("headerName"), is(singletonList("a")));
     }
@@ -373,22 +370,6 @@ public class HttpRequestTest {
         HttpRequest newRequest = v10Request.newBuilder().uri("/blah/blah").build();
 
         assertThat(newRequest.version(), is(HTTP_1_0));
-    }
-
-    // Make tests to ensure conversion from HttpRequest and back again preserves clientAddress - do it for Fullhttprequest too
-    @Test
-    public void conversionPreservesClientAddress() throws Exception {
-        InetSocketAddress address = InetSocketAddress.createUnresolved("styx.io", 8080);
-        HttpRequest original = HttpRequest.post("/foo").clientAddress(address).build();
-
-        HttpRequest streaming = new HttpRequest.Builder(original).build();
-
-        HttpRequest shouldMatchOriginal = streaming.toFullRequest(0x100)
-                .asCompletableFuture()
-                .get()
-                .toStreamingRequest();
-
-        assertThat(shouldMatchOriginal.clientAddress(), is(address));
     }
 
     @Test

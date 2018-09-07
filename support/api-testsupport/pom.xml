@@ -29,6 +29,11 @@
     </dependency>
 
     <dependency>
+      <groupId>com.hotels.styx</groupId>
+      <artifactId>styx-common</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
       <exclusions>
@@ -44,10 +49,6 @@
       <artifactId>wiremock</artifactId>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <groupId>com.hotels.styx</groupId>
-      <artifactId>styx-common</artifactId>
-    </dependency>
-  </dependencies>
 
+  </dependencies>
 </project>

@@ -13,11 +13,15 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api;
+package com.hotels.styx.api.extension.service.spi;
 
-public class MockContext implements HttpInterceptor.Context {
+import com.hotels.styx.api.HttpInterceptor;
 
-    public static final HttpInterceptor.Context MOCK_CONTEXT = new MockContext();
+import java.net.InetSocketAddress;
+import java.util.Optional;
+
+class MockContext implements HttpInterceptor.Context {
+    static final HttpInterceptor.Context MOCK_CONTEXT = new MockContext();
 
     @Override
     public void add(String key, Object value) {
@@ -32,5 +36,10 @@ public class MockContext implements HttpInterceptor.Context {
     @Override
     public boolean isSecure() {
         return false;
+    }
+
+    @Override
+    public Optional<InetSocketAddress> clientAddress() {
+        return Optional.empty();
     }
 }

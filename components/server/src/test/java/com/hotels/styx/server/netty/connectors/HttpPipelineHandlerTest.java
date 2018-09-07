@@ -51,6 +51,7 @@ import com.hotels.styx.api.HttpRequest;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -968,13 +969,8 @@ public class HttpPipelineHandlerTest {
         when(ctx.writeAndFlush(any(Object.class))).thenReturn(future);
         when(ctx.channel()).thenReturn(channel);
 
-        SocketAddress localAddress = mock(SocketAddress.class);
-        when(localAddress.toString()).thenReturn("localhost:1");
-        when(ctx.channel().localAddress()).thenReturn(localAddress);
-
-        SocketAddress remoteAddress = mock(SocketAddress.class);
-        when(remoteAddress.toString()).thenReturn("localhost:2");
-        when(ctx.channel().remoteAddress()).thenReturn(remoteAddress);
+        when(ctx.channel().localAddress()).thenReturn(InetSocketAddress.createUnresolved("localhost", 1));
+        when(ctx.channel().remoteAddress()).thenReturn(InetSocketAddress.createUnresolved("localhost", 2));
 
         return ctx;
     }

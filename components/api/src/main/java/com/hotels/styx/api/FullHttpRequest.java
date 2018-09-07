@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableSet;
 import io.netty.buffer.Unpooled;
 import rx.Observable;
 
-import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,8 +35,6 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
-import static com.hotels.styx.api.RequestCookie.decode;
-import static com.hotels.styx.api.RequestCookie.encode;
 import static com.hotels.styx.api.HttpMethod.DELETE;
 import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.api.HttpMethod.HEAD;
@@ -46,8 +43,9 @@ import static com.hotels.styx.api.HttpMethod.PATCH;
 import static com.hotels.styx.api.HttpMethod.POST;
 import static com.hotels.styx.api.HttpMethod.PUT;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.RequestCookie.decode;
+import static com.hotels.styx.api.RequestCookie.encode;
 import static java.lang.Integer.parseInt;
-import static java.net.InetSocketAddress.createUnresolved;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
@@ -82,8 +80,6 @@ import static java.util.stream.Stream.concat;
  */
 public class FullHttpRequest implements FullHttpMessage {
     private final Object id;
-    // Relic of old API, kept for conversions
-    private final InetSocketAddress clientAddress;
     private final HttpVersion version;
     private final HttpMethod method;
     private final Url url;
@@ -92,7 +88,6 @@ public class FullHttpRequest implements FullHttpMessage {
 
     FullHttpRequest(Builder builder) {
         this.id = builder.id == null ? randomUUID() : builder.id;
-        this.clientAddress = builder.clientAddress;
         this.version = builder.version;
         this.method = builder.method;
         this.url = builder.url;
@@ -258,11 +253,6 @@ public class FullHttpRequest implements FullHttpMessage {
     }
 
 
-    // Relic of old API, kept only for conversions
-    InetSocketAddress clientAddress() {
-        return this.clientAddress;
-    }
-
     /**
      * Get a query parameter by name if present.
      *
@@ -322,8 +312,7 @@ public class FullHttpRequest implements FullHttpMessage {
      */
     public HttpRequest toStreamingRequest() {
         HttpRequest.Builder streamingBuilder = new HttpRequest.Builder(this)
-                .disableValidation()
-                .clientAddress(clientAddress);
+                .disableValidation();
 
         if (this.body.length == 0) {
             return streamingBuilder.body(new StyxCoreObservable<>(Observable.empty())).build();
@@ -370,11 +359,8 @@ public class FullHttpRequest implements FullHttpMessage {
      * Builder.
      */
     public static final class Builder {
-        private static final InetSocketAddress LOCAL_HOST = createUnresolved("127.0.0.1", 0);
-
         private Object id;
         private HttpMethod method = HttpMethod.GET;
-        private InetSocketAddress clientAddress = LOCAL_HOST;
         private boolean validate = true;
         private Url url;
         private HttpHeaders.Builder headers;
@@ -411,7 +397,6 @@ public class FullHttpRequest implements FullHttpMessage {
         public Builder(HttpRequest request, byte[] body) {
             this.id = request.id();
             this.method = request.method();
-            this.clientAddress = request.clientAddress();
             this.url = request.url();
             this.version = request.version();
             this.headers = request.headers().newBuilder();
@@ -421,7 +406,6 @@ public class FullHttpRequest implements FullHttpMessage {
         Builder(FullHttpRequest request) {
             this.id = request.id();
             this.method = request.method();
-            this.clientAddress = request.clientAddress;
             this.url = request.url();
             this.version = request.version();
             this.headers = request.headers().newBuilder();

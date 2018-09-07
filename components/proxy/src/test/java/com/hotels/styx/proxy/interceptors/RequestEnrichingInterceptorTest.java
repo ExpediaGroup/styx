@@ -15,10 +15,16 @@
  */
 package com.hotels.styx.proxy.interceptors;
 
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.client.StyxHeaderConfig;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
+
+import java.net.InetSocketAddress;
 
 import static com.google.common.net.HttpHeaders.X_FORWARDED_FOR;
 import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
@@ -26,78 +32,88 @@ import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.client.StyxHeaderConfig.REQUEST_ID_DEFAULT;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
-import static com.hotels.styx.proxy.interceptors.ReturnResponseChain.returnsResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class RequestEnrichingInterceptorTest {
+    private final RequestRecordingChain recording = requestRecordingChain(new TestChain(false));
+    private final RequestRecordingChain recordingSecure = requestRecordingChain(new TestChain(true));
+
     private final RequestEnrichingInterceptor requestEnrichingInterceptor = new RequestEnrichingInterceptor(new StyxHeaderConfig());
 
     @Test
     public void addsRequestIdToTheHeaders() {
-        RequestRecordingChain recording = intercept(get("/some-uri"), false);
+        requestEnrichingInterceptor.intercept(get("/some-uri").build(), recording);
 
         assertThat(recording.recordedRequest().header(REQUEST_ID_DEFAULT), is(notNullValue()));
     }
 
     @Test
     public void setsTheRemoteAddressToTheForwardedForList() {
-        RequestRecordingChain recording = intercept(get(""), false);
+        requestEnrichingInterceptor.intercept(get("").build(), recording);
 
         assertThat(recording.recordedRequest().header(X_FORWARDED_FOR), isValue("127.0.0.1"));
     }
 
     @Test
     public void appendsTheRemoteAddressToTheForwardedForList() {
-        RequestRecordingChain recording = intercept(get("/some")
-                .header(X_FORWARDED_FOR, "172.21.175.59"), false);
+        requestEnrichingInterceptor.intercept(get("/some")
+                .header(X_FORWARDED_FOR, "172.21.175.59").build(), recording);
 
         assertThat(recording.recordedRequest().header(X_FORWARDED_FOR), isValue("172.21.175.59, 127.0.0.1"));
     }
 
     @Test
-    public void addsXForwardedProtoToHttpWhenAbsent() throws Exception {
-        RequestRecordingChain recording = intercept(get("/some"), false);
+    public void addsXForwardedProtoToHttpWhenAbsent() {
+        requestEnrichingInterceptor.intercept(get("/some").build(), recording);
 
         assertThat(recording.recordedRequest().header(X_FORWARDED_PROTO), isValue("http"));
     }
 
     @Test
-    public void addsXForwardedProtoToHttpsWhenAbsent() throws Exception {
-        RequestRecordingChain recording = intercept(get("/some"), true);
+    public void addsXForwardedProtoToHttpsWhenAbsent() {
+        requestEnrichingInterceptor.intercept(get("/some").build(), recordingSecure);
 
-        assertThat(recording.recordedRequest().header(X_FORWARDED_PROTO), isValue("https"));
+        assertThat(recordingSecure.recordedRequest().header(X_FORWARDED_PROTO), isValue("https"));
     }
 
     @Test
-    public void retainsXForwardedProtoWhenPresentInHttpMessage() throws Exception {
-        RequestRecordingChain recording = intercept(get("/some").addHeader(X_FORWARDED_PROTO, "https"), false);
+    public void retainsXForwardedProtoWhenPresentInHttpMessage() {
+        requestEnrichingInterceptor.intercept(get("/some").addHeader(X_FORWARDED_PROTO, "https").build(), recording);
+
         assertThat(recording.recordedRequest().header(X_FORWARDED_PROTO), isValue("https"));
 
-        recording = intercept(get("/some").addHeader(X_FORWARDED_PROTO, "http"), false);
+        requestEnrichingInterceptor.intercept(get("/some").addHeader(X_FORWARDED_PROTO, "http").build(), recording);
         assertThat(recording.recordedRequest().header(X_FORWARDED_PROTO), isValue("http"));
     }
-
 
     @Test
-    public void retainsXForwardedProtoWhenPresentInHttpsMessage() throws Exception {
-        RequestRecordingChain recording = intercept(get("/some").addHeader(X_FORWARDED_PROTO, "http"), true);
+    public void retainsXForwardedProtoWhenPresentInHttpsMessage() {
+        requestEnrichingInterceptor.intercept(get("/some").addHeader(X_FORWARDED_PROTO, "http").build(), recording);
+
         assertThat(recording.recordedRequest().header(X_FORWARDED_PROTO), isValue("http"));
 
-        recording = intercept(get("/some").addHeader(X_FORWARDED_PROTO, "https"), true);
+        requestEnrichingInterceptor.intercept(get("/some").addHeader(X_FORWARDED_PROTO, "https").build(), recording);
         assertThat(recording.recordedRequest().header(X_FORWARDED_PROTO), isValue("https"));
     }
 
-    private RequestRecordingChain intercept(HttpRequest.Builder builder, boolean secure) {
-        return intercept(builder.build(), secure);
-    }
+    private static class TestChain implements Chain {
+        private final boolean secure;
 
-    private RequestRecordingChain intercept(HttpRequest request, boolean secure) {
-        RequestRecordingChain recording = requestRecordingChain(returnsResponse(response().build(), HttpInterceptorContext.create(secure)));
-        requestEnrichingInterceptor.intercept(request, recording);
-        return recording;
-    }
+        TestChain(boolean secure) {
+            this.secure = secure;
+        }
 
+        @Override
+        public StyxObservable<HttpResponse> proceed(HttpRequest request) {
+            return StyxObservable.of(response().build());
+        }
+
+        @Override
+        public HttpInterceptor.Context context() {
+            return new HttpInterceptorContext(secure, InetSocketAddress.createUnresolved("127.0.0.1", 80));
+        }
+    }
 }

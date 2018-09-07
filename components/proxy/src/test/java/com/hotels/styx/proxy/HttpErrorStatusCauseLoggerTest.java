@@ -79,13 +79,13 @@ public class HttpErrorStatusCauseLoggerTest {
         assertThat(loggingTestSupport.log(), hasItem(
                 loggingEvent(
                         ERROR,
-                        "Failure status=\"500 Internal Server Error\" during request=HttpRequest\\{version=HTTP/1.1, method=GET, uri=/foo, headers=\\[\\], id=.*, clientAddress=.*:.*\\}",
+                        "Failure status=\"500 Internal Server Error\" during request=HttpRequest\\{version=HTTP/1.1, method=GET, uri=/foo, headers=\\[\\], id=.*\\}",
                         "java.lang.Exception",
                         "This is just a test")));
     }
 
     @Test
-    public void logsOtherExceptionsWithoutRequest() throws Exception {
+    public void logsOtherExceptionsWithoutRequest() {
         HttpRequest request = HttpRequest.get("/foo").build();
         Exception exception = new Exception("This is just a test");
 
