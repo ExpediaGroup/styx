@@ -16,6 +16,7 @@
 package com.hotels.styx.server;
 
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 
 import java.util.Optional;
@@ -27,7 +28,7 @@ public class PathPrefixRouter implements HttpRouter {
     private final PathTrie<HttpHandler> routes = new PathTrie<>();
 
     @Override
-    public Optional<HttpHandler> route(HttpRequest request) {
+    public Optional<HttpHandler> route(HttpRequest request, HttpInterceptor.Context ignore) {
         return routes.get(request.path());
     }
 

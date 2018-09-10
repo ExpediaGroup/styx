@@ -37,20 +37,20 @@ class ExpressionVisitor extends ConditionBaseVisitor<Expression<Boolean>> {
     public Expression<Boolean> visitAndExpression(ConditionParser.AndExpressionContext ctx) {
         Expression<Boolean> left = visit(ctx.expression(0));
         Expression<Boolean> right = visit(ctx.expression(1));
-        return request -> left.evaluate(request) && right.evaluate(request);
+        return (request, context) -> left.evaluate(request, context) && right.evaluate(request, context);
     }
 
     @Override
     public Expression<Boolean> visitOrExpression(ConditionParser.OrExpressionContext ctx) {
         Expression<Boolean> left = visit(ctx.expression(0));
         Expression<Boolean> right = visit(ctx.expression(1));
-        return request -> left.evaluate(request) || right.evaluate(request);
+        return (request, context) -> left.evaluate(request, context) || right.evaluate(request, context);
     }
 
     @Override
     public Expression<Boolean> visitNotExpression(ConditionParser.NotExpressionContext ctx) {
         Expression<Boolean> expression = visit(ctx.expression());
-        return request -> !expression.evaluate(request);
+        return (request, context) -> !expression.evaluate(request, context);
     }
 
     @Override
@@ -62,22 +62,22 @@ class ExpressionVisitor extends ConditionBaseVisitor<Expression<Boolean>> {
     @Override
     public Expression<Boolean> visitStringIsPresent(StringIsPresentContext ctx) {
         Expression<String> stringExpression = stringVisitor.visitStringExpression(ctx.stringExpression());
-        return request -> nullToEmpty(stringExpression.evaluate(request)).length() > 0;
+        return (request, context) -> nullToEmpty(stringExpression.evaluate(request, context)).length() > 0;
     }
 
     @Override
     public Expression<Boolean> visitStringEqualsString(ConditionParser.StringEqualsStringContext ctx) {
         Expression<String> left = stringVisitor.visitStringExpression(ctx.stringExpression(0));
         Expression<String> right = stringVisitor.visitStringExpression(ctx.stringExpression(1));
-        return request -> nullToEmpty(left.evaluate(request)).equals(right.evaluate(request));
+        return (request, context) -> nullToEmpty(left.evaluate(request, context)).equals(right.evaluate(request, context));
     }
 
     @Override
     public Expression<Boolean> visitStringMatchesRegexp(ConditionParser.StringMatchesRegexpContext ctx) {
         Expression<String> stringExpression = stringVisitor.visitStringExpression(ctx.stringExpression());
         Pattern pattern = Pattern.compile(stripFirstAndLastCharacter(ctx.string().getText()));
-        return request -> {
-            String evaluate = stringExpression.evaluate(request);
+        return (request, context) -> {
+            String evaluate = stringExpression.evaluate(request, context);
             return pattern.matcher(evaluate).matches();
         };
     }

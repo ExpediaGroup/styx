@@ -46,7 +46,7 @@ public class RouteHandlerAdapterTest {
         when(pipeline.handle(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(StyxObservable.of(respOk));
 
         HttpRouter router = mock(HttpRouter.class);
-        when(router.route(any(HttpRequest.class))).thenReturn(Optional.of(pipeline));
+        when(router.route(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(Optional.of(pipeline));
 
         HttpResponse response = new RouteHandlerAdapter(router).handle(request, HttpInterceptorContext.create()).asCompletableFuture().get();
 

@@ -16,8 +16,10 @@
 package com.hotels.styx.server.routing.antlr;
 
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.RequestCookie;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import java.util.Map;
@@ -30,22 +32,24 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class FunctionResolverTest {
-    Map<String, Function0> zeroArgumentFunctions = ImmutableMap.of(
-            "path", HttpRequest::path,
-            "method", request -> request.method().name());
+    private final Map<String, Function0> zeroArgumentFunctions = ImmutableMap.of(
+            "path", (request, context) -> request.path(),
+            "method", (request, context) -> request.method().name());
 
-    Map<String, Function1> oneArgumentFunctions = ImmutableMap.of(
-            "header", (request, name) -> request.header(name).orElse(""),
-            "cookie", (request, name) -> request.cookie(name).map(RequestCookie::value).orElse(""));
+    private final Map<String, Function1> oneArgumentFunctions = ImmutableMap.of(
+            "header", (request, context, name) -> request.header(name).orElse(""),
+            "cookie", (request, context, name) -> request.cookie(name).map(RequestCookie::value).orElse(""));
 
-    FunctionResolver functionResolver = new FunctionResolver(zeroArgumentFunctions, oneArgumentFunctions);
+    private final FunctionResolver functionResolver = new FunctionResolver(zeroArgumentFunctions, oneArgumentFunctions);
+
+    private final HttpInterceptor.Context context = HttpInterceptorContext.create();
 
     @Test
     public void resolvesZeroArgumentFunctions() {
         HttpRequest request = get("/foo").build();
 
-        assertThat(functionResolver.resolveFunction("path", emptyList()).call(request), is("/foo"));
-        assertThat(functionResolver.resolveFunction("method", emptyList()).call(request), is("GET"));
+        assertThat(functionResolver.resolveFunction("path", emptyList()).call(request, context), is("/foo"));
+        assertThat(functionResolver.resolveFunction("method", emptyList()).call(request, context), is("GET"));
     }
 
     @Test(expectedExceptions = DslFunctionResolutionError.class,
@@ -53,7 +57,7 @@ public class FunctionResolverTest {
     public void throwsExceptionIfZeroArgumentFunctionDoesNotExist() {
         HttpRequest request = get("/foo").build();
 
-        functionResolver.resolveFunction("foobar", emptyList()).call(request);
+        functionResolver.resolveFunction("foobar", emptyList()).call(request, context);
     }
 
     @Test
@@ -63,8 +67,8 @@ public class FunctionResolverTest {
                 .cookies(requestCookie("lang", "en_US|en-us_hotels_com"))
                 .build();
 
-        assertThat(functionResolver.resolveFunction("header", singletonList("Host")).call(request), is("www.hotels.com"));
-        assertThat(functionResolver.resolveFunction("cookie", singletonList("lang")).call(request), is("en_US|en-us_hotels_com"));
+        assertThat(functionResolver.resolveFunction("header", singletonList("Host")).call(request, context), is("www.hotels.com"));
+        assertThat(functionResolver.resolveFunction("cookie", singletonList("lang")).call(request, context), is("en_US|en-us_hotels_com"));
     }
 
     @Test(expectedExceptions = DslFunctionResolutionError.class,
@@ -75,6 +79,6 @@ public class FunctionResolverTest {
                 .cookies(requestCookie("lang", "en_US|en-us_hotels_com"))
                 .build();
 
-        functionResolver.resolveFunction("foobar", singletonList("barfoo")).call(request);
+        functionResolver.resolveFunction("foobar", singletonList("barfoo")).call(request, context);
     }
 }

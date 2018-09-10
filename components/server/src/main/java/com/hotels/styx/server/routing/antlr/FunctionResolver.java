@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.server.routing.antlr;
 
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 
 import java.util.List;
@@ -47,14 +48,14 @@ class FunctionResolver {
                 Function1 function1 = ensureNotNull(
                         oneArgumentFunctions.get(name),
                         "No such function=[%s], with n=[%d] arguments=[%s]", name, argumentSize, argumentsRepresentation);
-                return request -> function1.call(request, arguments.get(0));
+                return (request, context) -> function1.call(request, context, arguments.get(0));
 
             default:
                 throw new IllegalArgumentException(format("No such function=[%s], with n=[%d] arguments=[%s]", name, argumentSize, argumentsRepresentation));
         }
     }
 
-    private <T> T ensureNotNull(T functionRef, String message, String name, int argumentSize, String argumentsRepresentation) {
+    private static <T> T ensureNotNull(T functionRef, String message, String name, int argumentSize, String argumentsRepresentation) {
         if (functionRef == null) {
             throw new DslFunctionResolutionError(String.format(message, name, argumentSize, argumentsRepresentation));
         }
@@ -62,6 +63,6 @@ class FunctionResolver {
     }
 
     interface PartialFunction {
-        String call(HttpRequest request);
+        String call(HttpRequest request, HttpInterceptor.Context context);
     }
 }
