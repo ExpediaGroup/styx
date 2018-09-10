@@ -51,7 +51,7 @@ public class WiremockStyxRequestAdapter implements Request {
     @Override
     public String getAbsoluteUrl() {
         String host = styxRequest.header(HOST).orElse("");
-        String protocol = styxRequest.isSecure() ? "https" : "http";
+        String protocol = "http";
 
         return protocol + "://" + host + styxRequest.url().toURI().toString();
     }

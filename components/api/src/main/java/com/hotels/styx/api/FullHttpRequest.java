@@ -88,7 +88,6 @@ public class FullHttpRequest implements FullHttpMessage {
     private final HttpMethod method;
     private final Url url;
     private final HttpHeaders headers;
-    private final boolean secure;
     private final byte[] body;
 
     FullHttpRequest(Builder builder) {
@@ -97,7 +96,6 @@ public class FullHttpRequest implements FullHttpMessage {
         this.version = builder.version;
         this.method = builder.method;
         this.url = builder.url;
-        this.secure = builder.secure;
         this.headers = builder.headers.build();
         this.body = requireNonNull(builder.body);
     }
@@ -259,13 +257,6 @@ public class FullHttpRequest implements FullHttpMessage {
         return HttpMessageSupport.keepAlive(headers, version);
     }
 
-    /**
-     * @deprecated will be removed from the final 1.0 API release
-     */
-    @Deprecated
-    public boolean isSecure() {
-        return secure;
-    }
 
     // Relic of old API, kept only for conversions
     InetSocketAddress clientAddress() {
@@ -372,7 +363,6 @@ public class FullHttpRequest implements FullHttpMessage {
                 .add("uri", url)
                 .add("headers", headers)
                 .add("id", id)
-                .add("secure", secure)
                 .toString();
     }
 
@@ -387,7 +377,6 @@ public class FullHttpRequest implements FullHttpMessage {
         private InetSocketAddress clientAddress = LOCAL_HOST;
         private boolean validate = true;
         private Url url;
-        private boolean secure;
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
         private byte[] body;
@@ -411,7 +400,6 @@ public class FullHttpRequest implements FullHttpMessage {
             this();
             this.method = requireNonNull(method);
             this.url = Url.Builder.url(uri).build();
-            this.secure = url.isSecure();
         }
 
         /**
@@ -425,7 +413,6 @@ public class FullHttpRequest implements FullHttpMessage {
             this.method = request.method();
             this.clientAddress = request.clientAddress();
             this.url = request.url();
-            this.secure = request.isSecure();
             this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = body;
@@ -436,7 +423,6 @@ public class FullHttpRequest implements FullHttpMessage {
             this.method = request.method();
             this.clientAddress = request.clientAddress;
             this.url = request.url();
-            this.secure = request.isSecure();
             this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = request.body();
@@ -574,7 +560,6 @@ public class FullHttpRequest implements FullHttpMessage {
          */
         public Builder url(Url url) {
             this.url = url;
-            this.secure = url.isSecure();
             return this;
         }
 
@@ -689,17 +674,6 @@ public class FullHttpRequest implements FullHttpMessage {
 
         private static <T> Set<T> toSet(Collection<T> collection) {
             return collection instanceof Set ? (Set<T>) collection : ImmutableSet.copyOf(collection);
-        }
-
-        /**
-         * Sets whether the request is be secure.
-         *
-         * @param secure true if secure
-         * @return {@code this}
-         */
-        public Builder secure(boolean secure) {
-            this.secure = secure;
-            return this;
         }
 
         /**

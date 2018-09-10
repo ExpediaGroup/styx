@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.proxy.interceptors;
 
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
@@ -40,6 +41,11 @@ public final class RequestRecordingChain implements Chain {
     public StyxObservable<HttpResponse> proceed(HttpRequest request) {
         this.request = request;
         return delegate.proceed(request);
+    }
+
+    @Override
+    public HttpInterceptor.Context context() {
+        return delegate.context();
     }
 
     public HttpRequest recordedRequest() {

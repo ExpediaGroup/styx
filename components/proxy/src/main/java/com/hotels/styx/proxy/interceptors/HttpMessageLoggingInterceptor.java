@@ -34,17 +34,14 @@ public class HttpMessageLoggingInterceptor implements HttpInterceptor {
 
     @Override
     public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-        log(request);
-        return chain.proceed(request).map(response -> log(request, response));
-    }
-
-    private HttpResponse log(HttpRequest request, HttpResponse response) {
-        logger.logResponse(request, response);
-        return response;
-    }
-
-    private void log(HttpRequest request) {
         // Note that the request ID is repeated for request logging so that a single search term can be used to find both request and response logs.
-        logger.logRequest(request, null);
+        boolean secure = chain.context().isSecure();
+        logger.logRequest(request, null, secure);
+
+        return chain.proceed(request).map(response -> {
+            logger.logResponse(request, response, secure);
+            return response;
+        });
     }
+
 }

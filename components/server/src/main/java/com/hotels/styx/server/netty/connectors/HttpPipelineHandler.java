@@ -114,6 +114,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
 
     private final StateMachine<State> stateMachine;
     private final ResponseEnhancer responseEnhancer;
+    private final boolean secure;
 
     private volatile Subscription subscription;
     private volatile HttpRequest ongoingRequest;
@@ -131,6 +132,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         this.statsSink = requireNonNull(builder.progressListener);
         this.stateMachine = createStateMachine();
         this.metrics = builder.metricRegistry.get();
+        this.secure = builder.secure;
     }
 
     private StateMachine<State> createStateMachine() {
@@ -250,7 +252,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         // the same call stack as "onLegitimateRequest" handler. This happens when a plugin
         // generates a response.
         try {
-            Observable<HttpResponse> responseObservable = toRxObservable(httpPipeline.handle(v11Request, new HttpInterceptorContext()));
+            Observable<HttpResponse> responseObservable = toRxObservable(httpPipeline.handle(v11Request, new HttpInterceptorContext(this.secure)));
             subscription = responseObservable
                     .subscribe(new Subscriber<HttpResponse>() {
                                    @Override
@@ -587,6 +589,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         private RequestProgressListener progressListener = IGNORE_REQUEST_PROGRESS;
         private HttpResponseWriterFactory responseWriterFactory = HttpResponseWriter::new;
         private Supplier<MetricRegistry> metricRegistry = CodaHaleMetricRegistry::new;
+        private boolean secure;
 
         /**
          * Constructs a new builder.
@@ -653,6 +656,11 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
             return this;
         }
 
+        public Builder secure(boolean secure) {
+            this.secure = secure;
+            return this;
+        }
+
         /**
          * Builds a new instance based on the configured properties.
          *
@@ -672,8 +680,13 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         }
     }
 
-    private final class HttpInterceptorContext implements HttpInterceptor.Context {
+    private static final class HttpInterceptorContext implements HttpInterceptor.Context {
         private final Map<String, Object> context = new ConcurrentHashMap<>();
+        private final boolean secure;
+
+        public HttpInterceptorContext(boolean secure) {
+            this.secure = secure;
+        }
 
         @Override
         public void add(String key, Object value) {
@@ -683,6 +696,11 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         @Override
         public <T> T get(String key, Class<T> clazz) {
             return (T) context.get(key);
+        }
+
+        @Override
+        public boolean isSecure() {
+            return secure;
         }
     }
 }

@@ -175,7 +175,7 @@ class ProtocolsSpec extends FunSpec
   describe("Styx routing of HTTPS requests") {
 
     it("Proxies HTTPS requests to HTTP backend") {
-      val response = decodedRequest(httpsRequest("/http/app.x.4"))
+      val response = decodedRequest(httpsRequest("/http/app.x.4"), secure = true)
 
       assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")
@@ -186,7 +186,7 @@ class ProtocolsSpec extends FunSpec
     }
 
     it("Proxies HTTPS requests to HTTPS backend") {
-      val response = decodedRequest(httpsRequest("/https/trustAllCerts/foo.5"))
+      val response = decodedRequest(httpsRequest("/https/trustAllCerts/foo.5"), secure = true)
 
       assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")
@@ -200,7 +200,8 @@ class ProtocolsSpec extends FunSpec
       val response = decodedRequest(
         httpsRequest("/https/trustAllCerts/foo.6")
           .newBuilder().header(X_FORWARDED_PROTO, "http")
-          .build
+          .build,
+        secure = true
       )
 
       assert(response.status() == OK)
@@ -218,7 +219,7 @@ class ProtocolsSpec extends FunSpec
       val request = get(styxServer.secureRouterURL("/https/authenticate/secure/foo.7"))
         .build()
 
-      val response = decodedRequest(request)
+      val response = decodedRequest(request, secure = true)
 
       assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")
@@ -229,7 +230,7 @@ class ProtocolsSpec extends FunSpec
       val request = get(styxServer.secureRouterURL("/https/authenticate/insecure/foo.8"))
         .build()
 
-      val response = decodedRequest(request)
+      val response = decodedRequest(request, secure = true)
       assert(response.status() == BAD_GATEWAY)
 
       httpsOriginWithCert.verify(0, getRequestedFor(urlEqualTo("/https/authenticate/insecure/foo.8")))
@@ -239,7 +240,7 @@ class ProtocolsSpec extends FunSpec
       val request = get(styxServer.secureRouterURL("/https/trustAllCerts/foo.9"))
         .build()
 
-      val response = decodedRequest(request)
+      val response = decodedRequest(request, secure = true)
 
       assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")

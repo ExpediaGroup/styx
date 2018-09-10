@@ -76,7 +76,6 @@ class EmptyTlsProtocolsListSpec extends FunSpec
     it("Empty TLS protocols list activates all supported protocols") {
       val req = FullHttpRequest.get(styxServer.secureRouterURL("/secure"))
         .header(HOST, styxServer.httpsProxyHost)
-        .secure(true)
         .build()
 
       val resp1 = Await.result(clientV11.sendRequest(req).toScala, 3.seconds)

@@ -59,7 +59,6 @@ public class HttpRequestTest {
     @Test
     public void decodesToFullHttpRequest() throws Exception {
         HttpRequest streamingRequest = post("/foo/bar", body("foo", "bar"))
-                .secure(true)
                 .version(HTTP_1_0)
                 .header("HeaderName", "HeaderValue")
                 .cookies(requestCookie("CookieName", "CookieValue"))
@@ -71,7 +70,6 @@ public class HttpRequestTest {
 
         assertThat(full.method(), is(POST));
         assertThat(full.url(), is(url("/foo/bar").build()));
-        assertThat(full.isSecure(), is(true));
         assertThat(full.version(), is(HTTP_1_0));
         assertThat(full.headers(), containsInAnyOrder(
                 header("HeaderName", "HeaderValue"),
@@ -123,7 +121,6 @@ public class HttpRequestTest {
         assertThat(request.path(), is("/index"));
         assertThat(request.clientAddress().getHostName(), is("127.0.0.1"));
         assertThat(request.id(), is(notNullValue()));
-        assertThat(request.isSecure(), is(false));
         assertThat(request.cookies(), is(emptyIterable()));
         assertThat(request.headers(), is(emptyIterable()));
         assertThat(request.headers("any"), is(emptyIterable()));
@@ -147,7 +144,7 @@ public class HttpRequestTest {
                 .build();
 
         assertThat(request.toString(), is("HttpRequest{version=HTTP/1.0, method=PATCH, uri=https://hotels.com, headers=[headerName=a, Cookie=cfoo=bar, Host=hotels.com]," +
-                " id=id, secure=true, clientAddress=127.0.0.1:0}"));
+                " id=id, clientAddress=127.0.0.1:0}"));
 
         assertThat(request.headers("headerName"), is(singletonList("a")));
     }
@@ -167,12 +164,6 @@ public class HttpRequestTest {
         assertThat(newRequest.method(), is(DELETE));
         assertThat(newRequest.url().path(), is("/home"));
         assertThat(newRequest.headers(), hasItem(header("remove", "notanymore")));
-    }
-
-    @Test
-    public void shouldDetermineIfRequestIsSecure() {
-        assertThat(get("https://hotels.com").build().isSecure(), is(true));
-        assertThat(get("http://hotels.com").build().isSecure(), is(false));
     }
 
     @Test

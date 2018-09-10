@@ -66,19 +66,19 @@ public class HttpRequestMessageLoggerTest {
     @Test
     public void logsClientSideRequestShortFormat() {
         HttpRequest styxRequest = get("http://www.hotels.com/foo/bar/request").build();
-        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false).logRequest(styxRequest, origin);
+        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false).logRequest(styxRequest, origin, true);
 
-        assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, request=\\{method=GET, secure=false, uri=%s, origin=\"%s\"\\}",
+        assertThat(log.lastMessage(), is(loggingEvent(INFO, format("requestId=%s, secure=true, request=\\{method=GET, uri=%s, origin=\"%s\"\\}",
                 styxRequest.id(), styxRequest.url(), origin.hostAndPortString()))));
     }
 
     @Test
     public void logsClientSideRequestLongFormat() {
         HttpRequest styxRequest = get("http://www.hotels.com/foo/bar/request").build();
-        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", true).logRequest(styxRequest, origin);
+        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", true).logRequest(styxRequest, origin, true);
 
         assertThat(log.lastMessage(), is(loggingEvent(INFO,
-                format("requestId=%s, request=\\{method=GET, secure=false, uri=%s, origin=\"%s\", headers=\\[Host=www.hotels.com\\]\\}",
+                format("requestId=%s, secure=true, request=\\{method=GET, uri=%s, origin=\"%s\", headers=\\[Host=www.hotels.com\\]\\}",
                         styxRequest.id(), styxRequest.url(), origin.hostAndPortString()))));
     }
 
@@ -102,7 +102,7 @@ public class HttpRequestMessageLoggerTest {
 
     @Test
     public void requestLoggingDoesNotThrowExceptionWhenReceivingNullArguments() {
-        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false).logRequest(null, origin);
+        new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", false).logRequest(null, origin, true);
 
         assertThat(log.lastMessage(), is(loggingEvent(WARN, "requestId=N/A, request=null, origin=MyApp:h1:hostA:80")));
     }

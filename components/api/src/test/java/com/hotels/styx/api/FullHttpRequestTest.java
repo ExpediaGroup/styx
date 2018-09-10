@@ -58,7 +58,6 @@ public class FullHttpRequestTest {
     @Test
     public void convertsToStreamingHttpRequest() throws Exception {
         FullHttpRequest fullRequest = new FullHttpRequest.Builder(POST, "/foo/bar").body("foobar", UTF_8)
-                .secure(true)
                 .version(HTTP_1_1)
                 .header("HeaderName", "HeaderValue")
                 .cookies(requestCookie("CookieName", "CookieValue"))
@@ -68,7 +67,6 @@ public class FullHttpRequestTest {
 
         assertThat(streaming.method(), is(HttpMethod.POST));
         assertThat(streaming.url(), is(url("/foo/bar").build()));
-        assertThat(streaming.isSecure(), is(true));
         assertThat(streaming.version(), is(HTTP_1_1));
         assertThat(streaming.headers(), containsInAnyOrder(
                 header("Content-Length", "6"),
@@ -118,7 +116,6 @@ public class FullHttpRequestTest {
         assertThat(request.url().toString(), is("/index"));
         assertThat(request.path(), is("/index"));
         assertThat(request.id(), is(notNullValue()));
-        assertThat(request.isSecure(), is(false));
         assertThat(request.cookies(), is(emptyIterable()));
         assertThat(request.headers(), is(emptyIterable()));
         assertThat(request.headers("any"), is(emptyIterable()));
@@ -142,7 +139,7 @@ public class FullHttpRequestTest {
                 .build();
 
         assertThat(request.toString(), is("FullHttpRequest{version=HTTP/1.1, method=PATCH, uri=https://hotels.com, " +
-                "headers=[headerName=a, Cookie=cfoo=bar, Host=hotels.com], id=id, secure=true}"));
+                "headers=[headerName=a, Cookie=cfoo=bar, Host=hotels.com], id=id}"));
 
         assertThat(request.headers("headerName"), is(singletonList("a")));
     }
@@ -259,12 +256,6 @@ public class FullHttpRequestTest {
 
         assertThat(request.bodyAs(UTF_8), is("Original body"));
         assertThat(newRequest.bodyAs(UTF_8), is("New body"));
-    }
-
-    @Test
-    public void shouldDetermineIfRequestIsSecure() {
-        assertThat(get("https://hotels.com").build().isSecure(), is(true));
-        assertThat(get("http://hotels.com").build().isSecure(), is(false));
     }
 
     @Test

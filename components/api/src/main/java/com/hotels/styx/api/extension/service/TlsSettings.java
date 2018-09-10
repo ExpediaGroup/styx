@@ -151,7 +151,7 @@ public class TlsSettings {
          * When true, styx will not attempt to authenticate backend servers.
          * It will accept any certificate presented by the origins.
          *
-         * @deprecated
+         * @deprecated will be removed in future
          * @param trustAllCerts
          * @return
          */

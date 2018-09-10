@@ -28,4 +28,9 @@ public class MockContext implements HttpInterceptor.Context {
     public <T> T get(String key, Class<T> clazz) {
         return null;
     }
+
+    @Override
+    public boolean isSecure() {
+        return false;
+    }
 }

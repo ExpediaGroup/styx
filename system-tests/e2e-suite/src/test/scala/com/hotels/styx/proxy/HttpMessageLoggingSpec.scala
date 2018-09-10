@@ -113,17 +113,17 @@ class HttpMessageLoggingSpec extends FunSpec
         assertThat(logger.log.size(), is(2))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, request=\\{method=GET, secure=false, uri=http://localhost:[0-9]+/foobar, origin=\"N/A\", headers=\\[Host=localhost:[0-9]+\\]}")))
+          "requestId=[-a-z0-9]+, secure=false, request=\\{method=GET, uri=http://localhost:[0-9]+/foobar, origin=\"N/A\", headers=\\[Host=localhost:[0-9]+\\]}")))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, response=\\{status=200 OK, headers=\\[Server=Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + "=generic-app-01, Via=1.1 styx\\]\\}")))
+          "requestId=[-a-z0-9]+, secure=false, response=\\{status=200 OK, headers=\\[Server=Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + "=generic-app-01, Via=1.1 styx\\]\\}")))
       }
     }
 
     it("Should log HTTPS request") {
       val request = get(styxServer.secureRouterURL("/foobar")).build()
 
-      val resp = decodedRequest(request)
+      val resp = decodedRequest(request, secure = true)
 
       assertThat(resp.status(), is(OK))
 
@@ -131,10 +131,10 @@ class HttpMessageLoggingSpec extends FunSpec
         assertThat(logger.log.size(), is(2))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, request=\\{method=GET, secure=true, uri=https://localhost:[0-9]+/foobar, origin=\"N/A\", headers=.*}")))
+          "requestId=[-a-z0-9]+, secure=true, request=\\{method=GET, uri=https://localhost:[0-9]+/foobar, origin=\"N/A\", headers=.*}")))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, response=\\{status=200 OK, headers=\\[Server=Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + "=generic-app-01, Via=1.1 styx\\]\\}")))
+          "requestId=[-a-z0-9]+, secure=true, response=\\{status=200 OK, headers=\\[Server=Jetty\\(6.1.26\\), " + ORIGIN_ID_DEFAULT + "=generic-app-01, Via=1.1 styx\\]\\}")))
       }
     }
   }

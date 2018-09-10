@@ -601,8 +601,8 @@ public class HttpResponse implements StreamingHttpMessage {
          * When validation is enabled (by default), ensures that:
          *
          * <li>
-         *     <ul> There is maximum of only one {@code Content-Length} header
-         *     <ul> The {@code Content-Length} header is zero or positive integer
+         *     <ul>There is maximum of only one {@code Content-Length} header</ul>
+         *     <ul>The {@code Content-Length} header is zero or positive integer</ul>
          * </li>
          *
          * @throws IllegalArgumentException when validation fails

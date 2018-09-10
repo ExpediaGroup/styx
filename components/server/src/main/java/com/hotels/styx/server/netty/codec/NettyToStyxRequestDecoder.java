@@ -16,8 +16,8 @@
 package com.hotels.styx.server.netty.codec;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.Url;
 import com.hotels.styx.api.HttpVersion;
+import com.hotels.styx.api.Url;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;
@@ -31,8 +31,6 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.cookie.Cookie;
-import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.util.ReferenceCountUtil;
 import rx.Observable;
 import rx.Producer;
@@ -44,7 +42,6 @@ import java.net.URL;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
-import java.util.Set;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.Iterables.size;
@@ -67,14 +64,12 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
     private final UniqueIdSupplier uniqueIdSupplier;
     private final boolean flowControlEnabled;
     private final UnwiseCharsEncoder unwiseCharEncoder;
-    private final boolean secure;
     private FlowControllingHttpContentProducer producer;
 
     private NettyToStyxRequestDecoder(Builder builder) {
         this.uniqueIdSupplier = builder.uniqueIdSupplier;
         this.flowControlEnabled = builder.flowControlEnabled;
         this.unwiseCharEncoder = builder.unwiseCharEncoder;
-        this.secure = builder.secure;
     }
 
     @Override
@@ -168,8 +163,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
     @VisibleForTesting
     com.hotels.styx.api.HttpRequest.Builder makeAStyxRequestFrom(HttpRequest request, Observable<ByteBuf> content) {
-        Url url = url(unwiseCharEncoder.encode(request.getUri()))
-                .scheme(secure ? "https" : "http")
+        Url url = url(unwiseCharEncoder.encode(request.uri()))
                 .build();
         com.hotels.styx.api.HttpRequest.Builder requestBuilder = new com.hotels.styx.api.HttpRequest.Builder()
                 .method(toStyxMethod(request.method()))
@@ -190,14 +184,6 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
     private com.hotels.styx.api.HttpMethod toStyxMethod(HttpMethod method) {
         return com.hotels.styx.api.HttpMethod.httpMethod(method.name());
-    }
-
-    private static Set<Cookie> decodeCookieHeader(String header, HttpRequest request) {
-        try {
-            return ServerCookieDecoder.LAX.decode(header);
-        } catch (Exception e) {
-            throw new MalformedCookieHeaderException(e.getMessage() + " in " + request, e);
-        }
     }
 
     private static InetSocketAddress remoteAddress(ChannelHandlerContext ctx) {
@@ -272,7 +258,6 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
      * Builder.
      */
     public static final class Builder {
-        private boolean secure;
         private boolean flowControlEnabled;
         private UniqueIdSupplier uniqueIdSupplier = UUID_VERSION_ONE_SUPPLIER;
         private UnwiseCharsEncoder unwiseCharEncoder = IGNORE;
@@ -289,11 +274,6 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
         public Builder unwiseCharEncoder(UnwiseCharsEncoder unwiseCharEncoder) {
             this.unwiseCharEncoder = requireNonNull(unwiseCharEncoder);
-            return this;
-        }
-
-        public Builder secure(boolean secure) {
-            this.secure = secure;
             return this;
         }
 

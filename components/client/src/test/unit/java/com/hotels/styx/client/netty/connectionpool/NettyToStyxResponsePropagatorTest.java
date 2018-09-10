@@ -17,9 +17,9 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.base.Throwables;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
 import io.netty.buffer.ByteBuf;
@@ -43,11 +43,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.base.Charsets.UTF_8;
-import static com.google.common.net.HostAndPort.fromParts;
 import static com.hotels.styx.api.Id.GENERIC_APP;
+import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
-import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static com.hotels.styx.client.netty.connectionpool.NettyToStyxResponsePropagator.toStyxResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static io.netty.buffer.Unpooled.copiedBuffer;

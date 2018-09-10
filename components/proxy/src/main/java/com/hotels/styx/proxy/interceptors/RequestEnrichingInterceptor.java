@@ -37,21 +37,21 @@ public class RequestEnrichingInterceptor implements HttpInterceptor {
 
     @Override
     public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-        return chain.proceed(enrich(request));
+        return chain.proceed(enrich(request, chain.context().isSecure()));
     }
 
-    private HttpRequest enrich(HttpRequest request) {
+    private HttpRequest enrich(HttpRequest request, boolean secure) {
         return request.newBuilder()
                 .header(requestIdHeaderName, request.id())
                 .header(X_FORWARDED_FOR, xForwardedFor(request))
-                .header(X_FORWARDED_PROTO, xForwardedProto(request))
+                .header(X_FORWARDED_PROTO, xForwardedProto(request, secure))
                 .build();
     }
 
-    private static CharSequence xForwardedProto(HttpRequest request) {
+    private static CharSequence xForwardedProto(HttpRequest request, boolean secure) {
         return request
                 .header(X_FORWARDED_PROTO)
-                .orElse(request.isSecure() ? "https" : "http");
+                .orElse(secure ? "https" : "http");
     }
 
     private static String xForwardedFor(HttpRequest request) {
