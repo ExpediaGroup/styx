@@ -15,9 +15,11 @@
  */
 package com.hotels.styx.server.routing.antlr;
 
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.RequestCookie;
 import com.hotels.styx.api.HttpMethod;
+import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.routing.Condition;
 import org.testng.annotations.Test;
 
@@ -32,11 +34,11 @@ import static org.hamcrest.core.Is.is;
 
 public class AntlrConditionTest {
     final Condition.Parser parser = new AntlrConditionParser.Builder()
-            .registerFunction("method", request -> request.method().name())
-            .registerFunction("path", HttpRequest::path)
-            .registerFunction("userAgent", request -> request.header(USER_AGENT).orElse(""))
-            .registerFunction("header", (request, input) -> request.header(input).orElse(""))
-            .registerFunction("cookie", (request, input) ->
+            .registerFunction("method", (request, context) -> request.method().name())
+            .registerFunction("path", (request, context) -> request.path())
+            .registerFunction("userAgent", (request, context) -> request.header(USER_AGENT).orElse(""))
+            .registerFunction("header", (request, context, input) -> request.header(input).orElse(""))
+            .registerFunction("cookie", (request, context, input) ->
                     request.cookie(input).map(RequestCookie::value).orElse(""))
             .build();
 
@@ -52,16 +54,18 @@ public class AntlrConditionTest {
         return parser.parse(condition);
     }
 
+    private final HttpInterceptor.Context context = HttpInterceptorContext.create();
+
     @Test
     public void matchesRequestPath() {
         Condition condition = condition("path() == '/some-request'");
-        assertThat(condition.evaluate(newRequest("/some-request").build()), is(true));
+        assertThat(condition.evaluate(newRequest("/some-request").build(), context), is(true));
     }
 
     @Test
     public void notMatchingRequestPath() {
         Condition condition = condition("path() == '/some-request'");
-        assertThat(condition.evaluate(newRequest("/random-request").build()), is(false));
+        assertThat(condition.evaluate(newRequest("/random-request").build(), context), is(false));
     }
 
     @Test
@@ -70,29 +74,29 @@ public class AntlrConditionTest {
         HttpRequest request = newRequest("/path")
                 .header(HOST, "bbc.co.uk")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         HttpRequest request2 = newRequest("/path")
                 .header(HOST, "hotels.com")
                 .build();
-        assertThat(condition.evaluate(request2), is(false));
+        assertThat(condition.evaluate(request2, context), is(false));
 
         HttpRequest request3 = newRequest("/path")
                 .build();
-        assertThat(condition.evaluate(request3), is(false));
+        assertThat(condition.evaluate(request3, context), is(false));
     }
 
     @Test
     public void acceptsDoubleQuotesAsRegexp() throws Exception {
         assertThat(
-                condition("path() =~ \"/shop/.*\"").evaluate(newRequest("/shop/x").build()),
+                condition("path() =~ \"/shop/.*\"").evaluate(newRequest("/shop/x").build(), context),
                 is(true));
     }
 
     @Test
     public void acceptsSingleQuotesAsRegexp() throws Exception {
         assertThat(
-                condition("path() =~ '/shop/.*'").evaluate(newRequest("/shop/x").build()),
+                condition("path() =~ '/shop/.*'").evaluate(newRequest("/shop/x").build(), context),
                 is(true));
     }
 
@@ -103,7 +107,7 @@ public class AntlrConditionTest {
         HttpRequest request = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
     }
 
     @Test
@@ -113,20 +117,20 @@ public class AntlrConditionTest {
         HttpRequest request = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
     }
 
     @Test
     public void acceptsSingleQuotesAsRightHandSide() throws Exception {
         assertThat(
-                condition("path() =~ '/shop/.*'").evaluate(newRequest("/shop/x").build()),
+                condition("path() =~ '/shop/.*'").evaluate(newRequest("/shop/x").build(), context),
                 is(true));
     }
 
     @Test
     public void acceptsDoubleQuotesAsRightHandSide() throws Exception {
         assertThat(
-                condition("path() =~ \"^/shop/.*\"").evaluate(newRequest("/shop/x").build()),
+                condition("path() =~ \"^/shop/.*\"").evaluate(newRequest("/shop/x").build(), context),
                 is(true));
     }
 
@@ -138,12 +142,12 @@ public class AntlrConditionTest {
         HttpRequest request = newRequest("/foo")
                 .header(HOST, "bbc.co.uk")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         HttpRequest request2 = newRequest("/foo")
                 .build();
 
-        assertThat(condition.evaluate(request2), is(false));
+        assertThat(condition.evaluate(request2, context), is(false));
     }
 
     @Test
@@ -153,21 +157,21 @@ public class AntlrConditionTest {
         HttpRequest request = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         HttpRequest request2 = request.newBuilder()
                 .header(HOST, "hotels.com")
                 .build();
-        assertThat(condition.evaluate(request2), is(false));
+        assertThat(condition.evaluate(request2, context), is(false));
 
         HttpRequest request3 = request.newBuilder()
                 .header(HOST, "hotels.co.uk")
                 .build();
-        assertThat(condition.evaluate(request3), is(true));
+        assertThat(condition.evaluate(request3, context), is(true));
 
         HttpRequest request4 = newRequest()
                 .build();
-        assertThat(condition.evaluate(request4), is(false));
+        assertThat(condition.evaluate(request4, context), is(false));
     }
 
     @Test
@@ -175,7 +179,7 @@ public class AntlrConditionTest {
         Condition condition = condition("path() =~ '.foo.*'");
 
         assertThat(
-                condition.evaluate(get("/foo/bar").build()),
+                condition.evaluate(get("/foo/bar").build(), context),
                 is(true));
     }
 
@@ -187,29 +191,29 @@ public class AntlrConditionTest {
                 .header(HOST, "bbc.co.uk")
                 .header(CONTENT_LENGTH, "7")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         HttpRequest request2 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header(CONTENT_LENGTH, "1")
                 .build();
-        assertThat(condition.evaluate(request2), is(false));
+        assertThat(condition.evaluate(request2, context), is(false));
 
         HttpRequest request3 = newRequest()
                 .header(HOST, "hotels.com")
                 .header(CONTENT_LENGTH, "7")
                 .build();
-        assertThat(condition.evaluate(request3), is(false));
+        assertThat(condition.evaluate(request3, context), is(false));
 
         HttpRequest request4 = newRequest()
                 .header(CONTENT_LENGTH, "7")
                 .build();
-        assertThat(condition.evaluate(request4), is(false));
+        assertThat(condition.evaluate(request4, context), is(false));
 
         HttpRequest request5 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .build();
-        assertThat(condition.evaluate(request5), is(false));
+        assertThat(condition.evaluate(request5, context), is(false));
     }
 
     @Test
@@ -219,13 +223,13 @@ public class AntlrConditionTest {
                 .header(HOST, "bbc.co.uk")
                 .header(CONTENT_LENGTH, "20")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         HttpRequest request2 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header(CONTENT_LENGTH, "70")
                 .build();
-        assertThat(condition.evaluate(request2), is(false));
+        assertThat(condition.evaluate(request2, context), is(false));
     }
 
     @Test
@@ -238,7 +242,7 @@ public class AntlrConditionTest {
                 .header(CONTENT_LENGTH, "7")
                 .header("App-Name", "app1")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
     }
 
 
@@ -249,19 +253,19 @@ public class AntlrConditionTest {
         HttpRequest request = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         HttpRequest request2 = newRequest()
                 .header(HOST, "hotels.com")
                 .header(CONTENT_LENGTH, "7")
                 .build();
-        assertThat(condition.evaluate(request2), is(true));
+        assertThat(condition.evaluate(request2, context), is(true));
 
         HttpRequest request3 = newRequest()
                 .header(HOST, "hotels.com")
                 .header(CONTENT_LENGTH, "8")
                 .build();
-        assertThat(condition.evaluate(request3), is(false));
+        assertThat(condition.evaluate(request3, context), is(false));
     }
 
     @Test
@@ -273,26 +277,26 @@ public class AntlrConditionTest {
         HttpRequest request = newRequest()
                 .header("App-Name", "app5")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         request = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header(CONTENT_LENGTH, "7")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         request = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header(CONTENT_LENGTH, "8")
                 .build();
-        assertThat(condition.evaluate(request), is(false));
+        assertThat(condition.evaluate(request, context), is(false));
 
         request = newRequest()
                 .header(HOST, "hotels.com")
                 .header(CONTENT_LENGTH, "7")
                 .header("App-Name", "appX")
                 .build();
-        assertThat(condition.evaluate(request), is(false));
+        assertThat(condition.evaluate(request, context), is(false));
     }
 
     @Test
@@ -304,26 +308,26 @@ public class AntlrConditionTest {
         HttpRequest request = newRequest()
                 .header("App-Name", "app5")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         request = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header(CONTENT_LENGTH, "7")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         request = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header(CONTENT_LENGTH, "8")
                 .build();
-        assertThat(condition.evaluate(request), is(false));
+        assertThat(condition.evaluate(request, context), is(false));
 
         request = newRequest()
                 .header(HOST, "hotels.com")
                 .header(CONTENT_LENGTH, "7")
                 .header("App-Name", "appX")
                 .build();
-        assertThat(condition.evaluate(request), is(false));
+        assertThat(condition.evaluate(request, context), is(false));
     }
 
     @Test
@@ -332,12 +336,12 @@ public class AntlrConditionTest {
         HttpRequest request1 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .build();
-        assertThat(condition.evaluate(request1), is(false));
+        assertThat(condition.evaluate(request1, context), is(false));
 
         HttpRequest request2 = newRequest()
                 .header(CONTENT_LENGTH, 7)
                 .build();
-        assertThat(condition.evaluate(request2), is(true));
+        assertThat(condition.evaluate(request2, context), is(true));
     }
 
     @Test
@@ -349,19 +353,19 @@ public class AntlrConditionTest {
                 .header(HOST, "bbc.co.uk")
                 .header("App-Name", "app1")
                 .build();
-        assertThat(condition.evaluate(request1), is(true));
+        assertThat(condition.evaluate(request1, context), is(true));
 
         HttpRequest request2 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header("App-Name", "shop2")
                 .build();
-        assertThat(condition.evaluate(request2), is(true));
+        assertThat(condition.evaluate(request2, context), is(true));
 
         HttpRequest request3 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header("App-Name", "landing3")
                 .build();
-        assertThat(condition.evaluate(request3), is(false));
+        assertThat(condition.evaluate(request3, context), is(false));
     }
 
     @Test
@@ -373,19 +377,19 @@ public class AntlrConditionTest {
                 .header(HOST, "bbc.co.uk")
                 .header("App-Name", "landing1")
                 .build();
-        assertThat(condition.evaluate(request1), is(true));
+        assertThat(condition.evaluate(request1, context), is(true));
 
         HttpRequest request2 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header("App-Name", "app2")
                 .build();
-        assertThat(condition.evaluate(request2), is(false));
+        assertThat(condition.evaluate(request2, context), is(false));
 
         HttpRequest request3 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header("App-Name", "shop1")
                 .build();
-        assertThat(condition.evaluate(request3), is(true));
+        assertThat(condition.evaluate(request3, context), is(true));
 
     }
 
@@ -396,18 +400,18 @@ public class AntlrConditionTest {
                 .cookies(requestCookie("TheCookie", "foobar-foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         request = newRequest()
                 .cookies(requestCookie("AnotherCookie", "foobar-foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
-        assertThat(condition.evaluate(request), is(false));
+        assertThat(condition.evaluate(request, context), is(false));
 
         request = newRequest()
                 .header("App-Name", "app3")
                 .build();
-        assertThat(condition.evaluate(request), is(false));
+        assertThat(condition.evaluate(request, context), is(false));
     }
 
 
@@ -418,18 +422,18 @@ public class AntlrConditionTest {
                 .cookies(requestCookie("TheCookie", "foobar-foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         request = newRequest()
                 .cookies(requestCookie("AnotherCookie", "foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
-        assertThat(condition.evaluate(request), is(false));
+        assertThat(condition.evaluate(request, context), is(false));
 
         request = newRequest()
                 .header("App-Name", "app3")
                 .build();
-        assertThat(condition.evaluate(request), is(false));
+        assertThat(condition.evaluate(request, context), is(false));
     }
 
     @Test
@@ -440,18 +444,18 @@ public class AntlrConditionTest {
                 .cookies(requestCookie("TheCookie", "foobar-foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         request = newRequest()
                 .cookies(requestCookie("AnotherCookie", "foobar-x-baz"))
                 .header("App-Name", "app3")
                 .build();
-        assertThat(condition.evaluate(request), is(false));
+        assertThat(condition.evaluate(request, context), is(false));
 
         request = newRequest()
                 .header("App-Name", "app3")
                 .build();
-        assertThat(condition.evaluate(request), is(false));
+        assertThat(condition.evaluate(request, context), is(false));
     }
 
     @Test
@@ -459,11 +463,11 @@ public class AntlrConditionTest {
         Condition condition = condition("method() == 'GET'");
         HttpRequest request = get("/blah")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         request = post("/blah")
                 .build();
-        assertThat(condition.evaluate(request), is(false));
+        assertThat(condition.evaluate(request, context), is(false));
     }
 
     @Test
@@ -473,26 +477,26 @@ public class AntlrConditionTest {
         HttpRequest request = get("/blah")
                 .header(USER_AGENT, "Mozilla Firefox 1.1.2")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         request = get("/blah")
                 .header(USER_AGENT, "Mozilla Firefox 1.1.25")
                 .build();
-        assertThat(condition.evaluate(request), is(false));
+        assertThat(condition.evaluate(request, context), is(false));
 
         request = get("/blah")
                 .header(USER_AGENT, "Foxzilla x.y.z")
                 .build();
-        assertThat(condition.evaluate(request), is(false));
+        assertThat(condition.evaluate(request, context), is(false));
 
         request = get("/blah")
                 .header(USER_AGENT, "Safari-XYZ")
                 .build();
-        assertThat(condition.evaluate(request), is(true));
+        assertThat(condition.evaluate(request, context), is(true));
 
         request = post("/blah")
                 .build();
-        assertThat(condition.evaluate(request), is(false));
+        assertThat(condition.evaluate(request, context), is(false));
     }
 
     @Test(expectedExceptions = DslSyntaxError.class)

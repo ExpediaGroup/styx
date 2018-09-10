@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.server.routing;
 
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpRequest.get;
@@ -23,11 +24,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class AntlrMatcherTest {
 
+    private final HttpInterceptorContext context = HttpInterceptorContext.create();
+
     @Test
     public void matchesHttpProtocol() throws Exception {
         AntlrMatcher matcher = AntlrMatcher.antlrMatcher("protocol() == 'https'");
-        assertThat(matcher.apply(get("/path").secure(true).build()), is(true));
-        assertThat(matcher.apply(get("/path").secure(false).build()), is(false));
+        assertThat(matcher.apply(get("/path").secure(true).build(), context), is(true));
+        assertThat(matcher.apply(get("/path").secure(false).build(), context), is(false));
     }
 
 }

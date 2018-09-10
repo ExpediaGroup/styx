@@ -35,7 +35,7 @@ public class RouteHandlerAdapter implements HttpHandler {
 
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return router.route(request)
+        return router.route(request, context)
                 .map(pipeline -> pipeline.handle(request, context))
                 .orElse(StyxObservable.error(new NoServiceConfiguredException(request.path())));
     }

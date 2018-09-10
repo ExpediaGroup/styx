@@ -15,13 +15,14 @@
  */
 package com.hotels.styx.server.routing;
 
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 
 /**
  * Base interface for routing rules.
  */
 public interface Condition {
-    boolean evaluate(HttpRequest request);
+    boolean evaluate(HttpRequest request, HttpInterceptor.Context context);
 
     /**
      * Parser for a condition.

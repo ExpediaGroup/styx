@@ -15,12 +15,13 @@
  */
 package com.hotels.styx.server.routing;
 
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 
 /**
  * A matcher condition to match against HTTP requests.
  */
 public interface Matcher {
-    boolean apply(HttpRequest request);
+    boolean apply(HttpRequest request, HttpInterceptor.Context context);
 }
 

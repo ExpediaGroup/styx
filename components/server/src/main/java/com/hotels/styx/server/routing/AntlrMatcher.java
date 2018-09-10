@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.server.routing;
 
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.RequestCookie;
 import com.hotels.styx.server.routing.antlr.AntlrConditionParser;
@@ -25,13 +26,13 @@ import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
  * A Route matcher based on ANTLR condition parser.
  */
 public final class AntlrMatcher implements Matcher {
-    static final Condition.Parser CONDITION_PARSER = new AntlrConditionParser.Builder()
-            .registerFunction("method", request -> request.method().name())
-            .registerFunction("path", HttpRequest::path)
-            .registerFunction("userAgent", request -> request.header(USER_AGENT).orElse(""))
-            .registerFunction("protocol", request -> request.isSecure() ? "https" : "http")
-            .registerFunction("header", (request, input) -> request.header(input).orElse(""))
-            .registerFunction("cookie", (request, input) -> request.cookie(input).map(RequestCookie::value).orElse(""))
+    private static final Condition.Parser CONDITION_PARSER = new AntlrConditionParser.Builder()
+            .registerFunction("method", (request, context) -> request.method().name())
+            .registerFunction("path", (request, context) -> request.path())
+            .registerFunction("userAgent", (request, context) -> request.header(USER_AGENT).orElse(""))
+            .registerFunction("protocol", (request, context) -> request.isSecure() ? "https" : "http")
+            .registerFunction("header", (request, context, input) -> request.header(input).orElse(""))
+            .registerFunction("cookie", (request, context, input) -> request.cookie(input).map(RequestCookie::value).orElse(""))
             .build();
     private final Condition condition;
 
@@ -45,7 +46,7 @@ public final class AntlrMatcher implements Matcher {
     }
 
     @Override
-    public boolean apply(HttpRequest request) {
-        return this.condition.evaluate(request);
+    public boolean apply(HttpRequest request, HttpInterceptor.Context context) {
+        return this.condition.evaluate(request, context);
     }
 }

@@ -33,7 +33,7 @@ class StringCompareVisitor extends ConditionBaseVisitor<Expression<String>> {
 
     @Override
     public Expression<String> visitString(ConditionParser.StringContext ctx) {
-        return request -> stripFirstAndLastCharacter(ctx.getText());
+        return (request, context) -> stripFirstAndLastCharacter(ctx.getText());
     }
 
     @Override

@@ -85,7 +85,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     }
 
     @Override
-    public Optional<HttpHandler> route(HttpRequest request) {
+    public Optional<HttpHandler> route(HttpRequest request, HttpInterceptor.Context ignore) {
         String path = request.path();
 
         return routes.entrySet().stream()

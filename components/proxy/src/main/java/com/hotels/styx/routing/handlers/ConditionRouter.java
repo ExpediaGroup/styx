@@ -18,6 +18,7 @@ package com.hotels.styx.routing.handlers;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
@@ -57,9 +58,9 @@ public class ConditionRouter implements HttpRouter {
     }
 
     @Override
-    public Optional<HttpHandler> route(HttpRequest request) {
+    public Optional<HttpHandler> route(HttpRequest request, HttpInterceptor.Context context) {
         for (Route route : routes) {
-            HttpHandler handler = route.match(request);
+            HttpHandler handler = route.match(request, context);
             if (handler != null) {
                 return Optional.of(handler);
             }
@@ -77,8 +78,8 @@ public class ConditionRouter implements HttpRouter {
             this.handler = handler;
         }
 
-        public HttpHandler match(HttpRequest request) {
-            return matcher.apply(request) ? handler : null;
+        public HttpHandler match(HttpRequest request, HttpInterceptor.Context context) {
+            return matcher.apply(request, context) ? handler : null;
         }
     }
 
