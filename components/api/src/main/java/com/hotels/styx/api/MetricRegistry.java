@@ -28,7 +28,7 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 
 /**
- * A registry for collecting all metrics.
+ * A Styx metrics registry that is based on CodaHale {@link Metric} objects.
  */
 public interface MetricRegistry {
 

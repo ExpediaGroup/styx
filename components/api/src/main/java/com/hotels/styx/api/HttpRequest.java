@@ -37,8 +37,6 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderValues.KEEP_ALIVE;
-import static com.hotels.styx.api.RequestCookie.decode;
-import static com.hotels.styx.api.RequestCookie.encode;
 import static com.hotels.styx.api.HttpMethod.DELETE;
 import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.api.HttpMethod.HEAD;
@@ -49,6 +47,8 @@ import static com.hotels.styx.api.HttpMethod.PUT;
 import static com.hotels.styx.api.HttpMethod.httpMethod;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.HttpVersion.httpVersion;
+import static com.hotels.styx.api.RequestCookie.decode;
+import static com.hotels.styx.api.RequestCookie.encode;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.compositeBuffer;
 import static io.netty.buffer.Unpooled.copiedBuffer;
@@ -63,7 +63,41 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 
 /**
- * HTTP request with a fully aggregated/decoded body.
+ * An HTTP request object with a byte stream body.
+ * <p>
+ * An {@code HttpRequest} is used in {@link HttpInterceptor} where each content
+ * chunk must be processed as they arrive. It is also useful for dealing with
+ * very large content sizes, and in situations where content size is not known
+ * upfront.
+ * <p>
+ * An {@code HttpRequest} object is immutable with respect to the request line
+ * attributes and HTTP headers. Once an instance is created, they cannot change.
+ *
+ * An {@code HttpRequest} body is a byte buffer stream that can be consumed
+ * as sequence of asynchronous events. Once consumed, the stream is exhausted and
+ * can not be reused. Conceptually each {@code HttpRequest} object
+ * has an associated producer object that publishes data to the stream.
+ * For example, a Styx Server implements a content producer for {@link HttpInterceptor}
+ * extensions. The producer receives data chunks from a network socket and publishes
+ * them to an appropriate content stream.
+ *
+ * HTTP requests are created via {@code Builder} object, which can be created
+ * with static helper methods:
+ *
+ * <ul>
+ *     <li>{@code get}</li>
+ *     <li>{@code head}</li>
+ *     <li>{@code post}</li>
+ *     <li>{@code put}</li>
+ *     <li>{@code delete}</li>
+ *     <li>{@code patch}</li>
+ * </ul>
+ *
+ * A builder can also be created with one of the {@code Builder} constructors.
+ *
+ * A special method {@code newBuilder} creates a prepopulated {@code Builder}
+ * from the current request object. It is useful for transforming a request
+ * to another one my modifying one or more of its attributes.
  */
 public class HttpRequest implements StreamingHttpMessage {
     private final Object id;
@@ -183,38 +217,47 @@ public class HttpRequest implements StreamingHttpMessage {
         return new Builder(PATCH, uri).body(body);
     }
 
+    /**
+     * @return HTTP protocol version
+     */
     @Override
     public HttpVersion version() {
         return this.version;
     }
 
+    /**
+     * @return all HTTP headers as an {@link HttpHeaders} instance
+     */
     @Override
     public HttpHeaders headers() {
         return headers;
     }
 
+    /**
+     * @param name header name
+     * @return all values for a given HTTP header name or an empty list if the header is not present
+     */
     @Override
     public List<String> headers(CharSequence name) {
         return headers.getAll(name);
     }
 
+    /**
+     * @return request body as a byte stream
+     */
     @Override
     public StyxObservable<ByteBuf> body() {
         return body;
     }
 
     /**
-     * Gets the unique ID for this request.
-     *
-     * @return request ID
+     * @return an unique request ID
      */
     public Object id() {
         return id;
     }
 
     /**
-     * Returns the HTTP method of this request.
-     *
      * @return the HTTP method
      */
     public HttpMethod method() {
@@ -222,18 +265,14 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * Returns the requested URI (or alternatively, path).
-     *
-     * @return The URI being requested
+     * @return the request URL
      */
     public Url url() {
         return url;
     }
 
     /**
-     * Returns the requested path.
-     *
-     * @return the path being requested
+     * @return the request URL path component
      */
     public String path() {
         return url.path();
@@ -252,16 +291,22 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * Checks if the request has been transferred over a secure connection. If the protocol is HTTPS and the
-     * content is delivered over SSL then the request is considered to be secure.
-     *
-     * @return true if the request is transferred securely
+     * @deprecated will be removed from the final 1.0 API release
      */
+    @Deprecated
     public boolean isSecure() {
         return secure;
     }
 
+    /**
+     * Will be removed in due course.
+     *
+     * @deprecated will not appear in 1.0 interface
+     *
+     * @return
+     */
     // Relic of old API, kept only for conversions
+    @Deprecated
     public InetSocketAddress clientAddress() {
         return this.clientAddress;
     }
@@ -298,7 +343,7 @@ public class HttpRequest implements StreamingHttpMessage {
     /**
      * Get the names of all query parameters.
      *
-     * @return the names of all query parameters.
+     * @return the names of all query parameters
      */
     public Iterable<String> queryParamNames() {
         return url.queryParamNames();
@@ -306,8 +351,9 @@ public class HttpRequest implements StreamingHttpMessage {
 
     /**
      * Return a new {@link Builder} that will inherit properties from this request.
-     * This allows a new request to be made that will be identical to this one except for the properties
-     * overridden by the builder methods.
+     * <p>
+     * This allows a new request to be made that is identical to this one
+     * except for the properties overridden by the builder methods.
      *
      * @return new builder based on this request
      */
@@ -315,6 +361,26 @@ public class HttpRequest implements StreamingHttpMessage {
         return new Builder(this);
     }
 
+    /**
+     * Aggregates content stream and converts this request to a {@link FullHttpRequest}.
+     * <p>
+     * Returns a {@link StyxObservable} that eventually produces a
+     * {@link FullHttpRequest}. The resulting full request object has the same
+     * request line, headers, and content as this request.
+     *
+     * The content stream is aggregated asynchronously. The stream may be connected
+     * to a network socket or some other content producer. Once aggregated, a
+     * FullHttpRequest object is emitted on the returned {@link StyxObservable}.
+     *
+     * A sole {@code maxContentBytes} argument is a backstop defence against excessively
+     * long content streams. The {@code maxContentBytes} should be set to a sensible
+     * value according to your application requirements and heap size. When the content
+     * size stream exceeds the {@code maxContentBytes}, a @{link ContentOverflowException}
+     * is emitted on the returned observable.
+     *
+     * @param maxContentBytes maximum expected content size
+     * @return a {@link StyxObservable}
+     */
     public StyxObservable<FullHttpRequest> toFullRequest(int maxContentBytes) {
         CompositeByteBuf byteBufs = compositeBuffer();
 
@@ -350,7 +416,7 @@ public class HttpRequest implements StreamingHttpMessage {
     /**
      * Decodes the "Cookie" header in this request and returns the cookies.
      *
-     * @return cookies
+     * @return a set of cookies
      */
     public Set<RequestCookie> cookies() {
         return headers.get(COOKIE)
@@ -362,7 +428,7 @@ public class HttpRequest implements StreamingHttpMessage {
      * Decodes the "Cookie" header in this request and returns the specified cookie.
      *
      * @param name cookie name
-     * @return cookies
+     * @return an optional cookie
      */
     public Optional<RequestCookie> cookie(String name) {
         return cookies().stream()
@@ -384,7 +450,7 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * Builder.
+     * An HTTP request builder.
      */
     public static final class Builder {
         private static final InetSocketAddress LOCAL_HOST = createUnresolved("127.0.0.1", 0);
@@ -399,12 +465,21 @@ public class HttpRequest implements StreamingHttpMessage {
         private HttpVersion version = HTTP_1_1;
         private StyxObservable<ByteBuf> body;
 
+        /**
+         * Creates a new {@link Builder} object with default attributes.
+         */
         public Builder() {
             this.url = Url.Builder.url("/").build();
             this.headers = new HttpHeaders.Builder();
             this.body = new StyxCoreObservable<>(Observable.empty());
         }
 
+        /**
+         * Creates a new {@link Builder} with specified HTTP method and URI.
+         *
+         * @param method a HTTP method
+         * @param uri a HTTP URI
+         */
         public Builder(HttpMethod method, String uri) {
             this();
             this.method = requireNonNull(method);
@@ -412,7 +487,13 @@ public class HttpRequest implements StreamingHttpMessage {
             this.secure = url.isSecure();
         }
 
-        public Builder(HttpRequest request, StyxObservable<ByteBuf> body) {
+        /**
+         * Creates a new {@link Builder} from an existing request with a new body content stream.
+         *
+         * @param request a HTTP request object
+         * @param contentStream a body content stream
+         */
+        public Builder(HttpRequest request, StyxObservable<ByteBuf> contentStream) {
             this.id = request.id();
             this.method = httpMethod(request.method().name());
             this.clientAddress = request.clientAddress();
@@ -561,17 +642,29 @@ public class HttpRequest implements StreamingHttpMessage {
             return this;
         }
 
+        /**
+         * Do not use in any new code.
+         *
+         * @deprecated Will not appear in 1.0 API.
+         *
+         * @param clientAddress
+         * @return {@code this}
+         */
+        @Deprecated
         public Builder clientAddress(InetSocketAddress clientAddress) {
             this.clientAddress = clientAddress;
             return this;
         }
 
         /**
-         * Sets whether the request is be secure.
+         * Don't use. Will be removed soon.
+         *
+         * @deprecated Will not appear in 1.0 API.
          *
          * @param secure true if secure
          * @return {@code this}
          */
+        @Deprecated
         public Builder secure(boolean secure) {
             this.secure = secure;
             return this;

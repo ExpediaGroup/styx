@@ -32,7 +32,12 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 
 /**
- * Represents an HTTP cookie as sent in the {@code Cookie} header of an HTTP request.
+ * Represents an HTTP cookie as sent in the HTTP request {@code Cookie} header.
+ *
+ * A client includes a {@code RequestCookie} in a request to the remote server.
+ * It has just two attributes, {@code name} and {@code value}. Unlike {@link ResponseCookie}
+ * it doesn't have any cookie attributes.
+ *
  */
 public final class RequestCookie {
     private final String name;

@@ -55,7 +55,30 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 
 /**
- * HTTP request with a fully aggregated/decoded body.
+ * An immutable HTTP request object including full body content.
+ * <p>
+ * A {@link FullHttpRequest} is useful for requests with a
+ * finite body content, such as when PUT or POST are used to create or
+ * modify a RESTful object.
+ * <p>
+ * A FullHttpRequest is created via {@link FullHttpRequest.Builder}. A new builder
+ * can be obtained by a call to following static methods:
+ *
+ * <ul>
+ *     <li>{@code get}</li>
+ *     <li>{@code head}</li>
+ *     <li>{@code post}</li>
+ *     <li>{@code put}</li>
+ *     <li>{@code delete}</li>
+ *     <li>{@code patch}</li>
+ * </ul>
+ *
+ * A builder can also be created with one of the {@code Builder} constructors.
+ *
+ * FullHttpRequest is immutable. Once created it cannot be modified.
+ * However a request can be transformed to another using the {@link this#newBuilder}
+ * method. It creates a new {@link Builder} with all message properties and
+ * body content cloned in.
  */
 public class FullHttpRequest implements FullHttpMessage {
     private final Object id;
@@ -83,7 +106,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the GET method.
      *
      * @param uri URI
-     * @return {@code this}
+     * @return {@link FullHttpRequest.Builder}
      */
     public static Builder get(String uri) {
         return new Builder(GET, uri);
@@ -93,7 +116,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the HEAD method.
      *
      * @param uri URI
-     * @return {@code this}
+     * @return {@link FullHttpRequest.Builder}
      */
     public static Builder head(String uri) {
         return new Builder(HEAD, uri);
@@ -103,7 +126,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the POST method.
      *
      * @param uri URI
-     * @return {@code this}
+     * @return {@link FullHttpRequest.Builder}
      */
     public static Builder post(String uri) {
         return new Builder(POST, uri);
@@ -113,7 +136,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the DELETE method.
      *
      * @param uri URI
-     * @return {@code this}
+     * @return {@link FullHttpRequest.Builder}
      */
     public static Builder delete(String uri) {
         return new Builder(DELETE, uri);
@@ -123,7 +146,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the PUT method.
      *
      * @param uri URI
-     * @return {@code this}
+     * @return {@link FullHttpRequest.Builder}
      */
     public static Builder put(String uri) {
         return new Builder(PUT, uri);
@@ -133,22 +156,32 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the PATCH method.
      *
      * @param uri URI
-     * @return {@code this}
+     * @return {@link FullHttpRequest.Builder}
      */
     public static Builder patch(String uri) {
         return new Builder(PATCH, uri);
     }
 
+    /**
+     * @return HTTP protocol version
+     */
     @Override
     public HttpVersion version() {
         return this.version;
     }
 
+    /**
+     * @return all HTTP headers as an {@link HttpHeaders} instance
+     */
     @Override
     public HttpHeaders headers() {
         return headers;
     }
 
+    /**
+     * @param name header name
+     * @return all values for a given HTTP header name or an empty list if the header is not present
+     */
     @Override
     public List<String> headers(CharSequence name) {
         return headers.getAll(name);
@@ -162,7 +195,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * reference cannot be used to modify the message content.
      * <p>
      *
-     * @return Message body content
+     * @return message body content
      */
     @Override
     public byte[] body() {
@@ -176,8 +209,8 @@ public class FullHttpRequest implements FullHttpMessage {
      * The caller must ensure the provided charset is compatible with message content
      * type and encoding.
      *
-     * @param charset Charset used to decode message body.
-     * @return Message body as a String.
+     * @param charset Charset used to decode message body
+     * @return message body as a String
      */
     @Override
     public String bodyAs(Charset charset) {
@@ -187,17 +220,13 @@ public class FullHttpRequest implements FullHttpMessage {
     }
 
     /**
-     * Gets the unique ID for this request.
-     *
-     * @return request ID
+     * @return an unique request ID
      */
     public Object id() {
         return id;
     }
 
     /**
-     * Returns the HTTP method of this request.
-     *
      * @return the HTTP method
      */
     public HttpMethod method() {
@@ -205,18 +234,14 @@ public class FullHttpRequest implements FullHttpMessage {
     }
 
     /**
-     * Returns the requested URI (or alternatively, path).
-     *
-     * @return The URI being requested
+     * @return the request URL
      */
     public Url url() {
         return url;
     }
 
     /**
-     * Returns the requested path.
-     *
-     * @return the path being requested
+     * @return the request URL path component
      */
     public String path() {
         return url.path();
@@ -235,11 +260,9 @@ public class FullHttpRequest implements FullHttpMessage {
     }
 
     /**
-     * Checks if the request has been transferred over a secure connection. If the protocol is HTTPS and the
-     * content is delivered over SSL then the request is considered to be secure.
-     *
-     * @return true if the request is transferred securely
+     * @deprecated will be removed from the final 1.0 API release
      */
+    @Deprecated
     public boolean isSecure() {
         return secure;
     }
@@ -281,7 +304,7 @@ public class FullHttpRequest implements FullHttpMessage {
     /**
      * Get the names of all query parameters.
      *
-     * @return the names of all query parameters.
+     * @return the names of all query parameters
      */
     public Iterable<String> queryParamNames() {
         return url.queryParamNames();
@@ -301,10 +324,10 @@ public class FullHttpRequest implements FullHttpMessage {
     /**
      * Converts this request into a streaming form (HttpRequest).
      * <p>
-     * Converts this request into a HttpRequest object which represents the HTTP request as a
+     * Converts this request into an HttpRequest object which represents the HTTP request as a
      * stream of bytes.
      *
-     * @return A streaming HttpRequest object.
+     * @return A streaming HttpRequest object
      */
     public HttpRequest toStreamingRequest() {
         HttpRequest.Builder streamingBuilder = new HttpRequest.Builder(this)
@@ -321,7 +344,7 @@ public class FullHttpRequest implements FullHttpMessage {
     /**
      * Decodes the "Cookie" header in this request and returns the cookies.
      *
-     * @return cookies
+     * @return a set of cookies
      */
     public Set<RequestCookie> cookies() {
         return headers.get(COOKIE)
@@ -333,7 +356,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Decodes the "Cookie" header in this request and returns the specified cookie.
      *
      * @param name cookie name
-     * @return cookies
+     * @return an optional cookie
      */
     public Optional<RequestCookie> cookie(String name) {
         return cookies().stream()
@@ -369,12 +392,21 @@ public class FullHttpRequest implements FullHttpMessage {
         private HttpVersion version = HTTP_1_1;
         private byte[] body;
 
+        /**
+         * Creates a new {@link Builder} object with default attributes.
+         */
         public Builder() {
             this.url = Url.Builder.url("/").build();
             this.headers = new HttpHeaders.Builder();
             this.body = new byte[0];
         }
 
+        /**
+         * Creates a new  {@link Builder} object with specified and URI.
+         *
+         * @param method a HTTP method
+         * @param uri URI
+         */
         public Builder(HttpMethod method, String uri) {
             this();
             this.method = requireNonNull(method);
@@ -382,6 +414,12 @@ public class FullHttpRequest implements FullHttpMessage {
             this.secure = url.isSecure();
         }
 
+        /**
+         * Creates a new  {@link Builder} from streaming request and a content byte array.
+         *
+         * @param request a streaming HTTP request object
+         * @param body an HTTP body content array
+         */
         public Builder(HttpRequest request, byte[] body) {
             this.id = request.id();
             this.method = request.method();
@@ -421,7 +459,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * charset, and sets the Content-Length header accordingly.
          *
          * @param content request body
-         * @param charset Charset for string encoding.
+         * @param charset Charset for string encoding
          * @return {@code this}
          */
         public Builder body(String content, Charset charset) {
@@ -436,7 +474,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * argument is true.
          *
          * @param content          request body
-         * @param charset          Charset used for encoding request body.
+         * @param charset          charset used for encoding request body
          * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
          * @return {@code this}
          */
@@ -508,8 +546,8 @@ public class FullHttpRequest implements FullHttpMessage {
          * <p/>
          * Will not replace any existing values for the header.
          *
-         * @param name  The name of the header
-         * @param value The value of the header
+         * @param name  the name of the header
+         * @param value the value of the header
          * @return {@code this}
          */
         public Builder addHeader(CharSequence name, Object value) {
@@ -566,7 +604,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * Sets the cookies on this request by overwriting the value of the "Cookie" header.
          *
          * @param cookies cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder cookies(RequestCookie... cookies) {
             return cookies(asList(cookies));
@@ -576,7 +614,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * Sets the cookies on this request by overwriting the value of the "Cookie" header.
          *
          * @param cookies cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder cookies(Collection<RequestCookie> cookies) {
             requireNonNull(cookies);
@@ -595,7 +633,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * add all new cookies in one call to the method rather than spreading them out.
          *
          * @param cookies new cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder addCookies(RequestCookie... cookies) {
             return addCookies(asList(cookies));
@@ -608,7 +646,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * add all new cookies in one call to the method rather than spreading them out.
          *
          * @param cookies new cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder addCookies(Collection<RequestCookie> cookies) {
             requireNonNull(cookies);
@@ -622,7 +660,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * Removes all cookies matching one of the supplied names by overwriting the value of the "Cookie" header.
          *
          * @param names cookie names
-         * @return this builder
+         * @return {@code this}
          */
         public Builder removeCookies(String... names) {
             return removeCookies(asList(names));
@@ -632,7 +670,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * Removes all cookies matching one of the supplied names by overwriting the value of the "Cookie" header.
          *
          * @param names cookie names
-         * @return this builder
+         * @return {@code this}
          */
         public Builder removeCookies(Collection<String> names) {
             requireNonNull(names);
