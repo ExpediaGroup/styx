@@ -51,6 +51,13 @@ public interface HttpInterceptor {
         default <T> Optional<T> getIfAvailable(String key, Class<T> clazz) {
             return Optional.ofNullable(get(key, clazz));
         }
+
+        /**
+         * Returns true if this request was received over a secure connection.
+         *
+         * @return returns true if this request was received over a secure connection
+         */
+        boolean isSecure();
     }
 
     /**

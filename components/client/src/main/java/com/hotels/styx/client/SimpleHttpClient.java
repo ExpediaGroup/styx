@@ -49,17 +49,19 @@ public final class SimpleHttpClient implements FullHttpClient {
     private final ConnectionSettings connectionSettings;
     private final int maxResponseSize;
     private final Connection.Factory connectionFactory;
+    private final boolean isHttps;
 
-    private SimpleHttpClient(Builder builder) {
+    private SimpleHttpClient(Builder builder, boolean isHttps) {
         this.userAgent = Optional.ofNullable(builder.userAgent);
         this.connectionSettings = builder.connectionSettings;
         this.maxResponseSize = builder.maxResponseSize;
         this.connectionFactory = builder.connectionFactory;
+        this.isHttps = isHttps;
     }
 
     public CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request) {
         FullHttpRequest networkRequest = addUserAgent(request);
-        Origin origin = originFromRequest(networkRequest);
+        Origin origin = originFromRequest(networkRequest, isHttps);
 
         Observable<FullHttpResponse> responseObservable = connectionFactory.createConnection(origin, connectionSettings)
                 .flatMap(connection -> connection.write(networkRequest.toStreamingRequest())
@@ -78,7 +80,7 @@ public final class SimpleHttpClient implements FullHttpClient {
                 .orElse(request);
     }
 
-    private static Origin originFromRequest(FullHttpRequest request) {
+    private static Origin originFromRequest(FullHttpRequest request, Boolean isHttps) {
         String hostAndPort = request.header(HOST)
                 .orElseGet(() -> {
                     checkArgument(request.url().isAbsolute(), "host header is not set for request=%s", request);
@@ -89,7 +91,7 @@ public final class SimpleHttpClient implements FullHttpClient {
         HostAndPort host = HostAndPort.fromString(hostAndPort);
 
         if (host.getPortOrDefault(-1) < 0) {
-            host = host.withDefaultPort(request.isSecure() ? DEFAULT_HTTPS_PORT : DEFAULT_HTTP_PORT);
+            host = host.withDefaultPort(isHttps ? DEFAULT_HTTPS_PORT : DEFAULT_HTTP_PORT);
         }
 
         return newOriginBuilder(host.getHostText(), host.getPort()).build();
@@ -173,7 +175,7 @@ public final class SimpleHttpClient implements FullHttpClient {
                             false,
                             false))
                     .build();
-            return new SimpleHttpClient(this);
+            return new SimpleHttpClient(this, tlsSettings != null);
         }
     }
 }

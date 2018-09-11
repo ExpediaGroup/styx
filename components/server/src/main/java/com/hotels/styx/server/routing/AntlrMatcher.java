@@ -30,7 +30,7 @@ public final class AntlrMatcher implements Matcher {
             .registerFunction("method", (request, context) -> request.method().name())
             .registerFunction("path", (request, context) -> request.path())
             .registerFunction("userAgent", (request, context) -> request.header(USER_AGENT).orElse(""))
-            .registerFunction("protocol", (request, context) -> request.isSecure() ? "https" : "http")
+            .registerFunction("protocol", (request, context) -> context.isSecure() ? "https" : "http")
             .registerFunction("header", (request, context, input) -> request.header(input).orElse(""))
             .registerFunction("cookie", (request, context, input) -> request.cookie(input).map(RequestCookie::value).orElse(""))
             .build();

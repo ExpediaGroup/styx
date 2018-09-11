@@ -84,7 +84,6 @@ class Tls12Spec extends FunSpec
     it("Accepts TLS 1.2 only") {
       val req = new FullHttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
         .header(HOST, styxServer.httpsProxyHost)
-        .secure(true)
         .build()
 
       val resp = Await.result(clientV12.sendRequest(req).toScala, 3.seconds)
@@ -95,7 +94,6 @@ class Tls12Spec extends FunSpec
     it("Refuses TLS 1.1 when TLS 1.2 is required") {
       val req = new FullHttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
         .header(HOST, styxServer.httpsProxyHost)
-        .secure(true)
         .build()
 
       an[RuntimeException] should be thrownBy {

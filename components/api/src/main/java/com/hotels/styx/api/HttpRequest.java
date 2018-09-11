@@ -107,7 +107,6 @@ public class HttpRequest implements StreamingHttpMessage {
     private final HttpMethod method;
     private final Url url;
     private final HttpHeaders headers;
-    private final boolean secure;
     private final StyxObservable<ByteBuf> body;
 
     HttpRequest(Builder builder) {
@@ -116,7 +115,6 @@ public class HttpRequest implements StreamingHttpMessage {
         this.version = builder.version;
         this.method = builder.method;
         this.url = builder.url;
-        this.secure = builder.secure;
         this.headers = builder.headers.build();
         this.body = requireNonNull(builder.body);
     }
@@ -291,21 +289,8 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * @deprecated will be removed from the final 1.0 API release
+     * @deprecated will be removed from Styx 1.0 api release
      */
-    @Deprecated
-    public boolean isSecure() {
-        return secure;
-    }
-
-    /**
-     * Will be removed in due course.
-     *
-     * @deprecated will not appear in 1.0 interface
-     *
-     * @return
-     */
-    // Relic of old API, kept only for conversions
     @Deprecated
     public InetSocketAddress clientAddress() {
         return this.clientAddress;
@@ -444,7 +429,6 @@ public class HttpRequest implements StreamingHttpMessage {
                 .add("uri", url)
                 .add("headers", headers)
                 .add("id", id)
-                .add("secure", secure)
                 .add("clientAddress", clientAddress)
                 .toString();
     }
@@ -460,7 +444,6 @@ public class HttpRequest implements StreamingHttpMessage {
         private InetSocketAddress clientAddress = LOCAL_HOST;
         private boolean validate = true;
         private Url url;
-        private boolean secure;
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
         private StyxObservable<ByteBuf> body;
@@ -484,7 +467,6 @@ public class HttpRequest implements StreamingHttpMessage {
             this();
             this.method = requireNonNull(method);
             this.url = Url.Builder.url(uri).build();
-            this.secure = url.isSecure();
         }
 
         /**
@@ -498,7 +480,6 @@ public class HttpRequest implements StreamingHttpMessage {
             this.method = httpMethod(request.method().name());
             this.clientAddress = request.clientAddress();
             this.url = request.url();
-            this.secure = request.isSecure();
             this.version = httpVersion(request.version().toString());
             this.headers = request.headers().newBuilder();
             this.body = body;
@@ -509,7 +490,6 @@ public class HttpRequest implements StreamingHttpMessage {
             this.method = request.method();
             this.clientAddress = request.clientAddress();
             this.url = request.url();
-            this.secure = request.isSecure();
             this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = request.body();
@@ -520,7 +500,6 @@ public class HttpRequest implements StreamingHttpMessage {
             this.method = request.method();
             this.clientAddress = request.clientAddress();
             this.url = request.url();
-            this.secure = request.isSecure();
             this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = StyxCoreObservable.of(copiedBuffer(request.body()));
@@ -616,7 +595,6 @@ public class HttpRequest implements StreamingHttpMessage {
          */
         public Builder url(Url url) {
             this.url = url;
-            this.secure = url.isSecure();
             return this;
         }
 
@@ -653,20 +631,6 @@ public class HttpRequest implements StreamingHttpMessage {
         @Deprecated
         public Builder clientAddress(InetSocketAddress clientAddress) {
             this.clientAddress = clientAddress;
-            return this;
-        }
-
-        /**
-         * Don't use. Will be removed soon.
-         *
-         * @deprecated Will not appear in 1.0 API.
-         *
-         * @param secure true if secure
-         * @return {@code this}
-         */
-        @Deprecated
-        public Builder secure(boolean secure) {
-            this.secure = secure;
             return this;
         }
 

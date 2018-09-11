@@ -188,13 +188,14 @@ public class SimpleHttpClientTest {
     @Test
     public void sendsToDefaultHttpsPort() {
         Connection.Factory connectionFactory = mockConnectionFactory(mockConnection(response(OK).build()));
+        TlsSettings tlsSettings = mock(TlsSettings.class);
 
         SimpleHttpClient client = new SimpleHttpClient.Builder()
                 .setConnectionFactory(connectionFactory)
+                .tlsSettings(tlsSettings)
                 .build();
 
         client.sendRequest(get("/")
-                .secure(true)
                 .header(HOST, "localhost")
                 .build());
 

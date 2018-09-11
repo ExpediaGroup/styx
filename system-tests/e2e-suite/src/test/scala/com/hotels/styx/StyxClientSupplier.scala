@@ -46,15 +46,17 @@ trait StyxClientSupplier {
 
   private def doSecureRequest(request: FullHttpRequest): Future[FullHttpResponse] = httpsClient.sendRequest(request).toScala
 
-  private def doRequest(request: FullHttpRequest, debug: Boolean = false): Future[FullHttpResponse] = if (request.isSecure)
+  private def doRequest(request: FullHttpRequest, debug: Boolean = false, secure: Boolean = false): Future[FullHttpResponse] = if (secure)
     doSecureRequest(request)
   else
     doHttpRequest(request, debug = debug)
 
   def decodedRequest(request: FullHttpRequest,
                      debug: Boolean = false,
-                     maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds): FullHttpResponse = {
-    val future = doRequest(request, debug = debug)
+                     maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds,
+                     secure: Boolean = false
+                    ): FullHttpResponse = {
+    val future = doRequest(request, debug = debug, secure = secure)
       .map(response => {
         if (debug) {
           println("StyxClientSupplier: received response for: " + request.url().path())

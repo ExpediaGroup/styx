@@ -143,7 +143,7 @@ class ConditionRoutingSpec extends FunSpec
     }
 
     it("Routes HTTPS protocol to HTTPS origins") {
-      val response = decodedRequest(httpsRequest("/app.2"))
+      val response = decodedRequest(httpsRequest("/app.2"), secure = true)
 
       assert(response.status() == OK)
       assert(response.bodyAs(UTF_8) == "Hello, World!")

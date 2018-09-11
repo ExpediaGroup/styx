@@ -67,9 +67,7 @@ class HttpsSpec extends FunSpec
         .header(HOST, styxServer.httpsProxyHost)
         .build()
 
-      req.isSecure should be(true)
-
-      val resp = decodedRequest(req)
+      val resp = decodedRequest(req, secure = true)
       resp.status() should be(OK)
 
       recordingBackend.verify(getRequestedFor(urlPathEqualTo("/secure"))

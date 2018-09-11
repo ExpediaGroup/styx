@@ -27,6 +27,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class HttpInterceptorContext implements HttpInterceptor.Context {
     private final Map<String, Object> context = new ConcurrentHashMap<>();
+    private final boolean secure;
+
+    private HttpInterceptorContext(boolean secure) {
+        this.secure = secure;
+    }
 
     @Override
     public void add(String key, Object value) {
@@ -38,7 +43,16 @@ public final class HttpInterceptorContext implements HttpInterceptor.Context {
         return (T) context.get(key);
     }
 
+    @Override
+    public boolean isSecure() {
+        return secure;
+    }
+
     public static HttpInterceptorContext create() {
-        return new HttpInterceptorContext();
+        return new HttpInterceptorContext(false);
+    }
+
+    public static HttpInterceptorContext create(boolean secure) {
+        return new HttpInterceptorContext(secure);
     }
 }

@@ -16,12 +16,14 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.server.HttpInterceptorContext;
 
 /**
  * A handler that return whatever response returned from the passed in handler.
@@ -29,13 +31,23 @@ import com.hotels.styx.api.HttpRequest;
  */
 public final class ReturnResponseChain implements Chain {
     private final HttpResponse response;
+    private HttpInterceptor.Context context;
 
-    private ReturnResponseChain(HttpResponse response) {
+    private ReturnResponseChain(HttpResponse response, HttpInterceptor.Context context) {
         this.response = response;
+        this.context = context;
+    }
+
+    public HttpInterceptor.Context context() {
+        return context;
     }
 
     public static ReturnResponseChain returnsResponse(HttpResponse response) {
-        return new ReturnResponseChain(response);
+        return new ReturnResponseChain(response, HttpInterceptorContext.create());
+    }
+
+    public static ReturnResponseChain returnsResponse(HttpResponse response, HttpInterceptor.Context context) {
+        return new ReturnResponseChain(response, context);
     }
 
     public static ReturnResponseChain returnsResponse(String response) {

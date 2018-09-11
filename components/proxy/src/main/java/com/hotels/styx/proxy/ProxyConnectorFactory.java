@@ -160,13 +160,13 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
                             .errorStatusListener(httpErrorStatusListener)
                             .progressListener(requestStatsCollector)
                             .metricRegistry(metrics)
+                            .secure(sslContext.isPresent())
                             .build());
         }
 
 
         private NettyToStyxRequestDecoder requestTranslator() {
             return new NettyToStyxRequestDecoder.Builder()
-                    .secure(isHttps())
                     .flowControlEnabled(true)
                     .unwiseCharEncoder(unwiseCharEncoder)
                     .build();

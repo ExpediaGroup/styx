@@ -19,6 +19,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.support.api.HttpMessageBodies;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.AfterMethod;
@@ -58,18 +59,18 @@ public class HttpMessageLoggingInterceptorTest {
                 .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
                 .build();
 
-        consume(interceptor.intercept(request, respondWith(
+        consume(interceptor.intercept(request, chain(
                 response(OK)
                 .header("RespHeader", "RespHeaderValue")
                 .cookies(responseCookie("RespCookie", "RespCookieValue").build())
         )));
 
-        String requestPattern = "request=\\{method=GET, secure=false, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\]\\}";
+        String requestPattern = "request=\\{method=GET, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\]\\}";
         String responsePattern = "response=\\{status=200 OK, headers=\\[RespHeader=RespHeaderValue\\, Set-Cookie=RespCookie=RespCookieValue]\\}";
 
         assertThat(responseLogSupport.log(), contains(
-                loggingEvent(INFO, "requestId=" + request.id() + ", " + requestPattern),
-                loggingEvent(INFO, "requestId=" + request.id() + ", " + responsePattern)));
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + requestPattern),
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + responsePattern)));
     }
 
     @Test
@@ -80,40 +81,50 @@ public class HttpMessageLoggingInterceptorTest {
                 .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
                 .build();
 
-        consume(interceptor.intercept(request, respondWith(
+        consume(interceptor.intercept(request, chain(
                 response(OK)
                         .header("RespHeader", "RespHeaderValue")
                         .cookies(responseCookie("RespCookie", "RespCookieValue").build())
         )));
 
-        String requestPattern = "request=\\{method=GET, secure=false, uri=/, origin=\"N/A\"}";
+        String requestPattern = "request=\\{method=GET, uri=/, origin=\"N/A\"}";
         String responsePattern = "response=\\{status=200 OK}";
 
         assertThat(responseLogSupport.log(), contains(
-                loggingEvent(INFO, "requestId=" + request.id() + ", " + requestPattern),
-                loggingEvent(INFO, "requestId=" + request.id() + ", " + responsePattern)));
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + requestPattern),
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + responsePattern)));
     }
 
     @Test
     public void logsSecureRequests() {
         HttpRequest request = get("/")
-                .secure(true)
                 .header("ReqHeader", "ReqHeaderValue")
                 .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
                 .build();
 
-        consume(interceptor.intercept(request, respondWith(response(OK))));
+        consume(interceptor.intercept(request, chain(response(OK))));
 
-        String requestPattern = "request=\\{method=GET, secure=true, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\]\\}";
+        String requestPattern = "request=\\{method=GET, uri=/, origin=\"N/A\", headers=\\[ReqHeader=ReqHeaderValue, Cookie=ReqCookie=ReqCookieValue\\]\\}";
         String responsePattern = "response=\\{status=200 OK, headers=\\[\\]\\}";
 
         assertThat(responseLogSupport.log(), contains(
-                loggingEvent(INFO, "requestId=" + request.id() + ", " + requestPattern),
-                loggingEvent(INFO, "requestId=" + request.id() + ", " + responsePattern)));
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + requestPattern),
+                loggingEvent(INFO, "requestId=" + request.id() + ", secure=true, " + responsePattern)));
     }
 
-    private static HttpInterceptor.Chain respondWith(HttpResponse.Builder resp) {
-        return request -> StyxObservable.of(resp.build());
+
+    private static HttpInterceptor.Chain chain(HttpResponse.Builder resp) {
+        return new HttpInterceptor.Chain() {
+            @Override
+            public StyxObservable<HttpResponse> proceed(HttpRequest request) {
+                return StyxObservable.of(resp.build());
+            }
+
+            @Override
+            public HttpInterceptor.Context context() {
+                return HttpInterceptorContext.create(true);
+            }
+        };
     }
 
     private static void consume(StyxObservable<HttpResponse> resp) {

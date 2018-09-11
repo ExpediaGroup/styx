@@ -112,7 +112,7 @@ class HttpOutboundMessageLoggingSpec extends FunSpec
         assertThat(logger.log.size(), is(2))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
-          "requestId=[-a-z0-9]+, request=\\{method=GET, secure=false, uri=http://localhost:[0-9]+/foobar, origin=\"localhost:[0-9]+\", headers=\\[.*\\]}")))
+          "requestId=[-a-z0-9]+, request=\\{method=GET, uri=http://localhost:[0-9]+/foobar, origin=\"localhost:[0-9]+\", headers=\\[.*\\]}")))
 
         assertThat(logger.log(), hasItem(loggingEvent(INFO,
           "requestId=[-a-z0-9]+, response=\\{status=200 OK, headers=\\[Transfer-Encoding=chunked, Server=Jetty\\(6.1.26\\)\\]\\}")))

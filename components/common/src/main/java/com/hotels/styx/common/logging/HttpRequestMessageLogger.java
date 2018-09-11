@@ -38,7 +38,15 @@ public class HttpRequestMessageLogger {
         if (request == null) {
             logger.warn("requestId=N/A, request=null, origin={}", origin);
         } else {
-            logger.info("requestId={}, request={}", request.id(), information(request, origin, longFormatEnabled));
+            logger.info("requestId={}, request={}", new Object[] {request.id(), information(request, origin, longFormatEnabled)});
+        }
+    }
+
+    public void logRequest(HttpRequest request, Origin origin, boolean secure) {
+        if (request == null) {
+            logger.warn("requestId=N/A, request=null, origin={}", origin);
+        } else {
+            logger.info("requestId={}, secure={}, request={}", new Object[] {request.id(), secure, information(request, origin, longFormatEnabled)});
         }
     }
 
@@ -47,6 +55,14 @@ public class HttpRequestMessageLogger {
             logger.warn("requestId={}, response=null", id(request));
         } else {
             logger.info("requestId={}, response={}", id(request), information(response, longFormatEnabled));
+        }
+    }
+
+    public void logResponse(HttpRequest request, HttpResponse response, boolean secure) {
+        if (response == null) {
+            logger.warn("requestId={}, response=null", id(request));
+        } else {
+            logger.info("requestId={}, secure={}, response={}", new Object[] {id(request), secure, information(response, longFormatEnabled)});
         }
     }
 
@@ -66,7 +82,6 @@ public class HttpRequestMessageLogger {
     private static Info information(HttpRequest request, Origin origin, boolean longFormatEnabled) {
         Info info = new Info()
                 .add("method", request.method())
-                .add("secure", request.isSecure())
                 .add("uri", request.url())
                 .add("origin", origin != null ? origin.hostAndPortString() : "N/A");
 

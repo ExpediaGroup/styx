@@ -96,6 +96,11 @@ public class ConfigurationContextResolverInterceptorTest {
             public <T> T get(String key, Class<T> type) {
                 return type.cast(map.get(key));
             }
+
+            @Override
+            public boolean isSecure() {
+                return false;
+            }
         }
     }
 }
