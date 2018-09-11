@@ -49,11 +49,13 @@ import rx.Observable;
 import rx.subjects.PublishSubject;
 import com.hotels.styx.api.HttpRequest;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static ch.qos.logback.classic.Level.INFO;
 import static ch.qos.logback.classic.Level.WARN;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.toArray;
@@ -929,6 +931,21 @@ public class HttpPipelineHandlerTest {
         assertThat(logger.lastMessage(), is(
                 loggingEvent(WARN, "message='Spurious request received while handling another request'.*")));
         assertThat(responseUnsubscribed.get(), is(true));
+    }
+
+    @Test
+    public void logsSslHandshakeErrors() throws Exception {
+        LoggingTestSupport logger = new LoggingTestSupport(HttpPipelineHandler.class);
+
+        setupHandlerTo(ACCEPTING_REQUESTS);
+
+        handler.exceptionCaught(ctx, new DecoderException(new SSLHandshakeException("Client requested protocol TLSv1.1 not enabled or not supported")));
+
+        verify(ctx.channel()).close();
+        assertThat(handler.state(), is(TERMINATED));
+
+        assertThat(logger.lastMessage(), is(
+                loggingEvent(INFO, "SSL handshake failure from incoming connection .*")));
     }
 
     private HttpPipelineHandler.Builder handlerWithMocks() {

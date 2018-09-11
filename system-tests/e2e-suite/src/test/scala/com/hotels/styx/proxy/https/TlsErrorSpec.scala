@@ -15,24 +15,28 @@
  */
 package com.hotels.styx.proxy.https
 
+import ch.qos.logback.classic.Level.INFO
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames._
-import com.hotels.styx.api.HttpMethod.GET
-import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.{FullHttpClient, FullHttpRequest}
 import com.hotels.styx.client.SimpleHttpClient
 import com.hotels.styx.infrastructure.HttpResponseImplicits
+import com.hotels.styx.server.netty.connectors.HttpPipelineHandler
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
+import com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent
+import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.{SSLSetup, StyxProxySpec}
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.hasItem
 import org.scalatest.{FunSpec, ShouldMatchers}
 
 import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class Tls12Spec extends FunSpec
+class TlsErrorSpec extends FunSpec
   with StyxProxySpec
   with HttpResponseImplicits
   with ShouldMatchers
@@ -40,65 +44,63 @@ class Tls12Spec extends FunSpec
 
   val crtFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.crt").toString
   val keyFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.key").toString
-  val clientV12 = newClient(Seq("TLSv1.2"))
   val clientV11 = newClient(Seq("TLSv1.1"))
+  var log: LoggingTestSupport = _
 
   override val styxConfig = StyxYamlConfig(
     yamlConfig =
       s"""
-        |proxy:
-        |  connectors:
-        |    https:
-        |      port: 0
-        |      sslProvider: JDK
-        |      certificateFile: $crtFile
-        |      certificateKeyFile: $keyFile
-        |      protocols:
-        |       - TLSv1.2
-        |admin:
-        |  connectors:
-        |    http:
-        |      port: 0
-        |
+         |proxy:
+         |  connectors:
+         |    https:
+         |      port: 0
+         |      sslProvider: JDK
+         |      certificateFile: $crtFile
+         |      certificateKeyFile: $keyFile
+         |      protocols:
+         |       - TLSv1.2
+         |admin:
+         |  connectors:
+         |    http:
+         |      port: 0
+         |
       """.stripMargin
   )
 
-  val recordingBackend = FakeHttpServer.HttpsStartupConfig()
-    .start()
+  val app = FakeHttpServer.HttpsStartupConfig().start()
 
   override protected def beforeAll() = {
     super.beforeAll()
+    log = new LoggingTestSupport(classOf[HttpPipelineHandler])
     styxServer.setBackends("/secure" -> HttpsBackend(
-      "https-app", Origins(recordingBackend), TlsSettings()
+      "https-app", Origins(app), TlsSettings()
     ))
   }
 
   override protected def afterAll() = {
-    recordingBackend.stop()
+    app.stop()
     super.afterAll()
+    log.stop()
   }
 
   describe("TLS protocol restriction") {
-    recordingBackend.stub(urlPathEqualTo("/secure"), aResponse.withStatus(200))
+    app.stub(urlPathEqualTo("/secure"), aResponse.withStatus(200))
+    val serverPort = styxServer.proxyHttpsAddress().getPort
 
-    it("Accepts TLS 1.2 only") {
-      val req = new FullHttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
-        .header(HOST, styxServer.httpsProxyHost)
-        .build()
-
-      val resp = Await.result(clientV12.sendRequest(req).toScala, 3.seconds)
-
-      resp.status() should be(OK)
-    }
-
-    it("Refuses TLS 1.1 when TLS 1.2 is required") {
-      val req = new FullHttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
+    it("Logs an SSL handshake exception") {
+      val req = FullHttpRequest.get(styxServer.secureRouterURL("/secure"))
         .header(HOST, styxServer.httpsProxyHost)
         .build()
 
       an[RuntimeException] should be thrownBy {
         Await.result(clientV11.sendRequest(req).toScala, 3.seconds)
       }
+
+      val message =
+        """SSL handshake failure from incoming connection cause="Client requested protocol """ +
+          s"""TLSv1.1 not enabled or not supported", serverAddress=.*:$serverPort, clientAddress=.*"""
+
+      assertThat(log.log(), hasItem(loggingEvent(INFO, message)))
     }
   }
 
