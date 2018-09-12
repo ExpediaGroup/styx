@@ -83,11 +83,12 @@ class TlsErrorSpec extends FunSpec
     log.stop()
   }
 
-  describe("TLS protocol restriction") {
+  describe("TLS errors handling") {
     app.stub(urlPathEqualTo("/secure"), aResponse.withStatus(200))
-    val serverPort = styxServer.proxyHttpsAddress().getPort
 
     it("Logs an SSL handshake exception") {
+      val serverPort = styxServer.proxyHttpsAddress().getPort
+
       val req = FullHttpRequest.get(styxServer.secureRouterURL("/secure"))
         .header(HOST, styxServer.httpsProxyHost)
         .build()
