@@ -98,11 +98,11 @@ If the request URL does not match any of the **urlPattern**s, the request retain
 
 Because **urlPattern**s are matched in order they appear in the **rewrites** list, one needs to add the most specific pattern to the top of the list, and the least specific (i.e. most generic) pattern to the bottom of the list.
 
-## SSL Settings
+## TLS Settings
 See [Transport Layer Security](configure-tls.md) for details.
 
-The `sslSettings` is an optional configuration block. If present, it enables an HTTPS protocol between Styx and the
- backend application. If absent, insecure HTTP protocol is used. The `sslSettings` has following attributes:
+The `tlsSettings` is an optional configuration block. If present, it enables an HTTPS protocol between Styx and the
+ backend application. If absent, insecure HTTP protocol is used. The `tlsSettings` has following attributes:
 
 *   **trustAllCerts** - when `false` Styx authenticates the backend origin with configured certificates.
  When `true` Styx doesn't authenticate the remote end.
