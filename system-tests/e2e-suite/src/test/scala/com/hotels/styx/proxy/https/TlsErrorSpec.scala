@@ -30,6 +30,7 @@ import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.{SSLSetup, StyxProxySpec}
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.hasItem
+import org.scalatest.concurrent.Eventually
 import org.scalatest.{FunSpec, ShouldMatchers}
 
 import scala.compat.java8.FutureConverters.CompletionStageOps
@@ -40,7 +41,8 @@ class TlsErrorSpec extends FunSpec
   with StyxProxySpec
   with HttpResponseImplicits
   with ShouldMatchers
-  with SSLSetup {
+  with SSLSetup
+  with Eventually {
 
   val crtFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.crt").toString
   val keyFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.key").toString
@@ -101,7 +103,9 @@ class TlsErrorSpec extends FunSpec
         """SSL handshake failure from incoming connection cause="Client requested protocol """ +
           s"""TLSv1.1 not enabled or not supported", serverAddress=.*:$serverPort, clientAddress=.*"""
 
-      assertThat(log.log(), hasItem(loggingEvent(INFO, message)))
+      eventually(timeout(3 seconds)) {
+        assertThat(log.log(), hasItem(loggingEvent(INFO, message)))
+      }
     }
   }
 
