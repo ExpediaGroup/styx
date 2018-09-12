@@ -22,17 +22,14 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.server.NoServiceConfiguredException;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.HttpResponseStatus;
-import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.server.RequestProgressListener;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
@@ -42,6 +39,9 @@ import com.hotels.styx.common.FsmEventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
 import com.hotels.styx.common.StateMachine;
 import com.hotels.styx.server.BadRequestException;
+import com.hotels.styx.server.HttpErrorStatusListener;
+import com.hotels.styx.server.NoServiceConfiguredException;
+import com.hotels.styx.server.RequestProgressListener;
 import com.hotels.styx.server.RequestTimeoutException;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -52,6 +52,7 @@ import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -59,7 +60,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT;
@@ -68,6 +68,7 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.api.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.server.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.server.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
@@ -373,6 +374,23 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
     }
 
     private State handleChannelException(ChannelHandlerContext ctx, Throwable cause) {
+        Throwable sslException = sslException(cause);
+        if (sslException != null) {
+            if (ctx.channel().isActive()) {
+                ctx.channel().close();
+            }
+
+            LOGGER.info("SSL handshake failure from incoming connection "
+                    + "cause=\"{}\", "
+                    + "serverAddress={}, "
+                    + "clientAddress={}",
+                    new Object [] {sslException.getMessage(),
+                    ctx.channel().localAddress(),
+                    ctx.channel().remoteAddress()});
+
+            return TERMINATED;
+        }
+
         if (!isIoException(cause)) {
             HttpResponse response = exceptionToResponse(cause, ongoingRequest);
             httpErrorStatusListener.proxyErrorOccurred(response.status(), cause);
@@ -381,6 +399,14 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
             }
         }
         return TERMINATED;
+    }
+
+    private static Throwable sslException(Throwable cause) {
+        if (cause.getCause() != null && cause.getCause() instanceof SSLHandshakeException) {
+            return cause.getCause();
+        } else {
+            return null;
+        }
     }
 
     private void respondAndClose(ChannelHandlerContext ctx, HttpResponse response) {
