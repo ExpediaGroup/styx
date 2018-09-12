@@ -380,10 +380,10 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
                 ctx.channel().close();
             }
 
-            LOGGER.info("SSL handshake failure from incoming connection " +
-                    "cause=\"{}\", " +
-                    "serverAddress={}, " +
-                    "clientAddress={}",
+            LOGGER.info("SSL handshake failure from incoming connection "
+                    + "cause=\"{}\", "
+                    + "serverAddress={}, "
+                    + "clientAddress={}",
                     new Object [] {sslException.getMessage(),
                     ctx.channel().localAddress(),
                     ctx.channel().remoteAddress()});
