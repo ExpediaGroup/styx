@@ -16,7 +16,7 @@
 package com.hotels.styx.client.healthcheck;
 
 import com.codahale.metrics.Meter;
-import com.hotels.styx.api.FullHttpClient;
+import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.MetricRegistry;
@@ -36,7 +36,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
     private final String healthCheckUri;
-    private final FullHttpClient client;
+    private final HttpClient client;
     private final SimpleCache<Origin, Meter> meterCache;
 
     /**
@@ -46,7 +46,7 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
      * @param client         HTTP client to make health-check requests with
      * @param metricRegistry metric registry
      */
-    public UrlRequestHealthCheck(String healthCheckUri, FullHttpClient client, MetricRegistry metricRegistry) {
+    public UrlRequestHealthCheck(String healthCheckUri, HttpClient client, MetricRegistry metricRegistry) {
         this.healthCheckUri = uriWithInitialSlash(healthCheckUri);
         this.client = requireNonNull(client);
         this.meterCache = new SimpleCache<>(origin -> metricRegistry.meter("origins.healthcheck.failure." + origin.applicationId()));

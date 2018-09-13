@@ -17,7 +17,7 @@ package com.hotels.styx.client;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.HostAndPort;
-import com.hotels.styx.api.FullHttpClient;
+import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.Url;
@@ -41,7 +41,7 @@ import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
 /**
  * A client that uses netty as transport.
  */
-public final class SimpleHttpClient implements FullHttpClient {
+public final class SimpleHttpClient implements HttpClient {
     private static final int DEFAULT_HTTPS_PORT = 443;
     private static final int DEFAULT_HTTP_PORT = 80;
 

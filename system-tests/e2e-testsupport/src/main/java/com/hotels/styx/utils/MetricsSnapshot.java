@@ -20,7 +20,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.api.FullHttpClient;
+import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.client.SimpleHttpClient;
 
@@ -48,7 +48,7 @@ public class MetricsSnapshot {
     }
 
     public static MetricsSnapshot downloadFrom(String host, int port) throws IOException {
-        FullHttpClient client = new SimpleHttpClient.Builder().build();
+        HttpClient client = new SimpleHttpClient.Builder().build();
         FullHttpResponse response = await(client.sendRequest(get(format("http://%s:%d/admin/metrics", host, port)).build()));
         return new MetricsSnapshot(decodeToMap(response.bodyAs(UTF_8)));
     }

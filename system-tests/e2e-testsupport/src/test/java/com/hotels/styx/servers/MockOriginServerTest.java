@@ -17,7 +17,7 @@ package com.hotels.styx.servers;
 
 import com.github.tomakehurst.wiremock.client.ValueMatchingStrategy;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.hotels.styx.api.FullHttpClient;
+import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.SimpleHttpClient;
@@ -47,7 +47,7 @@ import static org.hamcrest.Matchers.is;
 public class MockOriginServerTest {
 
     private MockOriginServer server;
-    private FullHttpClient client;
+    private HttpClient client;
     private HostnameVerifier oldHostNameVerifier;
     private SimpleHttpClient tlsClient;
 

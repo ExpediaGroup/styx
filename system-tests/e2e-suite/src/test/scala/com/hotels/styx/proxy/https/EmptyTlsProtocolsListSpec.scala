@@ -17,7 +17,7 @@ package com.hotels.styx.proxy.https
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.{FullHttpClient, FullHttpRequest}
+import com.hotels.styx.api.{HttpClient, FullHttpRequest}
 import com.hotels.styx.client.SimpleHttpClient
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.support.ResourcePaths.fixturesHome
@@ -37,8 +37,8 @@ class EmptyTlsProtocolsListSpec extends FunSpec
 
   val crtFile = fixturesHome(this.getClass, "/ssl/testCredentials.crt").toString
   val keyFile = fixturesHome(this.getClass, "/ssl/testCredentials.key").toString
-  val clientV12 : FullHttpClient = newClient(Seq("TLSv1.2"))
-  val clientV11 : FullHttpClient = newClient(Seq("TLSv1.1"))
+  val clientV12 : HttpClient = newClient(Seq("TLSv1.2"))
+  val clientV11 : HttpClient = newClient(Seq("TLSv1.1"))
 
   override val styxConfig = StyxConfig(
     ProxyConfig(
@@ -86,7 +86,7 @@ class EmptyTlsProtocolsListSpec extends FunSpec
     }
   }
 
-  def newClient(supportedProtocols: Seq[String]): FullHttpClient = {
+  def newClient(supportedProtocols: Seq[String]): HttpClient = {
     new SimpleHttpClient.Builder()
       .tlsSettings(TlsSettings(protocols = supportedProtocols).asJava)
       .build()

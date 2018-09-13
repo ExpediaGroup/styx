@@ -24,7 +24,7 @@ import com.hotels.styx.server.handlers.StaticFileHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import com.hotels.styx.api.FullHttpClient;
+import com.hotels.styx.api.HttpClient;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -39,7 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class StaticFileOnRealServerIT {
-    private final FullHttpClient client = new SimpleHttpClient.Builder().build();
+    private final HttpClient client = new SimpleHttpClient.Builder().build();
 
     private HttpServer webServer;
     private File dir;

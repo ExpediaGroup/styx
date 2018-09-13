@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client.healthcheck;
 
-import com.hotels.styx.api.FullHttpClient;
+import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.HttpResponseStatus;
@@ -53,7 +53,7 @@ public class UrlRequestHealthCheckTest {
 
     @Test
     public void sendsTheHealthCheckRequestToTheGivenUrl() {
-        FullHttpClient client = request -> {
+        HttpClient client = request -> {
             requestedUrl = request.url().path();
             return respondWith(NOT_FOUND);
         };
@@ -67,7 +67,7 @@ public class UrlRequestHealthCheckTest {
 
     @Test
     public void declaresOriginHealthyOnOkResponseCode() throws IOException {
-        FullHttpClient client = request -> respondWith(OK);
+        HttpClient client = request -> respondWith(OK);
 
         new UrlRequestHealthCheck("/version.txt", client, metricRegistry)
                 .check(someOrigin, state -> this.originState = state);
@@ -78,7 +78,7 @@ public class UrlRequestHealthCheckTest {
 
     @Test
     public void declaresOriginUnhealthyOnNon200Ok() throws IOException {
-        FullHttpClient client = request -> respondWith(NOT_FOUND);
+        HttpClient client = request -> respondWith(NOT_FOUND);
 
         new UrlRequestHealthCheck("/version.txt", client, metricRegistry)
                 .check(someOrigin, state -> this.originState = state);
@@ -90,7 +90,7 @@ public class UrlRequestHealthCheckTest {
 
     @Test
     public void declaredOriginUnhealthyOnTransportException() throws IOException {
-        FullHttpClient client = request -> respondWith(new RuntimeException("health check failure, as expected"));
+        HttpClient client = request -> respondWith(new RuntimeException("health check failure, as expected"));
 
         new UrlRequestHealthCheck("/version.txt", client, metricRegistry)
                 .check(someOrigin, state -> this.originState = state);

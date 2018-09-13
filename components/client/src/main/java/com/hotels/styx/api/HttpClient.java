@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * HTTP Client that returns an observable of response.
  */
-public interface FullHttpClient {
+public interface HttpClient {
     /**
      * Processes a new request.
      *

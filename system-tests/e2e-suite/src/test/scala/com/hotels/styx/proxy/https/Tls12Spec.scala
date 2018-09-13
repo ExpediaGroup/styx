@@ -19,7 +19,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames._
 import com.hotels.styx.api.HttpMethod.GET
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.{FullHttpClient, FullHttpRequest}
+import com.hotels.styx.api.{HttpClient, FullHttpRequest}
 import com.hotels.styx.client.SimpleHttpClient
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.support.ResourcePaths.fixturesHome
@@ -102,7 +102,7 @@ class Tls12Spec extends FunSpec
     }
   }
 
-  def newClient(supportedProtocols: Seq[String]): FullHttpClient =
+  def newClient(supportedProtocols: Seq[String]): HttpClient =
     new SimpleHttpClient.Builder()
       .tlsSettings(TlsSettings(protocols = supportedProtocols).asJava)
       .build()

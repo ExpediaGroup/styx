@@ -18,7 +18,7 @@ package com.hotels.styx.testapi;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.api.FullHttpClient;
+import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;
@@ -58,7 +58,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class StyxServerTest {
-    private final FullHttpClient client = new SimpleHttpClient.Builder()
+    private final HttpClient client = new SimpleHttpClient.Builder()
             .build();
 
     private StyxServer styxServer;

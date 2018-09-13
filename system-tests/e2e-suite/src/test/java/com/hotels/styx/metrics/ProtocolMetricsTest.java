@@ -17,7 +17,7 @@ package com.hotels.styx.metrics;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.hotels.styx.api.FullHttpClient;
+import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.StyxObservable;
@@ -46,7 +46,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class ProtocolMetricsTest {
-    private final FullHttpClient client = new SimpleHttpClient.Builder().build();
+    private final HttpClient client = new SimpleHttpClient.Builder().build();
 
     private StyxServer styxServer;
 
@@ -113,11 +113,11 @@ public class ProtocolMetricsTest {
     }
 
     private FullHttpResponse doHttpsGet(String path) {
-        FullHttpClient client1 = new SimpleHttpClient.Builder().build();
+        HttpClient client1 = new SimpleHttpClient.Builder().build();
         return doRequest(client1, "https", styxServer.proxyHttpsPort(), path);
     }
 
-    private static FullHttpResponse doRequest(FullHttpClient client, String protocol, int port, String path) {
+    private static FullHttpResponse doRequest(HttpClient client, String protocol, int port, String path) {
         String url = format("%s://localhost:%s%s", protocol, port, startWithSlash(path));
 
         FullHttpRequest request = get(url)

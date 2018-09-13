@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.FullHttpClient;
+import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpInterceptor;
@@ -45,7 +45,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class StyxProxyTest extends SSLSetup {
-    final FullHttpClient client = new SimpleHttpClient.Builder()
+    final HttpClient client = new SimpleHttpClient.Builder()
             .build();
 
     public static void main(String[] args) {
