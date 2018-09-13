@@ -53,7 +53,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SimpleHttpClientTest {
+public class StyxHttpClientTest {
     private FullHttpRequest anyRequest;
     private static int MAX_LENGTH = 1024;
 
@@ -110,7 +110,7 @@ public class SimpleHttpClientTest {
         Connection mockConnection = mock(Connection.class);
         when(mockConnection.write(any(HttpRequest.class))).thenReturn(Observable.just(response().build()));
 
-        SimpleHttpClient client = new SimpleHttpClient.Builder()
+        StyxHttpClient client = new StyxHttpClient.Builder()
                 .setConnectionFactory((origin, connectionSettings) -> Observable.just(mockConnection))
                 .build();
 
@@ -126,7 +126,7 @@ public class SimpleHttpClientTest {
         Connection mockConnection = mock(Connection.class);
         when(mockConnection.write(any(HttpRequest.class))).thenReturn(Observable.just(response().build()));
 
-        SimpleHttpClient client = new SimpleHttpClient.Builder()
+        StyxHttpClient client = new StyxHttpClient.Builder()
                 .setConnectionFactory((origin, connectionSettings) -> Observable.just(mockConnection))
                 .userAgent("Styx/5.6")
                 .build();
@@ -143,7 +143,7 @@ public class SimpleHttpClientTest {
         Connection mockConnection = mock(Connection.class);
         when(mockConnection.write(any(HttpRequest.class))).thenReturn(Observable.just(response().build()));
 
-        SimpleHttpClient client = new SimpleHttpClient.Builder()
+        StyxHttpClient client = new StyxHttpClient.Builder()
                 .setConnectionFactory((origin, connectionSettings) -> Observable.just(mockConnection))
                 .userAgent("Styx/5.6")
                 .build();
@@ -162,7 +162,7 @@ public class SimpleHttpClientTest {
     public void requestWithNoHostOrUrlAuthorityCausesException() {
         FullHttpRequest request = get("/foo.txt").build();
 
-        SimpleHttpClient client = new SimpleHttpClient.Builder().build();
+        StyxHttpClient client = new StyxHttpClient.Builder().build();
 
         await(client.sendRequest(request));
     }
@@ -171,7 +171,7 @@ public class SimpleHttpClientTest {
     public void sendsToDefaultHttpPort() {
         Connection.Factory connectionFactory = mockConnectionFactory(mockConnection(response(OK).build()));
 
-        SimpleHttpClient client = new SimpleHttpClient.Builder()
+        StyxHttpClient client = new StyxHttpClient.Builder()
                 .setConnectionFactory(connectionFactory)
                 .build();
 
@@ -190,7 +190,7 @@ public class SimpleHttpClientTest {
         Connection.Factory connectionFactory = mockConnectionFactory(mockConnection(response(OK).build()));
         TlsSettings tlsSettings = mock(TlsSettings.class);
 
-        SimpleHttpClient client = new SimpleHttpClient.Builder()
+        StyxHttpClient client = new StyxHttpClient.Builder()
                 .setConnectionFactory(connectionFactory)
                 .tlsSettings(tlsSettings)
                 .build();
@@ -205,13 +205,13 @@ public class SimpleHttpClientTest {
         assertThat(originCaptor.getValue().port(), is(443));
     }
 
-    private SimpleHttpClient httpClient() {
-        return new SimpleHttpClient.Builder()
+    private StyxHttpClient httpClient() {
+        return new StyxHttpClient.Builder()
                 .build();
     }
 
-    private SimpleHttpClient httpsClient() {
-        return new SimpleHttpClient.Builder()
+    private StyxHttpClient httpsClient() {
+        return new StyxHttpClient.Builder()
                 .connectionSettings(new ConnectionSettings(1000))
                 .tlsSettings(new TlsSettings.Builder()
                         .authenticate(false)

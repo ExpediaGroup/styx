@@ -29,7 +29,7 @@ import com.hotels.styx.api.HttpVersion._
 import com.hotels.styx.common.FreePorts._
 import com.hotels.styx.api.{HttpClient, FullHttpResponse}
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
-import com.hotels.styx.client.{ConnectionSettings, SimpleHttpClient}
+import com.hotels.styx.client.{ConnectionSettings, StyxHttpClient}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origin, Origins}
 import com.hotels.styx.support.matchers.IsOptional.{isValue, matches}
@@ -123,7 +123,7 @@ class ProxySpec extends FunSpec
 
     it("should respond to HEAD with bodiless response") {
 
-      val client: HttpClient = new SimpleHttpClient.Builder()
+      val client: HttpClient = new StyxHttpClient.Builder()
         .connectionSettings(new ConnectionSettings(1000))
         .maxHeaderSize(2 * 8192)
         .threadName("scalatest-e2e-client")

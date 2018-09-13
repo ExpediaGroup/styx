@@ -34,7 +34,7 @@ import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.client.SimpleHttpClient;
+import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.client.StyxHeaderConfig;
 import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
@@ -205,7 +205,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         ConnectionSettings connectionSettings = new ConnectionSettings(
                 connectionPoolSettings.connectTimeoutMillis());
 
-        SimpleHttpClient client = new SimpleHttpClient.Builder()
+        StyxHttpClient client = new StyxHttpClient.Builder()
                 .connectionSettings(connectionSettings)
                 .threadName("Health-Check-Monitor-" + appId)
                 .userAgent("Styx/" + styxVersion)

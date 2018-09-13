@@ -41,7 +41,7 @@ import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
 /**
  * A client that uses netty as transport.
  */
-public final class SimpleHttpClient implements HttpClient {
+public final class StyxHttpClient implements HttpClient {
     private static final int DEFAULT_HTTPS_PORT = 443;
     private static final int DEFAULT_HTTP_PORT = 80;
 
@@ -51,7 +51,7 @@ public final class SimpleHttpClient implements HttpClient {
     private final Connection.Factory connectionFactory;
     private final boolean isHttps;
 
-    private SimpleHttpClient(Builder builder, boolean isHttps) {
+    private StyxHttpClient(Builder builder, boolean isHttps) {
         this.userAgent = Optional.ofNullable(builder.userAgent);
         this.connectionSettings = builder.connectionSettings;
         this.maxResponseSize = builder.maxResponseSize;
@@ -98,7 +98,7 @@ public final class SimpleHttpClient implements HttpClient {
     }
 
     /**
-     * Builder for {@link SimpleHttpClient}.
+     * Builder for {@link StyxHttpClient}.
      */
     public static class Builder {
         private Connection.Factory connectionFactory;
@@ -162,7 +162,7 @@ public final class SimpleHttpClient implements HttpClient {
          *
          * @return a new instance
          */
-        public SimpleHttpClient build() {
+        public StyxHttpClient build() {
             connectionFactory = connectionFactory != null ? connectionFactory : new NettyConnectionFactory.Builder()
                     .name(threadName)
                     .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(maxHeaderSize).build())
@@ -175,7 +175,7 @@ public final class SimpleHttpClient implements HttpClient {
                             false,
                             false))
                     .build();
-            return new SimpleHttpClient(this, tlsSettings != null);
+            return new StyxHttpClient(this, tlsSettings != null);
         }
     }
 }

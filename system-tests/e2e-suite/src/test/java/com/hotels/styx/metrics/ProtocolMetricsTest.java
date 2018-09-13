@@ -21,7 +21,7 @@ import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.StyxObservable;
-import com.hotels.styx.client.SimpleHttpClient;
+import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.testapi.StyxServer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -46,7 +46,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class ProtocolMetricsTest {
-    private final HttpClient client = new SimpleHttpClient.Builder().build();
+    private final HttpClient client = new StyxHttpClient.Builder().build();
 
     private StyxServer styxServer;
 
@@ -113,7 +113,7 @@ public class ProtocolMetricsTest {
     }
 
     private FullHttpResponse doHttpsGet(String path) {
-        HttpClient client1 = new SimpleHttpClient.Builder().build();
+        HttpClient client1 = new StyxHttpClient.Builder().build();
         return doRequest(client1, "https", styxServer.proxyHttpsPort(), path);
     }
 

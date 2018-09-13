@@ -17,8 +17,8 @@ package com.hotels.styx.proxy.https
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.{HttpClient, FullHttpRequest}
-import com.hotels.styx.client.SimpleHttpClient
+import com.hotels.styx.api.{FullHttpRequest, HttpClient}
+import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -87,7 +87,7 @@ class EmptyTlsProtocolsListSpec extends FunSpec
   }
 
   def newClient(supportedProtocols: Seq[String]): HttpClient = {
-    new SimpleHttpClient.Builder()
+    new StyxHttpClient.Builder()
       .tlsSettings(TlsSettings(protocols = supportedProtocols).asJava)
       .build()
   }

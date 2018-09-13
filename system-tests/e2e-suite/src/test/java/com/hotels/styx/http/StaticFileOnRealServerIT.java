@@ -18,7 +18,7 @@ package com.hotels.styx.http;
 import com.google.common.io.Files;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.client.SimpleHttpClient;
+import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.handlers.StaticFileHandler;
 import org.testng.annotations.AfterClass;
@@ -39,7 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class StaticFileOnRealServerIT {
-    private final HttpClient client = new SimpleHttpClient.Builder().build();
+    private final HttpClient client = new StyxHttpClient.Builder().build();
 
     private HttpServer webServer;
     private File dir;

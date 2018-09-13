@@ -17,7 +17,7 @@ package com.hotels.styx
 
 import com.hotels.styx.api._
 import com.hotels.styx.api.extension.service.TlsSettings
-import com.hotels.styx.client.{ConnectionSettings, SimpleHttpClient}
+import com.hotels.styx.client.{ConnectionSettings, StyxHttpClient}
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
@@ -28,13 +28,13 @@ trait StyxClientSupplier {
   val TWO_SECONDS: Int = 2 * 1000
   val FIVE_SECONDS: Int = 5 * 1000
 
-  val client: HttpClient = new SimpleHttpClient.Builder()
+  val client: HttpClient = new StyxHttpClient.Builder()
     .threadName("scalatest-e2e-client")
     .connectionSettings(new ConnectionSettings(1000))
     .maxHeaderSize(2 * 8192)
     .build()
 
-  val httpsClient: HttpClient = new SimpleHttpClient.Builder()
+  val httpsClient: HttpClient = new StyxHttpClient.Builder()
     .threadName("scalatest-e2e-secure-client")
     .connectionSettings(new ConnectionSettings(1000))
     .maxHeaderSize(2 * 8192)
