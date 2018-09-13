@@ -101,9 +101,9 @@ class DoubleSubscribingPluginSpec extends FunSpec
           testClient.isOpen should be (false)
         }
 
-//        styxServer.metricsSnapshot.
-
         eventually(timeout(3.seconds)) {
+          styxServer.metricsSnapshot.count("styx.exception.java_lang_IllegalStateException").getOrElse(0) should be(1)
+
           assertThat(logger.log(), hasItem(
             loggingEvent(
               ERROR,
