@@ -62,8 +62,8 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * A configurable HTTP client that uses connection pooling, load balancing, etc.
  */
-public final class StyxHttpClient implements HttpClient {
-    private static final Logger LOGGER = getLogger(StyxHttpClient.class);
+public final class StyxBackendServiceClient implements HttpClient {
+    private static final Logger LOGGER = getLogger(StyxBackendServiceClient.class);
     private static final int MAX_RETRY_ATTEMPTS = 3;
 
     private final Id id;
@@ -76,7 +76,7 @@ public final class StyxHttpClient implements HttpClient {
     private final String originsRestrictionCookieName;
     private final StickySessionConfig stickySessionConfig;
 
-    private StyxHttpClient(Builder builder) {
+    private StyxBackendServiceClient(Builder builder) {
         this.id = requireNonNull(builder.backendServiceId);
 
         this.stickySessionConfig = requireNonNull(builder.stickySessionConfig);
@@ -329,7 +329,7 @@ public final class StyxHttpClient implements HttpClient {
     }
 
     /**
-     * A builder for {@link com.hotels.styx.client.StyxHttpClient}.
+     * A builder for {@link StyxBackendServiceClient}.
      */
     public static class Builder {
 
@@ -388,11 +388,11 @@ public final class StyxHttpClient implements HttpClient {
             return this;
         }
 
-        public StyxHttpClient build() {
+        public StyxBackendServiceClient build() {
             if (originStatsFactory == null) {
                 originStatsFactory = new OriginStatsFactory(metricsRegistry);
             }
-            return new StyxHttpClient(this);
+            return new StyxBackendServiceClient(this);
         }
 
     }

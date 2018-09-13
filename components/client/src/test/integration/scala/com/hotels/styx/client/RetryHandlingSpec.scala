@@ -29,7 +29,7 @@ import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
-import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
+import StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.retry.RetryNTimes
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
@@ -125,7 +125,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree, healthyOriginTwo)
       .build()
 
-    val client: StyxHttpClient = newHttpClientBuilder(backendService.id)
+    val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
       .retryPolicy(new RetryNTimes(3))
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
@@ -138,7 +138,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
     val backendService = new BackendService.Builder()
       .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree)
       .build()
-    val client: StyxHttpClient = newHttpClientBuilder(backendService.id)
+    val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .retryPolicy(new RetryNTimes(2))
       .build
@@ -154,7 +154,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .stickySessionConfig(StickySessionEnabled)
       .build()
 
-    val client: StyxHttpClient = newHttpClientBuilder(backendService.id)
+    val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
       .retryPolicy(new RetryNTimes(3))
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build

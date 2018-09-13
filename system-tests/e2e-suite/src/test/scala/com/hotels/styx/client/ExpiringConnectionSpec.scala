@@ -22,7 +22,7 @@ import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
-import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
+import StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -47,7 +47,7 @@ class ExpiringConnectionSpec extends FunSpec
       .withStatus(200)
     )
 
-  var pooledClient: StyxHttpClient = _
+  var pooledClient: StyxBackendServiceClient = _
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

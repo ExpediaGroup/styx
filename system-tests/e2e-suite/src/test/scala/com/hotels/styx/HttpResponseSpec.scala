@@ -24,8 +24,8 @@ import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.api.extension.service
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
-import com.hotels.styx.client.StyxHttpClient
-import com.hotels.styx.client.StyxHttpClient._
+import com.hotels.styx.client.StyxBackendServiceClient
+import com.hotels.styx.client.StyxBackendServiceClient._
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.support.NettyOrigins
@@ -51,7 +51,7 @@ class HttpResponseSpec extends FunSuite
 
   val (originOne, originOneServer) = originAndCustomResponseWebServer("app", "h1")
 
-  var client: StyxHttpClient = _
+  var client: StyxBackendServiceClient = _
 
   val responseTimeout = 1000.millis
 

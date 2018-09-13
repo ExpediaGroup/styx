@@ -24,7 +24,7 @@ import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.client.OriginRestrictionLoadBalancingStrategy;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.client.StyxHttpClient;
+import com.hotels.styx.client.StyxBackendServiceClient;
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
@@ -71,7 +71,7 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
                 originRestrictionCookie
         );
 
-        return new StyxHttpClient.Builder(backendService.id())
+        return new StyxBackendServiceClient.Builder(backendService.id())
                 .loadBalancer(loadBalancingStrategy)
                 .stickySessionConfig(backendService.stickySessionConfig())
                 .metricsRegistry(environment.metricRegistry())

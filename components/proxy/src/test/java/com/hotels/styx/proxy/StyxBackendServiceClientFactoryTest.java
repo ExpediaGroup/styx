@@ -30,7 +30,7 @@ import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxHostHttpClient;
-import com.hotels.styx.client.StyxHttpClient;
+import com.hotels.styx.client.StyxBackendServiceClient;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -85,9 +85,9 @@ public class StyxBackendServiceClientFactoryTest {
 
         HttpClient client = factory.createClient(backendService, originsInventory, originStatsFactory);
 
-        assertThat(client, is(instanceOf(StyxHttpClient.class)));
+        assertThat(client, is(instanceOf(StyxBackendServiceClient.class)));
 
-        // note: for more meaningful tests, perhaps we need to add package-private accessor methods to StyxHttpClient
+        // note: for more meaningful tests, perhaps we need to add package-private accessor methods to StyxBackendServiceClient
         //       there is also the issue that the Transport class assumes it will get a NettyConnection, so mocks can't be used
         //       these problems are both outside the scope of the current issue being implemented
         //       so for the time being, this test is mostly a placeholder

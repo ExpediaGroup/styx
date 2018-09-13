@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post => wmpost}
 import com.hotels.styx.api.FullHttpRequest.post
 import com.hotels.styx.api.HttpResponseStatus._
-import com.hotels.styx.client.StyxHttpClient
+import com.hotels.styx.client.StyxBackendServiceClient
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.support.matchers.LoggingTestSupport
@@ -55,7 +55,7 @@ class OriginsConnectionSpec extends FunSpec
         .withStatus(OK.code())
       )
 
-      val loggingTestSupport: LoggingTestSupport = new LoggingTestSupport(classOf[StyxHttpClient])
+      val loggingTestSupport: LoggingTestSupport = new LoggingTestSupport(classOf[StyxBackendServiceClient])
 
       for (i <- 1 to 5) {
         val request = post(styxServer.routerURL("/foobar"))
@@ -77,7 +77,7 @@ class OriginsConnectionSpec extends FunSpec
         .withStatus(204)
       )
 
-      val loggingTestSupport: LoggingTestSupport = new LoggingTestSupport(classOf[StyxHttpClient])
+      val loggingTestSupport: LoggingTestSupport = new LoggingTestSupport(classOf[StyxBackendServiceClient])
 
       for (i <- 1 to 5) {
         val request = post(styxServer.routerURL("/foobar"))
