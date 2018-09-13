@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.api.BackendServiceClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
@@ -190,7 +190,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     }
 
     private HttpHandler newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
-        HttpClient client = clientFactory.createClient(backendService, originsInventory, originStatsFactory);
+        BackendServiceClient client = clientFactory.createClient(backendService, originsInventory, originStatsFactory);
         return (request, context) -> fromRxObservable(client.sendRequest(request));
     }
 

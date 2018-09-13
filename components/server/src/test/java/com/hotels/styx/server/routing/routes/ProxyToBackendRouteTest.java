@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.server.routing.routes;
 
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.api.BackendServiceClient;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
@@ -34,7 +34,7 @@ import com.hotels.styx.api.HttpRequest;
 public class ProxyToBackendRouteTest {
     @Test
     public void proxiesUsingClient() throws Exception {
-        HttpClient client = mock(HttpClient.class);
+        BackendServiceClient client = mock(BackendServiceClient.class);
         when(client.sendRequest(any(HttpRequest.class))).thenReturn(Observable.just(response(OK).build()));
 
         ProxyToBackendRoute proxy = ProxyToBackendRoute.proxyToBackend(client);

@@ -20,7 +20,7 @@ import rx.Observable;
 /**
  * HTTP Client that returns an observable of response.
  */
-public interface HttpClient {
+public interface BackendServiceClient {
     /**
      * Processes a new request.
      *

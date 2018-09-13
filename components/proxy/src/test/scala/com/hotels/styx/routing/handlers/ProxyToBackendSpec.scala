@@ -103,7 +103,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
   private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RouteHandlerDefinition]).get()
 
   private def clientFactory() = new BackendServiceClientFactory() {
-    override def createClient(backendService: BackendService, originsInventory: OriginsInventory, originStatsFactory: OriginStatsFactory): HttpClient = new HttpClient {
+    override def createClient(backendService: BackendService, originsInventory: OriginsInventory, originStatsFactory: OriginStatsFactory): BackendServiceClient = new BackendServiceClient {
       override def sendRequest(request: HttpRequest): Observable[HttpResponse] = {
         backendService.id() should be (id("ba"))
         backendService.connectionPoolConfig().maxConnectionsPerHost() should be (45)

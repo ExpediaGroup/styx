@@ -16,7 +16,7 @@
 package com.hotels.styx.client;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.api.BackendServiceClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
@@ -62,7 +62,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * A configurable HTTP client that uses connection pooling, load balancing, etc.
  */
-public final class StyxBackendServiceClient implements HttpClient {
+public final class StyxBackendServiceClient implements BackendServiceClient {
     private static final Logger LOGGER = getLogger(StyxBackendServiceClient.class);
     private static final int MAX_RETRY_ATTEMPTS = 3;
 

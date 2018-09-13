@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.proxy;
 
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.api.BackendServiceClient;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.api.extension.service.BackendService;
@@ -24,5 +24,5 @@ import com.hotels.styx.api.extension.service.BackendService;
  * Creates HTTP clients for connecting to backend services.
  */
 public interface BackendServiceClientFactory {
-    HttpClient createClient(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory);
+    BackendServiceClient createClient(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory);
 }

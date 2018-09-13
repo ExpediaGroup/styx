@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.server.routing.routes;
 
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.api.BackendServiceClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
@@ -29,13 +29,13 @@ import static java.util.Objects.requireNonNull;
  * A HTTP router route which proxies to Styx backend application.
  */
 public final class ProxyToBackendRoute implements HttpHandler {
-    private final HttpClient client;
+    private final BackendServiceClient client;
 
-    private ProxyToBackendRoute(HttpClient client) {
+    private ProxyToBackendRoute(BackendServiceClient client) {
         this.client = requireNonNull(client);
     }
 
-    public static ProxyToBackendRoute proxyToBackend(HttpClient client) {
+    public static ProxyToBackendRoute proxyToBackend(BackendServiceClient client) {
         return new ProxyToBackendRoute(client);
     }
 

@@ -43,7 +43,7 @@ class PluginAdapter(scalaInterceptor: (HttpRequest, ChainAdapter) => StyxObserva
     scalaInterceptor(request, new ChainAdapter(chain))
 }
 
-class HttpClientAdapter(sendRequest: HttpRequest => Observable[HttpResponse]) extends HttpClient {
+class HttpClientAdapter(sendRequest: HttpRequest => Observable[HttpResponse]) extends BackendServiceClient {
   override def sendRequest(request: HttpRequest): JavaObservable[HttpResponse] =
     toJavaObservable(sendRequest(request))
 }

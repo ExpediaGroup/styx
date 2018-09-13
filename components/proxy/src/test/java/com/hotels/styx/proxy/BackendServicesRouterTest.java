@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.api.BackendServiceClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
@@ -217,8 +217,8 @@ public class BackendServicesRouterTest {
 
     @Test
     public void closesClientWhenBackendServicesAreUpdated() {
-        HttpClient firstClient = mock(HttpClient.class);
-        HttpClient secondClient = mock(HttpClient.class);
+        BackendServiceClient firstClient = mock(BackendServiceClient.class);
+        BackendServiceClient secondClient = mock(BackendServiceClient.class);
 
         BackendServiceClientFactory clientFactory = mock(BackendServiceClientFactory.class);
         when(clientFactory.createClient(any(BackendService.class), any(OriginsInventory.class), any(OriginStatsFactory.class)))
@@ -244,8 +244,8 @@ public class BackendServicesRouterTest {
 
     @Test
     public void closesClientWhenBackendServicesAreRemoved() {
-        HttpClient firstClient = mock(HttpClient.class);
-        HttpClient secondClient = mock(HttpClient.class);
+        BackendServiceClient firstClient = mock(BackendServiceClient.class);
+        BackendServiceClient secondClient = mock(BackendServiceClient.class);
 
         ArgumentCaptor<OriginsInventory> originsInventory = forClass(OriginsInventory.class);
         BackendServiceClientFactory clientFactory = mock(BackendServiceClientFactory.class);
