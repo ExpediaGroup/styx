@@ -35,7 +35,8 @@ public class ContentCutoffPlugin implements Plugin {
                         .flatMap(it -> {
                             LOGGER.info("do something with full content: " + it.bodyAs(UTF_8));
 
-                            return StyxObservable.of(response); // Error: Returns an already consumed response.
+                            // Error: Returns an already consumed response.
+                            return StyxObservable.of(response);
                         })
                 );
     }

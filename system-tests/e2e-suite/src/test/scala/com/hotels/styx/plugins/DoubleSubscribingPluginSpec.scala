@@ -15,15 +15,22 @@
  */
 package com.hotels.styx.plugins
 
+import ch.qos.logback.classic.Level.ERROR
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpResponseStatus._
+import com.hotels.styx.api.plugins.spi.PluginException
 import com.hotels.styx.api.{HttpResponse, FullHttpResponse => StyxFullHttpResponse}
+import com.hotels.styx.proxy.HttpErrorStatusCauseLogger
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig, StyxConfig}
+import com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent
+import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.support.{ResourcePaths, TestClientSupport}
 import com.hotels.styx.{MockServer, StyxProxySpec}
 import io.netty.handler.codec.http.HttpMethod.GET
 import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import io.netty.handler.codec.http.{DefaultFullHttpRequest, FullHttpResponse}
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.hasItem
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 
@@ -34,6 +41,7 @@ class DoubleSubscribingPluginSpec extends FunSpec
   with Eventually
   with TestClientSupport {
 
+  var logger: LoggingTestSupport = _
   val mockServer = new MockServer("origin-1", 0)
 
   override val styxConfig = StyxConfig(
@@ -54,6 +62,16 @@ class DoubleSubscribingPluginSpec extends FunSpec
 
     styxServer.setBackends(
       "/" -> HttpBackend("app1", Origins(mockServer.origin), responseTimeout = 1.seconds))
+  }
+
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    logger = new LoggingTestSupport(classOf[HttpErrorStatusCauseLogger])
+  }
+
+  override protected def afterEach(): Unit = {
+    logger.stop()
+    super.afterEach()
   }
 
   override protected def afterAll(): Unit = {
@@ -81,6 +99,17 @@ class DoubleSubscribingPluginSpec extends FunSpec
         response.status.code() should be(200)
         eventually(timeout(2.seconds)) {
           testClient.isOpen should be (false)
+        }
+
+//        styxServer.metricsSnapshot.
+
+        eventually(timeout(3.seconds)) {
+          assertThat(logger.log(), hasItem(
+            loggingEvent(
+              ERROR,
+              """Error writing response.*""",
+              classOf[IllegalStateException],
+              "Secondary subscription occurred.*")))
         }
       }
     }
