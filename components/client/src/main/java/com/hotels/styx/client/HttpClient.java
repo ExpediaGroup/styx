@@ -17,6 +17,8 @@ package com.hotels.styx.client;
 
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -24,15 +26,24 @@ import java.util.concurrent.CompletableFuture;
  * HTTP Client that returns an observable of response.
  */
 public interface HttpClient {
-    /**
-     * Processes a new request.
-     *
-     * @param request HTTP request to process
-     * @return an observable of HTTP sendRequest.
-     *
-     * The sendRequest will be sent when the returned observable is subscribed to.
-     * In order to cancel the ongoing request, just unsubscribe from it.
-     *
-     */
+//    CompletableFuture<FullHttpResponse> sendRequest(HttpRequest request);
     CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request);
+
+    interface Transaction {
+        Transaction secure();
+
+        Transaction secure(boolean secure);
+
+        Transaction userAgent(String userAgent);
+
+        StreamingTransaction streaming();
+
+//        CompletableFuture<FullHttpResponse> sendRequest(HttpRequest request);
+        CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request);
+    }
+
+    interface StreamingTransaction {
+        CompletableFuture<HttpResponse> sendRequest(HttpRequest request);
+        CompletableFuture<HttpResponse> sendRequest(FullHttpRequest request);
+    }
 }

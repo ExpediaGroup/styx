@@ -17,6 +17,7 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.client.HttpConfig;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.testng.annotations.BeforeMethod;
@@ -34,6 +35,7 @@ import static org.hamcrest.core.Is.is;
 public class NettyConnectionTest {
     private Channel channel;
     private Origin origin;
+    private HttpConfig httpConfig = HttpConfig.defaultHttpConfig();
 
     @BeforeMethod
     public void startOriginServer() {
@@ -64,7 +66,7 @@ public class NettyConnectionTest {
     }
 
     private Connection createConnection() {
-        return new NettyConnection(origin, channel, null);
+        return new NettyConnection(origin, channel, null, httpConfig, null);
     }
 
     static class EventCapturingListener implements Connection.Listener {

@@ -18,12 +18,12 @@ package com.hotels.styx.client.netty.connectionpool;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
-import com.hotels.styx.client.netty.ClientEventLoopFactory;
 import com.hotels.styx.client.ChannelOptionSetting;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.HttpConfig;
 import com.hotels.styx.client.HttpRequestOperationFactory;
+import com.hotels.styx.client.netty.ClientEventLoopFactory;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
 import io.netty.bootstrap.Bootstrap;
@@ -31,9 +31,6 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.ssl.SslContext;
 import rx.Observable;
 
@@ -65,12 +62,16 @@ public class NettyConnectionFactory implements Connection.Factory {
 
     @Override
     public Observable<Connection> createConnection(Origin origin, ConnectionSettings connectionSettings) {
+        return createConnection(origin, connectionSettings, sslContext);
+    }
+
+    public Observable<Connection> createConnection(Origin origin, ConnectionSettings connectionSettings, SslContext sslContext) {
         return Observable.create(subscriber -> {
             ChannelFuture channelFuture = openConnection(origin, connectionSettings);
 
             channelFuture.addListener(future -> {
                 if (future.isSuccess()) {
-                    subscriber.onNext(new NettyConnection(origin, channelFuture.channel(), httpRequestOperationFactory));
+                    subscriber.onNext(new NettyConnection(origin, channelFuture.channel(), httpRequestOperationFactory, httpConfig, sslContext));
                     subscriber.onCompleted();
                 } else {
                     subscriber.onError(new OriginUnreachableException(origin, future.cause()));
@@ -103,16 +104,6 @@ public class NettyConnectionFactory implements Connection.Factory {
     private class Initializer extends ChannelInitializer<Channel> {
         @Override
         protected void initChannel(Channel ch) {
-            ChannelPipeline pipeline = ch.pipeline();
-
-            if (sslContext != null) {
-                pipeline.addLast("ssl", sslContext.newHandler(ch.alloc()));
-            }
-
-            pipeline.addLast("http-codec", new HttpClientCodec(httpConfig.maxInitialLineLength(), httpConfig.maxHeadersSize(), httpConfig.maxChunkSize()));
-            if (httpConfig.compress()) {
-                pipeline.addLast("decompressor", new HttpContentDecompressor());
-            }
         }
     }
 
