@@ -16,7 +16,7 @@
 package com.hotels.styx.client.netty.eventloop.epoll;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.hotels.styx.api.netty.ClientEventLoopFactory;
+import com.hotels.styx.client.netty.ClientEventLoopFactory;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;

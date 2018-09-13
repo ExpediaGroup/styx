@@ -24,7 +24,7 @@ import com.hotels.styx.server.handlers.StaticFileHandler;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.client.HttpClient;
 
 import java.io.File;
 import java.io.FileWriter;

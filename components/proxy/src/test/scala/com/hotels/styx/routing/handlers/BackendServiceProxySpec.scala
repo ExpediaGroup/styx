@@ -23,8 +23,8 @@ import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.api.extension.service.spi.{AbstractRegistry, Registry}
 import com.hotels.styx.api.extension.service.spi.{AbstractRegistry, Registry}
-import com.hotels.styx.api.{BackendServiceClient, HttpRequest, HttpResponse, HttpResponseStatus}
-import com.hotels.styx.client.{OriginStatsFactory, OriginsInventory}
+import com.hotels.styx.api.{HttpRequest, HttpResponse, HttpResponseStatus}
+import com.hotels.styx.client.{BackendServiceClient, OriginStatsFactory, OriginsInventory}
 import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded
 import com.hotels.styx.api.extension.service.spi.Registry.{Changes, ReloadResult}
 import com.hotels.styx.common.StyxFutures

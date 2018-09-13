@@ -27,9 +27,9 @@ import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.api.HttpVersion._
 import com.hotels.styx.common.FreePorts._
-import com.hotels.styx.api.{HttpClient, FullHttpResponse}
+import com.hotels.styx.api.FullHttpResponse
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
-import com.hotels.styx.client.{ConnectionSettings, StyxHttpClient}
+import com.hotels.styx.client.{ConnectionSettings, HttpClient, StyxHttpClient}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origin, Origins}
 import com.hotels.styx.support.matchers.IsOptional.{isValue, matches}

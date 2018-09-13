@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.server.routing.routes;
 
-import com.hotels.styx.api.BackendServiceClient;
+import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;

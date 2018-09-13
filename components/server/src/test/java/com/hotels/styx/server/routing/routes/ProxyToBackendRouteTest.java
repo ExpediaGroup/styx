@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.server.routing.routes;
 
-import com.hotels.styx.api.BackendServiceClient;
+import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;

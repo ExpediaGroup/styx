@@ -17,7 +17,7 @@ package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.BackendServiceClient;
+import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;

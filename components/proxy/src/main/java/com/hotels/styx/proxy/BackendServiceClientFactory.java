@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.proxy;
 
-import com.hotels.styx.api.BackendServiceClient;
+import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.api.extension.service.BackendService;

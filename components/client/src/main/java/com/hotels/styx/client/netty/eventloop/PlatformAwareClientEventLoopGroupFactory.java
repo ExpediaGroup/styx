@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client.netty.eventloop;
 
-import com.hotels.styx.api.netty.ClientEventLoopFactory;
+import com.hotels.styx.client.netty.ClientEventLoopFactory;
 import com.hotels.styx.client.netty.eventloop.epoll.EpollClientEventLoopGroupFactory;
 import com.hotels.styx.client.netty.eventloop.nio.NioClientEventLoopGroupFactory;
 import io.netty.channel.EventLoopGroup;

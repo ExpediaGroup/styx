@@ -17,7 +17,7 @@ package com.hotels.styx
 
 import com.hotels.styx.api._
 import com.hotels.styx.api.extension.service.TlsSettings
-import com.hotels.styx.client.{ConnectionSettings, StyxHttpClient}
+import com.hotels.styx.client.{ConnectionSettings, HttpClient, StyxHttpClient}
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._

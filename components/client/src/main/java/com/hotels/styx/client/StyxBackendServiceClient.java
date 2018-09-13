@@ -16,7 +16,6 @@
 package com.hotels.styx.client;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.BackendServiceClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;

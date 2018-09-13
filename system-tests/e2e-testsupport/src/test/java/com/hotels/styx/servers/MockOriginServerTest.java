@@ -17,7 +17,7 @@ package com.hotels.styx.servers;
 
 import com.github.tomakehurst.wiremock.client.ValueMatchingStrategy;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.StyxHttpClient;

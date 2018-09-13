@@ -19,7 +19,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.support.Meter;

@@ -18,7 +18,7 @@ package com.hotels.styx.testapi;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;

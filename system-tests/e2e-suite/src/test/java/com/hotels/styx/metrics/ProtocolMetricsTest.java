@@ -17,7 +17,7 @@ package com.hotels.styx.metrics;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.StyxObservable;

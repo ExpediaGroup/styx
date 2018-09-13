@@ -20,7 +20,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.client.StyxHttpClient;
 

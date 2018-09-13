@@ -16,7 +16,7 @@
 package com.hotels.styx.client.healthcheck;
 
 import com.codahale.metrics.Meter;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.MetricRegistry;

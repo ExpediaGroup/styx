@@ -13,23 +13,26 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api;
+package com.hotels.styx.client.netty;
 
-import rx.Observable;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 
 /**
- * HTTP Client that returns an observable of response.
+ * A Factory for creating event loops for client workers.
  */
-public interface BackendServiceClient {
+public interface ClientEventLoopFactory {
     /**
-     * Processes a new request.
+     * Create a new event loop for client workers.
      *
-     * @param request HTTP request to process
-     * @return an observable of HTTP sendRequest.
-     *
-     * The sendRequest will be sent when the returned observable is subscribed to.
-     * In order to cancel the ongoing request, just unsubscribe from it.
-     *
+     * @return a new event loop
      */
-    Observable<HttpResponse> sendRequest(HttpRequest request);
+    EventLoopGroup newClientWorkerEventLoopGroup();
+
+    /**
+     * The subclass of {@link SocketChannel} used to create channels.
+     *
+     * @return a subclass of {@link SocketChannel}
+     */
+    Class<? extends SocketChannel> clientSocketChannelClass();
 }

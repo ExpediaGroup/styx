@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpInterceptor;

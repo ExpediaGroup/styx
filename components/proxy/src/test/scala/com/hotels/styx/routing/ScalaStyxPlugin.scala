@@ -18,6 +18,7 @@ package com.hotels.styx.routing
 import com.hotels.styx.api.HttpInterceptor.Context
 import com.hotels.styx.api._
 import com.hotels.styx.api.plugins.spi.Plugin
+import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.routing.ImplicitScalaRxConversions.toJavaObservable
 import rx.lang.scala.Observable
 import rx.{Observable => JavaObservable}

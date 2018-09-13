@@ -20,7 +20,7 @@ import com.hotels.styx.Environment
 import com.hotels.styx.api.Id.id
 import com.hotels.styx.api._
 import com.hotels.styx.api.extension.service.BackendService
-import com.hotels.styx.client.{OriginStatsFactory, OriginsInventory}
+import com.hotels.styx.client.{BackendServiceClient, OriginStatsFactory, OriginsInventory}
 import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.BackendServiceClientFactory
