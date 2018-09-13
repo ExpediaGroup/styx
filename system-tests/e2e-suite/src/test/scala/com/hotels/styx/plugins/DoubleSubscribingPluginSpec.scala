@@ -16,16 +16,14 @@
 package com.hotels.styx.plugins
 
 import com.hotels.styx.MockServer.responseSupplier
-import com.hotels.styx.api.HttpResponse
-import com.hotels.styx.api.HttpResponse.Builder._
+import com.hotels.styx.api.HttpResponseStatus._
+import com.hotels.styx.api.{HttpResponse, FullHttpResponse => StyxFullHttpResponse}
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig, StyxConfig}
 import com.hotels.styx.support.{ResourcePaths, TestClientSupport}
 import com.hotels.styx.{MockServer, StyxProxySpec}
 import io.netty.handler.codec.http.HttpMethod.GET
-import com.hotels.styx.api.HttpResponseStatus._
 import io.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import io.netty.handler.codec.http.{DefaultFullHttpRequest, FullHttpResponse}
-import com.hotels.styx.api.{FullHttpResponse => StyxFullHttpResponse }
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 
@@ -65,9 +63,7 @@ class DoubleSubscribingPluginSpec extends FunSpec
 
 
   describe("Styx as a plugin container") {
-
-    // TODO: Mikko: Styx 2.0 API: Test fails. Look into it.
-    ignore("Tolerates plugins that break the content observable chain") {
+    it("Tolerates plugins that break the content observable chain") {
       val testClient = aggregatingTestClient("localhost", styxServer.httpPort)
 
       withTestClient(testClient) {
