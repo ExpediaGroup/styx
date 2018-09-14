@@ -20,8 +20,8 @@ import com.hotels.styx.support.configuration.ProxyConfig.proxyServerDefaults
 
 
 case class ProxyConfig(connectors: Connectors = Connectors(HttpConnectorConfig(), null),
-                       bossThreadCount: Int = proxyServerDefaults.bossThreadsCount(),
-                       workerThreadsCount: Int = proxyServerDefaults.workerThreadsCount(),
+                       bossThreadCount: Int = 1,
+                       workerThreadsCount: Int = 1,
                        nioAcceptorBacklog: Int = proxyServerDefaults.nioAcceptorBacklog(),
                        tcpNoDelay: Boolean = proxyServerDefaults.tcpNoDelay(),
                        nioReuseAddress: Boolean = proxyServerDefaults.nioReuseAddress(),
@@ -33,7 +33,7 @@ case class ProxyConfig(connectors: Connectors = Connectors(HttpConnectorConfig()
                        requestTimeoutMillis: Int = proxyServerDefaults.requestTimeoutMillis(),
                        keepAliveTimeoutMillis: Int = proxyServerDefaults.keepAliveTimeoutMillis(),
                        maxConnectionsCount: Int = proxyServerDefaults.maxConnectionsCount(),
-                       clientWorkerThreadsCount: Int = proxyServerDefaults.clientWorkerThreadsCount()) {
+                       clientWorkerThreadsCount: Int = 1) {
 }
 
 
