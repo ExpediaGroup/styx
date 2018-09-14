@@ -28,7 +28,9 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.concurrent.Future;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -47,11 +49,12 @@ public class HttpTestClient {
     private final Supplier<Bootstrap> bootstrap;
 
     private ChannelFuture channelFuture;
+    private final NioEventLoopGroup eventLoopGroup;
 
     public HttpTestClient(HostAndPort destination, ChannelInitializer<Channel> initializer) {
         this.destination = requireNonNull(destination);
 
-        NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup(1, new ThreadFactoryBuilder().setNameFormat("Test-Client-%d").build());
+        eventLoopGroup = new NioEventLoopGroup(1, new ThreadFactoryBuilder().setNameFormat("Test-Client-%d").build());
 
         this.bootstrap = lazy(() -> new Bootstrap()
                 .group(eventLoopGroup)
@@ -73,8 +76,22 @@ public class HttpTestClient {
         return this;
     }
 
-    public void disconnect() throws InterruptedException {
-        channelFuture.channel().close().await();
+    public CompletableFuture<Void> disconnect() {
+        return CompletableFuture.allOf(
+                toCompletableFuture(channelFuture.channel().close()),
+                toCompletableFuture(eventLoopGroup.shutdownGracefully()));
+    }
+
+    private CompletableFuture<Void> toCompletableFuture(Future<?> nettyFuture) {
+        CompletableFuture<Void> completableFuture = new CompletableFuture<>();
+        nettyFuture.addListener(it -> {
+            if (it.isSuccess()) {
+                completableFuture.complete(null);
+            } else {
+                completableFuture.completeExceptionally(it.cause());
+            }
+        });
+        return completableFuture;
     }
 
     public ChannelFuture channelFuture() {
