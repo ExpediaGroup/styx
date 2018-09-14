@@ -17,9 +17,9 @@ package com.hotels.styx.proxy.https
 
 import ch.qos.logback.classic.Level.INFO
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.hotels.styx.api.FullHttpRequest
 import com.hotels.styx.api.HttpHeaderNames._
-import com.hotels.styx.api.{FullHttpClient, FullHttpRequest}
-import com.hotels.styx.client.SimpleHttpClient
+import com.hotels.styx.client.{HttpClient, StyxHttpClient}
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler
 import com.hotels.styx.support.ResourcePaths.fixturesHome
@@ -109,8 +109,8 @@ class TlsErrorSpec extends FunSpec
     }
   }
 
-  def newClient(supportedProtocols: Seq[String]): FullHttpClient =
-    new SimpleHttpClient.Builder()
+  def newClient(supportedProtocols: Seq[String]): HttpClient =
+    new StyxHttpClient.Builder()
       .tlsSettings(TlsSettings(protocols = supportedProtocols).asJava)
       .build()
 
