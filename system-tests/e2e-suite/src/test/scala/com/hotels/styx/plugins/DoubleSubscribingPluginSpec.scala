@@ -18,7 +18,6 @@ package com.hotels.styx.plugins
 import ch.qos.logback.classic.Level.ERROR
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.HttpResponseStatus._
-import com.hotels.styx.api.plugins.spi.PluginException
 import com.hotels.styx.api.{HttpResponse, FullHttpResponse => StyxFullHttpResponse}
 import com.hotels.styx.proxy.HttpErrorStatusCauseLogger
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig, StyxConfig}
