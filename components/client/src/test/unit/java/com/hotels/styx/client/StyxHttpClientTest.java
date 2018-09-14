@@ -71,6 +71,29 @@ public class StyxHttpClientTest {
     }
 
     @Test
+    public void closesThreadpoolAfterUse() throws InterruptedException, ExecutionException {
+        StyxHttpClient client = new StyxHttpClient.Builder()
+                .threadName("test-client")
+                .build();
+
+        // Ensures that thread is created
+        client.sendRequest(httpRequest(server.port())).get();
+
+        assertThat(threadExists("test-client"), is(true));
+
+        client.shutdown().get();
+
+        assertThat(threadExists("test-client"), is(false));
+    }
+
+    private static Boolean threadExists(String threadName) {
+        for (Thread t : Thread.getAllStackTraces().keySet()) {
+            if (t.getName().startsWith(threadName)) return true;
+        }
+        return false;
+    }
+
+    @Test
     public void usesDefaultUserAgent() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
                 .userAgent("Simple-Client-Parent-Settings")
@@ -117,19 +140,6 @@ public class StyxHttpClientTest {
 
         assertThat(response.status(), is(OK));
     }
-
-//    @Test
-//    public void overridesTlsSettings() throws ExecutionException, InterruptedException {
-//        StyxHttpClient client = new StyxHttpClient.Builder()
-//                .build();
-//
-//        FullHttpResponse response = client
-//                .secure(new TlsSettings.Builder().build())
-//                .sendRequest(httpRequest(server.httpsPort()))
-//                .get();
-//
-//        assertThat(response.status(), is(OK));
-//    }
 
     @Test
     public void overridesTlsSettingsWithSecure() throws ExecutionException, InterruptedException {
@@ -321,11 +331,11 @@ public class StyxHttpClientTest {
 
     private StyxHttpClient httpsClient() {
         return new StyxHttpClient.Builder()
-                .connectionSettings(new ConnectionSettings(1000))
+                .connectTimeout(1000)
                 .tlsSettings(new TlsSettings.Builder()
                         .authenticate(false)
                         .build())
-                .responseTimeoutMillis(6000)
+                .responseTimeout(6000)
                 .build();
     }
 

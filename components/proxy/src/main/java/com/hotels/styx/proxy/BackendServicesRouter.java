@@ -206,7 +206,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                 connectionPoolSettings.connectTimeoutMillis());
 
         StyxHttpClient client = new StyxHttpClient.Builder()
-                .connectionSettings(connectionSettings)
+                .connectTimeout(connectionSettings.connectTimeoutMillis())
                 .threadName("Health-Check-Monitor-" + appId)
                 .userAgent("Styx/" + styxVersion)
                 .tlsSettings(tlsSettings.orElse(null))

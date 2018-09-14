@@ -30,13 +30,13 @@ trait StyxClientSupplier {
 
   val client: HttpClient = new StyxHttpClient.Builder()
     .threadName("scalatest-e2e-client")
-    .connectionSettings(new ConnectionSettings(1000))
+    .connectTimeout(1000)
     .maxHeaderSize(2 * 8192)
     .build()
 
   val httpsClient: HttpClient = new StyxHttpClient.Builder()
     .threadName("scalatest-e2e-secure-client")
-    .connectionSettings(new ConnectionSettings(1000))
+    .connectTimeout(1000)
     .maxHeaderSize(2 * 8192)
     .tlsSettings(new TlsSettings.Builder().build())
     .build()
