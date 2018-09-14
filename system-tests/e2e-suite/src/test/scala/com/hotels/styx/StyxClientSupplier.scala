@@ -16,35 +16,26 @@
 package com.hotels.styx
 
 import com.hotels.styx.api._
-import com.hotels.styx.api.extension.service.TlsSettings
-import com.hotels.styx.client.{ConnectionSettings, HttpClient, StyxHttpClient}
+import com.hotels.styx.client.StyxHttpClient
 
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration._
 import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 trait StyxClientSupplier {
   val TWO_SECONDS: Int = 2 * 1000
   val FIVE_SECONDS: Int = 5 * 1000
 
-  val client: HttpClient = new StyxHttpClient.Builder()
+  val client: StyxHttpClient = new StyxHttpClient.Builder()
     .threadName("scalatest-e2e-client")
     .connectTimeout(1000)
     .maxHeaderSize(2 * 8192)
     .build()
 
-  val httpsClient: HttpClient = new StyxHttpClient.Builder()
-    .threadName("scalatest-e2e-secure-client")
-    .connectTimeout(1000)
-    .maxHeaderSize(2 * 8192)
-    .tlsSettings(new TlsSettings.Builder().build())
-    .build()
-
-
   private def doHttpRequest(request: FullHttpRequest, debug: Boolean = false): Future[FullHttpResponse] = client.sendRequest(request).toScala
 
-  private def doSecureRequest(request: FullHttpRequest): Future[FullHttpResponse] = httpsClient.sendRequest(request).toScala
+  private def doSecureRequest(request: FullHttpRequest): Future[FullHttpResponse] = client.secure().sendRequest(request).toScala
 
   private def doRequest(request: FullHttpRequest, debug: Boolean = false, secure: Boolean = false): Future[FullHttpResponse] = if (secure)
     doSecureRequest(request)

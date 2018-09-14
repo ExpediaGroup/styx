@@ -209,11 +209,6 @@ public final class StyxHttpClient implements HttpClient {
         }
 
         @Override
-        public Transaction userAgent(String userAgent) {
-            this.builder.userAgent(userAgent);
-            return this;        }
-
-        @Override
         public StreamingTransaction streaming() {
             return null;
         }
