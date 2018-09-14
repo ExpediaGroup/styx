@@ -21,6 +21,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -88,10 +89,11 @@ public class CompositeHttpErrorStatusListenerTest {
     public void propagatesProxyErrorsWithRequests() {
         HttpRequest request = HttpRequest.get("/foo").build();
         IOException cause = new IOException();
-        listener.proxyErrorOccurred(request, INTERNAL_SERVER_ERROR, cause);
+        InetSocketAddress clientAddress = InetSocketAddress.createUnresolved("127.0.0.1", 0);
+        listener.proxyErrorOccurred(request, clientAddress, INTERNAL_SERVER_ERROR, cause);
 
-        verify(delegate1).proxyErrorOccurred(request, INTERNAL_SERVER_ERROR, cause);
-        verify(delegate2).proxyErrorOccurred(request, INTERNAL_SERVER_ERROR, cause);
-        verify(delegate3).proxyErrorOccurred(request, INTERNAL_SERVER_ERROR, cause);
+        verify(delegate1).proxyErrorOccurred(request, clientAddress, INTERNAL_SERVER_ERROR, cause);
+        verify(delegate2).proxyErrorOccurred(request, clientAddress, INTERNAL_SERVER_ERROR, cause);
+        verify(delegate3).proxyErrorOccurred(request, clientAddress, INTERNAL_SERVER_ERROR, cause);
     }
 }

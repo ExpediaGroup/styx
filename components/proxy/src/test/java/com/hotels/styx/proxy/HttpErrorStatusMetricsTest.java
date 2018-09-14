@@ -27,6 +27,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.stream.Stream;
 
@@ -125,7 +126,7 @@ public class HttpErrorStatusMetricsTest {
     @Test
     public void updatesCountersForProxyErrorsWithResponse() {
         HttpRequest request = get("/foo").build();
-        errorListener.proxyErrorOccurred(request, INTERNAL_SERVER_ERROR, new CustomException());
+        errorListener.proxyErrorOccurred(request, InetSocketAddress.createUnresolved("127.0.0.1", 0), INTERNAL_SERVER_ERROR, new CustomException());
 
         assertThat(count("styx.response.status.500"), is(1));
         assertThat(statusCountsExcluding("styx.response.status.500"), everyItem(is(0)));

@@ -23,6 +23,8 @@ import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
 
+import java.net.InetSocketAddress;
+
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static java.util.Objects.requireNonNull;
 
@@ -56,7 +58,7 @@ public class HttpErrorStatusMetrics implements HttpErrorStatusListener {
     }
 
     @Override
-    public void proxyErrorOccurred(HttpRequest request, HttpResponseStatus status, Throwable cause) {
+    public void proxyErrorOccurred(HttpRequest request, InetSocketAddress clientAddress, HttpResponseStatus status, Throwable cause) {
         proxyErrorOccurred(status, cause);
     }
 

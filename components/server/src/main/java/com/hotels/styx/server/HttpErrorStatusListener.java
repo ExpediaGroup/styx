@@ -19,6 +19,8 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 
+import java.net.InetSocketAddress;
+
 import static java.util.Arrays.asList;
 
 /**
@@ -39,7 +41,7 @@ public interface HttpErrorStatusListener {
         public void proxyErrorOccurred(HttpResponseStatus status, Throwable cause) { }
 
         @Override
-        public void proxyErrorOccurred(HttpRequest request, HttpResponseStatus status, Throwable cause) { }
+        public void proxyErrorOccurred(HttpRequest request, InetSocketAddress clientAddress, HttpResponseStatus status, Throwable cause) { }
     };
 
     static HttpErrorStatusListener compose(HttpErrorStatusListener... listeners) {
@@ -85,5 +87,5 @@ public interface HttpErrorStatusListener {
      * @param status  HTTP response status
      * @param cause   the throwable class associated with this error
      */
-    void proxyErrorOccurred(HttpRequest request, HttpResponseStatus status, Throwable cause);
+    void proxyErrorOccurred(HttpRequest request, InetSocketAddress clientAddress, HttpResponseStatus status, Throwable cause);
 }

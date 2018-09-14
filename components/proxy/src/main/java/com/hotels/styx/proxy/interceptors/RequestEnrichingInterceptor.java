@@ -44,37 +44,34 @@ public class RequestEnrichingInterceptor implements HttpInterceptor {
 
     @Override
     public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-        return chain.proceed(enrich(request, chain));
+        return chain.proceed(enrich(request, chain.context()));
     }
 
-    private HttpRequest enrich(HttpRequest request, Chain chain) {
+    private HttpRequest enrich(HttpRequest request, Context context) {
         HttpRequest.Builder builder = request.newBuilder();
 
-        xForwardedFor(request, chain.context())
+        xForwardedFor(request, context)
                 .ifPresent(headerValue -> builder.header(X_FORWARDED_FOR, headerValue));
 
         return builder
                 .header(requestIdHeaderName, request.id())
-                .header(X_FORWARDED_PROTO, xForwardedProto(request, chain.context().isSecure()))
+                .header(X_FORWARDED_PROTO, xForwardedProto(request, context.isSecure()))
                 .build();
     }
 
     private static Optional<String> xForwardedFor(HttpRequest request, HttpInterceptor.Context context) {
-        return clientAddress(request, context)
+        Optional<String> maybeClientAddress = context.clientAddress()
                 .map(InetSocketAddress::getHostString)
-                .map(hostName -> request.header(X_FORWARDED_FOR)
+                .map(hostName -> request
+                        .header(X_FORWARDED_FOR)
                         .map(xForwardedFor -> xForwardedFor + ", " + hostName)
                         .orElse(hostName));
-    }
 
-    private static Optional<InetSocketAddress> clientAddress(HttpRequest request, Context context) {
-        Optional<InetSocketAddress> clientAddress = context.clientAddress();
-
-        if (!clientAddress.isPresent()) {
+        if (!maybeClientAddress.isPresent()) {
             LOGGER.warn("No clientAddress in context url={}", request.url());
         }
 
-        return clientAddress;
+        return maybeClientAddress;
     }
 
     private static CharSequence xForwardedProto(HttpRequest request, boolean secure) {

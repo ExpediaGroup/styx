@@ -277,7 +277,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
             return WAITING_FOR_RESPONSE;
         } catch (Throwable cause) {
             HttpResponse response = exceptionToResponse(cause, request);
-            httpErrorStatusListener.proxyErrorOccurred(request, response.status(), cause);
+            httpErrorStatusListener.proxyErrorOccurred(request, remoteAddress(ctx), response.status(), cause);
             statsSink.onTerminate(request.id());
             if (ctx.channel().isActive()) {
                 respondAndClose(ctx, response);
@@ -449,7 +449,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
                         httpErrorStatusListener.proxyErrorOccurred(cause);
                         httpErrorStatusListener.proxyErrorOccurred(exception);
                     } else {
-                        httpErrorStatusListener.proxyErrorOccurred(ongoingRequest, response.status(), cause);
+                        httpErrorStatusListener.proxyErrorOccurred(ongoingRequest, remoteAddress(ctx), response.status(), cause);
                         statsSink.onComplete(ongoingRequest.id(), response.status().code());
                     }
 
