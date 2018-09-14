@@ -15,27 +15,30 @@
  */
 package com.hotels.styx.plugins;
 
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import com.hotels.styx.api.HttpRequest;
+import static org.slf4j.LoggerFactory.getLogger;
 
 public class ContentCutoffPlugin implements Plugin {
-    private static Logger LOGGER = LoggerFactory.getLogger(ContentCutoffPlugin.class);
+    private static final Logger LOGGER = getLogger(ContentCutoffPlugin.class);
 
     @Override
-    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-        return chain.proceed(request)
-                .flatMap(response ->
-                        response.toFullResponse(1024)
-                                .map(fullHttpResponse -> {
-                                    LOGGER.info("Throw away response body={}", fullHttpResponse.bodyAs(UTF_8));
-                                    return response;
-                                }));
+    public StyxObservable<HttpResponse> intercept(HttpRequest httpRequest, Chain chain) {
+        return chain
+                .proceed(httpRequest)
+                .flatMap(response -> response.toFullResponse(1000000)
+                        .flatMap(it -> {
+                            LOGGER.info("do something with full content: " + it.bodyAs(UTF_8));
 
+                            // Error: Returns an already consumed response.
+                            return StyxObservable.of(response);
+                        })
+                );
     }
+
 }
