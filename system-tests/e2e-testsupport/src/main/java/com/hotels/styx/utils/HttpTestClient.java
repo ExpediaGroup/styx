@@ -44,17 +44,17 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class HttpTestClient {
+    private static final NioEventLoopGroup eventLoopGroup =
+            new NioEventLoopGroup(1, new ThreadFactoryBuilder().setNameFormat("Test-Client-%d").build());
+
     private final HostAndPort destination;
     private final LinkedBlockingDeque<Object> receivedResponses = new LinkedBlockingDeque<>();
     private final Supplier<Bootstrap> bootstrap;
 
     private ChannelFuture channelFuture;
-    private final NioEventLoopGroup eventLoopGroup;
 
     public HttpTestClient(HostAndPort destination, ChannelInitializer<Channel> initializer) {
         this.destination = requireNonNull(destination);
-
-        eventLoopGroup = new NioEventLoopGroup(1, new ThreadFactoryBuilder().setNameFormat("Test-Client-%d").build());
 
         this.bootstrap = lazy(() -> new Bootstrap()
                 .group(eventLoopGroup)
@@ -77,9 +77,7 @@ public class HttpTestClient {
     }
 
     public CompletableFuture<Void> disconnect() {
-        return CompletableFuture.allOf(
-                toCompletableFuture(channelFuture.channel().close()),
-                toCompletableFuture(eventLoopGroup.shutdownGracefully()));
+        return toCompletableFuture(channelFuture.channel().close());
     }
 
     private CompletableFuture<Void> toCompletableFuture(Future<?> nettyFuture) {

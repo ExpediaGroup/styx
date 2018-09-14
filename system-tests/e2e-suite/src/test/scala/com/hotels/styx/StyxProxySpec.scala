@@ -52,12 +52,14 @@ trait StyxProxySpec extends StyxClientSupplier
     styxServer = styxConfig.startServer(new RegistryServiceAdapter(backendsRegistry))
     println("Styx http port is: [%d]".format(styxServer.httpPort))
     println("Styx https port is: [%d]".format(styxServer.secureHttpPort))
+    super.beforeAll()
   }
 
   override protected def afterAll() = {
     println("Styx http port was: [%d]".format(styxServer.httpPort))
     println("Styx https port was: [%d]".format(styxServer.secureHttpPort))
     styxServer.stopAsync().awaitTerminated()
+    super.afterAll()
   }
 }
 

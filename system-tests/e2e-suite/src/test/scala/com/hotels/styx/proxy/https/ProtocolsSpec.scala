@@ -119,6 +119,7 @@ class ProtocolsSpec extends FunSpec
 
   override protected def afterAll(): Unit = {
     httpsOriginWithoutCert.stop()
+    httpsOriginWithCert.stop()
     httpServer.stop()
     super.afterAll()
   }
