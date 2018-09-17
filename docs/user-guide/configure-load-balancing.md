@@ -53,7 +53,7 @@ the name of the cookie that should contain the origins restriction information.
 Load balancing strategies and the origin restriction feature are configured
 in the Styx proxy configuration file.
 
-To enable Busy load balancing strategy:
+To enable *Power of Two* load balancing strategy:
 
     loadBalancing:
       strategy:
