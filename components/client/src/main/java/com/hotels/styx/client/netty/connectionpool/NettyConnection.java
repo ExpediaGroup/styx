@@ -16,17 +16,17 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.client.Connection;
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.HttpRequestOperationFactory;
-
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
 import rx.Observable;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Objects.toStringHelper;
@@ -43,7 +43,7 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
     private final HttpRequestOperationFactory requestOperationFactory;
 
     private volatile long timeToFirstByteMs;
-    private final Announcer<Listener> listeners = Announcer.to(Listener.class);
+    private final List<Listener> listeners = new CopyOnWriteArrayList<>();
 
 
     /**
@@ -60,7 +60,7 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
         this.requestOperationFactory = requestOperationFactory;
         this.channel.pipeline().addLast(new TimeToFirstByteHandler(this));
         this.channel.closeFuture().addListener(future ->
-                listeners.announce().connectionClosed(NettyConnection.this));
+                listeners.forEach(listener -> listener.connectionClosed(NettyConnection.this)));
     }
 
     @Override
@@ -95,7 +95,7 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
 
     @Override
     public void addConnectionListener(Listener listener) {
-        this.listeners.addListener(listener);
+        this.listeners.add(listener);
     }
 
     @Override

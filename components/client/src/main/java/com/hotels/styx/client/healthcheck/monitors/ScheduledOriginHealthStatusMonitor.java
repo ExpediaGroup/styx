@@ -16,7 +16,6 @@
 package com.hotels.styx.client.healthcheck.monitors;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
@@ -24,9 +23,11 @@ import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.Schedule;
 
 import javax.annotation.concurrent.ThreadSafe;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static com.google.common.collect.ImmutableSet.copyOf;
@@ -40,7 +41,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  */
 @ThreadSafe
 public class ScheduledOriginHealthStatusMonitor extends AbstractStyxService implements OriginHealthStatusMonitor {
-    private final Announcer<OriginHealthStatusMonitor.Listener> listeners = Announcer.to(OriginHealthStatusMonitor.Listener.class);
+    private final List<Listener> listeners = new CopyOnWriteArrayList<>();
 
     private final ScheduledExecutorService hostHealthMonitorExecutor;
     private final OriginHealthCheckFunction healthCheckingFunction;
@@ -79,7 +80,7 @@ public class ScheduledOriginHealthStatusMonitor extends AbstractStyxService impl
 
     @Override
     public OriginHealthStatusMonitor addOriginStatusListener(OriginHealthStatusMonitor.Listener listener) {
-        this.listeners.addListener(listener);
+        this.listeners.add(listener);
         return this;
     }
 
@@ -91,9 +92,8 @@ public class ScheduledOriginHealthStatusMonitor extends AbstractStyxService impl
     }
 
     private void resetListeners(Set<Origin> origins) {
-        for (Origin origin : origins) {
-            this.listeners.announce().monitoringEnded(origin);
-        }
+        origins.forEach(origin ->
+                this.listeners.forEach(listener -> listener.monitoringEnded(origin)));
     }
 
     @Override
@@ -133,10 +133,10 @@ public class ScheduledOriginHealthStatusMonitor extends AbstractStyxService impl
     }
 
     private void announceOriginHealthy(Origin origin) {
-        listeners.announce().originHealthy(origin);
+        listeners.forEach(listener -> listener.originHealthy(origin));
     }
 
     private void announceOriginUnhealthy(Origin origin) {
-        this.listeners.announce().originUnhealthy(origin);
+        listeners.forEach(listener -> listener.originUnhealthy(origin));
     }
 }
