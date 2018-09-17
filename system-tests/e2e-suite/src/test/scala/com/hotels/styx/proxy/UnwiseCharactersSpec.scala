@@ -30,8 +30,10 @@ import com.hotels.styx.support.server.UrlMatchingStrategies._
 import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers.hasItem
 import org.scalatest._
+import org.scalatest.concurrent.Eventually
+import scala.concurrent.duration._
 
-class UnwiseCharactersSpec extends FunSpec with StyxProxySpec {
+class UnwiseCharactersSpec extends FunSpec with StyxProxySpec with Eventually {
 
   val recordingBackend = FakeHttpServer.HttpStartupConfig().start()
 
@@ -66,7 +68,9 @@ class UnwiseCharactersSpec extends FunSpec with StyxProxySpec {
       decodedRequest(req)
 
       recordingBackend.verify(receivedRewrittenUrl("/url/unwise%51%51blah"))
-      assertThat(logger.log(), hasItem(loggingEvent(WARN, "Value contains unwise chars. you should fix this. raw=/url/unwiseQQblah, escaped=/url/unwise%51%51blah.*")))
+      eventually(timeout(3.seconds)) {
+        assertThat(logger.log(), hasItem(loggingEvent(WARN, "Value contains unwise chars. you should fix this. raw=/url/unwiseQQblah, escaped=/url/unwise%51%51blah.*")))
+      }
     }
   }
 

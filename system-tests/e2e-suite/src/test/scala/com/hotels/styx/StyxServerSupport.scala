@@ -65,6 +65,8 @@ object StyxServerSupport {
 
   def newAdminServerConfigBuilder(adminHttpConnConfig: HttpConnectorConfig) = {
     new AdminServerConfig.Builder()
+      .setBossThreadsCount(1)
+      .setWorkerThreadsCount(1)
       .setHttpConnector(adminHttpConnConfig)
   }
 
