@@ -17,13 +17,14 @@ package com.hotels.styx.api.extension.service.spi;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapDifference;
-import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.Identifiable;
 import org.slf4j.Logger;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
@@ -45,7 +46,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 public abstract class AbstractRegistry<T extends Identifiable> implements Registry<T> {
     private static final Logger LOG = getLogger(AbstractRegistry.class);
 
-    private final Announcer<Registry.ChangeListener> announcer = Announcer.to(ChangeListener.class);
+    private final List<ChangeListener<T>> listeners = new CopyOnWriteArrayList<>();
     private final AtomicReference<Iterable<T>> snapshot = new AtomicReference<>(emptyList());
     private final Predicate<Collection<T>> resourceConstraint;
 
@@ -72,13 +73,13 @@ public abstract class AbstractRegistry<T extends Identifiable> implements Regist
     }
 
     protected void notifyListeners(Changes<T> changes) {
-        LOG.info("notifying about services={} to listeners={}", changes, announcer.listeners());
-        announcer.announce().onChange(changes);
+        LOG.info("notifying about services={} to listeners={}", changes, listeners);
+        listeners.forEach(listener -> listener.onChange(changes));
     }
 
     @Override
     public Registry<T> addListener(ChangeListener<T> changeListener) {
-        announcer.addListener(changeListener);
+        listeners.add(changeListener);
         changeListener.onChange(added(snapshot.get()));
         return this;
     }
@@ -109,7 +110,7 @@ public abstract class AbstractRegistry<T extends Identifiable> implements Regist
 
     @Override
     public Registry<T> removeListener(ChangeListener<T> changeListener) {
-        announcer.removeListener(changeListener);
+        listeners.remove(changeListener);
         return this;
     }
 
