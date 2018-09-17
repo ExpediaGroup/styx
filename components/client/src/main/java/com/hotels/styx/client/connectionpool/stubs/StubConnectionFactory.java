@@ -15,13 +15,15 @@
  */
 package com.hotels.styx.client.connectionpool.stubs;
 
-import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
-import com.hotels.styx.api.extension.Origin;
 import rx.Observable;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.google.common.base.Objects.toStringHelper;
 
@@ -43,7 +45,7 @@ public class StubConnectionFactory implements Connection.Factory {
     public static class StubConnection implements Connection {
         private final Origin origin;
         private boolean connected = true;
-        private final Announcer<Listener> listeners = Announcer.to(Connection.Listener.class);
+        private final List<Listener> listeners = new CopyOnWriteArrayList<>();
 
         public StubConnection(Origin origin) {
             this.origin = origin;
@@ -71,7 +73,7 @@ public class StubConnectionFactory implements Connection.Factory {
 
         @Override
         public void addConnectionListener(Listener listener) {
-            listeners.addListener(listener);
+            listeners.add(listener);
         }
 
         @Override
@@ -79,7 +81,7 @@ public class StubConnectionFactory implements Connection.Factory {
             // To avoid infinite recursion:
             if (connected) {
                 connected = false;
-                listeners.announce().connectionClosed(this);
+                listeners.forEach(listener -> listener.connectionClosed(this));
             }
         }
 

@@ -21,18 +21,17 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.ActiveOrigins;
-import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.OriginsChangeListener;
 import com.hotels.styx.api.extension.OriginsSnapshot;
 import com.hotels.styx.api.extension.RemoteHost;
-import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.monitors.NoOriginHealthStatusMonitor;
 import com.hotels.styx.client.origincommands.DisableOrigin;
@@ -49,6 +48,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -88,7 +88,7 @@ public final class OriginsInventory
     private static final HealthyEvent HEALTHY = new HealthyEvent();
     private static final UnhealthyEvent UNHEALTHY = new UnhealthyEvent();
 
-    private final Announcer<OriginsChangeListener> inventoryListeners = Announcer.to(OriginsChangeListener.class);
+    private final List<OriginsChangeListener> inventoryListeners = new CopyOnWriteArrayList<>();
 
     private final EventBus eventBus;
     private final Id appId;
@@ -181,7 +181,7 @@ public final class OriginsInventory
 
     @Override
     public void addOriginsChangeListener(OriginsChangeListener listener) {
-        inventoryListeners.addListener(listener);
+        inventoryListeners.add(listener);
     }
 
     public boolean closed() {
@@ -390,7 +390,7 @@ public final class OriginsInventory
 
     private void notifyStateChange() {
         OriginsSnapshot event = new OriginsSnapshot(appId, pools(ACTIVE), pools(INACTIVE), pools(DISABLED));
-        inventoryListeners.announce().originsChanged(event);
+        inventoryListeners.forEach(listener -> listener.originsChanged(event));
         eventBus.post(event);
     }
 
