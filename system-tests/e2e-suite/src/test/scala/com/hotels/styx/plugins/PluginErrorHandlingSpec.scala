@@ -69,7 +69,7 @@ class PluginErrorHandlingSpec extends FunSpec
       assert(resp.status() == INTERNAL_SERVER_ERROR)
     }
 
-    ignore("Catches exceptions from plugins handling responses, and maps them to INTERNAL_SERVER_ERRORs") {
+    it("Catches exceptions from plugins handling responses, and maps them to INTERNAL_SERVER_ERRORs") {
       for (i <- 1 to 2) {
         val request = get(styxServer.routerURL("/foo"))
           .header("Fail_after_handle", "true")
