@@ -59,13 +59,13 @@ To enable *Power of Two* load balancing strategy:
       strategy:
         factory: {class: "com.hotels.styx.client.loadbalancing.strategies.PowerOfTwoStrategy$Factory"}
 
-To enable Busy load balancing strategy:
+To enable *Busy* load balancing strategy:
 
     loadBalancing:
       strategy:
         factory: {class: "com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy$Factory"}
 
-To enable Round Robin load balancing strategy:
+To enable *Round Robin* load balancing strategy:
 
     loadBalancing:
       strategy:
