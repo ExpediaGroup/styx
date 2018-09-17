@@ -30,7 +30,7 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
-import com.hotels.styx.client.StyxHttpClient.newHttpClientBuilder
+import StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.support.api.BlockingObservables._
@@ -123,7 +123,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
   }
 
   test("Responds without sticky session cookie when sticky session is not enabled") {
-    val client: StyxHttpClient = newHttpClientBuilder(backendService.id)
+    val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
       .loadBalancer(roundRobinStrategy(activeOrigins(backendService)))
       .build
 
@@ -136,7 +136,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
   }
 
   test("Routes to origins indicated by sticky session cookie.") {
-    val client: StyxHttpClient = newHttpClientBuilder(backendService.id)
+    val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
@@ -154,7 +154,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
   }
 
   test("Routes to origins indicated by sticky session cookie when other cookies are provided.") {
-    val client: StyxHttpClient = newHttpClientBuilder(backendService.id)
+    val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
@@ -176,7 +176,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
   }
 
   test("Routes to new origin when the origin indicated by sticky session cookie does not exist.") {
-    val client: StyxHttpClient = newHttpClientBuilder(backendService.id)
+    val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
@@ -201,7 +201,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers
   test("Routes to new origin when the origin indicated by sticky session cookie is no longer available.") {
     server1.stop()
 
-    val client: StyxHttpClient = newHttpClientBuilder(backendService.id)
+    val client: StyxBackendServiceClient = newHttpClientBuilder(backendService.id)
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 

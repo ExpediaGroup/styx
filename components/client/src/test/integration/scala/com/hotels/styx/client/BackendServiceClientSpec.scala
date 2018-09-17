@@ -26,7 +26,7 @@ import com.hotels.styx.api.exceptions.ResponseTimeoutException
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
-import com.hotels.styx.client.StyxHttpClient._
+import StyxBackendServiceClient._
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.support.api.BlockingObservables.{waitForResponse, waitForStreamingResponse}
 import com.hotels.styx.support.server.FakeHttpServer
@@ -41,12 +41,12 @@ import org.scalatest._
 import org.scalatest.mock.MockitoSugar
 import rx.observers.TestSubscriber
 
-class HttpClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers with BeforeAndAfter with Matchers with MockitoSugar {
+class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers with BeforeAndAfter with Matchers with MockitoSugar {
   var webappOrigin: Origin = _
 
   val originOneServer = new FakeHttpServer(0)
 
-  var client: StyxHttpClient = _
+  var client: StyxBackendServiceClient = _
 
   val responseTimeout = 1000
 

@@ -18,7 +18,7 @@ package com.hotels.styx.client.netty.connectionpool;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
-import com.hotels.styx.api.netty.ClientEventLoopFactory;
+import com.hotels.styx.client.netty.ClientEventLoopFactory;
 import com.hotels.styx.client.ChannelOptionSetting;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;

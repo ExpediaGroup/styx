@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.configuration.Configuration;
@@ -24,7 +24,7 @@ import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.client.OriginRestrictionLoadBalancingStrategy;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.client.StyxHttpClient;
+import com.hotels.styx.client.StyxBackendServiceClient;
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
@@ -48,7 +48,7 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
     }
 
     @Override
-    public HttpClient createClient(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
+    public BackendServiceClient createClient(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
         Configuration styxConfig = environment.configuration();
         String originRestrictionCookie = styxConfig.get("originRestrictionCookie").orElse(null);
         boolean stickySessionEnabled = backendService.stickySessionConfig().stickySessionEnabled();
@@ -71,7 +71,7 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
                 originRestrictionCookie
         );
 
-        return new StyxHttpClient.Builder(backendService.id())
+        return new StyxBackendServiceClient.Builder(backendService.id())
                 .loadBalancer(loadBalancingStrategy)
                 .stickySessionConfig(backendService.stickySessionConfig())
                 .metricsRegistry(environment.metricRegistry())

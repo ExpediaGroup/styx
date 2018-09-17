@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
@@ -34,7 +34,7 @@ import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.client.SimpleHttpClient;
+import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.client.StyxHeaderConfig;
 import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
@@ -190,7 +190,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     }
 
     private HttpHandler newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
-        HttpClient client = clientFactory.createClient(backendService, originsInventory, originStatsFactory);
+        BackendServiceClient client = clientFactory.createClient(backendService, originsInventory, originStatsFactory);
         return (request, context) -> fromRxObservable(client.sendRequest(request));
     }
 
@@ -205,7 +205,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         ConnectionSettings connectionSettings = new ConnectionSettings(
                 connectionPoolSettings.connectTimeoutMillis());
 
-        SimpleHttpClient client = new SimpleHttpClient.Builder()
+        StyxHttpClient client = new StyxHttpClient.Builder()
                 .connectionSettings(connectionSettings)
                 .threadName("Health-Check-Monitor-" + appId)
                 .userAgent("Styx/" + styxVersion)

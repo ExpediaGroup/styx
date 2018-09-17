@@ -18,7 +18,7 @@ package com.hotels.styx.testapi;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.api.FullHttpClient;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;
@@ -26,7 +26,7 @@ import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.client.SimpleHttpClient;
+import com.hotels.styx.client.StyxHttpClient;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -58,7 +58,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class StyxServerTest {
-    private final FullHttpClient client = new SimpleHttpClient.Builder()
+    private final HttpClient client = new StyxHttpClient.Builder()
             .build();
 
     private StyxServer styxServer;
@@ -156,7 +156,7 @@ public class StyxServerTest {
                 .addRoute("/", originServer1.port())
                 .start();
 
-        SimpleHttpClient tlsClient = new SimpleHttpClient.Builder()
+        StyxHttpClient tlsClient = new StyxHttpClient.Builder()
                 .tlsSettings(new TlsSettings.Builder().build())
                 .build();
 
@@ -190,7 +190,7 @@ public class StyxServerTest {
                 .addRoute("/", backendService)
                 .start();
 
-        SimpleHttpClient tlsClient = new SimpleHttpClient.Builder()
+        StyxHttpClient tlsClient = new StyxHttpClient.Builder()
                 .tlsSettings(new TlsSettings.Builder().build())
                 .build();
 

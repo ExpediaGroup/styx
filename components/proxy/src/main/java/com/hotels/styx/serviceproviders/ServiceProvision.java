@@ -27,6 +27,7 @@ import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicyFactory;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.configuration.ServiceFactory;
+import com.hotels.styx.client.StyxBackendServiceClient;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.spi.config.ServiceFactoryConfig;
@@ -56,7 +57,7 @@ public final class ServiceProvision {
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceProvision.class);
 
     /**
-     * Create a {@link com.hotels.styx.client.StyxHttpClient} related factory configured with a particular key,
+     * Create a {@link StyxBackendServiceClient} related factory configured with a particular key,
      * then uses the factory's create method to create its product.
      *
      * @param <E>           service type

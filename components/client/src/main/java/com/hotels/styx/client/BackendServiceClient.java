@@ -13,14 +13,16 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api;
+package com.hotels.styx.client;
 
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import rx.Observable;
 
 /**
  * HTTP Client that returns an observable of response.
  */
-public interface HttpClient {
+public interface BackendServiceClient {
     /**
      * Processes a new request.
      *

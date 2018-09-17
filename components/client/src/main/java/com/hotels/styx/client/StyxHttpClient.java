@@ -15,385 +15,166 @@
  */
 package com.hotels.styx.client;
 
-import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.HttpClient;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.Id;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.net.HostAndPort;
+import com.hotels.styx.api.FullHttpRequest;
+import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.Url;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.extension.RemoteHost;
-import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
-import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
-import com.hotels.styx.api.RequestCookie;
-import com.hotels.styx.api.exceptions.NoAvailableHostsException;
-import com.hotels.styx.api.HttpResponseStatus;
-import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.extension.service.RewriteRule;
-import com.hotels.styx.api.extension.service.StickySessionConfig;
-import com.hotels.styx.client.retry.RetryNTimes;
-import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
-import com.hotels.styx.server.HttpInterceptorContext;
-import org.slf4j.Logger;
+import com.hotels.styx.api.extension.service.TlsSettings;
+import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
+import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import rx.Observable;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
+import java.util.concurrent.CompletableFuture;
 
-import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.hotels.styx.api.HttpHeaderNames.HOST;
+import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
-import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
-import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
-import static io.netty.handler.codec.http.HttpMethod.HEAD;
-import static java.util.Collections.emptyList;
-import static java.util.Objects.nonNull;
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.StreamSupport.stream;
-import static org.slf4j.LoggerFactory.getLogger;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
+import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
 
 /**
- * A configurable HTTP client that uses connection pooling, load balancing, etc.
+ * A client that uses netty as transport.
  */
 public final class StyxHttpClient implements HttpClient {
-    private static final Logger LOGGER = getLogger(StyxHttpClient.class);
-    private static final int MAX_RETRY_ATTEMPTS = 3;
+    private static final int DEFAULT_HTTPS_PORT = 443;
+    private static final int DEFAULT_HTTP_PORT = 80;
 
-    private final Id id;
-    private final RewriteRuleset rewriteRuleset;
-    private final LoadBalancer loadBalancer;
-    private final RetryPolicy retryPolicy;
-    private final OriginStatsFactory originStatsFactory;
-    private final MetricRegistry metricsRegistry;
-    private final boolean contentValidation;
-    private final String originsRestrictionCookieName;
-    private final StickySessionConfig stickySessionConfig;
+    private final Optional<String> userAgent;
+    private final ConnectionSettings connectionSettings;
+    private final int maxResponseSize;
+    private final Connection.Factory connectionFactory;
+    private final boolean isHttps;
 
-    private StyxHttpClient(Builder builder) {
-        this.id = requireNonNull(builder.backendServiceId);
-
-        this.stickySessionConfig = requireNonNull(builder.stickySessionConfig);
-
-        this.originStatsFactory = requireNonNull(builder.originStatsFactory);
-
-        this.loadBalancer = requireNonNull(builder.loadBalancer);
-
-        this.retryPolicy = builder.retryPolicy != null
-                ? builder.retryPolicy
-                : new RetryNTimes(3);
-
-        this.rewriteRuleset = new RewriteRuleset(builder.rewriteRules);
-
-        this.metricsRegistry = builder.metricsRegistry;
-        this.contentValidation = builder.contentValidation;
-        this.originsRestrictionCookieName = builder.originsRestrictionCookieName;
+    private StyxHttpClient(Builder builder, boolean isHttps) {
+        this.userAgent = Optional.ofNullable(builder.userAgent);
+        this.connectionSettings = builder.connectionSettings;
+        this.maxResponseSize = builder.maxResponseSize;
+        this.connectionFactory = builder.connectionFactory;
+        this.isHttps = isHttps;
     }
 
-    @Override
-    public Observable<HttpResponse> sendRequest(HttpRequest request) {
-        return sendRequest(rewriteUrl(request), new ArrayList<>(), 0);
+    public CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request) {
+        FullHttpRequest networkRequest = addUserAgent(request);
+        Origin origin = originFromRequest(networkRequest, isHttps);
+
+        Observable<FullHttpResponse> responseObservable = connectionFactory.createConnection(origin, connectionSettings)
+                .flatMap(connection -> connection.write(networkRequest.toStreamingRequest())
+                        .flatMap(response -> toRxObservable(response.toFullResponse(maxResponseSize)))
+                        .doOnTerminate(connection::close));
+
+        return fromSingleObservable(responseObservable);
+    }
+
+    private FullHttpRequest addUserAgent(FullHttpRequest request) {
+        return Optional.of(request)
+                .filter(req -> !req.header(USER_AGENT).isPresent())
+                .flatMap(req -> userAgent.map(userAgent -> request.newBuilder()
+                        .addHeader(USER_AGENT, userAgent)
+                        .build()))
+                .orElse(request);
+    }
+
+    private static Origin originFromRequest(FullHttpRequest request, Boolean isHttps) {
+        String hostAndPort = request.header(HOST)
+                .orElseGet(() -> {
+                    checkArgument(request.url().isAbsolute(), "host header is not set for request=%s", request);
+                    return request.url().authority().map(Url.Authority::hostAndPort)
+                            .orElseThrow(() -> new IllegalArgumentException("Cannot send request " + request + " as URL is not absolute and no HOST header is present"));
+                });
+
+        HostAndPort host = HostAndPort.fromString(hostAndPort);
+
+        if (host.getPortOrDefault(-1) < 0) {
+            host = host.withDefaultPort(isHttps ? DEFAULT_HTTPS_PORT : DEFAULT_HTTP_PORT);
+        }
+
+        return newOriginBuilder(host.getHostText(), host.getPort()).build();
     }
 
     /**
-     * Create a new builder.
-     *
-     * @return a new builder
-     */
-    public static Builder newHttpClientBuilder(Id backendServiceId) {
-        return new Builder(backendServiceId);
-    }
-
-    private static boolean isError(HttpResponseStatus status) {
-        return status.code() >= 400;
-    }
-
-    private static boolean bodyNeedsToBeRemoved(HttpRequest request, HttpResponse response) {
-        return isHeadRequest(request) || isBodilessResponse(response);
-    }
-
-    private static HttpResponse responseWithoutBody(HttpResponse response) {
-        return response.newBuilder()
-                .header(CONTENT_LENGTH, 0)
-                .removeHeader(TRANSFER_ENCODING)
-                .removeBody()
-                .build();
-    }
-
-    private static boolean isBodilessResponse(HttpResponse response) {
-        int status = response.status().code();
-        return status == 204 || status == 304 || status / 100 == 1;
-    }
-
-    private static boolean isHeadRequest(HttpRequest request) {
-        return request.method().equals(HEAD);
-    }
-
-    private Observable<HttpResponse> sendRequest(HttpRequest request, List<RemoteHost> previousOrigins, int attempt) {
-        if (attempt >= MAX_RETRY_ATTEMPTS) {
-            return Observable.error(new NoAvailableHostsException(this.id));
-        }
-
-        Optional<RemoteHost> remoteHost = selectOrigin(request);
-        if (remoteHost.isPresent()) {
-            RemoteHost host = remoteHost.get();
-            List<RemoteHost> newPreviousOrigins = newArrayList(previousOrigins);
-            newPreviousOrigins.add(remoteHost.get());
-            AtomicBoolean completed = new AtomicBoolean(false);
-
-            return toRxObservable(host.hostClient().handle(request, HttpInterceptorContext.create()))
-                    .map(response -> addStickySessionIdentifier(response, host.origin()))
-                    .doOnError(throwable -> logError(request, throwable))
-                    .doOnCompleted(() -> completed.set(true))
-                    .doOnUnsubscribe(() -> {
-                        if (!completed.get()) {
-                            originStatsFactory.originStats(host.origin()).requestCancelled();
-                        }
-                    })
-                    .doOnNext(this::recordErrorStatusMetrics)
-                    .map(response -> removeUnexpectedResponseBody(request, response))
-                    .map(this::removeRedundantContentLengthHeader)
-                    .onErrorResumeNext(cause -> {
-                        RetryPolicyContext retryContext = new RetryPolicyContext(this.id, attempt + 1, cause, request, previousOrigins);
-                        return retry(request, retryContext, newPreviousOrigins, attempt + 1, cause);
-                    });
-        } else {
-            RetryPolicyContext retryContext = new RetryPolicyContext(this.id, attempt + 1, null, request, previousOrigins);
-            return retry(request, retryContext, previousOrigins, attempt + 1, new NoAvailableHostsException(this.id));
-        }
-    }
-
-    Observable<HttpResponse> retry(HttpRequest request, RetryPolicyContext retryContext, List<RemoteHost> previousOrigins, int attempt, Throwable cause) {
-        LoadBalancer.Preferences lbContext = new LoadBalancer.Preferences() {
-            @Override
-            public Optional<String> preferredOrigins() {
-                return Optional.empty();
-            }
-
-            @Override
-            public List<Origin> avoidOrigins() {
-                return previousOrigins.stream()
-                        .map(RemoteHost::origin)
-                        .collect(Collectors.toList());
-            }
-        };
-
-        if (this.retryPolicy.evaluate(retryContext, loadBalancer, lbContext).shouldRetry()) {
-            return sendRequest(request, previousOrigins, attempt);
-        } else {
-            return Observable.error(cause);
-        }
-    }
-
-    private static final class RetryPolicyContext implements RetryPolicy.Context {
-        private final Id appId;
-        private final int retryCount;
-        private final Throwable lastException;
-        private final HttpRequest request;
-        private final Iterable<RemoteHost> previouslyUsedOrigins;
-
-        RetryPolicyContext(Id appId, int retryCount, Throwable lastException, HttpRequest request,
-                           Iterable<RemoteHost> previouslyUsedOrigins) {
-            this.appId = appId;
-            this.retryCount = retryCount;
-            this.lastException = lastException;
-            this.request = request;
-            this.previouslyUsedOrigins = previouslyUsedOrigins;
-        }
-
-        @Override
-        public Id appId() {
-            return appId;
-        }
-
-        @Override
-        public int currentRetryCount() {
-            return retryCount;
-        }
-
-        @Override
-        public Optional<Throwable> lastException() {
-            return Optional.ofNullable(lastException);
-        }
-
-        @Override
-        public HttpRequest currentRequest() {
-            return request;
-        }
-
-        @Override
-        public Iterable<RemoteHost> previousOrigins() {
-            return previouslyUsedOrigins;
-        }
-
-        @Override
-        public String toString() {
-            return toStringHelper(this)
-                    .add("appId", appId)
-                    .add("retryCount", retryCount)
-                    .add("lastException", lastException)
-                    .add("request", request.url())
-                    .add("previouslyUsedOrigins", hosts(previouslyUsedOrigins))
-                    .toString();
-        }
-
-        private static String hosts(Iterable<RemoteHost> origins) {
-            return stream(origins.spliterator(), false)
-                    .map(host -> host.origin().hostAndPortString())
-                    .collect(joining(", "));
-        }
-    }
-
-    private static void logError(HttpRequest rewrittenRequest, Throwable throwable) {
-        LOGGER.error("Error Handling request={} exceptionClass={} exceptionMessage=\"{}\"",
-                new Object[]{rewrittenRequest, throwable.getClass().getName(), throwable.getMessage()});
-    }
-
-    private HttpResponse removeUnexpectedResponseBody(HttpRequest request, HttpResponse response) {
-        if (contentValidation && bodyNeedsToBeRemoved(request, response)) {
-            return responseWithoutBody(response);
-        } else {
-            return response;
-        }
-    }
-
-    private HttpResponse removeRedundantContentLengthHeader(HttpResponse response) {
-        if (contentValidation && response.contentLength().isPresent() && response.chunked()) {
-            return response.newBuilder()
-                    .removeHeader(CONTENT_LENGTH)
-                    .build();
-        }
-        return response;
-    }
-
-    private void recordErrorStatusMetrics(HttpResponse response) {
-        if (isError(response.status())) {
-            metricsRegistry.counter("origins.response.status." + response.status().code()).inc();
-        }
-    }
-
-    private Optional<RemoteHost> selectOrigin(HttpRequest rewrittenRequest) {
-
-
-        LoadBalancer.Preferences preferences = new LoadBalancer.Preferences() {
-            @Override
-            public Optional<String> preferredOrigins() {
-                if (nonNull(originsRestrictionCookieName)) {
-                    return rewrittenRequest.cookie(originsRestrictionCookieName)
-                            .map(RequestCookie::value)
-                            .map(Optional::of)
-                            .orElse(rewrittenRequest.cookie("styx_origin_" + id).map(RequestCookie::value));
-                } else {
-                    return rewrittenRequest.cookie("styx_origin_" + id).map(RequestCookie::value);
-                }
-            }
-
-            @Override
-            public List<Origin> avoidOrigins() {
-                return Collections.emptyList();
-            }
-        };
-        return loadBalancer.choose(preferences);
-    }
-
-    private HttpResponse addStickySessionIdentifier(HttpResponse httpResponse, Origin origin) {
-        if (this.loadBalancer instanceof StickySessionLoadBalancingStrategy) {
-            int maxAge = stickySessionConfig.stickySessionTimeoutSeconds();
-            return httpResponse.newBuilder()
-                    .addCookies(newStickySessionCookie(id, origin.id(), maxAge))
-                    .build();
-        } else {
-            return httpResponse;
-        }
-    }
-
-    private HttpRequest rewriteUrl(HttpRequest request) {
-        return rewriteRuleset.rewrite(request);
-    }
-
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("id", id)
-                .add("stickySessionConfig", stickySessionConfig)
-                .add("retryPolicy", retryPolicy)
-                .add("rewriteRuleset", rewriteRuleset)
-                .add("loadBalancingStrategy", loadBalancer)
-                .toString();
-    }
-
-    /**
-     * A builder for {@link com.hotels.styx.client.StyxHttpClient}.
+     * Builder for {@link StyxHttpClient}.
      */
     public static class Builder {
+        private Connection.Factory connectionFactory;
+        private TlsSettings tlsSettings;
+        private String userAgent;
+        private ConnectionSettings connectionSettings = new ConnectionSettings(1000);
+        private int responseTimeout = 60000;
+        private int maxResponseSize = 1024 * 100;
+        private int maxHeaderSize = 8192;
+        private String threadName = "simple-netty-http-client";
 
-        private final Id backendServiceId;
-        private MetricRegistry metricsRegistry = new CodaHaleMetricRegistry();
-        private List<RewriteRule> rewriteRules = emptyList();
-        private RetryPolicy retryPolicy = new RetryNTimes(3);
-        private LoadBalancer loadBalancer;
-        private boolean contentValidation;
-        private OriginStatsFactory originStatsFactory;
-        private String originsRestrictionCookieName;
-        private StickySessionConfig stickySessionConfig = stickySessionDisabled();
-
-        public Builder(Id backendServiceId) {
-            this.backendServiceId = requireNonNull(backendServiceId);
-        }
-
-        public Builder stickySessionConfig(StickySessionConfig stickySessionConfig) {
-            this.stickySessionConfig = requireNonNull(stickySessionConfig);
+        public Builder connectionSettings(ConnectionSettings connectionSettings) {
+            this.connectionSettings = connectionSettings;
             return this;
         }
 
-        public Builder metricsRegistry(MetricRegistry metricsRegistry) {
-            this.metricsRegistry = requireNonNull(metricsRegistry);
+        /**
+         * Sets the user-agent header value to be included in requests.
+         *
+         * @param userAgent user-agent
+         * @return this builder
+         */
+        public Builder userAgent(String userAgent) {
+            this.userAgent = userAgent;
             return this;
         }
 
-        public Builder retryPolicy(RetryPolicy retryPolicy) {
-            this.retryPolicy = requireNonNull(retryPolicy);
+        public Builder responseTimeoutMillis(int responseTimeout) {
+            this.responseTimeout = responseTimeout;
             return this;
         }
 
-        public Builder rewriteRules(List<? extends RewriteRule> rewriteRules) {
-            this.rewriteRules = ImmutableList.copyOf(rewriteRules);
+        public Builder maxResponseSize(int maxResponseSize) {
+            this.maxResponseSize = maxResponseSize;
             return this;
         }
 
-
-        public Builder loadBalancer(LoadBalancer loadBalancer) {
-            this.loadBalancer = requireNonNull(loadBalancer);
+        public Builder tlsSettings(TlsSettings tlsSettings) {
+            this.tlsSettings = tlsSettings;
             return this;
         }
 
-        public Builder enableContentValidation() {
-            contentValidation = true;
+        public Builder maxHeaderSize(int maxHeaderSize) {
+            this.maxHeaderSize = maxHeaderSize;
             return this;
         }
 
-        public Builder originStatsFactory(OriginStatsFactory originStatsFactory) {
-            this.originStatsFactory = originStatsFactory;
+        public Builder threadName(String threadName) {
+            this.threadName = threadName;
             return this;
         }
 
-        public Builder originsRestrictionCookieName(String originsRestrictionCookieName) {
-            this.originsRestrictionCookieName = originsRestrictionCookieName;
+        @VisibleForTesting
+        Builder setConnectionFactory(Connection.Factory connectionFactory) {
+            this.connectionFactory = connectionFactory;
             return this;
         }
 
+        /**
+         * Construct a client instance.
+         *
+         * @return a new instance
+         */
         public StyxHttpClient build() {
-            if (originStatsFactory == null) {
-                originStatsFactory = new OriginStatsFactory(metricsRegistry);
-            }
-            return new StyxHttpClient(this);
+            connectionFactory = connectionFactory != null ? connectionFactory : new NettyConnectionFactory.Builder()
+                    .name(threadName)
+                    .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(maxHeaderSize).build())
+                    .tlsSettings(tlsSettings)
+                    .httpRequestOperationFactory(request -> new HttpRequestOperation(
+                            request,
+                            null,
+                            false,
+                            responseTimeout,
+                            false,
+                            false))
+                    .build();
+            return new StyxHttpClient(this, tlsSettings != null);
         }
-
     }
 }

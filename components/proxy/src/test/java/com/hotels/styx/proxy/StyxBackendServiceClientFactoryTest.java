@@ -17,7 +17,7 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.Connection;
@@ -30,7 +30,7 @@ import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxHostHttpClient;
-import com.hotels.styx.client.StyxHttpClient;
+import com.hotels.styx.client.StyxBackendServiceClient;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -83,11 +83,11 @@ public class StyxBackendServiceClientFactoryTest {
 
         OriginStatsFactory originStatsFactory = mock(OriginStatsFactory.class);
 
-        HttpClient client = factory.createClient(backendService, originsInventory, originStatsFactory);
+        BackendServiceClient client = factory.createClient(backendService, originsInventory, originStatsFactory);
 
-        assertThat(client, is(instanceOf(StyxHttpClient.class)));
+        assertThat(client, is(instanceOf(StyxBackendServiceClient.class)));
 
-        // note: for more meaningful tests, perhaps we need to add package-private accessor methods to StyxHttpClient
+        // note: for more meaningful tests, perhaps we need to add package-private accessor methods to StyxBackendServiceClient
         //       there is also the issue that the Transport class assumes it will get a NettyConnection, so mocks can't be used
         //       these problems are both outside the scope of the current issue being implemented
         //       so for the time being, this test is mostly a placeholder
@@ -107,7 +107,7 @@ public class StyxBackendServiceClientFactoryTest {
                                 .build())
                 .build();
 
-        HttpClient styxHttpClient = new StyxBackendServiceClientFactory(environment)
+        BackendServiceClient styxBackendServiceClient = new StyxBackendServiceClientFactory(environment)
                 .createClient(
                         backendService,
                         newOriginsInventoryBuilder(backendService)
@@ -127,9 +127,9 @@ public class StyxBackendServiceClientFactoryTest {
         HttpRequest requestx = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("x").toString())).build();
         HttpRequest requesty = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("y").toString())).build();
 
-        HttpResponse responsez = styxHttpClient.sendRequest(requestz).toBlocking().first();
-        HttpResponse responsex = styxHttpClient.sendRequest(requestx).toBlocking().first();
-        HttpResponse responsey = styxHttpClient.sendRequest(requesty).toBlocking().first();
+        HttpResponse responsez = styxBackendServiceClient.sendRequest(requestz).toBlocking().first();
+        HttpResponse responsex = styxBackendServiceClient.sendRequest(requestx).toBlocking().first();
+        HttpResponse responsey = styxBackendServiceClient.sendRequest(requesty).toBlocking().first();
 
         assertThat(responsex.header("X-Origin-Id").get(), is("x"));
         assertThat(responsey.header("X-Origin-Id").get(), is("y"));
@@ -152,7 +152,7 @@ public class StyxBackendServiceClientFactoryTest {
                         newOriginBuilder("localhost", 9093).id("z").build())
                 .build();
 
-        HttpClient styxHttpClient = new StyxBackendServiceClientFactory(environment)
+        BackendServiceClient styxBackendServiceClient = new StyxBackendServiceClientFactory(environment)
                 .createClient(
                         backendService,
                         newOriginsInventoryBuilder(backendService)
@@ -172,9 +172,9 @@ public class StyxBackendServiceClientFactoryTest {
         HttpRequest requestx = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString())).build();
         HttpRequest requesty = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("y").toString())).build();
 
-        HttpResponse responsez = styxHttpClient.sendRequest(requestz).toBlocking().first();
-        HttpResponse responsex = styxHttpClient.sendRequest(requestx).toBlocking().first();
-        HttpResponse responsey = styxHttpClient.sendRequest(requesty).toBlocking().first();
+        HttpResponse responsez = styxBackendServiceClient.sendRequest(requestz).toBlocking().first();
+        HttpResponse responsex = styxBackendServiceClient.sendRequest(requestx).toBlocking().first();
+        HttpResponse responsey = styxBackendServiceClient.sendRequest(requesty).toBlocking().first();
 
         assertThat(responsex.header("X-Origin-Id").get(), is("x"));
         assertThat(responsey.header("X-Origin-Id").get(), is("y"));

@@ -16,7 +16,7 @@
 package com.hotels.styx.client.netty.eventloop.nio;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.hotels.styx.api.netty.ClientEventLoopFactory;
+import com.hotels.styx.client.netty.ClientEventLoopFactory;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;

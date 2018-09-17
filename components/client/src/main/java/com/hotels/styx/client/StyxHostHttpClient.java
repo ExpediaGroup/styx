@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.HttpClient;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
@@ -31,7 +30,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * A Styx HTTP Client for proxying to an individual origin host.
  */
-public class StyxHostHttpClient implements HttpClient, LoadBalancingMetricSupplier {
+public class StyxHostHttpClient implements BackendServiceClient, LoadBalancingMetricSupplier {
     private final Transport transport;
     private final Id originId;
     private final ConnectionPool pool;

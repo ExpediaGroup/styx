@@ -17,10 +17,10 @@ package com.hotels.styx.servers;
 
 import com.github.tomakehurst.wiremock.client.ValueMatchingStrategy;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.hotels.styx.api.FullHttpClient;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.extension.service.TlsSettings;
-import com.hotels.styx.client.SimpleHttpClient;
+import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
 import org.testng.annotations.AfterMethod;
@@ -47,14 +47,14 @@ import static org.hamcrest.Matchers.is;
 public class MockOriginServerTest {
 
     private MockOriginServer server;
-    private FullHttpClient client;
+    private HttpClient client;
     private HostnameVerifier oldHostNameVerifier;
-    private SimpleHttpClient tlsClient;
+    private StyxHttpClient tlsClient;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        client = new SimpleHttpClient.Builder().build();
-        tlsClient = new SimpleHttpClient.Builder().tlsSettings(new TlsSettings.Builder().build()).build();
+        client = new StyxHttpClient.Builder().build();
+        tlsClient = new StyxHttpClient.Builder().tlsSettings(new TlsSettings.Builder().build()).build();
         oldHostNameVerifier = disableHostNameVerification();
     }
 

@@ -17,7 +17,7 @@ package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.HttpClient;
+import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
@@ -50,9 +50,9 @@ import com.hotels.styx.api.HttpRequest;
  * Routing object that proxies a request to a configured backend.
  */
 public class ProxyToBackend implements HttpHandler {
-    private final HttpClient client;
+    private final BackendServiceClient client;
 
-    private ProxyToBackend(HttpClient client) {
+    private ProxyToBackend(BackendServiceClient client) {
         this.client = client;
     }
 

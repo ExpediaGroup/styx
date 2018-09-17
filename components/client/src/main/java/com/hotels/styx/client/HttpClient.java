@@ -13,26 +13,26 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.netty;
+package com.hotels.styx.client;
 
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
+import com.hotels.styx.api.FullHttpRequest;
+import com.hotels.styx.api.FullHttpResponse;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
- * A Factory for creating event loops for client workers.
+ * HTTP Client that returns an observable of response.
  */
-public interface ClientEventLoopFactory {
+public interface HttpClient {
     /**
-     * Create a new event loop for client workers.
+     * Processes a new request.
      *
-     * @return a new event loop
-     */
-    EventLoopGroup newClientWorkerEventLoopGroup();
-
-    /**
-     * The subclass of {@link SocketChannel} used to create channels.
+     * @param request HTTP request to process
+     * @return an observable of HTTP sendRequest.
      *
-     * @return a subclass of {@link SocketChannel}
+     * The sendRequest will be sent when the returned observable is subscribed to.
+     * In order to cancel the ongoing request, just unsubscribe from it.
+     *
      */
-    Class<? extends SocketChannel> clientSocketChannelClass();
+    CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request);
 }
