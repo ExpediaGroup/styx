@@ -20,7 +20,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import rx.Observable;
 
-import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -55,7 +54,6 @@ import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.util.ReferenceCountUtil.release;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
-import static java.net.InetSocketAddress.createUnresolved;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
@@ -101,8 +99,6 @@ import static java.util.stream.Stream.concat;
  */
 public class HttpRequest implements StreamingHttpMessage {
     private final Object id;
-    // Relic of old API, kept for conversions
-    private final InetSocketAddress clientAddress;
     private final HttpVersion version;
     private final HttpMethod method;
     private final Url url;
@@ -111,7 +107,6 @@ public class HttpRequest implements StreamingHttpMessage {
 
     HttpRequest(Builder builder) {
         this.id = builder.id == null ? randomUUID() : builder.id;
-        this.clientAddress = builder.clientAddress;
         this.version = builder.version;
         this.method = builder.method;
         this.url = builder.url;
@@ -289,14 +284,6 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * @deprecated will be removed from Styx 1.0 api release
-     */
-    @Deprecated
-    public InetSocketAddress clientAddress() {
-        return this.clientAddress;
-    }
-
-    /**
      * Get a query parameter by name if present.
      *
      * @param name parameter name
@@ -429,7 +416,6 @@ public class HttpRequest implements StreamingHttpMessage {
                 .add("uri", url)
                 .add("headers", headers)
                 .add("id", id)
-                .add("clientAddress", clientAddress)
                 .toString();
     }
 
@@ -437,11 +423,8 @@ public class HttpRequest implements StreamingHttpMessage {
      * An HTTP request builder.
      */
     public static final class Builder {
-        private static final InetSocketAddress LOCAL_HOST = createUnresolved("127.0.0.1", 0);
-
         private Object id;
         private HttpMethod method = HttpMethod.GET;
-        private InetSocketAddress clientAddress = LOCAL_HOST;
         private boolean validate = true;
         private Url url;
         private HttpHeaders.Builder headers;
@@ -478,7 +461,6 @@ public class HttpRequest implements StreamingHttpMessage {
         public Builder(HttpRequest request, StyxObservable<ByteBuf> contentStream) {
             this.id = request.id();
             this.method = httpMethod(request.method().name());
-            this.clientAddress = request.clientAddress();
             this.url = request.url();
             this.version = httpVersion(request.version().toString());
             this.headers = request.headers().newBuilder();
@@ -488,7 +470,6 @@ public class HttpRequest implements StreamingHttpMessage {
         Builder(HttpRequest request) {
             this.id = request.id();
             this.method = request.method();
-            this.clientAddress = request.clientAddress();
             this.url = request.url();
             this.version = request.version();
             this.headers = request.headers().newBuilder();
@@ -498,7 +479,6 @@ public class HttpRequest implements StreamingHttpMessage {
         Builder(FullHttpRequest request) {
             this.id = request.id();
             this.method = request.method();
-            this.clientAddress = request.clientAddress();
             this.url = request.url();
             this.version = request.version();
             this.headers = request.headers().newBuilder();
@@ -617,20 +597,6 @@ public class HttpRequest implements StreamingHttpMessage {
          */
         public Builder method(HttpMethod method) {
             this.method = requireNonNull(method);
-            return this;
-        }
-
-        /**
-         * Do not use in any new code.
-         *
-         * @deprecated Will not appear in 1.0 API.
-         *
-         * @param clientAddress
-         * @return {@code this}
-         */
-        @Deprecated
-        public Builder clientAddress(InetSocketAddress clientAddress) {
-            this.clientAddress = clientAddress;
             return this;
         }
 

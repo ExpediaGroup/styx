@@ -17,13 +17,12 @@ package com.hotels.styx.api.extension.service.spi;
 
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static com.hotels.styx.api.MockContext.MOCK_CONTEXT;
+import static com.hotels.styx.api.extension.service.spi.MockContext.MOCK_CONTEXT;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.FAILED;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.RUNNING;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STARTING;

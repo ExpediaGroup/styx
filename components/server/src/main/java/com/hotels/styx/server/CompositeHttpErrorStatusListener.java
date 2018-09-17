@@ -19,6 +19,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,7 +51,7 @@ class CompositeHttpErrorStatusListener implements HttpErrorStatusListener {
     }
 
     @Override
-    public void proxyErrorOccurred(HttpRequest request, HttpResponseStatus status, Throwable cause) {
-        listeners.forEach(listener -> listener.proxyErrorOccurred(request, status, cause));
+    public void proxyErrorOccurred(HttpRequest request, InetSocketAddress clientAddress, HttpResponseStatus status, Throwable cause) {
+        listeners.forEach(listener -> listener.proxyErrorOccurred(request, clientAddress, status, cause));
     }
 }

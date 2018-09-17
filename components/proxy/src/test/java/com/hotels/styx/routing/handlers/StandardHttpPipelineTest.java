@@ -23,6 +23,7 @@ import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -30,8 +31,8 @@ import java.util.function.Consumer;
 
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -225,7 +226,9 @@ public class StandardHttpPipelineTest {
     }
 
     private HttpResponse sendRequestTo(StandardHttpPipeline pipeline) {
-        return await(pipeline.handle(get("/").build(), HttpInterceptorContext.create()).asCompletableFuture());
+        HttpInterceptor.Context context = new HttpInterceptorContext(InetSocketAddress.createUnresolved("127.0.0.1", 0));
+
+        return await(pipeline.handle(get("/").build(), context).asCompletableFuture());
     }
 
     private StandardHttpPipeline pipeline(HttpInterceptor... interceptors) {

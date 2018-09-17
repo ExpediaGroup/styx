@@ -24,11 +24,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class AntlrMatcherTest {
 
-    private final HttpInterceptorContext contextHttps = HttpInterceptorContext.create(true);
-    private final HttpInterceptorContext contextHttp = HttpInterceptorContext.create();
+    private final HttpInterceptorContext contextHttps = new HttpInterceptorContext(true);
+    private final HttpInterceptorContext contextHttp = new HttpInterceptorContext();
 
     @Test
-    public void matchesHttpProtocol() throws Exception {
+    public void matchesHttpProtocol() {
         AntlrMatcher matcher = AntlrMatcher.antlrMatcher("protocol() == 'https'");
         assertThat(matcher.apply(get("/path").build(), contextHttps), is(true));
         assertThat(matcher.apply(get("/path").build(), contextHttp), is(false));

@@ -17,14 +17,13 @@ package com.hotels.styx.proxy.interceptors;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationContextResolver;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
@@ -35,7 +34,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.hotels.styx.api.HttpRequest;
 
 public class ConfigurationContextResolverInterceptorTest {
     @Test
@@ -69,7 +67,7 @@ public class ConfigurationContextResolverInterceptorTest {
     }
 
     private static class TestChain implements HttpInterceptor.Chain {
-        private TestChainContext context = new TestChainContext();
+        private final HttpInterceptor.Context context = new HttpInterceptorContext();
         private boolean proceedWasCalled;
 
         @Override
@@ -82,25 +80,6 @@ public class ConfigurationContextResolverInterceptorTest {
             proceedWasCalled = true;
 
             return StyxObservable.of(response(OK).build());
-        }
-
-        private class TestChainContext implements HttpInterceptor.Context {
-            private Map<String, Object> map = new HashMap<>();
-
-            @Override
-            public void add(String key, Object value) {
-                map.put(key, value);
-            }
-
-            @Override
-            public <T> T get(String key, Class<T> type) {
-                return type.cast(map.get(key));
-            }
-
-            @Override
-            public boolean isSecure() {
-                return false;
-            }
         }
     }
 }

@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.api;
 
+import java.net.InetSocketAddress;
 import java.util.Optional;
 
 /**
@@ -58,6 +59,13 @@ public interface HttpInterceptor {
          * @return returns true if this request was received over a secure connection
          */
         boolean isSecure();
+
+        /**
+         * Provides address of the client that sent the request to Styx.
+         *
+         * @return address of the client that sent the request to Styx
+         */
+        Optional<InetSocketAddress> clientAddress();
     }
 
     /**

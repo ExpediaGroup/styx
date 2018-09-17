@@ -20,13 +20,14 @@ import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
-import com.hotels.styx.server.HttpErrorStatusListener;
-import com.hotels.styx.server.RequestStatsCollector;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.server.BadRequestException;
+import com.hotels.styx.server.HttpErrorStatusListener;
+import com.hotels.styx.server.RequestStatsCollector;
 import com.hotels.styx.server.RequestTimeoutException;
 import com.hotels.styx.server.netty.codec.NettyToStyxRequestDecoder;
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler.HttpResponseWriterFactory;
@@ -47,11 +48,10 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 import rx.subjects.PublishSubject;
-import com.hotels.styx.api.HttpRequest;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -64,13 +64,13 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderValues.CLOSE;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
-import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE_CLIENT_CLOSED;
@@ -237,7 +237,7 @@ public class HttpPipelineHandlerTest {
 
         assertThat(response.status(), is(io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR));
         verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), any(HttpRequest.class));
-        verify(errorListener, only()).proxyErrorOccurred(any(HttpRequest.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
+        verify(errorListener, only()).proxyErrorOccurred(any(HttpRequest.class), any(InetSocketAddress.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
     }
 
     @Test
@@ -597,7 +597,7 @@ public class HttpPipelineHandlerTest {
                 .toStreamingResponse());
 
         verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), eq(request));
-        verify(errorListener).proxyErrorOccurred(request, INTERNAL_SERVER_ERROR, cause);
+        verify(errorListener).proxyErrorOccurred(request, InetSocketAddress.createUnresolved("localhost", 2), INTERNAL_SERVER_ERROR, cause);
         verify(statsCollector).onTerminate(request.id());
         assertThat(handler.state(), is(TERMINATED));
     }
@@ -677,7 +677,7 @@ public class HttpPipelineHandlerTest {
 
         writerFuture.complete(null);
         verify(statsCollector).onComplete(request.id(), 502);
-        verify(errorListener).proxyErrorOccurred(any(HttpRequest.class), eq(BAD_GATEWAY), any(RuntimeException.class));
+        verify(errorListener).proxyErrorOccurred(any(HttpRequest.class), any(InetSocketAddress.class), eq(BAD_GATEWAY), any(RuntimeException.class));
 
         // NOTE: channel closure is not verified. This is because cannot mock channel future.
         verify(ctx).close();
@@ -702,7 +702,7 @@ public class HttpPipelineHandlerTest {
 
         writerFuture.complete(null);
         verify(statsCollector).onComplete(request.id(), 500);
-        verify(errorListener).proxyErrorOccurred(any(HttpRequest.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
+        verify(errorListener).proxyErrorOccurred(any(HttpRequest.class), any(InetSocketAddress.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
 
         // NOTE: channel closure is not verified. This is because cannot mock channel future.
         verify(ctx).close();
@@ -968,13 +968,8 @@ public class HttpPipelineHandlerTest {
         when(ctx.writeAndFlush(any(Object.class))).thenReturn(future);
         when(ctx.channel()).thenReturn(channel);
 
-        SocketAddress localAddress = mock(SocketAddress.class);
-        when(localAddress.toString()).thenReturn("localhost:1");
-        when(ctx.channel().localAddress()).thenReturn(localAddress);
-
-        SocketAddress remoteAddress = mock(SocketAddress.class);
-        when(remoteAddress.toString()).thenReturn("localhost:2");
-        when(ctx.channel().remoteAddress()).thenReturn(remoteAddress);
+        when(ctx.channel().localAddress()).thenReturn(InetSocketAddress.createUnresolved("localhost", 1));
+        when(ctx.channel().remoteAddress()).thenReturn(InetSocketAddress.createUnresolved("localhost", 2));
 
         return ctx;
     }

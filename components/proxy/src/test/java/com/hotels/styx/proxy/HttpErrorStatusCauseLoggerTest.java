@@ -21,6 +21,8 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.net.InetSocketAddress;
+
 import static ch.qos.logback.classic.Level.ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
@@ -74,22 +76,22 @@ public class HttpErrorStatusCauseLoggerTest {
         HttpRequest request = HttpRequest.get("/foo").build();
         Exception exception = new Exception("This is just a test");
 
-        httpErrorStatusCauseLogger.proxyErrorOccurred(request, INTERNAL_SERVER_ERROR, exception);
+        httpErrorStatusCauseLogger.proxyErrorOccurred(request, InetSocketAddress.createUnresolved("localhost", 80), INTERNAL_SERVER_ERROR, exception);
 
         assertThat(loggingTestSupport.log(), hasItem(
                 loggingEvent(
                         ERROR,
-                        "Failure status=\"500 Internal Server Error\" during request=HttpRequest\\{version=HTTP/1.1, method=GET, uri=/foo, headers=\\[\\], id=.*, clientAddress=.*:.*\\}",
+                        "Failure status=\"500 Internal Server Error\" during request=HttpRequest\\{version=HTTP/1.1, method=GET, uri=/foo, headers=\\[\\], id=.*\\}, clientAddress=localhost:80",
                         "java.lang.Exception",
                         "This is just a test")));
     }
 
     @Test
-    public void logsOtherExceptionsWithoutRequest() throws Exception {
+    public void logsOtherExceptionsWithoutRequest() {
         HttpRequest request = HttpRequest.get("/foo").build();
         Exception exception = new Exception("This is just a test");
 
-        httpErrorStatusCauseLogger.proxyErrorOccurred(request, BAD_GATEWAY, exception);
+        httpErrorStatusCauseLogger.proxyErrorOccurred(request, InetSocketAddress.createUnresolved("127.0.0.1", 0), BAD_GATEWAY, exception);
 
         assertThat(loggingTestSupport.log(), hasItem(
                 loggingEvent(

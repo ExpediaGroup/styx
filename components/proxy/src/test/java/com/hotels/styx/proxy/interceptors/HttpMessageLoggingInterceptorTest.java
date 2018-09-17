@@ -29,9 +29,9 @@ import org.testng.annotations.Test;
 import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
-import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -122,7 +122,7 @@ public class HttpMessageLoggingInterceptorTest {
 
             @Override
             public HttpInterceptor.Context context() {
-                return HttpInterceptorContext.create(true);
+                return new HttpInterceptorContext(true);
             }
         };
     }

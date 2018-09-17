@@ -87,7 +87,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 });
 
                 HttpRequest request = (HttpRequest) httpObject;
-                com.hotels.styx.api.HttpRequest styxRequest = toStyxRequest(ctx, request, contentObservable);
+                com.hotels.styx.api.HttpRequest styxRequest = toStyxRequest(request, contentObservable);
                 out.add(styxRequest);
             } else if (httpObject instanceof HttpContent && this.producer != null) {
                 this.producer.onNext(content(httpObject));
@@ -132,10 +132,9 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
         }
     }
 
-    private com.hotels.styx.api.HttpRequest toStyxRequest(ChannelHandlerContext ctx, HttpRequest request, Observable<ByteBuf> contentObservable) {
+    private com.hotels.styx.api.HttpRequest toStyxRequest(HttpRequest request, Observable<ByteBuf> contentObservable) {
         validateHostHeader(request);
         return makeAStyxRequestFrom(request, contentObservable)
-                .clientAddress(remoteAddress(ctx))
                 .removeHeader(EXPECT)
                 .build();
     }

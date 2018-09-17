@@ -40,11 +40,13 @@ import com.hotels.styx.common.QueueDrainingEventProcessor;
 import com.hotels.styx.common.StateMachine;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.HttpErrorStatusListener;
+import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.NoServiceConfiguredException;
 import com.hotels.styx.server.RequestProgressListener;
 import com.hotels.styx.server.RequestTimeoutException;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.TooLongFrameException;
 import org.slf4j.Logger;
@@ -54,9 +56,8 @@ import rx.Subscription;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
-import java.util.Map;
+import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
@@ -215,7 +216,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         eventProcessor.submit(new ChannelExceptionEvent(ctx, cause));
     }
 
@@ -253,7 +254,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         // the same call stack as "onLegitimateRequest" handler. This happens when a plugin
         // generates a response.
         try {
-            Observable<HttpResponse> responseObservable = toRxObservable(httpPipeline.handle(v11Request, new HttpInterceptorContext(this.secure)));
+            Observable<HttpResponse> responseObservable = toRxObservable(httpPipeline.handle(v11Request, newInterceptorContext(ctx)));
             subscription = responseObservable
                     .subscribe(new Subscriber<HttpResponse>() {
                                    @Override
@@ -276,13 +277,17 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
             return WAITING_FOR_RESPONSE;
         } catch (Throwable cause) {
             HttpResponse response = exceptionToResponse(cause, request);
-            httpErrorStatusListener.proxyErrorOccurred(request, response.status(), cause);
+            httpErrorStatusListener.proxyErrorOccurred(request, remoteAddress(ctx), response.status(), cause);
             statsSink.onTerminate(request.id());
             if (ctx.channel().isActive()) {
                 respondAndClose(ctx, response);
             }
             return TERMINATED;
         }
+    }
+
+    private HttpInterceptor.Context newInterceptorContext(ChannelHandlerContext ctx) {
+        return new HttpInterceptorContext(this.secure, remoteAddress(ctx));
     }
 
     private State onResponseReceived(HttpResponse response, ChannelHandlerContext ctx) {
@@ -444,7 +449,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
                         httpErrorStatusListener.proxyErrorOccurred(cause);
                         httpErrorStatusListener.proxyErrorOccurred(exception);
                     } else {
-                        httpErrorStatusListener.proxyErrorOccurred(ongoingRequest, response.status(), cause);
+                        httpErrorStatusListener.proxyErrorOccurred(ongoingRequest, remoteAddress(ctx), response.status(), cause);
                         statsSink.onComplete(ongoingRequest.id(), response.status().code());
                     }
 
@@ -706,27 +711,11 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         }
     }
 
-    private static final class HttpInterceptorContext implements HttpInterceptor.Context {
-        private final Map<String, Object> context = new ConcurrentHashMap<>();
-        private final boolean secure;
-
-        public HttpInterceptorContext(boolean secure) {
-            this.secure = secure;
+    private static InetSocketAddress remoteAddress(ChannelHandlerContext ctx) {
+        if (ctx.channel() instanceof EmbeddedChannel) {
+            return new InetSocketAddress(0);
         }
 
-        @Override
-        public void add(String key, Object value) {
-            context.put(key, value);
-        }
-
-        @Override
-        public <T> T get(String key, Class<T> clazz) {
-            return (T) context.get(key);
-        }
-
-        @Override
-        public boolean isSecure() {
-            return secure;
-        }
+        return (InetSocketAddress) ctx.channel().remoteAddress();
     }
 }

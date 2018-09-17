@@ -21,6 +21,8 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import org.slf4j.Logger;
 
+import java.net.InetSocketAddress;
+
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -40,9 +42,9 @@ public class HttpErrorStatusCauseLogger implements HttpErrorStatusListener {
     }
 
     @Override
-    public void proxyErrorOccurred(HttpRequest request, HttpResponseStatus status, Throwable cause) {
+    public void proxyErrorOccurred(HttpRequest request, InetSocketAddress clientAddress, HttpResponseStatus status, Throwable cause) {
         if (status.code() == 500) {
-            LOG.error("Failure status=\"{}\" during request={}", new Object[]{status, request, cause});
+            LOG.error("Failure status=\"{}\" during request={}, clientAddress={}", new Object[]{status, request, clientAddress, cause});
         } else {
             proxyErrorOccurred(status, cause);
         }

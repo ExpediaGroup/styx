@@ -17,7 +17,6 @@ package com.hotels.styx.server.handlers;
 
 import com.google.common.io.Files;
 import com.google.common.net.MediaType;
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
@@ -43,12 +42,12 @@ import static com.google.common.net.MediaType.PDF;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.net.MediaType.PNG;
 import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.server.handlers.MediaTypes.ICON;
 import static com.hotels.styx.server.handlers.MediaTypes.MICROSOFT_ASF_VIDEO;
 import static com.hotels.styx.server.handlers.MediaTypes.MICROSOFT_MS_VIDEO;
 import static com.hotels.styx.server.handlers.MediaTypes.WAV_AUDIO;
-import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
-import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
@@ -74,9 +73,9 @@ public class StaticFileHandlerTest {
 
     @Test
     public void should404ForMissingFiles() {
-        assertThat(handle(get("/index.html").build(), HttpInterceptorContext.create()), hasStatus(NOT_FOUND));
-        assertThat(handle(get("/notfound.html").build(), HttpInterceptorContext.create()), hasStatus(NOT_FOUND));
-        assertThat(handle(get("/foo/bar").build(), HttpInterceptorContext.create()), hasStatus(NOT_FOUND));
+        assertThat(handle(get("/index.html").build()), hasStatus(NOT_FOUND));
+        assertThat(handle(get("/notfound.html").build()), hasStatus(NOT_FOUND));
+        assertThat(handle(get("/foo/bar").build()), hasStatus(NOT_FOUND));
     }
 
     @Test
@@ -85,12 +84,12 @@ public class StaticFileHandlerTest {
         writeFile("foo.js", "Blah");
         mkdir("/a/b");
         writeFile("a/b/good", "hi");
-        assertThat("asking for /index.html", handle(get("/index.html").build(), HttpInterceptorContext.create()), hasStatus(OK));
-        assertThat(handle(get("/foo.js").build(), HttpInterceptorContext.create()), hasStatus(OK));
+        assertThat("asking for /index.html", handle(get("/index.html").build()), hasStatus(OK));
+        assertThat(handle(get("/foo.js").build()), hasStatus(OK));
 
-        assertThat(handle(get("/notfound.html").build(), HttpInterceptorContext.create()), hasStatus(NOT_FOUND));
-        assertThat(handle(get("/a/b/good").build(), HttpInterceptorContext.create()), hasStatus(OK));
-        assertThat(handle(get("/a/b/bad").build(), HttpInterceptorContext.create()), hasStatus(NOT_FOUND));
+        assertThat(handle(get("/notfound.html").build()), hasStatus(NOT_FOUND));
+        assertThat(handle(get("/a/b/good").build()), hasStatus(OK));
+        assertThat(handle(get("/a/b/bad").build()), hasStatus(NOT_FOUND));
     }
 
     @Test
@@ -100,9 +99,9 @@ public class StaticFileHandlerTest {
         mkdir("/a/b");
         writeFile("a/b/good", "hi");
 
-        assertThat(handle(get("/index.html?foo=x").build(), HttpInterceptorContext.create()), hasStatus(OK));
-        assertThat(handle(get("/foo.js?sdfsd").build(), HttpInterceptorContext.create()), hasStatus(OK));
-        assertThat(handle(get("/a/b/good?xx").build(), HttpInterceptorContext.create()), hasStatus(OK));
+        assertThat(handle(get("/index.html?foo=x").build()), hasStatus(OK));
+        assertThat(handle(get("/foo.js?sdfsd").build()), hasStatus(OK));
+        assertThat(handle(get("/a/b/good?xx").build()), hasStatus(OK));
     }
 
     @Test
@@ -115,8 +114,8 @@ public class StaticFileHandlerTest {
 
         handler = new StaticFileHandler(new File(dir, "/a/public"));
 
-        assertThat(handle(get("/index.html").build(), HttpInterceptorContext.create()), hasStatus(OK));
-        assertThat(handle(get("/../private/index.html").build(), HttpInterceptorContext.create()), hasStatus(NOT_FOUND));
+        assertThat(handle(get("/index.html").build()), hasStatus(OK));
+        assertThat(handle(get("/../private/index.html").build()), hasStatus(NOT_FOUND));
     }
 
     @Test
@@ -129,8 +128,8 @@ public class StaticFileHandlerTest {
 
         handler = new StaticFileHandler(new File(dir, "/a/public"));
 
-        assertThat(handle(get("/index.html").build(), HttpInterceptorContext.create()), hasStatus(OK));
-        assertThat(handle(get("/%2e%2e%2fprivate/index.html").build(), HttpInterceptorContext.create()), hasStatus(NOT_FOUND));
+        assertThat(handle(get("/index.html").build()), hasStatus(OK));
+        assertThat(handle(get("/%2e%2e%2fprivate/index.html").build()), hasStatus(NOT_FOUND));
     }
 
     @Test(dataProvider = "fileTypesProvider")
@@ -139,7 +138,7 @@ public class StaticFileHandlerTest {
 
         handler = new StaticFileHandler(dir);
 
-        HttpResponse response = handle(get("/" + path).build(), HttpInterceptorContext.create());
+        HttpResponse response = handle(get("/" + path).build());
         assertThat(response, hasStatus(OK));
         assertThat(response.contentType(), isValue(mediaType.toString()));
     }
@@ -181,7 +180,7 @@ public class StaticFileHandlerTest {
         }
     }
 
-    private HttpResponse handle(HttpRequest request, HttpInterceptor.Context context) {
-        return getFirst(handler.handle(request, context));
+    private HttpResponse handle(HttpRequest request) {
+        return getFirst(handler.handle(request, new HttpInterceptorContext()));
     }
 }
