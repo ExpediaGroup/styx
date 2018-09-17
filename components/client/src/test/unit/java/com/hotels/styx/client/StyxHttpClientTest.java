@@ -19,17 +19,17 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
+import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
+import io.netty.handler.ssl.SslContext;
+import org.mockito.ArgumentCaptor;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -39,18 +39,21 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.hotels.styx.api.FullHttpRequest.get;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
+import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith;
+import static java.lang.String.format;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class StyxHttpClientTest {
-    private FullHttpRequest anyRequest;
-    private static int MAX_LENGTH = 1024;
+    private FullHttpRequest httpRequest;
+    private FullHttpRequest secureRequest;
     private WireMockServer server;
 
     @BeforeMethod
@@ -59,8 +62,12 @@ public class StyxHttpClientTest {
         server.start();
         server.stubFor(WireMock.get(urlStartingWith("/")).willReturn(aResponse().withStatus(200)));
 
-        anyRequest = get("/foo.txt")
-                .header(HOST, "localhost:1234")
+        httpRequest = get("/")
+                .header(HOST, hostString(server.port()))
+                .build();
+
+        secureRequest = get("/")
+                .header(HOST, hostString(server.httpsPort()))
                 .build();
     }
 
@@ -71,13 +78,13 @@ public class StyxHttpClientTest {
     }
 
     @Test
-    public void closesThreadpoolAfterUse() throws InterruptedException, ExecutionException {
+    public void closesThreadPoolAfterUse() throws InterruptedException, ExecutionException {
         StyxHttpClient client = new StyxHttpClient.Builder()
                 .threadName("test-client")
                 .build();
 
-        // Ensures that thread is created
-        client.sendRequest(httpRequest(server.port())).get();
+        // Ensures that a thread is created before the assertions
+        client.sendRequest(httpRequest).get();
 
         assertThat(threadExists("test-client"), is(true));
 
@@ -100,7 +107,7 @@ public class StyxHttpClientTest {
                 .build();
 
         FullHttpResponse response = client
-                .sendRequest(httpRequest(server.port()))
+                .sendRequest(httpRequest)
                 .get();
 
         assertThat(response.status(), is(OK));
@@ -111,22 +118,37 @@ public class StyxHttpClientTest {
     }
 
     @Test
-    public void usesPerTransactionUserAgent() throws ExecutionException, InterruptedException {
+    public void doesNotSetAnyUserAgentIfNotSpecified() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
-                .userAgent("Simple-Client-Parent-Settings")
                 .build();
 
-        FullHttpResponse response = client
-                .userAgent("Simple-Client-Transaction-Settings")
-                .sendRequest(httpRequest(server.port()))
-                .get();
+        client.sendRequest(httpRequest).get();
 
-        assertThat(response.status(), is(OK));
         server.verify(
                 getRequestedFor(urlEqualTo("/"))
-                        .withHeader("User-Agent", equalTo("Simple-Client-Transaction-Settings"))
+                        .withoutHeader("User-Agent")
         );
     }
+
+    @Test
+    public void replacesUserAgentIfAlreadyPresentInRequest() throws ExecutionException, InterruptedException {
+        StyxHttpClient client = new StyxHttpClient.Builder()
+                .userAgent("My default user agent value")
+                .build();
+
+        FullHttpRequest request = get("/")
+                .header(HOST, hostString(server.port()))
+                .header(USER_AGENT, "My previous user agent")
+                .build();
+
+        client.sendRequest(request).get();
+
+        server.verify(
+                getRequestedFor(urlEqualTo("/"))
+                        .withHeader("User-Agent", equalTo("My default user agent value"))
+        );
+    }
+
 
     @Test
     public void usesDefaultTlsSettings() throws ExecutionException, InterruptedException {
@@ -135,7 +157,7 @@ public class StyxHttpClientTest {
                 .build();
 
         FullHttpResponse response = client
-                .sendRequest(httpRequest(server.httpsPort()))
+                .sendRequest(secureRequest)
                 .get();
 
         assertThat(response.status(), is(OK));
@@ -148,7 +170,7 @@ public class StyxHttpClientTest {
 
         FullHttpResponse response = client
                 .secure()
-                .sendRequest(httpRequest(server.httpsPort()))
+                .sendRequest(secureRequest)
                 .get();
 
         assertThat(response.status(), is(OK));
@@ -161,121 +183,86 @@ public class StyxHttpClientTest {
 
         FullHttpResponse response = client
                 .secure(true)
-                .sendRequest(httpRequest(server.httpsPort()))
+                .sendRequest(secureRequest)
                 .get();
 
         assertThat(response.status(), is(OK));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-            expectedExceptionsMessageRegExp = "An insecure HTTP transaction is not allowed with HTTPS configuration.")
-    public void canNotDowngradeDefaultSecureSettings() {
+    @Test
+    public void overridesTlsSettingsWithSecureBooleanFalse() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
                 .tlsSettings(new TlsSettings.Builder().build())
                 .build();
 
-        client.secure(false);
-    }
-
-    @Test
-    public void disablesTlsIfNullArgumentIsPassed() throws ExecutionException, InterruptedException {
-        StyxHttpClient client = new StyxHttpClient.Builder()
-                .tlsSettings(null)
-                .build();
-
         FullHttpResponse response = client
                 .secure(false)
-                .sendRequest(httpRequest(server.port()))
+                .sendRequest(httpRequest)
                 .get();
 
         assertThat(response.status(), is(OK));
     }
 
-    @Test
-    public void sendsHttp() {
-        FullHttpResponse response = await(httpClient().sendRequest(httpRequest(server.port())));
-        assertThat(response.status(), is(OK));
+    @Test(expectedExceptions = NullPointerException.class)
+    public void requiresValidTlsSettins() {
+        new StyxHttpClient.Builder()
+                .tlsSettings(null)
+                .build();
+    }
+
+    // TODO: Mikko:
+    // Note: this test case might fail depending on your ISP's configuration.
+    // Some ISPs may redirect failed DNS lookups to a specific landing page for
+    // advertising purposes.
+    @Test(expectedExceptions = OriginUnreachableException.class)
+    public void throwsOriginUnreachableExceptionWhenDnsResolutionFails() throws Throwable {
+        try {
+            new StyxHttpClient.Builder()
+                    .build()
+                    .sendRequest(get("/foo.txt").header(HOST, "a.b.c").build()).get();
+        } catch (ExecutionException cause) {
+            throw cause.getCause();
+        }
     }
 
     @Test
-    public void sendsHttps() {
-        FullHttpResponse response = await(httpsClient().sendRequest(httpsRequest(server.httpsPort())));
+    public void sendsMessagesInOriginUrlFormat() throws ExecutionException, InterruptedException {
+        FullHttpResponse response = new StyxHttpClient.Builder()
+                .build()
+                .sendRequest(get("/index.html").header(HOST, hostString(server.port())).build())
+                .get();
+
         assertThat(response.status(), is(OK));
+        server.verify(
+                getRequestedFor(urlEqualTo("/index.html"))
+                        .withHeader("Host", equalTo(hostString(server.port())))
+        );
     }
 
-//    @Test(expectedExceptions = OriginUnreachableException.class)
-//    public void throwsOriginUnreachableExceptionWhenDnsResolutionFails() throws Throwable {
-//        try {
-//            httpClient().sendRequest(get("/foo.txt").header(HOST, "a.b.c").build()).get();
-//        } catch (ExecutionException cause) {
-//            throw cause.getCause();
-//        }
-//    }
 
-    @Test(expectedExceptions = Exception.class)
-    public void cannotSendHttpsWhenConfiguredForHttp() {
-        FullHttpResponse response = await(httpClient().sendRequest(httpsRequest(server.httpsPort())));
+    @Test(enabled = false)
+    /*
+     * Wiremock (or Jetty server) origin converts an absolute URL to an origin
+     * form. Therefore we are unable to use an origin to verify that client used
+     * an absolute URL. However I (Mikko) have verified with WireShark that the
+     * request is indeed sent in absolute form.
+     */
+    public void sendsMessagesInAbsoluteUrlFormat() throws ExecutionException, InterruptedException {
+        FullHttpResponse response = new StyxHttpClient.Builder()
+                .build()
+                .sendRequest(get(format("http://%s/index.html", hostString(server.port()))).build())
+                .get();
+
         assertThat(response.status(), is(OK));
+        server.verify(
+                getRequestedFor(urlEqualTo(format("http://%s/index.html", hostString(server.port()))))
+                        .withHeader("Host", equalTo(hostString(server.port())))
+        );
     }
 
-    @Test(expectedExceptions = Exception.class)
-    public void cannotSendHttpWhenConfiguredForHttps() throws IOException {
-        FullHttpResponse response = await(httpsClient().sendRequest(httpRequest(server.port())));
-        assertThat(response.status(), is(OK));
+    private String hostString(int port) {
+        return "localhost:" + port;
     }
-
-//    @Test
-//    public void willNotSetAnyUserAgentIfNotSpecified() {
-//        Connection mockConnection = mock(Connection.class);
-//        when(mockConnection.write(any(HttpRequest.class))).thenReturn(Observable.just(response().build()));
-//
-//        StyxHttpClient client = new StyxHttpClient.Builder()
-//                .setConnectionFactory((origin, connectionSettings) -> Observable.just(mockConnection))
-//                .build();
-//
-//        client.sendRequest(anyRequest);
-//
-//        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-//        verify(mockConnection).write(captor.capture());
-//        assertThat(captor.getValue().header(USER_AGENT), isAbsent());
-//    }
-//
-//    @Test
-//    public void setsTheSpecifiedUserAgent() {
-//        Connection mockConnection = mock(Connection.class);
-//        when(mockConnection.write(any(HttpRequest.class))).thenReturn(Observable.just(response().build()));
-//
-//        StyxHttpClient client = new StyxHttpClient.Builder()
-//                .setConnectionFactory((origin, connectionSettings) -> Observable.just(mockConnection))
-//                .userAgent("Styx/5.6")
-//                .build();
-//
-//        client.sendRequest(anyRequest);
-//
-//        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-//        verify(mockConnection).write(captor.capture());
-//        assertThat(captor.getValue().header(USER_AGENT), isValue("Styx/5.6"));
-//    }
-//
-//    @Test
-//    public void retainsTheUserAgentStringFromTheRequest() {
-//        Connection mockConnection = mock(Connection.class);
-//        when(mockConnection.write(any(HttpRequest.class))).thenReturn(Observable.just(response().build()));
-//
-//        StyxHttpClient client = new StyxHttpClient.Builder()
-//                .setConnectionFactory((origin, connectionSettings) -> Observable.just(mockConnection))
-//                .userAgent("Styx/5.6")
-//                .build();
-//
-//        client.sendRequest(get("/foo.txt")
-//                .header(USER_AGENT, "Foo/Bar")
-//                .header(HOST, "localhost:1234")
-//                .build());
-//
-//        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
-//        verify(mockConnection).write(captor.capture());
-//        assertThat(captor.getValue().header(USER_AGENT), isValue("Foo/Bar"));
-//    }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void requestWithNoHostOrUrlAuthorityCausesException() {
@@ -286,82 +273,38 @@ public class StyxHttpClientTest {
         await(client.sendRequest(request));
     }
 
-//    @Test
-//    public void sendsToDefaultHttpPort() {
-//        Connection.Factory connectionFactory = mockConnectionFactory(mockConnection(response(OK).build()));
-//
-//        StyxHttpClient client = new StyxHttpClient.Builder()
-//                .setConnectionFactory(connectionFactory)
-//                .build();
-//
-//        client.sendRequest(get("/")
-//                .header(HOST, "localhost")
-//                .build());
-//
-//        ArgumentCaptor<Origin> originCaptor = ArgumentCaptor.forClass(Origin.class);
-//        verify(connectionFactory).createConnection(originCaptor.capture(), any(ConnectionSettings.class));
-//
-//        assertThat(originCaptor.getValue().port(), is(80));
-//    }
-//
-//    @Test
-//    public void sendsToDefaultHttpsPort() {
-//        Connection.Factory connectionFactory = mockConnectionFactory(mockConnection(response(OK).build()));
-//        TlsSettings tlsSettings = mock(TlsSettings.class);
-//
-//        StyxHttpClient client = new StyxHttpClient.Builder()
-//                .setConnectionFactory(connectionFactory)
-//                .tlsSettings(tlsSettings)
-//                .build();
-//
-//        client.sendRequest(get("/")
-//                .header(HOST, "localhost")
-//                .build());
-//
-//        ArgumentCaptor<Origin> originCaptor = ArgumentCaptor.forClass(Origin.class);
-//        verify(connectionFactory).createConnection(originCaptor.capture(), any(ConnectionSettings.class));
-//
-//        assertThat(originCaptor.getValue().port(), is(443));
-//    }
+    @Test
+    public void sendsToDefaultHttpPort() {
+        NettyConnectionFactory factory = mockConnectionFactory();
+        ArgumentCaptor<Origin> originCaptor = ArgumentCaptor.forClass(Origin.class);
 
-    private StyxHttpClient httpClient() {
-        return new StyxHttpClient.Builder()
-                .build();
+        StyxHttpClient.sendRequestInternal(factory, get("/")
+                        .header(HOST, "localhost")
+                        .build(),
+                new StyxHttpClient.TransactionParameters(new StyxHttpClient.Builder()));
+
+        verify(factory).createConnection(originCaptor.capture(), any(ConnectionSettings.class), any(SslContext.class));
+        assertThat(originCaptor.getValue().port(), is(80));
     }
 
-    private StyxHttpClient httpsClient() {
-        return new StyxHttpClient.Builder()
-                .connectTimeout(1000)
-                .tlsSettings(new TlsSettings.Builder()
-                        .authenticate(false)
-                        .build())
-                .responseTimeout(6000)
-                .build();
+    @Test
+    public void sendsToDefaultHttpsPort() {
+        NettyConnectionFactory factory = mockConnectionFactory();
+        ArgumentCaptor<Origin> originCaptor = ArgumentCaptor.forClass(Origin.class);
+
+        StyxHttpClient.sendRequestInternal(factory, get("/")
+                        .header(HOST, "localhost")
+                        .build(),
+                new StyxHttpClient.TransactionParameters(new StyxHttpClient.Builder().secure(true)));
+
+        verify(factory).createConnection(originCaptor.capture(), any(ConnectionSettings.class), any(SslContext.class));
+        assertThat(originCaptor.getValue().port(), is(443));
     }
 
-    private FullHttpRequest httpRequest(int port) {
-        return get("http://localhost:" + port)
-                .header(HOST, "localhost:" + port)
-                .build();
-    }
-
-    private FullHttpRequest httpsRequest(int port) {
-        return get("https://localhost:" + port)
-                .header(HOST, "localhost:" + port)
-                .build();
-    }
-
-    private Connection mockConnection(HttpResponse response) {
-        Connection connection = mock(Connection.class);
-        when(connection.write(any(HttpRequest.class))).thenReturn(Observable.just(response));
-        return connection;
-    }
-
-    private Connection.Factory mockConnectionFactory(Connection connection) {
-        Connection.Factory factory = mock(Connection.Factory.class);
-        when(factory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.just(connection));
+    private static NettyConnectionFactory mockConnectionFactory() {
+        NettyConnectionFactory factory = mock(NettyConnectionFactory.class);
+        when(factory.createConnection(any(Origin.class), any(ConnectionSettings.class), any(SslContext.class)))
+                .thenReturn(Observable.just(mock(Connection.class)));
         return factory;
     }
-
 }
