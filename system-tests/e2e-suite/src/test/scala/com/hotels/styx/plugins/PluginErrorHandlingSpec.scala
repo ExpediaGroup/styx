@@ -38,9 +38,7 @@ class PluginErrorHandlingSpec extends FunSpec
 
   override val styxConfig = StyxConfig(plugins = List(
     "failBeforeInterceptor" -> new FailBeforeHandleInterceptor(),
-    "failAfterInterceptor" -> new FailAfterHandleInterceptor(),
-//    "failAfterContentDecode" -> new DecodedContentFailurePlugin(10 * 1024),
-    "failDuringContentDecoding" -> new ContentDecodeFailurePlugin(10 * 1024)
+    "failAfterInterceptor" -> new FailAfterHandleInterceptor()
   ))
 
   override protected def beforeAll(): Unit = {
@@ -79,28 +77,6 @@ class PluginErrorHandlingSpec extends FunSpec
         assert(resp.status() == INTERNAL_SERVER_ERROR)
       }
     }
-
-    ignore("Catches exceptions from plugins processing decoded content, and maps them to INTERNAL_SERVER_ERRORs") {
-      for (i <- 1 to 2) {
-        val request = get(styxServer.routerURL("/foo"))
-          .header("Fail_after_content", "true")
-          .build()
-        val resp = decodedRequest(request)
-        assert(resp.status() == INTERNAL_SERVER_ERROR)
-      }
-    }
-
-    // TODO: See https://github.com/HotelsDotCom/styx/issues/202
-    ignore("Catches exceptions from plugins performing content decoding, and maps them to INTERNAL_SERVER_ERRORs") {
-      for (i <- 1 to 2) {
-        val request = get(styxServer.routerURL("/foo"))
-          .header("Fail_during_decoder", "true")
-          .build()
-        val resp = decodedRequest(request)
-        assert(resp.status() == INTERNAL_SERVER_ERROR)
-      }
-    }
-
   }
 
   private class FailBeforeHandleInterceptor extends PluginAdapter {
