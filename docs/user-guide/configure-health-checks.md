@@ -81,8 +81,8 @@ into `BackendService`.
 
 A meter of failed health check attempts per backend service:
 
-    origins.healthcheck.failure.<BACKEND-ID>.count
-    origins.healthcheck.failure.<BACKEND-ID>.m1_rate
-    origins.healthcheck.failure.<BACKEND-ID>.m5_rate
-    origins.healthcheck.failure.<BACKEND-ID>.m15_rate
-    origins.healthcheck.failure.<BACKEND-ID>.mean_rate
+    origins.<BACKEND-ID>.healthcheck.failure.count
+    origins.<BACKEND-ID>.healthcheck.failure.m1_rate
+    origins.<BACKEND-ID>.healthcheck.failure.m5_rate
+    origins.<BACKEND-ID>.healthcheck.failure.m15_rate
+    origins.<BACKEND-ID>.healthcheck.failure.mean_rate
