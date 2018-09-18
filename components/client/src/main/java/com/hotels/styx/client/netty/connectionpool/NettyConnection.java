@@ -15,15 +15,18 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.client.Connection;
+import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.client.HttpConfig;
 import com.hotels.styx.client.HttpRequestOperationFactory;
-
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpContentDecompressor;
+import io.netty.handler.ssl.SslContext;
 import io.netty.util.AttributeKey;
 import rx.Observable;
 
@@ -53,14 +56,28 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
      * @param channel the netty channel used
      * @param requestOperationFactory used to create operation objects that send http requests via this connection
      */
-    @VisibleForTesting
-    public NettyConnection(Origin origin, Channel channel, HttpRequestOperationFactory requestOperationFactory) {
+    public NettyConnection(Origin origin, Channel channel, HttpRequestOperationFactory requestOperationFactory, HttpConfig httpConfig, SslContext sslContext) {
         this.origin = requireNonNull(origin);
         this.channel = requireNonNull(channel);
         this.requestOperationFactory = requestOperationFactory;
         this.channel.pipeline().addLast(new TimeToFirstByteHandler(this));
         this.channel.closeFuture().addListener(future ->
                 listeners.announce().connectionClosed(NettyConnection.this));
+
+        addChannelHandlers(channel, httpConfig, sslContext);
+    }
+
+    private static void addChannelHandlers(Channel channel, HttpConfig httpConfig, SslContext sslContext) {
+        ChannelPipeline pipeline = channel.pipeline();
+
+        if (sslContext != null) {
+            pipeline.addLast("ssl", sslContext.newHandler(channel.alloc()));
+        }
+
+        pipeline.addLast("http-codec", new HttpClientCodec(httpConfig.maxInitialLineLength(), httpConfig.maxHeadersSize(), httpConfig.maxChunkSize()));
+        if (httpConfig.compress()) {
+            pipeline.addLast("decompressor", new HttpContentDecompressor());
+        }
     }
 
     @Override

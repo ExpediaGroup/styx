@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.common;
 
+import io.netty.util.concurrent.Future;
 import rx.Observable;
 
 import java.util.concurrent.CompletableFuture;
@@ -29,6 +30,20 @@ public final class CompletableFutures {
     public static <T> CompletableFuture<T> fromSingleObservable(Observable<T> observable) {
         CompletableFuture<T> future = new CompletableFuture<>();
         observable.single().subscribe(future::complete, future::completeExceptionally);
+        return future;
+    }
+
+    public static <T> CompletableFuture<T> fromNettyFuture(Future<?> nettyFuture) {
+        CompletableFuture<T> future = new CompletableFuture<>();
+
+        nettyFuture.addListener(it -> {
+            if (it.isSuccess()) {
+                future.complete(null);
+            } else {
+                future.completeExceptionally(it.cause());
+            }
+        });
+
         return future;
     }
 

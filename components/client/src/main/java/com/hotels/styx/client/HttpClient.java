@@ -17,22 +17,95 @@ package com.hotels.styx.client;
 
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * HTTP Client that returns an observable of response.
+ * A Styx HTTP client interface.
+ *
+ * This interface offers a fluent interface to build and configure HTTP
+ * request transactions from a client instance. The requests can be consumed
+ * either aggregated {@link FullHttpResponse} or streaming {@link HttpRequest}
+ * messages.
  */
 public interface HttpClient {
+
     /**
-     * Processes a new request.
+     * Sends a HTTP request message using this client.
      *
-     * @param request HTTP request to process
-     * @return an observable of HTTP sendRequest.
+     * @deprecated use {@link this::send} instead.
      *
-     * The sendRequest will be sent when the returned observable is subscribed to.
-     * In order to cancel the ongoing request, just unsubscribe from it.
+     * @param request a full HTTP request object
+     * @return a future of full HTTP request object
+     */
+    @Deprecated
+    default CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request) {
+        return send(request);
+    }
+
+    /**
+     * Sends a HTTP request message using this client.
+     *
+     * @param request a full HTTP request object
+     * @return a future of full HTTP request object
+     */
+    CompletableFuture<FullHttpResponse> send(FullHttpRequest request);
+
+    /**
+     * A HTTP request transaction.
+     *
+     * This interface allows client attributes and context to be customised
+     * for each request without having to rely on configured default values
+     * in the client.
      *
      */
-    CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request);
+    interface Transaction {
+        /**
+         * Send the request using TLS protocol.
+         *
+         * @return this {@code Transaction} object
+         */
+        Transaction secure();
+
+        /**
+         * Determines if the request should be sent securely or not.
+         *
+         * @param secure Set to {@code true} if the request should be sent securely,
+         *               or {@code false} if the request should be sent insecurely.
+         * @return this {@code Transaction} object
+         */
+        Transaction secure(boolean secure);
+
+        /**
+         * Converts the transaction object to streaming transaction.
+         *
+         * A call to {@code streaming()} converts this {@link Transaction} object to
+         * a {@link StreamingTransaction}. This allows responses to be consumed
+         * in streaming responses.
+         *
+         * @return a {@link StreamingTransaction} object
+         */
+        StreamingTransaction streaming();
+
+        /**
+         * Sends a HTTP request message using this client.
+         *
+         * @param request a full HTTP request object
+         * @return a future of full HTTP request object
+         */
+        CompletableFuture<FullHttpResponse> send(FullHttpRequest request);
+    }
+
+    /**
+     * A streaming HTTP request transaction.
+     *
+     * This interface allows the response object to be consumed in a streaming
+     * fashion instead of being aggregated into a FullHttpResponse.
+     */
+    interface StreamingTransaction {
+        CompletableFuture<HttpResponse> send(HttpRequest request);
+        CompletableFuture<HttpResponse> send(FullHttpRequest request);
+    }
 }
