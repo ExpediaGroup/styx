@@ -86,7 +86,7 @@ public class StyxHttpClientTest {
                 .build();
 
         // Ensures that a thread is created before the assertions
-        client.sendRequest(httpRequest).get();
+        client.send(httpRequest).get();
 
         assertThat(threadExists("test-client"), is(true));
 
@@ -109,7 +109,7 @@ public class StyxHttpClientTest {
                 .build();
 
         FullHttpResponse response = client
-                .sendRequest(httpRequest)
+                .send(httpRequest)
                 .get();
 
         assertThat(response.status(), is(OK));
@@ -124,7 +124,7 @@ public class StyxHttpClientTest {
         StyxHttpClient client = new StyxHttpClient.Builder()
                 .build();
 
-        client.sendRequest(httpRequest).get();
+        client.send(httpRequest).get();
 
         server.verify(
                 getRequestedFor(urlEqualTo("/"))
@@ -143,7 +143,7 @@ public class StyxHttpClientTest {
                 .header(USER_AGENT, "My previous user agent")
                 .build();
 
-        client.sendRequest(request).get();
+        client.send(request).get();
 
         server.verify(
                 getRequestedFor(urlEqualTo("/"))
@@ -159,7 +159,7 @@ public class StyxHttpClientTest {
                 .build();
 
         FullHttpResponse response = client
-                .sendRequest(secureRequest)
+                .send(secureRequest)
                 .get();
 
         assertThat(response.status(), is(OK));
@@ -172,7 +172,7 @@ public class StyxHttpClientTest {
 
         FullHttpResponse response = client
                 .secure()
-                .sendRequest(secureRequest)
+                .send(secureRequest)
                 .get();
 
         assertThat(response.status(), is(OK));
@@ -185,7 +185,7 @@ public class StyxHttpClientTest {
 
         FullHttpResponse response = client
                 .secure(true)
-                .sendRequest(secureRequest)
+                .send(secureRequest)
                 .get();
 
         assertThat(response.status(), is(OK));
@@ -199,7 +199,7 @@ public class StyxHttpClientTest {
 
         FullHttpResponse response = client
                 .secure(false)
-                .sendRequest(httpRequest)
+                .send(httpRequest)
                 .get();
 
         assertThat(response.status(), is(OK));
@@ -221,7 +221,7 @@ public class StyxHttpClientTest {
         try {
             new StyxHttpClient.Builder()
                     .build()
-                    .sendRequest(get("/foo.txt").header(HOST, "a.b.c").build()).get();
+                    .send(get("/foo.txt").header(HOST, "a.b.c").build()).get();
         } catch (ExecutionException cause) {
             throw cause.getCause();
         }
@@ -231,7 +231,7 @@ public class StyxHttpClientTest {
     public void sendsMessagesInOriginUrlFormat() throws ExecutionException, InterruptedException {
         FullHttpResponse response = new StyxHttpClient.Builder()
                 .build()
-                .sendRequest(get("/index.html").header(HOST, hostString(server.port())).build())
+                .send(get("/index.html").header(HOST, hostString(server.port())).build())
                 .get();
 
         assertThat(response.status(), is(OK));
@@ -254,7 +254,7 @@ public class StyxHttpClientTest {
                 ));
 
         try {
-            client.sendRequest(
+            client.send(
                     get("/slowResponse")
                             .header(HOST, hostString(server.port()))
                             .build())
@@ -274,7 +274,7 @@ public class StyxHttpClientTest {
     public void sendsMessagesInAbsoluteUrlFormat() throws ExecutionException, InterruptedException {
         FullHttpResponse response = new StyxHttpClient.Builder()
                 .build()
-                .sendRequest(get(format("http://%s/index.html", hostString(server.port()))).build())
+                .send(get(format("http://%s/index.html", hostString(server.port()))).build())
                 .get();
 
         assertThat(response.status(), is(OK));
@@ -294,7 +294,7 @@ public class StyxHttpClientTest {
 
         StyxHttpClient client = new StyxHttpClient.Builder().build();
 
-        await(client.sendRequest(request));
+        await(client.send(request));
     }
 
     @Test

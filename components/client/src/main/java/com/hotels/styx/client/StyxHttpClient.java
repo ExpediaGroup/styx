@@ -20,7 +20,6 @@ import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.Url;
-import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
@@ -93,7 +92,7 @@ public final class StyxHttpClient implements HttpClient {
      * @param request a {@link FullHttpRequest} object to be sent to remote origin.
      * @return a {@link CompletableFuture} of response
      */
-    public CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request) {
+    public CompletableFuture<FullHttpResponse> send(FullHttpRequest request) {
         return sendRequestInternal(connectionFactory, request, this.transactionParameters);
     }
 
@@ -230,8 +229,8 @@ public final class StyxHttpClient implements HttpClient {
          * Maximum time in milliseconds this client is willing to wait for the origin server to respond.
          *
          * Sets a maximum tolerated length of inactivity on TCP connection before remote origin is considered
-         * unresponsive. After this time a {@link ResponseTimeoutException} is thrown is emitted on the
-         * response future.
+         * unresponsive. After this time a {@link com.hotels.styx.api.exceptions.ResponseTimeoutException} is
+         * thrown is emitted on the response future.
          *
          * Note that an actual response can take considerably longer time to arrive than @{code responseTimeoutMillis}.
          * This can happen if origin sends the response slowly. Origin may send headers first, and then

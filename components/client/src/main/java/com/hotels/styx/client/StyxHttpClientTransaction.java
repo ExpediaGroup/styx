@@ -68,7 +68,7 @@ class StyxHttpClientTransaction implements HttpClient.Transaction {
      * @return a {@link CompletableFuture} of response
      */
     @Override
-    public CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request) {
+    public CompletableFuture<FullHttpResponse> send(FullHttpRequest request) {
         return StyxHttpClient.sendRequestInternal(connectionFactory, request, transactionParameters);
     }
 }

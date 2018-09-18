@@ -31,8 +31,19 @@ import java.util.concurrent.CompletableFuture;
  * messages.
  */
 public interface HttpClient {
-//    CompletableFuture<FullHttpResponse> sendRequest(HttpRequest request);
 
+    /**
+     * Sends a HTTP request message using this client.
+     *
+     * @deprecated use {@link this::send} instead.
+     *
+     * @param request a full HTTP request object
+     * @return a future of full HTTP request object
+     */
+    @Deprecated
+    default CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request) {
+        return send(request);
+    }
 
     /**
      * Sends a HTTP request message using this client.
@@ -40,7 +51,7 @@ public interface HttpClient {
      * @param request a full HTTP request object
      * @return a future of full HTTP request object
      */
-    CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request);
+    CompletableFuture<FullHttpResponse> send(FullHttpRequest request);
 
     /**
      * A HTTP request transaction.
@@ -78,7 +89,18 @@ public interface HttpClient {
          */
         StreamingTransaction streaming();
 
-//        CompletableFuture<FullHttpResponse> sendRequest(HttpRequest request);
+        /**
+         * Sends a HTTP request message using this client.
+         *
+         * @deprecated use {@link this::send} instead.
+         *
+         * @param request a full HTTP request object
+         * @return a future of full HTTP request object
+         */
+        @Deprecated
+        default CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request) {
+            return send(request);
+        }
 
         /**
          * Sends a HTTP request message using this client.
@@ -86,7 +108,7 @@ public interface HttpClient {
          * @param request a full HTTP request object
          * @return a future of full HTTP request object
          */
-        CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request);
+        CompletableFuture<FullHttpResponse> send(FullHttpRequest request);
     }
 
     /**
@@ -96,7 +118,7 @@ public interface HttpClient {
      * fashion instead of being aggregated into a FullHttpResponse.
      */
     interface StreamingTransaction {
-        CompletableFuture<HttpResponse> sendRequest(HttpRequest request);
-        CompletableFuture<HttpResponse> sendRequest(FullHttpRequest request);
+        CompletableFuture<HttpResponse> send(HttpRequest request);
+        CompletableFuture<HttpResponse> send(FullHttpRequest request);
     }
 }
