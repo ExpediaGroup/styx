@@ -25,6 +25,7 @@ import com.hotels.styx.client.HttpConfig;
 import com.hotels.styx.client.HttpRequestOperationFactory;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
+import com.hotels.styx.common.CompletableFutures;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -109,16 +110,7 @@ public class NettyConnectionFactory implements Connection.Factory {
     }
 
     public CompletableFuture<Void> close() {
-        CompletableFuture<Void> future = new CompletableFuture();
-        eventLoopGroup.shutdownGracefully()
-                .addListener(nettyFuture -> {
-                    if (nettyFuture.isSuccess()) {
-                        future.complete(null);
-                    } else {
-                        future.completeExceptionally(nettyFuture.cause());
-                    }
-                });
-        return future;
+        return CompletableFutures.fromNettyFuture(eventLoopGroup.shutdownGracefully());
     }
 
     private class Initializer extends ChannelInitializer<Channel> {

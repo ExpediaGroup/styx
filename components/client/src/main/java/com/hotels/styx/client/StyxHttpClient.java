@@ -30,6 +30,7 @@ import rx.Observable;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
@@ -198,11 +199,12 @@ public final class StyxHttpClient implements HttpClient {
         /**
          * Sets the TCP connection timeout.
          *
-         * @param timeoutMs desired TCP connection timeout
+         * @param duration desired TCP connection timeout duration
+         * @param timeUnit duration unit
          * @return this {@link Builder}
          */
-        public Builder connectTimeout(int timeoutMs) {
-            this.connectTimeoutMillis = timeoutMs;
+        public Builder connectTimeout(int duration, TimeUnit timeUnit) {
+            this.connectTimeoutMillis = (int) timeUnit.toMillis(duration);
             return this;
         }
 
