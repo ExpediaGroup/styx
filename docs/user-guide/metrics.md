@@ -138,6 +138,11 @@ The server side metrics scopes are illustrated in a diagram below:
     origins.<backend>.<origin>.status
 ```
 
+ - Health-check metrics
+```
+    origins.<backend>.healthcheck.failure
+```
+
 The client side metrics scopes are illustrated in a diagram below:
 
 ![Styx Client Metrics](../assets/styx-origin-metrics.png "Styx client metrics")
@@ -221,8 +226,6 @@ Styx also measures metrics from the underlying JVM:
 
 Following metrics are subject to change their names:
 
-     origins.healthcheck.failure.<app>
-     origins.healthcheck.failure.<app>.<instance>
      origins.response.status.<code>
 
 
