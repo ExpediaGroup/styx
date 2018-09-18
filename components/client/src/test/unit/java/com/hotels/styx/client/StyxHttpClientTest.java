@@ -20,6 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
+import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
@@ -44,6 +45,7 @@ import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith;
 import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
@@ -239,6 +241,28 @@ public class StyxHttpClientTest {
         );
     }
 
+    @Test(expectedExceptions = ResponseTimeoutException.class)
+    public void defaultResponseTimeout() throws Throwable {
+        StyxHttpClient client = new StyxHttpClient.Builder()
+                .responseTimeout(1000)
+                .build();
+
+        server.stubFor(WireMock.get(urlStartingWith("/slowResponse"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withFixedDelay(3000)
+                ));
+
+        try {
+            client.sendRequest(
+                    get("/slowResponse")
+                            .header(HOST, hostString(server.port()))
+                            .build())
+                    .get(2, SECONDS);
+        } catch (ExecutionException e) {
+            throw e.getCause();
+        }
+    }
 
     @Test(enabled = false)
     /*
@@ -281,7 +305,7 @@ public class StyxHttpClientTest {
         StyxHttpClient.sendRequestInternal(factory, get("/")
                         .header(HOST, "localhost")
                         .build(),
-                new StyxHttpClient.TransactionParameters(new StyxHttpClient.Builder()));
+                new TransactionParameters(new StyxHttpClient.Builder()));
 
         verify(factory).createConnection(originCaptor.capture(), any(ConnectionSettings.class), any(SslContext.class));
         assertThat(originCaptor.getValue().port(), is(80));
@@ -295,7 +319,7 @@ public class StyxHttpClientTest {
         StyxHttpClient.sendRequestInternal(factory, get("/")
                         .header(HOST, "localhost")
                         .build(),
-                new StyxHttpClient.TransactionParameters(new StyxHttpClient.Builder().secure(true)));
+                new TransactionParameters(new StyxHttpClient.Builder().secure(true)));
 
         verify(factory).createConnection(originCaptor.capture(), any(ConnectionSettings.class), any(SslContext.class));
         assertThat(originCaptor.getValue().port(), is(443));
