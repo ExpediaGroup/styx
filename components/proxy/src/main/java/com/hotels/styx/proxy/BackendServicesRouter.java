@@ -16,27 +16,27 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
-import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.StyxObservable;
-import com.hotels.styx.client.Connection;
-import com.hotels.styx.client.ConnectionSettings;
-import com.hotels.styx.client.connectionpool.ConnectionPool;
-import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.client.BackendServiceClient;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.client.StyxHeaderConfig;
 import com.hotels.styx.client.StyxHostHttpClient;
+import com.hotels.styx.client.StyxHttpClient;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
 import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
@@ -58,6 +58,7 @@ import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpReq
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -216,7 +217,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
     private static StyxHttpClient healthCheckClient(Id appId, Optional<TlsSettings> tlsSettings, String styxVersion, ConnectionSettings connectionSettings) {
         StyxHttpClient.Builder builder = new StyxHttpClient.Builder()
-                .connectTimeout(connectionSettings.connectTimeoutMillis())
+                .connectTimeout(connectionSettings.connectTimeoutMillis(), MILLISECONDS)
                 .threadName("Health-Check-Monitor-" + appId)
                 .userAgent("Styx/" + styxVersion);
 

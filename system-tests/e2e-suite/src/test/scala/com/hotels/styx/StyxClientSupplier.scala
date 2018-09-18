@@ -15,6 +15,8 @@
  */
 package com.hotels.styx
 
+import java.util.concurrent.TimeUnit.MILLISECONDS
+
 import com.hotels.styx.api._
 import com.hotels.styx.client.StyxHttpClient
 import org.scalatest.{BeforeAndAfterAll, Suite}
@@ -32,7 +34,7 @@ trait StyxClientSupplier extends BeforeAndAfterAll {
 
   val client: StyxHttpClient = new StyxHttpClient.Builder()
     .threadName("scalatest-e2e-client")
-    .connectTimeout(1000)
+    .connectTimeout(1000, MILLISECONDS)
     .maxHeaderSize(2 * 8192)
     .build()
 
@@ -42,7 +44,7 @@ trait StyxClientSupplier extends BeforeAndAfterAll {
   }
 
   private def doRequest(request: FullHttpRequest, secure: Boolean = false): Future[FullHttpResponse] = if (secure)
-    client.secure().sendRequest(request).toScala
+    client.secure().send(request).toScala
   else
     client.sendRequest(request).toScala
 

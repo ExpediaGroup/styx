@@ -124,7 +124,7 @@ class ProxySpec extends FunSpec
     it("should respond to HEAD with bodiless response") {
 
       val client: HttpClient = new StyxHttpClient.Builder()
-        .connectTimeout(1000)
+        .connectTimeout(1000, MILLISECONDS)
         .maxHeaderSize(2 * 8192)
         .threadName("scalatest-e2e-client")
         .build()
