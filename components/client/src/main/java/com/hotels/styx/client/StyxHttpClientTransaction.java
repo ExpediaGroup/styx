@@ -25,8 +25,8 @@ class StyxHttpClientTransaction implements HttpClient.Transaction {
     private StyxHttpClient.Builder builder;
     private NettyConnectionFactory connectionFactory;
 
-    public StyxHttpClientTransaction(NettyConnectionFactory connectionFactory, TransactionParameters parent) {
-        this.builder = parent.newBuilder();
+    public StyxHttpClientTransaction(NettyConnectionFactory connectionFactory, StyxHttpClient.Builder builder) {
+        this.builder = builder;
         this.connectionFactory = connectionFactory;
     }
 
@@ -49,6 +49,6 @@ class StyxHttpClientTransaction implements HttpClient.Transaction {
 
     @Override
     public CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request) {
-        return StyxHttpClient.sendRequestInternal(connectionFactory, request, new TransactionParameters(builder));
+        return StyxHttpClient.sendRequestInternal(connectionFactory, request, builder);
     }
 }

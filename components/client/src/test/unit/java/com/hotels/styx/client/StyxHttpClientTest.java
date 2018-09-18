@@ -305,7 +305,7 @@ public class StyxHttpClientTest {
         StyxHttpClient.sendRequestInternal(factory, get("/")
                         .header(HOST, "localhost")
                         .build(),
-                new TransactionParameters(new StyxHttpClient.Builder()));
+                new StyxHttpClient.Builder());
 
         verify(factory).createConnection(originCaptor.capture(), any(ConnectionSettings.class), any(SslContext.class));
         assertThat(originCaptor.getValue().port(), is(80));
@@ -319,7 +319,7 @@ public class StyxHttpClientTest {
         StyxHttpClient.sendRequestInternal(factory, get("/")
                         .header(HOST, "localhost")
                         .build(),
-                new TransactionParameters(new StyxHttpClient.Builder().secure(true)));
+                new StyxHttpClient.Builder().secure(true));
 
         verify(factory).createConnection(originCaptor.capture(), any(ConnectionSettings.class), any(SslContext.class));
         assertThat(originCaptor.getValue().port(), is(443));

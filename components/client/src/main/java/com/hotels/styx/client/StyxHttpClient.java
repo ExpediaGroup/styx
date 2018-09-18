@@ -33,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
+import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
 import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
@@ -46,12 +47,12 @@ public final class StyxHttpClient implements HttpClient {
     private static final int DEFAULT_HTTPS_PORT = 443;
     private static final int DEFAULT_HTTP_PORT = 80;
 
-    private final TransactionParameters transactionParameters;
-    final NettyConnectionFactory connectionFactory;
+    private final Builder transactionParameters;
+    private final NettyConnectionFactory connectionFactory;
 
-    private StyxHttpClient(Builder builder) {
-        transactionParameters = new TransactionParameters(builder);
-        connectionFactory = builder.connectionFactory;
+    private StyxHttpClient(NettyConnectionFactory connectionFactory, Builder parameters) {
+        transactionParameters = parameters;
+        this.connectionFactory = connectionFactory;
     }
 
     public CompletableFuture<Void> shutdown() {
@@ -59,13 +60,11 @@ public final class StyxHttpClient implements HttpClient {
     }
 
     public HttpClient.Transaction secure() {
-        TransactionParameters parameters = new TransactionParameters(this.transactionParameters.newBuilder().secure(true));
-        return new StyxHttpClientTransaction(connectionFactory, parameters);
+        return new StyxHttpClientTransaction(connectionFactory, this.transactionParameters.copy().secure(true));
     }
 
     public HttpClient.Transaction secure(boolean secure) {
-        TransactionParameters parameters = new TransactionParameters(this.transactionParameters.newBuilder().secure(secure));
-        return new StyxHttpClientTransaction(connectionFactory, parameters);
+        return new StyxHttpClientTransaction(connectionFactory, this.transactionParameters.copy().secure(secure));
     }
 
     public CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request) {
@@ -73,15 +72,15 @@ public final class StyxHttpClient implements HttpClient {
     }
 
     @VisibleForTesting
-    static CompletableFuture<FullHttpResponse> sendRequestInternal(NettyConnectionFactory connectionFactory, FullHttpRequest request, TransactionParameters params) {
-        FullHttpRequest networkRequest = params.addUserAgent(request);
+    static CompletableFuture<FullHttpResponse> sendRequestInternal(NettyConnectionFactory connectionFactory, FullHttpRequest request, Builder params) {
+        FullHttpRequest networkRequest = addUserAgent(params.userAgent, request);
         Origin origin = originFromRequest(networkRequest, params.https());
 
-        SslContext sslContext = getSslContext(params.https(), params.tlsSettings().orElse(null));
+        SslContext sslContext = getSslContext(params.https(), params.tlsSettings());
 
         Observable<FullHttpResponse> responseObservable = connectionFactory.createConnection(
                 origin,
-                new ConnectionSettings(params.connectionSettings()),
+                new ConnectionSettings(params.connectTimeoutMillis()),
                 sslContext
         ).flatMap(connection ->
                 connection.write(networkRequest.toStreamingRequest())
@@ -93,9 +92,20 @@ public final class StyxHttpClient implements HttpClient {
 
     }
 
+    private static FullHttpRequest addUserAgent(String userAgent, FullHttpRequest request) {
+        if (userAgent != null) {
+            return request.newBuilder()
+                    .header(USER_AGENT, userAgent)
+                    .build();
+        } else {
+            return request;
+        }
+    }
+
+
     private static SslContext getSslContext(boolean isHttps, TlsSettings tlsSettings) {
         if (isHttps) {
-            return Optional.of(tlsSettings != null ? tlsSettings : TransactionParameters.DEFAULT_TLS_SETTINGS)
+            return Optional.of(tlsSettings != null ? tlsSettings : new TlsSettings.Builder().build())
                     .map(SslContextFactory::get)
                     .orElse(null);
         } else {
@@ -135,6 +145,29 @@ public final class StyxHttpClient implements HttpClient {
         private int maxHeaderSize = 8192;
         private String threadName = "simple-netty-http-client";
         private boolean isHttps;
+
+        public Builder() {
+
+        }
+
+//        public Builder(TransactionParameters parameters) {
+//            this.connectTimeoutMillis = parameters.connectionTimeoutMillis();
+//            this.maxResponseSize = parameters.maxResponseSize();
+//            this.tlsSettings = parameters.tlsSettings().orElse(new TlsSettings.Builder().build());
+//            this.responseTimeout = parameters.responseTimeout();
+//            this.isHttps = parameters.https();
+//            this.userAgent = parameters.userAgent().orElse(null);
+//        }
+
+        public Builder(Builder another) {
+            this.connectTimeoutMillis = another.connectTimeoutMillis;
+            this.maxResponseSize = another.maxResponseSize;
+            this.tlsSettings = another.tlsSettings;
+            this.responseTimeout = another.responseTimeout;
+            this.isHttps = another.isHttps;
+            this.userAgent = another.userAgent;
+            this.maxHeaderSize = another.maxHeaderSize;
+        }
 
         public Builder connectTimeout(int timeoutMs) {
             this.connectTimeoutMillis = timeoutMs;
@@ -207,13 +240,17 @@ public final class StyxHttpClient implements HttpClient {
             return this;
         }
 
+        Builder copy() {
+            return new Builder(this);
+        }
+
         /**
          * Construct a client instance.
          *
          * @return a new instance
          */
         public StyxHttpClient build() {
-            connectionFactory = new NettyConnectionFactory.Builder()
+            NettyConnectionFactory connectionFactory = new NettyConnectionFactory.Builder()
                     .name(threadName)
                     .httpConfig(newHttpConfigBuilder().setMaxHeadersSize(maxHeaderSize).build())
                     .tlsSettings(tlsSettings)
@@ -225,7 +262,9 @@ public final class StyxHttpClient implements HttpClient {
                             false,
                             false))
                     .build();
-            return new StyxHttpClient(this);
+
+            return new StyxHttpClient(connectionFactory, this);
         }
+
     }
 }
