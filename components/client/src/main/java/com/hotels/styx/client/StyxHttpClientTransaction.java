@@ -22,33 +22,53 @@ import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import java.util.concurrent.CompletableFuture;
 
 class StyxHttpClientTransaction implements HttpClient.Transaction {
-    private StyxHttpClient.Builder builder;
+    private StyxHttpClient.Builder transactionParameters;
     private NettyConnectionFactory connectionFactory;
 
-    public StyxHttpClientTransaction(NettyConnectionFactory connectionFactory, StyxHttpClient.Builder builder) {
-        this.builder = builder;
+    public StyxHttpClientTransaction(NettyConnectionFactory connectionFactory, StyxHttpClient.Builder transactionParameters) {
+        this.transactionParameters = transactionParameters;
         this.connectionFactory = connectionFactory;
     }
 
+    /**
+     * Indicates that a request should be sent using secure {@code https} protocol.
+     *
+     * @return a @{HttpClient.Transaction} instance that allows fluent method chaining
+     */
     @Override
     public HttpClient.Transaction secure() {
-        this.builder.secure(true);
+        this.transactionParameters.secure(true);
         return this;
     }
 
+    /**
+     * Indicates if a request should be sent over secure {@code https} or insecure {@code http} protocol.
+     *
+     * A value of {@code true} indicates that a request should be sent over a secure {@code https} protocol.
+     * A value of {@code false} indicates that a request should be sent over an insecure {@code http} protocol.
+     *
+     * @param secure a boolean flag to indicate if a request should be sent over a secure protocol or not
+     * @return a @{HttpClient.Transaction} instance that allows fluent method chaining
+     */
     @Override
     public HttpClient.Transaction secure(boolean secure) {
-        this.builder.secure(secure);
+        this.transactionParameters.secure(secure);
         return this;
     }
 
     @Override
     public HttpClient.StreamingTransaction streaming() {
-        return null;
+        throw new UnsupportedOperationException("Not yet implemented.");
     }
 
+    /**
+     * Sends a request as {@link FullHttpRequest} object.
+     *
+     * @param request a {@link FullHttpRequest} object to be sent to remote origin.
+     * @return a {@link CompletableFuture} of response
+     */
     @Override
     public CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request) {
-        return StyxHttpClient.sendRequestInternal(connectionFactory, request, builder);
+        return StyxHttpClient.sendRequestInternal(connectionFactory, request, transactionParameters);
     }
 }

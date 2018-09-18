@@ -20,6 +20,7 @@ import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.Url;
+import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
@@ -55,25 +56,50 @@ public final class StyxHttpClient implements HttpClient {
         this.connectionFactory = connectionFactory;
     }
 
+    /**
+     * Shuts the styx HTTP client thread pool.
+     *
+     * @return A {@link CompletableFuture} that completes when the thread pool is terminated
+     */
     public CompletableFuture<Void> shutdown() {
         return connectionFactory.close();
     }
 
+    /**
+     * Indicates that a request should be sent using secure {@code https} protocol.
+     *
+     * @return a {@HttpClient.Transaction} instance that allows fluent method chaining
+     */
     public HttpClient.Transaction secure() {
         return new StyxHttpClientTransaction(connectionFactory, this.transactionParameters.copy().secure(true));
     }
 
+    /**
+     * Indicates if a request should be sent over secure {@code https} or insecure {@code http} protocol.
+     *
+     * A value of {@code true} indicates that a request should be sent over a secure {@code https} protocol.
+     * A value of (@code false} indicates that a request should be sent over an insecure {@code http} protocol.
+     *
+     * @param secure a boolean flag to indicate if a request should be sent over a secure protocol or not
+     * @return a {@HttpClient.Transaction} instance that allows fluent method chaining
+     */
     public HttpClient.Transaction secure(boolean secure) {
         return new StyxHttpClientTransaction(connectionFactory, this.transactionParameters.copy().secure(secure));
     }
 
+    /**
+     * Sends a request as {@link FullHttpRequest} object.
+     *
+     * @param request a {@link FullHttpRequest} object to be sent to remote origin.
+     * @return a {@link CompletableFuture} of response
+     */
     public CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request) {
         return sendRequestInternal(connectionFactory, request, this.transactionParameters);
     }
 
     @VisibleForTesting
     static CompletableFuture<FullHttpResponse> sendRequestInternal(NettyConnectionFactory connectionFactory, FullHttpRequest request, Builder params) {
-        FullHttpRequest networkRequest = addUserAgent(params.userAgent, request);
+        FullHttpRequest networkRequest = addUserAgent(params.userAgent(), request);
         Origin origin = originFromRequest(networkRequest, params.https());
 
         SslContext sslContext = getSslContext(params.https(), params.tlsSettings());
@@ -136,39 +162,46 @@ public final class StyxHttpClient implements HttpClient {
      * Builder for {@link StyxHttpClient}.
      */
     public static class Builder {
-        private NettyConnectionFactory connectionFactory;
-        private TlsSettings tlsSettings;
-        private String userAgent;
-        private int connectTimeoutMillis = 1000;
-        private int responseTimeout = 60000;
-        private int maxResponseSize = 1024 * 100;
-        private int maxHeaderSize = 8192;
         private String threadName = "simple-netty-http-client";
+        private int connectTimeoutMillis = 1000;
+        private int maxResponseSize = 1024 * 100;
+        private int responseTimeout = 60000;
+        private int maxHeaderSize = 8192;
+        private TlsSettings tlsSettings;
         private boolean isHttps;
+        private String userAgent;
 
         public Builder() {
-
         }
 
-//        public Builder(TransactionParameters parameters) {
-//            this.connectTimeoutMillis = parameters.connectionTimeoutMillis();
-//            this.maxResponseSize = parameters.maxResponseSize();
-//            this.tlsSettings = parameters.tlsSettings().orElse(new TlsSettings.Builder().build());
-//            this.responseTimeout = parameters.responseTimeout();
-//            this.isHttps = parameters.https();
-//            this.userAgent = parameters.userAgent().orElse(null);
-//        }
-
-        public Builder(Builder another) {
+        Builder(Builder another) {
+            this.threadName = another.threadName;
             this.connectTimeoutMillis = another.connectTimeoutMillis;
             this.maxResponseSize = another.maxResponseSize;
-            this.tlsSettings = another.tlsSettings;
             this.responseTimeout = another.responseTimeout;
+            this.maxHeaderSize = another.maxHeaderSize;
+            this.tlsSettings = another.tlsSettings;
             this.isHttps = another.isHttps;
             this.userAgent = another.userAgent;
-            this.maxHeaderSize = another.maxHeaderSize;
         }
 
+        /**
+         * Sets a thread name used for the thread pool.
+         *
+         * @param threadName thread name
+         * @return this {@link Builder}
+         */
+        public Builder threadName(String threadName) {
+            this.threadName = threadName;
+            return this;
+        }
+
+        /**
+         * Sets the TCP connection timeout.
+         *
+         * @param timeoutMs desired TCP connection timeout
+         * @return this {@link Builder}
+         */
         public Builder connectTimeout(int timeoutMs) {
             this.connectTimeoutMillis = timeoutMs;
             return this;
@@ -178,30 +211,12 @@ public final class StyxHttpClient implements HttpClient {
             return connectTimeoutMillis;
         }
 
-        public Builder responseTimeout(int responseTimeoutMs) {
-            this.responseTimeout = responseTimeoutMs;
-            return this;
-        }
-
-        int responseTimeout() {
-            return responseTimeout;
-        }
-
         /**
-         * Sets the user-agent header value to be included in requests.
+         * Sets the maximum allowed response size in bytes.
          *
-         * @param userAgent user-agent
-         * @return this builder
+         * @param maxResponseSize maximum response size in bytes.
+         * @return this {@link Builder}
          */
-        public Builder userAgent(String userAgent) {
-            this.userAgent = userAgent;
-            return this;
-        }
-
-        String userAgent() {
-            return this.userAgent;
-        }
-
         public Builder maxResponseSize(int maxResponseSize) {
             this.maxResponseSize = maxResponseSize;
             return this;
@@ -211,6 +226,45 @@ public final class StyxHttpClient implements HttpClient {
             return this.maxResponseSize;
         }
 
+        /**
+         * Maximum time in milliseconds this client is willing to wait for the origin server to respond.
+         *
+         * Sets a maximum tolerated length of inactivity on TCP connection before remote origin is considered
+         * unresponsive. After this time a {@link ResponseTimeoutException} is thrown is emitted on the
+         * response future.
+         *
+         * Note that an actual response can take considerably longer time to arrive than @{code responseTimeoutMillis}.
+         * This can happen if origin sends the response slowly. Origin may send headers first, and then
+         * slowly drip feed the response body. This is acceptable as long as the TCP connection does not
+         * experience longer inactivity than @{code responseTimeoutMillis} between any two consecutive
+         * data packets.
+         *
+         * @param responseTimeoutMs maximum tolerated inactivity on the TCP connection.
+         * @return this {@link Builder}
+         */
+        public Builder responseTimeout(int responseTimeoutMs) {
+            this.responseTimeout = responseTimeoutMs;
+            return this;
+        }
+
+        /**
+         * Sets the maximum length for HTTP request or status line.
+         *
+         * @param maxHeaderSize maximum HTTP request or status line length in bytes
+         * @return this {@link Builder}
+         */
+        public Builder maxHeaderSize(int maxHeaderSize) {
+            this.maxHeaderSize = maxHeaderSize;
+            return this;
+        }
+
+        /**
+         * Sets the TLS parameters to be used with secure connections.
+         * Implies that requests should be sent securely over @{code https} protocol.
+         *
+         * @param tlsSettings TLS parameters
+         * @return this {@link Builder}
+         */
         public Builder tlsSettings(TlsSettings tlsSettings) {
             this.tlsSettings = requireNonNull(tlsSettings);
             this.isHttps = true;
@@ -221,6 +275,12 @@ public final class StyxHttpClient implements HttpClient {
             return this.tlsSettings;
         }
 
+        /**
+         * Specifies whether requests should be sent securely or not.
+         *
+         * @param secure @{code true} if secure {@code https} protocol should be used, or {@code false} if insecure {@code http} protocol can be used
+         * @return this {@link Builder}
+         */
         public Builder secure(boolean secure) {
             this.isHttps = secure;
             return this;
@@ -230,14 +290,19 @@ public final class StyxHttpClient implements HttpClient {
             return this.isHttps;
         }
 
-        public Builder maxHeaderSize(int maxHeaderSize) {
-            this.maxHeaderSize = maxHeaderSize;
+        /**
+         * Sets the user-agent header value to be included in requests.
+         *
+         * @param userAgent user-agent
+         * @return this {@link Builder}
+         */
+        public Builder userAgent(String userAgent) {
+            this.userAgent = userAgent;
             return this;
         }
 
-        public Builder threadName(String threadName) {
-            this.threadName = threadName;
-            return this;
+        String userAgent() {
+            return this.userAgent;
         }
 
         Builder copy() {

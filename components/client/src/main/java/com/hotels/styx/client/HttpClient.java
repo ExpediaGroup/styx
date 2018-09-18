@@ -54,16 +54,16 @@ public interface HttpClient {
         /**
          * Send the request using TLS protocol.
          *
-         * @return this @{code Transaction} object
+         * @return this {@code Transaction} object
          */
         Transaction secure();
 
         /**
          * Determines if the request should be sent securely or not.
          *
-         * @param secure Set to @{code true} if the request should be sent securely,
-         *               or @{code false} if the request should be sent insecurely.
-         * @return this @{code Transaction} object
+         * @param secure Set to {@code true} if the request should be sent securely,
+         *               or {@code false} if the request should be sent insecurely.
+         * @return this {@code Transaction} object
          */
         Transaction secure(boolean secure);
 
@@ -71,7 +71,7 @@ public interface HttpClient {
          * Converts the transaction object to streaming transaction.
          *
          * A call to {@code streaming()} converts this {@link Transaction} object to
-         * a @{link StreamingTransaction}. This allows responses to be consumed
+         * a {@link StreamingTransaction}. This allows responses to be consumed
          * in streaming responses.
          *
          * @return a {@link StreamingTransaction} object
