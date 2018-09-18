@@ -15,23 +15,22 @@
  */
 package com.hotels.styx.client.healthcheck;
 
-import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.api.FullHttpResponse.response;
-import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -66,7 +65,7 @@ public class UrlRequestHealthCheckTest {
     }
 
     @Test
-    public void declaresOriginHealthyOnOkResponseCode() throws IOException {
+    public void declaresOriginHealthyOnOkResponseCode() {
         HttpClient client = request -> respondWith(OK);
 
         new UrlRequestHealthCheck("/version.txt", client, metricRegistry)
@@ -77,7 +76,7 @@ public class UrlRequestHealthCheckTest {
     }
 
     @Test
-    public void declaresOriginUnhealthyOnNon200Ok() throws IOException {
+    public void declaresOriginUnhealthyOnNon200Ok() {
         HttpClient client = request -> respondWith(NOT_FOUND);
 
         new UrlRequestHealthCheck("/version.txt", client, metricRegistry)
@@ -85,11 +84,12 @@ public class UrlRequestHealthCheckTest {
 
         assertThat(originState, is(UNHEALTHY));
         assertThat(metricRegistry.meter("origins.healthcheck.failure.generic-app").getCount(), is(1L));
-        assertThat(metricRegistry.getMeters().size(), is(1));
+        assertThat(metricRegistry.meter("origins.generic-app.healthcheck.failure").getCount(), is(1L));
+        assertThat(metricRegistry.getMeters().size(), is(2));
     }
 
     @Test
-    public void declaredOriginUnhealthyOnTransportException() throws IOException {
+    public void declaredOriginUnhealthyOnTransportException() {
         HttpClient client = request -> respondWith(new RuntimeException("health check failure, as expected"));
 
         new UrlRequestHealthCheck("/version.txt", client, metricRegistry)
@@ -97,7 +97,8 @@ public class UrlRequestHealthCheckTest {
 
         assertThat(originState, is(UNHEALTHY));
         assertThat(metricRegistry.meter("origins.healthcheck.failure.generic-app").getCount(), is(1L));
-        assertThat(metricRegistry.getMeters().size(), is(1));
+        assertThat(metricRegistry.meter("origins.generic-app.healthcheck.failure").getCount(), is(1L));
+        assertThat(metricRegistry.getMeters().size(), is(2));
     }
 
     private static CompletableFuture<FullHttpResponse> respondWith(Throwable error) {

@@ -16,28 +16,29 @@
 package com.hotels.styx.client.healthcheck;
 
 import com.codahale.metrics.Meter;
-import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.FullHttpRequest;
-import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.common.SimpleCache;
-import io.netty.buffer.ByteBuf;
-import rx.Observer;
 
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
-import static io.netty.util.ReferenceCountUtil.release;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 /**
  * Health-check that works by making a request to a URL and ensuring that it gets an HTTP 200 OK code back.
  */
 public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
+    private static final MeterFormat DEPRECATED_METER_FORMAT = new MeterFormat("origins.healthcheck.failure.%s");
+    private static final MeterFormat CORRECTED_METER_FORMAT = new MeterFormat("origins.%s.healthcheck.failure");
+
     private final String healthCheckUri;
     private final HttpClient client;
-    private final SimpleCache<Origin, Meter> meterCache;
+    private final SimpleCache<Origin, FailureMeter> meterCache;
 
     /**
      * Construct an instance.
@@ -49,7 +50,7 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
     public UrlRequestHealthCheck(String healthCheckUri, HttpClient client, MetricRegistry metricRegistry) {
         this.healthCheckUri = uriWithInitialSlash(healthCheckUri);
         this.client = requireNonNull(client);
-        this.meterCache = new SimpleCache<>(origin -> metricRegistry.meter("origins.healthcheck.failure." + origin.applicationId()));
+        this.meterCache = new SimpleCache<>(origin -> new FailureMeter(origin, metricRegistry));
     }
 
     private static String uriWithInitialSlash(String uri) {
@@ -83,19 +84,32 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
                 .build();
     }
 
-    // Note: this differs from just calling Observable.subscribe with no arguments, because it ignores errors too, whereas subscribe() throws an exception
-    private static class DoNothingObserver implements Observer<ByteBuf> {
-        @Override
-        public void onCompleted() {
+    private static final class FailureMeter {
+        private final Meter deprecatedMeter;
+        private final Meter correctedMeter;
+
+        FailureMeter(Origin origin, MetricRegistry metricRegistry) {
+            this.deprecatedMeter = DEPRECATED_METER_FORMAT.meter(origin, metricRegistry);
+            this.correctedMeter = CORRECTED_METER_FORMAT.meter(origin, metricRegistry);
         }
 
-        @Override
-        public void onError(Throwable throwable) {
+        void mark() {
+            deprecatedMeter.mark();
+            correctedMeter.mark();
+        }
+    }
+
+    private static final class MeterFormat {
+        private final String format;
+
+        MeterFormat(String format) {
+            this.format = format;
         }
 
-        @Override
-        public void onNext(ByteBuf byteBuf) {
-            release(byteBuf);
+        public Meter meter(Origin origin, MetricRegistry metricRegistry) {
+            String name = format(format, origin.applicationId());
+
+            return metricRegistry.meter(name);
         }
     }
 }
