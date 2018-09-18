@@ -205,18 +205,24 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         ConnectionSettings connectionSettings = new ConnectionSettings(
                 connectionPoolSettings.connectTimeoutMillis());
 
-        StyxHttpClient client = new StyxHttpClient.Builder()
-                .connectTimeout(connectionSettings.connectTimeoutMillis())
-                .threadName("Health-Check-Monitor-" + appId)
-                .userAgent("Styx/" + styxVersion)
-                .tlsSettings(tlsSettings.orElse(null))
-                .build();
+        StyxHttpClient client = healthCheckClient(appId, tlsSettings, styxVersion, connectionSettings);
 
         String healthCheckUri = healthCheckConfig
                 .uri()
                 .orElseThrow(() -> new IllegalArgumentException("Health check URI missing for " + appId));
 
         return new UrlRequestHealthCheck(healthCheckUri, client, metricRegistry);
+    }
+
+    private static StyxHttpClient healthCheckClient(Id appId, Optional<TlsSettings> tlsSettings, String styxVersion, ConnectionSettings connectionSettings) {
+        StyxHttpClient.Builder builder = new StyxHttpClient.Builder()
+                .connectTimeout(connectionSettings.connectTimeoutMillis())
+                .threadName("Health-Check-Monitor-" + appId)
+                .userAgent("Styx/" + styxVersion);
+
+        tlsSettings.ifPresent(builder::tlsSettings);
+
+        return builder.build();
     }
 
     private static class ProxyToClientPipeline implements HttpHandler {
