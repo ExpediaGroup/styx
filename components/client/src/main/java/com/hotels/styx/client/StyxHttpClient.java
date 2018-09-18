@@ -327,7 +327,7 @@ public final class StyxHttpClient implements HttpClient {
                             false))
                     .build();
 
-            return new StyxHttpClient(connectionFactory, this);
+            return new StyxHttpClient(connectionFactory, this.copy());
         }
 
     }

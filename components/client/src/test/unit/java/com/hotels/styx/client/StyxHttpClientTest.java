@@ -45,6 +45,7 @@ import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith;
 import static java.lang.String.format;
+import static java.lang.Thread.getAllStackTraces;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -96,10 +97,24 @@ public class StyxHttpClientTest {
     }
 
     private static Boolean threadExists(String threadName) {
-        for (Thread t : Thread.getAllStackTraces().keySet()) {
-            if (t.getName().startsWith(threadName)) return true;
-        }
-        return false;
+        return getAllStackTraces().keySet().stream()
+                .anyMatch(thread ->
+                        thread.getName().startsWith(threadName));
+    }
+
+    @Test
+    public void cannotBeModifiedAfterCreated() throws ExecutionException, InterruptedException {
+        StyxHttpClient.Builder builder = new StyxHttpClient.Builder().userAgent("v1");
+
+        StyxHttpClient client = builder.build();
+
+        builder.userAgent("v2");
+
+        assertThat(client.send(httpRequest).get().status(), is(OK));
+        server.verify(
+                getRequestedFor(urlEqualTo("/"))
+                        .withHeader("User-Agent", equalTo("v1"))
+        );
     }
 
     @Test
@@ -210,21 +225,6 @@ public class StyxHttpClientTest {
         new StyxHttpClient.Builder()
                 .tlsSettings(null)
                 .build();
-    }
-
-    // TODO: Mikko:
-    // Note: this test case might fail depending on your ISP's configuration.
-    // Some ISPs may redirect failed DNS lookups to a specific landing page for
-    // advertising purposes.
-    @Test(expectedExceptions = OriginUnreachableException.class)
-    public void throwsOriginUnreachableExceptionWhenDnsResolutionFails() throws Throwable {
-        try {
-            new StyxHttpClient.Builder()
-                    .build()
-                    .send(get("/foo.txt").header(HOST, "a.b.c").build()).get();
-        } catch (ExecutionException cause) {
-            throw cause.getCause();
-        }
     }
 
     @Test

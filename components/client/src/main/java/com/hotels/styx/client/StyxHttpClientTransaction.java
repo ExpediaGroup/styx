@@ -22,8 +22,8 @@ import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import java.util.concurrent.CompletableFuture;
 
 class StyxHttpClientTransaction implements HttpClient.Transaction {
-    private StyxHttpClient.Builder transactionParameters;
-    private NettyConnectionFactory connectionFactory;
+    private final StyxHttpClient.Builder transactionParameters;
+    private final NettyConnectionFactory connectionFactory;
 
     public StyxHttpClientTransaction(NettyConnectionFactory connectionFactory, StyxHttpClient.Builder transactionParameters) {
         this.transactionParameters = transactionParameters;

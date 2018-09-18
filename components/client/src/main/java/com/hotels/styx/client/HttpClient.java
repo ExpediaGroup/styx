@@ -92,19 +92,6 @@ public interface HttpClient {
         /**
          * Sends a HTTP request message using this client.
          *
-         * @deprecated use {@link this::send} instead.
-         *
-         * @param request a full HTTP request object
-         * @return a future of full HTTP request object
-         */
-        @Deprecated
-        default CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request) {
-            return send(request);
-        }
-
-        /**
-         * Sends a HTTP request message using this client.
-         *
          * @param request a full HTTP request object
          * @return a future of full HTTP request object
          */

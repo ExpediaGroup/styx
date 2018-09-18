@@ -58,8 +58,7 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
      * @param channel the netty channel used
      * @param requestOperationFactory used to create operation objects that send http requests via this connection
      */
-    @VisibleForTesting
-    public <T> NettyConnection(Origin origin, Channel channel, HttpRequestOperationFactory requestOperationFactory, HttpConfig httpConfig, SslContext sslContext) {
+    public NettyConnection(Origin origin, Channel channel, HttpRequestOperationFactory requestOperationFactory, HttpConfig httpConfig, SslContext sslContext) {
         this.origin = requireNonNull(origin);
         this.channel = requireNonNull(channel);
         this.requestOperationFactory = requestOperationFactory;
