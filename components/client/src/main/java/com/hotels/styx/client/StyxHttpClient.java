@@ -240,11 +240,12 @@ public final class StyxHttpClient implements HttpClient {
          * experience longer inactivity than @{code responseTimeoutMillis} between any two consecutive
          * data packets.
          *
-         * @param responseTimeoutMs maximum tolerated inactivity on the TCP connection.
+         * @param duration maximum tolerated inactivity on the TCP connection.
+         * @param timeUnit time unit for @{code duration}
          * @return this {@link Builder}
          */
-        public Builder responseTimeout(int responseTimeoutMs) {
-            this.responseTimeout = responseTimeoutMs;
+        public Builder responseTimeout(int duration, TimeUnit timeUnit) {
+            this.responseTimeout = (int) timeUnit.toMillis(duration);
             return this;
         }
 

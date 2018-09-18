@@ -244,7 +244,7 @@ public class StyxHttpClientTest {
     @Test(expectedExceptions = ResponseTimeoutException.class)
     public void defaultResponseTimeout() throws Throwable {
         StyxHttpClient client = new StyxHttpClient.Builder()
-                .responseTimeout(1000)
+                .responseTimeout(1, SECONDS)
                 .build();
 
         server.stubFor(WireMock.get(urlStartingWith("/slowResponse"))
