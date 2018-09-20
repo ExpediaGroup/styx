@@ -21,6 +21,7 @@ import io.netty.util.ReferenceCountUtil;
 import rx.Observable;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 import static com.hotels.styx.api.FlowControlDisableOperator.disableFlowControl;
 import static io.netty.buffer.ByteBufUtil.getBytes;
@@ -93,5 +94,10 @@ class RxContentStream implements ContentStream {
                 .subscribe();
 
         return future;
+    }
+
+    @Override
+    public ContentStream map(Function<ByteBuf, ByteBuf> transformation) {
+        return new RxContentStream(this.stream.map(transformation::apply));
     }
 }

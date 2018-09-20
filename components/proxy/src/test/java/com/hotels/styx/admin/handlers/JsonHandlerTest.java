@@ -17,6 +17,7 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Clock;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
@@ -26,12 +27,11 @@ import java.util.function.Supplier;
 
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.common.StyxFutures.await;
-import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
 import static java.lang.System.currentTimeMillis;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import com.hotels.styx.api.HttpRequest;
 
 public class JsonHandlerTest {
     long time = currentTimeMillis();
@@ -102,11 +102,15 @@ public class JsonHandlerTest {
     }
 
     private String response(JsonHandler<?> handler) {
-        return bodyAsString(await(handler.handle(get("/").build(), HttpInterceptorContext.create()).asCompletableFuture()));
+        return responseFor(handler, get("/").build());
     }
 
     private String responseFor(JsonHandler<?> handler, HttpRequest request) {
-        return bodyAsString(await(handler.handle(request, HttpInterceptorContext.create()).asCompletableFuture()));
+        return await(
+                handler.handle(request, HttpInterceptorContext.create())
+                        .flatMap(response -> response.toFullResponse(1000000))
+                        .map(response -> response.bodyAs(UTF_8))
+                        .asCompletableFuture());
     }
 
     private static class Convertible {

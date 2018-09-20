@@ -22,11 +22,12 @@ import rx.Observable;
 
 import java.util.concurrent.ExecutionException;
 
+import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class ContentStreamTest {
+public class RxContentStreamTest {
 
 //    @Test
 //    public void peeksFirstNBytes() throws ExecutionException, InterruptedException {
@@ -49,4 +50,21 @@ public class ContentStreamTest {
 //
 //        assertThat(result, is("111111111111111111111111111111" + "222222222222222222222222222222" + "333333333333333333333333333333"));
 //    }
+
+
+    @Test
+    public void mapsContent() {
+        ByteBuf buf1 = copiedBuffer("aa", UTF_8);
+        ByteBuf buf2 = copiedBuffer("bbb", UTF_8);
+        ByteBuf buf3 = copiedBuffer("cccc", UTF_8);
+
+        RxContentStream stream1 = new RxContentStream(Observable.just(buf1, buf2, buf3));
+
+        ContentStream stream2 = stream1.map(it -> copiedBuffer(it.toString(UTF_8).toUpperCase(), UTF_8));
+        String output = new String(stream2.aggregate(100).toBlocking().first(), UTF_8);
+
+        assertThat(output, is("AABBBCCCC"));
+    }
+
+
 }

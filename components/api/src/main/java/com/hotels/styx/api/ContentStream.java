@@ -19,6 +19,7 @@ import io.netty.buffer.ByteBuf;
 import rx.Observable;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 public interface ContentStream {
 
@@ -31,5 +32,7 @@ public interface ContentStream {
     ContentStream remove();
 
     CompletableFuture<Boolean> discard();
+
+    ContentStream map(Function<ByteBuf, ByteBuf> transformation);
 
 }

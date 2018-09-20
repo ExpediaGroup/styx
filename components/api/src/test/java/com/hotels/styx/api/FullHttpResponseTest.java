@@ -427,21 +427,21 @@ public class FullHttpResponseTest {
         assertThat(response.bodyAs(UTF_8), is("Original body"));
     }
 
-//    @Test
-//    public void responseBodyCannotBeChangedViaStreamingMessage() {
-//        FullHttpResponse original = response(OK)
-//                .body("original", UTF_8)
-//                .build();
-//
-//        ByteBuf byteBuf = ((StyxCoreObservable<ByteBuf>) original.toStreamingResponse().body())
-//                .delegate()
-//                .toBlocking()
-//                .first();
-//
-//        byteBuf.array()[0] = 'A';
-//
-//        assertThat(original.bodyAs(UTF_8), is("original"));
-//    }
+    @Test
+    public void responseBodyCannotBeChangedViaStreamingMessage() {
+        FullHttpResponse original = response(OK)
+                .body("original", UTF_8)
+                .build();
+
+        ByteBuf byteBuf = ((RxContentStream) original.toStreamingResponse().body())
+                .rxObservable()
+                .toBlocking()
+                .first();
+
+        byteBuf.array()[0] = 'A';
+
+        assertThat(original.bodyAs(UTF_8), is("original"));
+    }
 
     @Test(expectedExceptions = io.netty.util.IllegalReferenceCountException.class)
     public void toFullResponseReleasesOriginalRefCountedBuffers() throws ExecutionException, InterruptedException {
