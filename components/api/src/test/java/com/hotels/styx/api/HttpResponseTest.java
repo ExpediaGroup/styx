@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -27,8 +25,6 @@ import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.ResponseCookie.responseCookie;
-import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.CREATED;
@@ -41,8 +37,11 @@ import static com.hotels.styx.api.HttpResponseStatus.SEE_OTHER;
 import static com.hotels.styx.api.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.ResponseCookie.responseCookie;
+import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
+import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -55,6 +54,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static rx.Observable.just;
 
 public class HttpResponseTest {
     @Test
@@ -63,7 +63,7 @@ public class HttpResponseTest {
                 .version(HTTP_1_0)
                 .header("HeaderName", "HeaderValue")
                 .cookies(responseCookie("CookieName", "CookieValue").build())
-                .body(body("foo", "bar"))
+                .body(new RxContentStream(just("foo", "bar").map(it -> copiedBuffer(it, UTF_8))))
                 .build();
 
         FullHttpResponse full = response.toFullResponse(0x1000)
@@ -92,7 +92,7 @@ public class HttpResponseTest {
     private Object[][] emptyBodyResponses() {
         return new Object[][]{
                 {response().build()},
-                {response().body(StyxCoreObservable.empty()).build()},
+                {response().body(new RxContentStream(StyxCoreObservable.empty())).build()},
         };
     }
 
@@ -380,17 +380,14 @@ public class HttpResponseTest {
         return HttpResponse.response(status);
     }
 
-    private static StyxObservable<ByteBuf> body(String... contents) {
-        return StyxObservable.from(Stream.of(contents)
-                .map(content -> Unpooled.copiedBuffer(content, UTF_8))
-                .collect(toList()));
+    private static ContentStream body(String... contents) {
+        return new RxContentStream(StyxObservable.from(Stream.of(contents)
+                .map(content -> copiedBuffer(content, UTF_8))
+                .collect(toList())));
     }
 
-    private static String bytesToString(StyxObservable<ByteBuf> body) throws Exception {
-        return body.reduce((buf, result) -> result + buf.toString(UTF_8), "")
-                .asCompletableFuture()
-                .get();
-
+    private static String bytesToString(ContentStream body) throws Exception {
+        return new String(body.aggregate(100000).toBlocking().first(), UTF_8);
     }
 
     private static byte[] bytes(String s) {

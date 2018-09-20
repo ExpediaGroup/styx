@@ -18,15 +18,17 @@ package com.hotels.styx.plugins
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.MockServer.responseSupplier
+import com.hotels.styx.api.ContentStreams.fromRxObservable
 import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.HttpResponse.response
-import com.hotels.styx.api.StyxObservable
+import com.hotels.styx.api.{ContentStream, ContentStreams, StyxObservable}
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{MockServer, StyxProxySpec}
 import io.netty.buffer.{ByteBuf, Unpooled}
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
+import rx.Observable
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
@@ -65,7 +67,7 @@ class AggregatingPluginSpec extends FunSpec
 
     it("Gets response from aggregating plugin (with body)") {
       mockServer.stub("/body", responseSupplier(
-        () => response(OK).body(StyxObservable.from(Seq(chunk("a"), chunk("b"), chunk("c"), chunk("d"), chunk("e")).asJava)).build()
+        () => response(OK).body(fromRxObservable(Observable.from(Seq(chunk("a"), chunk("b"), chunk("c"), chunk("d"), chunk("e")).asJava))).build()
       ))
 
       val request = get(styxServer.routerURL("/body")).build()

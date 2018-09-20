@@ -16,10 +16,10 @@
 package com.hotels.styx.client;
 
 import com.google.common.collect.ImmutableList;
+import com.hotels.styx.api.ContentStreams;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import io.netty.buffer.ByteBuf;
@@ -178,11 +178,9 @@ public class TransportTest {
         ByteBuf chunk2 = copiedBuffer("y", UTF_8);
         ByteBuf chunk3 = copiedBuffer("z", UTF_8);
 
-        StyxObservable<ByteBuf> contentStream = StyxObservable.from(ImmutableList.of(chunk1, chunk2, chunk3));
-
         HttpRequest aRequest = request
                 .newBuilder()
-                .body(contentStream)
+                .body(ContentStreams.fromRxObservable(Observable.from(ImmutableList.of(chunk1, chunk2, chunk3))))
                 .build();
 
         transport.send(aRequest, Optional.empty(), APP_ID)

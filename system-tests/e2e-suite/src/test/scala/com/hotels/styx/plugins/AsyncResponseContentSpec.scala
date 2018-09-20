@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.FullHttpRequest.get
-import com.hotels.styx.api._
+import com.hotels.styx.api.{ContentStreams, _}
 import com.hotels.styx.support._
 import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -88,14 +88,14 @@ class AsyncDelayPlugin extends PluginAdapter {
     chain.proceed(request)
       .flatMap(asJavaFunction((response: HttpResponse) => {
 
-        val transformedContent: Observable[ByteBuf] = toRxObservable(response.body())
+        val transformedContent: Observable[ByteBuf] = ContentStreams.toRxObservable(response.body())
           .observeOn(Schedulers.computation())
           .flatMap((byteBuf: ByteBuf) => {
             Thread.sleep(1000)
             Observable.just(byteBuf)
           })
 
-        StyxObservable.of(response.newBuilder().body(fromRxObservable(transformedContent)).build())
+        StyxObservable.of(response.newBuilder().body(ContentStreams.fromRxObservable(transformedContent)).build())
       }))
   }
 }

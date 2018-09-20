@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
+import static com.hotels.styx.api.ContentStreams.toRxObservable;
 import static io.netty.handler.codec.http.HttpHeaders.setTransferEncodingChunked;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.util.Objects.requireNonNull;
@@ -79,6 +79,8 @@ class HttpResponseWriter {
                 }
             });
 
+            // TODO: Mikko
+            // - The ContentObservable should have a mechanism to consume its contents.
             Subscription subscriber = toRxObservable(response.body()).subscribe(new Subscriber<ByteBuf>() {
                 @Override
                 public void onStart() {

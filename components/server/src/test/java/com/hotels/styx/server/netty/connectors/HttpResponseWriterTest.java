@@ -45,10 +45,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static com.hotels.styx.api.ContentStreams.fromRxObservable;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
-import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.buffer.Unpooled.copiedBuffer;

@@ -22,7 +22,7 @@ import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.StyxInternalObservables.{fromRxObservable, toRxObservable}
-import com.hotels.styx.api.{HttpRequest, HttpResponse, StyxObservable}
+import com.hotels.styx.api.{ContentStreams, _}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
@@ -88,7 +88,7 @@ import scala.compat.java8.FunctionConverters.asJavaFunction
 class AsyncRequestContentDelayPlugin extends PluginAdapter {
   override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
     val contentTransformation: rx.Observable[ByteBuf] =
-      toRxObservable(request.body())
+      ContentStreams.toRxObservable(request.body())
         .observeOn(ComputationScheduler())
         .flatMap(byteBuf => {
           Thread.sleep(1000)
@@ -97,7 +97,7 @@ class AsyncRequestContentDelayPlugin extends PluginAdapter {
 
     // This was split apart as it no longer compiles without the type annotation StyxObservable[HttpRequest]
     val mapped: StyxObservable[HttpRequest] = StyxObservable.of(request)
-      .map(asJavaFunction((request: HttpRequest) => request.newBuilder().body(fromRxObservable(contentTransformation)).build()))
+      .map(asJavaFunction((request: HttpRequest) => request.newBuilder().body(ContentStreams.fromRxObservable(contentTransformation)).build()))
 
     mapped
       .flatMap(asJavaFunction((request: HttpRequest) => chain.proceed(request)))

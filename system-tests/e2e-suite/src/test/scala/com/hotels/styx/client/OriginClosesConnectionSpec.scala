@@ -17,8 +17,9 @@ package com.hotels.styx.client
 
 import ch.qos.logback.classic.Level
 import com.google.common.base.Charsets._
+import com.hotels.styx.api.ContentStreams.toRxObservable
 import com.hotels.styx.api.FullHttpRequest.get
-import com.hotels.styx.api.{HttpResponse, extension}
+import com.hotels.styx.api.{ContentStreams, HttpResponse, extension}
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.HttpResponseStatus.OK
@@ -41,7 +42,6 @@ import io.netty.handler.codec.http._
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import rx.observers.TestSubscriber
-import com.hotels.styx.api.StyxInternalObservables.toRxObservable
 import com.hotels.styx.api.exceptions.ResponseTimeoutException
 
 import scala.compat.java8.StreamConverters._

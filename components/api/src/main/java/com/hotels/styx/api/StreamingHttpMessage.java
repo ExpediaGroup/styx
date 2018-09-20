@@ -15,9 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import io.netty.buffer.ByteBuf;
-import rx.Subscriber;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -48,7 +45,7 @@ interface StreamingHttpMessage {
      *
      * @return the body
      */
-    StyxObservable<ByteBuf> body();
+    ContentStream body();
 
     /**
      * Returns the value of the header with the specified {@code name}.
@@ -98,26 +95,6 @@ interface StreamingHttpMessage {
     }
 
     default CompletableFuture<Boolean> releaseContentBuffers() {
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
-
-        ((StyxCoreObservable<ByteBuf>) body()).delegate()
-                .subscribe(new Subscriber<ByteBuf>() {
-                    @Override
-                    public void onCompleted() {
-                        future.complete(true);
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        future.completeExceptionally(e);
-                    }
-
-                    @Override
-                    public void onNext(ByteBuf byteBuf) {
-                        byteBuf.release();
-                    }
-                });
-
-        return future;
+        return body().discard();
     }
 }

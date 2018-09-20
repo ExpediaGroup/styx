@@ -43,9 +43,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static com.hotels.styx.api.ContentStreams.toRxObservable;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.client.netty.connectionpool.NettyToStyxResponsePropagator.toStyxResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;

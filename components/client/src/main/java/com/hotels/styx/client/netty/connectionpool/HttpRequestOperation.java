@@ -16,12 +16,12 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.exceptions.TransportLostException;
-import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.api.HttpVersion;
+import com.hotels.styx.api.exceptions.TransportLostException;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Operation;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
@@ -45,8 +45,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Objects.toStringHelper;
+import static com.hotels.styx.api.ContentStreams.toRxObservable;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.extension.service.BackendService.DEFAULT_RESPONSE_TIMEOUT_MILLIS;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.lang.String.format;

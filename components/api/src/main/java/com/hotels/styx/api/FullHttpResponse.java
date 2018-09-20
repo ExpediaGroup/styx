@@ -17,7 +17,6 @@ package com.hotels.styx.api;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
-import rx.Observable;
 
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -32,10 +31,10 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
-import static com.hotels.styx.api.ResponseCookie.decode;
-import static com.hotels.styx.api.ResponseCookie.encode;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.ResponseCookie.decode;
+import static com.hotels.styx.api.ResponseCookie.encode;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
@@ -182,9 +181,9 @@ public class FullHttpResponse implements FullHttpMessage {
      */
     public HttpResponse toStreamingResponse() {
         if (this.body.length == 0) {
-            return new HttpResponse.Builder(this, new StyxCoreObservable<>(Observable.empty())).build();
+            return new HttpResponse.Builder(this, new RxContentStream()).build();
         } else {
-            return new HttpResponse.Builder(this, StyxObservable.of(copiedBuffer(this.body))).build();
+            return new HttpResponse.Builder(this, new RxContentStream(StyxObservable.of(copiedBuffer(this.body)))).build();
         }
     }
 

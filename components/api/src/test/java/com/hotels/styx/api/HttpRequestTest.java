@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import rx.Observable;
 
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
@@ -82,7 +83,7 @@ public class HttpRequestTest {
         ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
 
         HttpRequest original = HttpRequest.get("/foo")
-                .body(StyxObservable.of(content))
+                .body(new RxContentStream(Observable.just(content)))
                 .build();
 
         FullHttpRequest fullRequest = original.toFullRequest(100)
@@ -108,7 +109,7 @@ public class HttpRequestTest {
     private Object[][] emptyBodyRequests() {
         return new Object[][]{
                 {get("/foo/bar").build()},
-                {post("/foo/bar", StyxCoreObservable.empty()).build()},
+                {post("/foo/bar", new RxContentStream(Observable.empty())).build()},
         };
     }
 
@@ -295,7 +296,7 @@ public class HttpRequestTest {
 
     @Test
     public void shouldSetsContentLengthForNonStreamingBodyMessage() {
-        assertThat(put("/home").body(StyxObservable.of(copiedBuffer("Hello", UTF_8))).build().header(CONTENT_LENGTH), isAbsent());
+        assertThat(put("/home").body(new RxContentStream(Observable.just(copiedBuffer("Hello", UTF_8)))).build().header(CONTENT_LENGTH), isAbsent());
     }
 
     @Test
@@ -428,16 +429,18 @@ public class HttpRequestTest {
         assertThat(r1.cookie("x"), isAbsent());
     }
 
-    private static StyxObservable<ByteBuf> body(String... contents) {
-        return StyxObservable.from(Stream.of(contents)
-                .map(content -> copiedBuffer(content, UTF_8))
-                .collect(toList()));
+    private static ContentStream body(String... contents) {
+        return new RxContentStream(
+                Observable.from(
+                        Stream.of(contents)
+                                .map(content -> copiedBuffer(content, UTF_8))
+                                .collect(toList())
+                ));
     }
 
-    private static String bytesToString(StyxObservable<ByteBuf> body) throws ExecutionException, InterruptedException {
-        return body.reduce((byteBuf, result) -> result + byteBuf.toString(UTF_8), "")
-                .asCompletableFuture()
-                .get();
+    private static String bytesToString(ContentStream body) {
+        byte[] aggregate = body.aggregate(100000).toBlocking().first();
+        return new String(aggregate, UTF_8);
     }
 
     private static byte[] bytes(String content) {

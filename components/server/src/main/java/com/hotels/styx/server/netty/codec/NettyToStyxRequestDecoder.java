@@ -45,9 +45,9 @@ import java.util.Queue;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.Iterables.size;
+import static com.hotels.styx.api.ContentStreams.fromRxObservable;
 import static com.hotels.styx.api.HttpHeaderNames.EXPECT;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.server.UniqueIdSuppliers.UUID_VERSION_ONE_SUPPLIER;
 import static com.hotels.styx.server.netty.codec.UnwiseCharsEncoder.IGNORE;

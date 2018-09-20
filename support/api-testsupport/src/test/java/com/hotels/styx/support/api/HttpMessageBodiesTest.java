@@ -43,14 +43,14 @@ public class HttpMessageBodiesTest {
         assertThat(bodyAsString(request), is("Hello, World!"));
     }
 
-    @Test
-    public void createsRequestBodyStringFromObservable() {
-        HttpRequest request = post("/")
-                .body(byteBufObservable("Hello,", " Wor", "ld!"))
-                .build();
-
-        assertThat(bodyAsString(request), is("Hello, World!"));
-    }
+//    @Test
+//    public void createsRequestBodyStringFromObservable() {
+//        HttpRequest request = post("/")
+//                .body(byteBufObservable("Hello,", " Wor", "ld!"))
+//                .build();
+//
+//        assertThat(bodyAsString(request), is("Hello, World!"));
+//    }
 
     @Test
     public void createsResponseBodyString() {
@@ -62,14 +62,14 @@ public class HttpMessageBodiesTest {
         assertThat(bodyAsString(response), is("Hello, World!"));
     }
 
-    @Test
-    public void createsResponseBodyStringFromObservable() {
-        HttpResponse response = HttpResponse.response()
-                .body(byteBufObservable("Hello,", " Wor", "ld!"))
-                .build();
-
-        assertThat(bodyAsString(response), is("Hello, World!"));
-    }
+//    @Test
+//    public void createsResponseBodyStringFromObservable() {
+//        HttpResponse response = HttpResponse.response()
+//                .body(byteBufObservable("Hello,", " Wor", "ld!"))
+//                .build();
+//
+//        assertThat(bodyAsString(response), is("Hello, World!"));
+//    }
 
 
     private static StyxObservable<ByteBuf> byteBufObservable(String... strings) {
