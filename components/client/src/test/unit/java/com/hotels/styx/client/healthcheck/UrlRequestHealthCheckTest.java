@@ -57,8 +57,8 @@ public class UrlRequestHealthCheckTest {
             return respondWith(NOT_FOUND);
         };
 
-        new UrlRequestHealthCheck("/version-foo.txt", client, metricRegistry)
-                .check(someOrigin, state -> {
+        new UrlRequestHealthCheck("/version-foo.txt", metricRegistry)
+                .check(client, someOrigin, state -> {
                 });
 
         assertThat(requestedUrl, is("/version-foo.txt"));
@@ -68,8 +68,8 @@ public class UrlRequestHealthCheckTest {
     public void declaresOriginHealthyOnOkResponseCode() {
         HttpClient client = request -> respondWith(OK);
 
-        new UrlRequestHealthCheck("/version.txt", client, metricRegistry)
-                .check(someOrigin, state -> this.originState = state);
+        new UrlRequestHealthCheck("/version.txt", metricRegistry)
+                .check(client, someOrigin, state -> this.originState = state);
 
         assertThat(originState, is(HEALTHY));
         assertThat(metricRegistry.getMeters().size(), is(0));
@@ -79,8 +79,8 @@ public class UrlRequestHealthCheckTest {
     public void declaresOriginUnhealthyOnNon200Ok() {
         HttpClient client = request -> respondWith(NOT_FOUND);
 
-        new UrlRequestHealthCheck("/version.txt", client, metricRegistry)
-                .check(someOrigin, state -> this.originState = state);
+        new UrlRequestHealthCheck("/version.txt", metricRegistry)
+                .check(client, someOrigin, state -> this.originState = state);
 
         assertThat(originState, is(UNHEALTHY));
         assertThat(metricRegistry.meter("origins.healthcheck.failure.generic-app").getCount(), is(1L));
@@ -92,8 +92,8 @@ public class UrlRequestHealthCheckTest {
     public void declaredOriginUnhealthyOnTransportException() {
         HttpClient client = request -> respondWith(new RuntimeException("health check failure, as expected"));
 
-        new UrlRequestHealthCheck("/version.txt", client, metricRegistry)
-                .check(someOrigin, state -> this.originState = state);
+        new UrlRequestHealthCheck("/version.txt", metricRegistry)
+                .check(client, someOrigin, state -> this.originState = state);
 
         assertThat(originState, is(UNHEALTHY));
         assertThat(metricRegistry.meter("origins.healthcheck.failure.generic-app").getCount(), is(1L));

@@ -68,7 +68,7 @@ public final class StyxHttpClient implements HttpClient {
     /**
      * Indicates that a request should be sent using secure {@code https} protocol.
      *
-     * @return a {@HttpClient.Transaction} instance that allows fluent method chaining
+     * @return a {@link HttpClient.Transaction} instance that allows fluent method chaining
      */
     public HttpClient.Transaction secure() {
         return new StyxHttpClientTransaction(connectionFactory, this.transactionParameters.copy().secure(true));
@@ -81,7 +81,7 @@ public final class StyxHttpClient implements HttpClient {
      * A value of (@code false} indicates that a request should be sent over an insecure {@code http} protocol.
      *
      * @param secure a boolean flag to indicate if a request should be sent over a secure protocol or not
-     * @return a {@HttpClient.Transaction} instance that allows fluent method chaining
+     * @return a {@link HttpClient.Transaction} instance that allows fluent method chaining
      */
     public HttpClient.Transaction secure(boolean secure) {
         return new StyxHttpClientTransaction(connectionFactory, this.transactionParameters.copy().secure(secure));
@@ -115,7 +115,6 @@ public final class StyxHttpClient implements HttpClient {
         );
 
         return fromSingleObservable(responseObservable);
-
     }
 
     private static FullHttpRequest addUserAgent(String userAgent, FullHttpRequest request) {
@@ -128,7 +127,6 @@ public final class StyxHttpClient implements HttpClient {
         }
     }
 
-
     private static SslContext getSslContext(boolean isHttps, TlsSettings tlsSettings) {
         if (isHttps) {
             return Optional.of(tlsSettings != null ? tlsSettings : new TlsSettings.Builder().build())
@@ -137,7 +135,6 @@ public final class StyxHttpClient implements HttpClient {
         } else {
             return null;
         }
-
     }
 
     private static Origin originFromRequest(FullHttpRequest request, Boolean isHttps) {
@@ -156,7 +153,6 @@ public final class StyxHttpClient implements HttpClient {
 
         return newOriginBuilder(host.getHostText(), host.getPort()).build();
     }
-
 
     /**
      * Builder for {@link StyxHttpClient}.
@@ -332,6 +328,5 @@ public final class StyxHttpClient implements HttpClient {
 
             return new StyxHttpClient(connectionFactory, this.copy());
         }
-
     }
 }

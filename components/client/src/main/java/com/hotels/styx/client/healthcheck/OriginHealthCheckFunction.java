@@ -16,26 +16,20 @@
 package com.hotels.styx.client.healthcheck;
 
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.client.HttpClient;
 
 /**
  * A function that checks the health of origins.
  */
 public interface OriginHealthCheckFunction {
     /**
-     * An enum that can be used as the type of the health-check result. Possible values are HEALTHY and UNHEALTHY.
-     */
-    enum OriginState {
-        HEALTHY,
-        UNHEALTHY
-    }
-
-    /**
      * Check the health of an origin.
      *
+     * @param client TODO
      * @param origin an origin
      * @param responseCallback a callback to be called when an origin state has been determined by a health-check
      */
-    void check(Origin origin, Callback responseCallback);
+    void check(HttpClient client, Origin origin, Callback responseCallback);
 
     /**
      * A callback interface to communicate origin health check outcome.
@@ -47,5 +41,13 @@ public interface OriginHealthCheckFunction {
          * @param state the state of the origin
          */
         void originStateResponse(OriginState state);
+    }
+
+    /**
+     * An enum that can be used as the type of the health-check result. Possible values are HEALTHY and UNHEALTHY.
+     */
+    enum OriginState {
+        HEALTHY,
+        UNHEALTHY
     }
 }

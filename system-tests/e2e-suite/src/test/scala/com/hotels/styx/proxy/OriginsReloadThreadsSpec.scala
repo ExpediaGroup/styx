@@ -20,13 +20,14 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.hotels.styx.api.FullHttpRequest
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HealthCheckConfig, HttpBackend, Origins}
+import com.hotels.styx.threads.Threads
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 
 import scala.concurrent.duration._
 
-class OriginsReloadRepetitionSpec extends FunSpec
+class OriginsReloadThreadsSpec extends FunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration
   with StyxClientSupplier
@@ -36,7 +37,6 @@ class OriginsReloadRepetitionSpec extends FunSpec
   val backend2 = FakeHttpServer.HttpStartupConfig(appId = "appOne", originId = "appOne-02").start()
   val backend3 = FakeHttpServer.HttpStartupConfig(appId = "appOne", originId = "appOne-03").start()
 
-  // TODO revert changes to this file after squashing commits
   val healthCheckConfig1 = HealthCheckConfig(Some("/any"), interval = Duration(500, MILLISECONDS))
 
   override protected def beforeAll(): Unit = {
@@ -56,10 +56,11 @@ class OriginsReloadRepetitionSpec extends FunSpec
   }
 
   describe("Reload Origins Endpoint") {
-    // this test was created to precisely reproduce a confusing bug we encountered.
-    it("should be able to remove and re-add origins") {
+    it("should not leak threads") {
+      val initialThreads = Threads.allThreadsDump()
+
       styxServer.setBackends(
-        "/foobar" -> HttpBackend("appOne", Origins(backend1, backend3))
+        "/foobar" -> HttpBackend("appOne", Origins(backend1, backend3), healthCheckConfig = healthCheckConfig1)
       )
 
       eventually(timeout(1 seconds)) {
@@ -71,7 +72,7 @@ class OriginsReloadRepetitionSpec extends FunSpec
       }
 
       styxServer.setBackends(
-        "/foobar" -> HttpBackend("appOne", Origins(backend3))
+        "/foobar" -> HttpBackend("appOne", Origins(backend3), healthCheckConfig = healthCheckConfig1)
       )
 
       eventually(timeout(1 seconds)) {
@@ -83,7 +84,7 @@ class OriginsReloadRepetitionSpec extends FunSpec
       }
 
       styxServer.setBackends(
-        "/foobar" -> HttpBackend("appOne", Origins(backend1, backend2, backend3))
+        "/foobar" -> HttpBackend("appOne", Origins(backend1, backend2, backend3), healthCheckConfig = healthCheckConfig1)
       )
 
       eventually(timeout(1 seconds)) {
@@ -92,6 +93,19 @@ class OriginsReloadRepetitionSpec extends FunSpec
         response.bodyAs(UTF_8) should include("localhost:" + backend1.port())
         response.bodyAs(UTF_8) should include("localhost:" + backend2.port())
         response.bodyAs(UTF_8) should include("localhost:" + backend3.port())
+      }
+
+      eventually(timeout(5 seconds)) {
+        val finalThreads = Threads.allThreadsDump()
+
+        val initialHCClientThreads = initialThreads.filter("Health-Check-Monitor").size()
+        val finalHCClientThreads = finalThreads.filter("Health-Check-Monitor").size()
+
+        val initialHCScheduleThreads = initialThreads.filter("STYX-ORIGINS-MONITOR").size()
+        val finalHCScheduleThreads = finalThreads.filter("STYX-ORIGINS-MONITOR").size()
+
+        assert(initialHCClientThreads == finalHCClientThreads)
+        assert(initialHCScheduleThreads == finalHCScheduleThreads)
       }
     }
   }

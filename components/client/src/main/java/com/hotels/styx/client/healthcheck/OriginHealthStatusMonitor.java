@@ -19,6 +19,7 @@ import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
 import com.hotels.styx.api.extension.service.spi.StyxService;
+import com.hotels.styx.client.HttpClient;
 
 import java.util.EventListener;
 import java.util.Set;
@@ -37,10 +38,11 @@ public interface OriginHealthStatusMonitor extends StyxService {
          *
          * @param id                the backend service id
          * @param healthCheckConfig configuration of the health check
-         * @param supplier          of the actual function which decided if the origin is healthy or not
+         * @param healthCheckFunction          of the actual function which decided if the origin is healthy or not
+         * @param client TODO
          * @return the monitor of the origin
          */
-        OriginHealthStatusMonitor create(Id id, HealthCheckConfig healthCheckConfig, Supplier<OriginHealthCheckFunction> supplier);
+        OriginHealthStatusMonitor create(Id id, HealthCheckConfig healthCheckConfig, Supplier<OriginHealthCheckFunction> healthCheckFunction, HttpClient client);
     }
 
     /**
