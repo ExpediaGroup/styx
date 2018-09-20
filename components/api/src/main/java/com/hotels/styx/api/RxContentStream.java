@@ -21,6 +21,7 @@ import io.netty.util.ReferenceCountUtil;
 import rx.Observable;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hotels.styx.api.FlowControlDisableOperator.disableFlowControl;
@@ -97,7 +98,31 @@ class RxContentStream implements ContentStream {
     }
 
     @Override
-    public ContentStream map(Function<ByteBuf, ByteBuf> transformation) {
-        return new RxContentStream(this.stream.map(transformation::apply));
+    public ContentStream map(Function<Buffer, Buffer> transformation) {
+        return new RxContentStream(this.stream
+                .map(Buffer::new)
+                .map(transformation::apply)
+                .map(buffer -> buffer.delegate));
     }
+
+    public void consume(Consumer<Event> consumer) {
+        stream.subscribe(buf -> consumer.accept(toContentEvent(buf)),
+                error -> consumer.accept(toErrorEvent(error)),
+                () -> consumer.accept(toEndOfStreamEvent()));
+    }
+
+    private static ContentEventInternal toContentEvent(ByteBuf buf) {
+        return new ContentEventInternal(new Buffer(buf));
+    }
+
+    private static EndOfStreamEvent toEndOfStreamEvent() {
+        return new EndOfStreamEvent() {
+        };
+    }
+
+    private static ErrorEvent toErrorEvent(Throwable cause) {
+        return () -> cause;
+    }
+
+
 }

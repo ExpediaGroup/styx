@@ -20,7 +20,8 @@ import io.netty.buffer.Unpooled;
 import org.testng.annotations.Test;
 import rx.Observable;
 
-import java.util.concurrent.ExecutionException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -60,11 +61,37 @@ public class RxContentStreamTest {
 
         RxContentStream stream1 = new RxContentStream(Observable.just(buf1, buf2, buf3));
 
-        ContentStream stream2 = stream1.map(it -> copiedBuffer(it.toString(UTF_8).toUpperCase(), UTF_8));
+        ContentStream stream2 = stream1.map(it -> new Buffer(copiedBuffer(new String(it.content(), UTF_8).toUpperCase(), UTF_8)));
         String output = new String(stream2.aggregate(100).toBlocking().first(), UTF_8);
 
         assertThat(output, is("AABBBCCCC"));
     }
 
+    @Test
+    public void consumesContent() {
+        List<String> output = new ArrayList<>();
 
+        ByteBuf buf1 = copiedBuffer("aa", UTF_8);
+        ByteBuf buf2 = copiedBuffer("bbb", UTF_8);
+        ByteBuf buf3 = copiedBuffer("cccc", UTF_8);
+
+        RxContentStream stream = new RxContentStream(Observable.just(buf1, buf2, buf3));
+
+        stream.consume(event -> {
+            System.out.println("got event: " + event);
+            switch (event.type()) {
+                case Content:
+                    output.add(new String(event.asContent().content().content(), UTF_8));
+                    break;
+                case Error:
+                    break;
+                case EndOfStream:
+                    output.add("-fin");
+                    break;
+            }
+
+        });
+
+        assertThat(String.join("", output), is("aabbbcccc-fin"));
+    }
 }

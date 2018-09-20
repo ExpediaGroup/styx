@@ -15,15 +15,17 @@
  */
 package com.hotels.styx.api;
 
-import io.netty.buffer.ByteBuf;
 import rx.Observable;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+/**
+ * Content stream abstraction.
+ */
 public interface ContentStream {
 
-    default CompletableFuture<ByteBuf> peek(int n) {
+    default CompletableFuture<Buffer> peek(int n) {
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
@@ -33,6 +35,58 @@ public interface ContentStream {
 
     CompletableFuture<Boolean> discard();
 
-    ContentStream map(Function<ByteBuf, ByteBuf> transformation);
+    ContentStream map(Function<Buffer, Buffer> transformation);
 
+    /**
+     * Content Stream Event.
+     */
+    interface Event {
+        enum Type {
+            Content, Error, EndOfStream
+        }
+
+        default Type type() {
+            if (this instanceof ContentEvent) {
+                return Type.Content;
+            } else if (this instanceof EndOfStreamEvent) {
+                return Type.EndOfStream;
+            } else {
+                return Type.Error;
+            }
+        }
+
+        default ContentEvent asContent() {
+            return (ContentEvent) this;
+        }
+
+        default EndOfStreamEvent asEndOfStream() {
+            return (EndOfStreamEvent) this;
+        }
+
+        default ErrorEvent asError() {
+            return (ErrorEvent) this;
+        }
+    };
+
+    /**
+     * Content event.
+     */
+    interface ContentEvent extends Event {
+        int size();
+        Buffer content();
+    }
+
+    /**
+     * Error occurred in content stream.
+     */
+    interface ErrorEvent extends Event {
+        Throwable cause();
+    }
+
+    /**
+     * End of stream event.
+     */
+    interface EndOfStreamEvent extends Event {
+
+    }
 }
