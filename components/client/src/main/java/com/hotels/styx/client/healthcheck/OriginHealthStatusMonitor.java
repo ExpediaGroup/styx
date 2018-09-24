@@ -39,7 +39,7 @@ public interface OriginHealthStatusMonitor extends StyxService {
          * @param id                the backend service id
          * @param healthCheckConfig configuration of the health check
          * @param healthCheckFunction          of the actual function which decided if the origin is healthy or not
-         * @param client TODO
+         * @param client client that will perform the health-check
          * @return the monitor of the origin
          */
         OriginHealthStatusMonitor create(Id id, HealthCheckConfig healthCheckConfig, Supplier<OriginHealthCheckFunction> healthCheckFunction, HttpClient client);

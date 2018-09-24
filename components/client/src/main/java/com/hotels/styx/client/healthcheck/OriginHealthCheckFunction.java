@@ -25,7 +25,7 @@ public interface OriginHealthCheckFunction {
     /**
      * Check the health of an origin.
      *
-     * @param client TODO
+     * @param client client that will perform the health-check
      * @param origin an origin
      * @param responseCallback a callback to be called when an origin state has been determined by a health-check
      */

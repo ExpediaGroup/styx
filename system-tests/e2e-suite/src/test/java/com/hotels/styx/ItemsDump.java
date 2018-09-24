@@ -124,15 +124,15 @@ public class ItemsDump {
     }
 
     /**
-     * TODO
+     * Filters the items to only include ones whose String representation contains the provided string.
      *
-     * @param string
-     * @return
+     * @param contained string that must be present in items
+     * @return filtered dump
      */
-    public ItemsDump filter(String string) {
+    public ItemsDump filter(String contained) {
         return dump(items.stream()
                 .map(Object::toString)
-                .filter(s -> s.contains(string))
+                .filter(s -> s.contains(contained))
                 .collect(toList()));
     }
 

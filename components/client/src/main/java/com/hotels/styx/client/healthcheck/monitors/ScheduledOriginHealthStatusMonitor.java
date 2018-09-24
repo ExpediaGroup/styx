@@ -59,7 +59,7 @@ public class ScheduledOriginHealthStatusMonitor extends AbstractStyxService impl
      * @param hostHealthMonitorExecutor service that will execute health-checks on a schedule
      * @param healthCheckingFunction function that performs health-checks
      * @param schedule schedule to follow for health-checking
-     * @param client TODO
+     * @param client client that will perform the health-check
      */
     public ScheduledOriginHealthStatusMonitor(ScheduledExecutorService hostHealthMonitorExecutor,
                                               OriginHealthCheckFunction healthCheckingFunction,
