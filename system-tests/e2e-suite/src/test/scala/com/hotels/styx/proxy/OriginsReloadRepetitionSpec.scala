@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.api.FullHttpRequest
 import com.hotels.styx.support.backends.FakeHttpServer
-import com.hotels.styx.support.configuration.{HealthCheckConfig, HttpBackend, Origins}
+import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
@@ -36,14 +36,11 @@ class OriginsReloadRepetitionSpec extends FunSpec
   val backend2 = FakeHttpServer.HttpStartupConfig(appId = "appOne", originId = "appOne-02").start()
   val backend3 = FakeHttpServer.HttpStartupConfig(appId = "appOne", originId = "appOne-03").start()
 
-  // TODO revert changes to this file after squashing commits
-  val healthCheckConfig1 = HealthCheckConfig(Some("/any"), interval = Duration(500, MILLISECONDS))
-
   override protected def beforeAll(): Unit = {
     super.beforeAll()
 
     styxServer.setBackends(
-      "/foobar" -> HttpBackend("appOne", Origins(backend1, backend2, backend3), healthCheckConfig = healthCheckConfig1)
+      "/foobar" -> HttpBackend("appOne", Origins(backend1, backend2, backend3))
     )
   }
 
