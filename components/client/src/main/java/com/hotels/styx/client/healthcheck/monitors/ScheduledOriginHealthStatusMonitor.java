@@ -30,9 +30,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static com.google.common.base.Throwables.propagate;
 import static com.google.common.collect.ImmutableSet.copyOf;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.RUNNING;
+import static java.lang.Thread.currentThread;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.CompletableFuture.runAsync;
@@ -121,7 +121,8 @@ public class ScheduledOriginHealthStatusMonitor extends AbstractStyxService impl
             try {
                 hostHealthMonitorExecutor.awaitTermination(10, SECONDS);
             } catch (InterruptedException e) {
-                throw propagate(e);
+                currentThread().interrupt();
+                throw new RuntimeException(e);
             }
         });
     }

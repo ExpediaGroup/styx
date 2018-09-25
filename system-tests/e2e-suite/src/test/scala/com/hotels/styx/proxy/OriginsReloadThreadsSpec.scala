@@ -55,8 +55,9 @@ class OriginsReloadThreadsSpec extends FunSpec
     super.afterAll()
   }
 
-  describe("Reload Origins Endpoint") {
-    it("should not leak threads") {
+  describe("Styx health checking") {
+    // See https://github.com/HotelsDotCom/styx/issues/291
+    it("cleans up resources after origins reload") {
       val initialThreads = Threads.allThreadsDump()
 
       styxServer.setBackends(
