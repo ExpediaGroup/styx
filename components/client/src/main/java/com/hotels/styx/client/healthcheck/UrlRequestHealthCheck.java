@@ -27,7 +27,6 @@ import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
 import static java.lang.String.format;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Health-check that works by making a request to a URL and ensuring that it gets an HTTP 200 OK code back.
@@ -37,19 +36,16 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
     private static final MeterFormat CORRECTED_METER_FORMAT = new MeterFormat("origins.%s.healthcheck.failure");
 
     private final String healthCheckUri;
-    private final HttpClient client;
     private final SimpleCache<Origin, FailureMeter> meterCache;
 
     /**
      * Construct an instance.
      *
      * @param healthCheckUri URI to make health-check requests to
-     * @param client         HTTP client to make health-check requests with
      * @param metricRegistry metric registry
      */
-    public UrlRequestHealthCheck(String healthCheckUri, HttpClient client, MetricRegistry metricRegistry) {
+    public UrlRequestHealthCheck(String healthCheckUri, MetricRegistry metricRegistry) {
         this.healthCheckUri = uriWithInitialSlash(healthCheckUri);
-        this.client = requireNonNull(client);
         this.meterCache = new SimpleCache<>(origin -> new FailureMeter(origin, metricRegistry));
     }
 
@@ -58,7 +54,7 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
     }
 
     @Override
-    public void check(Origin origin, OriginHealthCheckFunction.Callback responseCallback) {
+    public void check(HttpClient client, Origin origin, OriginHealthCheckFunction.Callback responseCallback) {
         FullHttpRequest request = newHealthCheckRequestFor(origin);
 
         client.sendRequest(request)

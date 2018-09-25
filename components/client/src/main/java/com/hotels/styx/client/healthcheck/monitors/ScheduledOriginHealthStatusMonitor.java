@@ -19,6 +19,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.Schedule;
@@ -31,8 +32,11 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static com.google.common.collect.ImmutableSet.copyOf;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.RUNNING;
+import static java.lang.Thread.currentThread;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.CompletableFuture.runAsync;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * An {@link com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor} that monitors the origins state
@@ -45,6 +49,8 @@ public class ScheduledOriginHealthStatusMonitor extends AbstractStyxService impl
     private final ScheduledExecutorService hostHealthMonitorExecutor;
     private final OriginHealthCheckFunction healthCheckingFunction;
     private final Schedule schedule;
+    private final HttpClient client;
+
     private final Set<Origin> origins;
 
     /**
@@ -53,13 +59,18 @@ public class ScheduledOriginHealthStatusMonitor extends AbstractStyxService impl
      * @param hostHealthMonitorExecutor service that will execute health-checks on a schedule
      * @param healthCheckingFunction function that performs health-checks
      * @param schedule schedule to follow for health-checking
+     * @param client client that will perform the health-check
      */
-    public ScheduledOriginHealthStatusMonitor(ScheduledExecutorService hostHealthMonitorExecutor, OriginHealthCheckFunction healthCheckingFunction,
-                                              Schedule schedule) {
+    public ScheduledOriginHealthStatusMonitor(ScheduledExecutorService hostHealthMonitorExecutor,
+                                              OriginHealthCheckFunction healthCheckingFunction,
+                                              Schedule schedule,
+                                              HttpClient client) {
         super("ScheduledOriginHealthStatusMonitor");
         this.hostHealthMonitorExecutor = requireNonNull(hostHealthMonitorExecutor);
         this.healthCheckingFunction = requireNonNull(healthCheckingFunction);
         this.schedule = requireNonNull(schedule);
+        this.client = requireNonNull(client);
+
         this.origins = new ConcurrentSkipListSet<>();
     }
 
@@ -105,7 +116,15 @@ public class ScheduledOriginHealthStatusMonitor extends AbstractStyxService impl
     @Override
     protected CompletableFuture<Void> stopService() {
         this.hostHealthMonitorExecutor.shutdown();
-        return completedFuture(null);
+
+        return runAsync(() -> {
+            try {
+                hostHealthMonitorExecutor.awaitTermination(10, SECONDS);
+            } catch (InterruptedException e) {
+                currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private void scheduleHealthCheck() {
@@ -120,7 +139,7 @@ public class ScheduledOriginHealthStatusMonitor extends AbstractStyxService impl
     }
 
     private void healthCheckOriginAndAnnounceListeners(Origin origin) {
-        healthCheckingFunction.check(origin, state -> {
+        healthCheckingFunction.check(client, origin, state -> {
             switch (state) {
                 case HEALTHY:
                     announceOriginHealthy(origin);

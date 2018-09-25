@@ -17,6 +17,7 @@ package com.hotels.styx.client.connectionpool;
 
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitorFactory;
 import com.hotels.styx.client.healthcheck.monitors.AnomalyExcludingOriginHealthStatusMonitor;
@@ -29,6 +30,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.mockito.Mockito.mock;
 
 public class OriginHealthStatusMonitorFactoryTest {
     final Id id = GENERIC_APP;
@@ -39,7 +41,7 @@ public class OriginHealthStatusMonitorFactoryTest {
         HealthCheckConfig healthCheckConfig = newHealthCheckConfigBuilder()
                 .build();
 
-        assertThat(factory.create(id, healthCheckConfig, null),
+        assertThat(factory.create(id, healthCheckConfig, null, null),
                 is(instanceOf(NoOriginHealthStatusMonitor.class)));
     }
 
@@ -50,9 +52,9 @@ public class OriginHealthStatusMonitorFactoryTest {
                 .interval(5, MILLISECONDS)
                 .build();
 
-        OriginHealthCheckFunction checkFunction = (origin, callback) -> {
+        OriginHealthCheckFunction checkFunction = (client, origin, callback) -> {
         };
-        assertThat(factory.create(id, healthCheckConfig, () -> checkFunction),
+        assertThat(factory.create( id, healthCheckConfig, () -> checkFunction, mock(HttpClient.class)),
                 is(instanceOf(AnomalyExcludingOriginHealthStatusMonitor.class)));
     }
 

@@ -26,11 +26,9 @@ import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
-import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.Connection;
-import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxHeaderConfig;
@@ -128,17 +126,9 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .metricRegistry(environment.metricRegistry())
                     .build();
 
-            OriginHealthStatusMonitor healthStatusMonitor = new OriginHealthStatusMonitorFactory()
-                    .create(backendService.id(),
-                            backendService.healthCheckConfig(),
-                            () -> originHealthCheckFunction(
-                                    backendService.id(),
-                                    environment.metricRegistry(),
-                                    backendService.tlsSettings(),
-                                    backendService.connectionPoolConfig(),
-                                    backendService.healthCheckConfig(),
-                                    environment.buildInfo().releaseVersion()
-                            ));
+            StyxHttpClient healthCheckClient = healthCheckClient(backendService);
+
+            OriginHealthStatusMonitor healthStatusMonitor = healthStatusMonitor(backendService, healthCheckClient);
 
             StyxHostHttpClient.Factory hostClientFactory = (ConnectionPool connectionPool) -> {
                 StyxHeaderConfig headerConfig = environment.styxConfig().styxHeaderConfig();
@@ -154,12 +144,37 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     .hostClientFactory(hostClientFactory)
                     .build();
 
-            pipeline = new ProxyToClientPipeline(newClientHandler(backendService, inventory, originStatsFactory), inventory);
+            pipeline = new ProxyToClientPipeline(newClientHandler(backendService, inventory, originStatsFactory), () -> {
+                inventory.close();
+                healthStatusMonitor.stop();
+                healthCheckClient.shutdown();
+            });
 
             routes.put(backendService.path(), pipeline);
             LOG.info("added path={} current routes={}", backendService.path(), routes.keySet());
-
         });
+    }
+
+    private OriginHealthStatusMonitor healthStatusMonitor(BackendService backendService, StyxHttpClient healthCheckClient) {
+        return new OriginHealthStatusMonitorFactory()
+                        .create(backendService.id(),
+                                backendService.healthCheckConfig(),
+                                () -> originHealthCheckFunction(
+                                        backendService.id(),
+                                        environment.metricRegistry(),
+                                        backendService.healthCheckConfig()),
+                                healthCheckClient);
+    }
+
+    private StyxHttpClient healthCheckClient(BackendService backendService) {
+        StyxHttpClient.Builder builder = new StyxHttpClient.Builder()
+                .connectTimeout(backendService.connectionPoolConfig().connectTimeoutMillis(), MILLISECONDS)
+                .threadName("Health-Check-Monitor-" + backendService.id())
+                .userAgent("Styx/" + environment.buildInfo().releaseVersion());
+
+        backendService.tlsSettings().ifPresent(builder::tlsSettings);
+
+        return builder.build();
     }
 
     private Connection.Factory connectionFactory(
@@ -168,6 +183,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             boolean longFormat,
             OriginStatsFactory originStatsFactory,
             long connectionExpiration) {
+
         Connection.Factory factory = new NettyConnectionFactory.Builder()
                 .name("Styx")
                 .httpRequestOperationFactory(
@@ -198,41 +214,22 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     private static OriginHealthCheckFunction originHealthCheckFunction(
             Id appId,
             MetricRegistry metricRegistry,
-            Optional<TlsSettings> tlsSettings,
-            ConnectionPoolSettings connectionPoolSettings,
-            HealthCheckConfig healthCheckConfig,
-            String styxVersion) {
-
-        ConnectionSettings connectionSettings = new ConnectionSettings(
-                connectionPoolSettings.connectTimeoutMillis());
-
-        StyxHttpClient client = healthCheckClient(appId, tlsSettings, styxVersion, connectionSettings);
+            HealthCheckConfig healthCheckConfig) {
 
         String healthCheckUri = healthCheckConfig
                 .uri()
                 .orElseThrow(() -> new IllegalArgumentException("Health check URI missing for " + appId));
 
-        return new UrlRequestHealthCheck(healthCheckUri, client, metricRegistry);
-    }
-
-    private static StyxHttpClient healthCheckClient(Id appId, Optional<TlsSettings> tlsSettings, String styxVersion, ConnectionSettings connectionSettings) {
-        StyxHttpClient.Builder builder = new StyxHttpClient.Builder()
-                .connectTimeout(connectionSettings.connectTimeoutMillis(), MILLISECONDS)
-                .threadName("Health-Check-Monitor-" + appId)
-                .userAgent("Styx/" + styxVersion);
-
-        tlsSettings.ifPresent(builder::tlsSettings);
-
-        return builder.build();
+        return new UrlRequestHealthCheck(healthCheckUri, metricRegistry);
     }
 
     private static class ProxyToClientPipeline implements HttpHandler {
         private final HttpHandler client;
-        private final OriginsInventory originsInventory;
+        private final Runnable onClose;
 
-        ProxyToClientPipeline(HttpHandler httpClient, OriginsInventory originsInventory) {
+        ProxyToClientPipeline(HttpHandler httpClient, Runnable onClose) {
             this.client = requireNonNull(httpClient);
-            this.originsInventory = originsInventory;
+            this.onClose = requireNonNull(onClose);
         }
 
         @Override
@@ -241,7 +238,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         }
 
         public void close() {
-            originsInventory.close();
+            onClose.run();
         }
     }
 }

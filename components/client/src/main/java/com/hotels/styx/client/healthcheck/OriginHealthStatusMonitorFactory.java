@@ -18,6 +18,7 @@ package com.hotels.styx.client.healthcheck;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.healthcheck.monitors.AnomalyExcludingOriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.monitors.NoOriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.monitors.ScheduledOriginHealthStatusMonitor;
@@ -34,16 +35,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * Factory that produces {@link OriginHealthStatusMonitor}s based on configuration.
  */
 public final class OriginHealthStatusMonitorFactory implements OriginHealthStatusMonitor.Factory {
-    /**
-     * Create a new monitor, given an application ID, health-check configuration and a supplier providing a function for the health check.
-     *
-     * @param id                application ID
-     * @param healthCheckConfig health check configuration
-     * @param supplier          function supplier
-     * @return a new monitor
-     */
     @Override
-    public OriginHealthStatusMonitor create(Id id, HealthCheckConfig healthCheckConfig, Supplier<OriginHealthCheckFunction> supplier) {
+    public OriginHealthStatusMonitor create(Id id, HealthCheckConfig healthCheckConfig, Supplier<OriginHealthCheckFunction> healthCheckFunction, HttpClient client) {
         if (healthCheckConfig == null || !healthCheckConfig.isEnabled()) {
             return new NoOriginHealthStatusMonitor();
         }
@@ -55,10 +48,10 @@ public final class OriginHealthStatusMonitorFactory implements OriginHealthStatu
 
         ScheduledOriginHealthStatusMonitor healthStatusMonitor = new ScheduledOriginHealthStatusMonitor(
                 executorService,
-                supplier.get(),
-                new Schedule(healthCheckConfig.intervalMillis(), MILLISECONDS));
+                healthCheckFunction.get(),
+                new Schedule(healthCheckConfig.intervalMillis(), MILLISECONDS),
+                client);
 
         return new AnomalyExcludingOriginHealthStatusMonitor(healthStatusMonitor, healthCheckConfig.healthyThreshold(), healthCheckConfig.unhealthyThreshold());
     }
-
 }

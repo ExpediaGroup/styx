@@ -16,13 +16,13 @@
 package com.hotels.styx.client.healthcheck.monitors;
 
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.Schedule;
 import com.hotels.styx.support.DeterministicScheduler;
 import org.testng.annotations.Test;
 
-import static com.google.common.net.HostAndPort.fromParts;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.HEALTHY;
 import static com.hotels.styx.client.healthcheck.OriginHealthCheckFunction.OriginState.UNHEALTHY;
@@ -90,7 +90,7 @@ public class ScheduledOriginHealthStatusMonitorTest {
     }
 
     private ScheduledOriginHealthStatusMonitor makeScheduledOriginHealthMonitor(OriginHealthCheckFunction healthChecker) {
-        return new ScheduledOriginHealthStatusMonitor(this.scheduler, healthChecker, new Schedule(10, MILLISECONDS));
+        return new ScheduledOriginHealthStatusMonitor(this.scheduler, healthChecker, new Schedule(10, MILLISECONDS), mock(HttpClient.class));
     }
 
     private static class StubOriginStateOriginHealthCheckFunction implements OriginHealthCheckFunction {
@@ -103,7 +103,7 @@ public class ScheduledOriginHealthStatusMonitorTest {
         }
 
         @Override
-        public void check(Origin origin, OriginHealthCheckFunction.Callback responseCallback) {
+        public void check(HttpClient client, Origin origin, OriginHealthCheckFunction.Callback responseCallback) {
             responseCallback.originStateResponse(this.treatAllOriginsAsLive || origin.equals(this.liveOrigin) ? HEALTHY : UNHEALTHY);
         }
 
