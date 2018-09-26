@@ -1,0 +1,78 @@
+package com.hotels.styx.api.stream;
+
+import com.hotels.styx.api.Buffer;
+import com.hotels.styx.api.ContentOverflowException;
+import io.netty.buffer.CompositeByteBuf;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static io.netty.buffer.Unpooled.compositeBuffer;
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
+
+public class ContentAggregator implements Subscriber<Buffer> {
+    private final Publisher<Buffer> upstream;
+    private final int maxSize;
+    private final CompletableFuture<Buffer> future = new CompletableFuture<>();
+    private final AtomicBoolean active = new AtomicBoolean();
+    private final CompositeByteBuf aggregated = compositeBuffer();
+    private Subscription subscription;
+
+    public ContentAggregator(Publisher<Buffer> upstream, int maxSize) {
+        this.upstream = requireNonNull(upstream);
+        this.maxSize = maxSize;
+    }
+
+    public CompletableFuture<Buffer> aggregate() {
+        if (active.compareAndSet(false, true)) {
+            this.upstream.subscribe(this);
+            return future;
+        } else {
+            throw new IllegalStateException("Secondary subscription!");
+        }
+    }
+
+    @Override
+    public void onSubscribe(Subscription subscription) {
+        if (this.subscription == null) {
+            this.subscription = subscription;
+            this.subscription.request(Long.MAX_VALUE);
+        } else {
+            subscription.cancel();
+            throw new IllegalStateException("Second onSubscribe event to ContentAggregator");
+        }
+    }
+
+    @Override
+    public void onNext(Buffer part) {
+        long newSize = aggregated.readableBytes() + part.size();
+
+        if (newSize > maxSize) {
+            part.delegate().release();
+            aggregated.release();
+            subscription.cancel();
+            this.future.completeExceptionally(
+                    new ContentOverflowException(format("Maximum content size exceeded. Maximum size allowed is %d bytes.", maxSize)));
+        } else {
+            aggregated.addComponent(part.delegate());
+            aggregated.writerIndex(aggregated.writerIndex() + part.size());
+        }
+    }
+
+    @Override
+    public void onError(Throwable cause) {
+        aggregated.release();
+        subscription.cancel();
+        future.completeExceptionally(cause);
+    }
+
+    @Override
+    public void onComplete() {
+        future.complete(new Buffer(aggregated));
+    }
+
+}
