@@ -1,3 +1,18 @@
+/*
+  Copyright (C) 2013-2018 Expedia Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
 package com.hotels.styx.api.stream;
 
 import com.hotels.styx.api.Buffer;
@@ -10,6 +25,9 @@ import rx.observables.SyncOnSubscribe;
 
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+/**
+ * Todo: Javadoc: RxContentConsumer consumes content.
+ */
 public class RxContentConsumer {
     private final Publisher<Buffer> publisher;
 
@@ -43,27 +61,23 @@ public class RxContentConsumer {
 
         @Override
         public void onSubscribe(Subscription subscription) {
-//            System.out.println("onSubscribe");
             this.subscription = subscription;
         }
 
         @Override
         public void onNext(Buffer buffer) {
-//            System.out.println("onNext");
             lastObserver = queue.removeFirst();
             lastObserver.onNext(buffer);
         }
 
         @Override
         public void onError(Throwable cause) {
-//            System.out.println("onError");
             lastObserver.onError(cause);
             lastObserver = null;
         }
 
         @Override
         public void onComplete() {
-//            System.out.println("onComplete");
             lastObserver.onCompleted();
             lastObserver = null;
         }

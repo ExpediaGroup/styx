@@ -1,3 +1,18 @@
+/*
+  Copyright (C) 2013-2018 Expedia Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
 package com.hotels.styx.api.stream;
 
 import com.hotels.styx.api.Buffer;
@@ -17,7 +32,7 @@ import java.util.function.Consumer;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
-/*
+/**
  * Relies on source observable to satisfy the reactive publisher specification.
  * This needs to be rectified.
  */
@@ -53,7 +68,7 @@ public class RxContentPublisher implements Publisher<Buffer> {
         private final EventProcessor eventProcessor = new EventProcessor(this);
         private final Subscriber<? super Buffer> downstream;
         private final Observable<Buffer> upstream;
-        private volatile long requests = 0;
+        private volatile long requests;
         private volatile State state = State.INITIAL;
         private final ConcurrentLinkedDeque<Buffer> queue = new ConcurrentLinkedDeque<>();
         private Throwable errorCause;
@@ -93,6 +108,11 @@ public class RxContentPublisher implements Publisher<Buffer> {
         }
 
 
+        /**
+         * Todo: Javadoc: Processes events.
+         *
+         * @param event
+         */
         @Override
         public void accept(Event event) {
             if (state == State.INITIAL) {
@@ -105,7 +125,9 @@ public class RxContentPublisher implements Publisher<Buffer> {
                 }
             } else if (state == State.BUFFERING) {
                 if (event instanceof RequestEvent) {
-                    if (request((RequestEvent) event)) return;
+                    if (request((RequestEvent) event)) {
+                        return;
+                    }
                     if (requests > 0) {
                         transitionTo(State.EMITTING);
                     }
@@ -135,7 +157,9 @@ public class RxContentPublisher implements Publisher<Buffer> {
                 }
             } else if (state == State.EMITTING) {
                 if (event instanceof RequestEvent) {
-                    if (request((RequestEvent) event)) return;
+                    if (request((RequestEvent) event)) {
+                        return;
+                    }
 
                     if (requests == 0) {
                         transitionTo(State.BUFFERING);
@@ -160,7 +184,9 @@ public class RxContentPublisher implements Publisher<Buffer> {
                 }
             } else if (state == State.FINISHING) {
                 if (event instanceof RequestEvent) {
-                    if (request((RequestEvent) event)) return;
+                    if (request((RequestEvent) event)) {
+                        return;
+                    }
 
                     if (queue.isEmpty() && errorCause == null) {
                         downstream.onComplete();
@@ -170,7 +196,7 @@ public class RxContentPublisher implements Publisher<Buffer> {
                         transitionTo(State.COMPLETED);
                     }
                 } else if (event instanceof CancelEvent) {
-                    // TODO
+                    LOGGER.warn("TODO!");
                 } else {
                     // Unexpected event!
                     LOGGER.warn("Unexpected event in FINISHING state: {}", event);
