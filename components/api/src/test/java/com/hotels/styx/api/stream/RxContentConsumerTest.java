@@ -52,7 +52,7 @@ public class RxContentConsumerTest {
     }
 
     @Test
-    public void consumesZeroLengthStreams() {
+    public void consumesEmptyStreams() {
         TestSubscriber<Buffer> subscriber = new TestSubscriber<>();
         Publisher<Buffer> publisher = new RxContentPublisher(Observable.empty());
 
