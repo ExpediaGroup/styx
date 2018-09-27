@@ -1,8 +1,22 @@
+/*
+  Copyright (C) 2013-2018 Expedia Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
 package com.hotels.styx.api.stream;
 
 import com.hotels.styx.api.Buffer;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscription;
+import org.reactivestreams.Subscriber;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
@@ -13,7 +27,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 public class DiscardOperatorTest {
 
@@ -33,17 +46,15 @@ public class DiscardOperatorTest {
         RxContentPublisher upstream = new RxContentPublisher(Observable.just(new Buffer("x", UTF_8)));
         DiscardOperator discard = new DiscardOperator(upstream);
 
-        discard.apply();
-        discard.apply();
+        discard.subscribe(mock(Subscriber.class));
+        discard.subscribe(mock(Subscriber.class));
     }
 
     @Test
     public void discardsZeroBuffers() {
         DiscardOperator discard = new DiscardOperator(new RxContentPublisher(Observable.empty()));
 
-        Publisher<Buffer> result = discard.apply();
-
-        new RxContentConsumer(result).consume().subscribe(testSubscriber);
+        new RxContentConsumer(discard).consume().subscribe(testSubscriber);
 
         assertThat(testSubscriber.getOnNextEvents(), is(empty()));
 
@@ -60,9 +71,7 @@ public class DiscardOperatorTest {
                                 new Buffer("x", UTF_8)
                         )));
 
-        Publisher<Buffer> result = discard.apply();
-
-        new RxContentConsumer(result).consume().subscribe(testSubscriber);
+        new RxContentConsumer(discard).consume().subscribe(testSubscriber);
 
         assertThat(testSubscriber.getOnNextEvents(), is(empty()));
         assertThat(testSubscriber.getOnErrorEvents().size(), is(0));
@@ -78,9 +87,7 @@ public class DiscardOperatorTest {
                                 buffer2
                         )));
 
-        Publisher<Buffer> result = discard.apply();
-
-        new RxContentConsumer(result).consume().subscribe(testSubscriber);
+        new RxContentConsumer(discard).consume().subscribe(testSubscriber);
 
         assertThat(testSubscriber.getOnNextEvents(), is(empty()));
         assertThat(testSubscriber.getOnErrorEvents().size(), is(0));
@@ -92,62 +99,23 @@ public class DiscardOperatorTest {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void checkForNullSubscription() {
-        Publisher<Buffer> upstream = mock(Publisher.class);
-        DiscardOperator aggregator = new DiscardOperator(upstream);
+        DiscardOperator discard = new DiscardOperator(
+                subscriber -> subscriber.onSubscribe(null));
 
-        aggregator.onSubscribe(null);
+        discard.subscribe(mock(Subscriber.class));
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void allowsOnlyOneSubscription() {
-        Subscription subscription1 = mock(Subscription.class);
-        Subscription subscription2 = mock(Subscription.class);
+        RxContentPublisher upstream = new RxContentPublisher(Observable.just(new Buffer("x", UTF_8)));
 
-        DiscardOperator discard = new DiscardOperator(
-                new RxContentPublisher(
-                        Observable.just(
-                                buffer1,
-                                buffer2
-                        )));
+        Subscriber subscription1 = mock(Subscriber.class);
+        Subscriber subscription2 = mock(Subscriber.class);
 
-        discard.onSubscribe(subscription1);
+        DiscardOperator discard = new DiscardOperator(upstream);
 
-        try {
-            discard.onSubscribe(subscription2);
-        } catch (IllegalStateException cause) {
-            verify(subscription2).cancel();
-            throw cause;
-        }
+        discard.subscribe(subscription1);
+        discard.subscribe(subscription2);
     }
 
-//    @Test
-//    public void emitsErrors() {
-//        AtomicBoolean unsubscribed = new AtomicBoolean();
-//        AtomicReference<Throwable> causeCapture = new AtomicReference<>(null);
-//
-//        Buffer a = new Buffer("aaabbb", UTF_8);
-//
-//        PublishSubject<Buffer> subject = PublishSubject.create();
-//
-//        AggregateOperator aggregator = new AggregateOperator(
-//                new RxContentPublisher(
-//                        subject.doOnUnsubscribe(() -> unsubscribed.set(true))), 8
-//        );
-//
-//        CompletableFuture<Buffer> future = aggregator.apply()
-//                .exceptionally(cause -> {
-//                    causeCapture.set(cause);
-//                    throw new RuntimeException();
-//                });
-//
-//        subject.onNext(a);
-//        subject.onError(new RuntimeException("something broke"));
-//
-//        assertTrue(future.isCompletedExceptionally());
-//        assertThat(causeCapture.get(), instanceOf(RuntimeException.class));
-//        assertThat(causeCapture.get().getMessage(), is("something broke"));
-//
-//        assertThat(a.delegate().refCnt(), is(0));
-//        assertTrue(unsubscribed.get());
-//    }
 }

@@ -172,7 +172,7 @@ public class RxContentConsumer {
 
         @Override
         public void request(long n) {
-            LOGGER.debug("request");
+            LOGGER.debug("request {}", n);
             eventProcessor.submit(new DownstreamRequestedEvent(n));
         }
 

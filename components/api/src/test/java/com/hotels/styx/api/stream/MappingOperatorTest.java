@@ -1,3 +1,18 @@
+/*
+  Copyright (C) 2013-2018 Expedia Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
 package com.hotels.styx.api.stream;
 
 import com.hotels.styx.api.Buffer;
@@ -17,24 +32,24 @@ public class MappingOperatorTest {
     private TestSubscriber<String> testSubscriber;
     private Buffer buffer1;
     private Buffer buffer2;
+    private RxContentPublisher upstream;
 
     @BeforeMethod
     public void setUp() {
         testSubscriber = new TestSubscriber<>(100);
         buffer1 = new Buffer("x", UTF_8);
         buffer2 = new Buffer("y", UTF_8);
+        upstream = new RxContentPublisher(Observable.just(
+                new Buffer("x", UTF_8),
+                new Buffer("Y", UTF_8)
+        ));
     }
 
     @Test
     public void appliesMappingToContent() {
-        RxContentPublisher upstream = new RxContentPublisher(Observable.just(
-                new Buffer("x", UTF_8),
-                new Buffer("Y", UTF_8)
-        ));
-
-        MappingOperator mapping = new MappingOperator(upstream, MappingOperatorTest::toUpperCaseBuffer);
-
-        RxContentConsumer consumer = new RxContentConsumer(mapping);
+        RxContentConsumer consumer = new RxContentConsumer(
+                new MappingOperator(upstream, this::toUpperCaseBuffer)
+        );
 
         consumer.consume()
                 .map(buffer -> new String(buffer.content(), UTF_8))
@@ -46,29 +61,23 @@ public class MappingOperatorTest {
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void allowsOnlyOneSubscription() {
-        RxContentPublisher upstream = new RxContentPublisher(Observable.just(new Buffer("x", UTF_8)));
-        MappingOperator mapper = new MappingOperator(upstream,
-                MappingOperatorTest::toUpperCaseBuffer);
+        MappingOperator mapper = new MappingOperator(upstream, this::toUpperCaseBuffer);
+
         Subscriber subscription1 = mock(Subscriber.class);
         Subscriber subscription2 = mock(Subscriber.class);
 
         mapper.subscribe(subscription1);
-
-        try {
-            mapper.subscribe(subscription2);
-        } catch (IllegalStateException cause) {
-//            verify(subscription2).cancel();
-            throw cause;
-        }
+        mapper.subscribe(subscription2);
     }
 
 
     @Test
     public void mapsAnEmptyStream() {
-        MappingOperator operator = new MappingOperator(new RxContentPublisher(Observable.empty()),
-                MappingOperatorTest::toUpperCaseBuffer);
 
-        RxContentConsumer consumer = new RxContentConsumer(operator);
+        RxContentConsumer consumer = new RxContentConsumer(
+                new MappingOperator(
+                        new RxContentPublisher(Observable.empty()),
+                        this::toUpperCaseBuffer));
 
         testSubscriber.requestMore(2);
 
@@ -83,9 +92,9 @@ public class MappingOperatorTest {
 
     @Test
     public void mapsAnEmptyErroringStream() {
-        MappingOperator operator = new MappingOperator(new RxContentPublisher(
-                Observable.<Buffer>empty().concatWith(Observable.error(new RuntimeException(">:-O")))),
-                MappingOperatorTest::toUpperCaseBuffer);
+        MappingOperator operator = new MappingOperator(
+                new RxContentPublisher(Observable.<Buffer>empty().concatWith(Observable.error(new RuntimeException(">:-O")))),
+                this::toUpperCaseBuffer);
 
         RxContentConsumer consumer = new RxContentConsumer(operator);
 
@@ -102,10 +111,8 @@ public class MappingOperatorTest {
     @Test
     public void emitsErrors() {
         MappingOperator operator = new MappingOperator(
-                new RxContentPublisher(
-                        Observable.just(buffer2)
-                                .concatWith(Observable.error(new RuntimeException(";-(")))),
-                MappingOperatorTest::toUpperCaseBuffer);
+                new RxContentPublisher(Observable.just(buffer2).concatWith(Observable.error(new RuntimeException(";-(")))),
+                this::toUpperCaseBuffer);
 
         RxContentConsumer consumer = new RxContentConsumer(operator);
 
@@ -120,16 +127,13 @@ public class MappingOperatorTest {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void checkForNullSubscription() {
-
-        MappingOperator aggregator = new MappingOperator(
+        new MappingOperator(
                 subscriber -> subscriber.onSubscribe(null),
-                MappingOperatorTest::toUpperCaseBuffer);
-
-        aggregator.subscribe(mock(Subscriber.class));
+                this::toUpperCaseBuffer
+        ).subscribe(mock(Subscriber.class));
     }
 
-
-    public static Buffer toUpperCaseBuffer(Buffer buffer) {
+    public Buffer toUpperCaseBuffer(Buffer buffer) {
         String mapped = new String(buffer.content(), UTF_8).toUpperCase();
         return new Buffer(mapped, UTF_8);
     }
