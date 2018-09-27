@@ -115,6 +115,7 @@ public class RxContentPublisher implements Publisher<Buffer> {
          */
         @Override
         public void accept(Event event) {
+            LOGGER.debug("accept: {} - {}", state, event);
             if (state == State.INITIAL) {
                 if (event instanceof SubscriptionEvent) {
                     upstreamSubscription = upstream.subscribe(bridge);

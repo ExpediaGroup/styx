@@ -102,7 +102,7 @@ class RxContentStream implements ContentStream {
         return new RxContentStream(this.stream
                 .map(Buffer::new)
                 .map(transformation::apply)
-                .map(buffer -> buffer.delegate));
+                .map(Buffer::delegate));
     }
 
     public void consume(Consumer<Event> consumer) {
