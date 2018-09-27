@@ -32,7 +32,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * TODO: Javadoc: Content aggregator aggregates content.
  */
-public class ContentAggregator implements Subscriber<Buffer> {
+public class AggregateOperator implements Subscriber<Buffer> {
     private final Publisher<Buffer> upstream;
     private final int maxSize;
     private final CompletableFuture<Buffer> future = new CompletableFuture<>();
@@ -40,12 +40,12 @@ public class ContentAggregator implements Subscriber<Buffer> {
     private final CompositeByteBuf aggregated = compositeBuffer();
     private Subscription subscription;
 
-    public ContentAggregator(Publisher<Buffer> upstream, int maxSize) {
+    public AggregateOperator(Publisher<Buffer> upstream, int maxSize) {
         this.upstream = requireNonNull(upstream);
         this.maxSize = maxSize;
     }
 
-    public CompletableFuture<Buffer> aggregate() {
+    public CompletableFuture<Buffer> apply() {
         if (active.compareAndSet(false, true)) {
             this.upstream.subscribe(this);
             return future;
@@ -61,7 +61,7 @@ public class ContentAggregator implements Subscriber<Buffer> {
             this.subscription.request(Long.MAX_VALUE);
         } else {
             subscription.cancel();
-            throw new IllegalStateException("Second onSubscribe event to ContentAggregator");
+            throw new IllegalStateException("Second onSubscribe event to AggregateOperator");
         }
     }
 

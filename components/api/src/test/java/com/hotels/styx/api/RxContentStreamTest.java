@@ -47,7 +47,7 @@ public class RxContentStreamTest {
 //
 //        assertThat(buf, is(buf1));
 //
-//        String result = new String(stream.aggregate(1000).toBlocking().first(), UTF_8);
+//        String result = new String(stream.apply(1000).toBlocking().first(), UTF_8);
 //
 //        assertThat(result, is("111111111111111111111111111111" + "222222222222222222222222222222" + "333333333333333333333333333333"));
 //    }

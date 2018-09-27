@@ -36,42 +36,42 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.testng.Assert.assertTrue;
 
-public class ContentAggregatorTest {
+public class AggregateOperatorTest {
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void allowsOnlyOneAggregation() {
         RxContentPublisher upstream = new RxContentPublisher(Observable.just(new Buffer("x", UTF_8)));
-        ContentAggregator aggregator = new ContentAggregator(upstream, 100);
+        AggregateOperator aggregator = new AggregateOperator(upstream, 100);
 
-        aggregator.aggregate();
-        aggregator.aggregate();
+        aggregator.apply();
+        aggregator.apply();
     }
 
     @Test
     public void aggregatesZeroBuffers() throws ExecutionException, InterruptedException {
-        ContentAggregator aggregator = new ContentAggregator(new RxContentPublisher(Observable.empty()), 100);
+        AggregateOperator aggregator = new AggregateOperator(new RxContentPublisher(Observable.empty()), 100);
 
-        Buffer a = aggregator.aggregate().get();
+        Buffer a = aggregator.apply().get();
         assertThat(a.size(), is(0));
         assertThat(new String(a.content(), UTF_8), is(""));
     }
 
     @Test
     public void aggregatesOneBuffer() throws ExecutionException, InterruptedException {
-        ContentAggregator aggregator = new ContentAggregator(new RxContentPublisher(Observable.just(new Buffer("x", UTF_8))), 100);
+        AggregateOperator aggregator = new AggregateOperator(new RxContentPublisher(Observable.just(new Buffer("x", UTF_8))), 100);
 
-        Buffer a = aggregator.aggregate().get();
+        Buffer a = aggregator.apply().get();
         assertThat(a.size(), is(1));
         assertThat(new String(a.content(), UTF_8), is("x"));
     }
 
     @Test
     public void aggregatesManyBuffers() throws ExecutionException, InterruptedException {
-        ContentAggregator aggregator = new ContentAggregator(new RxContentPublisher(Observable.just(
+        AggregateOperator aggregator = new AggregateOperator(new RxContentPublisher(Observable.just(
                 new Buffer("x", UTF_8),
                 new Buffer("y", UTF_8))), 100);
 
-        Buffer a = aggregator.aggregate().get();
+        Buffer a = aggregator.apply().get();
         assertThat(a.size(), is(2));
         assertThat(new String(a.content(), UTF_8), is("xy"));
     }
@@ -86,12 +86,12 @@ public class ContentAggregatorTest {
 
         PublishSubject<Buffer> subject = PublishSubject.create();
 
-        ContentAggregator aggregator = new ContentAggregator(
+        AggregateOperator aggregator = new AggregateOperator(
                 new RxContentPublisher(
                         subject.doOnUnsubscribe(() -> unsubscribed.set(true))), 8
         );
 
-        CompletableFuture<Buffer> future = aggregator.aggregate()
+        CompletableFuture<Buffer> future = aggregator.apply()
                 .exceptionally(cause -> {
                     causeCapture.set(cause);
                     throw new RuntimeException();
@@ -111,7 +111,7 @@ public class ContentAggregatorTest {
     @Test(expectedExceptions = NullPointerException.class)
     public void checkForNullSubscription() {
         Publisher<Buffer> upstream = mock(Publisher.class);
-        ContentAggregator aggregator = new ContentAggregator(upstream, 100);
+        AggregateOperator aggregator = new AggregateOperator(upstream, 100);
 
         aggregator.onSubscribe(null);
     }
@@ -122,7 +122,7 @@ public class ContentAggregatorTest {
         Subscription subscription1 = mock(Subscription.class);
         Subscription subscription2 = mock(Subscription.class);
 
-        ContentAggregator aggregator = new ContentAggregator(upstream, 100);
+        AggregateOperator aggregator = new AggregateOperator(upstream, 100);
         aggregator.onSubscribe(subscription1);
 
         try {
@@ -142,12 +142,12 @@ public class ContentAggregatorTest {
 
         PublishSubject<Buffer> subject = PublishSubject.create();
 
-        ContentAggregator aggregator = new ContentAggregator(
+        AggregateOperator aggregator = new AggregateOperator(
                 new RxContentPublisher(
                         subject.doOnUnsubscribe(() -> unsubscribed.set(true))), 8
         );
 
-        CompletableFuture<Buffer> future = aggregator.aggregate()
+        CompletableFuture<Buffer> future = aggregator.apply()
                 .exceptionally(cause -> {
                     causeCapture.set(cause);
                     throw new RuntimeException();

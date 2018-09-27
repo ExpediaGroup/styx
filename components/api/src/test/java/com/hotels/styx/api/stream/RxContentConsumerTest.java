@@ -51,6 +51,20 @@ public class RxContentConsumerTest {
         assertThat(subscriber.getOnNextEvents().size(), is(3));
     }
 
+    @Test
+    public void consumesZeroLengthStreams() {
+        TestSubscriber<Buffer> subscriber = new TestSubscriber<>();
+        Publisher<Buffer> publisher = new RxContentPublisher(Observable.empty());
+
+        rxSubscriber = new RxContentConsumer(publisher);
+
+        rxSubscriber.consume().subscribe(subscriber);
+
+        assertThat(subscriber.getOnNextEvents().size(), is(0));
+        assertThat(subscriber.getOnErrorEvents().size(), is(0));
+        assertThat(subscriber.getOnCompletedEvents().size(), is(1));
+    }
+
     class ProducerState {
         private int produced;
         private List<Buffer> data;

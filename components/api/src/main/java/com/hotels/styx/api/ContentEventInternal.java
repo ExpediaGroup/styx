@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.api;
 
-class ContentEventInternal implements ContentStream.ContentEvent {
+public class ContentEventInternal implements ContentStream.ContentEvent {
     private Buffer buffer;
 
     public ContentEventInternal(Buffer buffer) {
