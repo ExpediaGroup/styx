@@ -42,7 +42,7 @@ public class RxContentConsumer {
         this.publisher = publisher;
     }
 
-    Observable<Buffer> consume() {
+    public Observable<Buffer> consume() {
         InternalSubscription subscription = new InternalSubscription(this.publisher);
         return Observable.create(subscription);
     }
@@ -67,6 +67,7 @@ public class RxContentConsumer {
         private volatile State state = State.INITIAL;
         private volatile long requests;
 
+        //CHECKSTYLE:OFF
         @Override
         public void accept(Event event) {
             LOGGER.debug("Accept: {}: {}", state, event.toString());
@@ -150,6 +151,7 @@ public class RxContentConsumer {
                 }
             }
         }
+        //CHECKSTYLE:ON
 
         private void emit() {
             while (requests > 0 && !queue.isEmpty()) {

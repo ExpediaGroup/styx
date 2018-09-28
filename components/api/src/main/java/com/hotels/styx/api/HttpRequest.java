@@ -16,6 +16,8 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableSet;
+import com.hotels.styx.api.stream.ByteStream;
+import com.hotels.styx.api.stream.RxContentPublisher;
 import rx.Observable;
 
 import java.util.Collection;
@@ -24,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.google.common.base.Objects.toStringHelper;
@@ -96,7 +99,7 @@ public class HttpRequest implements StreamingHttpMessage {
     private final HttpMethod method;
     private final Url url;
     private final HttpHeaders headers;
-    private final ContentStream body;
+    private final ByteStream body;
 
     HttpRequest(Builder builder) {
         this.id = builder.id == null ? randomUUID() : builder.id;
@@ -174,7 +177,7 @@ public class HttpRequest implements StreamingHttpMessage {
      * @param body body
      * @return {@code this}
      */
-    public static Builder post(String uri, ContentStream body) {
+    public static Builder post(String uri, ByteStream body) {
         return new Builder(POST, uri).body(body);
     }
 
@@ -185,7 +188,7 @@ public class HttpRequest implements StreamingHttpMessage {
      * @param body body
      * @return {@code this}
      */
-    public static Builder put(String uri, ContentStream body) {
+    public static Builder put(String uri, ByteStream body) {
         return new Builder(PUT, uri).body(body);
     }
 
@@ -196,7 +199,7 @@ public class HttpRequest implements StreamingHttpMessage {
      * @param body body
      * @return {@code this}
      */
-    public static Builder patch(String uri, ContentStream body) {
+    public static Builder patch(String uri, ByteStream body) {
         return new Builder(PATCH, uri).body(body);
     }
 
@@ -229,7 +232,7 @@ public class HttpRequest implements StreamingHttpMessage {
      * @return request body as a byte stream
      */
     @Override
-    public ContentStream body() {
+    public ByteStream body() {
         return body;
     }
 
@@ -344,9 +347,10 @@ public class HttpRequest implements StreamingHttpMessage {
      * @return a {@link StyxObservable}
      */
     public StyxObservable<FullHttpRequest> toFullRequest(int maxContentBytes) {
-        return new StyxCoreObservable<>(
+        return StyxObservable.from(
                 body.aggregate(maxContentBytes)
-                        .map(it -> new FullHttpRequest.Builder(this, it).build()));
+                    .thenApply(it -> new FullHttpRequest.Builder(this, it.content()).build())
+        );
     }
 
     /**
@@ -393,7 +397,7 @@ public class HttpRequest implements StreamingHttpMessage {
         private Url url;
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
-        private ContentStream body;
+        private ByteStream body;
 
         /**
          * Creates a new {@link Builder} object with default attributes.
@@ -401,7 +405,7 @@ public class HttpRequest implements StreamingHttpMessage {
         public Builder() {
             this.url = Url.Builder.url("/").build();
             this.headers = new HttpHeaders.Builder();
-            this.body = new RxContentStream(Observable.empty());
+            this.body = new ByteStream(new RxContentPublisher(Observable.empty()));
         }
 
         /**
@@ -422,7 +426,7 @@ public class HttpRequest implements StreamingHttpMessage {
          * @param request       a HTTP request object
          * @param contentStream a body content stream
          */
-        public Builder(HttpRequest request, ContentStream contentStream) {
+        public Builder(HttpRequest request, ByteStream contentStream) {
             this.id = request.id();
             this.method = httpMethod(request.method().name());
             this.url = request.url();
@@ -446,7 +450,7 @@ public class HttpRequest implements StreamingHttpMessage {
             this.url = request.url();
             this.version = request.version();
             this.headers = request.headers().newBuilder();
-            this.body = new RxContentStream(Observable.just(copiedBuffer(request.body())));
+            this.body = new ByteStream(new RxContentPublisher(Observable.just(new Buffer(copiedBuffer(request.body())))));
         }
 
         /**
@@ -465,10 +469,37 @@ public class HttpRequest implements StreamingHttpMessage {
          * @param content request body
          * @return {@code this}
          */
-        public Builder body(ContentStream content) {
+        public Builder body(ByteStream content) {
             this.body = content;
             return this;
         }
+
+//        public Builder body(Function<ContentStream, ContentStream> transformation) {
+//            /* TODO: Mikko: This is still suspectible for being not connected:
+//
+//               An example consumer usage:
+//
+//                    request.newBuilder()
+//                           .body(stream -> new ContentStream("foo", "bar"))
+//                           .build();
+//
+//               This code breaks the link of stream transformations between
+//               "stream" and "new ContentStream(...)".
+//
+//            */
+//            this.body = transformation.apply(this.body);
+//            return this;
+//        }
+
+        public Builder body(Function<Buffer, Buffer> transformation) {
+            this.body = this.body.map(transformation);
+            return this;
+        }
+
+//        public Builder body(ContentProducer producer) {
+//            this.body.discard();
+//            return this;
+//        }
 
         /**
          * Sets the unique ID for this request.

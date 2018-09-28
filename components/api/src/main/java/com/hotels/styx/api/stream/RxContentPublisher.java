@@ -113,6 +113,7 @@ public class RxContentPublisher implements Publisher<Buffer> {
          *
          * @param event
          */
+        //CHECKSTYLE:OFF
         @Override
         public void accept(Event event) {
             LOGGER.debug("accept: {} - {}", state, event);
@@ -204,6 +205,7 @@ public class RxContentPublisher implements Publisher<Buffer> {
                 }
             }
         }
+        //CHECKSTYLE:ON
 
         private boolean request(RequestEvent event) {
             long n = event.n;

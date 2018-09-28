@@ -17,21 +17,33 @@ package com.hotels.styx.api;
 
 import io.netty.buffer.ByteBuf;
 
+import java.nio.charset.Charset;
+
+import static io.netty.buffer.Unpooled.copiedBuffer;
+import static java.util.Objects.requireNonNull;
+
 public class Buffer {
-    ByteBuf delegate;
+    private final ByteBuf delegate;
 
     public Buffer(ByteBuf byteBuf) {
-        this.delegate = byteBuf;
+        this.delegate = requireNonNull(byteBuf);
     }
 
-    int size() {
+    public Buffer(String content, Charset charset) {
+        this(copiedBuffer(content, charset));
+    }
+
+    public int size() {
         return delegate.readableBytes();
     }
 
-    byte[] content() {
+    public byte[] content() {
         byte[] bytes = new byte[delegate.readableBytes()];
         delegate.getBytes(delegate.readerIndex(), bytes);
         return bytes;
     }
 
+    public ByteBuf delegate() {
+        return delegate;
+    }
 }

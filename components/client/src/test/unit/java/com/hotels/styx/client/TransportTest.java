@@ -16,13 +16,13 @@
 package com.hotels.styx.client;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.ContentStreams;
+import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
+import com.hotels.styx.api.stream.ByteStream;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
-import io.netty.buffer.ByteBuf;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
@@ -45,6 +45,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static rx.Observable.just;
+import static rx.RxReactiveStreams.toPublisher;
 
 public class TransportTest {
     private static final String X_STYX_ORIGIN_ID = "X-Styx-Origin-Id";
@@ -174,22 +175,22 @@ public class TransportTest {
 
     @Test
     public void releasesContentStreamBuffersWhenPoolIsNotProvided() {
-        ByteBuf chunk1 = copiedBuffer("x", UTF_8);
-        ByteBuf chunk2 = copiedBuffer("y", UTF_8);
-        ByteBuf chunk3 = copiedBuffer("z", UTF_8);
+        Buffer chunk1 = new Buffer("x", UTF_8);
+        Buffer chunk2 = new Buffer("y", UTF_8);
+        Buffer chunk3 = new Buffer("z", UTF_8);
 
         HttpRequest aRequest = request
                 .newBuilder()
-                .body(ContentStreams.fromRxObservable(Observable.from(ImmutableList.of(chunk1, chunk2, chunk3))))
+                .body(new ByteStream(toPublisher(Observable.from(ImmutableList.of(chunk1, chunk2, chunk3)))))
                 .build();
 
         transport.send(aRequest, Optional.empty(), APP_ID)
                 .response()
                 .subscribe(subscriber);
 
-        assertThat(chunk1.refCnt(), is(0));
-        assertThat(chunk2.refCnt(), is(0));
-        assertThat(chunk3.refCnt(), is(0));
+        assertThat(chunk1.delegate().refCnt(), is(0));
+        assertThat(chunk2.delegate().refCnt(), is(0));
+        assertThat(chunk3.delegate().refCnt(), is(0));
     }
 
     @Test

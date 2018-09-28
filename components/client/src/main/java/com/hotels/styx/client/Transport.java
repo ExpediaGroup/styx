@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
+import static rx.RxReactiveStreams.toObservable;
 
 /**
  * Encapsulates a single connection to remote server which we can use to send the messages.
@@ -100,7 +101,7 @@ class Transport {
         return origin
                 .map(ConnectionPool::borrowConnection)
                 .orElseGet(() -> {
-                    request.releaseContentBuffers();
+                    toObservable(request.body().publisher()).forEach(it -> it.delegate().release());
                     return Observable.error(new NoAvailableHostsException(appId));
                 });
     }

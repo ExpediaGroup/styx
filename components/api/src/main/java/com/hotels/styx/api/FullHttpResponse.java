@@ -17,6 +17,9 @@ package com.hotels.styx.api;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
+import com.hotels.styx.api.stream.ByteStream;
+import com.hotels.styx.api.stream.RxContentPublisher;
+import rx.Observable;
 
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -69,7 +72,7 @@ public class FullHttpResponse implements FullHttpMessage {
     private final HttpHeaders headers;
     private final byte[] body;
 
-    FullHttpResponse(Builder builder) {
+    private FullHttpResponse(Builder builder) {
         this.version = builder.version;
         this.status = builder.status;
         this.headers = builder.headers.build();
@@ -181,9 +184,9 @@ public class FullHttpResponse implements FullHttpMessage {
      */
     public HttpResponse toStreamingResponse() {
         if (this.body.length == 0) {
-            return new HttpResponse.Builder(this, new RxContentStream()).build();
+            return new HttpResponse.Builder(this, new ByteStream(new RxContentPublisher(Observable.empty()))).build();
         } else {
-            return new HttpResponse.Builder(this, new RxContentStream(StyxObservable.of(copiedBuffer(this.body)))).build();
+            return new HttpResponse.Builder(this, new ByteStream(new RxContentPublisher(Observable.just(new Buffer(copiedBuffer(this.body)))))).build();
         }
     }
 

@@ -16,8 +16,10 @@
 package com.hotels.styx.server.netty.codec;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.Url;
+import com.hotels.styx.api.stream.ByteStream;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;
@@ -45,7 +47,6 @@ import java.util.Queue;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.Iterables.size;
-import static com.hotels.styx.api.ContentStreams.fromRxObservable;
 import static com.hotels.styx.api.HttpHeaderNames.EXPECT;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.Url.Builder.url;
@@ -53,6 +54,7 @@ import static com.hotels.styx.server.UniqueIdSuppliers.UUID_VERSION_ONE_SUPPLIER
 import static com.hotels.styx.server.netty.codec.UnwiseCharsEncoder.IGNORE;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.StreamSupport.stream;
+import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * This {@link MessageToMessageDecoder} is responsible for decode {@link io.netty.handler.codec.http.HttpRequest}
@@ -169,7 +171,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 .url(url)
                 .version(toStyxVersion(request.protocolVersion()))
                 .id(uniqueIdSupplier.get())
-                .body(fromRxObservable(content));
+                .body(new ByteStream(toPublisher(content.map(Buffer::new))));
 
         stream(request.headers().spliterator(), false)
                 .forEach(entry -> requestBuilder.addHeader(entry.getKey(), entry.getValue()));

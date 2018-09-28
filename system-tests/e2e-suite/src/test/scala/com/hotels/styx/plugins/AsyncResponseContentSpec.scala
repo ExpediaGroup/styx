@@ -20,19 +20,17 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.FullHttpRequest.get
-import com.hotels.styx.api.{ContentStreams, _}
+import com.hotels.styx.api._
 import com.hotels.styx.support._
-import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
-import _root_.io.netty.buffer.ByteBuf
 import _root_.io.netty.handler.codec.http.HttpHeaders.Names._
 import _root_.io.netty.handler.codec.http.HttpHeaders.Values._
-import com.hotels.styx.api.StyxInternalObservables.{fromRxObservable, toRxObservable}
+import com.hotels.styx.api.stream.ByteStream
 import org.scalatest.FunSpec
-import rx.Observable
+import rx.{Observable, RxReactiveStreams}
 import rx.schedulers.Schedulers
 
 import scala.concurrent.duration._
@@ -88,14 +86,14 @@ class AsyncDelayPlugin extends PluginAdapter {
     chain.proceed(request)
       .flatMap(asJavaFunction((response: HttpResponse) => {
 
-        val transformedContent: Observable[ByteBuf] = ContentStreams.toRxObservable(response.body())
+        val transformedContent: Observable[Buffer] = RxReactiveStreams.toObservable(response.body().publisher())
           .observeOn(Schedulers.computation())
-          .flatMap((byteBuf: ByteBuf) => {
+          .flatMap((buffer: Buffer) => {
             Thread.sleep(1000)
-            Observable.just(byteBuf)
+            Observable.just(buffer)
           })
 
-        StyxObservable.of(response.newBuilder().body(ContentStreams.fromRxObservable(transformedContent)).build())
+        StyxObservable.of(response.newBuilder().body(new ByteStream(RxReactiveStreams.toPublisher(transformedContent))).build())
       }))
   }
 }

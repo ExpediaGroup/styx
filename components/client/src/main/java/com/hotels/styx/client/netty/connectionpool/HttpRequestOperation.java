@@ -16,6 +16,7 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
@@ -45,7 +46,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Objects.toStringHelper;
-import static com.hotels.styx.api.ContentStreams.toRxObservable;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.extension.service.BackendService.DEFAULT_RESPONSE_TIMEOUT_MILLIS;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
@@ -53,6 +53,7 @@ import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
+import static rx.RxReactiveStreams.toObservable;
 
 /**
  * An operation that writes an HTTP request to an origin.
@@ -251,7 +252,8 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
         private ChannelFutureListener subscribeToResponseBody() {
             return future -> {
                 if (future.isSuccess()) {
-                    toRxObservable(request.body()).subscribe(requestBodyChunkSubscriber);
+                    Observable<ByteBuf> bufferObservable = toObservable(request.body().publisher()).map(Buffer::delegate);
+                    bufferObservable.subscribe(requestBodyChunkSubscriber);
                 } else {
                     LOGGER.error(format("error writing body to origin=%s request=%s", nettyConnection.getOrigin(), request), future.cause());
                     responseFromOriginObserver.onError(new TransportLostException(nettyConnection.channel().remoteAddress(), nettyConnection.getOrigin()));

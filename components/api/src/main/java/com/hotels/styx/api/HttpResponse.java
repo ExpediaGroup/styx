@@ -17,10 +17,10 @@ package com.hotels.styx.api;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
-import io.netty.buffer.ByteBuf;
+import com.hotels.styx.api.stream.ByteStream;
+import com.hotels.styx.api.stream.RxContentPublisher;
 import rx.Observable;
 
-import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +39,6 @@ import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.HttpVersion.httpVersion;
 import static com.hotels.styx.api.ResponseCookie.decode;
 import static com.hotels.styx.api.ResponseCookie.encode;
-import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
@@ -83,7 +82,7 @@ public class HttpResponse implements StreamingHttpMessage {
     private final HttpVersion version;
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
-    private final ContentStream body;
+    private final ByteStream body;
 
     HttpResponse(Builder builder) {
         this.version = builder.version;
@@ -118,7 +117,7 @@ public class HttpResponse implements StreamingHttpMessage {
      * @param body   response body
      * @return a new builder
      */
-    public static Builder response(HttpResponseStatus status, ContentStream body) {
+    public static Builder response(HttpResponseStatus status, ByteStream body) {
         return new Builder(status).body(body);
     }
 
@@ -134,7 +133,7 @@ public class HttpResponse implements StreamingHttpMessage {
      * @return the response body as a byte stream
      */
     @Override
-    public ContentStream body() {
+    public ByteStream body() {
         return body;
     }
 
@@ -193,11 +192,11 @@ public class HttpResponse implements StreamingHttpMessage {
      * @return a {@link StyxObservable}
      */
     public StyxObservable<FullHttpResponse> toFullResponse(int maxContentBytes) {
-        return new StyxCoreObservable<>(
-                body.aggregate(maxContentBytes)
-                        .map(it -> new FullHttpResponse.Builder(this, it)
-                                .disableValidation()
-                                .build()));
+        return StyxObservable.from(body.aggregate(maxContentBytes))
+                .map(it -> new FullHttpResponse.Builder(this, it.content())
+                    .disableValidation()
+                    .build()
+                );
     }
 
     /**
@@ -258,14 +257,14 @@ public class HttpResponse implements StreamingHttpMessage {
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
         private boolean validate = true;
-        private ContentStream body;
+        private ByteStream body;
 
         /**
          * Creates a new {@link Builder} object with default attributes.
          */
         public Builder() {
             this.headers = new HttpHeaders.Builder();
-            this.body = new RxContentStream(Observable.empty());
+            this.body = new ByteStream(new RxContentPublisher(Observable.empty()));
         }
 
         /**
@@ -295,16 +294,16 @@ public class HttpResponse implements StreamingHttpMessage {
          * Creates a new {@link Builder} object from a response code and a content stream.
          * <p>
          * Builder's response status line parameters and the HTTP headers are populated from
-         * the given {@code response} object, but the content stream is set to {@code contentStream}.
+         * the given {@code response} object, but the content stream is set to {@code ByteStream}.
          *
          * @param response      a full response for which the builder is based on
-         * @param contentStream a content byte stream
+         * @param byteStream a content byte stream
          */
-        public Builder(FullHttpResponse response, ContentStream contentStream) {
+        public Builder(FullHttpResponse response, ByteStream byteStream) {
             this.status = statusWithCode(response.status().code());
             this.version = httpVersion(response.version().toString());
             this.headers = response.headers().newBuilder();
-            this.body = contentStream;
+            this.body = byteStream;
         }
 
         /**
@@ -324,7 +323,7 @@ public class HttpResponse implements StreamingHttpMessage {
          * @param content response body
          * @return {@code this}
          */
-        public Builder body(ContentStream content) {
+        public Builder body(ByteStream content) {
             this.body = content;
             return this;
         }
@@ -336,10 +335,21 @@ public class HttpResponse implements StreamingHttpMessage {
          * @param charset           character set
          * @return {@code this}
          */
-        public Builder body(StyxObservable<String> contentObservable, Charset charset) {
-            Observable<ByteBuf> map = ((StyxCoreObservable<String>) contentObservable).delegate().map(content -> copiedBuffer(content, charset));
-            return body(new RxContentStream(map));
-        }
+
+        // Shoud probably be a publisher or something:
+//        public Builder body(Publisher<String> contentObservable, Charset charset) {
+//
+//
+//
+//            contentObservable
+//                    .map(string -> new Buffer(string, charset))
+//
+//            Observable<ByteBuf> map = ((StyxCoreObservable<String>) contentObservable)
+//                    .delegate()
+//                    .map(content -> copiedBuffer(content, charset));
+//
+//            return body(new ByteStream(new RxContentPublisher(map)));
+//        }
 
         /**
          * Sets the HTTP version.
@@ -521,7 +531,7 @@ public class HttpResponse implements StreamingHttpMessage {
          */
         // TODO: See https://github.com/HotelsDotCom/styx/issues/201
         public Builder removeBody() {
-            this.body = body.remove();
+            this.body = body.discard();
             return this;
         }
 

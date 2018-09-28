@@ -16,7 +16,7 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
-import io.netty.buffer.ByteBuf;
+import com.hotels.styx.api.stream.RxContentConsumer;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import rx.observers.TestSubscriber;
@@ -86,10 +86,10 @@ public class FullHttpRequestTest {
     public void convertsToStreamingHttpRequestWithEmptyBody(FullHttpRequest fullRequest) {
         HttpRequest streaming = fullRequest.toStreamingRequest();
 
-        TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
+        TestSubscriber<Buffer> subscriber = TestSubscriber.create(0);
         subscriber.requestMore(1);
 
-        ((RxContentStream) streaming.body()).rxObservable().subscribe(subscriber);
+        new RxContentConsumer(streaming.body().publisher()).consume().subscribe(subscriber);
 
         assertThat(subscriber.getOnNextEvents().size(), is(0));
         subscriber.assertCompleted();
@@ -234,12 +234,15 @@ public class FullHttpRequestTest {
                 .body("original", UTF_8)
                 .build();
 
-        ByteBuf byteBuf = ((RxContentStream) original.toStreamingRequest().body())
-                .rxObservable()
-                .toBlocking()
-                .first();
-
-        byteBuf.array()[0] = 'A';
+        new RxContentConsumer(original.toStreamingRequest()
+                .body()
+                .map(buffer -> {
+                    buffer.delegate().array()[0] = 'A';
+                    return buffer;
+                })
+                .publisher())
+                .consume()
+                .subscribe();
 
         assertThat(original.bodyAs(UTF_8), is("original"));
     }

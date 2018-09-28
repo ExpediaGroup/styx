@@ -16,9 +16,10 @@
 package com.hotels.styx.server.netty.codec;
 
 import com.google.common.base.Strings;
-import com.hotels.styx.api.ContentStream;
+import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.HttpHeader;
 import com.hotels.styx.api.HttpMethod;
+import com.hotels.styx.api.stream.ByteStream;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;
@@ -50,7 +51,6 @@ import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Sets.newHashSet;
-import static com.hotels.styx.api.ContentStreams.toRxObservable;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.server.UniqueIdSuppliers.fixedUniqueIdSupplier;
 import static com.hotels.styx.support.netty.HttpMessageSupport.httpMessageToBytes;
@@ -71,6 +71,7 @@ import static org.hamcrest.core.Is.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static rx.RxReactiveStreams.toObservable;
 
 public class NettyToStyxRequestDecoderTest {
     private final UniqueIdSupplier uniqueIdSupplier = fixedUniqueIdSupplier("1");
@@ -345,13 +346,13 @@ public class NettyToStyxRequestDecoderTest {
     }
 
 
-    private TestSubscriber<ByteBuf> subscribeTo(ContentStream contentStream) {
-        TestSubscriber<ByteBuf> subscriber = new TestSubscriber<>();
-        toRxObservable(contentStream).subscribe(subscriber);
+    private TestSubscriber<Buffer> subscribeTo(ByteStream contentStream) {
+        TestSubscriber<Buffer> subscriber = new TestSubscriber<>();
+        toObservable(contentStream.publisher()).subscribe(subscriber);
         return subscriber;
     }
 
-    private String subscribeAndRead(ContentStream content) throws InterruptedException {
+    private String subscribeAndRead(ByteStream content) throws InterruptedException {
         CountDownLatch bodyCompletedLatch = new CountDownLatch(1);
 
         StringBuilder contentBuilder = subscribeToContent(content, bodyCompletedLatch);
@@ -360,9 +361,9 @@ public class NettyToStyxRequestDecoderTest {
         return contentBuilder.toString();
     }
 
-    private static StringBuilder subscribeToContent(ContentStream contentStream, CountDownLatch onCompleteLatch) {
+    private static StringBuilder subscribeToContent(ByteStream contentStream, CountDownLatch onCompleteLatch) {
         StringBuilder builder = new StringBuilder();
-        toRxObservable(contentStream).subscribe(new Subscriber<ByteBuf>() {
+        toObservable(contentStream.publisher()).subscribe(new Subscriber<Buffer>() {
             @Override
             public void onCompleted() {
                 // no-op
@@ -375,8 +376,8 @@ public class NettyToStyxRequestDecoderTest {
             }
 
             @Override
-            public void onNext(ByteBuf byteBuf) {
-                builder.append(byteBuf.toString(UTF_8));
+            public void onNext(Buffer buffer) {
+                builder.append(new String(buffer.content(), UTF_8));
             }
         });
         return builder;

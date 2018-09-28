@@ -16,24 +16,27 @@
 package com.hotels.styx.server.handlers;
 
 import com.google.common.io.ByteStreams;
+import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
-import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.api.stream.ByteStream;
+import com.hotels.styx.common.http.handler.BaseHttpHandler;
+import rx.Observable;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static com.hotels.styx.server.handlers.MediaTypes.mediaTypeOf;
 import static com.hotels.styx.api.HttpResponseStatus.FORBIDDEN;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.server.handlers.MediaTypes.mediaTypeOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * Handler for class path resources.
@@ -78,7 +81,7 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
 
     private static HttpResponse error(HttpResponseStatus status) {
         return new HttpResponse.Builder(status)
-                .body(StyxObservable.of(status.description()), UTF_8)
+                .body(new ByteStream(toPublisher(Observable.just(new Buffer(status.description(), UTF_8)))))
                 .build();
     }
 

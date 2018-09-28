@@ -16,7 +16,10 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableSet;
+import com.hotels.styx.api.stream.ByteStream;
+import com.hotels.styx.api.stream.RxContentPublisher;
 import io.netty.buffer.Unpooled;
+import rx.Observable;
 
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -314,9 +317,9 @@ public class FullHttpRequest implements FullHttpMessage {
                 .disableValidation();
 
         if (this.body.length == 0) {
-            return streamingBuilder.body(new RxContentStream()).build();
+            return streamingBuilder.body(new ByteStream(new RxContentPublisher(Observable.empty()))).build();
         } else {
-            return streamingBuilder.body(new RxContentStream(StyxObservable.of(Unpooled.copiedBuffer(body)))).build();
+            return streamingBuilder.body(new ByteStream(new RxContentPublisher(Observable.just(new Buffer(Unpooled.copiedBuffer(body)))))).build();
         }
     }
 

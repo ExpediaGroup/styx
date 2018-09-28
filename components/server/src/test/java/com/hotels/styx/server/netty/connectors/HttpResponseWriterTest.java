@@ -18,10 +18,11 @@ package com.hotels.styx.server.netty.connectors;
 
 import ch.qos.logback.classic.Level;
 import com.google.common.collect.ImmutableList;
+import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.exceptions.TransportLostException;
+import com.hotels.styx.api.stream.ByteStream;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
@@ -42,26 +43,25 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.base.Charsets.UTF_8;
-import static com.hotels.styx.api.ContentStreams.fromRxObservable;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
-import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.net.InetAddress.getLoopbackAddress;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
+import static rx.RxReactiveStreams.toPublisher;
 
 public class HttpResponseWriterTest {
     private LoggingTestSupport LOGGER;
-    private PublishSubject<ByteBuf> contentObservable;
+
+    private PublishSubject<Buffer> contentObservable;
     private Queue<ChannelWriteArguments> channelArgs;
     private AtomicBoolean channelRead;
 
@@ -88,7 +88,7 @@ public class HttpResponseWriterTest {
                         CompletableFuture<Void> future = writer.write(response);
                         assertThat(future.isDone(), is(false));
 
-                        contentObservable.onNext(copiedBuffer("aaa", UTF_8));
+                        contentObservable.onNext(new Buffer("aaa", UTF_8));
                         assertThat(future.isDone(), is(false));
 
                         contentObservable.onCompleted();
@@ -99,7 +99,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable)).build());
+        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build());
         assertThat(channelRead.get(), is(true));
     }
 
@@ -115,7 +115,7 @@ public class HttpResponseWriterTest {
                         CompletableFuture<Void> future = writer.write(response);
                         assertThat(future.isDone(), is(false));
 
-                        contentObservable.onNext(copiedBuffer("aaa", UTF_8));
+                        contentObservable.onNext(new Buffer("aaa", UTF_8));
                         assertThat(future.isDone(), is(false));
 
                         contentObservable.onCompleted();
@@ -131,7 +131,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable)).build());
+        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build());
         assertThat(channelRead.get(), is(true));
     }
 
@@ -171,7 +171,7 @@ public class HttpResponseWriterTest {
                         writeAck(channelArgs);  // For response headers
                         assertThat(future.isDone(), is(false));
 
-                        contentObservable.onNext(copiedBuffer("aaa", UTF_8));
+                        contentObservable.onNext(new Buffer("aaa", UTF_8));
                         writeAck(channelArgs);  // For content chunk
                         assertThat(future.isDone(), is(false));
 
@@ -186,7 +186,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable)).build());
+        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build());
         assertThat(channelRead.get(), is(true));
     }
 
@@ -208,7 +208,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable)).build());
+        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build());
     }
 
 
@@ -225,7 +225,7 @@ public class HttpResponseWriterTest {
                         writeAck(channelArgs);
                         assertThat(future.isDone(), is(false));
 
-                        contentObservable.onNext(copiedBuffer("aaa", UTF_8));
+                        contentObservable.onNext(new Buffer("aaa", UTF_8));
                         assertThat(future.isDone(), is(false));
 
                         contentObservable.onCompleted();
@@ -239,7 +239,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable)).build());
+        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build());
     }
 
     @Test
@@ -269,7 +269,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable)).build());
+        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build());
         assertThat(channelRead.get(), is(true));
 
         List<Object> writeEvents = writeEventsCollector.writeEvents();
@@ -305,7 +305,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable.doOnUnsubscribe(() -> unsubscribed.set(true)))).build());
+        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable.doOnUnsubscribe(() -> unsubscribed.set(true))))).build());
         assertThat(channelRead.get(), is(true));
     }
 
@@ -313,8 +313,8 @@ public class HttpResponseWriterTest {
     public void releasesContentChunksWhenFailsToConvertToNettyHeaders() throws Exception {
         CaptureHttpResponseWriteEventsHandler writeEventsCollector = new CaptureHttpResponseWriteEventsHandler();
 
-        ByteBuf chunk1 = copiedBuffer("aaa", UTF_8);
-        ByteBuf chunk2 = copiedBuffer("aaa", UTF_8);
+        Buffer chunk1 = new Buffer("aaa", UTF_8);
+        Buffer chunk2 = new Buffer("aaa", UTF_8);
         AtomicBoolean unsubscribed = new AtomicBoolean(false);
 
         EmbeddedChannel ch = new EmbeddedChannel(
@@ -334,8 +334,8 @@ public class HttpResponseWriterTest {
                         contentObservable.onCompleted();
 
                         assertThat(future.isDone(), is(true));
-                        assertThat(chunk1.refCnt(), is(0));
-                        assertThat(chunk2.refCnt(), is(0));
+                        assertThat(chunk1.delegate().refCnt(), is(0));
+                        assertThat(chunk2.delegate().refCnt(), is(0));
 
                         channelRead.set(true);
                     }
@@ -343,49 +343,7 @@ public class HttpResponseWriterTest {
         );
 
         HttpResponse.Builder response = response(OK).cookies(responseCookie(",,,,", ",,,,").build());
-        ch.writeInbound(response.body(fromRxObservable(contentObservable.doOnUnsubscribe(() -> unsubscribed.set(true)))).build());
-        assertThat(channelRead.get(), is(true));
-    }
-
-    @Test
-    public void requestsMoreContentAfterSuccessfulWrite() throws Exception {
-        AtomicLong requested = new AtomicLong(0L);
-
-        EmbeddedChannel ch = new EmbeddedChannel(
-                new CaptureChannelArgumentsHandler(channelArgs),
-                new LoggingHandler(),
-                new SimpleChannelInboundHandler<HttpResponse>() {
-                    @Override
-                    protected void channelRead0(ChannelHandlerContext ctx, HttpResponse response) throws Exception {
-                        HttpResponseWriter writer = new HttpResponseWriter(ctx);
-                        CompletableFuture<Void> future = writer.write(response);
-                        assertThat(future.isDone(), is(false));
-                        writeAck(channelArgs);  // For response headers
-
-                        contentObservable.onNext(copiedBuffer("aaa", UTF_8));
-                        assertThat(future.isDone(), is(false));
-                        assertThat(requested.get(), is(1L));
-
-                        contentObservable.onNext(copiedBuffer("bbb", UTF_8));
-                        assertThat(future.isDone(), is(false));
-                        assertThat(requested.get(), is(1L));
-
-                        writeAck(channelArgs);  // For content chunk: aaa
-                        assertThat(requested.get(), is(2L));
-
-                        writeAck(channelArgs);  // For content chunk: bbb
-                        assertThat(requested.get(), is(3L));
-
-                        contentObservable.onCompleted();
-                        writeAck(channelArgs);  // For EMPTY_LAST_CHUNK
-                        assertThat(future.isDone(), is(true));
-
-                        channelRead.set(true);
-                    }
-                }
-        );
-
-        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable.doOnRequest(requested::addAndGet))).build());
+        ch.writeInbound(response.body(new ByteStream(toPublisher(contentObservable.doOnUnsubscribe(() -> unsubscribed.set(true))))).build());
         assertThat(channelRead.get(), is(true));
     }
 
@@ -399,10 +357,10 @@ public class HttpResponseWriterTest {
                         CompletableFuture<Void> future = writer.write(response);
                         assertThat(future.isDone(), is(false));
 
-                        contentObservable.onNext(copiedBuffer("aaa", UTF_8));
+                        contentObservable.onNext(new Buffer("aaa", UTF_8));
                         assertThat(future.isDone(), is(false));
 
-                        contentObservable.onNext(copiedBuffer("bbbb", UTF_8));
+                        contentObservable.onNext(new Buffer("bbbb", UTF_8));
                         assertThat(future.isDone(), is(false));
 
                         contentObservable.onError(new TransportLostException(
@@ -415,7 +373,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable)).build());
+        ch.writeInbound(response(OK).body(new ByteStream(toPublisher(contentObservable))).build());
 
         assertThat(LOGGER.lastMessage(), is(
                 loggingEvent(

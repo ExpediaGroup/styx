@@ -15,14 +15,17 @@
  */
 package com.hotels.styx.support.origins;
 
+import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.stream.ByteStream;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
-import com.hotels.styx.api.HttpResponseStatus;
+import rx.Observable;
 
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
@@ -33,6 +36,7 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.fill;
 import static java.util.UUID.randomUUID;
+import static rx.RxReactiveStreams.toPublisher;
 
 public class AppHandler implements HttpHandler {
     private final HttpHandler handler;
@@ -57,11 +61,11 @@ public class AppHandler implements HttpHandler {
                     request.queryParam("status").ifPresent(status ->
                             responseBuilder
                                     .status(httpResponseStatus(status))
-                                    .body(StyxObservable.of("Returning requested status (" + status + ")"), UTF_8)
+                                    .body(new ByteStream(toPublisher(Observable.just(new Buffer("Returning requested status (" + status + ")", UTF_8)))))
                     );
 
                     request.queryParam("length").ifPresent(length ->
-                            responseBuilder.body(StyxObservable.of(generateContent(parseInt(length))), UTF_8)
+                            responseBuilder.body(new ByteStream(toPublisher(Observable.just(new Buffer(generateContent(parseInt(length)), UTF_8)))))
                     );
 
                     return responseBuilder.build();

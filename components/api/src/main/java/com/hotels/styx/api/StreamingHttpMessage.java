@@ -15,9 +15,10 @@
  */
 package com.hotels.styx.api;
 
+import com.hotels.styx.api.stream.ByteStream;
+
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
@@ -45,7 +46,7 @@ interface StreamingHttpMessage {
      *
      * @return the body
      */
-    ContentStream body();
+    ByteStream body();
 
     /**
      * Returns the value of the header with the specified {@code name}.
@@ -94,7 +95,4 @@ interface StreamingHttpMessage {
         return HttpMessageSupport.chunked(headers());
     }
 
-    default CompletableFuture<Boolean> releaseContentBuffers() {
-        return body().discard();
-    }
 }

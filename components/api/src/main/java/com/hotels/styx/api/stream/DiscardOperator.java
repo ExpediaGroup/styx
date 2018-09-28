@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
 
-public class DiscardOperator implements Publisher<Buffer> {
+class DiscardOperator implements Publisher<Buffer> {
     private final Publisher<Buffer> upstream;
     private final AtomicReference<Subscriber<? super Buffer>> subscriber = new AtomicReference<>();
 

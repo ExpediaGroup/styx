@@ -21,15 +21,15 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.FullHttpRequest.get
-import com.hotels.styx.api.StyxInternalObservables.{fromRxObservable, toRxObservable}
-import com.hotels.styx.api.{ContentStreams, _}
+import com.hotels.styx.api.stream.ByteStream
+import com.hotels.styx.api._
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
-import io.netty.buffer.ByteBuf
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import org.scalatest.{BeforeAndAfterAll, FunSpec}
+import rx.RxReactiveStreams.{toObservable, toPublisher}
 
 import scala.concurrent.duration._
 import scala.compat.java8.FutureConverters.CompletionStageOps
@@ -87,8 +87,8 @@ import scala.compat.java8.FunctionConverters.asJavaFunction
 
 class AsyncRequestContentDelayPlugin extends PluginAdapter {
   override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
-    val contentTransformation: rx.Observable[ByteBuf] =
-      ContentStreams.toRxObservable(request.body())
+    val contentTransformation: rx.Observable[Buffer] =
+      toObservable(request.body().publisher())
         .observeOn(ComputationScheduler())
         .flatMap(byteBuf => {
           Thread.sleep(1000)
@@ -97,7 +97,7 @@ class AsyncRequestContentDelayPlugin extends PluginAdapter {
 
     // This was split apart as it no longer compiles without the type annotation StyxObservable[HttpRequest]
     val mapped: StyxObservable[HttpRequest] = StyxObservable.of(request)
-      .map(asJavaFunction((request: HttpRequest) => request.newBuilder().body(ContentStreams.fromRxObservable(contentTransformation)).build()))
+      .map(asJavaFunction((request: HttpRequest) => request.newBuilder().body(new ByteStream(toPublisher(contentTransformation))).build()))
 
     mapped
       .flatMap(asJavaFunction((request: HttpRequest) => chain.proceed(request)))

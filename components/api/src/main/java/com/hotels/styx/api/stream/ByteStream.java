@@ -16,9 +16,6 @@
 package com.hotels.styx.api.stream;
 
 import com.hotels.styx.api.Buffer;
-import com.hotels.styx.api.ContentEventInternal;
-import com.hotels.styx.api.ContentStream;
-import io.netty.buffer.ByteBuf;
 import org.reactivestreams.Publisher;
 
 import java.util.concurrent.CompletableFuture;
@@ -26,6 +23,9 @@ import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Byte stream class.
+ */
 public class ByteStream {
     private Publisher<Buffer> stream;
 
@@ -46,19 +46,6 @@ public class ByteStream {
     public CompletableFuture<Buffer> aggregate(int maxContentBytes) {
         return new AggregateOperator(this.stream, maxContentBytes)
                 .apply();
-    }
-
-    private static ContentEventInternal toContentEvent(ByteBuf buf) {
-        return new ContentEventInternal(new Buffer(buf));
-    }
-
-    private static ContentStream.EndOfStreamEvent toEndOfStreamEvent() {
-        return new ContentStream.EndOfStreamEvent() {
-        };
-    }
-
-    private static ContentStream.ErrorEvent toErrorEvent(Throwable cause) {
-        return () -> cause;
     }
 
     public Publisher<Buffer> publisher() {

@@ -53,6 +53,7 @@ class MappingOperator implements Publisher<Buffer> {
         private final Function<Buffer, Buffer> mapping;
         private final Subscriber<? super Buffer> subscriber;
         private Subscription subscription;
+        private long pendingN;
 
         public MapSubscription(Function<Buffer, Buffer> mapping, Subscriber<? super Buffer> subscriber) {
             this.mapping = mapping;
@@ -63,11 +64,20 @@ class MappingOperator implements Publisher<Buffer> {
         public void onSubscribe(Subscription subscription) {
             requireNonNull(subscription);
             this.subscription = subscription;
+            if (pendingN > 0) {
+                subscription.request(pendingN);
+                pendingN = 0;
+            }
         }
 
         @Override
         public void request(long n) {
-            subscription.request(n);
+            if (subscription != null) {
+                subscription.request(pendingN + n);
+                pendingN = 0;
+            } else {
+                pendingN += n;
+            }
         }
 
         @Override

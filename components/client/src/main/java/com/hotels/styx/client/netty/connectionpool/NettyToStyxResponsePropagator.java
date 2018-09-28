@@ -16,11 +16,13 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.stream.ByteStream;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
 import io.netty.buffer.ByteBuf;
@@ -40,7 +42,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hotels.styx.api.ContentStreams.fromRxObservable;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
 import static io.netty.util.ReferenceCountUtil.retain;
@@ -48,6 +49,7 @@ import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.StreamSupport.stream;
 import static org.slf4j.LoggerFactory.getLogger;
+import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * A netty channel handler that reads from a channel and pass the message to a {@link Subscriber}.
@@ -223,7 +225,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     private static HttpResponse toStyxResponse(io.netty.handler.codec.http.HttpResponse nettyResponse, Observable<ByteBuf> contentObservable, Origin origin) {
         try {
             return toStyxResponse(nettyResponse)
-                    .body(fromRxObservable(contentObservable))
+                    .body(new ByteStream(toPublisher(contentObservable.map(Buffer::new))))
                     .build();
         } catch (IllegalArgumentException e) {
             throw new BadHttpResponseException(origin, e);
