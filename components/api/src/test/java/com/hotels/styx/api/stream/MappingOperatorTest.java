@@ -16,6 +16,7 @@
 package com.hotels.styx.api.stream;
 
 import com.hotels.styx.api.Buffer;
+import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -27,19 +28,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
+import static rx.RxReactiveStreams.toObservable;
+import static rx.RxReactiveStreams.toPublisher;
 
 public class MappingOperatorTest {
     private TestSubscriber<String> testSubscriber;
     private Buffer buffer1;
     private Buffer buffer2;
-    private RxContentPublisher upstream;
+    private Publisher<Buffer> upstream;
 
     @BeforeMethod
     public void setUp() {
         testSubscriber = new TestSubscriber<>(100);
         buffer1 = new Buffer("x", UTF_8);
         buffer2 = new Buffer("y", UTF_8);
-        upstream = new RxContentPublisher(Observable.just(
+        upstream = toPublisher(Observable.just(
                 new Buffer("x", UTF_8),
                 new Buffer("Y", UTF_8)
         ));
@@ -47,12 +50,11 @@ public class MappingOperatorTest {
 
     @Test
     public void appliesMappingToContent() {
-        RxContentConsumer consumer = new RxContentConsumer(
+        Observable<Buffer> consumer = toObservable(
                 new MappingOperator(upstream, this::toUpperCaseBuffer)
         );
 
-        consumer.consume()
-                .map(buffer -> new String(buffer.content(), UTF_8))
+        consumer.map(buffer -> new String(buffer.content(), UTF_8))
                 .subscribe(testSubscriber);
 
         assertThat(testSubscriber.getOnNextEvents(), contains("X", "Y"));
@@ -74,15 +76,14 @@ public class MappingOperatorTest {
     @Test
     public void mapsAnEmptyStream() {
 
-        RxContentConsumer consumer = new RxContentConsumer(
+        Observable<Buffer> consumer = toObservable(
                 new MappingOperator(
-                        new RxContentPublisher(Observable.empty()),
+                        toPublisher(Observable.empty()),
                         this::toUpperCaseBuffer));
 
         testSubscriber.requestMore(2);
 
-        consumer.consume()
-                .map(buffer -> new String(buffer.content(), UTF_8))
+        consumer.map(buffer -> new String(buffer.content(), UTF_8))
                 .subscribe(testSubscriber);
 
         assertThat(testSubscriber.getOnNextEvents().size(), is(0));
@@ -93,13 +94,12 @@ public class MappingOperatorTest {
     @Test
     public void mapsAnEmptyErroringStream() {
         MappingOperator operator = new MappingOperator(
-                new RxContentPublisher(Observable.<Buffer>empty().concatWith(Observable.error(new RuntimeException(">:-O")))),
+                toPublisher(Observable.<Buffer>empty().concatWith(Observable.error(new RuntimeException(">:-O")))),
                 this::toUpperCaseBuffer);
 
-        RxContentConsumer consumer = new RxContentConsumer(operator);
+        Observable<Buffer> consumer = toObservable(operator);
 
-        consumer.consume()
-                .map(buffer -> new String(buffer.content(), UTF_8))
+        consumer.map(buffer -> new String(buffer.content(), UTF_8))
                 .subscribe(testSubscriber);
 
         assertThat(testSubscriber.getOnNextEvents().size(), is(0));
@@ -111,13 +111,12 @@ public class MappingOperatorTest {
     @Test
     public void emitsErrors() {
         MappingOperator operator = new MappingOperator(
-                new RxContentPublisher(Observable.just(buffer2).concatWith(Observable.error(new RuntimeException(";-(")))),
+                toPublisher(Observable.just(buffer2).concatWith(Observable.error(new RuntimeException(";-(")))),
                 this::toUpperCaseBuffer);
 
-        RxContentConsumer consumer = new RxContentConsumer(operator);
+        Observable<Buffer> consumer = toObservable(operator);
 
-        consumer.consume()
-                .map(buffer -> new String(buffer.content(), UTF_8))
+        consumer.map(buffer -> new String(buffer.content(), UTF_8))
                 .subscribe(testSubscriber);
 
         assertThat(testSubscriber.getOnNextEvents().size(), is(1));

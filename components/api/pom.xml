@@ -27,6 +27,12 @@
     </dependency>
 
     <dependency>
+      <groupId>io.reactivex</groupId>
+      <artifactId>rxjava-reactive-streams</artifactId>
+      <version>1.1.1</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.reactivestreams</groupId>
       <artifactId>reactive-streams</artifactId>
     </dependency>
@@ -86,13 +92,6 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>io.reactivex</groupId>
-      <artifactId>rxjava-reactive-streams</artifactId>
-      <version>1.1.1</version>
-      <scope>test</scope>
     </dependency>
 
   </dependencies>

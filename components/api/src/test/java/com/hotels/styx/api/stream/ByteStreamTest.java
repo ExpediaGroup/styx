@@ -16,6 +16,7 @@
 package com.hotels.styx.api.stream;
 
 import com.hotels.styx.api.Buffer;
+import org.reactivestreams.Publisher;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
@@ -28,6 +29,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
+import static rx.RxReactiveStreams.toObservable;
+import static rx.RxReactiveStreams.toPublisher;
 
 
 public class ByteStreamTest {
@@ -48,11 +51,10 @@ public class ByteStreamTest {
 
     @Test
     public void publishesContent() {
-        ByteStream stream = new ByteStream(new RxContentPublisher(Observable.just(buf1, buf2, buf3)));
-        RxContentConsumer consumer = new RxContentConsumer(stream.publisher());
+        ByteStream stream = new ByteStream(toPublisher(Observable.just(buf1, buf2, buf3)));
 
         testSubscriber.requestMore(255);
-        consumer.consume().subscribe(testSubscriber);
+        toObservable(stream.publisher()).subscribe(testSubscriber);
 
         assertThat(testSubscriber.getOnNextEvents().size(), is(3));
         assertThat(testSubscriber.getOnErrorEvents().size(), is(0));
@@ -61,10 +63,8 @@ public class ByteStreamTest {
 
     @Test
     public void publisherBackpressure() {
-        ByteStream stream = new ByteStream(new RxContentPublisher(Observable.just(buf1, buf2, buf3)));
-        RxContentConsumer consumer = new RxContentConsumer(stream.publisher());
-
-        consumer.consume().subscribe(testSubscriber);
+        ByteStream stream = new ByteStream(toPublisher(Observable.just(buf1, buf2, buf3)));
+        toObservable(stream.publisher()).subscribe(testSubscriber);
 
         assertThat(testSubscriber.getOnNextEvents().size(), is(0));
 
@@ -82,11 +82,11 @@ public class ByteStreamTest {
 
     @Test
     public void mapsContent() {
-        ByteStream stream = new ByteStream(new RxContentPublisher(Observable.just(buf1, buf2, buf3)));
+        ByteStream stream = new ByteStream(toPublisher(Observable.just(buf1, buf2, buf3)));
 
-        RxContentConsumer consumer = new RxContentConsumer(stream.map(this::toUpperCase).publisher());
+        ByteStream mapped = stream.map(this::toUpperCase);
 
-        consumer.consume()
+        toObservable(mapped.publisher())
                 .map(this::decodeUtf8String)
                 .subscribe(stringSubscriber);
 
@@ -99,11 +99,11 @@ public class ByteStreamTest {
 
     @Test
     public void discardsContent() {
-        ByteStream stream = new ByteStream(new RxContentPublisher(Observable.just(buf1, buf2, buf3)));
+        ByteStream stream = new ByteStream(toPublisher(Observable.just(buf1, buf2, buf3)));
 
-        RxContentConsumer consumer = new RxContentConsumer(stream.discard().publisher());
+        ByteStream discarded = stream.discard();
 
-        consumer.consume().subscribe(testSubscriber);
+        toObservable(discarded.publisher()).subscribe(testSubscriber);
         testSubscriber.requestMore(100);
 
         assertThat(testSubscriber.getOnNextEvents(), empty());
@@ -113,7 +113,7 @@ public class ByteStreamTest {
 
     @Test
     public void aggregatesContent() throws ExecutionException, InterruptedException {
-        ByteStream stream = new ByteStream(new RxContentPublisher(Observable.just(buf1, buf2, buf3)));
+        ByteStream stream = new ByteStream(toPublisher(Observable.just(buf1, buf2, buf3)));
 
         Buffer aggregated = stream.aggregate(100).get();
         assertThat(decodeUtf8String(aggregated), is("abc"));

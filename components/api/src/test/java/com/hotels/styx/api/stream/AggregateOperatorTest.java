@@ -35,12 +35,13 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.testng.Assert.assertTrue;
+import static rx.RxReactiveStreams.toPublisher;
 
 public class AggregateOperatorTest {
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void allowsOnlyOneAggregation() {
-        RxContentPublisher upstream = new RxContentPublisher(Observable.just(new Buffer("x", UTF_8)));
+        Publisher<Buffer> upstream = toPublisher(Observable.just(new Buffer("x", UTF_8)));
         AggregateOperator aggregator = new AggregateOperator(upstream, 100);
 
         aggregator.apply();
@@ -49,7 +50,7 @@ public class AggregateOperatorTest {
 
     @Test
     public void aggregatesZeroBuffers() throws ExecutionException, InterruptedException {
-        AggregateOperator aggregator = new AggregateOperator(new RxContentPublisher(Observable.empty()), 100);
+        AggregateOperator aggregator = new AggregateOperator(toPublisher(Observable.empty()), 100);
 
         Buffer a = aggregator.apply().get();
         assertThat(a.size(), is(0));
@@ -58,7 +59,7 @@ public class AggregateOperatorTest {
 
     @Test
     public void aggregatesOneBuffer() throws ExecutionException, InterruptedException {
-        AggregateOperator aggregator = new AggregateOperator(new RxContentPublisher(Observable.just(new Buffer("x", UTF_8))), 100);
+        AggregateOperator aggregator = new AggregateOperator(toPublisher(Observable.just(new Buffer("x", UTF_8))), 100);
 
         Buffer a = aggregator.apply().get();
         assertThat(a.size(), is(1));
@@ -67,7 +68,7 @@ public class AggregateOperatorTest {
 
     @Test
     public void aggregatesManyBuffers() throws ExecutionException, InterruptedException {
-        AggregateOperator aggregator = new AggregateOperator(new RxContentPublisher(Observable.just(
+        AggregateOperator aggregator = new AggregateOperator(toPublisher(Observable.just(
                 new Buffer("x", UTF_8),
                 new Buffer("y", UTF_8))), 100);
 
@@ -87,7 +88,7 @@ public class AggregateOperatorTest {
         PublishSubject<Buffer> subject = PublishSubject.create();
 
         AggregateOperator aggregator = new AggregateOperator(
-                new RxContentPublisher(
+                toPublisher(
                         subject.doOnUnsubscribe(() -> unsubscribed.set(true))), 8
         );
 
@@ -143,7 +144,7 @@ public class AggregateOperatorTest {
         PublishSubject<Buffer> subject = PublishSubject.create();
 
         AggregateOperator aggregator = new AggregateOperator(
-                new RxContentPublisher(
+                toPublisher(
                         subject.doOnUnsubscribe(() -> unsubscribed.set(true))), 8
         );
 

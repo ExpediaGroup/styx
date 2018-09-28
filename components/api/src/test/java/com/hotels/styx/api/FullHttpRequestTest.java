@@ -16,7 +16,6 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.api.stream.RxContentConsumer;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import rx.observers.TestSubscriber;
@@ -30,13 +29,13 @@ import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.api.Url.Builder.url;
-import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.HttpMethod.DELETE;
 import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.api.HttpMethod.POST;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
+import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
@@ -52,6 +51,7 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static rx.RxReactiveStreams.toObservable;
 
 
 public class FullHttpRequestTest {
@@ -89,7 +89,7 @@ public class FullHttpRequestTest {
         TestSubscriber<Buffer> subscriber = TestSubscriber.create(0);
         subscriber.requestMore(1);
 
-        new RxContentConsumer(streaming.body().publisher()).consume().subscribe(subscriber);
+        toObservable(streaming.body().publisher()).subscribe(subscriber);
 
         assertThat(subscriber.getOnNextEvents().size(), is(0));
         subscriber.assertCompleted();
@@ -234,14 +234,13 @@ public class FullHttpRequestTest {
                 .body("original", UTF_8)
                 .build();
 
-        new RxContentConsumer(original.toStreamingRequest()
+        toObservable(original.toStreamingRequest()
                 .body()
                 .map(buffer -> {
                     buffer.delegate().array()[0] = 'A';
                     return buffer;
                 })
                 .publisher())
-                .consume()
                 .subscribe();
 
         assertThat(original.bodyAs(UTF_8), is("original"));

@@ -16,6 +16,7 @@
 package com.hotels.styx.api.stream;
 
 import com.hotels.styx.api.Buffer;
+import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -27,6 +28,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
+import static rx.RxReactiveStreams.toObservable;
+import static rx.RxReactiveStreams.toPublisher;
 
 public class DiscardOperatorTest {
 
@@ -43,7 +46,7 @@ public class DiscardOperatorTest {
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void allowsOnlyOneDiscardOperation() {
-        RxContentPublisher upstream = new RxContentPublisher(Observable.just(new Buffer("x", UTF_8)));
+        Publisher<Buffer> upstream = toPublisher(Observable.just(new Buffer("x", UTF_8)));
         DiscardOperator discard = new DiscardOperator(upstream);
 
         discard.subscribe(mock(Subscriber.class));
@@ -52,9 +55,9 @@ public class DiscardOperatorTest {
 
     @Test
     public void discardsZeroBuffers() {
-        DiscardOperator discard = new DiscardOperator(new RxContentPublisher(Observable.empty()));
+        DiscardOperator discard = new DiscardOperator(toPublisher(Observable.empty()));
 
-        new RxContentConsumer(discard).consume().subscribe(testSubscriber);
+        toObservable(discard).subscribe(testSubscriber);
 
         assertThat(testSubscriber.getOnNextEvents(), is(empty()));
 
@@ -66,12 +69,12 @@ public class DiscardOperatorTest {
     @Test
     public void discardsOneBuffer() {
         DiscardOperator discard = new DiscardOperator(
-                new RxContentPublisher(
+                toPublisher(
                         Observable.just(
                                 new Buffer("x", UTF_8)
                         )));
 
-        new RxContentConsumer(discard).consume().subscribe(testSubscriber);
+        toObservable(discard).subscribe(testSubscriber);
 
         assertThat(testSubscriber.getOnNextEvents(), is(empty()));
         assertThat(testSubscriber.getOnErrorEvents().size(), is(0));
@@ -81,13 +84,13 @@ public class DiscardOperatorTest {
     @Test
     public void discardsManyBuffers() {
         DiscardOperator discard = new DiscardOperator(
-                new RxContentPublisher(
+                toPublisher(
                         Observable.just(
                                 buffer1,
                                 buffer2
                         )));
 
-        new RxContentConsumer(discard).consume().subscribe(testSubscriber);
+        toObservable(discard).subscribe(testSubscriber);
 
         assertThat(testSubscriber.getOnNextEvents(), is(empty()));
         assertThat(testSubscriber.getOnErrorEvents().size(), is(0));
@@ -107,7 +110,7 @@ public class DiscardOperatorTest {
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void allowsOnlyOneSubscription() {
-        RxContentPublisher upstream = new RxContentPublisher(Observable.just(new Buffer("x", UTF_8)));
+        Publisher<Buffer> upstream = toPublisher(Observable.just(new Buffer("x", UTF_8)));
 
         Subscriber subscription1 = mock(Subscriber.class);
         Subscriber subscription2 = mock(Subscriber.class);

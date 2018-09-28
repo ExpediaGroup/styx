@@ -17,8 +17,6 @@ package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.stream.ByteStream;
-import com.hotels.styx.api.stream.RxContentPublisher;
-import io.netty.buffer.Unpooled;
 import rx.Observable;
 
 import java.nio.charset.Charset;
@@ -47,12 +45,14 @@ import static com.hotels.styx.api.HttpMethod.PUT;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.RequestCookie.decode;
 import static com.hotels.styx.api.RequestCookie.encode;
+import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
+import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * An immutable HTTP request object including full body content.
@@ -317,9 +317,9 @@ public class FullHttpRequest implements FullHttpMessage {
                 .disableValidation();
 
         if (this.body.length == 0) {
-            return streamingBuilder.body(new ByteStream(new RxContentPublisher(Observable.empty()))).build();
+            return streamingBuilder.body(new ByteStream(toPublisher(Observable.empty()))).build();
         } else {
-            return streamingBuilder.body(new ByteStream(new RxContentPublisher(Observable.just(new Buffer(Unpooled.copiedBuffer(body)))))).build();
+            return streamingBuilder.body(new ByteStream(toPublisher(Observable.just(new Buffer(copiedBuffer(body)))))).build();
         }
     }
 

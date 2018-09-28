@@ -17,7 +17,6 @@ package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.stream.ByteStream;
-import com.hotels.styx.api.stream.RxContentPublisher;
 import rx.Observable;
 
 import java.util.Collection;
@@ -55,6 +54,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
+import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * An HTTP request object with a byte stream body.
@@ -405,7 +405,7 @@ public class HttpRequest implements StreamingHttpMessage {
         public Builder() {
             this.url = Url.Builder.url("/").build();
             this.headers = new HttpHeaders.Builder();
-            this.body = new ByteStream(new RxContentPublisher(Observable.empty()));
+            this.body = new ByteStream(toPublisher(Observable.empty()));
         }
 
         /**
@@ -450,7 +450,7 @@ public class HttpRequest implements StreamingHttpMessage {
             this.url = request.url();
             this.version = request.version();
             this.headers = request.headers().newBuilder();
-            this.body = new ByteStream(new RxContentPublisher(Observable.just(new Buffer(copiedBuffer(request.body())))));
+            this.body = new ByteStream(toPublisher(Observable.just(new Buffer(copiedBuffer(request.body())))));
         }
 
         /**

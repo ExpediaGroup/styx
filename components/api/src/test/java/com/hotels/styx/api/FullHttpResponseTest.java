@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import com.hotels.styx.api.stream.RxContentConsumer;
 import io.netty.buffer.ByteBuf;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -28,8 +27,6 @@ import java.util.concurrent.ExecutionException;
 import static com.hotels.styx.api.FullHttpResponse.response;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.ResponseCookie.responseCookie;
-import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.CREATED;
@@ -41,6 +38,8 @@ import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.HttpResponseStatus.SEE_OTHER;
 import static com.hotels.styx.api.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.ResponseCookie.responseCookie;
+import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_16;
@@ -52,6 +51,7 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static rx.RxReactiveStreams.toObservable;
 
 public class FullHttpResponseTest {
     @Test
@@ -435,14 +435,13 @@ public class FullHttpResponseTest {
 
 
 
-        new RxContentConsumer(original.toStreamingResponse()
+        toObservable(original.toStreamingResponse()
                 .body()
                 .map(buf -> {
                     buf.delegate().array()[0] = 'A';
                     return buf;
                 })
                 .publisher())
-                .consume()
                 .subscribe();
 
         assertThat(original.bodyAs(UTF_8), is("original"));
