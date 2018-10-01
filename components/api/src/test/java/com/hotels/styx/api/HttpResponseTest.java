@@ -18,7 +18,7 @@ package com.hotels.styx.api;
 import com.hotels.styx.api.stream.ByteStream;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import rx.Observable;
+import reactor.core.publisher.Flux;
 
 import java.util.Set;
 import java.util.stream.Stream;
@@ -52,8 +52,6 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static rx.Observable.just;
-import static rx.RxReactiveStreams.toPublisher;
 
 public class HttpResponseTest {
     @Test
@@ -62,7 +60,7 @@ public class HttpResponseTest {
                 .version(HTTP_1_0)
                 .header("HeaderName", "HeaderValue")
                 .cookies(responseCookie("CookieName", "CookieValue").build())
-                .body(new ByteStream(toPublisher(just("foo", "bar").map(it -> new Buffer(copiedBuffer(it, UTF_8))))))
+                .body(new ByteStream(Flux.just("foo", "bar").map(it -> new Buffer(copiedBuffer(it, UTF_8)))))
                 .build();
 
         FullHttpResponse full = response.toFullResponse(0x1000)
@@ -91,7 +89,7 @@ public class HttpResponseTest {
     private Object[][] emptyBodyResponses() {
         return new Object[][]{
                 {response().build()},
-                {response().body(new ByteStream(toPublisher(Observable.empty()))).build()},
+                {response().body(new ByteStream(Flux.empty())).build()},
         };
     }
 
@@ -380,9 +378,10 @@ public class HttpResponseTest {
     }
 
     private static ByteStream body(String... contents) {
-        return new ByteStream(toPublisher(Observable.from(Stream.of(contents)
-                .map(content -> new Buffer(copiedBuffer(content, UTF_8)))
-                .collect(toList()))));
+        return new ByteStream(Flux.fromIterable(
+                Stream.of(contents)
+                        .map(content -> new Buffer(copiedBuffer(content, UTF_8)))
+                        .collect(toList())));
     }
 
     private static String bytesToString(ByteStream body) throws Exception {

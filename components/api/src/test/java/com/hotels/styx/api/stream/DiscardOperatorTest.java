@@ -20,33 +20,28 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import rx.Observable;
-import rx.observers.TestSubscriber;
+import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
-import static rx.RxReactiveStreams.toObservable;
-import static rx.RxReactiveStreams.toPublisher;
 
 public class DiscardOperatorTest {
 
-    private TestSubscriber<? super Buffer> testSubscriber;
     private Buffer buffer1;
     private Buffer buffer2;
 
     @BeforeMethod
     public void setUp() {
-        testSubscriber = new TestSubscriber<>();
         buffer1 = new Buffer("x", UTF_8);
         buffer2 = new Buffer("y", UTF_8);
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void allowsOnlyOneDiscardOperation() {
-        Publisher<Buffer> upstream = toPublisher(Observable.just(new Buffer("x", UTF_8)));
+        Publisher<Buffer> upstream = Flux.just(new Buffer("x", UTF_8));
         DiscardOperator discard = new DiscardOperator(upstream);
 
         discard.subscribe(mock(Subscriber.class));
@@ -55,46 +50,31 @@ public class DiscardOperatorTest {
 
     @Test
     public void discardsZeroBuffers() {
-        DiscardOperator discard = new DiscardOperator(toPublisher(Observable.empty()));
+        DiscardOperator discard = new DiscardOperator(Flux.empty());
 
-        toObservable(discard).subscribe(testSubscriber);
-
-        assertThat(testSubscriber.getOnNextEvents(), is(empty()));
-
-        assertThat(testSubscriber.getOnNextEvents().size(), is(0));
-        assertThat(testSubscriber.getOnErrorEvents().size(), is(0));
-        assertThat(testSubscriber.getOnCompletedEvents().size(), is(1));
+        StepVerifier.create(discard, 100)
+                .expectSubscription()
+                .verifyComplete();
     }
 
     @Test
     public void discardsOneBuffer() {
-        DiscardOperator discard = new DiscardOperator(
-                toPublisher(
-                        Observable.just(
-                                new Buffer("x", UTF_8)
-                        )));
+        DiscardOperator discard = new DiscardOperator(Flux.just(new Buffer("x", UTF_8)));
 
-        toObservable(discard).subscribe(testSubscriber);
-
-        assertThat(testSubscriber.getOnNextEvents(), is(empty()));
-        assertThat(testSubscriber.getOnErrorEvents().size(), is(0));
-        assertThat(testSubscriber.getOnCompletedEvents().size(), is(1));
+        StepVerifier.create(discard, 100)
+                .verifyComplete();
     }
 
     @Test
     public void discardsManyBuffers() {
-        DiscardOperator discard = new DiscardOperator(
-                toPublisher(
-                        Observable.just(
-                                buffer1,
-                                buffer2
-                        )));
+        DiscardOperator discard = new DiscardOperator(Flux.just(buffer1, buffer2));
 
-        toObservable(discard).subscribe(testSubscriber);
+        StepVerifier.create(discard)
+                .expectSubscription()
+                .expectNextCount(0)
+                .expectComplete()
+                .verify();
 
-        assertThat(testSubscriber.getOnNextEvents(), is(empty()));
-        assertThat(testSubscriber.getOnErrorEvents().size(), is(0));
-        assertThat(testSubscriber.getOnCompletedEvents().size(), is(1));
         assertThat(buffer1.delegate().refCnt(), is(0));
         assertThat(buffer2.delegate().refCnt(), is(0));
     }
@@ -110,7 +90,7 @@ public class DiscardOperatorTest {
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void allowsOnlyOneSubscription() {
-        Publisher<Buffer> upstream = toPublisher(Observable.just(new Buffer("x", UTF_8)));
+        Publisher<Buffer> upstream = Flux.just(new Buffer("x", UTF_8));
 
         Subscriber subscription1 = mock(Subscriber.class);
         Subscriber subscription2 = mock(Subscriber.class);

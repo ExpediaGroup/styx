@@ -20,12 +20,11 @@ import com.hotels.styx.api.ContentOverflowException;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscription;
 import org.testng.annotations.Test;
-import rx.Observable;
-import rx.subjects.PublishSubject;
+import reactor.core.publisher.Flux;
+import reactor.test.publisher.TestPublisher;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -35,13 +34,12 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.testng.Assert.assertTrue;
-import static rx.RxReactiveStreams.toPublisher;
 
 public class AggregateOperatorTest {
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void allowsOnlyOneAggregation() {
-        Publisher<Buffer> upstream = toPublisher(Observable.just(new Buffer("x", UTF_8)));
+        Publisher<Buffer> upstream = Flux.just(new Buffer("x", UTF_8));
         AggregateOperator aggregator = new AggregateOperator(upstream, 100);
 
         aggregator.apply();
@@ -50,7 +48,7 @@ public class AggregateOperatorTest {
 
     @Test
     public void aggregatesZeroBuffers() throws ExecutionException, InterruptedException {
-        AggregateOperator aggregator = new AggregateOperator(toPublisher(Observable.empty()), 100);
+        AggregateOperator aggregator = new AggregateOperator(Flux.empty(), 100);
 
         Buffer a = aggregator.apply().get();
         assertThat(a.size(), is(0));
@@ -59,7 +57,7 @@ public class AggregateOperatorTest {
 
     @Test
     public void aggregatesOneBuffer() throws ExecutionException, InterruptedException {
-        AggregateOperator aggregator = new AggregateOperator(toPublisher(Observable.just(new Buffer("x", UTF_8))), 100);
+        AggregateOperator aggregator = new AggregateOperator(Flux.just(new Buffer("x", UTF_8)), 100);
 
         Buffer a = aggregator.apply().get();
         assertThat(a.size(), is(1));
@@ -68,9 +66,9 @@ public class AggregateOperatorTest {
 
     @Test
     public void aggregatesManyBuffers() throws ExecutionException, InterruptedException {
-        AggregateOperator aggregator = new AggregateOperator(toPublisher(Observable.just(
+        AggregateOperator aggregator = new AggregateOperator(Flux.just(
                 new Buffer("x", UTF_8),
-                new Buffer("y", UTF_8))), 100);
+                new Buffer("y", UTF_8)), 100);
 
         Buffer a = aggregator.apply().get();
         assertThat(a.size(), is(2));
@@ -79,18 +77,14 @@ public class AggregateOperatorTest {
 
     @Test
     public void aggregatesUpToNBytes() {
-        AtomicBoolean unsubscribed = new AtomicBoolean();
         AtomicReference<Throwable> causeCapture = new AtomicReference<>(null);
 
         Buffer a = new Buffer("aaabbb", UTF_8);
         Buffer b = new Buffer("ccc", UTF_8);
 
-        PublishSubject<Buffer> subject = PublishSubject.create();
+        TestPublisher<Buffer> upstream = TestPublisher.create();
 
-        AggregateOperator aggregator = new AggregateOperator(
-                toPublisher(
-                        subject.doOnUnsubscribe(() -> unsubscribed.set(true))), 8
-        );
+        AggregateOperator aggregator = new AggregateOperator(upstream, 8);
 
         CompletableFuture<Buffer> future = aggregator.apply()
                 .exceptionally(cause -> {
@@ -98,15 +92,16 @@ public class AggregateOperatorTest {
                     throw new RuntimeException();
                 });
 
-        subject.onNext(a);
-        subject.onNext(b);
+        upstream.next(a);
+        upstream.next(b);
+
+        upstream.assertCancelled();
 
         assertTrue(future.isCompletedExceptionally());
         assertThat(causeCapture.get(), instanceOf(ContentOverflowException.class));
 
         assertThat(a.delegate().refCnt(), is(0));
         assertThat(b.delegate().refCnt(), is(0));
-        assertTrue(unsubscribed.get());
     }
 
     @Test(expectedExceptions = NullPointerException.class)
@@ -136,17 +131,13 @@ public class AggregateOperatorTest {
 
     @Test
     public void emitsErrors() {
-        AtomicBoolean unsubscribed = new AtomicBoolean();
         AtomicReference<Throwable> causeCapture = new AtomicReference<>(null);
 
         Buffer a = new Buffer("aaabbb", UTF_8);
 
-        PublishSubject<Buffer> subject = PublishSubject.create();
+        TestPublisher<Buffer> upstream = TestPublisher.create();
 
-        AggregateOperator aggregator = new AggregateOperator(
-                toPublisher(
-                        subject.doOnUnsubscribe(() -> unsubscribed.set(true))), 8
-        );
+        AggregateOperator aggregator = new AggregateOperator(upstream, 8);
 
         CompletableFuture<Buffer> future = aggregator.apply()
                 .exceptionally(cause -> {
@@ -154,14 +145,15 @@ public class AggregateOperatorTest {
                     throw new RuntimeException();
                 });
 
-        subject.onNext(a);
-        subject.onError(new RuntimeException("something broke"));
+        upstream.next(a);
+        upstream.error(new RuntimeException("something broke"));
+
+        upstream.assertCancelled();
 
         assertTrue(future.isCompletedExceptionally());
         assertThat(causeCapture.get(), instanceOf(RuntimeException.class));
         assertThat(causeCapture.get().getMessage(), is("something broke"));
 
         assertThat(a.delegate().refCnt(), is(0));
-        assertTrue(unsubscribed.get());
     }
 }

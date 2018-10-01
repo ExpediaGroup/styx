@@ -18,7 +18,7 @@ package com.hotels.styx.api;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.stream.ByteStream;
-import rx.Observable;
+import reactor.core.publisher.Flux;
 
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -42,7 +42,6 @@ import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
-import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * An immutable HTTP response object including full body content.
@@ -184,9 +183,9 @@ public class FullHttpResponse implements FullHttpMessage {
      */
     public HttpResponse toStreamingResponse() {
         if (this.body.length == 0) {
-            return new HttpResponse.Builder(this, new ByteStream(toPublisher(Observable.empty()))).build();
+            return new HttpResponse.Builder(this, new ByteStream(Flux.empty())).build();
         } else {
-            return new HttpResponse.Builder(this, new ByteStream(toPublisher(Observable.just(new Buffer(copiedBuffer(this.body)))))).build();
+            return new HttpResponse.Builder(this, new ByteStream(Flux.just(new Buffer(copiedBuffer(this.body))))).build();
         }
     }
 

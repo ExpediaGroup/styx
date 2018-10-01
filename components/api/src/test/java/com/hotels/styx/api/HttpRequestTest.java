@@ -19,7 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.stream.ByteStream;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import rx.Observable;
+import reactor.core.publisher.Flux;
 
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
@@ -52,7 +52,6 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static rx.RxReactiveStreams.toPublisher;
 
 public class HttpRequestTest {
     @Test
@@ -83,7 +82,7 @@ public class HttpRequestTest {
         Buffer content = new Buffer("original", UTF_8);
 
         HttpRequest original = HttpRequest.get("/foo")
-                .body(new ByteStream(toPublisher(Observable.just(content))))
+                .body(new ByteStream(Flux.just(content)))
                 .build();
 
         FullHttpRequest fullRequest = original.toFullRequest(100)
@@ -109,7 +108,7 @@ public class HttpRequestTest {
     private Object[][] emptyBodyRequests() {
         return new Object[][]{
                 {get("/foo/bar").build()},
-                {post("/foo/bar", new ByteStream(toPublisher(Observable.empty()))).build()},
+                {post("/foo/bar", new ByteStream(Flux.empty())).build()},
         };
     }
 
@@ -306,7 +305,7 @@ public class HttpRequestTest {
 
     @Test
     public void shouldSetsContentLengthForNonStreamingBodyMessage() {
-        assertThat(put("/home").body(new ByteStream(toPublisher(Observable.just(new Buffer("Hello", UTF_8))))).build().header(CONTENT_LENGTH), isAbsent());
+        assertThat(put("/home").body(new ByteStream(Flux.just(new Buffer("Hello", UTF_8)))).build().header(CONTENT_LENGTH), isAbsent());
     }
 
     @Test
@@ -440,13 +439,12 @@ public class HttpRequestTest {
     }
 
     private static ByteStream body(String... contents) {
+
         return new ByteStream(
-                toPublisher(
-                Observable.from(
+                Flux.fromIterable(
                         Stream.of(contents)
                                 .map(content -> new Buffer(content, UTF_8))
-                                .collect(toList())
-                )));
+                                .collect(toList())));
     }
 
     private static String bytesToString(ByteStream body) {

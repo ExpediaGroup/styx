@@ -15,10 +15,9 @@
  */
 package com.hotels.styx.api;
 
-import io.netty.buffer.ByteBuf;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import rx.observers.TestSubscriber;
+import reactor.core.publisher.Flux;
 
 import java.util.Optional;
 import java.util.Set;
@@ -51,7 +50,6 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static rx.RxReactiveStreams.toObservable;
 
 public class FullHttpResponseTest {
     @Test
@@ -325,9 +323,6 @@ public class FullHttpResponseTest {
     public void convertsToStreamingHttpResponseWithEmptyBody(FullHttpResponse response) throws ExecutionException, InterruptedException {
         HttpResponse streaming = response.toStreamingResponse();
 
-        TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
-        subscriber.requestMore(1);
-
         byte[] result = streaming.body().aggregate(1000)
                 .get()
                 .content();
@@ -433,9 +428,7 @@ public class FullHttpResponseTest {
                 .body("original", UTF_8)
                 .build();
 
-
-
-        toObservable(original.toStreamingResponse()
+        Flux.from(original.toStreamingResponse()
                 .body()
                 .map(buf -> {
                     buf.delegate().array()[0] = 'A';

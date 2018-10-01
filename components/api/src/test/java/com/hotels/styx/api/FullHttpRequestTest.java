@@ -18,7 +18,8 @@ package com.hotels.styx.api;
 import com.google.common.collect.ImmutableMap;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import rx.observers.TestSubscriber;
+import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
 
 import java.util.Optional;
 
@@ -51,7 +52,6 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static rx.RxReactiveStreams.toObservable;
 
 
 public class FullHttpRequestTest {
@@ -86,13 +86,9 @@ public class FullHttpRequestTest {
     public void convertsToStreamingHttpRequestWithEmptyBody(FullHttpRequest fullRequest) {
         HttpRequest streaming = fullRequest.toStreamingRequest();
 
-        TestSubscriber<Buffer> subscriber = TestSubscriber.create(0);
-        subscriber.requestMore(1);
-
-        toObservable(streaming.body().publisher()).subscribe(subscriber);
-
-        assertThat(subscriber.getOnNextEvents().size(), is(0));
-        subscriber.assertCompleted();
+        StepVerifier.create(streaming.body().publisher())
+                .expectComplete()
+                .verify();
     }
 
     // We want to ensure that these are all considered equivalent
@@ -234,7 +230,7 @@ public class FullHttpRequestTest {
                 .body("original", UTF_8)
                 .build();
 
-        toObservable(original.toStreamingRequest()
+        Flux.from(original.toStreamingRequest()
                 .body()
                 .map(buffer -> {
                     buffer.delegate().array()[0] = 'A';

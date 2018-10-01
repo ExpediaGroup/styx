@@ -18,7 +18,7 @@ package com.hotels.styx.api;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.api.stream.ByteStream;
-import rx.Observable;
+import reactor.core.publisher.Flux;
 
 import java.util.Collection;
 import java.util.List;
@@ -42,7 +42,6 @@ import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
-import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * An HTTP response object with a byte stream body.
@@ -264,7 +263,7 @@ public class HttpResponse implements StreamingHttpMessage {
          */
         public Builder() {
             this.headers = new HttpHeaders.Builder();
-            this.body = new ByteStream(toPublisher(Observable.empty()));
+            this.body = new ByteStream(Flux.empty());
         }
 
         /**

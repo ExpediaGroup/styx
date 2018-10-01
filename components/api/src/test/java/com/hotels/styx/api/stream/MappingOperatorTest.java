@@ -20,44 +20,33 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import rx.Observable;
-import rx.observers.TestSubscriber;
+import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
-import static rx.RxReactiveStreams.toObservable;
-import static rx.RxReactiveStreams.toPublisher;
 
 public class MappingOperatorTest {
-    private TestSubscriber<String> testSubscriber;
     private Buffer buffer1;
-    private Buffer buffer2;
     private Publisher<Buffer> upstream;
 
     @BeforeMethod
     public void setUp() {
-        testSubscriber = new TestSubscriber<>(100);
-        buffer1 = new Buffer("x", UTF_8);
-        buffer2 = new Buffer("y", UTF_8);
-        upstream = toPublisher(Observable.just(
+        buffer1 = new Buffer("y", UTF_8);
+        upstream = Flux.just(
                 new Buffer("x", UTF_8),
                 new Buffer("Y", UTF_8)
-        ));
+        );
     }
 
     @Test
     public void appliesMappingToContent() {
-        Observable<Buffer> consumer = toObservable(
-                new MappingOperator(upstream, this::toUpperCaseBuffer)
-        );
+        Flux<Buffer> consumer = Flux.from(new MappingOperator(upstream, this::toUpperCaseBuffer));
 
-        consumer.map(buffer -> new String(buffer.content(), UTF_8))
-                .subscribe(testSubscriber);
-
-        assertThat(testSubscriber.getOnNextEvents(), contains("X", "Y"));
+        StepVerifier.create(consumer.map(buffer -> new String(buffer.content(), UTF_8)))
+                .expectNext("X", "Y")
+                .expectComplete()
+                .verify();
     }
 
 
@@ -75,53 +64,31 @@ public class MappingOperatorTest {
 
     @Test
     public void mapsAnEmptyStream() {
-
-        Observable<Buffer> consumer = toObservable(
-                new MappingOperator(
-                        toPublisher(Observable.empty()),
-                        this::toUpperCaseBuffer));
-
-        testSubscriber.requestMore(2);
-
-        consumer.map(buffer -> new String(buffer.content(), UTF_8))
-                .subscribe(testSubscriber);
-
-        assertThat(testSubscriber.getOnNextEvents().size(), is(0));
-        assertThat(testSubscriber.getOnErrorEvents().size(), is(0));
-        assertThat(testSubscriber.getOnCompletedEvents().size(), is(1));
+        StepVerifier.create(new MappingOperator(Flux.empty(), this::toUpperCaseBuffer))
+                .thenRequest(2)
+                .verifyComplete();
     }
 
     @Test
     public void mapsAnEmptyErroringStream() {
         MappingOperator operator = new MappingOperator(
-                toPublisher(Observable.<Buffer>empty().concatWith(Observable.error(new RuntimeException(">:-O")))),
+                Flux.<Buffer>empty().concatWith(Flux.error(new RuntimeException(">:-O"))),
                 this::toUpperCaseBuffer);
 
-        Observable<Buffer> consumer = toObservable(operator);
-
-        consumer.map(buffer -> new String(buffer.content(), UTF_8))
-                .subscribe(testSubscriber);
-
-        assertThat(testSubscriber.getOnNextEvents().size(), is(0));
-        assertThat(testSubscriber.getOnErrorEvents().size(), is(1));
-        assertThat(testSubscriber.getOnCompletedEvents().size(), is(0));
+        StepVerifier.create(operator, 2)
+                .verifyError();
     }
 
 
     @Test
     public void emitsErrors() {
         MappingOperator operator = new MappingOperator(
-                toPublisher(Observable.just(buffer2).concatWith(Observable.error(new RuntimeException(";-(")))),
+                Flux.just(buffer1).concatWith(Flux.error(new RuntimeException(";-("))),
                 this::toUpperCaseBuffer);
 
-        Observable<Buffer> consumer = toObservable(operator);
-
-        consumer.map(buffer -> new String(buffer.content(), UTF_8))
-                .subscribe(testSubscriber);
-
-        assertThat(testSubscriber.getOnNextEvents().size(), is(1));
-        assertThat(testSubscriber.getOnErrorEvents().size(), is(1));
-        assertThat(testSubscriber.getOnCompletedEvents().size(), is(0));
+        StepVerifier.create(operator)
+                .expectNextCount(1)
+                .verifyError();
     }
 
     @Test(expectedExceptions = NullPointerException.class)
