@@ -85,6 +85,10 @@ public class ByteStreamTest {
         StepVerifier.create(discarded.publisher())
                 .expectSubscription()
                 .verifyComplete();
+
+        assertThat(buf1.delegate().refCnt(), is(0));
+        assertThat(buf2.delegate().refCnt(), is(0));
+        assertThat(buf3.delegate().refCnt(), is(0));
     }
 
     @Test

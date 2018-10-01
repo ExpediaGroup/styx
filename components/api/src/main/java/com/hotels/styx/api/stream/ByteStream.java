@@ -17,6 +17,7 @@ package com.hotels.styx.api.stream;
 
 import com.hotels.styx.api.Buffer;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -34,12 +35,13 @@ public class ByteStream {
     }
 
     public ByteStream map(Function<Buffer, Buffer> mapping) {
-        return new ByteStream(new MappingOperator(this.stream, mapping));
+        return new ByteStream(Flux.from(stream).map(mapping));
     }
 
     public ByteStream discard() {
-        // Todo: modify the DiscardOperator to make it similar to MappingOperator:
-        return new ByteStream(new DiscardOperator(this.stream));
+        return new ByteStream(Flux.from(stream)
+                .doOnNext(buffer -> buffer.delegate().release())
+                .filter(buffer -> false));
     }
 
     // TODO: This could return a ByteStream of aggregated content
