@@ -17,6 +17,7 @@ package com.hotels.styx.api.stream;
 
 import com.hotels.styx.api.Buffer;
 import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
 import reactor.core.publisher.Flux;
 
 import java.util.concurrent.CompletableFuture;
@@ -27,7 +28,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Byte stream class.
  */
-public class ByteStream {
+public class ByteStream implements Publisher<Buffer> {
     private Publisher<Buffer> stream;
 
     public ByteStream(Publisher<Buffer> stream) {
@@ -50,8 +51,8 @@ public class ByteStream {
                 .apply();
     }
 
-    public Publisher<Buffer> publisher() {
-        return stream;
+    @Override
+    public void subscribe(Subscriber<? super Buffer> subscriber) {
+        stream.subscribe(subscriber);
     }
-
 }

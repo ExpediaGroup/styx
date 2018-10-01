@@ -348,7 +348,7 @@ public class NettyToStyxRequestDecoderTest {
 
     private TestSubscriber<Buffer> subscribeTo(ByteStream contentStream) {
         TestSubscriber<Buffer> subscriber = new TestSubscriber<>();
-        toObservable(contentStream.publisher()).subscribe(subscriber);
+        toObservable(contentStream).subscribe(subscriber);
         return subscriber;
     }
 
@@ -363,7 +363,7 @@ public class NettyToStyxRequestDecoderTest {
 
     private static StringBuilder subscribeToContent(ByteStream contentStream, CountDownLatch onCompleteLatch) {
         StringBuilder builder = new StringBuilder();
-        toObservable(contentStream.publisher()).subscribe(new Subscriber<Buffer>() {
+        toObservable(contentStream).subscribe(new Subscriber<Buffer>() {
             @Override
             public void onCompleted() {
                 // no-op

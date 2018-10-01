@@ -82,7 +82,7 @@ class HttpResponseWriter {
 
             // TODO: Mikko
             // - The ContentObservable should have a mechanism to consume its contents.
-            Subscription subscriber = toObservable(response.body().publisher()).map(Buffer::delegate).subscribe(new Subscriber<ByteBuf>() {
+            Subscription subscriber = toObservable(response.body()).map(Buffer::delegate).subscribe(new Subscriber<ByteBuf>() {
                 @Override
                 public void onStart() {
                     request(1);
@@ -160,7 +160,7 @@ class HttpResponseWriter {
             return future;
         } catch (Throwable cause) {
             LOGGER.warn("Failed to convert response headers. response={}, Cause={}", new Object[]{response, cause});
-            toObservable(response.body().publisher()).forEach(it -> it.delegate().release());
+            toObservable(response.body()).forEach(it -> it.delegate().release());
             future.completeExceptionally(cause);
             return future;
         }

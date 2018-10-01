@@ -86,7 +86,7 @@ public class FullHttpRequestTest {
     public void convertsToStreamingHttpRequestWithEmptyBody(FullHttpRequest fullRequest) {
         HttpRequest streaming = fullRequest.toStreamingRequest();
 
-        StepVerifier.create(streaming.body().publisher())
+        StepVerifier.create(streaming.body())
                 .expectComplete()
                 .verify();
     }
@@ -235,8 +235,7 @@ public class FullHttpRequestTest {
                 .map(buffer -> {
                     buffer.delegate().array()[0] = 'A';
                     return buffer;
-                })
-                .publisher())
+                }))
                 .subscribe();
 
         assertThat(original.bodyAs(UTF_8), is("original"));

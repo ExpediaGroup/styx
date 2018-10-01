@@ -433,8 +433,7 @@ public class FullHttpResponseTest {
                 .map(buf -> {
                     buf.delegate().array()[0] = 'A';
                     return buf;
-                })
-                .publisher())
+                }))
                 .subscribe();
 
         assertThat(original.bodyAs(UTF_8), is("original"));

@@ -126,7 +126,7 @@ class OriginClosesConnectionSpec extends FunSuite
         .toStreamingRequest)
 
     responseObservable
-      .doOnNext((t: HttpResponse) => RxReactiveStreams.toObservable(t.body().publisher()).subscribe(contentSubscriber))
+      .doOnNext((t: HttpResponse) => RxReactiveStreams.toObservable(t.body()).subscribe(contentSubscriber))
       .subscribe(responseSubscriber)
 
     responseSubscriber.awaitTerminalEvent()

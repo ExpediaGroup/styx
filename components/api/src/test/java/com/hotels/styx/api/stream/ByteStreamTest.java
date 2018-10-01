@@ -44,7 +44,7 @@ public class ByteStreamTest {
     public void publishesContent() {
         ByteStream stream = new ByteStream(Flux.just(buf1, buf2, buf3));
 
-        StepVerifier.create(stream.publisher())
+        StepVerifier.create(stream)
                 .expectNext(buf1)
                 .expectNext(buf2)
                 .expectNext(buf3)
@@ -55,7 +55,7 @@ public class ByteStreamTest {
     public void publisherBackpressure() {
         ByteStream stream = new ByteStream(Flux.just(buf1, buf2, buf3));
 
-        StepVerifier.create(stream.publisher(), 0)
+        StepVerifier.create(stream, 0)
                 .expectSubscription()
                 .thenRequest(1)
                 .expectNext(buf1)
@@ -70,7 +70,7 @@ public class ByteStreamTest {
 
         ByteStream mapped = stream.map(this::toUpperCase);
 
-        StepVerifier.create(Flux.from(mapped.publisher()).map(this::decodeUtf8String))
+        StepVerifier.create(Flux.from(mapped).map(this::decodeUtf8String))
                 .expectSubscription()
                 .expectNext("A", "B", "C")
                 .verifyComplete();
@@ -82,7 +82,7 @@ public class ByteStreamTest {
 
         ByteStream discarded = stream.discard();
 
-        StepVerifier.create(discarded.publisher())
+        StepVerifier.create(discarded)
                 .expectSubscription()
                 .verifyComplete();
 

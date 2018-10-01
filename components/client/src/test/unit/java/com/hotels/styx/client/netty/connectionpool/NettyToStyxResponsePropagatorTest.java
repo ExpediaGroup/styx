@@ -328,7 +328,7 @@ public class NettyToStyxResponsePropagatorTest {
 
     private TestSubscriber<ByteBuf> subscribeToContent(HttpResponse response) {
         TestSubscriber<ByteBuf> contentSubscriber = new TestSubscriber<>();
-        toObservable(response.body().publisher())
+        toObservable(response.body())
                 .map(Buffer::delegate)
                 .subscribe(contentSubscriber);
         return contentSubscriber;

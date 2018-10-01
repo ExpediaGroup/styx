@@ -88,7 +88,7 @@ import scala.compat.java8.FunctionConverters.asJavaFunction
 class AsyncRequestContentDelayPlugin extends PluginAdapter {
   override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
     val contentTransformation: rx.Observable[Buffer] =
-      toObservable(request.body().publisher())
+      toObservable(request.body())
         .observeOn(ComputationScheduler())
         .flatMap(byteBuf => {
           Thread.sleep(1000)

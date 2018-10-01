@@ -101,7 +101,7 @@ class Transport {
         return origin
                 .map(ConnectionPool::borrowConnection)
                 .orElseGet(() -> {
-                    toObservable(request.body().publisher()).forEach(it -> it.delegate().release());
+                    toObservable(request.body()).forEach(it -> it.delegate().release());
                     return Observable.error(new NoAvailableHostsException(appId));
                 });
     }

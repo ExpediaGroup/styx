@@ -252,7 +252,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
         private ChannelFutureListener subscribeToResponseBody() {
             return future -> {
                 if (future.isSuccess()) {
-                    Observable<ByteBuf> bufferObservable = toObservable(request.body().publisher()).map(Buffer::delegate);
+                    Observable<ByteBuf> bufferObservable = toObservable(request.body()).map(Buffer::delegate);
                     bufferObservable.subscribe(requestBodyChunkSubscriber);
                 } else {
                     LOGGER.error(format("error writing body to origin=%s request=%s", nettyConnection.getOrigin(), request), future.cause());

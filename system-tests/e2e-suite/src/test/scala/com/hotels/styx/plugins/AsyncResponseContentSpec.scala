@@ -86,7 +86,7 @@ class AsyncDelayPlugin extends PluginAdapter {
     chain.proceed(request)
       .flatMap(asJavaFunction((response: HttpResponse) => {
 
-        val transformedContent: Observable[Buffer] = RxReactiveStreams.toObservable(response.body().publisher())
+        val transformedContent: Observable[Buffer] = RxReactiveStreams.toObservable(response.body())
           .observeOn(Schedulers.computation())
           .flatMap((buffer: Buffer) => {
             Thread.sleep(1000)
