@@ -16,11 +16,13 @@
 package com.hotels.styx.api;
 
 import com.hotels.styx.api.stream.ByteStream;
+import io.netty.buffer.ByteBuf;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
 
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpHeader.header;
@@ -54,6 +56,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 public class HttpResponseTest {
+
     @Test
     public void encodesToFullHttpResponse() throws Exception {
         HttpResponse response = response(CREATED)
@@ -166,16 +169,22 @@ public class HttpResponseTest {
     }
 
     @Test
-    public void canRemoveResponseBody() {
+    public void canRemoveResponseBody() throws ExecutionException, InterruptedException {
+        Buffer originalContent = new Buffer("I'm going to get removed.", UTF_8);
+
         HttpResponse response = response(NO_CONTENT)
-                .body(body("shouldn't be here"))
+                .body(new ByteStream(Flux.just(originalContent)))
                 .build();
 
-        HttpResponse shouldClearBody = response.newBuilder()
-                .body(null)
-                .build();
+        FullHttpResponse fullResponse = response.newBuilder()
+                .body(ByteStream::drop)
+                .build()
+                .toFullResponse(1000)
+                .asCompletableFuture()
+                .get();
 
-        assertThat(shouldClearBody.body(), is(nullValue()));
+        assertThat(fullResponse.body().length, is(0));
+        assertThat(originalContent.delegate().refCnt(), is(0));
     }
 
     @Test
@@ -290,28 +299,6 @@ public class HttpResponseTest {
                 .ensureContentLengthIsValid()
                 .build();
     }
-
-//    @Test
-//    public void encodesBodyWithCharset() throws InterruptedException, ExecutionException, TimeoutException {
-//        StyxObservable<String> o = new ByteStream(Observable.just("Hello, World!");
-//
-//        FullHttpResponse responseUtf8 = response()
-//                .body(o, UTF_8)
-//                .build()
-//                .toFullResponse(1_000_000)
-//                .asCompletableFuture()
-//                .get(1, SECONDS);
-//
-//        FullHttpResponse responseUtf16 = response()
-//                .body(o, UTF_16)
-//                .build()
-//                .toFullResponse(1_000_000)
-//                .asCompletableFuture()
-//                .get(1, SECONDS);
-//
-//        assertThat(responseUtf8.body(), is("Hello, World!".getBytes(UTF_8)));
-//        assertThat(responseUtf16.body(), is("Hello, World!".getBytes(UTF_16)));
-//    }
 
     @Test
     public void addsCookies() {

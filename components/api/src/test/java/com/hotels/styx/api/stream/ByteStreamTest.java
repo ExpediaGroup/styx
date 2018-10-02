@@ -77,10 +77,42 @@ public class ByteStreamTest {
     }
 
     @Test
+    public void releasesRefcountForMappedBuffers() {
+        ByteStream stream = new ByteStream(Flux.just(buf1, buf2, buf3));
+
+        ByteStream mapped = stream.map(this::toUpperCase);
+
+        StepVerifier.create(Flux.from(mapped).map(this::decodeUtf8String))
+                .expectSubscription()
+                .expectNext("A", "B", "C")
+                .verifyComplete();
+
+        assertThat(buf1.delegate().refCnt(), is(0));
+        assertThat(buf2.delegate().refCnt(), is(0));
+        assertThat(buf3.delegate().refCnt(), is(0));
+    }
+
+    @Test
+    public void mapRetainsRefcountsForInlineBufferChanges() {
+        ByteStream stream = new ByteStream(Flux.just(buf1, buf2, buf3));
+
+        ByteStream mapped = stream.map(buf -> buf);
+
+        StepVerifier.create(Flux.from(mapped).map(this::decodeUtf8String))
+                .expectSubscription()
+                .expectNextCount(3)
+                .verifyComplete();
+
+        assertThat(buf1.delegate().refCnt(), is(1));
+        assertThat(buf2.delegate().refCnt(), is(1));
+        assertThat(buf3.delegate().refCnt(), is(1));
+    }
+
+    @Test
     public void discardsContent() {
         ByteStream stream = new ByteStream(Flux.just(buf1, buf2, buf3));
 
-        ByteStream discarded = stream.discard();
+        ByteStream discarded = stream.drop();
 
         StepVerifier.create(discarded)
                 .expectSubscription()
@@ -99,6 +131,36 @@ public class ByteStreamTest {
         assertThat(decodeUtf8String(aggregated), is("abc"));
     }
 
+    @Test
+    public void deliversEndOfStreamNotification() {
+        ByteStream stream = new ByteStream(Flux.just(buf1, buf2));
+
+        StepVerifier.create(new ByteStream(stream), 0)
+                .thenRequest(1)
+                .expectNext(buf1)
+                .then(() -> assertThat(stream.endOfStream().isDone(), is(false)))
+                .thenRequest(1)
+                .expectNext(buf2)
+                .then(() -> assertThat(stream.endOfStream().isDone(), is(true)))
+                .then(() -> assertThat(stream.endOfStream().isCompletedExceptionally(), is(false)))
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void deliversTerminatedStreamNotification() {
+        ByteStream stream = new ByteStream(Flux.just(buf1, buf2).concatWith(Flux.error(new RuntimeException("bang!"))));
+
+        StepVerifier.create(new ByteStream(stream), 0)
+                .thenRequest(1)
+                .expectNext(buf1)
+                .then(() -> assertThat(stream.endOfStream().isDone(), is(false)))
+                .thenRequest(1)
+                .expectNext(buf2)
+                .then(() -> assertThat(stream.endOfStream().isCompletedExceptionally(), is(true)))
+                .expectError()
+                .verify();
+    }
 
     private String decodeUtf8String(Buffer buffer) {
         return new String(buffer.content(), UTF_8);

@@ -29,26 +29,42 @@ import static java.util.Objects.requireNonNull;
  * Byte stream class.
  */
 public class ByteStream implements Publisher<Buffer> {
-    private Publisher<Buffer> stream;
+    private final CompletableFuture<Void> endOfStream = new CompletableFuture<>();
+    private final Publisher<Buffer> stream;
 
     public ByteStream(Publisher<Buffer> stream) {
-        this.stream = requireNonNull(stream);
+        this.stream = Flux.from(requireNonNull(stream))
+                        .doOnError(endOfStream::completeExceptionally)
+                        .doOnComplete(() -> endOfStream.complete(null));
     }
 
     public ByteStream map(Function<Buffer, Buffer> mapping) {
-        return new ByteStream(Flux.from(stream).map(mapping));
+        return new ByteStream(Flux.from(stream).map(refCountWrapper(mapping)));
     }
 
-    public ByteStream discard() {
+    private static Function<Buffer, Buffer> refCountWrapper(Function<Buffer, Buffer> mapping) {
+        return buffer -> {
+            Buffer buffer2 = mapping.apply(buffer);
+            if (buffer != buffer2) {
+                buffer.delegate().release();
+            }
+            return buffer2;
+        };
+    }
+
+    public ByteStream drop() {
         return new ByteStream(Flux.from(stream)
                 .doOnNext(buffer -> buffer.delegate().release())
                 .filter(buffer -> false));
     }
 
-    // TODO: This could return a ByteStream of aggregated content
     public CompletableFuture<Buffer> aggregate(int maxContentBytes) {
         return new AggregateOperator(this.stream, maxContentBytes)
                 .apply();
+    }
+
+    public CompletableFuture<Void> endOfStream() {
+        return endOfStream;
     }
 
     @Override

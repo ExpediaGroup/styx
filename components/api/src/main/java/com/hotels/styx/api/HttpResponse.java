@@ -513,7 +513,7 @@ public class HttpResponse implements StreamingHttpMessage {
          */
         // TODO: See https://github.com/HotelsDotCom/styx/issues/201
         public Builder removeBody() {
-            this.body = body.discard();
+            this.body = body.drop();
             return this;
         }
 
