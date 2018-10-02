@@ -20,10 +20,10 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import reactor.core.publisher.Flux;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Byte stream class.
@@ -33,9 +33,7 @@ public class ByteStream implements Publisher<Buffer> {
     private final Publisher<Buffer> stream;
 
     public ByteStream(Publisher<Buffer> stream) {
-        this.stream = Flux.from(requireNonNull(stream))
-                        .doOnError(endOfStream::completeExceptionally)
-                        .doOnComplete(() -> endOfStream.complete(null));
+        this.stream = stream;
     }
 
     public ByteStream map(Function<Buffer, Buffer> mapping) {
@@ -58,13 +56,16 @@ public class ByteStream implements Publisher<Buffer> {
                 .filter(buffer -> false));
     }
 
+    public ByteStream doOnEnd(Consumer<Optional<Throwable>> action) {
+        return new ByteStream(Flux.from(this.stream)
+                .doOnError(cause -> action.accept(Optional.of(cause)))
+                .doOnComplete(() -> action.accept(Optional.empty()))
+        );
+    }
+
     public CompletableFuture<Buffer> aggregate(int maxContentBytes) {
         return new AggregateOperator(this.stream, maxContentBytes)
                 .apply();
-    }
-
-    public CompletableFuture<Void> endOfStream() {
-        return endOfStream;
     }
 
     @Override

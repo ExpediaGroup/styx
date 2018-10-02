@@ -16,7 +16,6 @@
 package com.hotels.styx.api;
 
 import com.hotels.styx.api.stream.ByteStream;
-import io.netty.buffer.ByteBuf;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
@@ -53,7 +52,6 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
 
 public class HttpResponseTest {
 

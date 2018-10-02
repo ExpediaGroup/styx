@@ -21,7 +21,9 @@ import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -132,32 +134,35 @@ public class ByteStreamTest {
     }
 
     @Test
-    public void deliversEndOfStreamNotification() {
-        ByteStream stream = new ByteStream(Flux.just(buf1, buf2));
+    public void deliversAtEndOfStreamNotification() {
+        AtomicBoolean terminated = new AtomicBoolean();
+        ByteStream stream = new ByteStream(Flux.just(buf1, buf2))
+                .doOnEnd(maybeCause -> terminated.set(maybeCause == Optional.<Throwable>empty()));
 
         StepVerifier.create(new ByteStream(stream), 0)
                 .thenRequest(1)
                 .expectNext(buf1)
-                .then(() -> assertThat(stream.endOfStream().isDone(), is(false)))
+                .then(() -> assertThat(terminated.get(), is(false)))
                 .thenRequest(1)
                 .expectNext(buf2)
-                .then(() -> assertThat(stream.endOfStream().isDone(), is(true)))
-                .then(() -> assertThat(stream.endOfStream().isCompletedExceptionally(), is(false)))
+                .then(() -> assertThat(terminated.get(), is(true)))
                 .expectComplete()
                 .verify();
     }
 
     @Test
-    public void deliversTerminatedStreamNotification() {
-        ByteStream stream = new ByteStream(Flux.just(buf1, buf2).concatWith(Flux.error(new RuntimeException("bang!"))));
+    public void deliversAtEndOfStreamNotificationWhenTerminated() {
+        AtomicBoolean terminated = new AtomicBoolean();
+        ByteStream stream = new ByteStream(Flux.just(buf1, buf2).concatWith(Flux.error(new RuntimeException("bang!"))))
+                .doOnEnd(maybeCause -> terminated.set(maybeCause.isPresent()));
 
         StepVerifier.create(new ByteStream(stream), 0)
                 .thenRequest(1)
                 .expectNext(buf1)
-                .then(() -> assertThat(stream.endOfStream().isDone(), is(false)))
+                .then(() -> assertThat(terminated.get(), is(false)))
                 .thenRequest(1)
                 .expectNext(buf2)
-                .then(() -> assertThat(stream.endOfStream().isCompletedExceptionally(), is(true)))
+                .then(() -> assertThat(terminated.get(), is(true)))
                 .expectError()
                 .verify();
     }
