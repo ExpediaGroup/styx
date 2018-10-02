@@ -473,32 +473,10 @@ public class HttpRequest implements StreamingHttpMessage {
             return this;
         }
 
-//        public Builder body(Function<ContentStream, ContentStream> transformation) {
-//            /* TODO: Mikko: This is still suspectible for being not connected:
-//
-//               An example consumer usage:
-//
-//                    request.newBuilder()
-//                           .body(stream -> new ContentStream("foo", "bar"))
-//                           .build();
-//
-//               This code breaks the link of stream transformations between
-//               "stream" and "new ContentStream(...)".
-//
-//            */
-//            this.body = transformation.apply(this.body);
-//            return this;
-//        }
-
-        public Builder body(Function<Buffer, Buffer> transformation) {
-            this.body = this.body.map(transformation);
+        public Builder body(Function<ByteStream, ByteStream> transformation) {
+            this.body = transformation.apply(this.body);
             return this;
         }
-
-//        public Builder body(ContentProducer producer) {
-//            this.body.discard();
-//            return this;
-//        }
 
         /**
          * Sets the unique ID for this request.

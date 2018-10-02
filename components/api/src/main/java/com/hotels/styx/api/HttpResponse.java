@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.google.common.base.Objects.toStringHelper;
@@ -327,28 +328,10 @@ public class HttpResponse implements StreamingHttpMessage {
             return this;
         }
 
-        /**
-         * Sets the message body by encoding a {@link StyxObservable} of {@link String}s into bytes.
-         *
-         * @param contentObservable message body content.
-         * @param charset           character set
-         * @return {@code this}
-         */
-
-        // Shoud probably be a publisher or something:
-//        public Builder body(Publisher<String> contentObservable, Charset charset) {
-//
-//
-//
-//            contentObservable
-//                    .map(string -> new Buffer(string, charset))
-//
-//            Observable<ByteBuf> map = ((StyxCoreObservable<String>) contentObservable)
-//                    .delegate()
-//                    .map(content -> copiedBuffer(content, charset));
-//
-//            return body(new ByteStream(new RxContentPublisher(map)));
-//        }
+        public Builder body(Function<ByteStream, ByteStream> transformation) {
+            this.body = transformation.apply(this.body);
+            return this;
+        }
 
         /**
          * Sets the HTTP version.
