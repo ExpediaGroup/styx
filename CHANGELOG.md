@@ -5,7 +5,7 @@
 
 **Closed issues:**
 
-- ChunkedDownloadSpec fails intermittently on 0.7 branch [\#297](https://github.com/HotelsDotCom/styx/issues/297)
+- ChunkedDownloadSpec fails intermittently on 0.7 branch [\#296](https://github.com/HotelsDotCom/styx/issues/297)
 - Use Optional getOrElse to lazily create default objects [\#294](https://github.com/HotelsDotCom/styx/issues/294)
 
 **Merged pull requests:**
