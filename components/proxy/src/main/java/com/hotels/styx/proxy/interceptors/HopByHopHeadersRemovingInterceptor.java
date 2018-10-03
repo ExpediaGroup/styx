@@ -17,7 +17,7 @@ package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.Eventual;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.KEEP_ALIVE;
@@ -34,7 +34,7 @@ import com.hotels.styx.api.HttpRequest;
  */
 public class HopByHopHeadersRemovingInterceptor implements HttpInterceptor {
     @Override
-    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public Eventual<HttpResponse> intercept(HttpRequest request, Chain chain) {
         return chain.proceed(removeHopByHopHeaders(request))
                 .map(HopByHopHeadersRemovingInterceptor::removeHopByHopHeaders);
     }

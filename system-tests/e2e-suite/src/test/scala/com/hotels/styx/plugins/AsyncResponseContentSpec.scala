@@ -82,7 +82,7 @@ import rx.lang.scala.ImplicitFunctionConversions._
 import scala.compat.java8.FunctionConverters.asJavaFunction
 
 class AsyncDelayPlugin extends PluginAdapter {
-  override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
+  override def intercept(request: HttpRequest, chain: Chain): Eventual[HttpResponse] = {
     chain.proceed(request)
       .flatMap(asJavaFunction((response: HttpResponse) => {
 
@@ -93,7 +93,7 @@ class AsyncDelayPlugin extends PluginAdapter {
             Observable.just(buffer)
           })
 
-        StyxObservable.of(response.newBuilder().body(new ByteStream(toPublisher(transformedContent))).build())
+        Eventual.of(response.newBuilder().body(new ByteStream(toPublisher(transformedContent))).build())
       }))
   }
 }

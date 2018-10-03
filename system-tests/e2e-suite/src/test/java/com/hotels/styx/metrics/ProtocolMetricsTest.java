@@ -17,19 +17,14 @@ package com.hotels.styx.metrics;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.testapi.StyxServer;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import java.util.stream.Stream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
@@ -41,7 +36,6 @@ import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -125,15 +119,6 @@ public class ProtocolMetricsTest {
                 .build();
 
         return await(client.sendRequest(request));
-    }
-
-    // used to ensure that we do not increment counters for successive chunks
-    private static StyxObservable<ByteBuf> body(String... chunks) {
-        return StyxObservable.from(
-                Stream.of(chunks)
-                        .map(chunk -> Unpooled.copiedBuffer(chunk, UTF_8))
-                        .collect(toList())
-        );
     }
 
     private static String startWithSlash(String path) {

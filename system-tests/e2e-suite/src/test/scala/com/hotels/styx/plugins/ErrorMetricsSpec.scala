@@ -311,9 +311,9 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   private class Return500Interceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: Chain): Eventual[HttpResponse] = {
       if (request.header("Generate_error_status").asScala.contains("true"))
-        StyxObservable.of(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
+        Eventual.of(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
       else
         chain.proceed(request)
     }
@@ -322,10 +322,10 @@ class ErrorMetricsSpec extends FunSpec
   import scala.compat.java8.FunctionConverters.asJavaFunction
 
   private class MapTo500Interceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: Chain): Eventual[HttpResponse] = {
       if (request.header("Map_to_error_status").asScala.contains("true"))
         chain.proceed(request).flatMap(
-          asJavaFunction((t: HttpResponse) => StyxObservable.of(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
+          asJavaFunction((t: HttpResponse) => Eventual.of(response(HttpResponseStatus.INTERNAL_SERVER_ERROR).build())
           ))
       else
         chain.proceed(request)
@@ -333,19 +333,19 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   private class Return502Interceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: Chain): Eventual[HttpResponse] = {
       if (request.header("Generate_bad_gateway_status").asScala.contains("true"))
-        StyxObservable.of(response(HttpResponseStatus.BAD_GATEWAY).build())
+        Eventual.of(response(HttpResponseStatus.BAD_GATEWAY).build())
       else
         chain.proceed(request)
     }
   }
 
   private class MapTo502Interceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: Chain): Eventual[HttpResponse] = {
       if (request.header("Map_to_bad_gateway_status").asScala.contains("true"))
         chain.proceed(request).flatMap(
-          asJavaFunction((t: HttpResponse) => StyxObservable.of(response(HttpResponseStatus.BAD_GATEWAY).build())
+          asJavaFunction((t: HttpResponse) => Eventual.of(response(HttpResponseStatus.BAD_GATEWAY).build())
           ))
       else
         chain.proceed(request)
@@ -353,7 +353,7 @@ class ErrorMetricsSpec extends FunSpec
   }
 
   private class ThrowExceptionInterceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: Chain): Eventual[HttpResponse] = {
       if (request.header("Throw_an_exception").asScala.contains("true"))
         throw new TestException()
       else
@@ -363,9 +363,9 @@ class ErrorMetricsSpec extends FunSpec
 
   private class MapToExceptionInterceptor extends PluginAdapter {
 
-    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: Chain): Eventual[HttpResponse] = {
       if (request.header("Map_to_exception").asScala.contains("true"))
-        chain.proceed(request).flatMap(asJavaFunction((t: HttpResponse) => StyxObservable.error(new TestException())))
+        chain.proceed(request).flatMap(asJavaFunction((t: HttpResponse) => Eventual.error(new TestException())))
       else
         chain.proceed(request)
     }

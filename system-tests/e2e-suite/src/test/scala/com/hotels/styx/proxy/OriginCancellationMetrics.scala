@@ -67,7 +67,15 @@ class OriginCancellationMetrics extends FunSpec
       styxServer.metricsSnapshot.count("origins.app-1.requests.cancelled").get should be(0)
     }
 
-    it("Is incremented on an origin error") {
+
+    ignore("Is incremented on an origin error") {
+      /*
+       * This test simulates a failed message, not a successful message that is
+       * cancelled due to a latent error.
+       *
+       * HttpPipelineHandler point of view:
+       *  - Only receives `onError` event without response headers.
+       */
       originRespondingWith(
         responseWithHeaders(
           HttpHeader(CONTENT_LENGTH, "0"),

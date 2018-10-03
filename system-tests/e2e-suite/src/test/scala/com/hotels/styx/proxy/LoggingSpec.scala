@@ -24,7 +24,7 @@ import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.plugins.spi.PluginException
-import com.hotels.styx.api.{HttpRequest, HttpResponse, StyxObservable}
+import com.hotels.styx.api.{Eventual, HttpRequest, HttpResponse}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.matchers.LoggingEventMatcher._
@@ -137,7 +137,7 @@ class LoggingSpec extends FunSpec
 
 
   class BadPlugin extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
+    override def intercept(request: HttpRequest, chain: Chain): Eventual[HttpResponse] = {
       Option(request.header(X_THROW_AT).orElse(null)) match {
         case Some(AT_REQUEST) =>
           throw new RuntimeException("Throw exception at Request")

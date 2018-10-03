@@ -21,16 +21,13 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.FullHttpRequest.get
-import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse, StyxObservable}
-import com.hotels.styx.support.api.BlockingObservables.waitForResponse
+import com.hotels.styx.api._
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import org.scalatest.{FunSpec, ShouldMatchers}
-import rx.Observable
-import rx.schedulers.Schedulers
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -84,10 +81,10 @@ import scala.compat.java8.FunctionConverters.asJavaFunction
 
 
 class AsyncContentDelayPlugin extends PluginAdapter {
-  override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
+  override def intercept(request: HttpRequest, chain: Chain): Eventual[HttpResponse] = {
     chain.proceed(request)
       .flatMap(asJavaFunction((response: HttpResponse) => {
-        StyxObservable.from(
+        Eventual.from(
           Future {
             Thread.sleep(1000)
             response

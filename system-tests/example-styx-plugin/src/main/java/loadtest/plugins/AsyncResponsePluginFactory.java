@@ -15,11 +15,11 @@
  */
 package loadtest.plugins;
 
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.common.CompletableFutures;
 
 import java.util.concurrent.CompletableFuture;
@@ -42,9 +42,9 @@ public class AsyncResponsePluginFactory implements PluginFactory {
         }
 
         @Override
-        public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        public Eventual<HttpResponse> intercept(HttpRequest request, Chain chain) {
             return chain.proceed(request)
-                    .flatMap(response -> StyxObservable.from(processAsynchronously(response, config.delayMillis())));
+                    .flatMap(response -> Eventual.from(processAsynchronously(response, config.delayMillis())));
         }
 
         private static CompletableFuture<HttpResponse> processAsynchronously(HttpResponse response, int delayMillis) {

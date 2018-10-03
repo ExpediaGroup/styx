@@ -24,7 +24,7 @@ import rx.lang.scala.Observable
 import rx.{Observable => JavaObservable}
 
 private class ChainAdapter(javaChain: HttpInterceptor.Chain) {
-  def proceed(request: HttpRequest): StyxObservable[HttpResponse] = javaChain.proceed(request)
+  def proceed(request: HttpRequest): Eventual[HttpResponse] = javaChain.proceed(request)
 }
 
 private trait ScalaInterceptor {
@@ -39,8 +39,8 @@ object ImplicitScalaRxConversions {
   implicit def toJavaObservable[T](s: rx.lang.scala.Observable[T]): rx.Observable[T] = rx.lang.scala.JavaConversions.toJavaObservable(s).asInstanceOf[rx.Observable[T]]
 }
 
-class PluginAdapter(scalaInterceptor: (HttpRequest, ChainAdapter) => StyxObservable[HttpResponse]) extends Plugin {
-  def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): StyxObservable[HttpResponse] =
+class PluginAdapter(scalaInterceptor: (HttpRequest, ChainAdapter) => Eventual[HttpResponse]) extends Plugin {
+  def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): Eventual[HttpResponse] =
     scalaInterceptor(request, new ChainAdapter(chain))
 }
 
@@ -49,6 +49,6 @@ class HttpClientAdapter(sendRequest: HttpRequest => Observable[HttpResponse]) ex
     toJavaObservable(sendRequest(request))
 }
 
-class HttpHandlerAdapter(handler: (HttpRequest, Context) => StyxObservable[HttpResponse]) extends HttpHandler {
-  override def handle(request: HttpRequest, context: Context): StyxObservable[HttpResponse] = handler(request, context)
+class HttpHandlerAdapter(handler: (HttpRequest, Context) => Eventual[HttpResponse]) extends HttpHandler {
+  override def handle(request: HttpRequest, context: Context): Eventual[HttpResponse] = handler(request, context)
 }

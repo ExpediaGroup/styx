@@ -87,7 +87,7 @@ public interface HttpInterceptor {
          * @param request request to propagate
          * @return observable that will provide the response
          */
-        StyxObservable<HttpResponse> proceed(HttpRequest request);
+        Eventual<HttpResponse> proceed(HttpRequest request);
 
     }
 
@@ -99,6 +99,6 @@ public interface HttpInterceptor {
      * @param chain   chain
      * @return observable that will provide the response
      */
-    StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain);
+    Eventual<HttpResponse> intercept(HttpRequest request, Chain chain);
 
 }

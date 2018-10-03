@@ -18,11 +18,11 @@ package com.hotels.styx.testapi;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
@@ -290,8 +290,8 @@ public class StyxServerTest {
     @Test
     public void addsEndpointLinksToPluginPage() {
         setUpStyxAndPluginWithAdminPages(ImmutableMap.of(
-                "adminPage1", (request, ctx) -> StyxObservable.of(HttpResponse.response().build()),
-                "adminPage2", (request, ctx) -> StyxObservable.of(HttpResponse.response().build())
+                "adminPage1", (request, ctx) -> Eventual.of(HttpResponse.response().build()),
+                "adminPage2", (request, ctx) -> Eventual.of(HttpResponse.response().build())
         ));
 
         FullHttpResponse response = doAdminRequest("/admin/plugins/plugin-with-admin-pages");
@@ -304,8 +304,8 @@ public class StyxServerTest {
     @Test
     public void exposesAdminEndpoints() {
         setUpStyxAndPluginWithAdminPages(ImmutableMap.of(
-                "adminPage1", (request, ctx) -> StyxObservable.of(HttpResponse.response().header("AdminPage1", "yes").build()),
-                "adminPage2", (request, ctx) -> StyxObservable.of(HttpResponse.response().header("AdminPage2", "yes").build())
+                "adminPage1", (request, ctx) -> Eventual.of(HttpResponse.response().header("AdminPage1", "yes").build()),
+                "adminPage2", (request, ctx) -> Eventual.of(HttpResponse.response().header("AdminPage2", "yes").build())
         ));
 
         FullHttpResponse response = doAdminRequest("/admin/plugins/plugin-with-admin-pages/adminPage1");

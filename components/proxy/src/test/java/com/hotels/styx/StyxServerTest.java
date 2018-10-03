@@ -20,7 +20,7 @@ import com.google.common.util.concurrent.Service;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -251,7 +251,7 @@ public class StyxServerTest {
         }
 
         @Override
-        public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        public Eventual<HttpResponse> intercept(HttpRequest request, Chain chain) {
             return null;
         }
 

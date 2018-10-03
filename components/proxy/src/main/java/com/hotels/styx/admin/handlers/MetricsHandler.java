@@ -26,7 +26,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.infrastructure.configuration.json.mixins.CodaHaleMetricRegistryMixin;
 
@@ -82,12 +82,12 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         MetricRequest metricRequest = new MetricRequest(request);
 
         return metricRequest.fullMetrics()
                 ? super.handle(request, context)
-                : StyxObservable.of(restrictedMetricsResponse(metricRequest).build().toStreamingResponse());
+                : Eventual.of(restrictedMetricsResponse(metricRequest).build().toStreamingResponse());
     }
 
     private FullHttpResponse.Builder restrictedMetricsResponse(MetricRequest request) {

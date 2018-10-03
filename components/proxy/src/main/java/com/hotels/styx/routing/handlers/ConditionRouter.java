@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
@@ -129,7 +129,7 @@ public class ConditionRouter implements HttpRouter {
 
         private static HttpHandler buildFallbackHandler(List<String> parents, RouteHandlerFactory routeHandlerFactory, ConditionRouterConfig config) {
             if (config.fallback == null) {
-                return (request, context) -> StyxObservable.of(HttpResponse.response(BAD_GATEWAY).build());
+                return (request, context) -> Eventual.of(HttpResponse.response(BAD_GATEWAY).build());
             } else {
                 return routeHandlerFactory.build(append(parents, "fallback"), config.fallback);
             }

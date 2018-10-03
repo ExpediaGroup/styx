@@ -15,9 +15,9 @@
  */
 package loadtest.plugins;
 
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 
@@ -41,7 +41,7 @@ public class AsyncRequestPluginFactory implements PluginFactory {
         }
 
         @Override
-        public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        public Eventual<HttpResponse> intercept(HttpRequest request, Chain chain) {
 
 
 //            resp1 = chain.context().styxObservable(1)
@@ -58,13 +58,13 @@ public class AsyncRequestPluginFactory implements PluginFactory {
 //                    .
 //
 //
-//            StyxObservable.from(CompletableFuture.completedFuture(1))
+//            Eventual.from(CompletableFuture.completedFuture(1))
 //                    .transform(i -> response(OK).header("X-Int", i).build());
 //
 //            return chain.styxObservable(response(TEMPORARY_REDIRECT).build())
 //                    .transformAsync(x -> chain.proceed(request));
 //
-            return StyxObservable.of(fromSingleObservable(timer(config.delayMillis(), MILLISECONDS)))
+            return Eventual.of(fromSingleObservable(timer(config.delayMillis(), MILLISECONDS)))
                     .flatMap(x -> chain.proceed(request));
         }
     }

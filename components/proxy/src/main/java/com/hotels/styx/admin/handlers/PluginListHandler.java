@@ -19,7 +19,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 
 import java.util.List;
@@ -46,14 +46,14 @@ public class PluginListHandler implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         Stream<NamedPlugin> enabled = plugins.stream().filter(NamedPlugin::enabled);
         Stream<NamedPlugin> disabled = plugins.stream().filter(plugin -> !plugin.enabled());
 
         String output = section("Enabled", enabled)
                 + section("Disabled", disabled);
 
-        return StyxObservable.of(response(OK)
+        return Eventual.of(response(OK)
                 .body(output, UTF_8)
                 .addHeader(CONTENT_TYPE, HTML_UTF_8.toString())
                 .build()

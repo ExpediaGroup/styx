@@ -16,12 +16,12 @@
 package com.hotels.styx.proxy;
 
 import com.google.common.collect.ImmutableList;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
@@ -90,8 +90,8 @@ public class StyxProxyTest extends SSLSetup {
         assertThat("Server should not be running", !server.isRunning());
     }
 
-    private StyxObservable<HttpResponse> textResponse(String body) {
-        return StyxObservable.of(FullHttpResponse.response(OK)
+    private Eventual<HttpResponse> textResponse(String body) {
+        return Eventual.of(FullHttpResponse.response(OK)
                 .body("Response from http connector", UTF_8)
                 .build()
                 .toStreamingResponse());

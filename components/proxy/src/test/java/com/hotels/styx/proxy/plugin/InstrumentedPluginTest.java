@@ -16,9 +16,9 @@
 package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
@@ -33,8 +33,7 @@ import java.util.concurrent.ExecutionException;
 import com.hotels.styx.api.HttpRequest;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
-import static com.hotels.styx.api.StyxObservable.error;
+import static com.hotels.styx.api.Eventual.error;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -48,6 +47,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static rx.RxReactiveStreams.toObservable;
 
 public class InstrumentedPluginTest {
     private static final String SOME_EXCEPTION = formattedExceptionName(SomeException.class);
@@ -196,14 +196,14 @@ public class InstrumentedPluginTest {
         assertThat(metricRegistry.meter("plugins.passThrough.errors").getCount(), is(0L));
     }
 
-    private static StyxObservable<HttpResponse> aResponse(HttpResponseStatus status) {
-        return StyxObservable.of(response(status).build());
+    private static Eventual<HttpResponse> aResponse(HttpResponseStatus status) {
+        return Eventual.of(response(status).build());
     }
 
-    private static <T> void assertThatObservableHasErrorOnly(Class<? extends Throwable> type, StyxObservable<T> observable) {
+    private static <T> void assertThatObservableHasErrorOnly(Class<? extends Throwable> type, Eventual<T> observable) {
         TestSubscriber<T> testSubscriber = new TestSubscriber<>();
 
-        toRxObservable(observable).subscribe(testSubscriber);
+        toObservable(observable).subscribe(testSubscriber);
 
         testSubscriber.awaitTerminalEvent();
         testSubscriber.assertNoValues();

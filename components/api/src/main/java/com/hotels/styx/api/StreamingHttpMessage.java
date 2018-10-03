@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.api;
 
+import reactor.core.publisher.Flux;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -91,6 +93,18 @@ interface StreamingHttpMessage {
      */
     default boolean chunked() {
         return HttpMessageSupport.chunked(headers());
+    }
+
+    default void consume() {
+        body().drop().aggregate(1)
+                .thenApply(buffer -> {
+                    buffer.delegate().release();
+                    return null;
+                });
+    }
+
+    default void drop() {
+        Flux.from(body()).subscribe().dispose();
     }
 
 }

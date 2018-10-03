@@ -18,18 +18,19 @@ package com.hotels.styx.client;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.RequestCookie;
+import com.hotels.styx.api.ResponseEventListener;
+import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
-import com.hotels.styx.api.RequestCookie;
-import com.hotels.styx.api.exceptions.NoAvailableHostsException;
-import com.hotels.styx.api.HttpResponseStatus;
-import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.extension.service.RewriteRule;
 import com.hotels.styx.api.extension.service.StickySessionConfig;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
 import com.hotels.styx.server.HttpInterceptorContext;
@@ -40,14 +41,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
 import static io.netty.handler.codec.http.HttpMethod.HEAD;
@@ -57,6 +56,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.StreamSupport.stream;
 import static org.slf4j.LoggerFactory.getLogger;
+import static rx.RxReactiveStreams.toObservable;
 
 /**
  * A configurable HTTP client that uses connection pooling, load balancing, etc.
@@ -144,17 +144,13 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
             RemoteHost host = remoteHost.get();
             List<RemoteHost> newPreviousOrigins = newArrayList(previousOrigins);
             newPreviousOrigins.add(remoteHost.get());
-            AtomicBoolean completed = new AtomicBoolean(false);
 
-            return toRxObservable(host.hostClient().handle(request, HttpInterceptorContext.create()))
-                    .map(response -> addStickySessionIdentifier(response, host.origin()))
-                    .doOnError(throwable -> logError(request, throwable))
-                    .doOnCompleted(() -> completed.set(true))
-                    .doOnUnsubscribe(() -> {
-                        if (!completed.get()) {
-                            originStatsFactory.originStats(host.origin()).requestCancelled();
-                        }
-                    })
+            return ResponseEventListener.from(
+                        toObservable(host.hostClient().handle(request, HttpInterceptorContext.create()))
+                        .map(response -> addStickySessionIdentifier(response, host.origin())))
+                    .whenResponseError(cause -> logError(request, cause))
+                    .whenCancelled(() -> originStatsFactory.originStats(host.origin()).requestCancelled())
+                    .apply()
                     .doOnNext(this::recordErrorStatusMetrics)
                     .map(response -> removeUnexpectedResponseBody(request, response))
                     .map(this::removeRedundantContentLengthHeader)

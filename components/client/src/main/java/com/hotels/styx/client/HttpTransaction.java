@@ -31,15 +31,6 @@ interface HttpTransaction {
     Observable<HttpResponse> response();
 
     /**
-     * Checks whether the current transaction is cancelled (non-consumable). Default implementation always returns false.
-     *
-     * @return true if the transaction was cancelled
-     */
-    default boolean isCancelled() {
-        return false;
-    }
-
-    /**
      * Non cancellable txn.
      */
     class NonCancellableHttpTransaction implements HttpTransaction {

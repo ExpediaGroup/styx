@@ -19,7 +19,6 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;

@@ -114,6 +114,10 @@ public class ByteStream implements Publisher<Buffer> {
         );
     }
 
+    public ByteStream doOnCancel(Runnable action) {
+        return new ByteStream(Flux.from(this.stream).doOnCancel(action));
+    }
+
     /**
      * Consumes the stream by collecting it into an aggregate {@link Buffer} object.
      *

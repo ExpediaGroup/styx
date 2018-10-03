@@ -18,7 +18,7 @@ package com.hotels.styx.proxy.interceptors;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.AfterMethod;
@@ -115,8 +115,8 @@ public class HttpMessageLoggingInterceptorTest {
     private static HttpInterceptor.Chain chain(HttpResponse.Builder resp) {
         return new HttpInterceptor.Chain() {
             @Override
-            public StyxObservable<HttpResponse> proceed(HttpRequest request) {
-                return StyxObservable.of(resp.build());
+            public Eventual<HttpResponse> proceed(HttpRequest request) {
+                return Eventual.of(resp.build());
             }
 
             @Override
@@ -126,7 +126,7 @@ public class HttpMessageLoggingInterceptorTest {
         };
     }
 
-    private static void consume(StyxObservable<HttpResponse> resp) {
+    private static void consume(Eventual<HttpResponse> resp) {
         await(resp.flatMap(it -> it.toFullResponse(1000000)).asCompletableFuture());
     }
 }

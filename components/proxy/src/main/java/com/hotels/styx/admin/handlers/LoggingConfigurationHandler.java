@@ -16,11 +16,11 @@
 package com.hotels.styx.admin.handlers;
 
 import com.google.common.net.MediaType;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.StyxObservable;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -54,8 +54,8 @@ public class LoggingConfigurationHandler implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return StyxObservable.of(generateResponse());
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return Eventual.of(generateResponse());
     }
 
     private HttpResponse generateResponse() {

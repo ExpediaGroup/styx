@@ -109,8 +109,8 @@ class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplie
   }
 
   private class PluginUnderTest extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): StyxObservable[HttpResponse] =
-      StyxObservable.of(FullHttpResponse.response().body("response-from-plugin", UTF_8).build().toStreamingResponse)
+    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): Eventual[HttpResponse] =
+      Eventual.of(FullHttpResponse.response().body("response-from-plugin", UTF_8).build().toStreamingResponse)
   }
 
 }

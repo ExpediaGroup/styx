@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.proxy;
 
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.HttpRouter;
 import org.testng.annotations.Test;
@@ -43,7 +43,7 @@ public class RouteHandlerAdapterTest {
     @Test
     public void injectsToPipelineWhenRouteFound() throws Exception {
         HttpHandler pipeline = mock(HttpHandler.class);
-        when(pipeline.handle(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(StyxObservable.of(respOk));
+        when(pipeline.handle(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(Eventual.of(respOk));
 
         HttpRouter router = mock(HttpRouter.class);
         when(router.route(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(Optional.of(pipeline));

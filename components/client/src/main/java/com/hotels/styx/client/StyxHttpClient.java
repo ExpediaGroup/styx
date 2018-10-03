@@ -35,11 +35,11 @@ import java.util.concurrent.TimeUnit;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
 import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
 import static java.util.Objects.requireNonNull;
+import static rx.RxReactiveStreams.toObservable;
 
 /**
  * A client that uses netty as transport.
@@ -110,7 +110,7 @@ public final class StyxHttpClient implements HttpClient {
                 sslContext
         ).flatMap(connection ->
                 connection.write(networkRequest.toStreamingRequest())
-                        .flatMap(response -> toRxObservable(response.toFullResponse(params.maxResponseSize())))
+                        .flatMap(response -> toObservable(response.toFullResponse(params.maxResponseSize())))
                         .doOnTerminate(connection::close)
         );
 
