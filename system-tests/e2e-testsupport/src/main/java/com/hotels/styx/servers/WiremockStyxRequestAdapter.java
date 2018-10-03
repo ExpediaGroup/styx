@@ -76,7 +76,7 @@ public class WiremockStyxRequestAdapter implements Request {
     public ContentTypeHeader contentTypeHeader() {
         return styxRequest.header(CONTENT_TYPE)
                 .map(ContentTypeHeader::new)
-                .orElse(ContentTypeHeader.absent());
+                .orElseGet(ContentTypeHeader::absent);
     }
 
     @Override
@@ -102,7 +102,7 @@ public class WiremockStyxRequestAdapter implements Request {
     public QueryParameter queryParameter(String key) {
         return styxRequest.queryParam(key)
                 .map(value -> new QueryParameter(key, ImmutableList.of(value)))
-                .orElse(QueryParameter.absent(key));
+                .orElseGet(() -> QueryParameter.absent(key));
     }
 
     @Override

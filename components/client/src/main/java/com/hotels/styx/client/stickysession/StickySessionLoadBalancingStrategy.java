@@ -40,7 +40,7 @@ public class StickySessionLoadBalancingStrategy implements LoadBalancer {
         return context.preferredOrigins()
                 .flatMap(preferredHost -> originById(activeOrigins.snapshot(), preferredHost))
                 .map(Optional::of)
-                .orElse(delegate.choose(context));
+                .orElseGet(() -> delegate.choose(context));
     }
 
     private Optional<RemoteHost> originById(Iterable<RemoteHost> origins, String id) {

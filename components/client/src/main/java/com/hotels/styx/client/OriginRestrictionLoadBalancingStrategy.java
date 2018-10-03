@@ -72,7 +72,7 @@ public class OriginRestrictionLoadBalancingStrategy implements LoadBalancer {
                             }
                         }
                 )
-                .orElse(delegate.choose(context));
+                .orElseGet(() -> delegate.choose(context));
     }
 
     private Predicate<RemoteHost> originIsAllowed(String cookieValue) {

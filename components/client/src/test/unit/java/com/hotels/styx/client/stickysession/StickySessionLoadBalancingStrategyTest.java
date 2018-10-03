@@ -34,7 +34,10 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.EMPTY_LIST;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
@@ -61,6 +64,18 @@ public class StickySessionLoadBalancingStrategyTest {
         Optional<RemoteHost> chosenOne = strategy.choose(lbPreferences(Optional.of(ORIGIN_1.id())));
 
         assertThat(chosenOne, is(Optional.of(ORIGIN_1)));
+    }
+
+    @Test
+    public void dontDelegateWhenPreferredOriginIsFound() {
+        LoadBalancer delegate = mock(LoadBalancer.class);
+        StickySessionLoadBalancingStrategy aStrategy = new StickySessionLoadBalancingStrategy(activeOrigins, delegate);
+
+        when(activeOrigins.snapshot()).thenReturn(asList(ORIGIN_0, ORIGIN_1, ORIGIN_2));
+
+        aStrategy.choose(lbPreferences(Optional.of(ORIGIN_1.id())));
+
+        verify(delegate, never()).choose(any(LoadBalancer.Preferences.class));
     }
 
     @Test

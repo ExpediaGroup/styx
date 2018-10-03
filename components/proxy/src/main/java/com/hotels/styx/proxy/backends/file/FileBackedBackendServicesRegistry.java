@@ -160,7 +160,7 @@ public class FileBackedBackendServicesRegistry extends AbstractStyxService imple
                             "missing [services.registry.factory.config.originsFile] config value for factory class FileBackedBackendServicesRegistry.Factory"));
 
             FileMonitorSettings monitorSettings = registryConfiguration.get("monitor", FileMonitorSettings.class)
-                    .orElse(new FileMonitorSettings());
+                    .orElseGet(FileMonitorSettings::new);
 
             return registry(originsFile, monitorSettings);
         }
