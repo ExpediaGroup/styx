@@ -27,7 +27,7 @@ import static io.netty.buffer.Unpooled.compositeBuffer;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
-class AggregateOperator implements Subscriber<Buffer> {
+class ByteStreamAggregator implements Subscriber<Buffer> {
     private final Publisher<Buffer> upstream;
     private final int maxSize;
     private final CompletableFuture<Buffer> future = new CompletableFuture<>();
@@ -35,7 +35,7 @@ class AggregateOperator implements Subscriber<Buffer> {
     private final CompositeByteBuf aggregated = compositeBuffer();
     private Subscription subscription;
 
-    public AggregateOperator(Publisher<Buffer> upstream, int maxSize) {
+    public ByteStreamAggregator(Publisher<Buffer> upstream, int maxSize) {
         this.upstream = requireNonNull(upstream);
         this.maxSize = maxSize;
     }
@@ -45,7 +45,7 @@ class AggregateOperator implements Subscriber<Buffer> {
             this.upstream.subscribe(this);
             return future;
         } else {
-            throw new IllegalStateException("Secondary subscription!");
+            throw new IllegalStateException("ByteStreamAggregator may only be started once.");
         }
     }
 
@@ -56,7 +56,7 @@ class AggregateOperator implements Subscriber<Buffer> {
             this.subscription.request(Long.MAX_VALUE);
         } else {
             subscription.cancel();
-            throw new IllegalStateException("Second onSubscribe event to AggregateOperator");
+            throw new IllegalStateException("ByteStreamAggregator supports only one Producer instance.");
         }
     }
 

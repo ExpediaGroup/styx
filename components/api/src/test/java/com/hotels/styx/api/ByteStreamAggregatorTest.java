@@ -33,12 +33,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.testng.Assert.assertTrue;
 
-public class AggregateOperatorTest {
+public class ByteStreamAggregatorTest {
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void allowsOnlyOneAggregation() {
         Publisher<Buffer> upstream = Flux.just(new Buffer("x", UTF_8));
-        AggregateOperator aggregator = new AggregateOperator(upstream, 100);
+        ByteStreamAggregator aggregator = new ByteStreamAggregator(upstream, 100);
 
         aggregator.apply();
         aggregator.apply();
@@ -46,7 +46,7 @@ public class AggregateOperatorTest {
 
     @Test
     public void aggregatesZeroBuffers() throws ExecutionException, InterruptedException {
-        AggregateOperator aggregator = new AggregateOperator(Flux.empty(), 100);
+        ByteStreamAggregator aggregator = new ByteStreamAggregator(Flux.empty(), 100);
 
         Buffer a = aggregator.apply().get();
         assertThat(a.size(), is(0));
@@ -55,7 +55,7 @@ public class AggregateOperatorTest {
 
     @Test
     public void aggregatesOneBuffer() throws ExecutionException, InterruptedException {
-        AggregateOperator aggregator = new AggregateOperator(Flux.just(new Buffer("x", UTF_8)), 100);
+        ByteStreamAggregator aggregator = new ByteStreamAggregator(Flux.just(new Buffer("x", UTF_8)), 100);
 
         Buffer a = aggregator.apply().get();
         assertThat(a.size(), is(1));
@@ -64,7 +64,7 @@ public class AggregateOperatorTest {
 
     @Test
     public void aggregatesManyBuffers() throws ExecutionException, InterruptedException {
-        AggregateOperator aggregator = new AggregateOperator(Flux.just(
+        ByteStreamAggregator aggregator = new ByteStreamAggregator(Flux.just(
                 new Buffer("x", UTF_8),
                 new Buffer("y", UTF_8)), 100);
 
@@ -82,7 +82,7 @@ public class AggregateOperatorTest {
 
         TestPublisher<Buffer> upstream = TestPublisher.create();
 
-        AggregateOperator aggregator = new AggregateOperator(upstream, 8);
+        ByteStreamAggregator aggregator = new ByteStreamAggregator(upstream, 8);
 
         CompletableFuture<Buffer> future = aggregator.apply()
                 .exceptionally(cause -> {
@@ -105,7 +105,7 @@ public class AggregateOperatorTest {
     @Test(expectedExceptions = NullPointerException.class)
     public void checkForNullSubscription() {
         Publisher<Buffer> upstream = mock(Publisher.class);
-        AggregateOperator aggregator = new AggregateOperator(upstream, 100);
+        ByteStreamAggregator aggregator = new ByteStreamAggregator(upstream, 100);
 
         aggregator.onSubscribe(null);
     }
@@ -116,7 +116,7 @@ public class AggregateOperatorTest {
         Subscription subscription1 = mock(Subscription.class);
         Subscription subscription2 = mock(Subscription.class);
 
-        AggregateOperator aggregator = new AggregateOperator(upstream, 100);
+        ByteStreamAggregator aggregator = new ByteStreamAggregator(upstream, 100);
         aggregator.onSubscribe(subscription1);
 
         try {
@@ -135,7 +135,7 @@ public class AggregateOperatorTest {
 
         TestPublisher<Buffer> upstream = TestPublisher.create();
 
-        AggregateOperator aggregator = new AggregateOperator(upstream, 8);
+        ByteStreamAggregator aggregator = new ByteStreamAggregator(upstream, 8);
 
         CompletableFuture<Buffer> future = aggregator.apply()
                 .exceptionally(cause -> {

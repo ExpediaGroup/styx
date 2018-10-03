@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 
@@ -53,7 +54,7 @@ public class ByteStreamTest {
     }
 
     @Test
-    public void publisherBackpressure() {
+    public void supportsBackpressure() {
         ByteStream stream = new ByteStream(Flux.just(buf1, buf2, buf3));
 
         StepVerifier.create(stream, 0)
@@ -131,6 +132,18 @@ public class ByteStreamTest {
         Buffer aggregated = stream.aggregate(100).get();
         assertThat(decodeUtf8String(aggregated), is("abc"));
     }
+
+    @Test
+    public void contentAggregationOverflow() throws ExecutionException, InterruptedException {
+        ByteStream stream = new ByteStream(Flux.just(buf1, buf2, buf3));
+
+        Throwable cause = stream.aggregate(2)
+                .handle((result, throwable) -> throwable)
+                .get();
+
+        assertThat(cause, instanceOf(ContentOverflowException.class));
+    }
+
 
     @Test
     public void deliversAtEndOfStreamNotification() {

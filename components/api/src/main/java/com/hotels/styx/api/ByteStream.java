@@ -62,7 +62,7 @@ public class ByteStream implements Publisher<Buffer> {
     }
 
     public CompletableFuture<Buffer> aggregate(int maxContentBytes) {
-        return new AggregateOperator(this.stream, maxContentBytes)
+        return new ByteStreamAggregator(this.stream, maxContentBytes)
                 .apply();
     }
 
