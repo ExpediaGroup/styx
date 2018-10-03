@@ -17,7 +17,6 @@ package com.hotels.styx.api;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
-import com.hotels.styx.api.stream.ByteStream;
 import reactor.core.publisher.Flux;
 
 import java.nio.charset.Charset;

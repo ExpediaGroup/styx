@@ -16,7 +16,6 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.api.stream.ByteStream;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;

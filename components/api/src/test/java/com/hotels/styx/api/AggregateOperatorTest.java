@@ -13,10 +13,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.stream;
+package com.hotels.styx.api;
 
-import com.hotels.styx.api.Buffer;
-import com.hotels.styx.api.ContentOverflowException;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscription;
 import org.testng.annotations.Test;

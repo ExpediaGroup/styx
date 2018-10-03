@@ -28,7 +28,6 @@ import com.hotels.styx.support.server.UrlMatchingStrategies._
 import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
 import _root_.io.netty.handler.codec.http.HttpHeaders.Names._
 import _root_.io.netty.handler.codec.http.HttpHeaders.Values._
-import com.hotels.styx.api.stream.ByteStream
 import org.scalatest.FunSpec
 import rx.{Observable, RxReactiveStreams}
 import rx.schedulers.Schedulers

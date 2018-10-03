@@ -23,7 +23,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.stream.ByteStream;
+import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 import rx.Observable;
 

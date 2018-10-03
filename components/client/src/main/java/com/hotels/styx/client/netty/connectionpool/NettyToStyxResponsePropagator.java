@@ -22,7 +22,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.stream.ByteStream;
+import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
 import io.netty.buffer.ByteBuf;

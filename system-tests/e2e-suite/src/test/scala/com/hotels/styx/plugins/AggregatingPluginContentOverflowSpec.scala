@@ -30,7 +30,6 @@ import rx.Observable
 import rx.lang.scala.JavaConversions._
 
 import scala.concurrent.duration._
-import com.hotels.styx.api.stream.ByteStream
 import rx.RxReactiveStreams.toPublisher
 
 class AggregatingPluginContentOverflowSpec extends FunSpec

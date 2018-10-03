@@ -21,7 +21,7 @@ import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
-import com.hotels.styx.api.stream.ByteStream;
+import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import rx.Observable;
 

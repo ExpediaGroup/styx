@@ -16,7 +16,6 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableSet;
-import com.hotels.styx.api.stream.ByteStream;
 import reactor.core.publisher.Flux;
 
 import java.util.Collection;
@@ -473,6 +472,12 @@ public class HttpRequest implements StreamingHttpMessage {
             return this;
         }
 
+        /**
+         * Transforms request body.
+         *
+         * @param transformation a Function from ByteStream to ByteStream.
+         * @return a HttpRequest builder with a transformed message body.
+         */
         public Builder body(Function<ByteStream, ByteStream> transformation) {
             this.body = transformation.apply(this.body);
             return this;

@@ -21,7 +21,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
-import com.hotels.styx.api.stream.ByteStream;
+import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;

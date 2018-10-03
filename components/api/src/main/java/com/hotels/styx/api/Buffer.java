@@ -22,27 +22,51 @@ import java.nio.charset.Charset;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.util.Objects.requireNonNull;
 
-public class Buffer {
+/**
+ * Styx byte buffer abstraction.
+ *
+ */
+public final class Buffer {
     private final ByteBuf delegate;
 
     public Buffer(ByteBuf byteBuf) {
         this.delegate = requireNonNull(byteBuf);
     }
 
+    /**
+     * Creates a new Buffer with String content with specified encoding.
+     *
+     * @param content content
+     * @param charset desired character encoding
+     */
     public Buffer(String content, Charset charset) {
         this(copiedBuffer(content, charset));
     }
 
+    /**
+     * Returns a size of the Buffer in bytes.
+     * @return a size in bytes
+     */
     public int size() {
         return delegate.readableBytes();
     }
 
+    /**
+     * Returns buffer content as array of bytes.
+     *
+     * @return a byte array
+     */
     public byte[] content() {
         byte[] bytes = new byte[delegate.readableBytes()];
         delegate.getBytes(delegate.readerIndex(), bytes);
         return bytes;
     }
 
+    /**
+     * The underlying Netty ByteBuf.
+     *
+     * @return a Netty ByteBuf object
+     */
     public ByteBuf delegate() {
         return delegate;
     }

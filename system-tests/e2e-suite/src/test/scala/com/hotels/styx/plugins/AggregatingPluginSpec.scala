@@ -18,11 +18,10 @@ package com.hotels.styx.plugins
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.MockServer.responseSupplier
-import com.hotels.styx.api.Buffer
+import com.hotels.styx.api.{Buffer, ByteStream}
 import com.hotels.styx.api.FullHttpRequest.get
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.stream.ByteStream
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{MockServer, StyxProxySpec}
 import org.scalatest.FunSpec

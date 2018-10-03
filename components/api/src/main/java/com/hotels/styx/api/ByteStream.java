@@ -13,9 +13,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.stream;
+package com.hotels.styx.api;
 
-import com.hotels.styx.api.Buffer;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import reactor.core.publisher.Flux;
@@ -29,7 +28,6 @@ import java.util.function.Function;
  * Byte stream class.
  */
 public class ByteStream implements Publisher<Buffer> {
-    private final CompletableFuture<Void> endOfStream = new CompletableFuture<>();
     private final Publisher<Buffer> stream;
 
     public ByteStream(Publisher<Buffer> stream) {

@@ -19,7 +19,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.Url;
-import com.hotels.styx.api.stream.ByteStream;
+import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;

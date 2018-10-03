@@ -13,10 +13,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.api.stream;
+package com.hotels.styx.api;
 
-import com.hotels.styx.api.Buffer;
-import com.hotels.styx.api.ContentOverflowException;
 import io.netty.buffer.CompositeByteBuf;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -29,10 +27,7 @@ import static io.netty.buffer.Unpooled.compositeBuffer;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
-/**
- * TODO: Javadoc: Content aggregator aggregates content.
- */
-public class AggregateOperator implements Subscriber<Buffer> {
+class AggregateOperator implements Subscriber<Buffer> {
     private final Publisher<Buffer> upstream;
     private final int maxSize;
     private final CompletableFuture<Buffer> future = new CompletableFuture<>();

@@ -31,7 +31,7 @@ import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
-import com.hotels.styx.api.stream.ByteStream;
+import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.client.connectionpool.ResourceExhaustedException;
