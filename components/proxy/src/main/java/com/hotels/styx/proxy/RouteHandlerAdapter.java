@@ -40,6 +40,6 @@ public class RouteHandlerAdapter implements HttpHandler2 {
                 // TODO: NoServiceConfiguredException happens *after* routing. Therefore it doesn't contain
                 // any helpful information about the state of the router as to why service was not configured.
                 // It might be useful to think if there is a better way of addressing this issue.
-                .orElse(Observable.error(new NoServiceConfiguredException(request.path())));
+                .orElseGet(() -> Observable.error(new NoServiceConfiguredException(request.path())));
     }
 }
