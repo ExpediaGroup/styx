@@ -287,7 +287,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
                     return rewrittenRequest.cookie(originsRestrictionCookieName)
                             .map(RequestCookie::value)
                             .map(Optional::of)
-                            .orElse(rewrittenRequest.cookie("styx_origin_" + id).map(RequestCookie::value));
+                            .orElseGet(() -> rewrittenRequest.cookie("styx_origin_" + id).map(RequestCookie::value));
                 } else {
                     return rewrittenRequest.cookie("styx_origin_" + id).map(RequestCookie::value);
                 }

@@ -114,6 +114,23 @@ public class OriginRestrictionLoadBalancingStrategyTest {
     }
 
     @Test
+    public void dontDelegateWhenOriginRestrictionCookieMatches() {
+        Random mockRandom = mock(Random.class);
+        when(mockRandom.nextInt(eq(1))).thenReturn(0);
+
+        strategy = new OriginRestrictionLoadBalancingStrategy(() -> origins, delegate, mockRandom);
+
+        strategy.choose(lbPreference(Optional.of("origin-1")));
+        strategy.choose(lbPreference(Optional.of("origin-1")));
+        strategy.choose(lbPreference(Optional.of("origin-1")));
+        strategy.choose(lbPreference(Optional.of("origin-1")));
+        strategy.choose(lbPreference(Optional.of("origin-1")));
+        strategy.choose(lbPreference(Optional.of("origin-1")));
+
+        verify(delegate, never()).choose(any(LoadBalancer.Preferences.class));
+    }
+
+    @Test
     public void usesMultipleOriginsMatchingRegularExpression() {
         Random mockRandom = mock(Random.class);
         when(mockRandom.nextInt(eq(3))).thenReturn(1);

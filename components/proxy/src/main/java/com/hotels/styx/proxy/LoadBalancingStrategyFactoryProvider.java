@@ -50,7 +50,7 @@ public class LoadBalancingStrategyFactoryProvider implements Supplier<LoadBalanc
     public LoadBalancerFactory get() {
         return configurations.get(LOAD_BALANCING_STRATEGY_KEY)
                 .map(this::newFactoryInstance)
-                .orElse(busyConnectionBalancer());
+                .orElseGet(this::busyConnectionBalancer);
     }
 
     private LoadBalancerFactory busyConnectionBalancer() {
