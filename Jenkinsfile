@@ -21,8 +21,8 @@ pipeline {
       steps {
         sh '''cd styx-0.9-SNAPSHOT
 ./bin/startup conf/env-development/styx-config.yml &
-yum install make 
-make load-test
+
+/usr/bin/make load-test
 #kill $!
 ps ax | grep -i \'StyxServer\' | grep -v grep
 ./bin/shutdown'''
