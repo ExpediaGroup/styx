@@ -22,6 +22,10 @@ pipeline {
         sh '''cd styx-0.9-SNAPSHOT
 ./bin/startup conf/env-development/styx-config.yml &
 
+echo foo
+which make
+echo bar
+
 /usr/bin/make load-test
 #kill $!
 ps ax | grep -i \'StyxServer\' | grep -v grep
