@@ -25,5 +25,10 @@ kill $!
 '''
       }
     }
+    stage('Test') {
+      steps {
+        sh 'echo HELLYEAHBOIIIII'
+      }
+    }
   }
 }
