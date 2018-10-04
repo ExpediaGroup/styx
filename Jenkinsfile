@@ -22,14 +22,14 @@ pipeline {
         stage('Test') {
           steps {
             sh '''cd styx-0.9-SNAPSHOT
-echo TEST
 ./bin/shutdown '''
           }
         }
         stage('StartUp') {
           steps {
             sh '''cd styx-0.9-SNAPSHOT
-./bin/startup conf/env-development/styx-config.yml'''
+./bin/startup conf/env-development/styx-config.yml & echo TEST
+'''
           }
         }
       }
