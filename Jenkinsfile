@@ -20,8 +20,11 @@ pipeline {
     stage('StartUp') {
       steps {
         sh '''cd styx-0.9-SNAPSHOT
-./bin/startup conf/env-development/styx-config.yml & make load-test
-kill $!'''
+./bin/startup conf/env-development/styx-config.yml & 
+make load-test
+#kill $!
+ps ax | grep -i \'StyxServer\' | grep -v grep
+./bin/shutdown'''
       }
     }
   }
