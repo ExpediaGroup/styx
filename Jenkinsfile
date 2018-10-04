@@ -21,13 +21,13 @@ pipeline {
       steps {
         sh '''cd styx-0.9-SNAPSHOT
 ./bin/startup conf/env-development/styx-config.yml & echo TEST
-kill $!
 '''
       }
     }
     stage('Test') {
       steps {
-        sh 'echo HELLYEAHBOIIIII'
+        sh '''kill $!
+'''
       }
     }
   }
