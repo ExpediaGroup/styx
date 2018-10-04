@@ -1,5 +1,65 @@
 # Change Log
 
+## [styx-0.7.10](https://github.com/HotelsDotCom/styx/tree/styx-0.7.10) (2018-10-03)
+[Full Changelog](https://github.com/HotelsDotCom/styx/compare/styx-0.7.9...styx-0.7.10)
+
+**Closed issues:**
+
+- ChunkedDownloadSpec fails intermittently on 0.7 branch [\#296](https://github.com/HotelsDotCom/styx/issues/297)
+- Use Optional getOrElse to lazily create default objects [\#294](https://github.com/HotelsDotCom/styx/issues/294)
+
+**Merged pull requests:**
+
+- Fix issue #296: Back port PR #256 to styx-0.7 branch [\#297](https://github.com/HotelsDotCom/styx/pull/297) ([mikkokar](https://github.com/mikkokar))
+- Lazily create expensive Optional default values. Fixes #294. [\#295](https://github.com/HotelsDotCom/styx/pull/295) ([mikkokar](https://github.com/mikkokar))
+- Backport #292 to 0.7. [\#293](https://github.com/HotelsDotCom/styx/pull/293) ([taer](https://github.com/taer))
+
+## [styx-0.7.9](https://github.com/HotelsDotCom/styx/tree/styx-0.7.9) (2018-08-24)
+[Full Changelog](https://github.com/HotelsDotCom/styx/compare/styx-0.7.8...styx-0.7.9)
+
+**Fixed bugs:**
+
+- java.lang.NoClassDefFoundError caused by dependency conflict issue due to multiple versions of com.google.guava:guava:jar [\#227](https://github.com/HotelsDotCom/styx/issues/227)
+
+**Closed issues:**
+
+- Memory leak in styx V 0.14.0 [\#222](https://github.com/HotelsDotCom/styx/issues/222)
+- Add a metrics endpoint that allows all metrics starting with a given string to be found. [\#208](https://github.com/HotelsDotCom/styx/issues/208)
+
+**Merged pull requests:**
+
+- Fix a small typo [\#239](https://github.com/HotelsDotCom/styx/pull/239) ([VivianLopes](https://github.com/VivianLopes))
+- Add changelog for release 0.7.7 [\#238](https://github.com/HotelsDotCom/styx/pull/238) ([kvosper](https://github.com/kvosper))
+- fix documentation, instructions for release download [\#233](https://github.com/HotelsDotCom/styx/pull/233) ([VivianLopes](https://github.com/VivianLopes))
+- Update Google Guava to 18.0. [\#228](https://github.com/HotelsDotCom/styx/pull/228) ([mikkokar](https://github.com/mikkokar))
+- Fixes \#222: A memory leak in DashboardData. [\#224](https://github.com/HotelsDotCom/styx/pull/224) ([mikkokar](https://github.com/mikkokar))
+- Metrics endpoint enhancement [\#221](https://github.com/HotelsDotCom/styx/pull/221) ([kvosper](https://github.com/kvosper))
+
+## [styx-0.7.8](https://github.com/HotelsDotCom/styx/tree/styx-0.7.8) (2018-07-13)
+[Full Changelog](https://github.com/HotelsDotCom/styx/compare/styx-0.7.7...styx-0.7.8)
+
+**Implemented enhancements:**
+
+- Remove fasterxml objects from the BackendService etc. classes [\#132](https://github.com/HotelsDotCom/styx/issues/132)
+
+**Fixed bugs:**
+
+- Origin metrics for request cancellations count all requests [\#199](https://github.com/HotelsDotCom/styx/issues/199)
+
+**Closed issues:**
+
+- Cookie names should be treated case-sensitively [\#185](https://github.com/HotelsDotCom/styx/issues/185)
+- Add admin endpoint for querying specific metrics [\#182](https://github.com/HotelsDotCom/styx/issues/182)
+
+**Merged pull requests:**
+
+- Add SENDING\_RESPONSE\_CLIENT\_CLOSED state into HttpPipelineHandler FSM [\#214](https://github.com/HotelsDotCom/styx/pull/214) ([mikkokar](https://github.com/mikkokar))
+- Allow custom plugin loader injection [\#213](https://github.com/HotelsDotCom/styx/pull/213) ([fantayeneh](https://github.com/fantayeneh))
+- Fix issue \#199: Request cancellation per origin metric. [\#209](https://github.com/HotelsDotCom/styx/pull/209) ([mikkokar](https://github.com/mikkokar))
+- Add admin endpoint for querying specific metrics by name [\#206](https://github.com/HotelsDotCom/styx/pull/206) ([kvosper](https://github.com/kvosper))
+- Styx logo in readme file centered [\#195](https://github.com/HotelsDotCom/styx/pull/195) ([ClaudioCorridore](https://github.com/ClaudioCorridore))
+- Cookies should not be case insensitive  [\#186](https://github.com/HotelsDotCom/styx/pull/186) ([dvlato](https://github.com/dvlato))
+
 ## [styx-0.7.7](https://github.com/HotelsDotCom/styx/tree/styx-0.7.7) (2018-05-17)
 [Full Changelog](https://github.com/HotelsDotCom/styx/compare/styx-0.7.6...styx-0.7.7)
 
