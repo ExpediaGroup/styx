@@ -19,9 +19,8 @@ pipeline {
     }
     stage('StartUp') {
       steps {
-        sh '''which make || true
-cd styx-0.9-SNAPSHOT
-./bin/startup conf/env-development/styx-config.yml & echo TEST
+        sh '''cd styx-0.9-SNAPSHOT
+./bin/startup conf/env-development/styx-config.yml & make load-test
 kill $!
 '''
       }
