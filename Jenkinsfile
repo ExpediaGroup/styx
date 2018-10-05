@@ -1,7 +1,7 @@
 pipeline {
   agent {
     docker {
-      image 'maven:3.5.3'
+      image 'edge-jenkins:latest'
     }
 
   }
@@ -19,10 +19,7 @@ pipeline {
     }
     stage('StartUp') {
       steps {
-        sh '''hostname || true
-whoami || true
-echo $PATH || true
-ls -laF /usr/bin || true
+        sh '''which make || true
 cd styx-0.9-SNAPSHOT
 ./bin/startup conf/env-development/styx-config.yml & echo TEST
 kill $!
