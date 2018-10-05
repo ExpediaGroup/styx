@@ -10,7 +10,6 @@
 **Merged pull requests:**
 
 - Fix issue #296: Back port PR #256 to styx-0.7 branch [\#297](https://github.com/HotelsDotCom/styx/pull/297) ([mikkokar](https://github.com/mikkokar))
-
 - Backport #292 to 0.7. [\#293](https://github.com/HotelsDotCom/styx/pull/293) ([taer](https://github.com/taer))
 
 ## [styx-0.7.9](https://github.com/HotelsDotCom/styx/tree/styx-0.7.9) (2018-08-24)
