@@ -16,7 +16,7 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.Buffer;
+import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
@@ -252,7 +252,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
         private ChannelFutureListener subscribeToResponseBody() {
             return future -> {
                 if (future.isSuccess()) {
-                    Observable<ByteBuf> bufferObservable = toObservable(request.body()).map(Buffer::delegate);
+                    Observable<ByteBuf> bufferObservable = toObservable(request.body()).map(Buffers::toByteBuf);
                     bufferObservable.subscribe(requestBodyChunkSubscriber);
                 } else {
                     LOGGER.error(format("error writing body to origin=%s request=%s", nettyConnection.getOrigin(), request), future.cause());

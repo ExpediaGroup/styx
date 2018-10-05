@@ -32,6 +32,7 @@ import rx.subjects.PublishSubject;
 
 import java.util.Optional;
 
+import static com.hotels.styx.api.Buffers.toByteBuf;
 import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.Id.id;
@@ -187,9 +188,9 @@ public class TransportTest {
                 .response()
                 .subscribe(subscriber);
 
-        assertThat(chunk1.delegate().refCnt(), is(0));
-        assertThat(chunk2.delegate().refCnt(), is(0));
-        assertThat(chunk3.delegate().refCnt(), is(0));
+        assertThat(toByteBuf(chunk1).refCnt(), is(0));
+        assertThat(toByteBuf(chunk2).refCnt(), is(0));
+        assertThat(toByteBuf(chunk3).refCnt(), is(0));
     }
 
     @Test

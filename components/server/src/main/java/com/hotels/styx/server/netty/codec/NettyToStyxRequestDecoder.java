@@ -16,10 +16,10 @@
 package com.hotels.styx.server.netty.codec;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.Buffer;
+import com.hotels.styx.api.Buffers;
+import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.Url;
-import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;
@@ -171,7 +171,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 .url(url)
                 .version(toStyxVersion(request.protocolVersion()))
                 .id(uniqueIdSupplier.get())
-                .body(new ByteStream(toPublisher(content.map(Buffer::new))));
+                .body(new ByteStream(toPublisher(content.map(Buffers::fromByteBuf))));
 
         stream(request.headers().spliterator(), false)
                 .forEach(entry -> requestBuilder.addHeader(entry.getKey(), entry.getValue()));

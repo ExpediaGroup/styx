@@ -29,7 +29,7 @@ import static java.util.Objects.requireNonNull;
 public final class Buffer {
     private final ByteBuf delegate;
 
-    public Buffer(ByteBuf byteBuf) {
+    Buffer(ByteBuf byteBuf) {
         this.delegate = requireNonNull(byteBuf);
     }
 
@@ -67,7 +67,7 @@ public final class Buffer {
      *
      * @return a Netty ByteBuf object
      */
-    public ByteBuf delegate() {
+    ByteBuf delegate() {
         return delegate;
     }
 }

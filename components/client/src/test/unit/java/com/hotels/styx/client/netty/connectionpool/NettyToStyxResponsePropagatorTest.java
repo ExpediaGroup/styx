@@ -16,7 +16,7 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.base.Throwables;
-import com.hotels.styx.api.Buffer;
+import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
@@ -329,7 +329,7 @@ public class NettyToStyxResponsePropagatorTest {
     private TestSubscriber<ByteBuf> subscribeToContent(HttpResponse response) {
         TestSubscriber<ByteBuf> contentSubscriber = new TestSubscriber<>();
         toObservable(response.body())
-                .map(Buffer::delegate)
+                .map(Buffers::toByteBuf)
                 .subscribe(contentSubscriber);
         return contentSubscriber;
     }

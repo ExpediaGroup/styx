@@ -16,13 +16,13 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.Buffer;
+import com.hotels.styx.api.Buffers;
+import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
 import io.netty.buffer.ByteBuf;
@@ -225,7 +225,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     private static HttpResponse toStyxResponse(io.netty.handler.codec.http.HttpResponse nettyResponse, Observable<ByteBuf> contentObservable, Origin origin) {
         try {
             return toStyxResponse(nettyResponse)
-                    .body(new ByteStream(toPublisher(contentObservable.map(Buffer::new))))
+                    .body(new ByteStream(toPublisher(contentObservable.map(Buffers::fromByteBuf))))
                     .build();
         } catch (IllegalArgumentException e) {
             throw new BadHttpResponseException(origin, e);

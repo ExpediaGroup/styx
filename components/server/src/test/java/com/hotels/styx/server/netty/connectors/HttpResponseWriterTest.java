@@ -45,6 +45,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static com.hotels.styx.api.Buffers.toByteBuf;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
@@ -334,8 +335,8 @@ public class HttpResponseWriterTest {
                         contentObservable.onCompleted();
 
                         assertThat(future.isDone(), is(true));
-                        assertThat(chunk1.delegate().refCnt(), is(0));
-                        assertThat(chunk2.delegate().refCnt(), is(0));
+                        assertThat(toByteBuf(chunk1).refCnt(), is(0));
+                        assertThat(toByteBuf(chunk2).refCnt(), is(0));
 
                         channelRead.set(true);
                     }

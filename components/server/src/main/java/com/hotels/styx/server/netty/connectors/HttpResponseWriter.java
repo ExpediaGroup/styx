@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.server.netty.connectors;
 
-import com.hotels.styx.api.Buffer;
+import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.HttpResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
@@ -82,7 +82,7 @@ class HttpResponseWriter {
 
             // TODO: Mikko
             // - The ContentObservable should have a mechanism to consume its contents.
-            Subscription subscriber = toObservable(response.body()).map(Buffer::delegate).subscribe(new Subscriber<ByteBuf>() {
+            Subscription subscriber = toObservable(response.body()).map(Buffers::toByteBuf).subscribe(new Subscriber<ByteBuf>() {
                 @Override
                 public void onStart() {
                     request(1);
@@ -160,7 +160,7 @@ class HttpResponseWriter {
             return future;
         } catch (Throwable cause) {
             LOGGER.warn("Failed to convert response headers. response={}, Cause={}", new Object[]{response, cause});
-            toObservable(response.body()).forEach(it -> it.delegate().release());
+            toObservable(response.body()).forEach(it -> Buffers.toByteBuf(it).release());
             future.completeExceptionally(cause);
             return future;
         }
