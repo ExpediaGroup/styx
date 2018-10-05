@@ -42,14 +42,16 @@ import static java.util.Objects.requireNonNull;
 class HttpResponseWriter {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpResponseWriter.class);
     private final AtomicLong writeOps = new AtomicLong(0);
-    private final AtomicLong writeOpAcks = new AtomicLong(0);
+    private final AtomicLong contentBytesWritten = new AtomicLong(0);
+    private final AtomicLong writeOpsAcked = new AtomicLong(0);
+    private final AtomicLong contentBytesAcked = new AtomicLong(0);
     private final AtomicBoolean contentCompleted = new AtomicBoolean(false);
 
     private final ChannelHandlerContext ctx;
     private final ResponseTranslator responseTranslator;
 
     HttpResponseWriter(ChannelHandlerContext ctx) {
-       this(ctx, new StyxToNettyResponseTranslator());
+        this(ctx, new StyxToNettyResponseTranslator());
     }
 
     HttpResponseWriter(ChannelHandlerContext ctx, ResponseTranslator responseTranslator) {
@@ -63,10 +65,16 @@ class HttpResponseWriter {
         try {
             writeHeaders(response).addListener((ChannelFutureListener) writeOp -> {
                 if (writeOp.isSuccess()) {
-                    writeOpAcks.incrementAndGet();
+                    writeOpsAcked.incrementAndGet();
                 } else {
-                    LOGGER.warn("Unable to send response headers, writeOps={}, writeAcks={}, response={}, exception={}",
-                            new Object[]{writeOps.get(), writeOpAcks.get(), response, writeOp.cause()});
+                    LOGGER.warn("Unable to send response headers. Written content bytes {}/{} (ackd/sent). Write events {}/{} (ackd/writes). Exception={}",
+                            new Object[]{
+                                    contentBytesAcked.get(),
+                                    contentBytesWritten.get(),
+                                    writeOpsAcked.get(),
+                                    writeOps.get(),
+                                    response,
+                                    writeOp.cause()});
                     future.completeExceptionally(writeOp.cause());
                 }
             });
@@ -87,13 +95,16 @@ class HttpResponseWriter {
                 }
 
                 @Override
-                public void onError(Throwable e) {
-                    LOGGER.warn("Content observable error. writeOps={}, writeOpAcks={}, response={}, exception={}", new Object[]{
-                            writeOps.get(),
-                            writeOpAcks.get(),
-                            response,
-                            e});
-                    future.completeExceptionally(e);
+                public void onError(Throwable cause) {
+                    LOGGER.warn("Content observable error. Written content bytes {}/{} (ackd/sent). Write events {}/{} (ackd/writes). Exception={}",
+                            new Object[]{
+                                    contentBytesAcked.get(),
+                                    contentBytesWritten.get(),
+                                    writeOpsAcked.get(),
+                                    writeOps.get(),
+                                    cause
+                    });
+                    future.completeExceptionally(cause);
                 }
 
                 @Override
@@ -101,26 +112,35 @@ class HttpResponseWriter {
                     if (future.isDone()) {
                         byteBuf.release();
                     } else {
-                        nettyWriteAndFlush(new DefaultHttpContent(byteBuf)).addListener((ChannelFutureListener) this::onWriteOutcome);
+                        long bufSize = (long) byteBuf.readableBytes();
+                        contentBytesWritten.addAndGet(bufSize);
+                        nettyWriteAndFlush(new DefaultHttpContent(byteBuf))
+                                .addListener(it -> onWriteOutcome((ChannelFuture) it, bufSize));
                     }
                 }
 
-                private void onWriteOutcome(ChannelFuture writeOp) {
+                private void onWriteOutcome(ChannelFuture writeOp, long bufSize) {
                     if (writeOp.isSuccess()) {
-                        writeOpAcks.incrementAndGet();
+                        contentBytesAcked.addAndGet(bufSize);
+                        writeOpsAcked.incrementAndGet();
                         request(1);
                         completeIfAllSent(future);
                     } else if (!future.isDone()) {
                         // Suppress messages if future has already failed, or completed for other reason:
                         unsubscribe();
-                        LOGGER.warn("Write error. writeOps={}, writeOpAcks={}, response={}, exception={}", new Object[]{
-                                writeOps.get(), writeOpAcks.get(), response, writeOp.cause()});
+                        LOGGER.warn("Write error. Written content bytes {}/{} (ackd/sent). Write events {}/{} (ackd/writes), Exception={}", new Object[]{
+                                contentBytesAcked.get(),
+                                contentBytesWritten.get(),
+                                writeOpsAcked.get(),
+                                writeOps.get(),
+                                response,
+                                writeOp.cause()});
                         future.completeExceptionally(writeOp.cause());
                     }
                 }
 
                 private void onWriteEmptyLastChunkOutcome(ChannelFuture writeOp) {
-                    writeOpAcks.incrementAndGet();
+                    writeOpsAcked.incrementAndGet();
                     completeIfAllSent(future);
                     unsubscribe();
                 }
@@ -146,7 +166,7 @@ class HttpResponseWriter {
 
 
     private void completeIfAllSent(CompletableFuture<Void> future) {
-        if (contentCompleted.get() && writeOps.get() == writeOpAcks.get()) {
+        if (contentCompleted.get() && writeOps.get() == writeOpsAcked.get()) {
             future.complete(null);
         }
     }
