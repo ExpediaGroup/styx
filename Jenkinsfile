@@ -23,7 +23,7 @@ pipeline {
 echo $PATH || true
 ls -laF /usr/bin || true
 cd styx-0.9-SNAPSHOT
-./bin/startup conf/env-development/styx-config.yml & echo load-test
+./bin/startup conf/env-development/styx-config.yml & echo TEST
 kill $!
 '''
       }
