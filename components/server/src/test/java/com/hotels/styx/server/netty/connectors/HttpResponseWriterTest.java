@@ -16,8 +16,11 @@
 package com.hotels.styx.server.netty.connectors;
 
 
+import ch.qos.logback.classic.Level;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.exceptions.TransportLostException;
+import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
@@ -26,10 +29,12 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.logging.LoggingHandler;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.subjects.PublishSubject;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,27 +46,36 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.hotels.styx.api.HttpResponse.response;
-import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
-import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.ResponseCookie.responseCookie;
+import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
+import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
+import static java.net.InetAddress.getLoopbackAddress;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 
 public class HttpResponseWriterTest {
-
+    private LoggingTestSupport LOGGER;
     private PublishSubject<ByteBuf> contentObservable;
     private Queue<ChannelWriteArguments> channelArgs;
     private AtomicBoolean channelRead;
 
     @BeforeMethod
-    public void setUp() throws Exception {
+    public void setUp() {
+        LOGGER = new LoggingTestSupport(HttpResponseWriter.class);
         contentObservable = PublishSubject.create();
         channelArgs = new ArrayDeque<>();
         channelRead = new AtomicBoolean(false);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        LOGGER.stop();
     }
 
     @Test
@@ -373,6 +387,42 @@ public class HttpResponseWriterTest {
 
         ch.writeInbound(response(OK).body(fromRxObservable(contentObservable.doOnRequest(requested::addAndGet))).build());
         assertThat(channelRead.get(), is(true));
+    }
+
+    @Test
+    public void logsSentAndAcknowledgedBytes() {
+        EmbeddedChannel ch = new EmbeddedChannel(
+                new SimpleChannelInboundHandler<HttpResponse>() {
+                    @Override
+                    protected void channelRead0(ChannelHandlerContext ctx, HttpResponse response) throws Exception {
+                        HttpResponseWriter writer = new HttpResponseWriter(ctx);
+                        CompletableFuture<Void> future = writer.write(response);
+                        assertThat(future.isDone(), is(false));
+
+                        contentObservable.onNext(copiedBuffer("aaa", UTF_8));
+                        assertThat(future.isDone(), is(false));
+
+                        contentObservable.onNext(copiedBuffer("bbbb", UTF_8));
+                        assertThat(future.isDone(), is(false));
+
+                        contentObservable.onError(new TransportLostException(
+                                new InetSocketAddress(getLoopbackAddress(), 5050),
+                                newOriginBuilder("localhost", 5050).build()));
+                        assertThat(future.isDone(), is(true));
+
+                        channelRead.set(true);
+                    }
+                }
+        );
+
+        ch.writeInbound(response(OK).body(fromRxObservable(contentObservable)).build());
+
+        assertThat(LOGGER.lastMessage(), is(
+                loggingEvent(
+                        Level.WARN,
+                        "Content observable error. Written content bytes 7/7 \\(ackd/sent\\). Write events 3/3 \\(ackd/writes\\).*",
+                        TransportLostException.class,
+                        "Connection to origin lost. origin=\"generic-app:anonymous-origin:localhost:5050\", remoteAddress=\"localhost/127.0.0.1:5050.*")));
     }
 
     @Test(enabled = false)
