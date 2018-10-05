@@ -1,7 +1,7 @@
 pipeline {
   agent {
     docker {
-      image 'maven:3.5.3'
+      image 'edge-jenkins:latest'
     }
 
   }
@@ -17,21 +17,14 @@ pipeline {
 '''
       }
     }
-    stage('Test') {
-      parallel {
-        stage('Test') {
-          steps {
-            sh '''cd styx-0.9-SNAPSHOT
-echo TEST
-./bin/shutdown '''
-          }
-        }
-        stage('StartUp') {
-          steps {
-            sh '''cd styx-0.9-SNAPSHOT
-./bin/startup conf/env-development/styx-config.yml'''
-          }
-        }
+    stage('StartUp') {
+      steps {
+        sh '''cd styx-0.9-SNAPSHOT
+./bin/startup conf/env-development/styx-config.yml & 
+sleep 10
+make -f ../Makefile load-test
+kill $!
+'''
       }
     }
   }
