@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.api;
 
+import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
@@ -439,21 +440,20 @@ public class FullHttpResponseTest {
         assertThat(original.bodyAs(UTF_8), is("original"));
     }
 
-    // TODO: What's going on with this?
-//    @Test(expectedExceptions = io.netty.util.IllegalReferenceCountException.class)
-//    public void toFullResponseReleasesOriginalRefCountedBuffers() throws ExecutionException, InterruptedException {
-//        Buffer content = new Buffer(Unpooled.copiedBuffer("original", UTF_8));
-//
-//        HttpResponse original = HttpResponse.response(OK)
-//                .body(new ByteStream(new RxContentPublisher(Observable.just(content))))
-//                .build();
-//
-//        original.toFullResponse(100)
-//                .asCompletableFuture()
-//                .get();
-//
-//        content.delegate().array()[0] = 'A';
-//    }
+    @Test
+    public void toFullResponseReleasesOriginalRefCountedBuffers() throws ExecutionException, InterruptedException {
+        Buffer content = new Buffer(Unpooled.copiedBuffer("original", UTF_8));
+
+        HttpResponse original = HttpResponse.response(OK)
+                .body(new ByteStream(Flux.just(content)))
+                .build();
+
+        original.toFullResponse(100)
+                .asCompletableFuture()
+                .get();
+
+        assertThat(content.delegate().refCnt(), is(0));
+    }
 
     @Test
     public void transformedBodyIsNewCopy() {

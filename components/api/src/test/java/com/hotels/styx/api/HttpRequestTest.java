@@ -75,8 +75,7 @@ public class HttpRequestTest {
         assertThat(full.body(), is(bytes("foobar")));
     }
 
-    // TODO: Mikko: what triggers the exception?
-    @Test(enabled = false, expectedExceptions = io.netty.util.IllegalReferenceCountException.class)
+    @Test
     public void toFullRequestReleasesOriginalReferenceCountedBuffers() throws ExecutionException, InterruptedException {
         Buffer content = new Buffer("original", UTF_8);
 
@@ -88,7 +87,7 @@ public class HttpRequestTest {
                 .asCompletableFuture()
                 .get();
 
-        content.delegate().array()[0] = 'A';
+        assertThat(content.delegate().refCnt(), is(0));
 
         assertThat(fullRequest.bodyAs(UTF_8), is("original"));
     }
@@ -110,16 +109,6 @@ public class HttpRequestTest {
                 {post("/foo/bar", new ByteStream(Flux.empty())).build()},
         };
     }
-
-//    @Test
-//    public void transformRequestBody() {
-//        HttpRequest aPost = HttpRequest.post("/")
-//                .body(HttpContentStream.fromBufferStream(Observable.just(new Buffer("hello", UTF_8), new Buffer("world", UTF_8))))
-//                .build();
-//
-//        aPost.newBuilder()
-//                .body(buf -> buf.);
-//    }
 
     @Test
     public void createsARequestWithDefaultValues() {

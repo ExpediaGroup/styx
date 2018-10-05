@@ -46,6 +46,7 @@ import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.HttpVersion.httpVersion;
 import static com.hotels.styx.api.RequestCookie.decode;
 import static com.hotels.styx.api.RequestCookie.encode;
+import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
@@ -347,8 +348,16 @@ public class HttpRequest implements StreamingHttpMessage {
     public StyxObservable<FullHttpRequest> toFullRequest(int maxContentBytes) {
         return StyxObservable.from(
                 body.aggregate(maxContentBytes)
-                    .thenApply(it -> new FullHttpRequest.Builder(this, it.content()).build())
+                    .thenApply(it -> new FullHttpRequest.Builder(this, decodeAndRelease(it)).build())
         );
+    }
+
+    private static byte[] decodeAndRelease(Buffer aggregate) {
+        try {
+            return getBytes(aggregate.delegate());
+        } finally {
+            aggregate.delegate().release();
+        }
     }
 
     /**

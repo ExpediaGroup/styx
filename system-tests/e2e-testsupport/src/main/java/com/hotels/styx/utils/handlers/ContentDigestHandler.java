@@ -15,7 +15,9 @@
  */
 package com.hotels.styx.utils.handlers;
 
+import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
@@ -25,10 +27,9 @@ import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.support.api.HttpMessageBodies.bodyAsString;
+import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.String.format;
 import static java.util.UUID.randomUUID;
-import com.hotels.styx.api.HttpRequest;
 
 public class ContentDigestHandler extends BaseHttpHandler {
     private final Origin origin;
@@ -39,12 +40,12 @@ public class ContentDigestHandler extends BaseHttpHandler {
 
     @Override
     protected HttpResponse doHandle(HttpRequest request) {
-        String requestBody = bodyAsString(request);
+        FullHttpRequest fullRequest = await(request.toFullRequest(0x100000).asCompletableFuture());
 
         String responseBody = format("Response From %s - %s, received content digest: %s",
                 origin.hostAndPortString(),
                 randomUUID(),
-                requestBody.hashCode());
+                fullRequest.bodyAs(UTF_8).hashCode());
 
         return FullHttpResponse.response(OK)
                 .header(CONTENT_TYPE, HTML_UTF_8.toString())

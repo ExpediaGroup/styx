@@ -38,6 +38,7 @@ import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.HttpVersion.httpVersion;
 import static com.hotels.styx.api.ResponseCookie.decode;
 import static com.hotels.styx.api.ResponseCookie.encode;
+import static io.netty.buffer.ByteBufUtil.getBytes;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
@@ -192,11 +193,20 @@ public class HttpResponse implements StreamingHttpMessage {
      */
     public StyxObservable<FullHttpResponse> toFullResponse(int maxContentBytes) {
         return StyxObservable.from(body.aggregate(maxContentBytes))
-                .map(it -> new FullHttpResponse.Builder(this, it.content())
+                .map(it -> new FullHttpResponse.Builder(this, decodeAndRelease(it))
                     .disableValidation()
                     .build()
                 );
     }
+
+    private static byte[] decodeAndRelease(Buffer aggregate) {
+        try {
+            return getBytes(aggregate.delegate());
+        } finally {
+            aggregate.delegate().release();
+        }
+    }
+
 
     /**
      * Decodes "Set-Cookie" header values and returns them as set of {@link ResponseCookie} objects.
