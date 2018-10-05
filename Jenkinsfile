@@ -19,7 +19,8 @@ pipeline {
     }
     stage('StartUp') {
       steps {
-        sh '''whoami || true
+        sh '''hostname || true
+whoami || true
 echo $PATH || true
 ls -laF /usr/bin || true
 cd styx-0.9-SNAPSHOT
