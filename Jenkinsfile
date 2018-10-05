@@ -19,9 +19,9 @@ pipeline {
     }
     stage('StartUp') {
       steps {
-        sh '''whoami
-echo $PATH
-ls -laF /usr/bin
+        sh '''whoami || true
+echo $PATH || true
+ls -laF /usr/bin || true
 cd styx-0.9-SNAPSHOT
 ./bin/startup conf/env-development/styx-config.yml & echo load-test
 kill $!
