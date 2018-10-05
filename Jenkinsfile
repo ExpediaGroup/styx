@@ -19,19 +19,10 @@ pipeline {
     }
     stage('StartUp') {
       steps {
-        sh '''echo foo
-which make
-echo bar
-
-cd styx-0.9-SNAPSHOT
-./bin/startup conf/env-development/styx-config.yml &
-
-
-
-/usr/bin/make load-test
-#kill $!
-ps ax | grep -i \'StyxServer\' | grep -v grep
-./bin/shutdown'''
+        sh '''cd styx-0.9-SNAPSHOT
+./bin/startup conf/env-development/styx-config.yml & echo load-test
+kill $!
+'''
       }
     }
   }
