@@ -53,6 +53,7 @@ import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
+import static java.net.InetAddress.getLoopbackAddress;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -65,7 +66,7 @@ public class HttpResponseWriterTest {
     private AtomicBoolean channelRead;
 
     @BeforeMethod
-    public void setUp() throws Exception {
+    public void setUp() {
         LOGGER = new LoggingTestSupport(HttpResponseWriter.class);
         contentObservable = PublishSubject.create();
         channelArgs = new ArrayDeque<>();
@@ -404,7 +405,9 @@ public class HttpResponseWriterTest {
                         contentObservable.onNext(copiedBuffer("bbbb", UTF_8));
                         assertThat(future.isDone(), is(false));
 
-                        contentObservable.onError(new TransportLostException(new InetSocketAddress("localhost", 5050), newOriginBuilder("localhost", 5050).build()));
+                        contentObservable.onError(new TransportLostException(
+                                new InetSocketAddress(getLoopbackAddress(), 5050),
+                                newOriginBuilder("localhost", 5050).build()));
                         assertThat(future.isDone(), is(true));
 
                         channelRead.set(true);
