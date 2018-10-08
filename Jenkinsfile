@@ -23,7 +23,6 @@ pipeline {
 ./bin/startup conf/env-development/styx-config.yml & 
 sleep 10
 cd ..
-#make -f ../Makefile load-test OPENSSL_INCLUDE_DIR=/usr/include
 make load-test OPENSSL_INCLUDE_DIR=/usr/include
 kill $!
 '''
