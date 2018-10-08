@@ -953,56 +953,57 @@
         </dependencies>
       </plugin>
 
-      <plugin>
-        <groupId>com.mycila</groupId>
-        <artifactId>license-maven-plugin</artifactId>
-        <version>3.0</version>
-        <configuration>
-          <header>file:///${main.basedir}/src/license/templates/APACHE-2.txt</header>
-          <headerDefinitions>
-            <headerDefinition>file:///${main.basedir}/src/license/header-definitions.xml</headerDefinition>
-          </headerDefinitions>
-          <properties>
-            <owner>Expedia Inc.</owner>
-            <currentYear>${current.year}</currentYear>
-          </properties>
-          <excludes>
-            <exclude>**/README</exclude>
-            <exclude>src/test/resources/**</exclude>
-            <exclude>src/main/resources/**</exclude>
-            <exclude>**/*.xml</exclude>
-            <exclude>**/*.yaml</exclude>
-            <exclude>**/*.yml</exclude>
-            <exclude>**/*.md</exclude>
-            <exclude>**/*.txt</exclude>
-            <exclude>**/*.css</exclude>
-            <exclude>**/Dockerfile</exclude>
-            <exclude>default.properties</exclude>
-            <exclude>**/GraphiteReporter.java</exclude>
-            <exclude>**/ServerCookieEncoder.java</exclude>
-            <exclude>**/MultithreadedStressTester.java</exclude>
-            <exclude>**/RelationshipTester.java</exclude>
-            <exclude>**/EqualsTester.java</exclude>
-            <exclude>**/URLEncoder.java</exclude>
-            <exclude>**/DeltaQueue.java</exclude>
-          </excludes>
-        </configuration>
-        <dependencies>
-          <dependency>
-            <groupId>com.mycila</groupId>
-            <artifactId>license-maven-plugin-git</artifactId>
-            <version>3.0</version>
-          </dependency>
-        </dependencies>
-        <executions>
-          <execution>
-            <goals>
-              <goal>format</goal>
-            </goals>
-            <phase>process-sources</phase>
-          </execution>
-        </executions>
-      </plugin>
+      <!-- TODO re-enable this plugin later -->
+      <!--<plugin>-->
+        <!--<groupId>com.mycila</groupId>-->
+        <!--<artifactId>license-maven-plugin</artifactId>-->
+        <!--<version>3.0</version>-->
+        <!--<configuration>-->
+          <!--<header>file:///${main.basedir}/src/license/templates/APACHE-2.txt</header>-->
+          <!--<headerDefinitions>-->
+            <!--<headerDefinition>file:///${main.basedir}/src/license/header-definitions.xml</headerDefinition>-->
+          <!--</headerDefinitions>-->
+          <!--<properties>-->
+            <!--<owner>Expedia Inc.</owner>-->
+            <!--<currentYear>${current.year}</currentYear>-->
+          <!--</properties>-->
+          <!--<excludes>-->
+            <!--<exclude>**/README</exclude>-->
+            <!--<exclude>src/test/resources/**</exclude>-->
+            <!--<exclude>src/main/resources/**</exclude>-->
+            <!--<exclude>**/*.xml</exclude>-->
+            <!--<exclude>**/*.yaml</exclude>-->
+            <!--<exclude>**/*.yml</exclude>-->
+            <!--<exclude>**/*.md</exclude>-->
+            <!--<exclude>**/*.txt</exclude>-->
+            <!--<exclude>**/*.css</exclude>-->
+            <!--<exclude>**/Dockerfile</exclude>-->
+            <!--<exclude>default.properties</exclude>-->
+            <!--<exclude>**/GraphiteReporter.java</exclude>-->
+            <!--<exclude>**/ServerCookieEncoder.java</exclude>-->
+            <!--<exclude>**/MultithreadedStressTester.java</exclude>-->
+            <!--<exclude>**/RelationshipTester.java</exclude>-->
+            <!--<exclude>**/EqualsTester.java</exclude>-->
+            <!--<exclude>**/URLEncoder.java</exclude>-->
+            <!--<exclude>**/DeltaQueue.java</exclude>-->
+          <!--</excludes>-->
+        <!--</configuration>-->
+        <!--<dependencies>-->
+          <!--<dependency>-->
+            <!--<groupId>com.mycila</groupId>-->
+            <!--<artifactId>license-maven-plugin-git</artifactId>-->
+            <!--<version>3.0</version>-->
+          <!--</dependency>-->
+        <!--</dependencies>-->
+        <!--<executions>-->
+          <!--<execution>-->
+            <!--<goals>-->
+              <!--<goal>format</goal>-->
+            <!--</goals>-->
+            <!--<phase>process-sources</phase>-->
+          <!--</execution>-->
+        <!--</executions>-->
+      <!--</plugin>-->
 
     </plugins>
 
