@@ -13,8 +13,9 @@ pipeline {
     }
     stage('Deploy') {
       steps {
-        sh '''mkdir /jenkins_styx
-unzip -d /jenkins_styx/ ./distribution/target/styx-0.9-SNAPSHOT-linux-x86_64.zip
+        sh '''echo "WD="$(pwd)
+mkdir ./jenkins_styx
+unzip -d ./jenkins_styx/ ./distribution/target/styx-0.9-SNAPSHOT-linux-x86_64.zip
 '''
       }
     }
