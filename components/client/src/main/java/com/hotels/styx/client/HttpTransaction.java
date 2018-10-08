@@ -31,13 +31,6 @@ interface HttpTransaction {
     Observable<HttpResponse> response();
 
     /**
-     * Cancels the ongoing transaction. Default implementation does nothing.
-     */
-    default void cancel() {
-        // do nothing
-    }
-
-    /**
      * Checks whether the current transaction is cancelled (non-consumable). Default implementation always returns false.
      *
      * @return true if the transaction was cancelled
