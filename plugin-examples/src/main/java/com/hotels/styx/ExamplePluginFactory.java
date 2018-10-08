@@ -26,7 +26,7 @@ public class ExamplePluginFactory implements PluginFactory {
      * The environment object will provide this plugin with the configuration you created in the YAML file.
      *
      * @param environment
-     * @return
+     * @return plugin
      */
     @Override
     public Plugin create(PluginFactory.Environment environment) {
