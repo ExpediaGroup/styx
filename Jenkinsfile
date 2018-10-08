@@ -22,7 +22,7 @@ pipeline {
         sh '''cd styx-0.9-SNAPSHOT
 ./bin/startup conf/env-development/styx-config.yml & 
 sleep 10
-make -f ../Makefile load-test OPENSSL_INCLUDE_DIR=/usr/include/openssl
+make -f ../Makefile load-test OPENSSL_DIR=/usr/include
 kill $!
 '''
       }
