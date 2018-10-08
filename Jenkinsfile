@@ -13,7 +13,7 @@ pipeline {
     }
     stage('Deploy') {
       steps {
-        sh '''unzip -d ./distribution/target/styx-0.9-SNAPSHOT-linux-x86_64.zip
+        sh '''unzip ./distribution/target/styx-0.9-SNAPSHOT-linux-x86_64.zip
 '''
       }
     }
