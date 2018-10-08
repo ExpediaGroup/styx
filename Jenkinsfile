@@ -6,22 +6,12 @@ pipeline {
 
   }
   stages {
-    stage('Build') {
-      steps {
-        sh 'mvn install -Prelease,linux -Dmaven.test.skip=true'
-      }
-    }
-    stage('Deploy') {
-      steps {
-        sh '''unzip ./distribution/target/styx-0.9-SNAPSHOT-linux-x86_64.zip
-'''
-      }
-    }
     stage('StartUp') {
       steps {
-        sh '''cd styx-0.9-SNAPSHOT
-./bin/startup conf/env-development/styx-config.yml & 
-sleep 10
+        sh '''make start-with-origins STACK=perf-local & 
+while ! nc -z localhost 8080; do   
+  sleep 0.1 # wait for 1/10 of the second before check again
+done
 cd ..
 make load-test OPENSSL_INCLUDE_DIR=/usr/include
 kill $!
