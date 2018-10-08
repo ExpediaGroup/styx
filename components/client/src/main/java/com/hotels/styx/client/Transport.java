@@ -18,8 +18,8 @@ package com.hotels.styx.client;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
-import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
 import rx.Observable;
 
 import java.util.Optional;
@@ -52,13 +52,6 @@ class Transport {
 
         return new HttpTransaction() {
             private final AtomicBoolean cancelled = new AtomicBoolean(false);
-
-            @Override
-            public void cancel() {
-                if (!cancelled.getAndSet(true)) {
-                    closeIfConnected(origin, connectionRef);
-                }
-            }
 
             @Override
             public Observable<HttpResponse> response() {

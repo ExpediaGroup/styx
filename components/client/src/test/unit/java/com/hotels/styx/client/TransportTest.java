@@ -20,8 +20,8 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.StyxObservable;
-import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
 import io.netty.buffer.ByteBuf;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -33,8 +33,8 @@ import rx.subjects.PublishSubject;
 import java.util.Optional;
 
 import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.Id.id;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -115,7 +115,7 @@ public class TransportTest {
     }
 
     @Test
-    public void releasesIfRequestIsCancelledBeforeHeaders() {
+    public void releasesIfRequestIsUnsubscribedBeforeHeaders() {
         Connection connection = mockConnection(responseProvider);
         ConnectionPool pool = mockPool(connection);
 
@@ -123,12 +123,12 @@ public class TransportTest {
 
         transaction.response().subscribe(subscriber);
 
-        transaction.cancel();
+        subscriber.unsubscribe();
         verify(pool).closeConnection(any(Connection.class));
     }
 
     @Test
-    public void releasesIfRequestIsCancelledAfterHeaders() {
+    public void releasesIfRequestIsUnsubscribedAfterHeaders() {
         Connection connection = mockConnection(responseProvider);
         ConnectionPool pool = mockPool(connection);
 
@@ -138,26 +138,7 @@ public class TransportTest {
 
         responseProvider.onNext(response);
 
-        transaction.cancel();
-        verify(pool).closeConnection(any(Connection.class));
-    }
-
-    @Test
-    public void closesConnectionOnlyOnce() {
-        ConnectionPool pool = mockPool(mockConnection(responseProvider));
-
-        HttpTransaction transaction = transport.send(request, Optional.of(pool), APP_ID);
-
-        transaction.response().subscribe(new TestSubscriber<>());
-
-        responseProvider.onNext(response);
-
-        verify(pool, never()).closeConnection(any(Connection.class));
-
-        transaction.cancel();
-        transaction.cancel();
-        transaction.cancel();
-
+        subscriber.unsubscribe();
         verify(pool).closeConnection(any(Connection.class));
     }
 
