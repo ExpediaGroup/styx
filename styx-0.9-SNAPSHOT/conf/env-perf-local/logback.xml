@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration scan="true" scanPeriod="10000">
+    <if condition='isNull("LOG_LOCATION")'>
+        <then>
+            <property name="LOG_LOCATION" value="../logs"/>
+        </then>
+    </if>
+
+    <conversionRule conversionWord="styx_exception_data"  converterClass="com.hotels.styx.infrastructure.logging.ExceptionConverter" />
+
+    <property name="LAYOUT_PATTERN_BODY" value="%m%n%styx_exception_data"/>
+    <property name="LAYOUT_PATTERN_PREFIX" value="%-5p %d{yyyy-MM-dd HH:mm:ss,SSSZZ} [%c{5}] [build=${release.label}] [%t]"/>
+    <property name="LAYOUT_PATTERN" value="${LAYOUT_PATTERN_PREFIX} - ${LAYOUT_PATTERN_BODY}"/>
+
+    <!---->
+    <appender name="PERFORMANCE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_LOCATION}/styx-performance.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${LOG_LOCATION}/styx-performance-%i.log</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>9</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>50MB</maxFileSize>
+        </triggeringPolicy>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <Pattern>${LAYOUT_PATTERN}</Pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.apache" level="WARN"/>
+    <logger name="org.mortbay" level="WARN"/>
+    <logger name="io.netty" level="WARN"/>
+    <logger name="com.hotels.styx.proxy.backends.file.FileChangeMonitor" level="INFO"/>
+
+    <root level="ERROR">
+        <appender-ref ref="PERFORMANCE"/>
+    </root>
+</configuration>

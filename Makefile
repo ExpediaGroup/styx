@@ -61,7 +61,8 @@ ENDPOINT=http://localhost:8080/lp/demo
 SSL_ENDPOINT=https://localhost:8443/lp/demo
 LOAD_TEST_TOOL=scripts/load-test-tool/load_test.py
 PERF_DIR=system-tests/performance
-OPENSSL_INCLUDE_DIR=/usr/local/opt/openssl/include
+OPENSSL_DIR=/usr/local/opt/openssl
+OPENSSL_INCLUDE_DIR=$(OPENSSL_DIR)/include
 
 wrk2:
 	git clone https://github.com/giltene/wrk2.git
@@ -69,7 +70,7 @@ wrk2:
 wrk2/wrk: wrk2
 	# Assumes openssl has been installed using homebrew, *AND* the homebrew
 	# installation directory is /usr/local
-	(cd wrk2/; LIBRARY_PATH=/usr/local/opt/openssl/lib C_INCLUDE_PATH=$(OPENSSL_INCLUDE_DIR) make)
+	(cd wrk2/; LIBRARY_PATH=$(OPENSSL_DIR)/lib C_INCLUDE_PATH=$(OPENSSL_INCLUDE_DIR) make)
 
 ## Run a load test against Styx - launch styx with: make start STACK=perf-local
 load-test: wrk2/wrk

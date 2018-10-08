@@ -1,0 +1,77 @@
+#This file is used to configure the origins that Styx will proxy to.
+#The file name format for origins files is origins-<ENVIRONMENT>.yaml
+#
+#
+#Applications have the following properties:
+#
+#id: a unique name used to identify applications
+#path: the beginning of a (relative) URI used by Styx to determine which application to route a request to.
+#healthCheck: config for health checks
+#origins: a list of origins (instances of the application)
+#stickySession: allows HTTP sessions to be pinned to a specific origin.
+#connectionPool: config for the connection pools used to communicate with this application
+#responseTimeoutMillis: Maximum time to wait for origin to respond.
+#
+#
+#HealthCheck has the following properties:
+#
+#uri: the URI that must be available for the healthcheck to pass
+#intervalMillis: the interval between healthchecks in milliseconds
+#healthyThreshold: the number of times health check must pass for an inactive origin to be declared active
+#unhealthyThreshold: the number of times health check must pass for an active origin to be declared inactive
+#
+#
+#Sticky Sessions config has the following properties:
+#
+#enabled: true/false, to enable sticky sessions
+#timeoutSeconds: Controls the Styx session cookie expiry time. The expiry time will be set to timeoutSeconds
+#                from the most recent HTTP request.
+#
+#
+#Connection Pool  has the following properties:
+#
+#maxConnectionsPerHost: the maximum number of connections that may be established to a single origin
+#maxPendingConnectionsPerHost: the maximum number of connections that may be waiting to be established at the same time
+#connectTimeoutMillis: the maximum time Styx should wait for a connection to be established
+#pendingConnectionTimeoutMillis: the maximum time to wait for a connection from the connection pool
+#
+#
+#In the list of rewrites, a rewrite has the following properties:
+#
+#urlPattern: A regular expression to match the path in the incoming request.
+#replacement: A replacement string that is expanded with any text captured within regular expression capture groups.
+#             Use $1, $2, ... to refer to regular expression capture groups.
+#
+#
+#In the list of origins, an origin has the following properties:
+#
+#id: a unique name used to identify origins
+#host: the hostname and port number that requests will be routed to (in the format HOST:PORT - note that PORT is mandatory; it cannot be excluded)
+
+
+#Here is an example application:
+
+- id: "app"
+  path: "/"
+  healthCheck:
+    uri: "/version.txt"
+    intervalMillis: 10000
+    healthyThreshold: 2
+    unhealthyThreshold: 2
+  stickySession:
+    enabled: true
+    timeoutSeconds: 14321
+  connectionPool:
+    maxConnectionsPerHost: 300
+    maxPendingConnectionsPerHost: 50
+    connectTimeoutMillis: 12000
+    pendingConnectionTimeoutMillis: 10000
+  rewrites:
+  - urlPattern: "/app/(.*)/foobar/(.*)"
+    replacement: "/$1/barfoo/$2"
+  - urlPattern: "/app/(.*)"
+    replacement: "/$1"
+  origins:
+  - id: "app1"
+    host: "host.example.net:7401"
+  responseTimeoutMillis: 12000

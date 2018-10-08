@@ -1,0 +1,14 @@
+include: ${STYX_HOME:classpath:}/conf/default.yml
+
+jvmRouteName: styx-perf-local
+
+proxy:
+  connectors:
+    https:
+      sslProvider: JDK
+      certificateFile: ${STYX_HOME:classpath:}/conf/tls/testCredentials.crt
+      certificateKeyFile: ${STYX_HOME:classpath:}/conf/tls/testCredentials.key
+      cipherSuites:
+        - TLS_RSA_WITH_AES_128_GCM_SHA256
+
+originsFile: ${STYX_HOME:classpath:}/conf/env-perf-local/origins.yml

@@ -1,0 +1,132 @@
+#!/bin/bash
+
+set -e
+
+usage() {
+  echo "Styx - Reverse Proxy"
+  echo ""
+  echo "usage: startup [options] [CONFIG-FILE]"
+  echo ""
+  echo "ARGUMENTS:"
+  echo ""
+  echo "        Optional CONFIG-FILE is a path to Styx configuration file. If not given,"
+  echo "        the configuration file path is read from STYX_CONFIG environment"
+  echo "        variable. Configuration file path defaults to to $APP_HOME/conf/default.yml"
+  echo "        when neither CONFIG-FILE is given, nor STYX_CONFIG is set."
+  echo ""
+  echo "OPTIONS:"
+  echo ""
+  echo "  -l <FILE>  --logback <FILE>"
+  echo "        Reads the logging configuration from FILE."
+  echo ""
+  echo "  -e <FILE>  --env <FILE>"
+  echo "        Reads the environment settings from FILE."
+  echo ""
+  echo "  -h  --help"
+  echo "        Display this help message."
+  echo ""
+  echo "ENVIRONMENT:"
+  echo ""
+  echo "  STYX_CONFIG=<FILE>"
+  echo "        Configuration file path."
+  echo ""
+  echo "  STYX_LOG_CONFIG=<FILE>"
+  echo "        Sets the logging configuration file."
+  echo ""
+  echo "  STYX_LOG_OUTPUT=<DIR>"
+  echo "        Specifies an output directory where Styx writes its logging output."
+  echo "        When not set, defaults to $APP_HOME/logs."
+}
+
+
+echo "Running Styx startup..."
+APP_HOME=$(cd $(dirname $0)/.. && pwd )
+echo "APP_HOME: $APP_HOME"
+
+: ${STYX_ENV_FILE:=$APP_HOME/conf/styx-env.sh}
+: ${STYX_LOG_CONFIG:=$APP_HOME/conf/logback.xml}
+
+while [[ $# -gt 1 ]]
+do
+  key="$1"
+
+  case $key in
+    -l|--logback)
+      STYX_LOG_CONFIG=$2
+      shift
+      ;;
+    -e|--env)
+      STYX_ENV_FILE=$2
+      shift
+      ;;
+    *)
+      echo "Unknown option: $1 ($@)"
+      echo
+      usage
+      exit -1
+    ;;
+  esac
+
+  shift
+done
+
+case $1 in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      if [[ -n $1 ]]; then
+        STYX_CONFIG=$1
+      fi
+esac
+
+
+echo "Applying environment settings from $STYX_ENV_FILE"
+source $STYX_ENV_FILE
+
+# Log location
+: ${STYX_LOG_OUTPUT:="${APP_HOME}/logs"}
+
+# Check if log folder exists, creates otherwise
+if [ ! -d "$STYX_LOG_OUTPUT" ]; then
+  mkdir -p $STYX_LOG_OUTPUT
+fi
+
+: ${APP_CONFIG_FILE_LOCATION:=$STYX_CONFIG}
+if [ ! -n "$APP_CONFIG_FILE_LOCATION" ]; then
+  APP_CONFIG_FILE_LOCATION=$APP_HOME/conf/default.yml
+fi
+
+: ${APP_LOG_CONFIG_LOCATION:=$STYX_LOG_CONFIG}
+: ${APP_LOG_LOCATION:=$STYX_LOG_OUTPUT}
+
+echo "Styx config file: $APP_CONFIG_FILE_LOCATION"
+echo "Styx log configuration: $APP_LOG_CONFIG_LOCATION"
+echo "Styx log output location: $APP_LOG_LOCATION"
+
+
+for var in ${!APP_*}; do
+  STYX_OPTS="$STYX_OPTS -D${var:4}=${!var}"
+done
+
+for var in ${!JVM_*}; do
+    JAVA_OPTS="$JAVA_OPTS ${!var}"
+done
+
+# Set styx options
+STYX_OPTS="$STYX_OPTS -DSTYX_HOME=$APP_HOME"
+
+# Export
+export JAVA_HOME JAVA_OPTS STYX_OPTS
+
+for file in $APP_HOME/lib/*.jar;
+do
+  CLASSPATH=$CLASSPATH:$file
+done
+
+echo "JAVA_OPTS=$JAVA_OPTS"
+echo "STYX_OPTS=$STYX_OPTS"
+echo "CLASSPATH=$CLASSPATH"
+
+CLASSPATH=$CLASSPATH exec java $JAVA_OPTS $STYX_OPTS  com.hotels.styx.StyxServer

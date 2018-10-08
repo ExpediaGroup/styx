@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration scan="true" scanPeriod="10000">
+  <if condition='isNull("LOG_LOCATION")'>
+    <then>
+      <property name="LOG_LOCATION" value="../logs"/>
+    </then>
+  </if>
+
+  <conversionRule conversionWord="styx_exception_data"  converterClass="com.hotels.styx.infrastructure.logging.ExceptionConverter" />
+
+  <property name="EXCEPTION_MDC_VALUES_SUB_TEMPLATE" value=''/>
+  <property name="LAYOUT_PATTERN_BODY" value="%m%n%styx_exception_data"/>
+  <property name="LAYOUT_PATTERN_PREFIX" value="%-5p %d{yyyy-MM-dd HH:mm:ss,SSSZZ} [%c{5}] [build=${release.label}] [%t]"/>
+  <property name="LAYOUT_PATTERN" value="${LAYOUT_PATTERN_PREFIX} - ${LAYOUT_PATTERN_BODY}"/>
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <layout class="ch.qos.logback.classic.PatternLayout">
+      <Pattern>${LAYOUT_PATTERN}</Pattern>
+    </layout>
+  </appender>
+  <appender name="MAIN" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${LOG_LOCATION}/styx.log</file>
+    <append>true</append>
+    <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+      <Pattern>${LAYOUT_PATTERN}</Pattern>
+    </encoder>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <FileNamePattern>${LOG_LOCATION}/styx.log.%d{yyyy-MM-dd}</FileNamePattern>
+    </rollingPolicy>
+  </appender>
+
+
+  <logger name="org.apache" level="WARN"/>
+  <logger name="org.mortbay" level="WARN"/>
+  <logger name="io.netty" level="WARN"/>
+  <logger name="com.hotels.styx.proxy.backends.file.FileChangeMonitor" level="INFO"/>
+
+  <root level="DEBUG">
+    <appender-ref ref="MAIN"/>
+    <appender-ref ref="CONSOLE"/>
+  </root>
+  <jmxConfigurator contextName="MAIN"/>
+</configuration>

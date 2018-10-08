@@ -1,0 +1,60 @@
+# See origins-default.yaml for explanation of config format
+---
+- id: "app"
+  path: "/"
+  connectionPool:
+    maxConnectionsPerHost: 45
+    maxPendingConnectionsPerHost: 15
+    connectTimeoutMillis: 8000
+    pendingConnectionTimeoutMillis: 8000
+  origins:
+  - id: "app-01"
+    host: "localhost:9090"
+  responseTimeoutMillis: 60000
+
+- id: "landing"
+  path: "/landing/"
+  connectionPool:
+    maxConnectionsPerHost: 45
+    maxPendingConnectionsPerHost: 100
+    connectTimeoutMillis: 8000
+    pendingConnectionTimeoutMillis: 8000
+  origins:
+  - { id: "landing-01", host: "localhost:9010" }
+  - { id: "landing-02", host: "localhost:9011" }
+  - { id: "landing-03", host: "localhost:9012" }
+  - { id: "landing-04", host: "localhost:9013" }
+  - { id: "landing-05", host: "localhost:9014" }
+  - { id: "landing-06", host: "localhost:9015" }
+  - { id: "landing-07", host: "localhost:9016" }
+  - { id: "landing-08", host: "localhost:9017" }
+  - { id: "landing-09", host: "localhost:9018" }
+  - { id: "landing-10", host: "localhost:9019" }
+  - { id: "landing-11", host: "localhost:9020" }
+  - { id: "landing-12", host: "localhost:9021" }
+  - { id: "landing-13", host: "localhost:9022" }
+  - { id: "landing-14", host: "localhost:9023" }
+  - { id: "landing-15", host: "localhost:9024" }
+  - { id: "landing-16", host: "localhost:9025" }
+  - { id: "landing-17", host: "localhost:9026" }
+  - { id: "landing-18", host: "localhost:9027" }
+  - { id: "landing-19", host: "localhost:9028" }
+  - { id: "landing-20", host: "localhost:9029" }
+  - { id: "landing-21", host: "localhost:9030" }
+  - { id: "landing-22", host: "localhost:9031" }
+  - { id: "landing-23", host: "localhost:9032" }
+  - { id: "landing-24", host: "localhost:9033" }
+  - { id: "landing-25", host: "localhost:9034" }
+  - { id: "landing-26", host: "localhost:9035" }
+  - { id: "landing-27", host: "localhost:9036" }
+  - { id: "landing-28", host: "localhost:9037" }
+  - { id: "landing-29", host: "localhost:9038" }
+  - { id: "landing-30", host: "localhost:9039" }
+  responseTimeoutMillis: 60000
+
+- id: "shopping"
+  path: "/shop/"
+  origins:
+  - id: "shop-01"
+    host: "localhost:9094"
+  responseTimeoutMillis: 60000
