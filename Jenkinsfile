@@ -8,7 +8,7 @@ pipeline {
   stages {
     stage('StartUp') {
       steps {
-        sh '''make start STACK=perf-local & 
+        sh '''make start-with-origins STACK=perf-local & 
 while ! nc -z localhost 8080; do 
 sleep 5 
 done
