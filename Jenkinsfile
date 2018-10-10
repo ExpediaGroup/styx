@@ -12,6 +12,7 @@ pipeline {
 while ! nc -z localhost 8080; do 
 sleep 5
 done
+ps aux 
 make load-test OPENSSL_INCLUDE_DIR=/usr/include
 '''
       }
