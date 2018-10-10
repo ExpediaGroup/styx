@@ -187,12 +187,4 @@ public class ByteStreamTest {
         return new Buffer(decodeUtf8String(buffer).toUpperCase(), UTF_8);
     }
 
-    @Test(enabled = false)
-    public void flatMapscontent() {
-    }
-
-    @Test(enabled = false)
-    public void peeksContent() {
-    }
-
 }

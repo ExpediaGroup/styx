@@ -80,8 +80,6 @@ class HttpResponseWriter {
                 }
             });
 
-            // TODO: Mikko
-            // - The ContentObservable should have a mechanism to consume its contents.
             Subscription subscriber = toObservable(response.body()).map(Buffers::toByteBuf).subscribe(new Subscriber<ByteBuf>() {
                 @Override
                 public void onStart() {

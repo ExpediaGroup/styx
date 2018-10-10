@@ -24,6 +24,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Byte stream class.
  */
@@ -31,14 +33,14 @@ public class ByteStream implements Publisher<Buffer> {
     private final Publisher<Buffer> stream;
 
     public ByteStream(Publisher<Buffer> stream) {
-        this.stream = stream;
+        this.stream = requireNonNull(stream);
     }
 
     public ByteStream map(Function<Buffer, Buffer> mapping) {
-        return new ByteStream(Flux.from(stream).map(refCountWrapper(mapping)));
+        return new ByteStream(Flux.from(stream).map(releaseOldBuffers(mapping)));
     }
 
-    private static Function<Buffer, Buffer> refCountWrapper(Function<Buffer, Buffer> mapping) {
+    private static Function<Buffer, Buffer> releaseOldBuffers(Function<Buffer, Buffer> mapping) {
         return buffer -> {
             Buffer buffer2 = mapping.apply(buffer);
             if (buffer != buffer2) {

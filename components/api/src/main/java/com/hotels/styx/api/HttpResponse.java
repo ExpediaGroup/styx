@@ -312,7 +312,7 @@ public class HttpResponse implements StreamingHttpMessage {
             this.status = statusWithCode(response.status().code());
             this.version = httpVersion(response.version().toString());
             this.headers = response.headers().newBuilder();
-            this.body = byteStream;
+            this.body = requireNonNull(byteStream);
         }
 
         /**
@@ -333,7 +333,7 @@ public class HttpResponse implements StreamingHttpMessage {
          * @return {@code this}
          */
         public Builder body(ByteStream content) {
-            this.body = content;
+            this.body = requireNonNull(content);
             return this;
         }
 
@@ -344,7 +344,7 @@ public class HttpResponse implements StreamingHttpMessage {
          * @return a HttpResponhse builder with a transformed message body.
          */
         public Builder body(Function<ByteStream, ByteStream> transformation) {
-            this.body = transformation.apply(this.body);
+            this.body = requireNonNull(transformation.apply(this.body));
             return this;
         }
 

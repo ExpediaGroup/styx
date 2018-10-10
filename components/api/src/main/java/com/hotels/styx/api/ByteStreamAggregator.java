@@ -35,7 +35,7 @@ class ByteStreamAggregator implements Subscriber<Buffer> {
     private final CompositeByteBuf aggregated = compositeBuffer();
     private Subscription subscription;
 
-    public ByteStreamAggregator(Publisher<Buffer> upstream, int maxSize) {
+    ByteStreamAggregator(Publisher<Buffer> upstream, int maxSize) {
         this.upstream = requireNonNull(upstream);
         this.maxSize = maxSize;
     }
