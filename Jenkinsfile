@@ -11,8 +11,8 @@ pipeline {
         sh '''make start-with-origins STACK=perf-local & 
 while ! nc -z localhost 8080; do 
 sleep 1
-done
 jps -v
+done
 #make load-test OPENSSL_INCLUDE_DIR=/usr/include
 
 '''
