@@ -69,7 +69,11 @@ public class RoundRobinStrategy implements LoadBalancer {
     @Override
     public Optional<RemoteHost> choose(Preferences preferences) {
         ArrayList<RemoteHost> remoteHosts = origins.get();
-        return Optional.ofNullable(remoteHosts.get(index.getAndIncrement() % remoteHosts.size()));
+        if (remoteHosts == null || remoteHosts.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.ofNullable(remoteHosts.get(index.getAndIncrement() % remoteHosts.size()));
+        }
     }
 
     @Override
