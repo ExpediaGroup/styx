@@ -12,7 +12,7 @@ pipeline {
 while ! nc -z localhost 8080; do 
 sleep 5
 done
-which jps
+jps
 #make load-test OPENSSL_INCLUDE_DIR=/usr/include
 '''
       }
