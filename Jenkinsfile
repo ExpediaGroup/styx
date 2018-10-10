@@ -12,7 +12,8 @@ pipeline {
 while ! nc -z localhost 8080; do 
 sleep 5
 done
-make load-test OPENSSL_INCLUDE_DIR=/usr/include
+which jps
+#make load-test OPENSSL_INCLUDE_DIR=/usr/include
 '''
       }
     }
