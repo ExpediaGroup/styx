@@ -41,7 +41,7 @@ import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import rx.observers.TestSubscriber
 import com.hotels.styx.api.exceptions.ResponseTimeoutException
-import rx.RxReactiveStreams
+import rx.RxReactiveStreams.toObservable
 
 import scala.compat.java8.StreamConverters._
 import scala.concurrent.duration._
@@ -126,7 +126,7 @@ class OriginClosesConnectionSpec extends FunSuite
         .toStreamingRequest)
 
     responseObservable
-      .doOnNext((t: HttpResponse) => RxReactiveStreams.toObservable(t.body()).subscribe(contentSubscriber))
+      .doOnNext((t: HttpResponse) => toObservable(t.body()).subscribe(contentSubscriber))
       .subscribe(responseSubscriber)
 
     responseSubscriber.awaitTerminalEvent()

@@ -17,17 +17,17 @@ package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Buffer;
+import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
-import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RouteHandlerDefinition;
 import com.hotels.styx.routing.config.RouteHandlerFactory;
-import rx.Observable;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -35,7 +35,6 @@ import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
-import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * A HTTP handler for returning a static response.
@@ -51,7 +50,7 @@ public class StaticResponseHandler implements HttpHandler {
 
     @Override
     public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return StyxObservable.of(response(statusWithCode(status)).body(new ByteStream(toPublisher(Observable.just(new Buffer(text, UTF_8))))).build());
+        return StyxObservable.of(response(statusWithCode(status)).body(new ByteStream(Flux.just(new Buffer(text, UTF_8)))).build());
     }
 
     private static class StaticResponseConfig {

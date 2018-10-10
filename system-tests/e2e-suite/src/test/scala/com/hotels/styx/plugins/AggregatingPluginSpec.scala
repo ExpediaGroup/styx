@@ -26,7 +26,8 @@ import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{MockServer, StyxProxySpec}
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-import rx.{Observable, RxReactiveStreams}
+import rx.RxReactiveStreams.toPublisher
+import rx.Observable
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
@@ -65,7 +66,7 @@ class AggregatingPluginSpec extends FunSpec
 
     it("Gets response from aggregating plugin (with body)") {
       mockServer.stub("/body", responseSupplier(
-        () => response(OK).body(new ByteStream(RxReactiveStreams.toPublisher(Observable.from(Seq(chunk("a"), chunk("b"), chunk("c"), chunk("d"), chunk("e")).asJava)))).build()
+        () => response(OK).body(new ByteStream(toPublisher(Observable.from(Seq(chunk("a"), chunk("b"), chunk("c"), chunk("d"), chunk("e")).asJava)))).build()
       ))
 
       val request = get(styxServer.routerURL("/body")).build()

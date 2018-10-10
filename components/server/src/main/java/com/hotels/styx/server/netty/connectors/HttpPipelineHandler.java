@@ -51,6 +51,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.TooLongFrameException;
 import org.slf4j.Logger;
+import reactor.core.publisher.Flux;
 import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
@@ -85,7 +86,6 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * Passes request to HTTP Pipeline.
@@ -497,7 +497,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
 
         return responseEnhancer.enhance(HttpResponse.response(status), request)
                 .header(CONTENT_LENGTH, message.getBytes(UTF_8).length)
-                .body(new ByteStream(toPublisher(Observable.just(new Buffer(message, UTF_8)))))
+                .body(new ByteStream(Flux.just(new Buffer(message, UTF_8))))
                 .build();
     }
 
