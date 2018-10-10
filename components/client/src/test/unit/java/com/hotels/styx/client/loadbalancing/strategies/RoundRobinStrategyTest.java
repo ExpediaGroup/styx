@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.client.loadbalancing.strategies;
 
+import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.ActiveOrigins;
@@ -50,6 +51,8 @@ public class RoundRobinStrategyTest {
     private static final RemoteHost HOST_5 = remoteHostFor("localhost", 5);
     private static final RemoteHost HOST_6 = remoteHostFor("localhost", 6);
     private Id APP_ID = id("app");
+    private Environment environment;
+    private Configuration configuration;
 
     private static RemoteHost remoteHostFor(String host, int port) {
         Origin origin = newOriginBuilder(host, port).build();
@@ -61,13 +64,15 @@ public class RoundRobinStrategyTest {
     }
 
     private LoadBalancer strategy;
-    private ActiveOrigins activeOriginsMock;
 
     @BeforeMethod
     public void setUp() {
-        activeOriginsMock = mock(ActiveOrigins.class);
-        when(activeOriginsMock.snapshot()).thenReturn(asList(HOST_1, HOST_2, HOST_3));
-        strategy = new RoundRobinStrategy.Factory().create(mock(Environment.class), mock(Configuration.class), activeOriginsMock);
+        environment = mock(Environment.class);
+        configuration = mock(Configuration.class);
+        strategy = new RoundRobinStrategy.Factory().create(
+                environment,
+                configuration,
+                () -> asList(HOST_1, HOST_2, HOST_3));
     }
 
     @Test
@@ -80,14 +85,24 @@ public class RoundRobinStrategyTest {
     }
 
     @Test
+    public void returnsEmptyIfNoActiveOrigins() {
+        strategy = new RoundRobinStrategy.Factory().create(environment, configuration, ImmutableList::of);
+        assertThat(strategy.choose(null), is(Optional.empty()));
+    }
+
+    @Test
     public void refreshesAtOriginsChange() {
+        ActiveOrigins activeOrigins = mock(ActiveOrigins.class);
+        when(activeOrigins.snapshot()).thenReturn(asList(HOST_1, HOST_2, HOST_3));
+        strategy = new RoundRobinStrategy.Factory().create(environment, configuration, activeOrigins);
+
         assertThat(strategy.choose(null), is(Optional.of(HOST_1)));
         assertThat(strategy.choose(null), is(Optional.of(HOST_2)));
         assertThat(strategy.choose(null), is(Optional.of(HOST_3)));
         assertThat(strategy.choose(null), is(Optional.of(HOST_1)));
         assertThat(strategy.choose(null), is(Optional.of(HOST_2)));
 
-        when(activeOriginsMock.snapshot()).thenReturn(asList(HOST_2, HOST_4, HOST_6));
+        when(activeOrigins.snapshot()).thenReturn(asList(HOST_2, HOST_4, HOST_6));
         strategy.originsChanged(new OriginsSnapshot(
                 APP_ID,
                 asList(HOST_2, HOST_4, HOST_6),
