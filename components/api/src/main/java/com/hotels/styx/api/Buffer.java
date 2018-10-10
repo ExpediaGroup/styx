@@ -23,7 +23,7 @@ import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Styx byte buffer abstraction.
+ * A Styx byte buffer.
  *
  */
 public final class Buffer {
@@ -34,7 +34,7 @@ public final class Buffer {
     }
 
     /**
-     * Creates a new Buffer with String content with specified encoding.
+     * Creates a new Buffer from {@link String} content with specified character encoding.
      *
      * @param content content
      * @param charset desired character encoding
