@@ -23,7 +23,7 @@ import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A Styx byte buffer.
+ * A byte buffer.
  *
  */
 public final class Buffer {
