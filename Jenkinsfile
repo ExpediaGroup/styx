@@ -9,7 +9,7 @@ pipeline {
     stage('StartUp') {
       steps {
         sh '''make start-with-origins STACK=perf-local & 
-sleep 200 
+sleep 250 
 make load-test OPENSSL_INCLUDE_DIR=/usr/include
 kill $!
 '''
