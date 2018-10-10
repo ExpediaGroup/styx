@@ -18,6 +18,7 @@ package com.hotels.styx.server.netty.connectors;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffer;
+import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
@@ -31,7 +32,6 @@ import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
-import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.client.BadHttpResponseException;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.client.connectionpool.ResourceExhaustedException;
@@ -52,7 +52,6 @@ import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.TooLongFrameException;
 import org.slf4j.Logger;
 import rx.Observable;
-import rx.RxReactiveStreams;
 import rx.Subscriber;
 import rx.Subscription;
 
@@ -86,6 +85,7 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
+import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * Passes request to HTTP Pipeline.
@@ -497,7 +497,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
 
         return responseEnhancer.enhance(HttpResponse.response(status), request)
                 .header(CONTENT_LENGTH, message.getBytes(UTF_8).length)
-                .body(new ByteStream(RxReactiveStreams.toPublisher(Observable.just(new Buffer(message, UTF_8)))))
+                .body(new ByteStream(toPublisher(Observable.just(new Buffer(message, UTF_8)))))
                 .build();
     }
 
