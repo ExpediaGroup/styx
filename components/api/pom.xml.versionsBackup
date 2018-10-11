@@ -3,47 +3,37 @@
   <parent>
     <groupId>com.hotels.styx</groupId>
     <artifactId>styx-components</artifactId>
-    <version>0.6-SNAPSHOT</version>
+    <version>0.9-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>styx-server</artifactId>
-  <name>Styx - Components - Server</name>
+  <artifactId>styx-api</artifactId>
+  <name>Styx - Components - Core Api</name>
 
   <properties>
+    <checkstyle.skip>false</checkstyle.skip>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
   </properties>
 
   <dependencies>
     <dependency>
-      <groupId>com.hotels.styx</groupId>
-      <artifactId>styx-api</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.hotels.styx</groupId>
-      <artifactId>styx-client</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.hotels.styx</groupId>
-      <artifactId>styx-common</artifactId>
-    </dependency>
-
-    <dependency>
       <groupId>io.netty</groupId>
-      <artifactId>netty-tcnative-boringssl-static</artifactId>
-      <classifier>${netty-tcnative.classifier}</classifier>
+      <artifactId>netty-all</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.antlr</groupId>
-      <artifactId>antlr4-runtime</artifactId>
+      <groupId>io.reactivex</groupId>
+      <artifactId>rxjava</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hdrhistogram</groupId>
+      <artifactId>HdrHistogram</artifactId>
     </dependency>
 
     <dependency>
       <groupId>io.dropwizard.metrics</groupId>
-      <artifactId>metrics-graphite</artifactId>
+      <artifactId>metrics-core</artifactId>
     </dependency>
 
     <dependency>
@@ -52,13 +42,18 @@
     </dependency>
 
     <dependency>
-      <groupId>com.fasterxml.jackson.dataformat</groupId>
-      <artifactId>jackson-dataformat-yaml</artifactId>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>annotations</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.uuid</groupId>
+      <artifactId>java-uuid-generator</artifactId>
     </dependency>
 
     <dependency>
@@ -69,12 +64,6 @@
     <dependency>
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-testsupport</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.hotels.styx</groupId>
-      <artifactId>styx-api-testsupport</artifactId>
       <scope>test</scope>
     </dependency>
 
@@ -97,27 +86,27 @@
   </dependencies>
 
   <build>
-    <resources>
-      <resource>
-        <directory>src/main/resources</directory>
-        <filtering>true</filtering>
-        <includes>
-          <include>**/*</include>
-        </includes>
-      </resource>
-    </resources>
-    <testResources>
-      <testResource>
-        <directory>src/test/resources</directory>
-      </testResource>
-    </testResources>
-
     <plugins>
       <plugin>
-        <groupId>org.antlr</groupId>
-        <artifactId>antlr4-maven-plugin</artifactId>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <configuration>
+          <skip>false</skip>
+        </configuration>
       </plugin>
     </plugins>
   </build>
+
 
 </project>
