@@ -12,10 +12,7 @@ pipeline {
         sh '''make start-with-origins STACK=perf-local PLATFORM=linux & 
 while ! nc -z localhost 8080; do 
 sleep 5
-done
-
-
-'''
+done'''
       }
     }
     stage('Test') {
