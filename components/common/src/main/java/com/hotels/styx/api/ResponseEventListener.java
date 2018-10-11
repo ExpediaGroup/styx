@@ -23,15 +23,17 @@ import rx.Observable;
 
 import java.util.function.Consumer;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Associate callbacks to Streaming Response object.
  */
 public class ResponseEventListener {
     private final Observable<HttpResponse> publisher;
-    private Runnable cancelAction;
-    private Consumer<Throwable> responseErrorAction;
-    private Consumer<Throwable> contentErrorAction;
-    private Runnable onCompletedAction;
+    private Consumer<Throwable> responseErrorAction = cause -> { };
+    private Consumer<Throwable> contentErrorAction = cause -> { };
+    private Runnable onCompletedAction = () -> { };
+    private Runnable cancelAction = () -> { };
 
     private final StateMachine<State> fsm = new StateMachine.Builder<State>()
             .initialState(State.INITIAL)
@@ -60,7 +62,7 @@ public class ResponseEventListener {
             .build();
 
     ResponseEventListener(Observable<HttpResponse> publisher) {
-        this.publisher = publisher;
+        this.publisher = requireNonNull(publisher);
     }
 
     public static ResponseEventListener from(rx.Observable<HttpResponse> publisher) {
@@ -68,17 +70,22 @@ public class ResponseEventListener {
     }
 
     public ResponseEventListener whenCancelled(Runnable action) {
-        this.cancelAction = action;
+        this.cancelAction = requireNonNull(action);
         return this;
     }
 
     public ResponseEventListener whenResponseError(Consumer<Throwable> responseErrorAction) {
-        this.responseErrorAction = responseErrorAction;
+        this.responseErrorAction = requireNonNull(responseErrorAction);
         return this;
     }
 
     public ResponseEventListener whenContentError(Consumer<Throwable> contentErrorAction) {
-        this.contentErrorAction = contentErrorAction;
+        this.contentErrorAction = requireNonNull(contentErrorAction);
+        return this;
+    }
+
+    public ResponseEventListener whenCompleted(Runnable action) {
+        this.onCompletedAction = requireNonNull(action);
         return this;
     }
 
@@ -95,11 +102,6 @@ public class ResponseEventListener {
                 .map(response -> Requests.doOnComplete(response, () -> eventProcessor.submit(new ContentEnd())))
                 .map(response -> Requests.doOnCancel(response, () -> eventProcessor.submit(new ContentCancelled())));
 
-    }
-
-    public ResponseEventListener whenCompleted(Runnable action) {
-        this.onCompletedAction = action;
-        return this;
     }
 
     enum State {
