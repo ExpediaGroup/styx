@@ -13,9 +13,14 @@ pipeline {
 while ! nc -z localhost 8080; do 
 sleep 5
 done
-ps aux 
-jps
-make load-test OPENSSL_INCLUDE_DIR=/usr/include
+
+#make load-test OPENSSL_INCLUDE_DIR=/usr/include
+'''
+      }
+    }
+    stage('Test') {
+      steps {
+        sh '''make load-test OPENSSL_INCLUDE_DIR=/usr/include
 '''
       }
     }
