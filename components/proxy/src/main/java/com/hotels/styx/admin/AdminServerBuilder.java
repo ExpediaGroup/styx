@@ -22,6 +22,7 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.dashboard.DashboardData;
 import com.hotels.styx.admin.dashboard.DashboardDataSupplier;
+import com.hotels.styx.admin.handlers.CurrentRequestsHandler;
 import com.hotels.styx.admin.handlers.IndexHandler;
 import com.hotels.styx.admin.handlers.JVMMetricsHandler;
 import com.hotels.styx.admin.handlers.JsonHandler;
@@ -50,6 +51,8 @@ import com.hotels.styx.server.StandardHttpRouter;
 import com.hotels.styx.server.handlers.ClassPathResourceHandler;
 import com.hotels.styx.server.netty.NettyServerBuilderSpec;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
+import com.hotels.styx.server.track.CurrentRequestTracker;
+
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -110,6 +113,7 @@ public class AdminServerBuilder {
         httpRouter.add("/admin", new IndexHandler(indexLinkPaths()));
         httpRouter.add("/admin/ping", new PingHandler());
         httpRouter.add("/admin/threads", new ThreadsHandler());
+        httpRouter.add("/admin/current_requests", new CurrentRequestsHandler(CurrentRequestTracker.INSTANCE));
         MetricsHandler metricsHandler = new MetricsHandler(environment.metricRegistry(), metricsCacheExpiration);
         httpRouter.add("/admin/metrics", metricsHandler);
         httpRouter.add("/admin/metrics/", metricsHandler);
@@ -157,6 +161,7 @@ public class AdminServerBuilder {
                 link("version.txt", "/version.txt"),
                 link("Ping", "/admin/ping"),
                 link("Threads", "/admin/threads"),
+                link("Current Requests", "/admin/current_requests?withStackTrace=true"),
                 link("Metrics", "/admin/metrics?pretty"),
                 link("Configuration", "/admin/configuration?pretty"),
                 link("Log Configuration", "/admin/configuration/logging"),

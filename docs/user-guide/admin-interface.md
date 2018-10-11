@@ -29,6 +29,8 @@ Note that this endpoint must be externally secured.
 
 * `Threads` - a stack trace dump from all threads. 
 
+* `Current Request` - shows all HTTP requests inside styx and the stack trace for each request, if the request is in WAITING_FOR_RESPONSE state then the stack trace will not be available. 
+
 All endpoints are available from the admin menu:
 
 `http://<STYX_SERVER_URL>/admin/`
