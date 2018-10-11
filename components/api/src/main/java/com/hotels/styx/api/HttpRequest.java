@@ -16,9 +16,7 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableSet;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
-import rx.Observable;
+import reactor.core.publisher.Flux;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -26,11 +24,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.hotels.styx.api.FlowControlDisableOperator.disableFlowControl;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
@@ -49,11 +47,8 @@ import static com.hotels.styx.api.HttpVersion.httpVersion;
 import static com.hotels.styx.api.RequestCookie.decode;
 import static com.hotels.styx.api.RequestCookie.encode;
 import static io.netty.buffer.ByteBufUtil.getBytes;
-import static io.netty.buffer.Unpooled.compositeBuffer;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static io.netty.util.ReferenceCountUtil.release;
 import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
@@ -70,7 +65,7 @@ import static java.util.stream.Stream.concat;
  * <p>
  * An {@code HttpRequest} object is immutable with respect to the request line
  * attributes and HTTP headers. Once an instance is created, they cannot change.
- *
+ * <p>
  * An {@code HttpRequest} body is a byte buffer stream that can be consumed
  * as sequence of asynchronous events. Once consumed, the stream is exhausted and
  * can not be reused. Conceptually each {@code HttpRequest} object
@@ -78,21 +73,21 @@ import static java.util.stream.Stream.concat;
  * For example, a Styx Server implements a content producer for {@link HttpInterceptor}
  * extensions. The producer receives data chunks from a network socket and publishes
  * them to an appropriate content stream.
- *
+ * <p>
  * HTTP requests are created via {@code Builder} object, which can be created
  * with static helper methods:
  *
  * <ul>
- *     <li>{@code get}</li>
- *     <li>{@code head}</li>
- *     <li>{@code post}</li>
- *     <li>{@code put}</li>
- *     <li>{@code delete}</li>
- *     <li>{@code patch}</li>
+ * <li>{@code get}</li>
+ * <li>{@code head}</li>
+ * <li>{@code post}</li>
+ * <li>{@code put}</li>
+ * <li>{@code delete}</li>
+ * <li>{@code patch}</li>
  * </ul>
- *
+ * <p>
  * A builder can also be created with one of the {@code Builder} constructors.
- *
+ * <p>
  * A special method {@code newBuilder} creates a prepopulated {@code Builder}
  * from the current request object. It is useful for transforming a request
  * to another one my modifying one or more of its attributes.
@@ -103,7 +98,7 @@ public class HttpRequest implements StreamingHttpMessage {
     private final HttpMethod method;
     private final Url url;
     private final HttpHeaders headers;
-    private final StyxObservable<ByteBuf> body;
+    private final ByteStream body;
 
     HttpRequest(Builder builder) {
         this.id = builder.id == null ? randomUUID() : builder.id;
@@ -179,10 +174,9 @@ public class HttpRequest implements StreamingHttpMessage {
      *
      * @param uri  URI
      * @param body body
-     * @param body type
      * @return {@code this}
      */
-    public static Builder post(String uri, StyxObservable<ByteBuf> body) {
+    public static Builder post(String uri, ByteStream body) {
         return new Builder(POST, uri).body(body);
     }
 
@@ -191,10 +185,9 @@ public class HttpRequest implements StreamingHttpMessage {
      *
      * @param uri  URI
      * @param body body
-     * @param body type
      * @return {@code this}
      */
-    public static Builder put(String uri, StyxObservable<ByteBuf> body) {
+    public static Builder put(String uri, ByteStream body) {
         return new Builder(PUT, uri).body(body);
     }
 
@@ -203,10 +196,9 @@ public class HttpRequest implements StreamingHttpMessage {
      *
      * @param uri  URI
      * @param body body
-     * @param body type
      * @return {@code this}
      */
-    public static Builder patch(String uri, StyxObservable<ByteBuf> body) {
+    public static Builder patch(String uri, ByteStream body) {
         return new Builder(PATCH, uri).body(body);
     }
 
@@ -239,7 +231,7 @@ public class HttpRequest implements StreamingHttpMessage {
      * @return request body as a byte stream
      */
     @Override
-    public StyxObservable<ByteBuf> body() {
+    public ByteStream body() {
         return body;
     }
 
@@ -339,11 +331,11 @@ public class HttpRequest implements StreamingHttpMessage {
      * Returns a {@link StyxObservable} that eventually produces a
      * {@link FullHttpRequest}. The resulting full request object has the same
      * request line, headers, and content as this request.
-     *
+     * <p>
      * The content stream is aggregated asynchronously. The stream may be connected
      * to a network socket or some other content producer. Once aggregated, a
      * FullHttpRequest object is emitted on the returned {@link StyxObservable}.
-     *
+     * <p>
      * A sole {@code maxContentBytes} argument is a backstop defence against excessively
      * long content streams. The {@code maxContentBytes} should be set to a sensible
      * value according to your application requirements and heap size. When the content
@@ -354,34 +346,17 @@ public class HttpRequest implements StreamingHttpMessage {
      * @return a {@link StyxObservable}
      */
     public StyxObservable<FullHttpRequest> toFullRequest(int maxContentBytes) {
-        CompositeByteBuf byteBufs = compositeBuffer();
-
-        return new StyxCoreObservable<>(
-                ((StyxCoreObservable<ByteBuf>) body)
-                        .delegate()
-                        .lift(disableFlowControl())
-                        .doOnError(e -> byteBufs.release())
-                        .collect(() -> byteBufs, (composite, part) -> {
-                            long newSize = composite.readableBytes() + part.readableBytes();
-
-                            if (newSize > maxContentBytes) {
-                                release(composite);
-                                release(part);
-
-                                throw new ContentOverflowException(format("Maximum content size exceeded. Maximum size allowed is %d bytes.", maxContentBytes));
-                            }
-                            composite.addComponent(part);
-                            composite.writerIndex(composite.writerIndex() + part.readableBytes());
-                        })
-                        .map(HttpRequest::decodeAndRelease)
-                        .map(decoded -> new FullHttpRequest.Builder(this, decoded).build()));
+        return StyxObservable.from(
+                body.aggregate(maxContentBytes)
+                    .thenApply(it -> new FullHttpRequest.Builder(this, decodeAndRelease(it)).build())
+        );
     }
 
-    private static byte[] decodeAndRelease(CompositeByteBuf aggregate) {
+    private static byte[] decodeAndRelease(Buffer aggregate) {
         try {
-            return getBytes(aggregate);
+            return getBytes(aggregate.delegate());
         } finally {
-            aggregate.release();
+            aggregate.delegate().release();
         }
     }
 
@@ -429,7 +404,7 @@ public class HttpRequest implements StreamingHttpMessage {
         private Url url;
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
-        private StyxObservable<ByteBuf> body;
+        private ByteStream body;
 
         /**
          * Creates a new {@link Builder} object with default attributes.
@@ -437,14 +412,14 @@ public class HttpRequest implements StreamingHttpMessage {
         public Builder() {
             this.url = Url.Builder.url("/").build();
             this.headers = new HttpHeaders.Builder();
-            this.body = new StyxCoreObservable<>(Observable.empty());
+            this.body = new ByteStream(Flux.empty());
         }
 
         /**
          * Creates a new {@link Builder} with specified HTTP method and URI.
          *
          * @param method a HTTP method
-         * @param uri a HTTP URI
+         * @param uri    a HTTP URI
          */
         public Builder(HttpMethod method, String uri) {
             this();
@@ -455,10 +430,10 @@ public class HttpRequest implements StreamingHttpMessage {
         /**
          * Creates a new {@link Builder} from an existing request with a new body content stream.
          *
-         * @param request a HTTP request object
+         * @param request       a HTTP request object
          * @param contentStream a body content stream
          */
-        public Builder(HttpRequest request, StyxObservable<ByteBuf> contentStream) {
+        public Builder(HttpRequest request, ByteStream contentStream) {
             this.id = request.id();
             this.method = httpMethod(request.method().name());
             this.url = request.url();
@@ -482,7 +457,7 @@ public class HttpRequest implements StreamingHttpMessage {
             this.url = request.url();
             this.version = request.version();
             this.headers = request.headers().newBuilder();
-            this.body = StyxCoreObservable.of(copiedBuffer(request.body()));
+            this.body = new ByteStream(Flux.just(new Buffer(copiedBuffer(request.body()))));
         }
 
         /**
@@ -501,8 +476,19 @@ public class HttpRequest implements StreamingHttpMessage {
          * @param content request body
          * @return {@code this}
          */
-        public Builder body(StyxObservable<ByteBuf> content) {
+        public Builder body(ByteStream content) {
             this.body = content;
+            return this;
+        }
+
+        /**
+         * Transforms request body.
+         *
+         * @param transformation a Function from ByteStream to ByteStream.
+         * @return a HttpRequest builder with a transformed message body.
+         */
+        public Builder body(Function<ByteStream, ByteStream> transformation) {
+            this.body = transformation.apply(this.body);
             return this;
         }
 

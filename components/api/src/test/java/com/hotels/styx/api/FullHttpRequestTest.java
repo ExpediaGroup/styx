@@ -16,10 +16,10 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
-import io.netty.buffer.ByteBuf;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import rx.observers.TestSubscriber;
+import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
 
 import java.util.Optional;
 
@@ -30,13 +30,13 @@ import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.api.Url.Builder.url;
-import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.HttpMethod.DELETE;
 import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.api.HttpMethod.POST;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.RequestCookie.requestCookie;
+import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
@@ -86,13 +86,9 @@ public class FullHttpRequestTest {
     public void convertsToStreamingHttpRequestWithEmptyBody(FullHttpRequest fullRequest) {
         HttpRequest streaming = fullRequest.toStreamingRequest();
 
-        TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
-        subscriber.requestMore(1);
-
-        ((StyxCoreObservable<ByteBuf>) streaming.body()).delegate().subscribe(subscriber);
-
-        assertThat(subscriber.getOnNextEvents().size(), is(0));
-        subscriber.assertCompleted();
+        StepVerifier.create(streaming.body())
+                .expectComplete()
+                .verify();
     }
 
     // We want to ensure that these are all considered equivalent
@@ -234,12 +230,13 @@ public class FullHttpRequestTest {
                 .body("original", UTF_8)
                 .build();
 
-        ByteBuf byteBuf = ((StyxCoreObservable<ByteBuf>) original.toStreamingRequest().body())
-                .delegate()
-                .toBlocking()
-                .first();
-
-        byteBuf.array()[0] = 'A';
+        Flux.from(original.toStreamingRequest()
+                .body()
+                .map(buffer -> {
+                    buffer.delegate().array()[0] = 'A';
+                    return buffer;
+                }))
+                .subscribe();
 
         assertThat(original.bodyAs(UTF_8), is("original"));
     }

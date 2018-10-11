@@ -15,11 +15,10 @@
  */
 package com.hotels.styx.api;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import rx.observers.TestSubscriber;
+import reactor.core.publisher.Flux;
 
 import java.util.Optional;
 import java.util.Set;
@@ -28,8 +27,6 @@ import java.util.concurrent.ExecutionException;
 import static com.hotels.styx.api.FullHttpResponse.response;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.ResponseCookie.responseCookie;
-import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.CREATED;
@@ -41,6 +38,8 @@ import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.HttpResponseStatus.SEE_OTHER;
 import static com.hotels.styx.api.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.ResponseCookie.responseCookie;
+import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_16;
@@ -322,16 +321,14 @@ public class FullHttpResponseTest {
     }
 
     @Test(dataProvider = "emptyBodyResponses")
-    public void convertsToStreamingHttpResponseWithEmptyBody(FullHttpResponse response) {
+    public void convertsToStreamingHttpResponseWithEmptyBody(FullHttpResponse response) throws ExecutionException, InterruptedException {
         HttpResponse streaming = response.toStreamingResponse();
 
-        TestSubscriber<ByteBuf> subscriber = TestSubscriber.create(0);
-        subscriber.requestMore(1);
+        byte[] result = streaming.body().aggregate(1000)
+                .get()
+                .content();
 
-        ((StyxCoreObservable<ByteBuf>) streaming.body()).delegate().subscribe(subscriber);
-
-        assertThat(subscriber.getOnNextEvents().size(), is(0));
-        subscriber.assertCompleted();
+        assertThat(result.length, is(0));
     }
 
     // We want to ensure that these are all considered equivalent
@@ -432,29 +429,30 @@ public class FullHttpResponseTest {
                 .body("original", UTF_8)
                 .build();
 
-        ByteBuf byteBuf = ((StyxCoreObservable<ByteBuf>) original.toStreamingResponse().body())
-                .delegate()
-                .toBlocking()
-                .first();
-
-        byteBuf.array()[0] = 'A';
+        Flux.from(original.toStreamingResponse()
+                .body()
+                .map(buf -> {
+                    buf.delegate().array()[0] = 'A';
+                    return buf;
+                }))
+                .subscribe();
 
         assertThat(original.bodyAs(UTF_8), is("original"));
     }
 
-    @Test(expectedExceptions = io.netty.util.IllegalReferenceCountException.class)
+    @Test
     public void toFullResponseReleasesOriginalRefCountedBuffers() throws ExecutionException, InterruptedException {
-        ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
+        Buffer content = new Buffer(Unpooled.copiedBuffer("original", UTF_8));
 
         HttpResponse original = HttpResponse.response(OK)
-                .body(StyxObservable.of(content))
+                .body(new ByteStream(Flux.just(content)))
                 .build();
 
         original.toFullResponse(100)
                 .asCompletableFuture()
                 .get();
 
-        content.array()[0] = 'A';
+        assertThat(content.delegate().refCnt(), is(0));
     }
 
     @Test

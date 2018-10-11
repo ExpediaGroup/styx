@@ -17,21 +17,17 @@ package com.hotels.styx.api;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
-import io.netty.util.ReferenceCountUtil;
-import rx.Observable;
+import reactor.core.publisher.Flux;
 
-import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.hotels.styx.api.FlowControlDisableOperator.disableFlowControl;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
@@ -43,11 +39,7 @@ import static com.hotels.styx.api.HttpVersion.httpVersion;
 import static com.hotels.styx.api.ResponseCookie.decode;
 import static com.hotels.styx.api.ResponseCookie.encode;
 import static io.netty.buffer.ByteBufUtil.getBytes;
-import static io.netty.buffer.Unpooled.compositeBuffer;
-import static io.netty.buffer.Unpooled.copiedBuffer;
-import static io.netty.util.ReferenceCountUtil.release;
 import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -62,7 +54,7 @@ import static java.util.stream.Collectors.toList;
  * <p>
  * An {@code HttpResponse} object is immutable with respect to the response
  * attributes and HTTP headers. Once an instance is created, they cannot change.
- *
+ * <p>
  * An {@code HttpResponse} body is a byte buffer stream that can be consumed
  * as sequence of asynchronous events. Once consumed, the stream is exhausted and
  * can not be reused. Conceptually each {@code HttpResponse} object has an
@@ -70,16 +62,16 @@ import static java.util.stream.Collectors.toList;
  * a Styx Server implements a content producer for {@link HttpInterceptor}
  * extensions. The producer receives data chunks from a network socket and
  * publishes them to an appropriate content stream.
- *
+ * <p>
  * HTTP responses are created via {@code Builder} object, which can be created
  * with static helper methods:
  *
  * <ul>
- *     <li>{@code response()}</li>
- *     <li>{@code response(HttpResponseStatus)}</li>
- *     <li>{@code response(HttpResponseStatus, StyxObservable<ByteBuf>)}</li>
+ * <li>{@code response()}</li>
+ * <li>{@code response(HttpResponseStatus)}</li>
+ * <li>{@code response(HttpResponseStatus, StyxObservable<ByteBuf>)}</li>
  * </ul>
- *
+ * <p>
  * A builder can also be created with one of the {@code Builder} constructors.
  *
  * A special method {@code newBuilder} creates a prepopulated {@code Builder}
@@ -90,7 +82,7 @@ public class HttpResponse implements StreamingHttpMessage {
     private final HttpVersion version;
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
-    private final StyxObservable<ByteBuf> body;
+    private final ByteStream body;
 
     HttpResponse(Builder builder) {
         this.version = builder.version;
@@ -125,7 +117,7 @@ public class HttpResponse implements StreamingHttpMessage {
      * @param body   response body
      * @return a new builder
      */
-    public static Builder response(HttpResponseStatus status, StyxObservable<ByteBuf> body) {
+    public static Builder response(HttpResponseStatus status, ByteStream body) {
         return new Builder(status).body(body);
     }
 
@@ -141,7 +133,7 @@ public class HttpResponse implements StreamingHttpMessage {
      * @return the response body as a byte stream
      */
     @Override
-    public StyxObservable<ByteBuf> body() {
+    public ByteStream body() {
         return body;
     }
 
@@ -185,11 +177,11 @@ public class HttpResponse implements StreamingHttpMessage {
      * Returns a {@link StyxObservable<FullHttpResponse>} that eventually produces a
      * {@link FullHttpResponse}. The resulting full response object has the same
      * response line, headers, and content as this response.
-     *
+     * <p>
      * The content stream is aggregated asynchronously. The stream may be connected
      * to a network socket or some other content producer. Once aggregated, a
      * FullHttpResponse object is emitted on the returned {@link StyxObservable}.
-     *
+     * <p>
      * A sole {@code maxContentBytes} argument is a backstop defence against excessively
      * long content streams. The {@code maxContentBytes} should be set to a sensible
      * value according to your application requirements and heap size. When the content
@@ -200,39 +192,21 @@ public class HttpResponse implements StreamingHttpMessage {
      * @return a {@link StyxObservable}
      */
     public StyxObservable<FullHttpResponse> toFullResponse(int maxContentBytes) {
-        CompositeByteBuf byteBufs = compositeBuffer();
-
-        Observable<FullHttpResponse> delegate = ((StyxCoreObservable<ByteBuf>) body)
-                .delegate()
-                .lift(disableFlowControl())
-                .doOnError(e -> byteBufs.release())
-                .collect(() -> byteBufs, (composite, part) -> {
-                    long newSize = composite.readableBytes() + part.readableBytes();
-
-                    if (newSize > maxContentBytes) {
-                        release(composite);
-                        release(part);
-
-                        throw new ContentOverflowException(format("Maximum content size exceeded. Maximum size allowed is %d bytes.", maxContentBytes));
-                    }
-                    composite.addComponent(part);
-                    composite.writerIndex(composite.writerIndex() + part.readableBytes());
-                })
-                .map(HttpResponse::decodeAndRelease)
-                .map(decoded -> new FullHttpResponse.Builder(this, decoded)
-                        .disableValidation()
-                        .build());
-
-        return new StyxCoreObservable<>(delegate);
+        return StyxObservable.from(body.aggregate(maxContentBytes))
+                .map(it -> new FullHttpResponse.Builder(this, decodeAndRelease(it))
+                    .disableValidation()
+                    .build()
+                );
     }
 
-    private static byte[] decodeAndRelease(CompositeByteBuf aggregate) {
+    private static byte[] decodeAndRelease(Buffer aggregate) {
         try {
-            return getBytes(aggregate);
+            return getBytes(aggregate.delegate());
         } finally {
-            aggregate.release();
+            aggregate.delegate().release();
         }
     }
+
 
     /**
      * Decodes "Set-Cookie" header values and returns them as set of {@link ResponseCookie} objects.
@@ -248,7 +222,7 @@ public class HttpResponse implements StreamingHttpMessage {
      *
      * @param name cookie name
      * @return an optional {@link ResponseCookie} value if corresponding cookie name is present,
-     *         or {@link Optional#empty} if not.
+     * or {@link Optional#empty} if not.
      */
     public Optional<ResponseCookie> cookie(String name) {
         return cookies().stream()
@@ -292,14 +266,14 @@ public class HttpResponse implements StreamingHttpMessage {
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
         private boolean validate = true;
-        private StyxObservable<ByteBuf> body;
+        private ByteStream body;
 
         /**
          * Creates a new {@link Builder} object with default attributes.
          */
         public Builder() {
             this.headers = new HttpHeaders.Builder();
-            this.body = new StyxCoreObservable<>(Observable.empty());
+            this.body = new ByteStream(Flux.empty());
         }
 
         /**
@@ -329,16 +303,16 @@ public class HttpResponse implements StreamingHttpMessage {
          * Creates a new {@link Builder} object from a response code and a content stream.
          * <p>
          * Builder's response status line parameters and the HTTP headers are populated from
-         * the given {@code response} object, but the content stream is set to {@code contentStream}.
+         * the given {@code response} object, but the content stream is set to {@code ByteStream}.
          *
-         * @param response a full response for which the builder is based on
-         * @param contentStream a content byte stream
+         * @param response      a full response for which the builder is based on
+         * @param byteStream a content byte stream
          */
-        public Builder(FullHttpResponse response, StyxObservable<ByteBuf> contentStream) {
+        public Builder(FullHttpResponse response, ByteStream byteStream) {
             this.status = statusWithCode(response.status().code());
             this.version = httpVersion(response.version().toString());
             this.headers = response.headers().newBuilder();
-            this.body = contentStream;
+            this.body = requireNonNull(byteStream);
         }
 
         /**
@@ -358,20 +332,20 @@ public class HttpResponse implements StreamingHttpMessage {
          * @param content response body
          * @return {@code this}
          */
-        public Builder body(StyxObservable<ByteBuf> content) {
-            this.body = content;
+        public Builder body(ByteStream content) {
+            this.body = requireNonNull(content);
             return this;
         }
 
         /**
-         * Sets the message body by encoding a {@link StyxObservable} of {@link String}s into bytes.
+         * Transforms request body.
          *
-         * @param contentObservable message body content.
-         * @param charset           character set
-         * @return {@code this}
+         * @param transformation a Function from ByteStream to ByteStream.
+         * @return a HttpResponhse builder with a transformed message body.
          */
-        public Builder body(StyxObservable<String> contentObservable, Charset charset) {
-            return body(contentObservable.map(content -> copiedBuffer(content, charset)));
+        public Builder body(Function<ByteStream, ByteStream> transformation) {
+            this.body = requireNonNull(transformation.apply(this.body));
+            return this;
         }
 
         /**
@@ -554,12 +528,8 @@ public class HttpResponse implements StreamingHttpMessage {
          */
         // TODO: See https://github.com/HotelsDotCom/styx/issues/201
         public Builder removeBody() {
-            Observable<ByteBuf> delegate = ((StyxCoreObservable<ByteBuf>) body)
-                    .delegate()
-                    .doOnNext(ReferenceCountUtil::release)
-                    .ignoreElements();
-
-            return body(new StyxCoreObservable<>(delegate));
+            this.body = body.drop();
+            return this;
         }
 
 
@@ -581,8 +551,8 @@ public class HttpResponse implements StreamingHttpMessage {
          * method is invoked. Specifically that:
          *
          * <li>
-         *     <ul>There is maximum of only one {@code Content-Length} header</ul>
-         *     <ul>The {@code Content-Length} header is zero or positive integer</ul>
+         * <ul>There is maximum of only one {@code Content-Length} header</ul>
+         * <ul>The {@code Content-Length} header is zero or positive integer</ul>
          * </li>
          *
          * @return {@code this}
@@ -597,16 +567,16 @@ public class HttpResponse implements StreamingHttpMessage {
          * <p>
          * Validates and builds a {link HttpResponse} object. Object validation can be
          * disabled with {@link this.disableValidation} method.
-         *
+         * <p>
          * When validation is enabled (by default), ensures that:
          *
          * <li>
-         *     <ul>There is maximum of only one {@code Content-Length} header</ul>
-         *     <ul>The {@code Content-Length} header is zero or positive integer</ul>
+         * <ul>There is maximum of only one {@code Content-Length} header</ul>
+         * <ul>The {@code Content-Length} header is zero or positive integer</ul>
          * </li>
          *
-         * @throws IllegalArgumentException when validation fails
          * @return a new full response.
+         * @throws IllegalArgumentException when validation fails
          */
         public HttpResponse build() {
             if (validate) {

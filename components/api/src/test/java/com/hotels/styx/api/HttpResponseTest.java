@@ -15,20 +15,16 @@
  */
 package com.hotels.styx.api;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Flux;
 
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.ResponseCookie.responseCookie;
-import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.CREATED;
@@ -41,11 +37,12 @@ import static com.hotels.styx.api.HttpResponseStatus.SEE_OTHER;
 import static com.hotels.styx.api.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.ResponseCookie.responseCookie;
+import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
-import static java.nio.charset.StandardCharsets.UTF_16;
+import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -54,16 +51,16 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
 
 public class HttpResponseTest {
+
     @Test
     public void encodesToFullHttpResponse() throws Exception {
         HttpResponse response = response(CREATED)
                 .version(HTTP_1_0)
                 .header("HeaderName", "HeaderValue")
                 .cookies(responseCookie("CookieName", "CookieValue").build())
-                .body(body("foo", "bar"))
+                .body(new ByteStream(Flux.just("foo", "bar").map(it -> new Buffer(copiedBuffer(it, UTF_8)))))
                 .build();
 
         FullHttpResponse full = response.toFullResponse(0x1000)
@@ -92,7 +89,7 @@ public class HttpResponseTest {
     private Object[][] emptyBodyResponses() {
         return new Object[][]{
                 {response().build()},
-                {response().body(StyxCoreObservable.empty()).build()},
+                {response().body(new ByteStream(Flux.empty())).build()},
         };
     }
 
@@ -169,16 +166,22 @@ public class HttpResponseTest {
     }
 
     @Test
-    public void canRemoveResponseBody() {
+    public void canRemoveResponseBody() throws ExecutionException, InterruptedException {
+        Buffer originalContent = new Buffer("I'm going to get removed.", UTF_8);
+
         HttpResponse response = response(NO_CONTENT)
-                .body(body("shouldn't be here"))
+                .body(new ByteStream(Flux.just(originalContent)))
                 .build();
 
-        HttpResponse shouldClearBody = response.newBuilder()
-                .body(null)
-                .build();
+        FullHttpResponse fullResponse = response.newBuilder()
+                .body(ByteStream::drop)
+                .build()
+                .toFullResponse(1000)
+                .asCompletableFuture()
+                .get();
 
-        assertThat(shouldClearBody.body(), is(nullValue()));
+        assertThat(fullResponse.body().length, is(0));
+        assertThat(originalContent.delegate().refCnt(), is(0));
     }
 
     @Test
@@ -295,28 +298,6 @@ public class HttpResponseTest {
     }
 
     @Test
-    public void encodesBodyWithCharset() throws InterruptedException, ExecutionException, TimeoutException {
-        StyxObservable<String> o = StyxObservable.of("Hello, World!");
-
-        FullHttpResponse responseUtf8 = response()
-                .body(o, UTF_8)
-                .build()
-                .toFullResponse(1_000_000)
-                .asCompletableFuture()
-                .get(1, SECONDS);
-
-        FullHttpResponse responseUtf16 = response()
-                .body(o, UTF_16)
-                .build()
-                .toFullResponse(1_000_000)
-                .asCompletableFuture()
-                .get(1, SECONDS);
-
-        assertThat(responseUtf8.body(), is("Hello, World!".getBytes(UTF_8)));
-        assertThat(responseUtf16.body(), is("Hello, World!".getBytes(UTF_16)));
-    }
-
-    @Test
     public void addsCookies() {
         HttpResponse response = response()
                 .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
@@ -380,17 +361,15 @@ public class HttpResponseTest {
         return HttpResponse.response(status);
     }
 
-    private static StyxObservable<ByteBuf> body(String... contents) {
-        return StyxObservable.from(Stream.of(contents)
-                .map(content -> Unpooled.copiedBuffer(content, UTF_8))
-                .collect(toList()));
+    private static ByteStream body(String... contents) {
+        return new ByteStream(Flux.fromIterable(
+                Stream.of(contents)
+                        .map(content -> new Buffer(copiedBuffer(content, UTF_8)))
+                        .collect(toList())));
     }
 
-    private static String bytesToString(StyxObservable<ByteBuf> body) throws Exception {
-        return body.reduce((buf, result) -> result + buf.toString(UTF_8), "")
-                .asCompletableFuture()
-                .get();
-
+    private static String bytesToString(ByteStream body) throws Exception {
+        return new String(body.aggregate(100000).get().content(), UTF_8);
     }
 
     private static byte[] bytes(String s) {

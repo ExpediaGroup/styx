@@ -18,7 +18,7 @@ package com.hotels.styx.client
 import ch.qos.logback.classic.Level
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.FullHttpRequest.get
-import com.hotels.styx.api.{HttpResponse, extension}
+import com.hotels.styx.api.{Buffer, HttpResponse, extension}
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.HttpResponseStatus.OK
@@ -31,7 +31,6 @@ import com.hotels.styx.support.configuration.{BackendService, HttpBackend, Origi
 import com.hotels.styx.support.matchers.LoggingTestSupport
 import com.hotels.styx.support.observables.ImplicitRxConversions
 import com.hotels.styx.{DefaultStyxConfiguration, StyxClientSupplier, StyxProxySpec}
-import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled._
 import io.netty.channel.ChannelFutureListener.CLOSE
 import io.netty.channel.ChannelHandlerContext
@@ -41,8 +40,8 @@ import io.netty.handler.codec.http._
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
 import rx.observers.TestSubscriber
-import com.hotels.styx.api.StyxInternalObservables.toRxObservable
 import com.hotels.styx.api.exceptions.ResponseTimeoutException
+import rx.RxReactiveStreams.toObservable
 
 import scala.compat.java8.StreamConverters._
 import scala.concurrent.duration._
@@ -117,7 +116,7 @@ class OriginClosesConnectionSpec extends FunSuite
       .build
 
     val responseSubscriber = new TestSubscriber[HttpResponse]()
-    val contentSubscriber = new TestSubscriber[ByteBuf](1)
+    val contentSubscriber = new TestSubscriber[Buffer](1)
 
     val startTime = System.currentTimeMillis()
     val responseObservable = styxClient.sendRequest(
@@ -127,7 +126,7 @@ class OriginClosesConnectionSpec extends FunSuite
         .toStreamingRequest)
 
     responseObservable
-      .doOnNext((t: HttpResponse) => toRxObservable(t.body()).subscribe(contentSubscriber))
+      .doOnNext((t: HttpResponse) => toObservable(t.body()).subscribe(contentSubscriber))
       .subscribe(responseSubscriber)
 
     responseSubscriber.awaitTerminalEvent()

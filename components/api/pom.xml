@@ -27,6 +27,28 @@
     </dependency>
 
     <dependency>
+      <groupId>io.reactivex</groupId>
+      <artifactId>rxjava-reactive-streams</artifactId>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/io.projectreactor/reactor-core -->
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-core</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.reactivestreams</groupId>
+      <artifactId>reactive-streams</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>org.hdrhistogram</groupId>
       <artifactId>HdrHistogram</artifactId>
     </dependency>

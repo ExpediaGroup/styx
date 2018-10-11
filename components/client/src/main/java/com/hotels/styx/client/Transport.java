@@ -100,7 +100,8 @@ class Transport {
         return origin
                 .map(ConnectionPool::borrowConnection)
                 .orElseGet(() -> {
-                    request.releaseContentBuffers();
+                    // Aggregates an empty body:
+                    request.body().drop().aggregate(1);
                     return Observable.error(new NoAvailableHostsException(appId));
                 });
     }

@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.server.netty.connectors;
 
+import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.HttpResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
@@ -31,10 +32,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static io.netty.handler.codec.http.HttpHeaders.setTransferEncodingChunked;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static java.util.Objects.requireNonNull;
+import static rx.RxReactiveStreams.toObservable;
 
 /**
  * Netty HTTP response writer.
@@ -79,7 +80,7 @@ class HttpResponseWriter {
                 }
             });
 
-            Subscription subscriber = toRxObservable(response.body()).subscribe(new Subscriber<ByteBuf>() {
+            Subscription subscriber = toObservable(response.body()).map(Buffers::toByteBuf).subscribe(new Subscriber<ByteBuf>() {
                 @Override
                 public void onStart() {
                     request(1);
@@ -157,7 +158,7 @@ class HttpResponseWriter {
             return future;
         } catch (Throwable cause) {
             LOGGER.warn("Failed to convert response headers. response={}, Cause={}", new Object[]{response, cause});
-            response.releaseContentBuffers();
+            toObservable(response.body()).forEach(it -> Buffers.toByteBuf(it).release());
             future.completeExceptionally(cause);
             return future;
         }

@@ -17,6 +17,8 @@ package com.hotels.styx.server.netty.connectors;
 
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hotels.styx.api.Buffer;
+import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
@@ -24,7 +26,6 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
@@ -50,6 +51,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.TooLongFrameException;
 import org.slf4j.Logger;
+import reactor.core.publisher.Flux;
 import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
@@ -495,7 +497,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
 
         return responseEnhancer.enhance(HttpResponse.response(status), request)
                 .header(CONTENT_LENGTH, message.getBytes(UTF_8).length)
-                .body(StyxObservable.of(message), UTF_8)
+                .body(new ByteStream(Flux.just(new Buffer(message, UTF_8))))
                 .build();
     }
 

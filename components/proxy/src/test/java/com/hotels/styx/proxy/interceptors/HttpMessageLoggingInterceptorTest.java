@@ -20,7 +20,6 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.server.HttpInterceptorContext;
-import com.hotels.styx.support.api.HttpMessageBodies;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -128,6 +127,6 @@ public class HttpMessageLoggingInterceptorTest {
     }
 
     private static void consume(StyxObservable<HttpResponse> resp) {
-        await(resp.map(HttpMessageBodies::bodyAsString).asCompletableFuture());
+        await(resp.flatMap(it -> it.toFullResponse(1000000)).asCompletableFuture());
     }
 }

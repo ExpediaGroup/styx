@@ -16,10 +16,9 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableMap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Flux;
 
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
@@ -41,7 +40,6 @@ import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
-import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -77,19 +75,19 @@ public class HttpRequestTest {
         assertThat(full.body(), is(bytes("foobar")));
     }
 
-    @Test(expectedExceptions = io.netty.util.IllegalReferenceCountException.class)
+    @Test
     public void toFullRequestReleasesOriginalReferenceCountedBuffers() throws ExecutionException, InterruptedException {
-        ByteBuf content = Unpooled.copiedBuffer("original", UTF_8);
+        Buffer content = new Buffer("original", UTF_8);
 
         HttpRequest original = HttpRequest.get("/foo")
-                .body(StyxObservable.of(content))
+                .body(new ByteStream(Flux.just(content)))
                 .build();
 
         FullHttpRequest fullRequest = original.toFullRequest(100)
                 .asCompletableFuture()
                 .get();
 
-        content.array()[0] = 'A';
+        assertThat(content.delegate().refCnt(), is(0));
 
         assertThat(fullRequest.bodyAs(UTF_8), is("original"));
     }
@@ -108,12 +106,12 @@ public class HttpRequestTest {
     private Object[][] emptyBodyRequests() {
         return new Object[][]{
                 {get("/foo/bar").build()},
-                {post("/foo/bar", StyxCoreObservable.empty()).build()},
+                {post("/foo/bar", new ByteStream(Flux.empty())).build()},
         };
     }
 
     @Test
-    public void createsARequestWithDefaultValues() throws Exception {
+    public void createsARequestWithDefaultValues() {
         HttpRequest request = get("/index").build();
         assertThat(request.version(), is(HTTP_1_1));
         assertThat(request.url().toString(), is("/index"));
@@ -295,7 +293,7 @@ public class HttpRequestTest {
 
     @Test
     public void shouldSetsContentLengthForNonStreamingBodyMessage() {
-        assertThat(put("/home").body(StyxObservable.of(copiedBuffer("Hello", UTF_8))).build().header(CONTENT_LENGTH), isAbsent());
+        assertThat(put("/home").body(new ByteStream(Flux.just(new Buffer("Hello", UTF_8)))).build().header(CONTENT_LENGTH), isAbsent());
     }
 
     @Test
@@ -428,16 +426,24 @@ public class HttpRequestTest {
         assertThat(r1.cookie("x"), isAbsent());
     }
 
-    private static StyxObservable<ByteBuf> body(String... contents) {
-        return StyxObservable.from(Stream.of(contents)
-                .map(content -> copiedBuffer(content, UTF_8))
-                .collect(toList()));
+    private static ByteStream body(String... contents) {
+
+        return new ByteStream(
+                Flux.fromIterable(
+                        Stream.of(contents)
+                                .map(content -> new Buffer(content, UTF_8))
+                                .collect(toList())));
     }
 
-    private static String bytesToString(StyxObservable<ByteBuf> body) throws ExecutionException, InterruptedException {
-        return body.reduce((byteBuf, result) -> result + byteBuf.toString(UTF_8), "")
-                .asCompletableFuture()
-                .get();
+    private static String bytesToString(ByteStream body) {
+        try {
+            return new String(body.aggregate(100000).get().content(), UTF_8);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static byte[] bytes(String content) {

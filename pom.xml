@@ -102,6 +102,14 @@
     <netty.version>4.1.15.Final</netty.version>
     <netty-tcnative.version>2.0.6.Final</netty-tcnative.version>
     <rxjava.version>1.1.6</rxjava.version>
+    <reactive-streams.version>1.0.2</reactive-streams.version>
+    <reactor.version>3.2.0.RELEASE</reactor.version>
+
+    <!--Kotlin -->
+    <kotlin.version>1.2.51</kotlin.version>
+    <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
+
+    <java-uuid-generator.version>3.1.5</java-uuid-generator.version>
 
     <!-- Logging Versions -->
     <logback.version>1.1.2</logback.version>
@@ -155,7 +163,6 @@
     <sonar.jacoco.itReportPath>${project.build.directory}/jacoco-it.exec</sonar.jacoco.itReportPath>
     <sonar.language>java</sonar.language>
 
-
     <jacoco.classRatio>91</jacoco.classRatio>
     <jacoco.instructionRatio>80</jacoco.instructionRatio>
     <jacoco.methodRatio>90</jacoco.methodRatio>
@@ -173,9 +180,7 @@
     <surefire.skip.tests>false</surefire.skip.tests>
 
     <netty-transport-native-epoll.classifier />
-    <!--Kotlin -->
-    <kotlin.version>1.2.51</kotlin.version>
-    <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
+    <rxjava-reactive-streams.version>1.1.1</rxjava-reactive-streams.version>
   </properties>
 
   <dependencyManagement>
@@ -239,9 +244,34 @@
       </dependency>
 
       <dependency>
+        <groupId>io.reactivex</groupId>
+        <artifactId>rxjava-reactive-streams</artifactId>
+        <version>${rxjava-reactive-streams.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.reactivestreams</groupId>
+        <artifactId>reactive-streams</artifactId>
+        <version>${reactive-streams.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.projectreactor</groupId>
+        <artifactId>reactor-core</artifactId>
+        <version>${reactor.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.projectreactor</groupId>
+        <artifactId>reactor-test</artifactId>
+        <version>${reactor.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
         <groupId>com.fasterxml.uuid</groupId>
         <artifactId>java-uuid-generator</artifactId>
-        <version>3.1.5</version>
+        <version>${java-uuid-generator.version}</version>
       </dependency>
 
       <dependency>

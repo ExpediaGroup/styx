@@ -16,8 +16,7 @@
 package com.hotels.styx.api;
 
 import com.google.common.collect.ImmutableSet;
-import io.netty.buffer.Unpooled;
-import rx.Observable;
+import reactor.core.publisher.Flux;
 
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -45,6 +44,7 @@ import static com.hotels.styx.api.HttpMethod.PUT;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.RequestCookie.decode;
 import static com.hotels.styx.api.RequestCookie.encode;
+import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
@@ -315,9 +315,9 @@ public class FullHttpRequest implements FullHttpMessage {
                 .disableValidation();
 
         if (this.body.length == 0) {
-            return streamingBuilder.body(new StyxCoreObservable<>(Observable.empty())).build();
+            return streamingBuilder.body(new ByteStream(Flux.empty())).build();
         } else {
-            return streamingBuilder.body(StyxObservable.of(Unpooled.copiedBuffer(body))).build();
+            return streamingBuilder.body(new ByteStream(Flux.just(new Buffer(copiedBuffer(body))))).build();
         }
     }
 
