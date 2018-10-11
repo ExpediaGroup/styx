@@ -2,6 +2,7 @@ pipeline {
   agent {
     docker {
       image 'edge-jenkins:latest'
+      args '-v $HOME/.m2:/root/.m2'
     }
 
   }
