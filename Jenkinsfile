@@ -18,6 +18,8 @@ done'''
     stage('Test') {
       steps {
         sh '''make load-test OPENSSL_INCLUDE_DIR=/usr/include
+sleep 60
+make load-test OPENSSL_INCLUDE_DIR=/usr/include
 '''
       }
     }
