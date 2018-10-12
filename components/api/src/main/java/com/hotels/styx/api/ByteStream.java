@@ -114,6 +114,12 @@ public class ByteStream implements Publisher<Buffer> {
         );
     }
 
+    /**
+     * Run a provided action when a consumer cancels this ByteStream.
+     *
+     * @param action the action runnable
+     * @return a new ByteStream with the action attached
+     */
     public ByteStream doOnCancel(Runnable action) {
         return new ByteStream(Flux.from(this.stream).doOnCancel(action));
     }
