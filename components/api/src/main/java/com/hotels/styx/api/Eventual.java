@@ -44,6 +44,39 @@ public final class Eventual<T> implements Publisher<T> {
         this.publisher = publisher;
     }
 
+    /**
+     * Creates a new {@link Eventual} object from given value.
+     *
+     * @param value the emitted value
+     * @param <T> an element type
+     * @return an {@link Eventual} object
+     */
+    public static <T> Eventual<T> of(T value) {
+        return fromMono(Mono.just(value));
+    }
+
+    /**
+     * Creates a new {@link Eventual} from a {@link CompletionStage}.
+     *
+     * @param completionStage a {@link CompletionStage} instance
+     * @param <T> an event type
+     * @return an {@link Eventual} object
+     */
+    public static <T> Eventual<T> from(CompletionStage<T> completionStage) {
+        return fromMono(Mono.fromCompletionStage(completionStage));
+    }
+
+    /**
+     * Creates a new (@link Eventual} that emits an error.
+     *
+     * @param error a {@link Throwable} object
+     * @param <T> an element type
+     * @return an {@link Eventual} object
+     */
+    public static <T> Eventual<T> error(Throwable error) {
+        return fromMono(Mono.error(error));
+    }
+
     private static <T> Eventual<T> fromMono(Mono<T> mono) {
         return new Eventual<>(mono);
     }
@@ -88,39 +121,6 @@ public final class Eventual<T> implements Publisher<T> {
      */
     public CompletableFuture<T> asCompletableFuture() {
         return Mono.from(publisher).toFuture();
-    }
-
-    /**
-     * Creates a new {@link Eventual} object from given value.
-     *
-     * @param value the emitted value
-     * @param <T> an element type
-     * @return an {@link Eventual} object
-     */
-    public static <T> Eventual<T> of(T value) {
-        return fromMono(Mono.just(value));
-    }
-
-    /**
-     * Creates a new {@link Eventual} from a {@link CompletionStage}.
-     *
-     * @param completionStage a {@link CompletionStage} instance
-     * @param <T> an event type
-     * @return an {@link Eventual} object
-     */
-    public static <T> Eventual<T> from(CompletionStage<T> completionStage) {
-        return fromMono(Mono.fromCompletionStage(completionStage));
-    }
-
-    /**
-     * Creates a new (@link Eventual} that emits an error.
-     *
-     * @param error a {@link Throwable} object
-     * @param <T> an element type
-     * @return an {@link Eventual} object
-     */
-    public static <T> Eventual<T> error(Throwable error) {
-        return fromMono(Mono.error(error));
     }
 
     /**

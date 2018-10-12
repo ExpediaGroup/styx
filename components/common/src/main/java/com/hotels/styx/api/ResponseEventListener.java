@@ -23,6 +23,10 @@ import rx.Observable;
 
 import java.util.function.Consumer;
 
+import static com.hotels.styx.api.ResponseEventListener.State.COMPLETED;
+import static com.hotels.styx.api.ResponseEventListener.State.INITIAL;
+import static com.hotels.styx.api.ResponseEventListener.State.STREAMING;
+import static com.hotels.styx.api.ResponseEventListener.State.TERMINATED;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -36,32 +40,32 @@ public class ResponseEventListener {
     private Runnable cancelAction = () -> { };
 
     private final StateMachine<State> fsm = new StateMachine.Builder<State>()
-            .initialState(State.INITIAL)
-            .transition(State.INITIAL, MessageHeaders.class, event -> State.STREAMING)
-            .transition(State.INITIAL, MessageCancelled.class, event -> {
+            .initialState(INITIAL)
+            .transition(INITIAL, MessageHeaders.class, event -> STREAMING)
+            .transition(INITIAL, MessageCancelled.class, event -> {
                 cancelAction.run();
-                return State.TERMINATED;
+                return TERMINATED;
             })
-            .transition(State.INITIAL, MessageError.class, event -> {
+            .transition(INITIAL, MessageError.class, event -> {
                 responseErrorAction.accept(event.cause());
-                return State.TERMINATED;
+                return TERMINATED;
             })
-            .transition(State.STREAMING, ContentEnd.class, event -> {
+            .transition(STREAMING, ContentEnd.class, event -> {
                 onCompletedAction.run();
-                return State.COMPLETED;
+                return COMPLETED;
             })
-            .transition(State.STREAMING, ContentError.class, event -> {
+            .transition(STREAMING, ContentError.class, event -> {
                 contentErrorAction.accept(event.cause());
-                return State.TERMINATED;
+                return TERMINATED;
             })
-            .transition(State.STREAMING, ContentCancelled.class, event -> {
+            .transition(STREAMING, ContentCancelled.class, event -> {
                 cancelAction.run();
-                return State.TERMINATED;
+                return TERMINATED;
             })
             .onInappropriateEvent((state, event) -> state)
             .build();
 
-    ResponseEventListener(Observable<HttpResponse> publisher) {
+    private ResponseEventListener(Observable<HttpResponse> publisher) {
         this.publisher = requireNonNull(publisher);
     }
 
@@ -112,11 +116,11 @@ public class ResponseEventListener {
     }
 
 
-    static class MessageHeaders {
+    private static class MessageHeaders {
 
     }
 
-    static class MessageError {
+    private static class MessageError {
         private Throwable cause;
 
         public MessageError(Throwable cause) {
@@ -129,15 +133,15 @@ public class ResponseEventListener {
         }
     }
 
-    static class MessageCancelled {
+    private static class MessageCancelled {
 
     }
 
-    static class ContentEnd {
+    private static class ContentEnd {
 
     }
 
-    static class ContentError {
+    private static class ContentError {
         private Throwable cause;
 
         public ContentError(Throwable cause) {
@@ -150,7 +154,7 @@ public class ResponseEventListener {
         }
     }
 
-    static class ContentCancelled {
+    private static class ContentCancelled {
 
     }
 }

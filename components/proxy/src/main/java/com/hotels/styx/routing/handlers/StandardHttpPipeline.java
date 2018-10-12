@@ -18,8 +18,10 @@ package com.hotels.styx.routing.handlers;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import rx.Observable;
+import rx.RxReactiveStreams;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,8 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static rx.Observable.create;
-import com.hotels.styx.api.HttpRequest;
-import rx.RxReactiveStreams;
+import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * The pipeline consists of a chain of interceptors followed by a handler.
@@ -87,7 +88,7 @@ class StandardHttpPipeline implements HttpHandler {
                     return Eventual.error(e);
                 }
             }
-            return new Eventual<>(RxReactiveStreams.toPublisher(RxReactiveStreams.toObservable(client.handle(request, this.context))
+            return new Eventual<>(toPublisher(RxReactiveStreams.toObservable(client.handle(request, this.context))
                     .compose(StandardHttpPipeline::sendErrorOnDoubleSubscription)));
         }
     }

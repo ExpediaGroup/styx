@@ -22,6 +22,8 @@ import reactor.test.publisher.TestPublisher;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,8 +40,8 @@ public class RequestsTest {
     @BeforeMethod
     public void setUp() {
         publisher = TestPublisher.create();
-        request = HttpRequest.get("/").body(new ByteStream(publisher)).build();
-        response = HttpResponse.response(OK).body(new ByteStream(publisher)).build();
+        request = get("/").body(new ByteStream(publisher)).build();
+        response = response(OK).body(new ByteStream(publisher)).build();
         completed = new AtomicReference<>();
     }
 

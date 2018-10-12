@@ -32,6 +32,7 @@ import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
@@ -55,14 +56,14 @@ public class ResponseEventListenerTest {
         Observable<HttpResponse> publisher = Observable.just(response(OK).body(new ByteStream(Flux.just(new Buffer("hey", UTF_8)))).build());
         TestSubscriber<HttpResponse> subscriber = TestSubscriber.create();
 
-        Observable<HttpResponse> evResponse2 = ResponseEventListener.from(publisher)
+        Observable<HttpResponse> response = ResponseEventListener.from(publisher)
                 .whenCancelled(() -> cancelled.set(true))
                 .whenResponseError(cause -> responseError.set(cause))
                 .whenContentError(cause -> contentError.set(cause))
                 .whenCompleted(() -> completed.set(true))
                 .apply();
 
-        evResponse2.subscribe(subscriber);
+        response.subscribe(subscriber);
 
         subscriber.getOnNextEvents().get(0).consume();
 
@@ -77,11 +78,11 @@ public class ResponseEventListenerTest {
         PublishSubject<HttpResponse> publisher = PublishSubject.create();
         TestSubscriber<HttpResponse> subscriber = TestSubscriber.create(0);
 
-        Observable<HttpResponse> evResponse2 = ResponseEventListener.from(publisher)
+        Observable<HttpResponse> response = ResponseEventListener.from(publisher)
                 .whenCancelled(() -> cancelled.set(true))
                 .apply();
 
-        evResponse2.subscribe(subscriber);
+        response.subscribe(subscriber);
 
         subscriber.unsubscribe();
 
@@ -92,7 +93,7 @@ public class ResponseEventListenerTest {
     public void firesWhenContentCancelled() {
         TestPublisher<Buffer> contentPublisher = TestPublisher.create();
 
-        HttpResponse evResponse2 = ResponseEventListener.from(
+        HttpResponse response = ResponseEventListener.from(
                 Observable.just(response(OK)
                         .body(new ByteStream(contentPublisher))
                         .build()))
@@ -101,10 +102,10 @@ public class ResponseEventListenerTest {
                 .toBlocking()
                 .first();
 
-        assertThat(cancelled.get(), Matchers.is(false));
+        assertThat(cancelled.get(), is(false));
 
-        StepVerifier.create(evResponse2.body())
-                .then(() -> assertThat(cancelled.get(), Matchers.is(false)))
+        StepVerifier.create(response.body())
+                .then(() -> assertThat(cancelled.get(), is(false)))
                 .thenCancel()
                 .verify();
 
@@ -116,11 +117,11 @@ public class ResponseEventListenerTest {
         Observable<HttpResponse> publisher = Observable.error(new RuntimeException());
         TestSubscriber<HttpResponse> subscriber = TestSubscriber.create();
 
-        Observable<HttpResponse> evResponse2 = ResponseEventListener.from(publisher)
+        Observable<HttpResponse> response = ResponseEventListener.from(publisher)
                 .whenResponseError(cause -> responseError.set(cause))
                 .apply();
 
-        evResponse2.subscribe(subscriber);
+        response.subscribe(subscriber);
 
         assertTrue(responseError.get() instanceof RuntimeException);
     }
@@ -134,13 +135,13 @@ public class ResponseEventListenerTest {
                         .build())
                 .concatWith(Observable.error(new RuntimeException()));
 
-        Observable<HttpResponse> evResponse2 = ResponseEventListener.from(publisher)
+        Observable<HttpResponse> response = ResponseEventListener.from(publisher)
                 .whenCancelled(() -> cancelled.set(true))
                 .whenResponseError(cause -> responseError.set(cause))
                 .whenContentError(cause -> contentError.set(cause))
                 .apply();
 
-        evResponse2.subscribe(subscriber);
+        response.subscribe(subscriber);
 
         subscriber.getOnNextEvents().get(0).consume();
 
@@ -156,13 +157,13 @@ public class ResponseEventListenerTest {
                         .body(new ByteStream(Flux.error(new RuntimeException())))
                         .build());
 
-        HttpResponse evResponse2 = ResponseEventListener.from(publisher)
+        HttpResponse response = ResponseEventListener.from(publisher)
                 .whenContentError(cause -> responseError.set(cause))
                 .apply()
                 .toBlocking()
                 .first();
 
-        evResponse2.consume();
+        response.consume();
 
         assertTrue(responseError.get() instanceof RuntimeException);
     }
