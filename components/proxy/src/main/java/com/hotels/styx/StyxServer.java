@@ -85,6 +85,8 @@ public final class StyxServer extends AbstractService {
     }
 
     private static StyxServer createStyxServer(String[] args) {
+        Stopwatch stopwatch = Stopwatch.createStarted();
+
         StartupConfig startupConfig = parseStartupConfig(args);
 
         LOG.info("Styx home={}", startupConfig.styxHome());
@@ -104,7 +106,7 @@ public final class StyxServer extends AbstractService {
                 .loggingSetUp(FROM_CONFIG)
                 .build();
 
-        return new StyxServer(components);
+        return new StyxServer(components, stopwatch);
     }
 
     private static void validateConfiguration(StartupConfig startupConfig, YamlConfiguration yamlConfiguration) {
@@ -131,8 +133,15 @@ public final class StyxServer extends AbstractService {
     private final HttpServer adminServer;
 
     private final ServiceManager serviceManager;
+    private final Stopwatch stopwatch;
 
     public StyxServer(StyxServerComponents config) {
+        this(config, null);
+    }
+
+    public StyxServer(StyxServerComponents config, Stopwatch stopwatch) {
+        this.stopwatch = stopwatch;
+
         registerCoreMetrics(config.environment().buildInfo(), config.environment().metricRegistry());
 
         Map<String, StyxService> servicesFromConfig = config.services();
@@ -185,11 +194,15 @@ public final class StyxServer extends AbstractService {
 
     @Override
     protected void doStart() {
-        Stopwatch stopwatch = Stopwatch.createStarted();
         printBanner();
         this.serviceManager.addListener(new ServerStartListener(this));
         this.serviceManager.startAsync().awaitHealthy();
-        LOG.info("Started styx server in {}ms", stopwatch.elapsed(MILLISECONDS));
+
+        if (stopwatch == null) {
+            LOG.info("Started Styx server");
+        } else {
+            LOG.info("Started Styx server in {} ms", stopwatch.elapsed(MILLISECONDS));
+        }
     }
 
     private void printBanner() {
