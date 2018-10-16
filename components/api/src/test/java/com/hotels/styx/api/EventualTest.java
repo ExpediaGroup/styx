@@ -15,45 +15,101 @@
  */
 package com.hotels.styx.api;
 
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 import org.testng.annotations.Test;
-import reactor.core.publisher.Mono;
-import rx.subjects.PublishSubject;
+import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
 
-import static rx.RxReactiveStreams.toPublisher;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.testng.Assert.assertEquals;
 
 public class EventualTest {
 
     @Test
-    public void testFromRxObservable() {
-        PublishSubject<String> subject = PublishSubject.create();
-        Eventual<String> eventual = new Eventual<>(Mono.from(toPublisher(subject)));
+    public void newEventual() throws ExecutionException, InterruptedException {
+        String value = new Eventual<>(Flux.just("hello"))
+                .asCompletableFuture()
+                .get();
 
-        eventual.subscribe(new Subscriber<String>() {
-            @Override
-            public void onSubscribe(Subscription subscription) {
-                System.out.println("onSubscribe");
-                subscription.request(10);
-            }
+        assertEquals(value, "hello");
+    }
 
-            @Override
-            public void onNext(String s) {
-                System.out.println("onNext " + s);
-            }
+    @Test
+    public void publishesOnlyOneElement() throws ExecutionException, InterruptedException {
+        AtomicInteger i = new AtomicInteger();
+        String value = new Eventual<>(Flux.just("hello", "world"))
+                .map(x -> {
+                    i.incrementAndGet();
+                    return x;
+                })
+                .asCompletableFuture()
+                .get();
 
-            @Override
-            public void onError(Throwable throwable) {
-                System.out.println("onError");
-            }
+        assertEquals(i.get(), 1);
+        assertEquals(value, "hello");
+    }
 
-            @Override
-            public void onComplete() {
-                System.out.println("onComplete");
-            }
-        });
+    @Test
+    public void createFromValue() throws ExecutionException, InterruptedException {
+        String value = Eventual.of("x")
+                .asCompletableFuture()
+                .get();
 
-        subject.onNext("hey");
-//        subject.onCompleted();
+        assertEquals(value, "x");
+    }
+
+    @Test
+    public void createFromCompletionStage() {
+        CompletableFuture<String> future = new CompletableFuture<>();
+
+        Eventual<String> eventual = Eventual.from(future);
+
+        StepVerifier.create(eventual)
+                .thenRequest(1)
+                .expectNextCount(0)
+                .then(() -> future.complete("hello"))
+                .expectNext("hello")
+                .verifyComplete();
+    }
+
+    @Test
+    public void createFromError() {
+        Eventual<String> eventual = Eventual.error(new RuntimeException("things went wrong"));
+
+        StepVerifier.create(eventual)
+                .expectError(RuntimeException.class)
+                .verify();
+    }
+
+    @Test
+    public void mapsValues() throws ExecutionException, InterruptedException {
+        String value = new Eventual<>(Flux.just("hello"))
+                .map(String::toUpperCase)
+                .asCompletableFuture()
+                .get();
+
+        assertEquals(value, "HELLO");
+    }
+
+    @Test
+    public void flatMapsValues() {
+        Eventual<String> eventual = Eventual.of("hello")
+                .flatMap(it -> Eventual.of(it + " world"));
+
+        StepVerifier.create(eventual)
+                .expectNext("hello world")
+                .verifyComplete();
+    }
+
+    @Test
+    public void mapsErrors() {
+        Eventual<String> eventual = Eventual.<String>error(new RuntimeException("ouch"))
+                .onError(it -> Eventual.of("mapped error: " + it.getMessage()));
+
+        StepVerifier.create(eventual)
+                .expectNext("mapped error: ouch")
+                .verifyComplete();
     }
 }
