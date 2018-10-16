@@ -102,8 +102,6 @@ interface StreamingHttpMessage {
      * all the traffic. This has the benefit of keeping the underlying TCP connection
      * open for connection pooling.
      * <p>
-     * Compare to {@link this#drop()} that causes the underlying TCP socket to
-     * be closed.
      */
     default void consume() {
         body().drop().aggregate(1)
@@ -113,18 +111,5 @@ interface StreamingHttpMessage {
                 });
     }
 
-    /**
-     * Drop the message without consuming the message body.
-     * <p>
-     * This method disconnects from the HTTP content producer, closing the underlying
-     * TCP connection. Useful for error recovery where it is necessary to avoid further
-     * use of the pooled TCP connection.
-     * <p>
-     * Compare to {@link this#consume()} that gracefully consumes the body and
-     * keeps the TCP connection open.
-     */
-    default void drop() {
-        Flux.from(body()).subscribe().dispose();
-    }
 
 }
