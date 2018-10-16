@@ -21,7 +21,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets.UTF_8
 import com.google.common.net.HostAndPort._
 import com.hotels.styx._
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.{BAD_REQUEST, OK}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}

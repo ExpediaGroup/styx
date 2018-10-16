@@ -18,7 +18,7 @@ package com.hotels.styx.servers;
 import com.github.tomakehurst.wiremock.http.ContentTypeHeader;
 import com.github.tomakehurst.wiremock.http.QueryParameter;
 import com.google.common.base.Optional;
-import com.hotels.styx.api.FullHttpRequest;
+import com.hotels.styx.api.HttpRequest;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -39,7 +39,7 @@ import static org.testng.Assert.assertEquals;
 public class WiremockStyxRequestAdapterTest {
     private WiremockStyxRequestAdapter adapter;
     private String content;
-    private FullHttpRequest.Builder styxRequestBuilder;
+    private HttpRequest.Builder styxRequestBuilder;
 
     @BeforeMethod
     public void setUp() {
@@ -57,7 +57,7 @@ public class WiremockStyxRequestAdapterTest {
                 "    }\n" +
                 "}";
 
-        styxRequestBuilder = FullHttpRequest.post("/__admin/mappings/new?msg=6198.1")
+        styxRequestBuilder = HttpRequest.post("/__admin/mappings/new?msg=6198.1")
                 .header(CONTENT_TYPE, "application/json; charset=UTF-8")
                 .header(HOST, "localhost")
                 .header(CONNECTION, "Keep-Alive")

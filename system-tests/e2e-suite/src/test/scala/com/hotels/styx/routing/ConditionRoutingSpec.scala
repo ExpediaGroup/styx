@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.api.extension
 import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}

@@ -18,7 +18,7 @@ package com.hotels.styx.proxy
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post => wmpost}
-import com.hotels.styx.api.FullHttpRequest.post
+import com.hotels.styx.api.HttpRequest.post
 import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.client.StyxBackendServiceClient
 import com.hotels.styx.support.backends.FakeHttpServer

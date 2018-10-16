@@ -22,7 +22,7 @@ import com.google.common.base.Charsets.UTF_8
 import com.google.common.io.Files
 import com.google.common.io.Files._
 import com.hotels.styx.MockServer.responseSupplier
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.FullHttpResponse.response
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpResponseStatus._

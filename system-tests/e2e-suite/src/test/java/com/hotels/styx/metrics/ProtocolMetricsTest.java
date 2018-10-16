@@ -17,7 +17,7 @@ package com.hotels.styx.metrics;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.hotels.styx.api.FullHttpRequest;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
@@ -31,7 +31,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static com.hotels.styx.api.FullHttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.String.format;
@@ -114,7 +114,7 @@ public class ProtocolMetricsTest {
     private static FullHttpResponse doRequest(HttpClient client, String protocol, int port, String path) {
         String url = format("%s://localhost:%s%s", protocol, port, startWithSlash(path));
 
-        FullHttpRequest request = get(url)
+        HttpRequest request = get(url)
                 .body("foobarbaz", UTF_8)
                 .build();
 

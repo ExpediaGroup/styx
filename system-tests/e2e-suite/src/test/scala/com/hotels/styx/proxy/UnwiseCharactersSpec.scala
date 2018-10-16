@@ -19,7 +19,7 @@ import ch.qos.logback.classic.Level._
 import com.github.tomakehurst.wiremock.client.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder
 import com.hotels.styx.support.backends.FakeHttpServer

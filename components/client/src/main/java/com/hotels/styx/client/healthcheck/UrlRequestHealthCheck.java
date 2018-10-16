@@ -16,7 +16,7 @@
 package com.hotels.styx.client.healthcheck;
 
 import com.codahale.metrics.Meter;
-import com.hotels.styx.api.FullHttpRequest;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.HttpClient;
@@ -55,7 +55,7 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
 
     @Override
     public void check(HttpClient client, Origin origin, OriginHealthCheckFunction.Callback responseCallback) {
-        FullHttpRequest request = newHealthCheckRequestFor(origin);
+        HttpRequest request = newHealthCheckRequestFor(origin);
 
         client.sendRequest(request)
                 .handle((response, cause) -> {
@@ -74,8 +74,8 @@ public class UrlRequestHealthCheck implements OriginHealthCheckFunction {
                 });
     }
 
-    private FullHttpRequest newHealthCheckRequestFor(Origin origin) {
-        return FullHttpRequest.get(healthCheckUri)
+    private HttpRequest newHealthCheckRequestFor(Origin origin) {
+        return HttpRequest.get(healthCheckUri)
                 .header(HOST, origin.hostAndPortString())
                 .build();
     }

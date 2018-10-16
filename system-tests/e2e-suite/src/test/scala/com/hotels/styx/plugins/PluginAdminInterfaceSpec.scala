@@ -100,7 +100,7 @@ class PluginAdminInterfaceSpec extends FunSpec with StyxProxySpec with StyxClien
   }
 
   private def get(url: String) = {
-    decodedRequest(FullHttpRequest.get(url).build())
+    decodedRequest(HttpRequest.get(url).build())
   }
 
   def styxHostAndPort: HostAndPort = {

@@ -37,7 +37,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 
 import com.google.common.io.Files.createTempDir
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._

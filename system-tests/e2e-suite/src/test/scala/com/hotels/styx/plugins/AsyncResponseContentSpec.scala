@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import _root_.io.netty.handler.codec.http.HttpHeaders.Names._
 import _root_.io.netty.handler.codec.http.HttpHeaders.Values._
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api._
 import com.hotels.styx.support._

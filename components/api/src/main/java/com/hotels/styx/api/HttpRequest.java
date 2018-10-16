@@ -55,11 +55,11 @@ import static java.util.stream.Stream.concat;
 /**
  * An immutable HTTP request object including full body content.
  * <p>
- * A {@link FullHttpRequest} is useful for requests with a
+ * A {@link HttpRequest} is useful for requests with a
  * finite body content, such as when PUT or POST are used to create or
  * modify a RESTful object.
  * <p>
- * A FullHttpRequest is created via {@link FullHttpRequest.Builder}. A new builder
+ * A HttpRequest is created via {@link HttpRequest.Builder}. A new builder
  * can be obtained by a call to following static methods:
  *
  * <ul>
@@ -73,12 +73,12 @@ import static java.util.stream.Stream.concat;
  *
  * A builder can also be created with one of the {@code Builder} constructors.
  *
- * FullHttpRequest is immutable. Once created it cannot be modified.
+ * HttpRequest is immutable. Once created it cannot be modified.
  * However a request can be transformed to another using the {@link this#newBuilder}
  * method. It creates a new {@link Builder} with all message properties and
  * body content cloned in.
  */
-public class FullHttpRequest implements FullHttpMessage {
+public class HttpRequest implements FullHttpMessage {
     private final Object id;
     private final HttpVersion version;
     private final HttpMethod method;
@@ -86,7 +86,7 @@ public class FullHttpRequest implements FullHttpMessage {
     private final HttpHeaders headers;
     private final byte[] body;
 
-    FullHttpRequest(Builder builder) {
+    HttpRequest(Builder builder) {
         this.id = builder.id == null ? randomUUID() : builder.id;
         this.version = builder.version;
         this.method = builder.method;
@@ -99,7 +99,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the GET method.
      *
      * @param uri URI
-     * @return {@link FullHttpRequest.Builder}
+     * @return {@link HttpRequest.Builder}
      */
     public static Builder get(String uri) {
         return new Builder(GET, uri);
@@ -109,7 +109,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the HEAD method.
      *
      * @param uri URI
-     * @return {@link FullHttpRequest.Builder}
+     * @return {@link HttpRequest.Builder}
      */
     public static Builder head(String uri) {
         return new Builder(HEAD, uri);
@@ -119,7 +119,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the POST method.
      *
      * @param uri URI
-     * @return {@link FullHttpRequest.Builder}
+     * @return {@link HttpRequest.Builder}
      */
     public static Builder post(String uri) {
         return new Builder(POST, uri);
@@ -129,7 +129,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the DELETE method.
      *
      * @param uri URI
-     * @return {@link FullHttpRequest.Builder}
+     * @return {@link HttpRequest.Builder}
      */
     public static Builder delete(String uri) {
         return new Builder(DELETE, uri);
@@ -139,7 +139,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the PUT method.
      *
      * @param uri URI
-     * @return {@link FullHttpRequest.Builder}
+     * @return {@link HttpRequest.Builder}
      */
     public static Builder put(String uri) {
         return new Builder(PUT, uri);
@@ -149,7 +149,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the PATCH method.
      *
      * @param uri URI
-     * @return {@link FullHttpRequest.Builder}
+     * @return {@link HttpRequest.Builder}
      */
     public static Builder patch(String uri) {
         return new Builder(PATCH, uri);
@@ -184,7 +184,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Returns message body as a byte array.
      * <p>
      * Returns the body of this message as a byte array, in its unencoded form.
-     * Because FullHttpRequest is an immutable object, the returned byte array
+     * Because HttpRequest is an immutable object, the returned byte array
      * reference cannot be used to modify the message content.
      * <p>
      *
@@ -403,7 +403,7 @@ public class FullHttpRequest implements FullHttpMessage {
             this.body = body;
         }
 
-        Builder(FullHttpRequest request) {
+        Builder(HttpRequest request) {
             this.id = request.id();
             this.method = request.method();
             this.url = request.url();
@@ -690,7 +690,7 @@ public class FullHttpRequest implements FullHttpMessage {
          *
          * @return a new full request
          */
-        public FullHttpRequest build() {
+        public HttpRequest build() {
             if (validate) {
                 ensureContentLengthIsValid();
                 requireNotDuplicatedHeader(COOKIE);
@@ -698,7 +698,7 @@ public class FullHttpRequest implements FullHttpMessage {
                 setHostHeader();
             }
 
-            return new FullHttpRequest(this);
+            return new HttpRequest(this);
         }
 
         private void setHostHeader() {

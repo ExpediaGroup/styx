@@ -33,7 +33,7 @@ import io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT
 import io.netty.handler.codec.http._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.extension.Origin
 
 import scala.concurrent.duration.{Duration, _}

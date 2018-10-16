@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Optional
 
 import com.hotels.styx._
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api._
 import HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}

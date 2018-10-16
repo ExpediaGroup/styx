@@ -61,7 +61,7 @@ public class LiveHttpRequestTest {
                 .cookies(requestCookie("CookieName", "CookieValue"))
                 .build();
 
-        FullHttpRequest full = streamingRequest.toFullRequest(0x1000)
+        HttpRequest full = streamingRequest.toFullRequest(0x1000)
                 .asCompletableFuture()
                 .get();
 
@@ -83,7 +83,7 @@ public class LiveHttpRequestTest {
                 .body(new ByteStream(Flux.just(content)))
                 .build();
 
-        FullHttpRequest fullRequest = original.toFullRequest(100)
+        HttpRequest fullRequest = original.toFullRequest(100)
                 .asCompletableFuture()
                 .get();
 
@@ -94,7 +94,7 @@ public class LiveHttpRequestTest {
 
     @Test(dataProvider = "emptyBodyRequests")
     public void encodesToStreamingHttpRequestWithEmptyBody(LiveHttpRequest streamingRequest) throws Exception {
-        FullHttpRequest full = streamingRequest.toFullRequest(0x1000)
+        HttpRequest full = streamingRequest.toFullRequest(0x1000)
                 .asCompletableFuture()
                 .get();
 

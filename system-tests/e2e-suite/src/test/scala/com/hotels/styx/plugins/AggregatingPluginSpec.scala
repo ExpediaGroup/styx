@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx.api.{Buffer, ByteStream}
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}

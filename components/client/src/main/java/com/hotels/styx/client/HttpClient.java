@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.FullHttpRequest;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -41,7 +41,7 @@ public interface HttpClient {
      * @return a future of full HTTP request object
      */
     @Deprecated
-    default CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request) {
+    default CompletableFuture<FullHttpResponse> sendRequest(HttpRequest request) {
         return send(request);
     }
 
@@ -51,7 +51,7 @@ public interface HttpClient {
      * @param request a full HTTP request object
      * @return a future of full HTTP request object
      */
-    CompletableFuture<FullHttpResponse> send(FullHttpRequest request);
+    CompletableFuture<FullHttpResponse> send(HttpRequest request);
 
     /**
      * A HTTP request transaction.
@@ -95,7 +95,7 @@ public interface HttpClient {
          * @param request a full HTTP request object
          * @return a future of full HTTP request object
          */
-        CompletableFuture<FullHttpResponse> send(FullHttpRequest request);
+        CompletableFuture<FullHttpResponse> send(HttpRequest request);
     }
 
     /**
@@ -106,6 +106,6 @@ public interface HttpClient {
      */
     interface StreamingTransaction {
         CompletableFuture<LiveHttpResponse> send(LiveHttpRequest request);
-        CompletableFuture<LiveHttpResponse> send(FullHttpRequest request);
+        CompletableFuture<LiveHttpResponse> send(HttpRequest request);
     }
 }

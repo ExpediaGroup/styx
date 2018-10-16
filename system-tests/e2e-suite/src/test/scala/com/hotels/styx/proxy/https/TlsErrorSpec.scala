@@ -17,8 +17,8 @@ package com.hotels.styx.proxy.https
 
 import ch.qos.logback.classic.Level.INFO
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.api.FullHttpRequest
 import com.hotels.styx.api.HttpHeaderNames._
+import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.client.{HttpClient, StyxHttpClient}
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler
@@ -91,7 +91,7 @@ class TlsErrorSpec extends FunSpec
     it("Logs an SSL handshake exception") {
       val serverPort = styxServer.proxyHttpsAddress().getPort
 
-      val req = FullHttpRequest.get(styxServer.secureRouterURL("/secure"))
+      val req = HttpRequest.get(styxServer.secureRouterURL("/secure"))
         .header(HOST, styxServer.httpsProxyHost)
         .build()
 

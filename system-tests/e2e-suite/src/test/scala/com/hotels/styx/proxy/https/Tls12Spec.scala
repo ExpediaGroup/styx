@@ -19,7 +19,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames._
 import com.hotels.styx.api.HttpMethod.GET
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.FullHttpRequest
+import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.client.{HttpClient, StyxHttpClient}
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.support.ResourcePaths.fixturesHome
@@ -82,7 +82,7 @@ class Tls12Spec extends FunSpec
     recordingBackend.stub(urlPathEqualTo("/secure"), aResponse.withStatus(200))
 
     it("Accepts TLS 1.2 only") {
-      val req = new FullHttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
+      val req = new HttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
         .header(HOST, styxServer.httpsProxyHost)
         .build()
 
@@ -92,7 +92,7 @@ class Tls12Spec extends FunSpec
     }
 
     it("Refuses TLS 1.1 when TLS 1.2 is required") {
-      val req = new FullHttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
+      val req = new HttpRequest.Builder(GET, styxServer.secureRouterURL("/secure"))
         .header(HOST, styxServer.httpsProxyHost)
         .build()
 

@@ -16,7 +16,7 @@
 package com.hotels.styx.http;
 
 import com.google.common.io.Files;
-import com.hotels.styx.api.FullHttpRequest;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.server.HttpServer;
@@ -71,7 +71,7 @@ public class StaticFileOnRealServerIT {
         mkdir("some/dir");
         writeFile("some/dir/content1.txt", "some txt");
 
-        FullHttpRequest request = new FullHttpRequest.Builder(GET, "/index.html")
+        HttpRequest request = new HttpRequest.Builder(GET, "/index.html")
                 .header("Host", serverEndpoint)
                 .build();
 

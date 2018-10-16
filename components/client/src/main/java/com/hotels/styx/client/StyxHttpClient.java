@@ -17,7 +17,7 @@ package com.hotels.styx.client;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.HostAndPort;
-import com.hotels.styx.api.FullHttpRequest;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.extension.Origin;
@@ -88,18 +88,18 @@ public final class StyxHttpClient implements HttpClient {
     }
 
     /**
-     * Sends a request as {@link FullHttpRequest} object.
+     * Sends a request as {@link HttpRequest} object.
      *
-     * @param request a {@link FullHttpRequest} object to be sent to remote origin.
+     * @param request a {@link HttpRequest} object to be sent to remote origin.
      * @return a {@link CompletableFuture} of response
      */
-    public CompletableFuture<FullHttpResponse> send(FullHttpRequest request) {
+    public CompletableFuture<FullHttpResponse> send(HttpRequest request) {
         return sendRequestInternal(connectionFactory, request, this.transactionParameters);
     }
 
     @VisibleForTesting
-    static CompletableFuture<FullHttpResponse> sendRequestInternal(NettyConnectionFactory connectionFactory, FullHttpRequest request, Builder params) {
-        FullHttpRequest networkRequest = addUserAgent(params.userAgent(), request);
+    static CompletableFuture<FullHttpResponse> sendRequestInternal(NettyConnectionFactory connectionFactory, HttpRequest request, Builder params) {
+        HttpRequest networkRequest = addUserAgent(params.userAgent(), request);
         Origin origin = originFromRequest(networkRequest, params.https());
 
         SslContext sslContext = getSslContext(params.https(), params.tlsSettings());
@@ -118,7 +118,7 @@ public final class StyxHttpClient implements HttpClient {
 
     }
 
-    private static FullHttpRequest addUserAgent(String userAgent, FullHttpRequest request) {
+    private static HttpRequest addUserAgent(String userAgent, HttpRequest request) {
         if (userAgent != null) {
             return request.newBuilder()
                     .header(USER_AGENT, userAgent)
@@ -140,7 +140,7 @@ public final class StyxHttpClient implements HttpClient {
 
     }
 
-    private static Origin originFromRequest(FullHttpRequest request, Boolean isHttps) {
+    private static Origin originFromRequest(HttpRequest request, Boolean isHttps) {
         String hostAndPort = request.header(HOST)
                 .orElseGet(() -> {
                     checkArgument(request.url().isAbsolute(), "host header is not set for request=%s", request);

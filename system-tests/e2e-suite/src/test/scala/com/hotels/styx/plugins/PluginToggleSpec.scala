@@ -17,7 +17,7 @@ package com.hotels.styx.plugins
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import com.hotels.styx.api.FullHttpRequest.{get, put}
+import com.hotels.styx.api.HttpRequest.{get, put}
 import com.hotels.styx.api.{FullHttpResponse, _}
 import HttpResponseStatus.OK
 import com.hotels.styx.support.backends.FakeHttpServer

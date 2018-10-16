@@ -17,7 +17,7 @@ package com.hotels.styx.client
 
 import ch.qos.logback.classic.Level
 import com.google.common.base.Charsets._
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.{Buffer, LiveHttpResponse, extension}
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
