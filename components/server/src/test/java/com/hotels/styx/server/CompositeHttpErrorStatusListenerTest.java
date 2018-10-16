@@ -16,7 +16,7 @@
 package com.hotels.styx.server;
 
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -35,7 +35,7 @@ public class CompositeHttpErrorStatusListenerTest {
     HttpErrorStatusListener delegate2;
     HttpErrorStatusListener delegate3;
     LiveHttpRequest request = LiveHttpRequest.get("/foo").build();
-    HttpResponse response = HttpResponse.response(OK).build();
+    LiveHttpResponse response = LiveHttpResponse.response(OK).build();
 
     @BeforeMethod
     public void setUp() {

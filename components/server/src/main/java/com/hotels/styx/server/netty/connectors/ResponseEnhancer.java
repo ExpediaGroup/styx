@@ -16,7 +16,7 @@
 package com.hotels.styx.server.netty.connectors;
 
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 
 /**
  * Enhances responses. For example, adding headers.
@@ -31,18 +31,18 @@ public interface ResponseEnhancer {
      * @param request request to which Styx is responding
      * @return enhanced response builder
      */
-    HttpResponse.Builder enhance(HttpResponse.Builder responseBuilder, LiveHttpRequest request);
+    LiveHttpResponse.Builder enhance(LiveHttpResponse.Builder responseBuilder, LiveHttpRequest request);
 
     /**
      * Create a new enhanced response, based on an existing one. This is less efficient than
-     * {@link #enhance(HttpResponse.Builder, LiveHttpRequest)} as it has to create a new builder
+     * {@link #enhance(LiveHttpResponse.Builder, LiveHttpRequest)} as it has to create a new builder
      * and build, but it suitable for cases where that would have to happen anyway.
      *
      * @param response response
      * @param request request
      * @return enhanced response
      */
-    default HttpResponse enhance(HttpResponse response, LiveHttpRequest request) {
+    default LiveHttpResponse enhance(LiveHttpResponse response, LiveHttpRequest request) {
         return enhance(response.newBuilder(), request).build();
     }
 }

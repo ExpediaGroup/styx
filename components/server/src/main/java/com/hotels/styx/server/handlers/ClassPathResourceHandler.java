@@ -20,7 +20,7 @@ import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import reactor.core.publisher.Flux;
@@ -52,7 +52,7 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
     }
 
     @Override
-    protected HttpResponse doHandle(LiveHttpRequest request) {
+    protected LiveHttpResponse doHandle(LiveHttpRequest request) {
         try {
             String path = request.path();
 
@@ -78,8 +78,8 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
         }
     }
 
-    private static HttpResponse error(HttpResponseStatus status) {
-        return new HttpResponse.Builder(status)
+    private static LiveHttpResponse error(HttpResponseStatus status) {
+        return new LiveHttpResponse.Builder(status)
                 .body(new ByteStream(Flux.just(new Buffer(status.description(), UTF_8))))
                 .build();
     }

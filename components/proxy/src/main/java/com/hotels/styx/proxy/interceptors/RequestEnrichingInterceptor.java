@@ -17,7 +17,7 @@ package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.client.StyxHeaderConfig;
 import org.slf4j.Logger;
@@ -43,7 +43,7 @@ public class RequestEnrichingInterceptor implements HttpInterceptor {
     }
 
     @Override
-    public Eventual<HttpResponse> intercept(LiveHttpRequest request, Chain chain) {
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         return chain.proceed(enrich(request, chain.context()));
     }
 

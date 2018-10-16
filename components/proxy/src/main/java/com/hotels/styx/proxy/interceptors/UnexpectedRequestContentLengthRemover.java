@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Eventual;
 
 import java.util.Optional;
@@ -29,7 +29,7 @@ import com.hotels.styx.api.LiveHttpRequest;
  */
 public class UnexpectedRequestContentLengthRemover implements HttpInterceptor {
     @Override
-    public Eventual<HttpResponse> intercept(LiveHttpRequest request, Chain chain) {
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         return chain.proceed(removeBadContentLength(request));
     }
 

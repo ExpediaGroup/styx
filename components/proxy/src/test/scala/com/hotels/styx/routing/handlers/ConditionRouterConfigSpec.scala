@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.routing.handlers
 
-import com.hotels.styx.api.HttpResponse.response
+import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.{BAD_GATEWAY, OK}
 import com.hotels.styx.api.{HttpHandler, HttpInterceptor, LiveHttpRequest, Eventual}
 import com.hotels.styx.common.StyxFutures

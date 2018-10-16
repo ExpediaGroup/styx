@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor.Chain;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import org.testng.annotations.Test;
 
@@ -24,7 +24,7 @@ import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.LiveHttpRequest.delete;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpRequest.post;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
 import static com.hotels.styx.proxy.interceptors.ReturnResponseChain.returnsResponse;
@@ -61,7 +61,7 @@ public class HopByHopHeadersRemovingInterceptorTest {
 
     @Test
     public void removesHopByHopHeadersFromResponse() throws Exception {
-        HttpResponse response = await(interceptor.intercept(get("/foo").build(), returnsResponse(response()
+        LiveHttpResponse response = await(interceptor.intercept(get("/foo").build(), returnsResponse(response()
                 .header(TE, "foo")
                 .header(PROXY_AUTHENTICATE, "foo")
                 .header(PROXY_AUTHORIZATION, "bar")
@@ -118,7 +118,7 @@ public class HopByHopHeadersRemovingInterceptorTest {
 
     @Test
     public void removesConnectionHeadersFromResponse() throws Exception {
-        HttpResponse response = await(interceptor.intercept(get("/foo").build(), returnsResponse(response()
+        LiveHttpResponse response = await(interceptor.intercept(get("/foo").build(), returnsResponse(response()
                 .header(CONNECTION, "Foo, Bar, Baz")
                 .header("Foo", "abc")
                 .header("Foo", "def")

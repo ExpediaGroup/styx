@@ -19,7 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
@@ -55,15 +55,15 @@ public class TransportTest {
     private static final Id APP_ID = id("app-01");
 
     private LiveHttpRequest request;
-    private HttpResponse response;
+    private LiveHttpResponse response;
     private Transport transport;
-    private PublishSubject<HttpResponse> responseProvider;
-    private TestSubscriber<HttpResponse> subscriber;
+    private PublishSubject<LiveHttpResponse> responseProvider;
+    private TestSubscriber<LiveHttpResponse> subscriber;
 
     @BeforeMethod
     public void setUp() {
         request = get("/").build();
-        response = HttpResponse.response(OK).build();
+        response = LiveHttpResponse.response(OK).build();
         transport = new Transport(id("x"), X_STYX_ORIGIN_ID);
         responseProvider = PublishSubject.create();
         subscriber = new TestSubscriber<>();
@@ -95,7 +95,7 @@ public class TransportTest {
                 .response()
                 .subscribe(subscriber);
 
-        HttpResponse response2 = subscriber.getOnNextEvents().get(0);
+        LiveHttpResponse response2 = subscriber.getOnNextEvents().get(0);
 
         subscriber.unsubscribe();
 
@@ -136,7 +136,7 @@ public class TransportTest {
                 .response()
                 .subscribe(subscriber);
 
-        responseProvider.onNext(HttpResponse.response(OK).body(new ByteStream(testPublisher)).build());
+        responseProvider.onNext(LiveHttpResponse.response(OK).body(new ByteStream(testPublisher)).build());
 
         assertEquals(subscriber.getOnNextEvents().size(), 1);
         assertTrue(subscriber.getOnCompletedEvents().isEmpty());
@@ -198,7 +198,7 @@ public class TransportTest {
     @Test
     public void terminatesConnectionDueToUnsubscribedBody() {
         TestPublisher<Buffer> testPublisher = TestPublisher.create();
-        Connection connection = mockConnection(Observable.just(HttpResponse.response(OK).body(new ByteStream(testPublisher)).build()));
+        Connection connection = mockConnection(Observable.just(LiveHttpResponse.response(OK).body(new ByteStream(testPublisher)).build()));
         ConnectionPool pool = mockPool(connection);
 
         transport.send(request, Optional.of(pool), APP_ID)

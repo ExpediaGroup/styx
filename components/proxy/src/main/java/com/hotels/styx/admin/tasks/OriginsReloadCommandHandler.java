@@ -21,7 +21,7 @@ import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
@@ -62,12 +62,12 @@ public class OriginsReloadCommandHandler implements HttpHandler {
     }
 
     @Override
-    public Eventual<HttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
-        return new Eventual<>(toPublisher(Observable.<HttpResponse>create(this::reload)
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+        return new Eventual<>(toPublisher(Observable.<LiveHttpResponse>create(this::reload)
                 .subscribeOn(Schedulers.from(executor))));
     }
 
-    private void reload(Subscriber<? super HttpResponse> subscriber) {
+    private void reload(Subscriber<? super LiveHttpResponse> subscriber) {
         backendServicesRegistry.reload()
                 .handle((result, exception) -> {
                     if (exception == null) {
@@ -96,7 +96,7 @@ public class OriginsReloadCommandHandler implements HttpHandler {
         }
     }
 
-    private HttpResponse okResponse(String content) {
+    private LiveHttpResponse okResponse(String content) {
         return FullHttpResponse.response(OK)
                 .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
                 .body(content, UTF_8)
@@ -104,7 +104,7 @@ public class OriginsReloadCommandHandler implements HttpHandler {
                 .toStreamingResponse();
     }
 
-    private HttpResponse errorResponse(Throwable cause) {
+    private LiveHttpResponse errorResponse(Throwable cause) {
         String errorId = randomUUID().toString();
         LOG.error("id={}", errorId, cause);
 
@@ -129,7 +129,7 @@ public class OriginsReloadCommandHandler implements HttpHandler {
         return false;
     }
 
-    private HttpResponse errorResponse(HttpResponseStatus code, String content) {
+    private LiveHttpResponse errorResponse(HttpResponseStatus code, String content) {
         return FullHttpResponse.response(code)
                 .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
                 .body(content, UTF_8)

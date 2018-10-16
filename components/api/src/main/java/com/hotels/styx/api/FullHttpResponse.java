@@ -173,18 +173,18 @@ public class FullHttpResponse implements FullHttpMessage {
     }
 
     /**
-     * Converts this response to a streaming form (HttpResponse).
+     * Converts this response to a streaming form (LiveHttpResponse).
      * <p>
-     * Converts this response to an HttpResponse object which represents the HTTP response as a
+     * Converts this response to an LiveHttpResponse object which represents the HTTP response as a
      * stream of bytes.
      *
-     * @return A streaming HttpResponse object
+     * @return A streaming LiveHttpResponse object
      */
-    public HttpResponse toStreamingResponse() {
+    public LiveHttpResponse toStreamingResponse() {
         if (this.body.length == 0) {
-            return new HttpResponse.Builder(this, new ByteStream(Flux.empty())).build();
+            return new LiveHttpResponse.Builder(this, new ByteStream(Flux.empty())).build();
         } else {
-            return new HttpResponse.Builder(this, new ByteStream(Flux.just(new Buffer(copiedBuffer(this.body))))).build();
+            return new LiveHttpResponse.Builder(this, new ByteStream(Flux.just(new Buffer(copiedBuffer(this.body))))).build();
         }
     }
 
@@ -266,7 +266,7 @@ public class FullHttpResponse implements FullHttpMessage {
         }
 
         /**
-         * Creates a new {@link Builder} object from an existing {@link HttpResponse} object.
+         * Creates a new {@link Builder} object from an existing {@link LiveHttpResponse} object.
          * Similar to {@link this.newBuilder} method.
          *
          * @param response a full HTTP response instance
@@ -284,7 +284,7 @@ public class FullHttpResponse implements FullHttpMessage {
          * @param response a streaming HTTP response instance
          * @param body a HTTP message body
          */
-        public Builder(HttpResponse response, byte[] body) {
+        public Builder(LiveHttpResponse response, byte[] body) {
             this.status = response.status();
             this.version = response.version();
             this.headers = response.headers().newBuilder();

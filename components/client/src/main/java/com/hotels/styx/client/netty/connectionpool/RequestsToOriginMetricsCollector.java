@@ -51,7 +51,7 @@ class RequestsToOriginMetricsCollector extends ChannelDuplexHandler {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         //
-        // Break out HttpResponse and and LastHttpContent handling in separate
+        // Break out LiveHttpResponse and and LastHttpContent handling in separate
         // blocks. This way it doesn't require an HttpObjectAggregator in the
         // pipeline.
         //

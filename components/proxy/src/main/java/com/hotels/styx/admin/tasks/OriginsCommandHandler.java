@@ -19,7 +19,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.extension.OriginsChangeListener;
@@ -68,7 +68,7 @@ public class OriginsCommandHandler extends BaseHttpHandler implements OriginsCha
     }
 
     @Override
-    public HttpResponse doHandle(LiveHttpRequest request) {
+    public LiveHttpResponse doHandle(LiveHttpRequest request) {
         String cmd = request.queryParam("cmd").orElse("");
         String appId = request.queryParam("appId").orElse("");
         String originId = request.queryParam("originId").orElse("");

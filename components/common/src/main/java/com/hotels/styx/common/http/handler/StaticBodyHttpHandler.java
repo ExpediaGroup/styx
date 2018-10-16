@@ -19,7 +19,7 @@ import com.google.common.base.Charsets;
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -61,7 +61,7 @@ public class StaticBodyHttpHandler extends BaseHttpHandler {
     }
 
     @Override
-    public HttpResponse doHandle(LiveHttpRequest request) {
+    public LiveHttpResponse doHandle(LiveHttpRequest request) {
         return FullHttpResponse.response(OK)
                 .header(CONTENT_TYPE, this.contentType.toString())
                 .header(CONTENT_LENGTH, this.contentLength)

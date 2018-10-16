@@ -20,7 +20,7 @@ import ch.qos.logback.classic.Level;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.channel.ChannelHandlerContext;
@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.hotels.styx.api.Buffers.toByteBuf;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
@@ -82,9 +82,9 @@ public class HttpResponseWriterTest {
     @Test
     public void completesFutureOnlyAfterContentObservableIsCompleted() throws Exception {
         EmbeddedChannel ch = new EmbeddedChannel(
-                new SimpleChannelInboundHandler<HttpResponse>() {
+                new SimpleChannelInboundHandler<LiveHttpResponse>() {
                     @Override
-                    protected void channelRead0(ChannelHandlerContext ctx, HttpResponse response) throws Exception {
+                    protected void channelRead0(ChannelHandlerContext ctx, LiveHttpResponse response) throws Exception {
                         HttpResponseWriter writer = new HttpResponseWriter(ctx);
                         CompletableFuture<Void> future = writer.write(response);
                         assertThat(future.isDone(), is(false));
@@ -109,9 +109,9 @@ public class HttpResponseWriterTest {
         EmbeddedChannel ch = new EmbeddedChannel(
                 new CaptureChannelArgumentsHandler(channelArgs),
                 new LoggingHandler(),
-                new SimpleChannelInboundHandler<HttpResponse>() {
+                new SimpleChannelInboundHandler<LiveHttpResponse>() {
                     @Override
-                    protected void channelRead0(ChannelHandlerContext ctx, HttpResponse response) throws Exception {
+                    protected void channelRead0(ChannelHandlerContext ctx, LiveHttpResponse response) throws Exception {
                         HttpResponseWriter writer = new HttpResponseWriter(ctx);
                         CompletableFuture<Void> future = writer.write(response);
                         assertThat(future.isDone(), is(false));
@@ -163,9 +163,9 @@ public class HttpResponseWriterTest {
         EmbeddedChannel ch = new EmbeddedChannel(
                 new CaptureChannelArgumentsHandler(channelArgs),
                 new LoggingHandler(),
-                new SimpleChannelInboundHandler<HttpResponse>() {
+                new SimpleChannelInboundHandler<LiveHttpResponse>() {
                     @Override
-                    protected void channelRead0(ChannelHandlerContext ctx, HttpResponse response) throws Exception {
+                    protected void channelRead0(ChannelHandlerContext ctx, LiveHttpResponse response) throws Exception {
                         HttpResponseWriter writer = new HttpResponseWriter(ctx);
 
                         CompletableFuture<Void> future = writer.write(response);
@@ -195,9 +195,9 @@ public class HttpResponseWriterTest {
     public void failsTheResultWhenResponseWriteFails() throws Exception {
         EmbeddedChannel ch = new EmbeddedChannel(
                 new CaptureChannelArgumentsHandler(channelArgs),
-                new SimpleChannelInboundHandler<HttpResponse>() {
+                new SimpleChannelInboundHandler<LiveHttpResponse>() {
                     @Override
-                    protected void channelRead0(ChannelHandlerContext ctx, HttpResponse response) throws Exception {
+                    protected void channelRead0(ChannelHandlerContext ctx, LiveHttpResponse response) throws Exception {
                         HttpResponseWriter writer = new HttpResponseWriter(ctx);
                         CompletableFuture<Void> future = writer.write(response);
                         assertThat(future.isDone(), is(false));
@@ -217,9 +217,9 @@ public class HttpResponseWriterTest {
     public void failsTheResultWhenContentWriteFails() throws Exception {
         EmbeddedChannel ch = new EmbeddedChannel(
                 new CaptureChannelArgumentsHandler(channelArgs),
-                new SimpleChannelInboundHandler<HttpResponse>() {
+                new SimpleChannelInboundHandler<LiveHttpResponse>() {
                     @Override
-                    protected void channelRead0(ChannelHandlerContext ctx, HttpResponse response) throws Exception {
+                    protected void channelRead0(ChannelHandlerContext ctx, LiveHttpResponse response) throws Exception {
                         HttpResponseWriter writer = new HttpResponseWriter(ctx);
                         CompletableFuture<Void> future = writer.write(response);
 
@@ -250,9 +250,9 @@ public class HttpResponseWriterTest {
         EmbeddedChannel ch = new EmbeddedChannel(
                 new CaptureChannelArgumentsHandler(channelArgs),
                 writeEventsCollector,
-                new SimpleChannelInboundHandler<HttpResponse>() {
+                new SimpleChannelInboundHandler<LiveHttpResponse>() {
                     @Override
-                    protected void channelRead0(ChannelHandlerContext ctx, HttpResponse response) throws Exception {
+                    protected void channelRead0(ChannelHandlerContext ctx, LiveHttpResponse response) throws Exception {
                         HttpResponseWriter writer = new HttpResponseWriter(ctx);
 
                         CompletableFuture<Void> future = writer.write(response);
@@ -288,9 +288,9 @@ public class HttpResponseWriterTest {
         EmbeddedChannel ch = new EmbeddedChannel(
                 new CaptureChannelArgumentsHandler(channelArgs),
                 writeEventsCollector,
-                new SimpleChannelInboundHandler<HttpResponse>() {
+                new SimpleChannelInboundHandler<LiveHttpResponse>() {
                     @Override
-                    protected void channelRead0(ChannelHandlerContext ctx, HttpResponse response) throws Exception {
+                    protected void channelRead0(ChannelHandlerContext ctx, LiveHttpResponse response) throws Exception {
                         HttpResponseWriter writer = new HttpResponseWriter(ctx);
 
                         CompletableFuture<Void> future = writer.write(response);
@@ -321,9 +321,9 @@ public class HttpResponseWriterTest {
         EmbeddedChannel ch = new EmbeddedChannel(
                 new CaptureChannelArgumentsHandler(channelArgs),
                 writeEventsCollector,
-                new SimpleChannelInboundHandler<HttpResponse>() {
+                new SimpleChannelInboundHandler<LiveHttpResponse>() {
                     @Override
-                    protected void channelRead0(ChannelHandlerContext ctx, HttpResponse response) throws Exception {
+                    protected void channelRead0(ChannelHandlerContext ctx, LiveHttpResponse response) throws Exception {
                         HttpResponseWriter writer = new HttpResponseWriter(ctx, httpResponse -> {
                             throw new RuntimeException();
                         });
@@ -343,7 +343,7 @@ public class HttpResponseWriterTest {
                 }
         );
 
-        HttpResponse.Builder response = response(OK).cookies(responseCookie(",,,,", ",,,,").build());
+        LiveHttpResponse.Builder response = response(OK).cookies(responseCookie(",,,,", ",,,,").build());
         ch.writeInbound(response.body(new ByteStream(toPublisher(contentObservable.doOnUnsubscribe(() -> unsubscribed.set(true))))).build());
         assertThat(channelRead.get(), is(true));
     }
@@ -351,9 +351,9 @@ public class HttpResponseWriterTest {
     @Test
     public void logsSentAndAcknowledgedBytes() {
         EmbeddedChannel ch = new EmbeddedChannel(
-                new SimpleChannelInboundHandler<HttpResponse>() {
+                new SimpleChannelInboundHandler<LiveHttpResponse>() {
                     @Override
-                    protected void channelRead0(ChannelHandlerContext ctx, HttpResponse response) throws Exception {
+                    protected void channelRead0(ChannelHandlerContext ctx, LiveHttpResponse response) throws Exception {
                         HttpResponseWriter writer = new HttpResponseWriter(ctx);
                         CompletableFuture<Void> future = writer.write(response);
                         assertThat(future.isDone(), is(false));

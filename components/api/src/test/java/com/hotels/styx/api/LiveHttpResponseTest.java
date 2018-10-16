@@ -53,11 +53,11 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.testng.Assert.assertEquals;
 
-public class HttpResponseTest {
+public class LiveHttpResponseTest {
 
     @Test
     public void encodesToFullHttpResponse() throws Exception {
-        HttpResponse response = response(CREATED)
+        LiveHttpResponse response = response(CREATED)
                 .version(HTTP_1_0)
                 .header("HeaderName", "HeaderValue")
                 .cookies(responseCookie("CookieName", "CookieValue").build())
@@ -77,7 +77,7 @@ public class HttpResponseTest {
     }
 
     @Test(dataProvider = "emptyBodyResponses")
-    public void encodesToFullHttpResponseWithEmptyBody(HttpResponse response) throws Exception {
+    public void encodesToFullHttpResponseWithEmptyBody(LiveHttpResponse response) throws Exception {
         FullHttpResponse full = response.toFullResponse(0x1000)
                 .asCompletableFuture()
                 .get();
@@ -96,7 +96,7 @@ public class HttpResponseTest {
 
     @Test
     public void createsAResponseWithDefaultValues() throws Exception {
-        HttpResponse response = response().build();
+        LiveHttpResponse response = response().build();
         assertThat(response.version(), is(HTTP_1_1));
         assertThat(response.cookies(), is(emptyIterable()));
         assertThat(response.headers(), is(emptyIterable()));
@@ -105,7 +105,7 @@ public class HttpResponseTest {
 
     @Test
     public void createsResponseWithMinimalInformation() throws Exception {
-        HttpResponse response = response()
+        LiveHttpResponse response = response()
                 .status(BAD_GATEWAY)
                 .version(HTTP_1_0)
                 .build();
@@ -119,7 +119,7 @@ public class HttpResponseTest {
 
     @Test
     public void setsASingleOutboundCookie() {
-        HttpResponse response = response()
+        LiveHttpResponse response = response()
                 .cookies(responseCookie("user", "QSplbl9HX1VL").domain(".hotels.com").path("/").maxAge(3600).build())
                 .build();
 
@@ -128,7 +128,7 @@ public class HttpResponseTest {
 
     @Test
     public void setsMultipleOutboundCookies() {
-        HttpResponse response = response()
+        LiveHttpResponse response = response()
                 .cookies(
                         responseCookie("a", "b").build(),
                         responseCookie("c", "d").build())
@@ -143,7 +143,7 @@ public class HttpResponseTest {
 
     @Test
     public void getASingleCookieValue() {
-        HttpResponse response = response()
+        LiveHttpResponse response = response()
                 .cookies(
                         responseCookie("a", "b").build(),
                         responseCookie("c", "d").build())
@@ -155,11 +155,11 @@ public class HttpResponseTest {
     @Test
     public void canRemoveAHeader() {
         Object headerValue = "b";
-        HttpResponse response = response()
+        LiveHttpResponse response = response()
                 .header("a", headerValue)
                 .addHeader("c", headerValue)
                 .build();
-        HttpResponse shouldRemoveHeader = response.newBuilder()
+        LiveHttpResponse shouldRemoveHeader = response.newBuilder()
                 .removeHeader("c")
                 .build();
 
@@ -170,7 +170,7 @@ public class HttpResponseTest {
     public void canRemoveResponseBody() throws ExecutionException, InterruptedException {
         Buffer originalContent = new Buffer("I'm going to get removed.", UTF_8);
 
-        HttpResponse response = response(NO_CONTENT)
+        LiveHttpResponse response = response(NO_CONTENT)
                 .body(new ByteStream(Flux.just(originalContent)))
                 .build();
 
@@ -187,13 +187,13 @@ public class HttpResponseTest {
 
     @Test
     public void supportsCaseInsensitiveHeaderNames() {
-        HttpResponse response = response(OK).header("Content-Type", "text/plain").build();
+        LiveHttpResponse response = response(OK).header("Content-Type", "text/plain").build();
         assertThat(response.header("content-type"), isValue("text/plain"));
     }
 
     @Test
     public void headerValuesAreCaseSensitive() {
-        HttpResponse response = response(OK).header("Content-Type", "TEXT/PLAIN").build();
+        LiveHttpResponse response = response(OK).header("Content-Type", "TEXT/PLAIN").build();
         assertThat(response.header("content-type"), not(isValue("text/plain")));
     }
 
@@ -210,8 +210,8 @@ public class HttpResponseTest {
 
     @Test
     public void shouldRemoveContentLengthFromChunkedMessages() {
-        HttpResponse response = response().header(CONTENT_LENGTH, 5).build();
-        HttpResponse chunkedResponse = response.newBuilder().setChunked().build();
+        LiveHttpResponse response = response().header(CONTENT_LENGTH, 5).build();
+        LiveHttpResponse chunkedResponse = response.newBuilder().setChunked().build();
 
         assertThat(chunkedResponse.chunked(), is(true));
         assertThat(chunkedResponse.header(CONTENT_LENGTH).isPresent(), is(false));
@@ -219,8 +219,8 @@ public class HttpResponseTest {
 
     @Test
     public void shouldNotFailToRemoveNonExistentContentLength() {
-        HttpResponse response = response().build();
-        HttpResponse chunkedResponse = response.newBuilder().setChunked().build();
+        LiveHttpResponse response = response().build();
+        LiveHttpResponse chunkedResponse = response.newBuilder().setChunked().build();
 
         assertThat(chunkedResponse.chunked(), is(true));
         assertThat(chunkedResponse.header(CONTENT_LENGTH).isPresent(), is(false));
@@ -228,7 +228,7 @@ public class HttpResponseTest {
 
     @Test
     public void addsHeaderValue() {
-        HttpResponse response = response()
+        LiveHttpResponse response = response()
                 .header("name", "value1")
                 .addHeader("name", "value2")
                 .build();
@@ -300,7 +300,7 @@ public class HttpResponseTest {
 
     @Test
     public void addsCookies() {
-        HttpResponse response = response()
+        LiveHttpResponse response = response()
                 .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
                 .build();
 
@@ -309,7 +309,7 @@ public class HttpResponseTest {
 
     @Test
     public void addsCookiesToExistingCookies() {
-        HttpResponse response = response()
+        LiveHttpResponse response = response()
                 .addCookies(responseCookie("z", "z1").build())
                 .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
                 .build();
@@ -319,11 +319,11 @@ public class HttpResponseTest {
 
     @Test
     public void newCookiesWithDuplicateNamesOverridePreviousOnes() {
-        HttpResponse r1 = response()
+        LiveHttpResponse r1 = response()
                 .cookies(responseCookie("y", "y1").build())
                 .build();
 
-        HttpResponse r2 = r1.newBuilder().addCookies(
+        LiveHttpResponse r2 = r1.newBuilder().addCookies(
                 responseCookie("y", "y2").build())
                 .build();
 
@@ -332,11 +332,11 @@ public class HttpResponseTest {
 
     @Test
     public void removesCookies() {
-        HttpResponse r1 = response()
+        LiveHttpResponse r1 = response()
                 .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
                 .build();
 
-        HttpResponse r2 = r1.newBuilder()
+        LiveHttpResponse r2 = r1.newBuilder()
                 .removeCookies("x")
                 .removeCookies("foo") // ensure that trying to remove a non-existent cookie does not cause Exception
                 .build();
@@ -346,7 +346,7 @@ public class HttpResponseTest {
 
     @Test
     public void removesCookiesInSameBuilder() {
-        HttpResponse r1 = response()
+        LiveHttpResponse r1 = response()
                 .addCookies(responseCookie("x", "x1").build())
                 .removeCookies("x")
                 .build();
@@ -359,7 +359,7 @@ public class HttpResponseTest {
         Buffer buf1 = new Buffer("foo", UTF_8);
         Buffer buf2 = new Buffer("bar", UTF_8);
 
-        HttpResponse response = response()
+        LiveHttpResponse response = response()
                 .body(new ByteStream(Flux.just(buf1, buf2)))
                 .build();
 
@@ -369,12 +369,12 @@ public class HttpResponseTest {
         assertEquals(buf2.delegate().refCnt(), 0);
     }
 
-    private static HttpResponse.Builder response() {
-        return HttpResponse.response();
+    private static LiveHttpResponse.Builder response() {
+        return LiveHttpResponse.response();
     }
 
-    private static HttpResponse.Builder response(HttpResponseStatus status) {
-        return HttpResponse.response(status);
+    private static LiveHttpResponse.Builder response(HttpResponseStatus status) {
+        return LiveHttpResponse.response(status);
     }
 
     private static ByteStream body(String... contents) {

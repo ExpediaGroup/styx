@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.routing.interceptors
 
-import com.hotels.styx.api.HttpResponse.response
-import com.hotels.styx.api.{HttpInterceptor, LiveHttpRequest, HttpResponse, Eventual}
+import com.hotels.styx.api.LiveHttpResponse.response
+import com.hotels.styx.api._
 import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition
@@ -71,7 +71,7 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
   class CapturingChain extends HttpInterceptor.Chain {
     var storedRequest: LiveHttpRequest = _
 
-    override def proceed(request: LiveHttpRequest): Eventual[HttpResponse] = {
+    override def proceed(request: LiveHttpRequest): Eventual[LiveHttpResponse] = {
       storedRequest = request
       Eventual.of(response(OK).build())
     }

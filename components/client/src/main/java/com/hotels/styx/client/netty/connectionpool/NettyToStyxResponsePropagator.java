@@ -19,7 +19,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
@@ -42,7 +42,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
 import static io.netty.util.ReferenceCountUtil.retain;
 import static java.lang.String.format;
@@ -59,7 +59,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     private static final Logger LOGGER = getLogger(NettyToStyxResponsePropagator.class);
 
     private final AtomicBoolean responseCompleted = new AtomicBoolean(false);
-    private final Subscriber<? super HttpResponse> responseObserver;
+    private final Subscriber<? super LiveHttpResponse> responseObserver;
     private final boolean flowControlEnabled;
     private final LiveHttpRequest request;
 
@@ -67,11 +67,11 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     private final Long idleTimeoutMillis;
     private Optional<FlowControllingHttpContentProducer> contentProducer = Optional.empty();
 
-    NettyToStyxResponsePropagator(Subscriber<? super HttpResponse> responseObserver, Origin origin) {
+    NettyToStyxResponsePropagator(Subscriber<? super LiveHttpResponse> responseObserver, Origin origin) {
         this(responseObserver, origin, false, 5L, TimeUnit.SECONDS);
     }
 
-    NettyToStyxResponsePropagator(Subscriber<? super HttpResponse> responseObserver,
+    NettyToStyxResponsePropagator(Subscriber<? super LiveHttpResponse> responseObserver,
                                   Origin origin,
                                   boolean flowControlEnabled,
                                   long idleTimeout,
@@ -79,7 +79,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
         this(responseObserver, origin, flowControlEnabled, idleTimeout, timeUnit, null);
     }
 
-    NettyToStyxResponsePropagator(Subscriber<? super HttpResponse> responseObserver,
+    NettyToStyxResponsePropagator(Subscriber<? super LiveHttpResponse> responseObserver,
                                   Origin origin,
                                   boolean flowControlEnabled,
                                   long idleTimeout,
@@ -141,7 +141,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
                         eventLoop.submit(() -> this.contentProducer.ifPresent(FlowControllingHttpContentProducer::unsubscribe));
                     });
 
-            HttpResponse response = toStyxResponse(nettyResponse, contentObservable, origin);
+            LiveHttpResponse response = toStyxResponse(nettyResponse, contentObservable, origin);
             this.responseObserver.onNext(response);
         }
         if (msg instanceof HttpContent) {
@@ -213,8 +213,8 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     }
 
     @VisibleForTesting
-    static HttpResponse.Builder toStyxResponse(io.netty.handler.codec.http.HttpResponse nettyResponse) {
-        HttpResponse.Builder responseBuilder = response(statusWithCode(nettyResponse.getStatus().code()));
+    static LiveHttpResponse.Builder toStyxResponse(io.netty.handler.codec.http.HttpResponse nettyResponse) {
+        LiveHttpResponse.Builder responseBuilder = response(statusWithCode(nettyResponse.getStatus().code()));
 
         stream(nettyResponse.headers().spliterator(), false)
                 .forEach(header -> responseBuilder.addHeader(header.getKey(), header.getValue()));
@@ -222,7 +222,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
         return responseBuilder;
     }
 
-    private static HttpResponse toStyxResponse(io.netty.handler.codec.http.HttpResponse nettyResponse, Observable<ByteBuf> contentObservable, Origin origin) {
+    private static LiveHttpResponse toStyxResponse(io.netty.handler.codec.http.HttpResponse nettyResponse, Observable<ByteBuf> contentObservable, Origin origin) {
         try {
             return toStyxResponse(nettyResponse)
                     .body(new ByteStream(toPublisher(contentObservable.map(Buffers::fromByteBuf))))

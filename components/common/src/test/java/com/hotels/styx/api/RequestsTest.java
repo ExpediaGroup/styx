@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -35,7 +35,7 @@ public class RequestsTest {
     private TestPublisher<Buffer> publisher;
     private LiveHttpRequest request;
     private AtomicReference<Optional<Throwable>> completed;
-    private HttpResponse response;
+    private LiveHttpResponse response;
 
     @BeforeMethod
     public void setUp() {

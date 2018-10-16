@@ -80,7 +80,7 @@ class PluginErrorHandlingSpec extends FunSpec
   }
 
   private class FailBeforeHandleInterceptor extends PluginAdapter {
-    override def intercept(request: LiveHttpRequest, chain: HttpInterceptor.Chain): Eventual[HttpResponse] = {
+    override def intercept(request: LiveHttpRequest, chain: HttpInterceptor.Chain): Eventual[LiveHttpResponse] = {
       failIfHeaderPresent(request)
       chain.proceed(request)
     }
@@ -88,9 +88,9 @@ class PluginErrorHandlingSpec extends FunSpec
   import scala.compat.java8.FunctionConverters.asJavaFunction
 
   private class FailAfterHandleInterceptor extends PluginAdapter {
-    override def intercept(request: LiveHttpRequest, chain: HttpInterceptor.Chain): Eventual[HttpResponse] = {
+    override def intercept(request: LiveHttpRequest, chain: HttpInterceptor.Chain): Eventual[LiveHttpResponse] = {
       chain.proceed(request).map(
-        asJavaFunction((response: HttpResponse) => {
+        asJavaFunction((response: LiveHttpResponse) => {
           val fail: Optional[String] = request.header("Fail_after_handle")
           if (isTrue(fail)) {
             throw new RuntimeException("something went wrong")

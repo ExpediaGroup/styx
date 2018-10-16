@@ -29,15 +29,15 @@ import com.hotels.styx.server.netty.{NettyServerBuilder, ServerConnector, WebSer
 import com.hotels.styx.server.{HttpConnectorConfig, HttpServer}
 
 class RequestRecordingHandler(val requestQueue: BlockingQueue[LiveHttpRequest], val delegate: HttpHandler) extends HttpHandler {
-  override def handle(request: LiveHttpRequest, context: HttpInterceptor.Context): Eventual[HttpResponse] = {
+  override def handle(request: LiveHttpRequest, context: HttpInterceptor.Context): Eventual[LiveHttpResponse] = {
     requestQueue.add(request)
     delegate.handle(request, context)
   }
 }
 
 object MockServer {
-  def responseSupplier(f: () => HttpResponse) = new Supplier[HttpResponse] {
-    override def get(): HttpResponse = f()
+  def responseSupplier(f: () => LiveHttpResponse) = new Supplier[LiveHttpResponse] {
+    override def get(): LiveHttpResponse = f()
   }
 }
 
@@ -47,7 +47,7 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
   val router = new HttpHandler {
     val routes = new ConcurrentHashMap[String, HttpHandler]()
 
-    override def handle(request: LiveHttpRequest, context: HttpInterceptor.Context): Eventual[HttpResponse] = {
+    override def handle(request: LiveHttpRequest, context: HttpInterceptor.Context): Eventual[LiveHttpResponse] = {
       val handler: HttpHandler = routes.getOrDefault(request.path(), new NotFoundHandler)
       handler.handle(request, context)
     }
@@ -70,7 +70,7 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
     requestQueue.poll(timeout, unit)
   }
 
-  def stub(path: String, responseSupplier: Supplier[HttpResponse]): MockServer = {
+  def stub(path: String, responseSupplier: Supplier[LiveHttpResponse]): MockServer = {
     router.addRoute(path, requestRecordingHandler(requestQueue, returnsResponse(responseSupplier)))
     this
   }

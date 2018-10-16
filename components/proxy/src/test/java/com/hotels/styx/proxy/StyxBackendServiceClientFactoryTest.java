@@ -18,8 +18,8 @@ package com.hotels.styx.proxy;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.client.BackendServiceClient;
-import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.api.extension.Origin;
@@ -35,7 +35,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
@@ -127,9 +127,9 @@ public class StyxBackendServiceClientFactoryTest {
         LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("x").toString())).build();
         LiveHttpRequest requesty = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("y").toString())).build();
 
-        HttpResponse responsez = styxBackendServiceClient.sendRequest(requestz).toBlocking().first();
-        HttpResponse responsex = styxBackendServiceClient.sendRequest(requestx).toBlocking().first();
-        HttpResponse responsey = styxBackendServiceClient.sendRequest(requesty).toBlocking().first();
+        LiveHttpResponse responsez = styxBackendServiceClient.sendRequest(requestz).toBlocking().first();
+        LiveHttpResponse responsex = styxBackendServiceClient.sendRequest(requestx).toBlocking().first();
+        LiveHttpResponse responsey = styxBackendServiceClient.sendRequest(requesty).toBlocking().first();
 
         assertThat(responsex.header("X-Origin-Id").get(), is("x"));
         assertThat(responsey.header("X-Origin-Id").get(), is("y"));
@@ -172,16 +172,16 @@ public class StyxBackendServiceClientFactoryTest {
         LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString())).build();
         LiveHttpRequest requesty = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("y").toString())).build();
 
-        HttpResponse responsez = styxBackendServiceClient.sendRequest(requestz).toBlocking().first();
-        HttpResponse responsex = styxBackendServiceClient.sendRequest(requestx).toBlocking().first();
-        HttpResponse responsey = styxBackendServiceClient.sendRequest(requesty).toBlocking().first();
+        LiveHttpResponse responsez = styxBackendServiceClient.sendRequest(requestz).toBlocking().first();
+        LiveHttpResponse responsex = styxBackendServiceClient.sendRequest(requestx).toBlocking().first();
+        LiveHttpResponse responsey = styxBackendServiceClient.sendRequest(requesty).toBlocking().first();
 
         assertThat(responsex.header("X-Origin-Id").get(), is("x"));
         assertThat(responsey.header("X-Origin-Id").get(), is("y"));
         assertThat(responsez.header("X-Origin-Id").get(), is("z"));
     }
 
-    private StyxHostHttpClient hostClient(HttpResponse response) {
+    private StyxHostHttpClient hostClient(LiveHttpResponse response) {
         StyxHostHttpClient mockClient = mock(StyxHostHttpClient.class);
         when(mockClient.sendRequest(any(LiveHttpRequest.class))).thenReturn(just(response));
         when(mockClient.loadBalancingMetric()).thenReturn(new LoadBalancingMetric(1));

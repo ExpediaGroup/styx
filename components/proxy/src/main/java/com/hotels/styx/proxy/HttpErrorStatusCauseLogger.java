@@ -16,8 +16,8 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpErrorStatusListener;
-import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import org.slf4j.Logger;
 
@@ -56,12 +56,12 @@ public class HttpErrorStatusCauseLogger implements HttpErrorStatusListener {
     }
 
     @Override
-    public void proxyWriteFailure(LiveHttpRequest request, HttpResponse response, Throwable cause) {
+    public void proxyWriteFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) {
         LOG.error("Error writing response. request={}, response={}, cause={}", new Object[]{request, response, cause});
     }
 
     @Override
-    public void proxyingFailure(LiveHttpRequest request, HttpResponse response, Throwable cause) {
+    public void proxyingFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) {
         LOG.error("Error proxying request. request={} response={} cause={}", new Object[]{request, response, cause});
     }
 

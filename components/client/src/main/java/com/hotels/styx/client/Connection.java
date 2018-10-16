@@ -16,7 +16,7 @@
 package com.hotels.styx.client;
 
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;
 import rx.Observable;
 
@@ -48,7 +48,7 @@ public interface Connection extends Closeable {
      * @param request
      * @return an observable that provides the response
      */
-    Observable<HttpResponse> write(LiveHttpRequest request);
+    Observable<LiveHttpResponse> write(LiveHttpRequest request);
 
     /**
      * Returns if the underlying connection is still active.

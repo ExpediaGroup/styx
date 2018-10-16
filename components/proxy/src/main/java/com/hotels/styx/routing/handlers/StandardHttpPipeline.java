@@ -19,7 +19,7 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import rx.Observable;
 
 import java.util.List;
@@ -48,7 +48,7 @@ class StandardHttpPipeline implements HttpHandler {
     }
 
     @Override
-    public Eventual<HttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         HttpInterceptorChain interceptorsChain = new HttpInterceptorChain(interceptors, 0, handler, context);
 
         return interceptorsChain.proceed(request);
@@ -77,7 +77,7 @@ class StandardHttpPipeline implements HttpHandler {
         }
 
         @Override
-        public Eventual<HttpResponse> proceed(LiveHttpRequest request) {
+        public Eventual<LiveHttpResponse> proceed(LiveHttpRequest request) {
             if (index < interceptors.size()) {
                 HttpInterceptor.Chain chain = new HttpInterceptorChain(this, index + 1);
                 HttpInterceptor interceptor = interceptors.get(index);
@@ -93,7 +93,7 @@ class StandardHttpPipeline implements HttpHandler {
         }
     }
 
-    private static Observable<HttpResponse> sendErrorOnDoubleSubscription(Observable<HttpResponse> original) {
+    private static Observable<LiveHttpResponse> sendErrorOnDoubleSubscription(Observable<LiveHttpResponse> original) {
         AtomicInteger subscriptionCounter = new AtomicInteger();
 
         return create(subscriber -> {

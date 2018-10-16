@@ -19,7 +19,7 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 
 /**
  * This class provides a skeleton implementation of the {@link HttpHandler} interface, that can be used when no
@@ -28,7 +28,7 @@ import com.hotels.styx.api.HttpResponse;
 public abstract class BaseHttpHandler implements HttpHandler {
 
     @Override
-    public Eventual<HttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         return Eventual.of(doHandle(request));
     }
 
@@ -38,5 +38,5 @@ public abstract class BaseHttpHandler implements HttpHandler {
      * @param request request
      * @return response
      */
-    protected abstract HttpResponse doHandle(LiveHttpRequest request);
+    protected abstract LiveHttpResponse doHandle(LiveHttpRequest request);
 }

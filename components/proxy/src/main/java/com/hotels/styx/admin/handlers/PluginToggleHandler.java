@@ -22,7 +22,7 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
@@ -37,7 +37,7 @@ import java.util.stream.Stream;
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.METHOD_NOT_ALLOWED;
@@ -75,12 +75,12 @@ public class PluginToggleHandler implements HttpHandler {
     }
 
     @Override
-    public Eventual<HttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         return getCurrentOrPutNewState(request, context)
                 .onError(cause -> handleErrors(cause, context));
     }
 
-    private Eventual<HttpResponse> getCurrentOrPutNewState(LiveHttpRequest request, HttpInterceptor.Context context) {
+    private Eventual<LiveHttpResponse> getCurrentOrPutNewState(LiveHttpRequest request, HttpInterceptor.Context context) {
         if (GET.equals(request.method())) {
             return getCurrentState(request, context);
         } else if (PUT.equals(request.method())) {
@@ -90,7 +90,7 @@ public class PluginToggleHandler implements HttpHandler {
         }
     }
 
-    private Eventual<HttpResponse> getCurrentState(LiveHttpRequest request, HttpInterceptor.Context context) {
+    private Eventual<LiveHttpResponse> getCurrentState(LiveHttpRequest request, HttpInterceptor.Context context) {
         return Eventual.of(request)
                 .map(this::plugin)
                 .map(this::currentState)
@@ -101,7 +101,7 @@ public class PluginToggleHandler implements HttpHandler {
         return plugin.enabled() ? PluginEnabledState.ENABLED : PluginEnabledState.DISABLED;
     }
 
-    private Eventual<HttpResponse> putNewState(LiveHttpRequest request, HttpInterceptor.Context context) {
+    private Eventual<LiveHttpResponse> putNewState(LiveHttpRequest request, HttpInterceptor.Context context) {
         return Eventual.of(request)
                 .flatMap(this::requestedUpdate)
                 .map(this::applyUpdate);
@@ -116,7 +116,7 @@ public class PluginToggleHandler implements HttpHandler {
                 });
     }
 
-    private HttpResponse applyUpdate(RequestedUpdate requestedUpdate) {
+    private LiveHttpResponse applyUpdate(RequestedUpdate requestedUpdate) {
         boolean changed = requestedUpdate.apply();
 
         String message = responseMessage(requestedUpdate, changed);
@@ -173,7 +173,7 @@ public class PluginToggleHandler implements HttpHandler {
                 .map(PluginEnabledState::fromBoolean);
     }
 
-    private static HttpResponse responseWith(HttpResponseStatus status, String message) {
+    private static LiveHttpResponse responseWith(HttpResponseStatus status, String message) {
         return FullHttpResponse.response(status)
                 .body(message + "\n", UTF_8)
                 .addHeader(CONTENT_TYPE, PLAIN_TEXT_UTF_8.toString())
@@ -193,7 +193,7 @@ public class PluginToggleHandler implements HttpHandler {
         }
     }
 
-    private static Eventual<HttpResponse> handleErrors(Throwable e, HttpInterceptor.Context context) {
+    private static Eventual<LiveHttpResponse> handleErrors(Throwable e, HttpInterceptor.Context context) {
         if (e instanceof PluginNotFoundException) {
             return Eventual.of(responseWith(NOT_FOUND, e.getMessage()));
         }

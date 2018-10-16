@@ -20,7 +20,7 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
@@ -233,7 +233,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         }
 
         @Override
-        public Eventual<HttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+        public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
             return client.handle(request, context);
         }
 

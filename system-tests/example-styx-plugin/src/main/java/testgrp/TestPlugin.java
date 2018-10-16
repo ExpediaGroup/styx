@@ -19,7 +19,7 @@ import com.google.common.base.Charsets;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
@@ -43,7 +43,7 @@ public class TestPlugin implements Plugin {
 
 
     @Override
-    public Eventual<HttpResponse> intercept(LiveHttpRequest request, Chain chain) {
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         String header = xHcomPluginsHeader(request);
 
         final String configPath = environment.pluginConfig(String.class);

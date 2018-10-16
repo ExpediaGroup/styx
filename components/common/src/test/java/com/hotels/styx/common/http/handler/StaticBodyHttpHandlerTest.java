@@ -17,7 +17,7 @@ package com.hotels.styx.common.http.handler;
 
 
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
@@ -34,7 +34,7 @@ public class StaticBodyHttpHandlerTest {
     public void respondsWithStaticBody() throws Exception {
         StaticBodyHttpHandler handler = new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "foo", UTF_8);
 
-        HttpResponse response = handler.handle(get("/").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
+        LiveHttpResponse response = handler.handle(get("/").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
         FullHttpResponse fullResponse = response.toFullResponse(1024)
                 .asCompletableFuture()
                 .get();

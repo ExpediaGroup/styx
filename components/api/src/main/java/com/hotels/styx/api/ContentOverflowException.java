@@ -21,7 +21,7 @@ package com.hotels.styx.api;
  * <p>
  * A streaming HTTP message can be aggregated to a full message.
  * The aggregator methods {@link LiveHttpRequest#toFullRequest}, and
- * {@link HttpResponse#toFullResponse} consume data from a network socket or
+ * {@link LiveHttpResponse#toFullResponse} consume data from a network socket or
  * some other unpredictable source and emit this exception when more data is
  * received than expected.
  */

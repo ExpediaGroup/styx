@@ -26,8 +26,8 @@ import com.google.common.base.{Joiner, Optional}
 import com.google.common.io.ByteStreams
 import com.google.common.io.ByteStreams._
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
-import com.hotels.styx.api.{FullHttpResponse, HttpResponse, HttpResponseStatus}
-import com.hotels.styx.api.HttpResponse.response
+import com.hotels.styx.api.{FullHttpResponse, LiveHttpResponse, HttpResponseStatus}
+import LiveHttpResponse.response
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
@@ -88,7 +88,7 @@ class ChunkedRequestSpec extends FunSpec
   }
 
   @throws(classOf[IOException])
-  def readResponse(connection: HttpURLConnection): HttpResponse = {
+  def readResponse(connection: HttpURLConnection): LiveHttpResponse = {
     val status: Int = connection.getResponseCode
     var responseBuilder: FullHttpResponse.Builder = null
 

@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Eventual;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
@@ -34,13 +34,13 @@ import com.hotels.styx.api.LiveHttpRequest;
  */
 public class HopByHopHeadersRemovingInterceptor implements HttpInterceptor {
     @Override
-    public Eventual<HttpResponse> intercept(LiveHttpRequest request, Chain chain) {
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         return chain.proceed(removeHopByHopHeaders(request))
                 .map(HopByHopHeadersRemovingInterceptor::removeHopByHopHeaders);
     }
 
-    private static HttpResponse removeHopByHopHeaders(HttpResponse response) {
-        HttpResponse.Builder newResponse = response.newBuilder();
+    private static LiveHttpResponse removeHopByHopHeaders(LiveHttpResponse response) {
+        LiveHttpResponse.Builder newResponse = response.newBuilder();
 
         response.header(CONNECTION).ifPresent(connection -> {
             for (String connectToken : connection.split(",")) {

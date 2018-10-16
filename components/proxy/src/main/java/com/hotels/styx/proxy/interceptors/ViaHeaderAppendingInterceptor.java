@@ -17,7 +17,7 @@ package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.LiveHttpRequest;
 
@@ -35,7 +35,7 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
     private static final CharSequence VIA_STYX_1_1 = newEntity("1.1 styx");
 
     @Override
-    public Eventual<HttpResponse> intercept(LiveHttpRequest request, Chain chain) {
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         LiveHttpRequest newRequest = request.newBuilder()
                 .header(VIA, viaHeader(request))
                 .build();
@@ -54,7 +54,7 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
                 .orElse(styxViaEntry);
     }
 
-    private static CharSequence viaHeader(HttpResponse httpMessage) {
+    private static CharSequence viaHeader(LiveHttpResponse httpMessage) {
         CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
 
         return httpMessage.headers().get(VIA)

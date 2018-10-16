@@ -22,14 +22,14 @@ import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -72,7 +72,7 @@ public class InterceptorPipelineBuilderTest {
     @Test
     public void buildsPipelineWithInterceptors() throws Exception {
         HttpHandler pipeline = new InterceptorPipelineBuilder(environment, plugins, handler).build();
-        HttpResponse response = pipeline.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
+        LiveHttpResponse response = pipeline.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
 
         assertThat(response.header("plug1"), isValue("1"));
         assertThat(response.header("plug2"), isValue("1"));

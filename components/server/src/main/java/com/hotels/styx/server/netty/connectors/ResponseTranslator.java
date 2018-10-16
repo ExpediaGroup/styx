@@ -16,12 +16,13 @@
 package com.hotels.styx.server.netty.connectors;
 
 
+import com.hotels.styx.api.LiveHttpResponse;
 import io.netty.handler.codec.http.HttpResponse;
 
 /**
- * Converts object of a type {@link com.hotels.styx.api.HttpResponse}
+ * Converts object of a type {@link LiveHttpResponse}
  * to {@link io.netty.handler.codec.http.HttpResponse}.
  */
 public interface ResponseTranslator {
-    HttpResponse toNettyResponse(com.hotels.styx.api.HttpResponse httpResponse);
+    HttpResponse toNettyResponse(LiveHttpResponse httpResponse);
 }

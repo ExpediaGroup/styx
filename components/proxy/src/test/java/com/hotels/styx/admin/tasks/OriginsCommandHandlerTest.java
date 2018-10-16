@@ -19,7 +19,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.OriginsSnapshot;
 import com.hotels.styx.api.extension.RemoteHost;
@@ -84,35 +84,35 @@ public class OriginsCommandHandlerTest {
 
     @Test
     public void returnsProperErrorMessageForBadCommand() {
-        HttpResponse response = post("/admin/tasks/origins?cmd=foo&appId=foo&originId=bar");
+        LiveHttpResponse response = post("/admin/tasks/origins?cmd=foo&appId=foo&originId=bar");
         assertThat(response, hasStatus(BAD_REQUEST));
         assertThat(response, hasBody("cmd, appId and originId are all required parameters. cmd can be enable_origin|disable_origin"));
     }
 
     @Test
     public void returnsProperErrorMessageForMissingAppId() {
-        HttpResponse response = post("/admin/tasks/origins?cmd=enable_origin&originId=bar");
+        LiveHttpResponse response = post("/admin/tasks/origins?cmd=enable_origin&originId=bar");
         assertThat(response, hasStatus(BAD_REQUEST));
         assertThat(response, hasBody("cmd, appId and originId are all required parameters. cmd can be enable_origin|disable_origin"));
     }
 
     @Test
     public void returnsProperErrorMessageForMissingOriginId() {
-        HttpResponse response = post("/admin/tasks/origins?cmd=disable_origin&appId=foo");
+        LiveHttpResponse response = post("/admin/tasks/origins?cmd=disable_origin&appId=foo");
         assertThat(response, hasStatus(BAD_REQUEST));
         assertThat(response, hasBody("cmd, appId and originId are all required parameters. cmd can be enable_origin|disable_origin"));
     }
 
     @Test(dataProvider = "nonexistentAppOrOriginId")
     public void failsToIssueTheCommandForNonexistentAppId(String appId) {
-        HttpResponse response = post(format("/admin/tasks/origins?cmd=disable_origin&appId=%s&originId=bar", appId));
+        LiveHttpResponse response = post(format("/admin/tasks/origins?cmd=disable_origin&appId=%s&originId=bar", appId));
         assertThat(response, hasStatus(BAD_REQUEST));
         assertThat(response, hasBody(format("application with id=%s is not found", appId)));
     }
 
     @Test(dataProvider = "nonexistentAppOrOriginId")
     public void failsToIssueTheCommandForNonexistentOriginId(String originId) {
-        HttpResponse response = post(format("/admin/tasks/origins?cmd=disable_origin&appId=activeAppId&originId=%s", originId));
+        LiveHttpResponse response = post(format("/admin/tasks/origins?cmd=disable_origin&appId=activeAppId&originId=%s", originId));
         assertThat(response, hasStatus(BAD_REQUEST));
         assertThat(response, hasBody(format("origin with id=%s is not found for application=activeAppId", originId)));
     }
@@ -122,7 +122,7 @@ public class OriginsCommandHandlerTest {
         return new Object[][]{{"foo"}, {"bar"}};
     }
 
-    private HttpResponse post(String path) {
+    private LiveHttpResponse post(String path) {
         LiveHttpRequest request = LiveHttpRequest.post(path).build();
         return getFirst(originsCommand.handle(request, HttpInterceptorContext.create()));
     }

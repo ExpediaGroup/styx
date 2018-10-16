@@ -19,7 +19,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.extension.service.BackendService;
@@ -55,7 +55,7 @@ public class BackendServiceProxy implements HttpHandler {
     }
 
     @Override
-    public Eventual<HttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         return handler.handle(request, context);
     }
 

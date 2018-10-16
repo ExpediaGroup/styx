@@ -17,7 +17,7 @@ package com.hotels.styx.proxy.plugin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
@@ -318,7 +318,7 @@ public class PluginSuppliersTest {
         }
 
         @Override
-        public Eventual<HttpResponse> intercept(LiveHttpRequest request, Chain chain) {
+        public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
             return null;
         }
     }

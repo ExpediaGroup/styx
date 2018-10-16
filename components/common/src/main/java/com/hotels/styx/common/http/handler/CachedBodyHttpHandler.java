@@ -18,7 +18,7 @@ package com.hotels.styx.common.http.handler;
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +57,7 @@ public class CachedBodyHttpHandler extends BaseHttpHandler {
     }
 
     @Override
-    public HttpResponse doHandle(LiveHttpRequest request) {
+    public LiveHttpResponse doHandle(LiveHttpRequest request) {
         return bodySupplier.get().toResponse();
     }
 
@@ -70,7 +70,7 @@ public class CachedBodyHttpHandler extends BaseHttpHandler {
             this.contentLength = content.getBytes(charset).length;
         }
 
-        HttpResponse toResponse() {
+        LiveHttpResponse toResponse() {
             return FullHttpResponse.response(OK)
                     .header(CONTENT_TYPE, contentType)
                     .header(CONTENT_LENGTH, contentLength)

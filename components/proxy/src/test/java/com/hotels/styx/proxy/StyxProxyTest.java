@@ -21,7 +21,7 @@ import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
@@ -90,7 +90,7 @@ public class StyxProxyTest extends SSLSetup {
         assertThat("Server should not be running", !server.isRunning());
     }
 
-    private Eventual<HttpResponse> textResponse(String body) {
+    private Eventual<LiveHttpResponse> textResponse(String body) {
         return Eventual.of(FullHttpResponse.response(OK)
                 .body("Response from http connector", UTF_8)
                 .build()

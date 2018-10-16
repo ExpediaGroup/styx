@@ -18,7 +18,7 @@ package com.hotels.styx.common.http.handler;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
@@ -51,7 +51,7 @@ public class HttpMethodFilteringHandlerTest {
         HttpMethodFilteringHandler post = new HttpMethodFilteringHandler(GET, handler);
 
         LiveHttpRequest request = post("/some-uri").build();
-        HttpResponse response = post.handle(request, HttpInterceptorContext.create()).asCompletableFuture().get();
+        LiveHttpResponse response = post.handle(request, HttpInterceptorContext.create()).asCompletableFuture().get();
 
         assertThat(response.status(), is(METHOD_NOT_ALLOWED));
     }

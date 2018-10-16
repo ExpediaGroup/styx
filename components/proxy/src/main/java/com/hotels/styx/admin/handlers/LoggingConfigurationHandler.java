@@ -19,7 +19,7 @@ import com.google.common.net.MediaType;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.Resource;
 import org.slf4j.Logger;
@@ -54,11 +54,11 @@ public class LoggingConfigurationHandler implements HttpHandler {
     }
 
     @Override
-    public Eventual<HttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         return Eventual.of(generateResponse());
     }
 
-    private HttpResponse generateResponse() {
+    private LiveHttpResponse generateResponse() {
         Content content = contentSupplier.get();
 
         return response(OK)

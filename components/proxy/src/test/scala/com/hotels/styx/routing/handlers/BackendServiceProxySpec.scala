@@ -23,7 +23,7 @@ import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.api.extension.service.spi.{AbstractRegistry, Registry}
 import com.hotels.styx.api.extension.service.spi.{AbstractRegistry, Registry}
-import com.hotels.styx.api.{LiveHttpRequest, HttpResponse, HttpResponseStatus}
+import com.hotels.styx.api.{LiveHttpRequest, LiveHttpResponse, HttpResponseStatus}
 import com.hotels.styx.client.{BackendServiceClient, OriginStatsFactory, OriginsInventory}
 import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded
 import com.hotels.styx.api.extension.service.spi.Registry.{Changes, ReloadResult}
@@ -113,8 +113,8 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
 
   private def clientFactory() = new BackendServiceClientFactory() {
     override def createClient(backendService: BackendService, originsInventory: OriginsInventory, originStatsFactory: OriginStatsFactory): BackendServiceClient = new BackendServiceClient {
-      override def sendRequest(request: LiveHttpRequest): Observable[HttpResponse] = Observable
-        .just(HttpResponse
+      override def sendRequest(request: LiveHttpRequest): Observable[LiveHttpResponse] = Observable
+        .just(LiveHttpResponse
           .response(HttpResponseStatus.OK)
           .addHeader("X-Backend-Service", backendService.id())
           .build()

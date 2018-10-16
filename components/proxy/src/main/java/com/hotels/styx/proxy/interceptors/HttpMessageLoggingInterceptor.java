@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.common.logging.HttpRequestMessageLogger;
@@ -33,7 +33,7 @@ public class HttpMessageLoggingInterceptor implements HttpInterceptor {
     }
 
     @Override
-    public Eventual<HttpResponse> intercept(LiveHttpRequest request, Chain chain) {
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         // Note that the request ID is repeated for request logging so that a single search term can be used to find both request and response logs.
         boolean secure = chain.context().isSecure();
         logger.logRequest(request, null, secure);

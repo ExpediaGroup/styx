@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.api;
 
-import org.hamcrest.Matchers;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
@@ -28,7 +27,7 @@ import rx.subjects.PublishSubject;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -53,10 +52,10 @@ public class ResponseEventListenerTest {
 
     @Test
     public void doesntFireUnnecessaryEvents() {
-        Observable<HttpResponse> publisher = Observable.just(response(OK).body(new ByteStream(Flux.just(new Buffer("hey", UTF_8)))).build());
-        TestSubscriber<HttpResponse> subscriber = TestSubscriber.create();
+        Observable<LiveHttpResponse> publisher = Observable.just(response(OK).body(new ByteStream(Flux.just(new Buffer("hey", UTF_8)))).build());
+        TestSubscriber<LiveHttpResponse> subscriber = TestSubscriber.create();
 
-        Observable<HttpResponse> response = ResponseEventListener.from(publisher)
+        Observable<LiveHttpResponse> response = ResponseEventListener.from(publisher)
                 .whenCancelled(() -> cancelled.set(true))
                 .whenResponseError(cause -> responseError.set(cause))
                 .whenContentError(cause -> contentError.set(cause))
@@ -75,10 +74,10 @@ public class ResponseEventListenerTest {
 
     @Test
     public void firesWhenResponseIsCancelledBeforeHeaders() {
-        PublishSubject<HttpResponse> publisher = PublishSubject.create();
-        TestSubscriber<HttpResponse> subscriber = TestSubscriber.create(0);
+        PublishSubject<LiveHttpResponse> publisher = PublishSubject.create();
+        TestSubscriber<LiveHttpResponse> subscriber = TestSubscriber.create(0);
 
-        Observable<HttpResponse> response = ResponseEventListener.from(publisher)
+        Observable<LiveHttpResponse> response = ResponseEventListener.from(publisher)
                 .whenCancelled(() -> cancelled.set(true))
                 .apply();
 
@@ -93,7 +92,7 @@ public class ResponseEventListenerTest {
     public void firesWhenContentCancelled() {
         TestPublisher<Buffer> contentPublisher = TestPublisher.create();
 
-        HttpResponse response = ResponseEventListener.from(
+        LiveHttpResponse response = ResponseEventListener.from(
                 Observable.just(response(OK)
                         .body(new ByteStream(contentPublisher))
                         .build()))
@@ -114,10 +113,10 @@ public class ResponseEventListenerTest {
 
     @Test
     public void firesOnResponseError() {
-        Observable<HttpResponse> publisher = Observable.error(new RuntimeException());
-        TestSubscriber<HttpResponse> subscriber = TestSubscriber.create();
+        Observable<LiveHttpResponse> publisher = Observable.error(new RuntimeException());
+        TestSubscriber<LiveHttpResponse> subscriber = TestSubscriber.create();
 
-        Observable<HttpResponse> response = ResponseEventListener.from(publisher)
+        Observable<LiveHttpResponse> response = ResponseEventListener.from(publisher)
                 .whenResponseError(cause -> responseError.set(cause))
                 .apply();
 
@@ -128,14 +127,14 @@ public class ResponseEventListenerTest {
 
     @Test
     public void ignoresResponseErrorAfterHeaders() {
-        TestSubscriber<HttpResponse> subscriber = TestSubscriber.create();
-        Observable<HttpResponse> publisher = Observable.just(
+        TestSubscriber<LiveHttpResponse> subscriber = TestSubscriber.create();
+        Observable<LiveHttpResponse> publisher = Observable.just(
                 response(OK)
                         .body(new ByteStream(Flux.just(new Buffer("hey", UTF_8))))
                         .build())
                 .concatWith(Observable.error(new RuntimeException()));
 
-        Observable<HttpResponse> response = ResponseEventListener.from(publisher)
+        Observable<LiveHttpResponse> response = ResponseEventListener.from(publisher)
                 .whenCancelled(() -> cancelled.set(true))
                 .whenResponseError(cause -> responseError.set(cause))
                 .whenContentError(cause -> contentError.set(cause))
@@ -152,12 +151,12 @@ public class ResponseEventListenerTest {
 
     @Test
     public void firesResponseContentError() {
-        Observable<HttpResponse> publisher = Observable.just(
+        Observable<LiveHttpResponse> publisher = Observable.just(
                 response(OK)
                         .body(new ByteStream(Flux.error(new RuntimeException())))
                         .build());
 
-        HttpResponse response = ResponseEventListener.from(publisher)
+        LiveHttpResponse response = ResponseEventListener.from(publisher)
                 .whenContentError(cause -> responseError.set(cause))
                 .apply()
                 .toBlocking()

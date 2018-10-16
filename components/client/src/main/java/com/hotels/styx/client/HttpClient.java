@@ -18,7 +18,7 @@ package com.hotels.styx.client;
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -105,7 +105,7 @@ public interface HttpClient {
      * fashion instead of being aggregated into a FullHttpResponse.
      */
     interface StreamingTransaction {
-        CompletableFuture<HttpResponse> send(LiveHttpRequest request);
-        CompletableFuture<HttpResponse> send(FullHttpRequest request);
+        CompletableFuture<LiveHttpResponse> send(LiveHttpRequest request);
+        CompletableFuture<LiveHttpResponse> send(FullHttpRequest request);
     }
 }

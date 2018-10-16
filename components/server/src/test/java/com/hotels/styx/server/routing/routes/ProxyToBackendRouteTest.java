@@ -16,13 +16,13 @@
 package com.hotels.styx.server.routing.routes;
 
 import com.hotels.styx.client.BackendServiceClient;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 import rx.Observable;
 
 import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,7 +39,7 @@ public class ProxyToBackendRouteTest {
 
         ProxyToBackendRoute proxy = ProxyToBackendRoute.proxyToBackend(client);
 
-        HttpResponse response = proxy.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
+        LiveHttpResponse response = proxy.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
         assertThat(response.status(), is(OK));
     }
 }

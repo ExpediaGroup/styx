@@ -16,7 +16,7 @@
 package com.hotels.styx.server;
 
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 
 import java.net.InetSocketAddress;
@@ -32,10 +32,10 @@ public interface HttpErrorStatusListener {
         public void proxyErrorOccurred(Throwable cause) { }
 
         @Override
-        public void proxyWriteFailure(LiveHttpRequest request, HttpResponse response, Throwable cause) { }
+        public void proxyWriteFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) { }
 
         @Override
-        public void proxyingFailure(LiveHttpRequest request, HttpResponse response, Throwable cause) { }
+        public void proxyingFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) { }
 
         @Override
         public void proxyErrorOccurred(HttpResponseStatus status, Throwable cause) { }
@@ -60,7 +60,7 @@ public interface HttpErrorStatusListener {
      *
      * @param cause the throwable class associated with this error
      */
-    void proxyWriteFailure(LiveHttpRequest request, HttpResponse response, Throwable cause);
+    void proxyWriteFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause);
 
     /**
      * To be called when an exception was thrown in styx while proxying.
@@ -68,7 +68,7 @@ public interface HttpErrorStatusListener {
      *
      * @param cause the throwable class associated with this error
      */
-    void proxyingFailure(LiveHttpRequest request, HttpResponse response, Throwable cause);
+    void proxyingFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause);
 
     /**
      * To be called when an exception was thrown in styx while proxying.

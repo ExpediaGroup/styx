@@ -62,7 +62,7 @@ public class FullHttpResponseTest {
                 .body("message content", UTF_8)
                 .build();
 
-        HttpResponse streaming = response.toStreamingResponse();
+        LiveHttpResponse streaming = response.toStreamingResponse();
 
         assertThat(streaming.version(), is(HTTP_1_1));
         assertThat(streaming.status(), is(CREATED));
@@ -322,7 +322,7 @@ public class FullHttpResponseTest {
 
     @Test(dataProvider = "emptyBodyResponses")
     public void convertsToStreamingHttpResponseWithEmptyBody(FullHttpResponse response) throws ExecutionException, InterruptedException {
-        HttpResponse streaming = response.toStreamingResponse();
+        LiveHttpResponse streaming = response.toStreamingResponse();
 
         byte[] result = streaming.body().aggregate(1000)
                 .get()
@@ -444,7 +444,7 @@ public class FullHttpResponseTest {
     public void toFullResponseReleasesOriginalRefCountedBuffers() throws ExecutionException, InterruptedException {
         Buffer content = new Buffer(Unpooled.copiedBuffer("original", UTF_8));
 
-        HttpResponse original = HttpResponse.response(OK)
+        LiveHttpResponse original = LiveHttpResponse.response(OK)
                 .body(new ByteStream(Flux.just(content)))
                 .build();
 

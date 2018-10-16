@@ -18,7 +18,7 @@ package com.hotels.styx.admin.handlers;
 import com.codahale.metrics.jvm.ThreadDump;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import java.io.ByteArrayOutputStream;
@@ -42,7 +42,7 @@ public class ThreadsHandler extends BaseHttpHandler {
     }
 
     @Override
-    public HttpResponse doHandle(LiveHttpRequest request) {
+    public LiveHttpResponse doHandle(LiveHttpRequest request) {
         return FullHttpResponse.response(OK)
                 .disableCaching()
                 .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)

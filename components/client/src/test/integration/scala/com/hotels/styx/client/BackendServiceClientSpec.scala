@@ -27,6 +27,7 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import StyxBackendServiceClient._
+import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.support.api.BlockingObservables.{waitForResponse, waitForStreamingResponse}
 import com.hotels.styx.support.server.FakeHttpServer
@@ -50,7 +51,7 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Shou
 
   val responseTimeout = 1000
 
-  var testSubscriber: TestSubscriber[com.hotels.styx.api.HttpResponse] = _
+  var testSubscriber: TestSubscriber[LiveHttpResponse] = _
 
   override protected def beforeAll(): Unit = {
     originOneServer.start()
@@ -67,7 +68,7 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Shou
 
   before {
     originOneServer.reset()
-    testSubscriber = new TestSubscriber[com.hotels.styx.api.HttpResponse]()
+    testSubscriber = new TestSubscriber[LiveHttpResponse]()
 
     val backendService = new BackendService.Builder()
       .origins(webappOrigin)

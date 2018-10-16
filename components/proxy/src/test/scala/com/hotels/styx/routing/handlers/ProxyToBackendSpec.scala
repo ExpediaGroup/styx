@@ -104,7 +104,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
 
   private def clientFactory() = new BackendServiceClientFactory() {
     override def createClient(backendService: BackendService, originsInventory: OriginsInventory, originStatsFactory: OriginStatsFactory): BackendServiceClient = new BackendServiceClient {
-      override def sendRequest(request: LiveHttpRequest): Observable[HttpResponse] = {
+      override def sendRequest(request: LiveHttpRequest): Observable[LiveHttpResponse] = {
         backendService.id() should be (id("ba"))
         backendService.connectionPoolConfig().maxConnectionsPerHost() should be (45)
         backendService.connectionPoolConfig().maxPendingConnectionsPerHost() should be (15)
@@ -112,7 +112,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
         backendService.origins().head.id() should be(id("ba1"))
         backendService.origins().head.port should be(9094)
         Observable
-          .just(HttpResponse
+          .just(LiveHttpResponse
             .response(OK)
             .addHeader("X-Backend-Service", backendService.id())
             .build()

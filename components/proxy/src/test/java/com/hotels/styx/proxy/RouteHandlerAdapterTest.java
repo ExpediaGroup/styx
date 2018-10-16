@@ -18,7 +18,7 @@ package com.hotels.styx.proxy;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.HttpRouter;
@@ -27,7 +27,7 @@ import org.testng.annotations.Test;
 import java.util.Optional;
 
 import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
 public class RouteHandlerAdapterTest {
 
     private LiveHttpRequest request = get("/").build();
-    private HttpResponse respOk = response(OK).build();
+    private LiveHttpResponse respOk = response(OK).build();
 
     @Test
     public void injectsToPipelineWhenRouteFound() throws Exception {
@@ -48,7 +48,7 @@ public class RouteHandlerAdapterTest {
         HttpRouter router = mock(HttpRouter.class);
         when(router.route(any(LiveHttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(Optional.of(pipeline));
 
-        HttpResponse response = new RouteHandlerAdapter(router).handle(request, HttpInterceptorContext.create()).asCompletableFuture().get();
+        LiveHttpResponse response = new RouteHandlerAdapter(router).handle(request, HttpInterceptorContext.create()).asCompletableFuture().get();
 
         assertThat(response.status(), is(OK));
     }

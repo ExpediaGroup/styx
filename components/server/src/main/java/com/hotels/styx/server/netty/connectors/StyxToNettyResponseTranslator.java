@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.server.netty.connectors;
 
+import com.hotels.styx.api.LiveHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -22,7 +23,7 @@ import io.netty.handler.codec.http.HttpVersion;
 
 class StyxToNettyResponseTranslator implements ResponseTranslator {
 
-    public HttpResponse toNettyResponse(com.hotels.styx.api.HttpResponse httpResponse) {
+    public HttpResponse toNettyResponse(LiveHttpResponse httpResponse) {
         io.netty.handler.codec.http.HttpVersion version = toNettyVersion(httpResponse.version());
         HttpResponseStatus httpResponseStatus = HttpResponseStatus.valueOf(httpResponse.status().code());
 

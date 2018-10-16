@@ -26,7 +26,7 @@
  * for shaping or modifying proxied HTTP messages, including requests and responses.
  * <p></p>
  * Styx represents proxied live traffic as instances of {@link com.hotels.styx.api.LiveHttpRequest} and
- * {@link com.hotels.styx.api.HttpResponse} classes. They offer an interface for processing
+ * {@link com.hotels.styx.api.LiveHttpResponse} classes. They offer an interface for processing
  * a HTTP message content as a stream of network events. These classes are used
  * (1) from HttpInterceptors to process live traffic or (2) to deal with arbitrarily
  * large HTTP content.

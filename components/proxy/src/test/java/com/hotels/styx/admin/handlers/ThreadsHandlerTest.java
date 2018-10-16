@@ -17,7 +17,7 @@ package com.hotels.styx.admin.handlers;
 
 
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
@@ -44,7 +44,7 @@ public class ThreadsHandlerTest {
         assertThat(response.bodyAs(UTF_8), containsString("Finalizer"));
     }
 
-    private HttpResponse handle(LiveHttpRequest request) {
+    private LiveHttpResponse handle(LiveHttpRequest request) {
         return getFirst(handler.handle(request, HttpInterceptorContext.create()));
     }
 }

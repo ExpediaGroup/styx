@@ -17,7 +17,7 @@ package com.hotels.styx.plugins;
 
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import org.slf4j.Logger;
 
@@ -28,7 +28,7 @@ public class ContentCutoffPlugin implements Plugin {
     private static final Logger LOGGER = getLogger(ContentCutoffPlugin.class);
 
     @Override
-    public Eventual<HttpResponse> intercept(LiveHttpRequest httpRequest, Chain chain) {
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest httpRequest, Chain chain) {
         return chain
                 .proceed(httpRequest)
                 .flatMap(response -> response.toFullResponse(1000000)

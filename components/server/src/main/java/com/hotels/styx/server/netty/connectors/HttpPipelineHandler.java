@@ -23,7 +23,7 @@ import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
@@ -122,7 +122,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
     private volatile Subscription subscription;
     private volatile LiveHttpRequest ongoingRequest;
-    private volatile HttpResponse ongoingResponse;
+    private volatile LiveHttpResponse ongoingResponse;
     private volatile LiveHttpRequest prematureRequest;
 
     private volatile CompletableFuture<Void> future;
@@ -256,9 +256,9 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         // the same call stack as "onLegitimateRequest" handler. This happens when a plugin
         // generates a response.
         try {
-            Observable<HttpResponse> responseObservable = toObservable(httpPipeline.handle(v11Request, newInterceptorContext(ctx)));
+            Observable<LiveHttpResponse> responseObservable = toObservable(httpPipeline.handle(v11Request, newInterceptorContext(ctx)));
             subscription = responseObservable
-                    .subscribe(new Subscriber<HttpResponse>() {
+                    .subscribe(new Subscriber<LiveHttpResponse>() {
                                    @Override
                                    public void onCompleted() {
                                        eventProcessor.submit(new ResponseObservableCompletedEvent(ctx, request.id()));
@@ -270,7 +270,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
                                    }
 
                                    @Override
-                                   public void onNext(HttpResponse response) {
+                                   public void onNext(LiveHttpResponse response) {
                                        eventProcessor.submit(new ResponseReceivedEvent(response, ctx));
                                    }
                                }
@@ -278,7 +278,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
             return WAITING_FOR_RESPONSE;
         } catch (Throwable cause) {
-            HttpResponse response = exceptionToResponse(cause, request);
+            LiveHttpResponse response = exceptionToResponse(cause, request);
             httpErrorStatusListener.proxyErrorOccurred(request, remoteAddress(ctx), response.status(), cause);
             statsSink.onTerminate(request.id());
             if (ctx.channel().isActive()) {
@@ -292,7 +292,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         return new HttpInterceptorContext(this.secure, remoteAddress(ctx));
     }
 
-    private State onResponseReceived(HttpResponse response, ChannelHandlerContext ctx) {
+    private State onResponseReceived(LiveHttpResponse response, ChannelHandlerContext ctx) {
         ongoingResponse = response;
         HttpResponseWriter httpResponseWriter = responseWriterFactory.create(ctx);
 
@@ -399,7 +399,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         }
 
         if (!isIoException(cause)) {
-            HttpResponse response = exceptionToResponse(cause, ongoingRequest);
+            LiveHttpResponse response = exceptionToResponse(cause, ongoingRequest);
             httpErrorStatusListener.proxyErrorOccurred(response.status(), cause);
             if (ctx.channel().isActive()) {
                 respondAndClose(ctx, response);
@@ -416,7 +416,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         }
     }
 
-    private void respondAndClose(ChannelHandlerContext ctx, HttpResponse response) {
+    private void respondAndClose(ChannelHandlerContext ctx, LiveHttpResponse response) {
         HttpResponseWriter responseWriter = responseWriterFactory.create(ctx);
         CompletableFuture<Void> future = responseWriter.write(response);
         future.handle((ignore, reason) -> {
@@ -442,7 +442,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
             return TERMINATED;
         }
 
-        HttpResponse response = exceptionToResponse(cause, ongoingRequest);
+        LiveHttpResponse response = exceptionToResponse(cause, ongoingRequest);
         responseWriterFactory.create(ctx)
                 .write(response)
                 .handle((ignore, exception) -> {
@@ -479,7 +479,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
         cancelSubscription();
         statsSink.onTerminate(ongoingRequest.id());
-        responseWriterFactory.create(ctx).write(HttpResponse.response(INTERNAL_SERVER_ERROR).build())
+        responseWriterFactory.create(ctx).write(LiveHttpResponse.response(INTERNAL_SERVER_ERROR).build())
                 .handle((dontCare, ignore) -> ctx.close());
         return TERMINATED;
     }
@@ -488,14 +488,14 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         return throwable instanceof IOException;
     }
 
-    private HttpResponse exceptionToResponse(Throwable exception, LiveHttpRequest request) {
+    private LiveHttpResponse exceptionToResponse(Throwable exception, LiveHttpRequest request) {
         HttpResponseStatus status = status(exception instanceof PluginException
                 ? exception.getCause()
                 : exception);
 
         String message = status.code() >= 500 ? "Site temporarily unavailable." : status.description();
 
-        return responseEnhancer.enhance(HttpResponse.response(status), request)
+        return responseEnhancer.enhance(LiveHttpResponse.response(status), request)
                 .header(CONTENT_LENGTH, message.getBytes(UTF_8).length)
                 .body(new ByteStream(Flux.just(new Buffer(message, UTF_8))))
                 .build();
@@ -543,10 +543,10 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     }
 
     private static class ResponseReceivedEvent {
-        private final HttpResponse response;
+        private final LiveHttpResponse response;
         private final ChannelHandlerContext ctx;
 
-        ResponseReceivedEvent(HttpResponse response, ChannelHandlerContext ctx) {
+        ResponseReceivedEvent(LiveHttpResponse response, ChannelHandlerContext ctx) {
             this.response = response;
             this.ctx = ctx;
         }

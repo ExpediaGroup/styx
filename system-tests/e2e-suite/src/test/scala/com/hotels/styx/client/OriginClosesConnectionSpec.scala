@@ -18,7 +18,7 @@ package com.hotels.styx.client
 import ch.qos.logback.classic.Level
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.FullHttpRequest.get
-import com.hotels.styx.api.{Buffer, HttpResponse, extension}
+import com.hotels.styx.api.{Buffer, LiveHttpResponse, extension}
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.HttpResponseStatus.OK
@@ -115,7 +115,7 @@ class OriginClosesConnectionSpec extends FunSuite
         .loadBalancer(busyConnectionStrategy(activeOrigins(backendService)))
       .build
 
-    val responseSubscriber = new TestSubscriber[HttpResponse]()
+    val responseSubscriber = new TestSubscriber[LiveHttpResponse]()
     val contentSubscriber = new TestSubscriber[Buffer](1)
 
     val startTime = System.currentTimeMillis()
@@ -126,7 +126,7 @@ class OriginClosesConnectionSpec extends FunSuite
         .toStreamingRequest)
 
     responseObservable
-      .doOnNext((t: HttpResponse) => toObservable(t.body()).subscribe(contentSubscriber))
+      .doOnNext((t: LiveHttpResponse) => toObservable(t.body()).subscribe(contentSubscriber))
       .subscribe(responseSubscriber)
 
     responseSubscriber.awaitTerminalEvent()

@@ -17,7 +17,7 @@ package com.hotels.styx.plugins;
 
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 
 import static rx.RxReactiveStreams.toObservable;
@@ -26,7 +26,7 @@ import static rx.RxReactiveStreams.toPublisher;
 public class OnCompleteErrorPlugin implements Plugin {
 
     @Override
-    public Eventual<HttpResponse> intercept(LiveHttpRequest request, Chain chain) {
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
 
         return new Eventual<>(toPublisher(toObservable(chain.proceed(request))
                 .doOnCompleted(() -> {

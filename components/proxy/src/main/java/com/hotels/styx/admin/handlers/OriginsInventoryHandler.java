@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.OriginsChangeListener;
 import com.hotels.styx.api.extension.OriginsSnapshot;
@@ -64,7 +64,7 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsC
     }
 
     @Override
-    protected HttpResponse doHandle(LiveHttpRequest request) {
+    protected LiveHttpResponse doHandle(LiveHttpRequest request) {
         return response(OK)
                 .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
                 .disableCaching()

@@ -85,7 +85,7 @@ import rx.lang.scala.schedulers._
 import scala.compat.java8.FunctionConverters.asJavaFunction
 
 class AsyncRequestContentDelayPlugin extends PluginAdapter {
-  override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[HttpResponse] = {
+  override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
     val contentTransformation: rx.Observable[Buffer] =
       toObservable(request.body())
         .observeOn(ComputationScheduler())

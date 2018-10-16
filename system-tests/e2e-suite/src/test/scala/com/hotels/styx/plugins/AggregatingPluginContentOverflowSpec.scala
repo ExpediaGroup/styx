@@ -64,7 +64,7 @@ class AggregatingPluginContentOverflowSpec extends FunSpec
 
       mockServer.stub("/body", responseSupplier(
         () => {
-          HttpResponse.response(OK).body(new ByteStream(toPublisher(toJavaObservable(
+          LiveHttpResponse.response(OK).body(new ByteStream(toPublisher(toJavaObservable(
                         delay(500.millis,
                           Seq(
                             buf("a" * 1000),

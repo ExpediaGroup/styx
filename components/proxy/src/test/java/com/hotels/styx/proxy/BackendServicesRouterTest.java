@@ -19,7 +19,7 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
@@ -35,7 +35,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
@@ -211,7 +211,7 @@ public class BackendServicesRouterTest {
         assertThat(proxyTo(route2, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
     }
 
-    private HttpResponse proxyTo(Optional<HttpHandler> pipeline, LiveHttpRequest request) throws ExecutionException, InterruptedException {
+    private LiveHttpResponse proxyTo(Optional<HttpHandler> pipeline, LiveHttpRequest request) throws ExecutionException, InterruptedException {
         return pipeline.get().handle(request, context).asCompletableFuture().get();
     }
 
@@ -345,7 +345,7 @@ public class BackendServicesRouterTest {
                 .build();
     }
 
-    private static Observable<HttpResponse> responseWithOriginIdHeader(BackendService backendService) {
+    private static Observable<LiveHttpResponse> responseWithOriginIdHeader(BackendService backendService) {
         return just(response(OK)
                 .header(ORIGIN_ID_DEFAULT, backendService.id())
                 .build());

@@ -17,7 +17,7 @@ package com.hotels.styx.client.connectionpool.stubs;
 
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.extension.Announcer;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
 import com.hotels.styx.api.extension.Origin;
@@ -50,7 +50,7 @@ public class StubConnectionFactory implements Connection.Factory {
         }
 
         @Override
-        public Observable<HttpResponse> write(LiveHttpRequest request) {
+        public Observable<LiveHttpResponse> write(LiveHttpRequest request) {
             throw new UnsupportedOperationException("Not implemented");
         }
 

@@ -19,7 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
@@ -47,13 +47,13 @@ public class OriginsHandler extends BaseHttpHandler {
     }
 
     @Override
-    protected HttpResponse doHandle(LiveHttpRequest request) {
+    protected LiveHttpResponse doHandle(LiveHttpRequest request) {
         Iterable<BackendService> backendServices = backendServicesRegistry.get();
 
         return jsonResponse(backendServices, isPrettyPrint(request));
     }
 
-    private HttpResponse jsonResponse(Object object, boolean prettyPrint) {
+    private LiveHttpResponse jsonResponse(Object object, boolean prettyPrint) {
         try {
             String jsonContent = marshal(object, prettyPrint);
             return response(OK)

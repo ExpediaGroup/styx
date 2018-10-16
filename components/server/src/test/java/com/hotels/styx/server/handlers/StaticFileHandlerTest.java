@@ -18,7 +18,7 @@ package com.hotels.styx.server.handlers;
 import com.google.common.io.Files;
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -138,7 +138,7 @@ public class StaticFileHandlerTest {
 
         handler = new StaticFileHandler(dir);
 
-        HttpResponse response = handle(get("/" + path).build());
+        LiveHttpResponse response = handle(get("/" + path).build());
         assertThat(response, hasStatus(OK));
         assertThat(response.contentType(), isValue(mediaType.toString()));
     }
@@ -180,7 +180,7 @@ public class StaticFileHandlerTest {
         }
     }
 
-    private HttpResponse handle(LiveHttpRequest request) {
+    private LiveHttpResponse handle(LiveHttpRequest request) {
         return getFirst(handler.handle(request, new HttpInterceptorContext()));
     }
 }

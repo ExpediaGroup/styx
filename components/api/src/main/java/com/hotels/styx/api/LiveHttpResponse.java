@@ -47,17 +47,17 @@ import static java.util.stream.Collectors.toList;
 /**
  * An HTTP response object with a byte stream body.
  * <p>
- * An {@code HttpResponse} is used in {@link HttpInterceptor} where each content
+ * An {@code LiveHttpResponse} is used in {@link HttpInterceptor} where each content
  * chunk must be processed as they arrive. It is also useful for dealing with
  * very large content sizes, and in situations where content size is not known
  * upfront.
  * <p>
- * An {@code HttpResponse} object is immutable with respect to the response
+ * An {@code LiveHttpResponse} object is immutable with respect to the response
  * attributes and HTTP headers. Once an instance is created, they cannot change.
  * <p>
- * An {@code HttpResponse} body is a byte buffer stream that can be consumed
+ * An {@code LiveHttpResponse} body is a byte buffer stream that can be consumed
  * as sequence of asynchronous events. Once consumed, the stream is exhausted and
- * can not be reused. Conceptually each {@code HttpResponse} object has an
+ * can not be reused. Conceptually each {@code LiveHttpResponse} object has an
  * associated producer object that publishes data to the stream. For example,
  * a Styx Server implements a content producer for {@link HttpInterceptor}
  * extensions. The producer receives data chunks from a network socket and
@@ -78,13 +78,13 @@ import static java.util.stream.Collectors.toList;
  * from the current response object. It is useful for transforming a response
  * to another one my modifying one or more of its attributes.
  */
-public class HttpResponse implements StreamingHttpMessage {
+public class LiveHttpResponse implements StreamingHttpMessage {
     private final HttpVersion version;
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
     private final ByteStream body;
 
-    HttpResponse(Builder builder) {
+    LiveHttpResponse(Builder builder) {
         this.version = builder.version;
         this.status = builder.status;
         this.headers = builder.headers.build();
@@ -146,7 +146,7 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     /**
-     * Return a new {@link HttpResponse.Builder} that will inherit properties from this response.
+     * Return a new {@link LiveHttpResponse.Builder} that will inherit properties from this response.
      * <p>
      * This allows a new response to be made that is identical to this one
      * except for the properties overridden by the builder methods.
@@ -252,7 +252,7 @@ public class HttpResponse implements StreamingHttpMessage {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        HttpResponse other = (HttpResponse) obj;
+        LiveHttpResponse other = (LiveHttpResponse) obj;
         return Objects.equal(this.version, other.version)
                 && Objects.equal(this.status, other.status)
                 && Objects.equal(this.headers, other.headers);
@@ -287,12 +287,12 @@ public class HttpResponse implements StreamingHttpMessage {
         }
 
         /**
-         * Creates a new {@link Builder} object from an existing {@link HttpResponse} object.
+         * Creates a new {@link Builder} object from an existing {@link LiveHttpResponse} object.
          * Similar to {@link this.newBuilder} method.
          *
          * @param response a response object for which the builder is based on
          */
-        public Builder(HttpResponse response) {
+        public Builder(LiveHttpResponse response) {
             this.status = response.status();
             this.version = response.version();
             this.headers = response.headers().newBuilder();
@@ -565,7 +565,7 @@ public class HttpResponse implements StreamingHttpMessage {
         /**
          * Builds a new full response based on the settings configured in this builder.
          * <p>
-         * Validates and builds a {link HttpResponse} object. Object validation can be
+         * Validates and builds a {link LiveHttpResponse} object. Object validation can be
          * disabled with {@link this.disableValidation} method.
          * <p>
          * When validation is enabled (by default), ensures that:
@@ -578,12 +578,12 @@ public class HttpResponse implements StreamingHttpMessage {
          * @return a new full response.
          * @throws IllegalArgumentException when validation fails
          */
-        public HttpResponse build() {
+        public LiveHttpResponse build() {
             if (validate) {
                 ensureContentLengthIsValid();
             }
 
-            return new HttpResponse(this);
+            return new LiveHttpResponse(this);
         }
 
         Builder ensureContentLengthIsValid() {

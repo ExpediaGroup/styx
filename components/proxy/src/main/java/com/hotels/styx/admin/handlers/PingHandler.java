@@ -16,7 +16,7 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
@@ -31,7 +31,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class PingHandler extends BaseHttpHandler {
     @Override
-    protected HttpResponse doHandle(LiveHttpRequest request) {
+    protected LiveHttpResponse doHandle(LiveHttpRequest request) {
         return response(OK)
                 .disableCaching()
                 .addHeader(CONTENT_TYPE, PLAIN_TEXT_UTF_8.toString())

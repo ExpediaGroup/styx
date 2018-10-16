@@ -20,7 +20,7 @@ import com.hotels.styx.api.LiveHttpRequest;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
 import static com.hotels.styx.proxy.interceptors.ReturnResponseChain.returnsResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;

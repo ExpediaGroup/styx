@@ -17,8 +17,8 @@ package com.hotels.styx.proxy;
 
 import com.codahale.metrics.Counter;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpErrorStatusListener;
-import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
@@ -63,12 +63,12 @@ public class HttpErrorStatusMetrics implements HttpErrorStatusListener {
     }
 
     @Override
-    public void proxyWriteFailure(LiveHttpRequest request, HttpResponse response, Throwable cause) {
+    public void proxyWriteFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) {
         incrementExceptionCounter(cause, response.status());
     }
 
     @Override
-    public void proxyingFailure(LiveHttpRequest request, HttpResponse response, Throwable cause) {
+    public void proxyingFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) {
         incrementExceptionCounter(cause, response.status());
     }
 

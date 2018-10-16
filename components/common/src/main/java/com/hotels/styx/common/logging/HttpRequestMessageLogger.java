@@ -16,7 +16,7 @@
 package com.hotels.styx.common.logging;
 
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;
 import org.slf4j.Logger;
 
@@ -50,7 +50,7 @@ public class HttpRequestMessageLogger {
         }
     }
 
-    public void logResponse(LiveHttpRequest request, HttpResponse response) {
+    public void logResponse(LiveHttpRequest request, LiveHttpResponse response) {
         if (response == null) {
             logger.warn("requestId={}, response=null", id(request));
         } else {
@@ -58,7 +58,7 @@ public class HttpRequestMessageLogger {
         }
     }
 
-    public void logResponse(LiveHttpRequest request, HttpResponse response, boolean secure) {
+    public void logResponse(LiveHttpRequest request, LiveHttpResponse response, boolean secure) {
         if (response == null) {
             logger.warn("requestId={}, response=null", id(request));
         } else {
@@ -70,7 +70,7 @@ public class HttpRequestMessageLogger {
         return request != null ? request.id() : null;
     }
 
-    private static Info information(HttpResponse response, boolean longFormatEnabled) {
+    private static Info information(LiveHttpResponse response, boolean longFormatEnabled) {
         Info info = new Info().add("status", response.status());
 
         if (longFormatEnabled) {

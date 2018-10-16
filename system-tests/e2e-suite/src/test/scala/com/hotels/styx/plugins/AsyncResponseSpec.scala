@@ -81,9 +81,9 @@ import scala.compat.java8.FunctionConverters.asJavaFunction
 
 
 class AsyncContentDelayPlugin extends PluginAdapter {
-  override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[HttpResponse] = {
+  override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
     chain.proceed(request)
-      .flatMap(asJavaFunction((response: HttpResponse) => {
+      .flatMap(asJavaFunction((response: LiveHttpResponse) => {
         Eventual.from(
           Future {
             Thread.sleep(1000)

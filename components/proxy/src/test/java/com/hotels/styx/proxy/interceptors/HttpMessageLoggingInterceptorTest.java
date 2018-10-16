@@ -17,7 +17,7 @@ package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
@@ -27,7 +27,7 @@ import org.testng.annotations.Test;
 
 import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
@@ -112,10 +112,10 @@ public class HttpMessageLoggingInterceptorTest {
     }
 
 
-    private static HttpInterceptor.Chain chain(HttpResponse.Builder resp) {
+    private static HttpInterceptor.Chain chain(LiveHttpResponse.Builder resp) {
         return new HttpInterceptor.Chain() {
             @Override
-            public Eventual<HttpResponse> proceed(LiveHttpRequest request) {
+            public Eventual<LiveHttpResponse> proceed(LiveHttpRequest request) {
                 return Eventual.of(resp.build());
             }
 
@@ -126,7 +126,7 @@ public class HttpMessageLoggingInterceptorTest {
         };
     }
 
-    private static void consume(Eventual<HttpResponse> resp) {
+    private static void consume(Eventual<LiveHttpResponse> resp) {
         await(resp.flatMap(it -> it.toFullResponse(1000000)).asCompletableFuture());
     }
 }
