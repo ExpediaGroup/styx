@@ -78,7 +78,7 @@ import static java.util.stream.Stream.concat;
  * method. It creates a new {@link Builder} with all message properties and
  * body content cloned in.
  */
-public class HttpRequest implements FullHttpMessage {
+public class HttpRequest implements HttpMessage {
     private final Object id;
     private final HttpVersion version;
     private final HttpMethod method;

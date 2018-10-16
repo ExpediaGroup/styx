@@ -64,7 +64,7 @@ import static java.util.stream.Collectors.toList;
  * method. It creates a new {@link Builder} with all message properties and
  * body content cloned in.
  */
-public class HttpResponse implements FullHttpMessage {
+public class HttpResponse implements HttpMessage {
     private final HttpVersion version;
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
