@@ -87,7 +87,7 @@ public class TransportTest {
     }
 
     @Test
-    public void returnsConnectionBackToPool_headersCancelled() {
+    public void returnsConnectionBackToPoolDueToCancelledHeaders() {
         Connection connection = mockConnection(just(response));
         ConnectionPool pool = mockPool(connection);
 
@@ -149,7 +149,7 @@ public class TransportTest {
     }
 
     @Test
-    public void returnsConnectionBackToPool_delayedResponseError() {
+    public void returnsConnectionBackToPoolDueToDelayedResponseError() {
         Connection connection = mockConnection(responseProvider);
         ConnectionPool pool = mockPool(connection);
 
@@ -166,7 +166,7 @@ public class TransportTest {
     }
 
     @Test
-    public void terminatesConnection_emptyHeadersObservable() {
+    public void terminatesConnectionDueToObservableEmittingOnCompleteWithoutHeaders() {
         Connection connection = mockConnection(Observable.empty());
         ConnectionPool pool = mockPool(connection);
 
@@ -196,7 +196,7 @@ public class TransportTest {
     }
 
     @Test
-    public void terminatesConnection_bodyIsUnsubscribed() {
+    public void terminatesConnectionDueToUnsubscribedBody() {
         TestPublisher<Buffer> testPublisher = TestPublisher.create();
         Connection connection = mockConnection(Observable.just(HttpResponse.response(OK).body(new ByteStream(testPublisher)).build()));
         ConnectionPool pool = mockPool(connection);
