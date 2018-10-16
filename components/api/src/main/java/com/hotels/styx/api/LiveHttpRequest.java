@@ -92,7 +92,7 @@ import static java.util.stream.Stream.concat;
  * from the current request object. It is useful for transforming a request
  * to another one my modifying one or more of its attributes.
  */
-public class LiveHttpRequest implements StreamingHttpMessage {
+public class LiveHttpRequest implements LiveHttpMessage {
     private final Object id;
     private final HttpVersion version;
     private final HttpMethod method;

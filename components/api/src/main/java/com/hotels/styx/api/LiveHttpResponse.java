@@ -78,7 +78,7 @@ import static java.util.stream.Collectors.toList;
  * from the current response object. It is useful for transforming a response
  * to another one my modifying one or more of its attributes.
  */
-public class LiveHttpResponse implements StreamingHttpMessage {
+public class LiveHttpResponse implements LiveHttpMessage {
     private final HttpVersion version;
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
