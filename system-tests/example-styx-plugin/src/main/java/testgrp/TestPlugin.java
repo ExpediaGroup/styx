@@ -16,7 +16,7 @@
 package testgrp;
 
 import com.google.common.base.Charsets;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -69,7 +69,7 @@ public class TestPlugin implements Plugin {
                                 .header("X-Hcom-Styx-Started", styxStarted)
                                 .header("X-Hcom-Styx-Stopped", styxStopped)
                                 .build())
-                .map(FullHttpResponse::toStreamingResponse);
+                .map(HttpResponse::toStreamingResponse);
     }
 
     private String xHcomPluginsHeader(LiveHttpRequest message) {

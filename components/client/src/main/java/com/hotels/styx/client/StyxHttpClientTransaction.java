@@ -16,7 +16,7 @@
 package com.hotels.styx.client;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 
 import java.util.concurrent.CompletableFuture;
@@ -68,7 +68,7 @@ class StyxHttpClientTransaction implements HttpClient.Transaction {
      * @return a {@link CompletableFuture} of response
      */
     @Override
-    public CompletableFuture<FullHttpResponse> send(HttpRequest request) {
+    public CompletableFuture<HttpResponse> send(HttpRequest request) {
         return StyxHttpClient.sendRequestInternal(connectionFactory, request, transactionParameters);
     }
 }

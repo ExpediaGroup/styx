@@ -21,7 +21,7 @@ import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import static com.google.common.net.HttpHeaders.CONTENT_LANGUAGE;
 import static com.google.common.net.MediaType.HTML_UTF_8;
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.lang.String.format;

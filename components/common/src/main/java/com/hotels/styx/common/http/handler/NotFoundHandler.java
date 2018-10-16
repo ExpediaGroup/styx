@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.common.http.handler;
 
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -40,7 +40,7 @@ public class NotFoundHandler extends BaseHttpHandler {
 
     @Override
     public LiveHttpResponse doHandle(LiveHttpRequest request) {
-        return FullHttpResponse.response(NOT_FOUND)
+        return HttpResponse.response(NOT_FOUND)
                 .body(NOT_FOUND_MESSAGE, UTF_8)
                 .build()
                 .toStreamingResponse();

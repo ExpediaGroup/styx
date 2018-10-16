@@ -43,7 +43,7 @@ trait StyxClientSupplier extends BeforeAndAfterAll {
     super.afterAll()
   }
 
-  private def doRequest(request: HttpRequest, secure: Boolean = false): Future[FullHttpResponse] = if (secure)
+  private def doRequest(request: HttpRequest, secure: Boolean = false): Future[HttpResponse] = if (secure)
     client.secure().send(request).toScala
   else
     client.sendRequest(request).toScala
@@ -52,7 +52,7 @@ trait StyxClientSupplier extends BeforeAndAfterAll {
                      debug: Boolean = false,
                      maxSize: Int = 1024 * 1024, timeout: Duration = 30.seconds,
                      secure: Boolean = false
-                    ): FullHttpResponse = {
+                    ): HttpResponse = {
     val future = doRequest(request, secure = secure)
       .map(response => {
         if (debug) {

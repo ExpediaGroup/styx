@@ -22,7 +22,7 @@ import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import java.util.function.Supplier;
 
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**

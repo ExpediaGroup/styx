@@ -17,7 +17,7 @@ package com.hotels.styx.http;
 
 import com.google.common.io.Files;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.handlers.StaticFileHandler;
@@ -75,7 +75,7 @@ public class StaticFileOnRealServerIT {
                 .header("Host", serverEndpoint)
                 .build();
 
-        FullHttpResponse response = await(client.sendRequest(request));
+        HttpResponse response = await(client.sendRequest(request));
         assertThat(response.bodyAs(UTF_8), is("Hello World"));
     }
 

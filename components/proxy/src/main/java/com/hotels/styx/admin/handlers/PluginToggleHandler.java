@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -174,7 +174,7 @@ public class PluginToggleHandler implements HttpHandler {
     }
 
     private static LiveHttpResponse responseWith(HttpResponseStatus status, String message) {
-        return FullHttpResponse.response(status)
+        return HttpResponse.response(status)
                 .body(message + "\n", UTF_8)
                 .addHeader(CONTENT_TYPE, PLAIN_TEXT_UTF_8.toString())
                 .disableCaching()

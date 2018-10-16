@@ -18,7 +18,7 @@ package com.hotels.styx.metrics;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.HttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.testapi.StyxServer;
@@ -74,7 +74,7 @@ public class ProtocolMetricsTest {
                 .addRoute("/", origin.port())
                 .start();
 
-        FullHttpResponse response = doGet("/");
+        HttpResponse response = doGet("/");
 
         assertThat(response.status(), is(OK));
 
@@ -91,7 +91,7 @@ public class ProtocolMetricsTest {
                 .addRoute("/", origin.port())
                 .start();
 
-        FullHttpResponse response = doHttpsGet("/");
+        HttpResponse response = doHttpsGet("/");
 
         assertThat(response.status(), is(OK));
 
@@ -102,16 +102,16 @@ public class ProtocolMetricsTest {
         assertThat(styxServer.metrics().meter("styx.server.https.responses.200").getCount(), is(1L));
     }
 
-    private FullHttpResponse doGet(String path) {
+    private HttpResponse doGet(String path) {
         return doRequest(client, "http", styxServer.proxyHttpPort(), startWithSlash(path));
     }
 
-    private FullHttpResponse doHttpsGet(String path) {
+    private HttpResponse doHttpsGet(String path) {
         HttpClient client1 = new StyxHttpClient.Builder().build();
         return doRequest(client1, "https", styxServer.proxyHttpsPort(), path);
     }
 
-    private static FullHttpResponse doRequest(HttpClient client, String protocol, int port, String path) {
+    private static HttpResponse doRequest(HttpClient client, String protocol, int port, String path) {
         String url = format("%s://localhost:%s%s", protocol, port, startWithSlash(path));
 
         HttpRequest request = get(url)

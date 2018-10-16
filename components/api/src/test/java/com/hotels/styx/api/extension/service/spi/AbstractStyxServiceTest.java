@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.api.extension.service.spi;
 
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import org.testng.annotations.Test;
 
@@ -41,7 +41,7 @@ public class AbstractStyxServiceTest {
     public void exposesNameAndStatusViaAdminInterface() throws ExecutionException, InterruptedException {
         DerivedStyxService service = new DerivedStyxService("derived-service", new CompletableFuture<>());
 
-        FullHttpResponse response =
+        HttpResponse response =
                 service.adminInterfaceHandlers().get("status").handle(get, MOCK_CONTEXT)
                         .flatMap(r -> r.toFullResponse(1024))
                 .asCompletableFuture()

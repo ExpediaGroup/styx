@@ -18,7 +18,7 @@ package com.hotels.styx.client;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
@@ -93,18 +93,18 @@ public final class StyxHttpClient implements HttpClient {
      * @param request a {@link HttpRequest} object to be sent to remote origin.
      * @return a {@link CompletableFuture} of response
      */
-    public CompletableFuture<FullHttpResponse> send(HttpRequest request) {
+    public CompletableFuture<HttpResponse> send(HttpRequest request) {
         return sendRequestInternal(connectionFactory, request, this.transactionParameters);
     }
 
     @VisibleForTesting
-    static CompletableFuture<FullHttpResponse> sendRequestInternal(NettyConnectionFactory connectionFactory, HttpRequest request, Builder params) {
+    static CompletableFuture<HttpResponse> sendRequestInternal(NettyConnectionFactory connectionFactory, HttpRequest request, Builder params) {
         HttpRequest networkRequest = addUserAgent(params.userAgent(), request);
         Origin origin = originFromRequest(networkRequest, params.https());
 
         SslContext sslContext = getSslContext(params.https(), params.tlsSettings());
 
-        Observable<FullHttpResponse> responseObservable = connectionFactory.createConnection(
+        Observable<HttpResponse> responseObservable = connectionFactory.createConnection(
                 origin,
                 new ConnectionSettings(params.connectTimeoutMillis()),
                 sslContext

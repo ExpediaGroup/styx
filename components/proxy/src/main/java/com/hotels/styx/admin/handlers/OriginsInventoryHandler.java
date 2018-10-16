@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;

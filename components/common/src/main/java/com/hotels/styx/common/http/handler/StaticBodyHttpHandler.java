@@ -17,7 +17,7 @@ package com.hotels.styx.common.http.handler;
 
 import com.google.common.base.Charsets;
 import com.google.common.net.MediaType;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 
@@ -62,7 +62,7 @@ public class StaticBodyHttpHandler extends BaseHttpHandler {
 
     @Override
     public LiveHttpResponse doHandle(LiveHttpRequest request) {
-        return FullHttpResponse.response(OK)
+        return HttpResponse.response(OK)
                 .header(CONTENT_TYPE, this.contentType.toString())
                 .header(CONTENT_LENGTH, this.contentLength)
                 .body(this.body, StandardCharsets.UTF_8)

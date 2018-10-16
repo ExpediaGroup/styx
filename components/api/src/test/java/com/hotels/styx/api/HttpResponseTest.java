@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
@@ -52,10 +52,10 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
-public class FullHttpResponseTest {
+public class HttpResponseTest {
     @Test
     public void convertsToStreamingHttpResponse() throws Exception {
-        FullHttpResponse response = response(CREATED)
+        HttpResponse response = response(CREATED)
                 .version(HTTP_1_1)
                 .header("HeaderName", "HeaderValue")
                 .cookies(responseCookie("CookieName", "CookieValue").build())
@@ -83,7 +83,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void createsAResponseWithDefaultValues() {
-        FullHttpResponse response = FullHttpResponse.response().build();
+        HttpResponse response = HttpResponse.response().build();
         assertThat(response.version(), is(HTTP_1_1));
         assertThat(response.cookies(), is(emptyIterable()));
         assertThat(response.headers(), is(emptyIterable()));
@@ -92,7 +92,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void createsResponseWithMinimalInformation() {
-        FullHttpResponse response = FullHttpResponse.response()
+        HttpResponse response = HttpResponse.response()
                 .status(BAD_GATEWAY)
                 .version(HTTP_1_1)
                 .build();
@@ -106,7 +106,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void setsASingleOutboundCookie() {
-        FullHttpResponse response = FullHttpResponse.response()
+        HttpResponse response = HttpResponse.response()
                 .cookies(responseCookie("user", "QSplbl9HX1VL").domain(".hotels.com").path("/").maxAge(3600).build())
                 .build();
 
@@ -115,7 +115,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void setsMultipleOutboundCookies() {
-        FullHttpResponse response = FullHttpResponse.response()
+        HttpResponse response = HttpResponse.response()
                 .cookies(
                         responseCookie("a", "b").build(),
                         responseCookie("c", "d").build())
@@ -131,7 +131,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void getASingleCookieValue() {
-        FullHttpResponse response = FullHttpResponse.response()
+        HttpResponse response = HttpResponse.response()
                 .cookies(
                         responseCookie("a", "b").build(),
                         responseCookie("c", "d").build())
@@ -143,11 +143,11 @@ public class FullHttpResponseTest {
     @Test
     public void canRemoveAHeader() {
         Object headerValue = "b";
-        FullHttpResponse response = FullHttpResponse.response()
+        HttpResponse response = HttpResponse.response()
                 .header("a", headerValue)
                 .addHeader("c", headerValue)
                 .build();
-        FullHttpResponse shouldRemoveHeader = response.newBuilder()
+        HttpResponse shouldRemoveHeader = response.newBuilder()
                 .removeHeader("c")
                 .build();
 
@@ -156,11 +156,11 @@ public class FullHttpResponseTest {
 
     @Test
     public void canRemoveResponseBody() {
-        FullHttpResponse response = response(NO_CONTENT)
+        HttpResponse response = response(NO_CONTENT)
                 .body("shouldn't be here", UTF_8)
                 .build();
 
-        FullHttpResponse shouldClearBody = response.newBuilder()
+        HttpResponse shouldClearBody = response.newBuilder()
                 .body("", UTF_8)
                 .build();
 
@@ -169,31 +169,31 @@ public class FullHttpResponseTest {
 
     @Test
     public void supportsCaseInsensitiveHeaderNames() {
-        FullHttpResponse response = response(OK).header("Content-Type", "text/plain").build();
+        HttpResponse response = response(OK).header("Content-Type", "text/plain").build();
         assertThat(response.header("content-type"), isValue("text/plain"));
     }
 
     @Test
     public void headerValuesAreCaseSensitive() {
-        FullHttpResponse response = response(OK).header("Content-Type", "TEXT/PLAIN").build();
+        HttpResponse response = response(OK).header("Content-Type", "TEXT/PLAIN").build();
         assertThat(response.header("content-type"), not(isValue("text/plain")));
     }
 
     @Test
     public void createsANonCacheableResponse() {
-        assertThat(FullHttpResponse.response().disableCaching().build().headers(), is(isNotCacheable()));
+        assertThat(HttpResponse.response().disableCaching().build().headers(), is(isNotCacheable()));
     }
 
     @Test
     public void shouldCreateAChunkedResponse() {
-        assertThat(FullHttpResponse.response().build().chunked(), is(false));
-        assertThat(FullHttpResponse.response().setChunked().build().chunked(), is(true));
+        assertThat(HttpResponse.response().build().chunked(), is(false));
+        assertThat(HttpResponse.response().setChunked().build().chunked(), is(true));
     }
 
     @Test
     public void shouldRemoveContentLengthFromChunkedMessages() {
-        FullHttpResponse response = FullHttpResponse.response().header(CONTENT_LENGTH, 5).build();
-        FullHttpResponse chunkedResponse = response.newBuilder().setChunked().build();
+        HttpResponse response = HttpResponse.response().header(CONTENT_LENGTH, 5).build();
+        HttpResponse chunkedResponse = response.newBuilder().setChunked().build();
 
         assertThat(chunkedResponse.chunked(), is(true));
         assertThat(chunkedResponse.header(CONTENT_LENGTH).isPresent(), is(false));
@@ -201,8 +201,8 @@ public class FullHttpResponseTest {
 
     @Test
     public void shouldNotFailToRemoveNonExistentContentLength() {
-        FullHttpResponse response = FullHttpResponse.response().build();
-        FullHttpResponse chunkedResponse = response.newBuilder().setChunked().build();
+        HttpResponse response = HttpResponse.response().build();
+        HttpResponse chunkedResponse = response.newBuilder().setChunked().build();
 
         assertThat(chunkedResponse.chunked(), is(true));
         assertThat(chunkedResponse.header(CONTENT_LENGTH).isPresent(), is(false));
@@ -210,7 +210,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void addsHeaderValue() {
-        FullHttpResponse response = FullHttpResponse.response()
+        HttpResponse response = HttpResponse.response()
                 .header("name", "value1")
                 .addHeader("name", "value2")
                 .build();
@@ -226,17 +226,17 @@ public class FullHttpResponseTest {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookie() {
-        FullHttpResponse.response().cookies((ResponseCookie) null).build();
+        HttpResponse.response().cookies((ResponseCookie) null).build();
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookieName() {
-        FullHttpResponse.response().cookies(responseCookie(null, "value").build()).build();
+        HttpResponse.response().cookies(responseCookie(null, "value").build()).build();
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookieValue() {
-        FullHttpResponse.response().cookies(responseCookie("name", null).build()).build();
+        HttpResponse.response().cookies(responseCookie("name", null).build()).build();
     }
 
     @DataProvider(name = "responses")
@@ -257,7 +257,7 @@ public class FullHttpResponseTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void rejectsMultipleContentLengthInSingleHeader() {
-        FullHttpResponse.response()
+        HttpResponse.response()
                 .addHeader(CONTENT_LENGTH, "15, 16")
                 .ensureContentLengthIsValid()
                 .build();
@@ -265,7 +265,7 @@ public class FullHttpResponseTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void rejectsMultipleContentLength() {
-        FullHttpResponse.response()
+        HttpResponse.response()
                 .addHeader(CONTENT_LENGTH, "15")
                 .addHeader(CONTENT_LENGTH, "16")
                 .ensureContentLengthIsValid()
@@ -274,7 +274,7 @@ public class FullHttpResponseTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void rejectsInvalidContentLength() {
-        FullHttpResponse.response()
+        HttpResponse.response()
                 .addHeader(CONTENT_LENGTH, "foo")
                 .ensureContentLengthIsValid()
                 .build();
@@ -282,13 +282,13 @@ public class FullHttpResponseTest {
 
     @Test
     public void allowsModificationOfHeadersBasedOnBody() {
-        FullHttpResponse response = FullHttpResponse.response()
+        HttpResponse response = HttpResponse.response()
                 .body("foobar", UTF_8)
                 .build();
 
         assertThat(response.header("some-header"), isAbsent());
 
-        FullHttpResponse newResponse = response.newBuilder()
+        HttpResponse newResponse = response.newBuilder()
                 .header("some-header", response.body().length)
                 .build();
 
@@ -298,11 +298,11 @@ public class FullHttpResponseTest {
 
     @Test
     public void allowsModificationOfBodyBasedOnExistingBody() {
-        FullHttpResponse response = FullHttpResponse.response()
+        HttpResponse response = HttpResponse.response()
                 .body("foobar", UTF_8)
                 .build();
 
-        FullHttpResponse newResponse = response.newBuilder()
+        HttpResponse newResponse = response.newBuilder()
                 .body(response.bodyAs(UTF_8) + "x", UTF_8)
                 .build();
 
@@ -311,7 +311,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void overridesContent() {
-        FullHttpResponse response = FullHttpResponse.response()
+        HttpResponse response = HttpResponse.response()
                 .body("Response content.", UTF_8)
                 .body(" ", UTF_8)
                 .body("Extra content", UTF_8)
@@ -321,7 +321,7 @@ public class FullHttpResponseTest {
     }
 
     @Test(dataProvider = "emptyBodyResponses")
-    public void convertsToStreamingHttpResponseWithEmptyBody(FullHttpResponse response) throws ExecutionException, InterruptedException {
+    public void convertsToStreamingHttpResponseWithEmptyBody(HttpResponse response) throws ExecutionException, InterruptedException {
         LiveHttpResponse streaming = response.toStreamingResponse();
 
         byte[] result = streaming.body().aggregate(1000)
@@ -335,24 +335,24 @@ public class FullHttpResponseTest {
     @DataProvider(name = "emptyBodyResponses")
     private Object[][] emptyBodyResponses() {
         return new Object[][]{
-                {FullHttpResponse.response()
+                {HttpResponse.response()
                         .build()},
-                {FullHttpResponse.response()
+                {HttpResponse.response()
                         .body(null, UTF_8)
                         .build()},
-                {FullHttpResponse.response()
+                {HttpResponse.response()
                         .body("", UTF_8)
                         .build()},
-                {FullHttpResponse.response()
+                {HttpResponse.response()
                         .body(null, UTF_8, true)
                         .build()},
-                {FullHttpResponse.response()
+                {HttpResponse.response()
                         .body("", UTF_8, true)
                         .build()},
-                {FullHttpResponse.response()
+                {HttpResponse.response()
                         .body(null, true)
                         .build()},
-                {FullHttpResponse.response()
+                {HttpResponse.response()
                         .body(new byte[0], true)
                         .build()},
         };
@@ -360,7 +360,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void encodesBodyWithGivenCharset() {
-        FullHttpResponse response = FullHttpResponse.response()
+        HttpResponse response = HttpResponse.response()
                 .body("Response content.", UTF_16, true)
                 .build();
 
@@ -369,20 +369,20 @@ public class FullHttpResponseTest {
 
     @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Charset is not provided.")
     public void contentFromStringOnlyThrowsNPEWhenCharsetIsNull() {
-        FullHttpResponse.response()
+        HttpResponse.response()
                 .body("Response content.", null)
                 .build();
     }
 
     @Test
     public void contentFromStringSetsContentLengthIfRequired() {
-        FullHttpResponse response1 = FullHttpResponse.response()
+        HttpResponse response1 = HttpResponse.response()
                 .body("Response content.", UTF_8, true)
                 .build();
 
         assertThat(response1.header("Content-Length"), is(Optional.of("17")));
 
-        FullHttpResponse response2 = FullHttpResponse.response()
+        HttpResponse response2 = HttpResponse.response()
                 .body("Response content.", UTF_8, false)
                 .build();
 
@@ -391,20 +391,20 @@ public class FullHttpResponseTest {
 
     @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Charset is not provided.")
     public void contentFromStringThrowsNPEWhenCharsetIsNull() {
-        FullHttpResponse.response()
+        HttpResponse.response()
                 .body("Response content.", null, false)
                 .build();
     }
 
     @Test
     public void contentFromByteArraySetsContentLengthIfRequired() {
-        FullHttpResponse response1 = FullHttpResponse.response()
+        HttpResponse response1 = HttpResponse.response()
                 .body("Response content.".getBytes(UTF_16), true)
                 .build();
         assertThat(response1.body(), is("Response content.".getBytes(UTF_16)));
         assertThat(response1.header("Content-Length"), is(Optional.of("36")));
 
-        FullHttpResponse response2 = FullHttpResponse.response()
+        HttpResponse response2 = HttpResponse.response()
                 .body("Response content.".getBytes(UTF_8), false)
                 .build();
 
@@ -414,7 +414,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void responseBodyIsImmutable() {
-        FullHttpResponse response = response(OK)
+        HttpResponse response = response(OK)
                 .body("Original body", UTF_8)
                 .build();
 
@@ -425,7 +425,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void responseBodyCannotBeChangedViaStreamingMessage() {
-        FullHttpResponse original = response(OK)
+        HttpResponse original = response(OK)
                 .body("original", UTF_8)
                 .build();
 
@@ -457,11 +457,11 @@ public class FullHttpResponseTest {
 
     @Test
     public void transformedBodyIsNewCopy() {
-        FullHttpResponse request = response()
+        HttpResponse request = response()
                 .body("Original body", UTF_8)
                 .build();
 
-        FullHttpResponse newRequest = response()
+        HttpResponse newRequest = response()
                 .body("New body", UTF_8)
                 .build();
 
@@ -471,7 +471,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void addsCookies() {
-        FullHttpResponse response = response()
+        HttpResponse response = response()
                 .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
                 .build();
 
@@ -480,7 +480,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void addsCookiesToExistingCookies() {
-        FullHttpResponse response = response()
+        HttpResponse response = response()
                 .addCookies(responseCookie("z", "z1").build())
                 .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
                 .build();
@@ -490,11 +490,11 @@ public class FullHttpResponseTest {
 
     @Test
     public void newCookiesWithDuplicateNamesOverridePreviousOnes() {
-        FullHttpResponse r1 = response()
+        HttpResponse r1 = response()
                 .cookies(responseCookie("y", "y1").build())
                 .build();
 
-        FullHttpResponse r2 = r1.newBuilder().addCookies(
+        HttpResponse r2 = r1.newBuilder().addCookies(
                 responseCookie("y", "y2").build())
                 .build();
 
@@ -503,11 +503,11 @@ public class FullHttpResponseTest {
 
     @Test
     public void removesCookies() {
-        FullHttpResponse r1 = response()
+        HttpResponse r1 = response()
                 .addCookies(responseCookie("x", "x1").build(), responseCookie("y", "y1").build())
                 .build();
 
-        FullHttpResponse r2 = r1.newBuilder()
+        HttpResponse r2 = r1.newBuilder()
                 .removeCookies("x")
                 .removeCookies("foo") // ensure that trying to remove a non-existent cookie does not cause Exception
                 .build();
@@ -517,7 +517,7 @@ public class FullHttpResponseTest {
 
     @Test
     public void removesCookiesInSameBuilder() {
-        FullHttpResponse r1 = response()
+        HttpResponse r1 = response()
                 .addCookies(responseCookie("x", "x1").build())
                 .removeCookies("x")
                 .build();

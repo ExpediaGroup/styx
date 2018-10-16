@@ -18,7 +18,7 @@ package com.hotels.styx.server.netty.connectors;
 import com.google.common.collect.ObjectArrays;
 import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -590,7 +590,7 @@ public class HttpPipelineHandlerTest {
 
         handler.channelRead0(ctx, request);
 
-        verify(responseWriter).write(FullHttpResponse.response(INTERNAL_SERVER_ERROR)
+        verify(responseWriter).write(HttpResponse.response(INTERNAL_SERVER_ERROR)
                 .header(CONTENT_LENGTH, 29)
                 .body("Site temporarily unavailable.", UTF_8)
                 .build()
@@ -668,7 +668,7 @@ public class HttpPipelineHandlerTest {
         responseObservable.onError(new ContentOverflowException("Request Send Error"));
 
         assertThat(responseUnsubscribed.get(), is(true));
-        verify(responseWriter).write(FullHttpResponse.response(BAD_GATEWAY)
+        verify(responseWriter).write(HttpResponse.response(BAD_GATEWAY)
                 .header(CONTENT_LENGTH, "29")
                 .body("Site temporarily unavailable.", UTF_8)
                 .build()
@@ -694,7 +694,7 @@ public class HttpPipelineHandlerTest {
         responseObservable.onError(new StyxClientException("Client error occurred", new RuntimeException("Something went wrong")));
 
         assertThat(responseUnsubscribed.get(), is(true));
-        verify(responseWriter).write(FullHttpResponse.response(INTERNAL_SERVER_ERROR)
+        verify(responseWriter).write(HttpResponse.response(INTERNAL_SERVER_ERROR)
                 .header(CONTENT_LENGTH, "29")
                 .body("Site temporarily unavailable.", UTF_8)
                 .build()

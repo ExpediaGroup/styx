@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static com.google.common.net.MediaType.HTML_UTF_8;
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.lang.String.format;

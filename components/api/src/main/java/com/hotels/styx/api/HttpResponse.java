@@ -45,11 +45,11 @@ import static java.util.stream.Collectors.toList;
 /**
  * An immutable HTTP response object including full body content.
  * <p>
- * A {@link FullHttpResponse} is useful for responses with a
+ * A {@link HttpResponse} is useful for responses with a
  * finite body content, such as when a REST API object is returned as a
  * response to a GET request.
  * <p>
- * A FullHttpResponse is created via {@link FullHttpResponse.Builder}. A new builder
+ * A HttpResponse is created via {@link HttpResponse.Builder}. A new builder
  * can be obtained by a call to following static methods:
  *
  * <ul>
@@ -59,18 +59,18 @@ import static java.util.stream.Collectors.toList;
  *
  * A builder can also be created with one of the {@code Builder} constructors.
  *
- * FullHttpResponse is immutable. Once created it cannot be modified.
+ * HttpResponse is immutable. Once created it cannot be modified.
  * However a response can be transformed to another using the {@link this#newBuilder}
  * method. It creates a new {@link Builder} with all message properties and
  * body content cloned in.
  */
-public class FullHttpResponse implements FullHttpMessage {
+public class HttpResponse implements FullHttpMessage {
     private final HttpVersion version;
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
     private final byte[] body;
 
-    private FullHttpResponse(Builder builder) {
+    private HttpResponse(Builder builder) {
         this.version = builder.version;
         this.status = builder.status;
         this.headers = builder.headers.build();
@@ -147,7 +147,7 @@ public class FullHttpResponse implements FullHttpMessage {
     }
 
     /**
-     * Return a new {@link FullHttpResponse.Builder} that will inherit properties from this response.
+     * Return a new {@link HttpResponse.Builder} that will inherit properties from this response.
      * <p>
      * This allows a new response to be made that is identical to this one
      * except for the properties overridden by the builder methods.
@@ -231,7 +231,7 @@ public class FullHttpResponse implements FullHttpMessage {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        FullHttpResponse other = (FullHttpResponse) obj;
+        HttpResponse other = (HttpResponse) obj;
         return Objects.equal(this.version, other.version)
                 && Objects.equal(this.status, other.status)
                 && Objects.equal(this.headers, other.headers);
@@ -271,7 +271,7 @@ public class FullHttpResponse implements FullHttpMessage {
          *
          * @param response a full HTTP response instance
          */
-        public Builder(FullHttpResponse response) {
+        public Builder(HttpResponse response) {
             this.status = response.status();
             this.version = response.version();
             this.headers = response.headers().newBuilder();
@@ -550,12 +550,12 @@ public class FullHttpResponse implements FullHttpMessage {
          *
          * @return a new full response
          */
-        public FullHttpResponse build() {
+        public HttpResponse build() {
             if (validate) {
                 ensureContentLengthIsValid();
             }
 
-            return new FullHttpResponse(this);
+            return new HttpResponse(this);
         }
 
         Builder ensureContentLengthIsValid() {

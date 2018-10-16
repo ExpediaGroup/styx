@@ -18,7 +18,7 @@ package com.hotels.styx.server.handlers;
 import com.google.common.io.ByteStreams;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
@@ -60,7 +60,7 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
                 return error(FORBIDDEN);
             }
 
-            return new FullHttpResponse.Builder(OK)
+            return new HttpResponse.Builder(OK)
                     .body(resourceBody(path), true)
                     .header(CONTENT_TYPE, mediaTypeOf(path))
                     .build()

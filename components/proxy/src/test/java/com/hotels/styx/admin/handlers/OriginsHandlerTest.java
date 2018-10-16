@@ -17,7 +17,7 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
@@ -54,7 +54,7 @@ public class OriginsHandlerTest {
         Iterable<BackendService> expected = loadFromPath(originsFile).get();
 
         withOriginsHandler(originsFile, handler -> {
-            FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create()));
+            HttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create()));
 
             assertThat(response.status(), is(OK));
             assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
@@ -70,7 +70,7 @@ public class OriginsHandlerTest {
         Registry<BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
         OriginsHandler handler = new OriginsHandler(backendServicesRegistry);
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(OK));
         assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));
@@ -85,7 +85,7 @@ public class OriginsHandlerTest {
         Iterable<BackendService> expected = loadFromPath(originsFile).get();
 
         withOriginsHandler(originsFile, handler -> {
-            FullHttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create()));
+            HttpResponse response = waitForResponse(handler.handle(get("/admin/configuration/origins").build(), HttpInterceptorContext.create()));
 
             assertThat(response.status(), is(OK));
             assertThat(response.contentType(), isValue(JSON_UTF_8.toString()));

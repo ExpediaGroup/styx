@@ -17,7 +17,7 @@ package com.hotels.styx.admin.tasks;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -97,7 +97,7 @@ public class OriginsReloadCommandHandler implements HttpHandler {
     }
 
     private LiveHttpResponse okResponse(String content) {
-        return FullHttpResponse.response(OK)
+        return HttpResponse.response(OK)
                 .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
                 .body(content, UTF_8)
                 .build()
@@ -130,7 +130,7 @@ public class OriginsReloadCommandHandler implements HttpHandler {
     }
 
     private LiveHttpResponse errorResponse(HttpResponseStatus code, String content) {
-        return FullHttpResponse.response(code)
+        return HttpResponse.response(code)
                 .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
                 .body(content, UTF_8)
                 .build()

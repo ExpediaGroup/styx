@@ -32,7 +32,7 @@ import java.util.function.Supplier;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.api.Clocks.systemClock;
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.OK;

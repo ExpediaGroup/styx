@@ -172,15 +172,15 @@ public class LiveHttpResponse implements LiveHttpMessage {
     }
 
     /**
-     * Aggregates content stream and converts this response to a {@link FullHttpResponse}.
+     * Aggregates content stream and converts this response to a {@link HttpResponse}.
      * <p>
-     * Returns a {@link Eventual <FullHttpResponse>} that eventually produces a
-     * {@link FullHttpResponse}. The resulting full response object has the same
+     * Returns a {@link Eventual <HttpResponse>} that eventually produces a
+     * {@link HttpResponse}. The resulting full response object has the same
      * response line, headers, and content as this response.
      * <p>
      * The content stream is aggregated asynchronously. The stream may be connected
      * to a network socket or some other content producer. Once aggregated, a
-     * FullHttpResponse object is emitted on the returned {@link Eventual}.
+     * HttpResponse object is emitted on the returned {@link Eventual}.
      * <p>
      * A sole {@code maxContentBytes} argument is a backstop defence against excessively
      * long content streams. The {@code maxContentBytes} should be set to a sensible
@@ -191,9 +191,9 @@ public class LiveHttpResponse implements LiveHttpMessage {
      * @param maxContentBytes maximum expected content size
      * @return a {@link Eventual}
      */
-    public Eventual<FullHttpResponse> toFullResponse(int maxContentBytes) {
+    public Eventual<HttpResponse> toFullResponse(int maxContentBytes) {
         return Eventual.from(body.aggregate(maxContentBytes))
-                .map(it -> new FullHttpResponse.Builder(this, decodeAndRelease(it))
+                .map(it -> new HttpResponse.Builder(this, decodeAndRelease(it))
                     .disableValidation()
                     .build()
                 );
@@ -308,7 +308,7 @@ public class LiveHttpResponse implements LiveHttpMessage {
          * @param response      a full response for which the builder is based on
          * @param byteStream a content byte stream
          */
-        public Builder(FullHttpResponse response, ByteStream byteStream) {
+        public Builder(HttpResponse response, ByteStream byteStream) {
             this.status = statusWithCode(response.status().code());
             this.version = httpVersion(response.version().toString());
             this.headers = response.headers().newBuilder();

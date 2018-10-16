@@ -18,7 +18,7 @@ package com.hotels.styx.server.handlers;
 import com.google.common.io.Files;
 import com.google.common.net.MediaType;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -58,7 +58,7 @@ public class StaticFileHandler implements HttpHandler {
         try {
             return resolveFile(request.path())
                     .map(ResolvedFile::new)
-                    .map(resolvedFile -> FullHttpResponse.response()
+                    .map(resolvedFile -> HttpResponse.response()
                             .addHeader(CONTENT_TYPE, resolvedFile.mediaType)
                             .body(resolvedFile.content, UTF_8)
                             .build()
@@ -66,7 +66,7 @@ public class StaticFileHandler implements HttpHandler {
                     .map(Eventual::of)
                     .orElseGet(() -> NOT_FOUND_HANDLER.handle(request, context));
         } catch (IOException e) {
-            return Eventual.of(FullHttpResponse.response(INTERNAL_SERVER_ERROR).build().toStreamingResponse());
+            return Eventual.of(HttpResponse.response(INTERNAL_SERVER_ERROR).build().toStreamingResponse());
         }
     }
 

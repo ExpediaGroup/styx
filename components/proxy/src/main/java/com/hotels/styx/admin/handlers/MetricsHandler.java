@@ -21,7 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -37,7 +37,7 @@ import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.MapStream.stream;
@@ -90,7 +90,7 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
                 : Eventual.of(restrictedMetricsResponse(metricRequest).build().toStreamingResponse());
     }
 
-    private FullHttpResponse.Builder restrictedMetricsResponse(MetricRequest request) {
+    private HttpResponse.Builder restrictedMetricsResponse(MetricRequest request) {
         Map<String, Metric> fullMetrics = metricRegistry.getMetrics();
 
         Map<String, Metric> restricted = filter(fullMetrics, (name, metric) -> request.matchesRoot(name));
@@ -100,7 +100,7 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
                 : search(request, restricted);
     }
 
-    private FullHttpResponse.Builder search(MetricRequest request, Map<String, Metric> metrics) {
+    private HttpResponse.Builder search(MetricRequest request, Map<String, Metric> metrics) {
         Map<String, Metric> searched = filter(metrics, (name, metric) -> request.containsSearchTerm(name));
 
         String body = serialise(searched, request.prettyPrint);

@@ -16,7 +16,7 @@
 package com.hotels.styx.admin.handlers;
 
 
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
@@ -37,7 +37,7 @@ public class ThreadsHandlerTest {
 
     @Test
     public void dumpsCurrentThreadsState() {
-        FullHttpResponse response = waitForResponse(handler.handle(get("/threads").build(), HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(get("/threads").build(), HttpInterceptorContext.create()));
         assertThat(response.status(), is(OK));
         assertThat(response.headers(), isNotCacheable());
         assertThat(response.contentType().get(), is("text/plain; charset=utf-8"));

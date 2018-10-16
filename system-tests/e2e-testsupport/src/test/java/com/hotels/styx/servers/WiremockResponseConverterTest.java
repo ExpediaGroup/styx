@@ -21,7 +21,7 @@ import com.github.tomakehurst.wiremock.http.Response;
 import com.github.tomakehurst.wiremock.http.ResponseDefinition;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpHeader;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import org.testng.annotations.Test;
 
 import java.util.Map;
@@ -46,7 +46,7 @@ public class WiremockResponseConverterTest {
         ResponseDefinition created = ResponseDefinition.created();
         Response render = new BasicResponseRenderer().render(created);
 
-        FullHttpResponse styxResponse = toStyxResponse(render);
+        HttpResponse styxResponse = toStyxResponse(render);
 
         assertThat(styxResponse.status(), is(CREATED));
         assertThat(styxResponse.bodyAs(UTF_8), is(""));
@@ -60,7 +60,7 @@ public class WiremockResponseConverterTest {
                 httpHeader("Transfer-Encoding", "chunked"),
                 httpHeader("Content-Type", "application/json")));
 
-        FullHttpResponse styxResponse = toStyxResponse(new BasicResponseRenderer().render(response));
+        HttpResponse styxResponse = toStyxResponse(new BasicResponseRenderer().render(response));
 
         assertThat(styxResponse.status(), is(OK));
         Map<String, String> actual = headersAsMap(styxResponse);
@@ -72,7 +72,7 @@ public class WiremockResponseConverterTest {
         assertThat(headerCount(styxResponse.headers()), is(2));
     }
 
-    private Map<String, String> headersAsMap(FullHttpResponse response) {
+    private Map<String, String> headersAsMap(HttpResponse response) {
         Spliterator<HttpHeader> spliterator = response.headers().spliterator();
 
         return StreamSupport.stream(spliterator, false)

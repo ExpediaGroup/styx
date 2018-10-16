@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.server.handlers;
 
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.DataProvider;
@@ -37,20 +37,20 @@ public class ClassPathResourceHandlerTest {
     @Test
     public void readsClassPathResources() {
         LiveHttpRequest request = get("/admin/dashboard/expected.txt").build();
-        FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(OK));
         assertThat(body(response), is("Foo\nBar\n"));
     }
 
-    private static String body(FullHttpResponse response) {
+    private static String body(HttpResponse response) {
         return response.bodyAs(UTF_8).replace(lineSeparator(), "\n");
     }
 
     @Test
     public void returns404IfResourceDoesNotExist() {
         LiveHttpRequest request = get("/admin/dashboard/unexpected.txt").build();
-        FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(NOT_FOUND));
     }
@@ -68,7 +68,7 @@ public class ClassPathResourceHandlerTest {
     @Test(dataProvider = "forbiddenPaths")
     public void returns403IfTryingToAccessResourcesOutsidePermittedRoot(String path) {
         LiveHttpRequest request = get(path).build();
-        FullHttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(FORBIDDEN));
     }

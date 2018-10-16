@@ -17,7 +17,7 @@ package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
@@ -46,7 +46,7 @@ public class StyxConfigurationHandlerTest {
                 "  strategy: ROUND_ROBIN\n" +
                 "originsFile: " + ORIGINS_FILE + "\n";
 
-        FullHttpResponse adminPageResponse = waitForResponse(browseForCurrentConfiguration(yaml, false));
+        HttpResponse adminPageResponse = waitForResponse(browseForCurrentConfiguration(yaml, false));
 
         assertThat(adminPageResponse.bodyAs(UTF_8), is("{\"proxy\":{\"connectors\":{\"http\":{\"port\":8080}}}," +
                 "\"loadBalancing\":{\"strategy\":\"ROUND_ROBIN\"},\"originsFile\":\"" +
@@ -64,7 +64,7 @@ public class StyxConfigurationHandlerTest {
                 "  strategy: ROUND_ROBIN\n" +
                 "originsFile: " + ORIGINS_FILE + "\n";
 
-        FullHttpResponse adminPageResponse = waitForResponse(browseForCurrentConfiguration(yaml, true));
+        HttpResponse adminPageResponse = waitForResponse(browseForCurrentConfiguration(yaml, true));
 
         assertThat(adminPageResponse.bodyAs(UTF_8), is("{\n" +
                 "  \"proxy\" : {\n" +

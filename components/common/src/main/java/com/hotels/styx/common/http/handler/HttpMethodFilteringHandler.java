@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.common.http.handler;
 
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -48,7 +48,7 @@ public class HttpMethodFilteringHandler implements HttpHandler {
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         if (!method.equals(request.method())) {
             return Eventual.of(
-                    FullHttpResponse.response(METHOD_NOT_ALLOWED)
+                    HttpResponse.response(METHOD_NOT_ALLOWED)
                             .body(errorBody, StandardCharsets.UTF_8)
                             .build()
                             .toStreamingResponse()

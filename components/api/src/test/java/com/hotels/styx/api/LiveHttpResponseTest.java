@@ -64,7 +64,7 @@ public class LiveHttpResponseTest {
                 .body(new ByteStream(Flux.just("foo", "bar").map(it -> new Buffer(copiedBuffer(it, UTF_8)))))
                 .build();
 
-        FullHttpResponse full = response.toFullResponse(0x1000)
+        HttpResponse full = response.toFullResponse(0x1000)
                 .asCompletableFuture()
                 .get();
 
@@ -78,7 +78,7 @@ public class LiveHttpResponseTest {
 
     @Test(dataProvider = "emptyBodyResponses")
     public void encodesToFullHttpResponseWithEmptyBody(LiveHttpResponse response) throws Exception {
-        FullHttpResponse full = response.toFullResponse(0x1000)
+        HttpResponse full = response.toFullResponse(0x1000)
                 .asCompletableFuture()
                 .get();
 
@@ -174,7 +174,7 @@ public class LiveHttpResponseTest {
                 .body(new ByteStream(Flux.just(originalContent)))
                 .build();
 
-        FullHttpResponse fullResponse = response.newBuilder()
+        HttpResponse fullResponse = response.newBuilder()
                 .body(ByteStream::drop)
                 .build()
                 .toFullResponse(1000)

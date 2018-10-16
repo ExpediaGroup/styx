@@ -26,7 +26,7 @@ import java.util.function.Function;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.CREATED;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.RUNNING;

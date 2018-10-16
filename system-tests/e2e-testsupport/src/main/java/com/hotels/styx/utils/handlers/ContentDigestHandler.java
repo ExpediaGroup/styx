@@ -16,7 +16,7 @@
 package com.hotels.styx.utils.handlers;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;
@@ -47,7 +47,7 @@ public class ContentDigestHandler extends BaseHttpHandler {
                 randomUUID(),
                 fullRequest.bodyAs(UTF_8).hashCode());
 
-        return FullHttpResponse.response(OK)
+        return HttpResponse.response(OK)
                 .header(CONTENT_TYPE, HTML_UTF_8.toString())
                 .header(CONTENT_LENGTH, responseBody.getBytes(UTF_8).length)
                 .body(responseBody, UTF_8)

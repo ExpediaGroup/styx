@@ -30,7 +30,7 @@ import org.testng.annotations.Test;
 import java.util.List;
 import java.util.Map;
 
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;

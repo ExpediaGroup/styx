@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
@@ -32,7 +32,7 @@ public class PingHandlerTest {
 
     @Test
     public void respondsPongToPingRequest() {
-        FullHttpResponse response = waitForResponse(handler.handle(get("/ping").build(), HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(get("/ping").build(), HttpInterceptorContext.create()));
         assertThat(response.status(), is(OK));
         assertThat(response.headers(), isNotCacheable());
         assertThat(response.contentType().get(), is("text/plain; charset=utf-8"));

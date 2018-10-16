@@ -31,7 +31,7 @@
  * (1) from HttpInterceptors to process live traffic or (2) to deal with arbitrarily
  * large HTTP content.
  * <p></p>
- * {@link com.hotels.styx.api.HttpRequest} and {@link com.hotels.styx.api.FullHttpResponse} classes provide an immutable
+ * {@link com.hotels.styx.api.HttpRequest} and {@link com.hotels.styx.api.HttpResponse} classes provide an immutable
  * aggregate view of a HTTP messages with full headers and content.
  * They are useful for dealing with HTTP messages with limited content sizes,
  * such as most RESTful API endpoints, or when "real-time" content processing

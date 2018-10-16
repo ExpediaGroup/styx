@@ -26,7 +26,7 @@ import com.hotels.styx.api.extension.service.spi.Registry;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;

@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -51,7 +51,7 @@ public final class ReturnResponseChain implements Chain {
     }
 
     public static ReturnResponseChain returnsResponse(String response) {
-        return returnsResponse(FullHttpResponse.response().body(response, UTF_8).build().toStreamingResponse());
+        return returnsResponse(HttpResponse.response().body(response, UTF_8).build().toStreamingResponse());
     }
 
     public static ReturnResponseChain returnsResponse(LiveHttpResponse.Builder builder) {

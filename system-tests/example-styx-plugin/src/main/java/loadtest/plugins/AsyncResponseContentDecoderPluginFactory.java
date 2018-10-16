@@ -16,7 +16,7 @@
 package loadtest.plugins;
 
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -55,7 +55,7 @@ public class AsyncResponseContentDecoderPluginFactory implements PluginFactory {
                     .flatMap(response ->  response.toFullResponse(this.maxContentLength))
                     .flatMap(fullResponse -> Eventual.from(asyncEvent(this.delayMillis))
                             .map(x -> fullResponse))
-                    .map(FullHttpResponse::toStreamingResponse);
+                    .map(HttpResponse::toStreamingResponse);
         }
 
         static CompletableFuture<Void> asyncEvent(int delayMillis) {
