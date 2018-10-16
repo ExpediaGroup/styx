@@ -16,14 +16,13 @@
 package com.hotels.styx.proxy
 
 import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.{NettyOrigins, TestClientSupport}
-import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec, api}
+import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
-import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
 
 class OriginCancellationMetrics extends FunSpec
   with StyxProxySpec
@@ -69,24 +68,8 @@ class OriginCancellationMetrics extends FunSpec
 
 
     ignore("Is incremented on an origin error") {
-      /*
-       * This test simulates a failed message, not a successful message that is
-       * cancelled due to a latent error.
-       *
-       * HttpPipelineHandler point of view:
-       *  - Only receives `onError` event without response headers.
-       */
-      originRespondingWith(
-        responseWithHeaders(
-          HttpHeader(CONTENT_LENGTH, "0"),
-          HttpHeader(CONTENT_LENGTH, "0")
-        ))
-
-      val request = get(styxServer.routerURL("/OriginCancellationMetrics/2")).build()
-      val response = decodedRequest(request)
-      response.status() should be(BAD_GATEWAY)
-
-      styxServer.metricsSnapshot.count("origins.app-1.requests.cancelled").get should be(1)
+      // This assertion is now a part of ChunkedDownloadSpec
+      // "Cancels the HTTP download request when browser closes the connection."
     }
   }
 
