@@ -51,6 +51,7 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.testng.Assert.assertEquals;
 
 public class HttpResponseTest {
 
@@ -351,6 +352,21 @@ public class HttpResponseTest {
                 .build();
 
         assertThat(r1.cookie("x"), isAbsent());
+    }
+
+    @Test
+    public void consumesBody() {
+        Buffer buf1 = new Buffer("foo", UTF_8);
+        Buffer buf2 = new Buffer("bar", UTF_8);
+
+        HttpResponse response = response()
+                .body(new ByteStream(Flux.just(buf1, buf2)))
+                .build();
+
+        response.consume();
+
+        assertEquals(buf1.delegate().refCnt(), 0);
+        assertEquals(buf2.delegate().refCnt(), 0);
     }
 
     private static HttpResponse.Builder response() {
