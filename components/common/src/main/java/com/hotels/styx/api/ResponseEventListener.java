@@ -69,7 +69,7 @@ public class ResponseEventListener {
         this.publisher = requireNonNull(publisher);
     }
 
-    public static ResponseEventListener from(rx.Observable<HttpResponse> publisher) {
+    public static ResponseEventListener from(Observable<HttpResponse> publisher) {
         return new ResponseEventListener(publisher);
     }
 

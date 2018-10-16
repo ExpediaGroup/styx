@@ -21,7 +21,6 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import rx.Observable;
-import rx.RxReactiveStreams;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static rx.Observable.create;
+import static rx.RxReactiveStreams.toObservable;
 import static rx.RxReactiveStreams.toPublisher;
 
 /**
@@ -88,7 +88,7 @@ class StandardHttpPipeline implements HttpHandler {
                     return Eventual.error(e);
                 }
             }
-            return new Eventual<>(toPublisher(RxReactiveStreams.toObservable(client.handle(request, this.context))
+            return new Eventual<>(toPublisher(toObservable(client.handle(request, this.context))
                     .compose(StandardHttpPipeline::sendErrorOnDoubleSubscription)));
         }
     }

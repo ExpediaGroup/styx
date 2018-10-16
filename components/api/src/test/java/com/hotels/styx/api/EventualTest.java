@@ -28,7 +28,7 @@ import static org.testng.Assert.assertEquals;
 public class EventualTest {
 
     @Test
-    public void newEventual() throws ExecutionException, InterruptedException {
+    public void createFromPublisher() throws ExecutionException, InterruptedException {
         String value = new Eventual<>(Flux.just("hello"))
                 .asCompletableFuture()
                 .get();
