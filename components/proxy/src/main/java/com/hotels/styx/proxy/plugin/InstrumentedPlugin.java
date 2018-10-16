@@ -19,7 +19,7 @@ import com.codahale.metrics.Meter;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -84,7 +84,7 @@ public class InstrumentedPlugin implements Plugin {
     }
 
     @Override
-    public Eventual<HttpResponse> intercept(HttpRequest request, Chain originalChain) {
+    public Eventual<HttpResponse> intercept(LiveHttpRequest request, Chain originalChain) {
         StatusRecordingChain chain = new StatusRecordingChain(originalChain);
         try {
             return new Eventual<>(toPublisher(
@@ -140,7 +140,7 @@ public class InstrumentedPlugin implements Plugin {
         }
 
         @Override
-        public Eventual<HttpResponse> proceed(HttpRequest request) {
+        public Eventual<HttpResponse> proceed(LiveHttpRequest request) {
             try {
                 return new Eventual<>(
                         toPublisher(toObservable(chain.proceed(request))

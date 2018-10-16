@@ -22,7 +22,7 @@ import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.MetricRegistry;
@@ -92,7 +92,7 @@ import static rx.RxReactiveStreams.toObservable;
  * If a response is successfully returned, it is written by a NettyHttpResponseWriter.
  * If an error occurs, an error response is generated.
  */
-public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest> {
+public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpRequest> {
     private static final Logger LOGGER = getLogger(HttpPipelineHandler.class);
 
     private static final ExceptionStatusMapper EXCEPTION_STATUSES = new ExceptionStatusMapper.Builder()
@@ -121,9 +121,9 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
     private final boolean secure;
 
     private volatile Subscription subscription;
-    private volatile HttpRequest ongoingRequest;
+    private volatile LiveHttpRequest ongoingRequest;
     private volatile HttpResponse ongoingResponse;
-    private volatile HttpRequest prematureRequest;
+    private volatile LiveHttpRequest prematureRequest;
 
     private volatile CompletableFuture<Void> future;
     private volatile QueueDrainingEventProcessor eventProcessor;
@@ -207,7 +207,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, HttpRequest request) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, LiveHttpRequest request) throws Exception {
         eventProcessor.submit(new RequestReceivedEvent(request, ctx));
     }
 
@@ -222,7 +222,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         eventProcessor.submit(new ChannelExceptionEvent(ctx, cause));
     }
 
-    private State onSpuriousRequest(HttpRequest request, State state) {
+    private State onSpuriousRequest(LiveHttpRequest request, State state) {
         LOGGER.warn(warningMessage("message='Spurious request received while handling another request', spuriousRequest=" + request));
 
         metrics.counter("requests.cancelled.spuriousRequest").inc();
@@ -231,7 +231,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         return TERMINATED;
     }
 
-    private State onPrematureRequest(HttpRequest request, ChannelHandlerContext ctx) {
+    private State onPrematureRequest(LiveHttpRequest request, ChannelHandlerContext ctx) {
         if (prematureRequest != null) {
             LOGGER.warn(warningMessage("message='Spurious request received while handling another request', spuriousRequest=%s" + request));
 
@@ -247,9 +247,9 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         }
     }
 
-    private State onLegitimateRequest(HttpRequest request, ChannelHandlerContext ctx) {
+    private State onLegitimateRequest(LiveHttpRequest request, ChannelHandlerContext ctx) {
         statsSink.onRequest(request.id());
-        HttpRequest v11Request = request.newBuilder().version(HTTP_1_1).build();
+        LiveHttpRequest v11Request = request.newBuilder().version(HTTP_1_1).build();
         ongoingRequest = request;
 
         // Note, it is possible for onCompleted, onError, and onNext events to be emitted in
@@ -488,7 +488,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         return throwable instanceof IOException;
     }
 
-    private HttpResponse exceptionToResponse(Throwable exception, HttpRequest request) {
+    private HttpResponse exceptionToResponse(Throwable exception, LiveHttpRequest request) {
         HttpResponseStatus status = status(exception instanceof PluginException
                 ? exception.getCause()
                 : exception);
@@ -533,10 +533,10 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
     }
 
     private static class RequestReceivedEvent {
-        final HttpRequest request;
+        final LiveHttpRequest request;
         final ChannelHandlerContext ctx;
 
-        RequestReceivedEvent(HttpRequest request, ChannelHandlerContext ctx) {
+        RequestReceivedEvent(LiveHttpRequest request, ChannelHandlerContext ctx) {
             this.request = request;
             this.ctx = ctx;
         }
@@ -706,7 +706,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         HttpPipelineHandler buildForIoExceptionTest() {
             return new HttpPipelineHandler(this) {
                 @Override
-                protected void channelRead0(ChannelHandlerContext ctx, HttpRequest request) throws Exception {
+                protected void channelRead0(ChannelHandlerContext ctx, LiveHttpRequest request) throws Exception {
                     throw new IOException("Connection reset by peer");
                 }
             };

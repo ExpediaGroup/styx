@@ -63,7 +63,7 @@ public class FullHttpRequestTest {
                 .cookies(requestCookie("CookieName", "CookieValue"))
                 .build();
 
-        HttpRequest streaming = fullRequest.toStreamingRequest();
+        LiveHttpRequest streaming = fullRequest.toStreamingRequest();
 
         assertThat(streaming.method(), is(HttpMethod.POST));
         assertThat(streaming.url(), is(url("/foo/bar").build()));
@@ -84,7 +84,7 @@ public class FullHttpRequestTest {
 
     @Test(dataProvider = "emptyBodyRequests")
     public void convertsToStreamingHttpRequestWithEmptyBody(FullHttpRequest fullRequest) {
-        HttpRequest streaming = fullRequest.toStreamingRequest();
+        LiveHttpRequest streaming = fullRequest.toStreamingRequest();
 
         StepVerifier.create(streaming.body())
                 .expectComplete()

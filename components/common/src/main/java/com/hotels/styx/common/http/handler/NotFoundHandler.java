@@ -17,7 +17,7 @@ package com.hotels.styx.common.http.handler;
 
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
@@ -39,7 +39,7 @@ public class NotFoundHandler extends BaseHttpHandler {
             + "   <p>The requested URL was not found on this server.\n";
 
     @Override
-    public HttpResponse doHandle(HttpRequest request) {
+    public HttpResponse doHandle(LiveHttpRequest request) {
         return FullHttpResponse.response(NOT_FOUND)
                 .body(NOT_FOUND_MESSAGE, UTF_8)
                 .build()

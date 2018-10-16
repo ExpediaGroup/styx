@@ -25,7 +25,7 @@ public final class Requests {
     private Requests() {
     }
 
-    public static HttpRequest doFinally(HttpRequest request, Consumer<Optional<Throwable>> action) {
+    public static LiveHttpRequest doFinally(LiveHttpRequest request, Consumer<Optional<Throwable>> action) {
         return request.newBuilder()
                 .body(it -> it.doOnEnd(action))
                 .build();
@@ -37,7 +37,7 @@ public final class Requests {
                 .build();
     }
 
-    public static HttpRequest doOnComplete(HttpRequest request, Runnable action) {
+    public static LiveHttpRequest doOnComplete(LiveHttpRequest request, Runnable action) {
         return request.newBuilder()
                 .body(it -> it.doOnEnd(ifSuccessful(action)))
                 .build();
@@ -49,7 +49,7 @@ public final class Requests {
                 .build();
     }
 
-    public static HttpRequest doOnError(HttpRequest request, Consumer<Throwable> action) {
+    public static LiveHttpRequest doOnError(LiveHttpRequest request, Consumer<Throwable> action) {
         return request.newBuilder()
                 .body(it -> it.doOnEnd(ifError(action)))
                 .build();
@@ -61,7 +61,7 @@ public final class Requests {
                 .build();
     }
 
-    public static HttpRequest doOnCancel(HttpRequest request, Runnable action) {
+    public static LiveHttpRequest doOnCancel(LiveHttpRequest request, Runnable action) {
         return request.newBuilder().body(it -> it.doOnCancel(action)).build();
     }
 

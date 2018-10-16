@@ -154,7 +154,7 @@ trait StyxServerSupplements {
 class PluginAdapter extends Plugin {
   override def adminInterfaceHandlers(): util.Map[String, HttpHandler] = emptyMap()
 
-  override def intercept(request: HttpRequest, chain: Chain): Eventual[HttpResponse] = chain.proceed(request)
+  override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[HttpResponse] = chain.proceed(request)
 
   override def styxStarting(): Unit = Unit
 

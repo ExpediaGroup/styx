@@ -16,7 +16,7 @@
 package com.hotels.styx.routing.interceptors
 
 import com.hotels.styx.api.HttpResponse.response
-import com.hotels.styx.api.{HttpInterceptor, HttpRequest, HttpResponse, Eventual}
+import com.hotels.styx.api.{HttpInterceptor, LiveHttpRequest, HttpResponse, Eventual}
 import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition
@@ -43,7 +43,7 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
     val interceptor = new RewriteInterceptor.ConfigFactory().build(config)
     val capturingChain = new CapturingChain
 
-    val response = StyxFutures.await(interceptor.intercept(HttpRequest.get("/foo").build(), capturingChain).asCompletableFuture())
+    val response = StyxFutures.await(interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain).asCompletableFuture())
     capturingChain.request().path() should be ("/app/foo")
   }
 
@@ -60,7 +60,7 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
     val interceptor = new RewriteInterceptor.ConfigFactory().build(config)
     val capturingChain = new CapturingChain
 
-    val response = StyxFutures.await(interceptor.intercept(HttpRequest.get("/foo").build(), capturingChain).asCompletableFuture())
+    val response = StyxFutures.await(interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain).asCompletableFuture())
     capturingChain.request().path() should be ("/foo")
   }
 
@@ -69,9 +69,9 @@ class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSug
   private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RouteHandlerDefinition]).get()
 
   class CapturingChain extends HttpInterceptor.Chain {
-    var storedRequest: HttpRequest = _
+    var storedRequest: LiveHttpRequest = _
 
-    override def proceed(request: HttpRequest): Eventual[HttpResponse] = {
+    override def proceed(request: LiveHttpRequest): Eventual[HttpResponse] = {
       storedRequest = request
       Eventual.of(response(OK).build())
     }

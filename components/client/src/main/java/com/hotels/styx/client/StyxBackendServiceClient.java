@@ -16,7 +16,7 @@
 package com.hotels.styx.client;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.Id;
@@ -96,7 +96,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
     }
 
     @Override
-    public Observable<HttpResponse> sendRequest(HttpRequest request) {
+    public Observable<HttpResponse> sendRequest(LiveHttpRequest request) {
         return sendRequest(rewriteUrl(request), new ArrayList<>(), 0);
     }
 
@@ -113,7 +113,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         return status.code() >= 400;
     }
 
-    private static boolean bodyNeedsToBeRemoved(HttpRequest request, HttpResponse response) {
+    private static boolean bodyNeedsToBeRemoved(LiveHttpRequest request, HttpResponse response) {
         return isHeadRequest(request) || isBodilessResponse(response);
     }
 
@@ -130,11 +130,11 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         return status == 204 || status == 304 || status / 100 == 1;
     }
 
-    private static boolean isHeadRequest(HttpRequest request) {
+    private static boolean isHeadRequest(LiveHttpRequest request) {
         return request.method().equals(HEAD);
     }
 
-    private Observable<HttpResponse> sendRequest(HttpRequest request, List<RemoteHost> previousOrigins, int attempt) {
+    private Observable<HttpResponse> sendRequest(LiveHttpRequest request, List<RemoteHost> previousOrigins, int attempt) {
         if (attempt >= MAX_RETRY_ATTEMPTS) {
             return Observable.error(new NoAvailableHostsException(this.id));
         }
@@ -164,7 +164,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         }
     }
 
-    Observable<HttpResponse> retry(HttpRequest request, RetryPolicyContext retryContext, List<RemoteHost> previousOrigins, int attempt, Throwable cause) {
+    Observable<HttpResponse> retry(LiveHttpRequest request, RetryPolicyContext retryContext, List<RemoteHost> previousOrigins, int attempt, Throwable cause) {
         LoadBalancer.Preferences lbContext = new LoadBalancer.Preferences() {
             @Override
             public Optional<String> preferredOrigins() {
@@ -190,10 +190,10 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         private final Id appId;
         private final int retryCount;
         private final Throwable lastException;
-        private final HttpRequest request;
+        private final LiveHttpRequest request;
         private final Iterable<RemoteHost> previouslyUsedOrigins;
 
-        RetryPolicyContext(Id appId, int retryCount, Throwable lastException, HttpRequest request,
+        RetryPolicyContext(Id appId, int retryCount, Throwable lastException, LiveHttpRequest request,
                            Iterable<RemoteHost> previouslyUsedOrigins) {
             this.appId = appId;
             this.retryCount = retryCount;
@@ -218,7 +218,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         }
 
         @Override
-        public HttpRequest currentRequest() {
+        public LiveHttpRequest currentRequest() {
             return request;
         }
 
@@ -245,12 +245,12 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         }
     }
 
-    private static void logError(HttpRequest rewrittenRequest, Throwable throwable) {
+    private static void logError(LiveHttpRequest rewrittenRequest, Throwable throwable) {
         LOGGER.error("Error Handling request={} exceptionClass={} exceptionMessage=\"{}\"",
                 new Object[]{rewrittenRequest, throwable.getClass().getName(), throwable.getMessage()});
     }
 
-    private HttpResponse removeUnexpectedResponseBody(HttpRequest request, HttpResponse response) {
+    private HttpResponse removeUnexpectedResponseBody(LiveHttpRequest request, HttpResponse response) {
         if (contentValidation && bodyNeedsToBeRemoved(request, response)) {
             return responseWithoutBody(response);
         } else {
@@ -273,7 +273,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         }
     }
 
-    private Optional<RemoteHost> selectOrigin(HttpRequest rewrittenRequest) {
+    private Optional<RemoteHost> selectOrigin(LiveHttpRequest rewrittenRequest) {
 
 
         LoadBalancer.Preferences preferences = new LoadBalancer.Preferences() {
@@ -308,7 +308,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         }
     }
 
-    private HttpRequest rewriteUrl(HttpRequest request) {
+    private LiveHttpRequest rewriteUrl(LiveHttpRequest request) {
         return rewriteRuleset.rewrite(request);
     }
 

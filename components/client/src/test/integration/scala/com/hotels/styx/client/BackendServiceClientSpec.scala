@@ -18,7 +18,7 @@ package com.hotels.styx.client
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets._
-import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.extension.{ActiveOrigins, Origin}

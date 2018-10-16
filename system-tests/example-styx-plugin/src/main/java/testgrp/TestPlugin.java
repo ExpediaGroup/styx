@@ -18,7 +18,7 @@ package testgrp;
 import com.google.common.base.Charsets;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -43,13 +43,13 @@ public class TestPlugin implements Plugin {
 
 
     @Override
-    public Eventual<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public Eventual<HttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         String header = xHcomPluginsHeader(request);
 
         final String configPath = environment.pluginConfig(String.class);
         String pluginsList = environment.configuration().get("plugins.active").get();
 
-        HttpRequest newRequest = request.newBuilder()
+        LiveHttpRequest newRequest = request.newBuilder()
                 .header(X_HCOM_PLUGINS_HEADER, header)
                 .header(X_HCOM_PLUGINS_CONFIGURATION_PATH, configPath)
                 .header(X_HCOM_PLUGINS_LIST, pluginsList)
@@ -72,7 +72,7 @@ public class TestPlugin implements Plugin {
                 .map(FullHttpResponse::toStreamingResponse);
     }
 
-    private String xHcomPluginsHeader(HttpRequest message) {
+    private String xHcomPluginsHeader(LiveHttpRequest message) {
         return message.headers().get(X_HCOM_PLUGINS_HEADER).orElse("")
                 .concat(" test-plugin-a")
                 .trim();

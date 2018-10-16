@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.ResponseEventListener;
@@ -40,7 +40,7 @@ class Transport {
         this.originIdHeaderName = requireNonNull(originIdHeaderName);
     }
 
-    public HttpTransaction send(HttpRequest request, Optional<ConnectionPool> origin, Id originId) {
+    public HttpTransaction send(LiveHttpRequest request, Optional<ConnectionPool> origin, Id originId) {
         Observable<Connection> connection = connection(request, origin);
 
         AtomicReference<Connection> connectionRef = new AtomicReference<>(null);
@@ -79,7 +79,7 @@ class Transport {
         };
     }
 
-    private Observable<Connection> connection(HttpRequest request, Optional<ConnectionPool> origin) {
+    private Observable<Connection> connection(LiveHttpRequest request, Optional<ConnectionPool> origin) {
         return origin
                 .map(ConnectionPool::borrowConnection)
                 .orElseGet(() -> {

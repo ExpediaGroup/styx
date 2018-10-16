@@ -15,12 +15,12 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 
 /**
- * A Factory for creating an HttpRequestOperation from an HttpRequest.
+ * A Factory for creating an HttpRequestOperation from an LiveHttpRequest.
  */
 public interface HttpRequestOperationFactory {
     /**
@@ -29,7 +29,7 @@ public interface HttpRequestOperationFactory {
      * @param request the http request
      * @return a new http operation
      */
-    HttpRequestOperation newHttpRequestOperation(HttpRequest request);
+    HttpRequestOperation newHttpRequestOperation(LiveHttpRequest request);
 
     /**
      * Builds HttpRequestOperationFactory objects.

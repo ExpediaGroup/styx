@@ -16,7 +16,7 @@
 package com.hotels.styx.api.extension.service.spi;
 
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -35,7 +35,7 @@ import static org.hamcrest.Matchers.is;
 
 public class AbstractStyxServiceTest {
 
-    private final HttpRequest get = HttpRequest.get("/").build();
+    private final LiveHttpRequest get = LiveHttpRequest.get("/").build();
 
     @Test
     public void exposesNameAndStatusViaAdminInterface() throws ExecutionException, InterruptedException {

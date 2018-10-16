@@ -82,7 +82,7 @@ import rx.lang.scala.ImplicitFunctionConversions._
 import scala.compat.java8.FunctionConverters.asJavaFunction
 
 class AsyncDelayPlugin extends PluginAdapter {
-  override def intercept(request: HttpRequest, chain: Chain): Eventual[HttpResponse] = {
+  override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[HttpResponse] = {
     chain.proceed(request)
       .flatMap(asJavaFunction((response: HttpResponse) => {
 

@@ -18,7 +18,7 @@ package com.hotels.styx.support.generators
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
-import com.hotels.styx.api.{FullHttpRequest, HttpRequest}
+import com.hotels.styx.api.{FullHttpRequest, LiveHttpRequest}
 import com.hotels.styx.api.HttpMethod._
 import com.hotels.styx.api.HttpVersion._
 import com.hotels.styx.support.generators.HttpHeadersGenerator.{HeaderTuple, contentTypeCharset, httpHeaders}
@@ -29,7 +29,7 @@ class StyxHttpMessageGenerator {
 
   val maxContentChunkLength = 2000
 
-  def nettyHttpRequest: Gen[HttpRequest] = for {
+  def nettyHttpRequest: Gen[LiveHttpRequest] = for {
     method <- Gen.oneOf(GET, POST, PUT, HEAD, CONNECT, DELETE, OPTIONS, PATCH, TRACE)
     version <- Gen.oneOf(HTTP_1_0, HTTP_1_1)
     uri <- genUrl

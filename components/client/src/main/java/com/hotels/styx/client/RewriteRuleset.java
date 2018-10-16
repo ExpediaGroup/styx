@@ -16,7 +16,7 @@
 package com.hotels.styx.client;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.extension.service.RewriteRule;
 
@@ -46,7 +46,7 @@ public class RewriteRuleset {
      * @param request a request
      * @return a rewritten request
      */
-    public HttpRequest rewrite(HttpRequest request) {
+    public LiveHttpRequest rewrite(LiveHttpRequest request) {
         String path = request.path();
         String newPath = newPath(path);
 

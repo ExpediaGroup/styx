@@ -17,7 +17,7 @@ package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 
@@ -88,7 +88,7 @@ public final class NamedPlugin implements Plugin {
     }
 
     @Override
-    public Eventual<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public Eventual<HttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         if (enabled) {
             return plugin.intercept(request, chain);
         }

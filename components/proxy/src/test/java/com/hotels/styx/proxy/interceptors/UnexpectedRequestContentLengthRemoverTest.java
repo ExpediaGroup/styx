@@ -16,10 +16,10 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor.Chain;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
 import static com.hotels.styx.proxy.interceptors.ReturnResponseChain.returnsResponse;
@@ -36,17 +36,17 @@ public class UnexpectedRequestContentLengthRemoverTest {
 
     @Test
     public void removesContentLengthIfBothContentLengthAndChunkedHeaderExists() throws Exception {
-        HttpRequest request = get("/foo")
+        LiveHttpRequest request = get("/foo")
                 .header(CONTENT_LENGTH, "50")
                 .header(TRANSFER_ENCODING, CHUNKED).build();
 
-        HttpRequest interceptedRequest = interceptRequest(request);
+        LiveHttpRequest interceptedRequest = interceptRequest(request);
 
         assertThat(interceptedRequest.contentLength(), isAbsent());
         assertThat(interceptedRequest.chunked(), is(true));
     }
 
-    private HttpRequest interceptRequest(HttpRequest request) {
+    private LiveHttpRequest interceptRequest(LiveHttpRequest request) {
         RequestRecordingChain recording = requestRecordingChain(ANY_RESPONSE_HANDLER);
         interceptor.intercept(request, recording);
         return recording.recordedRequest();

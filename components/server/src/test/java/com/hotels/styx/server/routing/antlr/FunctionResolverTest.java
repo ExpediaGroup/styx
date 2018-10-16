@@ -17,14 +17,14 @@ package com.hotels.styx.server.routing.antlr;
 
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.RequestCookie;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import java.util.Map;
 
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -46,7 +46,7 @@ public class FunctionResolverTest {
 
     @Test
     public void resolvesZeroArgumentFunctions() {
-        HttpRequest request = get("/foo").build();
+        LiveHttpRequest request = get("/foo").build();
 
         assertThat(functionResolver.resolveFunction("path", emptyList()).call(request, context), is("/foo"));
         assertThat(functionResolver.resolveFunction("method", emptyList()).call(request, context), is("GET"));
@@ -55,14 +55,14 @@ public class FunctionResolverTest {
     @Test(expectedExceptions = DslFunctionResolutionError.class,
             expectedExceptionsMessageRegExp = "No such function=\\[foobar\\], with n=\\[0\\] arguments=\\[\\]")
     public void throwsExceptionIfZeroArgumentFunctionDoesNotExist() {
-        HttpRequest request = get("/foo").build();
+        LiveHttpRequest request = get("/foo").build();
 
         functionResolver.resolveFunction("foobar", emptyList()).call(request, context);
     }
 
     @Test
     public void resolvesOneArgumentFunctions() {
-        HttpRequest request = get("/foo")
+        LiveHttpRequest request = get("/foo")
                 .header("Host", "www.hotels.com")
                 .cookies(requestCookie("lang", "en_US|en-us_hotels_com"))
                 .build();
@@ -74,7 +74,7 @@ public class FunctionResolverTest {
     @Test(expectedExceptions = DslFunctionResolutionError.class,
             expectedExceptionsMessageRegExp = "No such function=\\[foobar\\], with n=\\[1\\] arguments=\\[barfoo\\]")
     public void throwsExceptionIfOneArgumentFunctionDoesNotExist() {
-        HttpRequest request = get("/foo")
+        LiveHttpRequest request = get("/foo")
                 .header("Host", "www.hotels.com")
                 .cookies(requestCookie("lang", "en_US|en-us_hotels_com"))
                 .build();

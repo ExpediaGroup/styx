@@ -19,18 +19,18 @@ import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import java.io.File;
 
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import com.hotels.styx.api.HttpRequest;
 
 public class StyxConfigurationHandlerTest {
     private static final String ORIGINS_FILE = fixturesHome() + "conf/origins/origins-development.yml";
@@ -92,7 +92,7 @@ public class StyxConfigurationHandlerTest {
         return configurationBrowserHandler(yaml).handle(adminRequest(pretty), HttpInterceptorContext.create());
     }
 
-    private static HttpRequest adminRequest(boolean pretty) {
+    private static LiveHttpRequest adminRequest(boolean pretty) {
         if (pretty) {
             return get("/?pretty=").build();
         } else {

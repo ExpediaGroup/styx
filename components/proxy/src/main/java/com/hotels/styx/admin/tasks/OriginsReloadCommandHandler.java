@@ -20,7 +20,7 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.extension.service.BackendService;
@@ -62,7 +62,7 @@ public class OriginsReloadCommandHandler implements HttpHandler {
     }
 
     @Override
-    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<HttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         return new Eventual<>(toPublisher(Observable.<HttpResponse>create(this::reload)
                 .subscribeOn(Schedulers.from(executor))));
     }

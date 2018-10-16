@@ -17,8 +17,8 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.client.BackendServiceClient;
-import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
@@ -34,7 +34,7 @@ import com.hotels.styx.client.StyxBackendServiceClient;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
@@ -123,9 +123,9 @@ public class StyxBackendServiceClientFactoryTest {
                                 .build(),
                         new OriginStatsFactory(new CodaHaleMetricRegistry()));
 
-        HttpRequest requestz = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("z").toString())).build();
-        HttpRequest requestx = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("x").toString())).build();
-        HttpRequest requesty = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("y").toString())).build();
+        LiveHttpRequest requestz = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("z").toString())).build();
+        LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("x").toString())).build();
+        LiveHttpRequest requesty = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("y").toString())).build();
 
         HttpResponse responsez = styxBackendServiceClient.sendRequest(requestz).toBlocking().first();
         HttpResponse responsex = styxBackendServiceClient.sendRequest(requestx).toBlocking().first();
@@ -168,9 +168,9 @@ public class StyxBackendServiceClientFactoryTest {
                                 .build(),
                         new OriginStatsFactory(new CodaHaleMetricRegistry()));
 
-        HttpRequest requestz = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("z").toString())).build();
-        HttpRequest requestx = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString())).build();
-        HttpRequest requesty = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("y").toString())).build();
+        LiveHttpRequest requestz = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("z").toString())).build();
+        LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString())).build();
+        LiveHttpRequest requesty = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("y").toString())).build();
 
         HttpResponse responsez = styxBackendServiceClient.sendRequest(requestz).toBlocking().first();
         HttpResponse responsex = styxBackendServiceClient.sendRequest(requestx).toBlocking().first();
@@ -183,7 +183,7 @@ public class StyxBackendServiceClientFactoryTest {
 
     private StyxHostHttpClient hostClient(HttpResponse response) {
         StyxHostHttpClient mockClient = mock(StyxHostHttpClient.class);
-        when(mockClient.sendRequest(any(HttpRequest.class))).thenReturn(just(response));
+        when(mockClient.sendRequest(any(LiveHttpRequest.class))).thenReturn(just(response));
         when(mockClient.loadBalancingMetric()).thenReturn(new LoadBalancingMetric(1));
         return mockClient;
     }

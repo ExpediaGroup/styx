@@ -17,8 +17,8 @@ package com.hotels.styx.plugins;
 
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.api.HttpRequest;
 
 public class AggregationTesterPlugin implements Plugin {
     private final int maxContentBytes;
@@ -28,7 +28,7 @@ public class AggregationTesterPlugin implements Plugin {
     }
 
     @Override
-    public Eventual<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public Eventual<HttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         return chain.proceed(request)
                 .flatMap(response ->
                         response.toFullResponse(maxContentBytes)

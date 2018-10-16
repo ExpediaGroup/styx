@@ -16,7 +16,7 @@
 package loadtest.plugins;
 
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
@@ -42,7 +42,7 @@ public class AsyncResponsePluginFactory implements PluginFactory {
         }
 
         @Override
-        public Eventual<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        public Eventual<HttpResponse> intercept(LiveHttpRequest request, Chain chain) {
             return chain.proceed(request)
                     .flatMap(response -> Eventual.from(processAsynchronously(response, config.delayMillis())));
         }

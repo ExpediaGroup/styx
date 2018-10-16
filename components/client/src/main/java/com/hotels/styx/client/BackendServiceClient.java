@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import rx.Observable;
 
@@ -33,5 +33,5 @@ public interface BackendServiceClient {
      * In order to cancel the ongoing request, just unsubscribe from it.
      *
      */
-    Observable<HttpResponse> sendRequest(HttpRequest request);
+    Observable<HttpResponse> sendRequest(LiveHttpRequest request);
 }

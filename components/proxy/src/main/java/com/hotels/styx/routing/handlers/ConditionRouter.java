@@ -21,6 +21,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
@@ -43,7 +44,6 @@ import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.format;
 import static java.lang.String.join;
-import com.hotels.styx.api.HttpRequest;
 
 /**
  * Condition predicate based HTTP router.
@@ -58,7 +58,7 @@ public class ConditionRouter implements HttpRouter {
     }
 
     @Override
-    public Optional<HttpHandler> route(HttpRequest request, HttpInterceptor.Context context) {
+    public Optional<HttpHandler> route(LiveHttpRequest request, HttpInterceptor.Context context) {
         for (Route route : routes) {
             HttpHandler handler = route.match(request, context);
             if (handler != null) {
@@ -78,7 +78,7 @@ public class ConditionRouter implements HttpRouter {
             this.handler = handler;
         }
 
-        public HttpHandler match(HttpRequest request, HttpInterceptor.Context context) {
+        public HttpHandler match(LiveHttpRequest request, HttpInterceptor.Context context) {
             return matcher.apply(request, context) ? handler : null;
         }
     }

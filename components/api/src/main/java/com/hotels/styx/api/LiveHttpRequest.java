@@ -58,17 +58,17 @@ import static java.util.stream.Stream.concat;
 /**
  * An HTTP request object with a byte stream body.
  * <p>
- * An {@code HttpRequest} is used in {@link HttpInterceptor} where each content
+ * An {@code LiveHttpRequest} is used in {@link HttpInterceptor} where each content
  * chunk must be processed as they arrive. It is also useful for dealing with
  * very large content sizes, and in situations where content size is not known
  * upfront.
  * <p>
- * An {@code HttpRequest} object is immutable with respect to the request line
+ * An {@code LiveHttpRequest} object is immutable with respect to the request line
  * attributes and HTTP headers. Once an instance is created, they cannot change.
  * <p>
- * An {@code HttpRequest} body is a byte buffer stream that can be consumed
+ * An {@code LiveHttpRequest} body is a byte buffer stream that can be consumed
  * as sequence of asynchronous events. Once consumed, the stream is exhausted and
- * can not be reused. Conceptually each {@code HttpRequest} object
+ * can not be reused. Conceptually each {@code LiveHttpRequest} object
  * has an associated producer object that publishes data to the stream.
  * For example, a Styx Server implements a content producer for {@link HttpInterceptor}
  * extensions. The producer receives data chunks from a network socket and publishes
@@ -92,7 +92,7 @@ import static java.util.stream.Stream.concat;
  * from the current request object. It is useful for transforming a request
  * to another one my modifying one or more of its attributes.
  */
-public class HttpRequest implements StreamingHttpMessage {
+public class LiveHttpRequest implements StreamingHttpMessage {
     private final Object id;
     private final HttpVersion version;
     private final HttpMethod method;
@@ -100,7 +100,7 @@ public class HttpRequest implements StreamingHttpMessage {
     private final HttpHeaders headers;
     private final ByteStream body;
 
-    HttpRequest(Builder builder) {
+    LiveHttpRequest(Builder builder) {
         this.id = builder.id == null ? randomUUID() : builder.id;
         this.version = builder.version;
         this.method = builder.method;
@@ -433,7 +433,7 @@ public class HttpRequest implements StreamingHttpMessage {
          * @param request       a HTTP request object
          * @param contentStream a body content stream
          */
-        public Builder(HttpRequest request, ByteStream contentStream) {
+        public Builder(LiveHttpRequest request, ByteStream contentStream) {
             this.id = request.id();
             this.method = httpMethod(request.method().name());
             this.url = request.url();
@@ -442,7 +442,7 @@ public class HttpRequest implements StreamingHttpMessage {
             this.body = body;
         }
 
-        Builder(HttpRequest request) {
+        Builder(LiveHttpRequest request) {
             this.id = request.id();
             this.method = request.method();
             this.url = request.url();
@@ -485,7 +485,7 @@ public class HttpRequest implements StreamingHttpMessage {
          * Transforms request body.
          *
          * @param transformation a Function from ByteStream to ByteStream.
-         * @return a HttpRequest builder with a transformed message body.
+         * @return a LiveHttpRequest builder with a transformed message body.
          */
         public Builder body(Function<ByteStream, ByteStream> transformation) {
             this.body = transformation.apply(this.body);
@@ -710,7 +710,7 @@ public class HttpRequest implements StreamingHttpMessage {
          *
          * @return a new full request
          */
-        public HttpRequest build() {
+        public LiveHttpRequest build() {
             if (validate) {
                 ensureContentLengthIsValid();
                 requireNotDuplicatedHeader(COOKIE);
@@ -718,7 +718,7 @@ public class HttpRequest implements StreamingHttpMessage {
                 setHostHeader();
             }
 
-            return new HttpRequest(this);
+            return new LiveHttpRequest(this);
         }
 
         private void setHostHeader() {

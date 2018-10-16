@@ -17,7 +17,7 @@ package com.hotels.styx.utils.handlers;
 
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
@@ -39,7 +39,7 @@ public class ContentDigestHandler extends BaseHttpHandler {
     }
 
     @Override
-    protected HttpResponse doHandle(HttpRequest request) {
+    protected HttpResponse doHandle(LiveHttpRequest request) {
         FullHttpRequest fullRequest = await(request.toFullRequest(0x100000).asCompletableFuture());
 
         String responseBody = format("Response From %s - %s, received content digest: %s",

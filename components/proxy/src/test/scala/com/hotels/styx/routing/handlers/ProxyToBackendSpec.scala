@@ -55,7 +55,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
   it("builds ProxyToBackend handler") {
     val handler = new ProxyToBackend.ConfigFactory(environment, clientFactory()).build(List(), null, config)
 
-    val response = StyxFutures.await(handler.handle(HttpRequest.get("/foo").build(), HttpInterceptorContext.create).asCompletableFuture())
+    val response = StyxFutures.await(handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create).asCompletableFuture())
     response.status should be (OK)
   }
 
@@ -104,7 +104,7 @@ class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
 
   private def clientFactory() = new BackendServiceClientFactory() {
     override def createClient(backendService: BackendService, originsInventory: OriginsInventory, originStatsFactory: OriginStatsFactory): BackendServiceClient = new BackendServiceClient {
-      override def sendRequest(request: HttpRequest): Observable[HttpResponse] = {
+      override def sendRequest(request: LiveHttpRequest): Observable[HttpResponse] = {
         backendService.id() should be (id("ba"))
         backendService.connectionPoolConfig().maxConnectionsPerHost() should be (45)
         backendService.connectionPoolConfig().maxPendingConnectionsPerHost() should be (15)

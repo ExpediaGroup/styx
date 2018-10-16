@@ -20,6 +20,7 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -30,8 +31,8 @@ import org.testng.annotations.Test;
 import rx.observers.TestSubscriber;
 
 import java.util.concurrent.ExecutionException;
-import com.hotels.styx.api.HttpRequest;
-import static com.hotels.styx.api.HttpRequest.get;
+
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.Eventual.error;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
@@ -54,7 +55,7 @@ public class InstrumentedPluginTest {
 
     private MetricRegistry metricRegistry;
     private Environment environment;
-    private HttpRequest someRequest;
+    private LiveHttpRequest someRequest;
     private Chain chain;
 
     @BeforeMethod
@@ -91,7 +92,7 @@ public class InstrumentedPluginTest {
 
         HttpResponse response = plugin.intercept(someRequest, chain).asCompletableFuture().get();
 
-        verify(chain, never()).proceed(any(HttpRequest.class));
+        verify(chain, never()).proceed(any(LiveHttpRequest.class));
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
         assertThat(metricRegistry.meter("plugins.returnEarly.response.status.500").getCount(), is(1L));
         assertThat(metricRegistry.meter("plugins.returnEarly.errors").getCount(), is(1L));
@@ -132,7 +133,7 @@ public class InstrumentedPluginTest {
 
         HttpResponse response = plugin.intercept(someRequest, chain).asCompletableFuture().get();
 
-        verify(chain, never()).proceed(any(HttpRequest.class));
+        verify(chain, never()).proceed(any(LiveHttpRequest.class));
         assertThat(response.status(), is(BAD_GATEWAY));
         assertThat(metricRegistry.meter("plugins.returnEarly.response.status.502").getCount(), is(1L));
         assertThat(metricRegistry.meter("plugins.returnEarly.errors").getCount(), is(0L));
@@ -147,7 +148,7 @@ public class InstrumentedPluginTest {
         assertThatObservableHasErrorOnly(PluginException.class,
                 plugin.intercept(someRequest, chain));
 
-        verify(chain, never()).proceed(any(HttpRequest.class));
+        verify(chain, never()).proceed(any(LiveHttpRequest.class));
 
         assertThat(metricRegistry.meter("plugins.immediateException.response.status.500").getCount(), is(1L));
         assertThat(metricRegistry.meter("plugins.immediateException.exception." + SOME_EXCEPTION).getCount(), is(1L));
@@ -162,7 +163,7 @@ public class InstrumentedPluginTest {
         assertThatObservableHasErrorOnly(PluginException.class,
                 plugin.intercept(someRequest, chain));
 
-        verify(chain, never()).proceed(any(HttpRequest.class));
+        verify(chain, never()).proceed(any(LiveHttpRequest.class));
 
         assertThat(metricRegistry.meter("plugins.immediateException.response.status.500").getCount(), is(1L));
         assertThat(metricRegistry.meter("plugins.immediateException.exception." + SOME_EXCEPTION).getCount(), is(1L));

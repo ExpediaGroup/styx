@@ -17,7 +17,7 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Clock;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
@@ -25,7 +25,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.System.currentTimeMillis;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -86,7 +86,7 @@ public class JsonHandlerTest {
 
     @Test
     public void prettyPrintsOutputWhenPrettyIsSetToTrue() {
-        HttpRequest request = get("/?pretty=true").build();
+        LiveHttpRequest request = get("/?pretty=true").build();
 
         Supplier<Convertible> supplier = sequentialSupplier(new Convertible("foo", 456));
         JsonHandler<Convertible> handler = new JsonHandler<>(supplier, Optional.empty());
@@ -105,7 +105,7 @@ public class JsonHandlerTest {
         return responseFor(handler, get("/").build());
     }
 
-    private String responseFor(JsonHandler<?> handler, HttpRequest request) {
+    private String responseFor(JsonHandler<?> handler, LiveHttpRequest request) {
         return await(
                 handler.handle(request, HttpInterceptorContext.create())
                         .flatMap(response -> response.toFullResponse(1000000))

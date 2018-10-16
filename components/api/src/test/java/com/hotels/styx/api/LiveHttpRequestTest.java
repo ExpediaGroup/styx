@@ -29,10 +29,10 @@ import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpMethod.DELETE;
 import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.api.HttpMethod.POST;
-import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.HttpRequest.patch;
-import static com.hotels.styx.api.HttpRequest.post;
-import static com.hotels.styx.api.HttpRequest.put;
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.patch;
+import static com.hotels.styx.api.LiveHttpRequest.post;
+import static com.hotels.styx.api.LiveHttpRequest.put;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
@@ -52,10 +52,10 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
-public class HttpRequestTest {
+public class LiveHttpRequestTest {
     @Test
     public void decodesToFullHttpRequest() throws Exception {
-        HttpRequest streamingRequest = post("/foo/bar", body("foo", "bar"))
+        LiveHttpRequest streamingRequest = post("/foo/bar", body("foo", "bar"))
                 .version(HTTP_1_0)
                 .header("HeaderName", "HeaderValue")
                 .cookies(requestCookie("CookieName", "CookieValue"))
@@ -79,7 +79,7 @@ public class HttpRequestTest {
     public void toFullRequestReleasesOriginalReferenceCountedBuffers() throws ExecutionException, InterruptedException {
         Buffer content = new Buffer("original", UTF_8);
 
-        HttpRequest original = HttpRequest.get("/foo")
+        LiveHttpRequest original = LiveHttpRequest.get("/foo")
                 .body(new ByteStream(Flux.just(content)))
                 .build();
 
@@ -93,7 +93,7 @@ public class HttpRequestTest {
     }
 
     @Test(dataProvider = "emptyBodyRequests")
-    public void encodesToStreamingHttpRequestWithEmptyBody(HttpRequest streamingRequest) throws Exception {
+    public void encodesToStreamingHttpRequestWithEmptyBody(LiveHttpRequest streamingRequest) throws Exception {
         FullHttpRequest full = streamingRequest.toFullRequest(0x1000)
                 .asCompletableFuture()
                 .get();
@@ -112,7 +112,7 @@ public class HttpRequestTest {
 
     @Test
     public void createsARequestWithDefaultValues() {
-        HttpRequest request = get("/index").build();
+        LiveHttpRequest request = get("/index").build();
         assertThat(request.version(), is(HTTP_1_1));
         assertThat(request.url().toString(), is("/index"));
         assertThat(request.path(), is("/index"));
@@ -132,25 +132,25 @@ public class HttpRequestTest {
 
     @Test
     public void canUseBuilderToSetRequestProperties() {
-        HttpRequest request = patch("https://hotels.com")
+        LiveHttpRequest request = patch("https://hotels.com")
                 .version(HTTP_1_0)
                 .id("id")
                 .header("headerName", "a")
                 .cookies(requestCookie("cfoo", "bar"))
                 .build();
 
-        assertThat(request.toString(), is("HttpRequest{version=HTTP/1.0, method=PATCH, uri=https://hotels.com, headers=[headerName=a, Cookie=cfoo=bar, Host=hotels.com], id=id}"));
+        assertThat(request.toString(), is("LiveHttpRequest{version=HTTP/1.0, method=PATCH, uri=https://hotels.com, headers=[headerName=a, Cookie=cfoo=bar, Host=hotels.com], id=id}"));
 
         assertThat(request.headers("headerName"), is(singletonList("a")));
     }
 
     @Test
     public void canModifyPreviouslyCreatedRequest() {
-        HttpRequest request = get("/foo")
+        LiveHttpRequest request = get("/foo")
                 .header("remove", "remove")
                 .build();
 
-        HttpRequest newRequest = request.newBuilder()
+        LiveHttpRequest newRequest = request.newBuilder()
                 .method(DELETE)
                 .uri("/home")
                 .header("remove", "notanymore")
@@ -163,26 +163,26 @@ public class HttpRequestTest {
 
     @Test
     public void decodesQueryParams() {
-        HttpRequest request = get("http://example.com/?foo=bar")
+        LiveHttpRequest request = get("http://example.com/?foo=bar")
                 .build();
         assertThat(request.queryParam("foo"), isValue("bar"));
     }
 
     @Test
     public void decodesQueryParamsContainingEncodedEquals() {
-        HttpRequest request = get("http://example.com/?foo=a%2Bb%3Dc")
+        LiveHttpRequest request = get("http://example.com/?foo=a%2Bb%3Dc")
                 .build();
         assertThat(request.queryParam("foo"), isValue("a+b=c"));
     }
 
     @Test
     public void createsRequestBuilderFromRequest() {
-        HttpRequest originalRequest = get("/home")
+        LiveHttpRequest originalRequest = get("/home")
                 .cookies(requestCookie("fred", "blogs"))
                 .header("some", "header")
                 .build();
 
-        HttpRequest clonedRequest = originalRequest.newBuilder().build();
+        LiveHttpRequest clonedRequest = originalRequest.newBuilder().build();
 
         assertThat(clonedRequest.method(), is(originalRequest.method()));
         assertThat(clonedRequest.url(), is(originalRequest.url()));
@@ -192,20 +192,20 @@ public class HttpRequestTest {
 
     @Test
     public void extractsSingleQueryParameter() {
-        HttpRequest req = get("http://host.com:8080/path?fish=cod&fruit=orange")
+        LiveHttpRequest req = get("http://host.com:8080/path?fish=cod&fruit=orange")
                 .build();
         assertThat(req.queryParam("fish"), isValue("cod"));
     }
 
     @Test
     public void extractsMultipleQueryParameterValues() {
-        HttpRequest req = get("http://host.com:8080/path?fish=cod&fruit=orange&fish=smørflyndre").build();
+        LiveHttpRequest req = get("http://host.com:8080/path?fish=cod&fruit=orange&fish=smørflyndre").build();
         assertThat(req.queryParams("fish"), contains("cod", "smørflyndre"));
     }
 
     @Test
     public void extractsMultipleQueryParams() {
-        HttpRequest req = get("http://example.com?foo=bar&foo=hello&abc=def")
+        LiveHttpRequest req = get("http://example.com?foo=bar&foo=hello&abc=def")
                 .build();
 
         assertThat(req.queryParamNames(), containsInAnyOrder("foo", "abc"));
@@ -218,21 +218,21 @@ public class HttpRequestTest {
 
     @Test
     public void alwaysReturnsEmptyListWhenThereIsNoQueryString() {
-        HttpRequest req = get("http://host.com:8080/path").build();
+        LiveHttpRequest req = get("http://host.com:8080/path").build();
         assertThat(req.queryParams("fish"), is(emptyIterable()));
         assertThat(req.queryParam("fish"), isAbsent());
     }
 
     @Test
     public void returnsEmptyListWhenThereIsNoSuchParameter() {
-        HttpRequest req = get("http://host.com:8080/path?poisson=cabillaud").build();
+        LiveHttpRequest req = get("http://host.com:8080/path?poisson=cabillaud").build();
         assertThat(req.queryParams("fish"), is(emptyIterable()));
         assertThat(req.queryParam("fish"), isAbsent());
     }
 
     @Test
     public void canExtractCookies() {
-        HttpRequest request = get("/")
+        LiveHttpRequest request = get("/")
                 .cookies(
                         requestCookie("cookie1", "foo"),
                         requestCookie("cookie3", "baz"),
@@ -246,7 +246,7 @@ public class HttpRequestTest {
 
     @Test
     public void cannotExtractNonExistentCookie() {
-        HttpRequest request = get("/")
+        LiveHttpRequest request = get("/")
                 .cookies(
                         requestCookie("cookie1", "foo"),
                         requestCookie("cookie3", "baz"),
@@ -258,7 +258,7 @@ public class HttpRequestTest {
 
     @Test
     public void extractsAllCookies() {
-        HttpRequest request = get("/")
+        LiveHttpRequest request = get("/")
                 .cookies(
                         requestCookie("cookie1", "foo"),
                         requestCookie("cookie3", "baz"),
@@ -273,18 +273,18 @@ public class HttpRequestTest {
 
     @Test
     public void extractsEmptyIterableIfCookieHeaderNotSet() {
-        HttpRequest request = get("/").build();
+        LiveHttpRequest request = get("/").build();
         assertThat(request.cookies(), is(emptyIterable()));
     }
 
     @Test
     public void canRemoveAHeader() {
         Object hdValue = "b";
-        HttpRequest request = get("/")
+        LiveHttpRequest request = get("/")
                 .header("a", hdValue)
                 .addHeader("c", hdValue)
                 .build();
-        HttpRequest shouldRemoveHeader = request.newBuilder()
+        LiveHttpRequest shouldRemoveHeader = request.newBuilder()
                 .removeHeader("c")
                 .build();
 
@@ -305,7 +305,7 @@ public class HttpRequestTest {
 
     @Test
     public void builderSetsRequestContent() throws Exception {
-        HttpRequest request = post("/foo/bar", body("Foo bar")).build();
+        LiveHttpRequest request = post("/foo/bar", body("Foo bar")).build();
 
         assertThat(bytesToString(request.body()), is("Foo bar"));
     }
@@ -349,30 +349,30 @@ public class HttpRequestTest {
 
     @Test
     public void createARequestWithStreamingUrl() {
-        HttpRequest request = get("http://www.hotels.com").build();
+        LiveHttpRequest request = get("http://www.hotels.com").build();
 
         assertThat(request.url(), is(url("http://www.hotels.com").build()));
     }
 
     @Test
     public void setsHostHeaderFromAuthorityIfSet() {
-        HttpRequest request = get("http://www.hotels.com").build();
+        LiveHttpRequest request = get("http://www.hotels.com").build();
 
         assertThat(request.header(HOST), isValue("www.hotels.com"));
     }
 
     @Test
     public void createsANewRequestWithSameVersionAsBefore() {
-        HttpRequest v10Request = get("/foo/bar").version(HTTP_1_0).build();
+        LiveHttpRequest v10Request = get("/foo/bar").version(HTTP_1_0).build();
 
-        HttpRequest newRequest = v10Request.newBuilder().uri("/blah/blah").build();
+        LiveHttpRequest newRequest = v10Request.newBuilder().uri("/blah/blah").build();
 
         assertThat(newRequest.version(), is(HTTP_1_0));
     }
 
     @Test
     public void addsCookies() {
-        HttpRequest request = HttpRequest.get("/")
+        LiveHttpRequest request = LiveHttpRequest.get("/")
                 .addCookies(requestCookie("x", "x1"), requestCookie("y", "y1"))
                 .build();
 
@@ -381,7 +381,7 @@ public class HttpRequestTest {
 
     @Test
     public void addsCookiesToExistingCookies() {
-        HttpRequest request = HttpRequest.get("/")
+        LiveHttpRequest request = LiveHttpRequest.get("/")
                 .addCookies(requestCookie("z", "z1"))
                 .addCookies(requestCookie("x", "x1"), requestCookie("y", "y1"))
                 .build();
@@ -391,11 +391,11 @@ public class HttpRequestTest {
 
     @Test
     public void newCookiesWithDuplicateNamesOverridePreviousOnes() {
-        HttpRequest r1 = HttpRequest.get("/")
+        LiveHttpRequest r1 = LiveHttpRequest.get("/")
                 .cookies(requestCookie("y", "y1"))
                 .build();
 
-        HttpRequest r2 = r1.newBuilder().addCookies(
+        LiveHttpRequest r2 = r1.newBuilder().addCookies(
                 requestCookie("y", "y2"))
                 .build();
 
@@ -404,11 +404,11 @@ public class HttpRequestTest {
 
     @Test
     public void removesCookies() {
-        HttpRequest r1 = HttpRequest.get("/")
+        LiveHttpRequest r1 = LiveHttpRequest.get("/")
                 .addCookies(requestCookie("x", "x1"), requestCookie("y", "y1"))
                 .build();
 
-        HttpRequest r2 = r1.newBuilder()
+        LiveHttpRequest r2 = r1.newBuilder()
                 .removeCookies("x")
                 .removeCookies("foo") // ensure that trying to remove a non-existent cookie does not cause Exception
                 .build();
@@ -418,7 +418,7 @@ public class HttpRequestTest {
 
     @Test
     public void removesCookiesInSameBuilder() {
-        HttpRequest r1 = HttpRequest.get("/")
+        LiveHttpRequest r1 = LiveHttpRequest.get("/")
                 .addCookies(requestCookie("x", "x1"))
                 .removeCookies("x")
                 .build();

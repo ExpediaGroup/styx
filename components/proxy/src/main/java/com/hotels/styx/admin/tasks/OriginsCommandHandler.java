@@ -21,6 +21,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.extension.OriginsChangeListener;
 import com.hotels.styx.api.extension.OriginsSnapshot;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
@@ -41,7 +42,6 @@ import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.TEMPORARY_REDIRECT;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import com.hotels.styx.api.HttpRequest;
 
 /**
  * Handles commands for enabling and disabling origins.
@@ -68,7 +68,7 @@ public class OriginsCommandHandler extends BaseHttpHandler implements OriginsCha
     }
 
     @Override
-    public HttpResponse doHandle(HttpRequest request) {
+    public HttpResponse doHandle(LiveHttpRequest request) {
         String cmd = request.queryParam("cmd").orElse("");
         String appId = request.queryParam("appId").orElse("");
         String originId = request.queryParam("originId").orElse("");

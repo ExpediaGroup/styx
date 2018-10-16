@@ -24,7 +24,7 @@ import org.testng.annotations.Test;
 import java.util.Optional;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;

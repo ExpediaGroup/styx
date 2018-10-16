@@ -29,7 +29,7 @@ import java.io.IOException;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.applications.BackendServices.newBackendServices;
 import static com.hotels.styx.applications.yaml.YamlApplicationsProvider.loadFromPath;

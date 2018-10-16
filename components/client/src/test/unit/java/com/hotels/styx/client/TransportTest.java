@@ -18,7 +18,7 @@ package com.hotels.styx.client;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
@@ -34,7 +34,7 @@ import rx.subjects.PublishSubject;
 import java.util.Optional;
 
 import static com.hotels.styx.api.Buffers.toByteBuf;
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.Id.id;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -54,7 +54,7 @@ public class TransportTest {
     private static final String X_STYX_ORIGIN_ID = "X-Styx-Origin-Id";
     private static final Id APP_ID = id("app-01");
 
-    private HttpRequest request;
+    private LiveHttpRequest request;
     private HttpResponse response;
     private Transport transport;
     private PublishSubject<HttpResponse> responseProvider;
@@ -82,7 +82,7 @@ public class TransportTest {
                 .consume();
 
         verify(pool).borrowConnection();
-        verify(connection).write(any(HttpRequest.class));
+        verify(connection).write(any(LiveHttpRequest.class));
         verify(pool).returnConnection(any(Connection.class));
     }
 
@@ -221,7 +221,7 @@ public class TransportTest {
         Buffer chunk2 = new Buffer("y", UTF_8);
         Buffer chunk3 = new Buffer("z", UTF_8);
 
-        HttpRequest aRequest = request
+        LiveHttpRequest aRequest = request
                 .newBuilder()
                 .body(new ByteStream(toPublisher(Observable.from(ImmutableList.of(chunk1, chunk2, chunk3)))))
                 .build();
@@ -248,7 +248,7 @@ public class TransportTest {
 
     Connection mockConnection(Observable responseObservable) {
         Connection connection = mock(Connection.class);
-        when(connection.write(any(HttpRequest.class))).thenReturn(responseObservable);
+        when(connection.write(any(LiveHttpRequest.class))).thenReturn(responseObservable);
         return connection;
     }
 

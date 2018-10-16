@@ -15,12 +15,12 @@
  */
 package com.hotels.styx.client;
 
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.extension.service.RewriteConfig;
 import com.hotels.styx.api.extension.service.RewriteRule;
 import org.testng.annotations.Test;
 
 import java.util.List;
-import com.hotels.styx.api.HttpRequest;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -87,7 +87,7 @@ public class RewriteRulesetTest {
         assertThat(rewriter.rewrite(requestWithUrl("/significant/path?a=b&c=d")).url().toString(), is("/significant/path?a=b&c=d"));
     }
 
-    private HttpRequest requestWithUrl(String url) {
-        return HttpRequest.get(url).build();
+    private LiveHttpRequest requestWithUrl(String url) {
+        return LiveHttpRequest.get(url).build();
     }
 }

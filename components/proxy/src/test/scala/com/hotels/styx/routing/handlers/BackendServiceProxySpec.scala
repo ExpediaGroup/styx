@@ -23,7 +23,7 @@ import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.api.extension.service.spi.{AbstractRegistry, Registry}
 import com.hotels.styx.api.extension.service.spi.{AbstractRegistry, Registry}
-import com.hotels.styx.api.{HttpRequest, HttpResponse, HttpResponseStatus}
+import com.hotels.styx.api.{LiveHttpRequest, HttpResponse, HttpResponseStatus}
 import com.hotels.styx.client.{BackendServiceClient, OriginStatsFactory, OriginsInventory}
 import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded
 import com.hotels.styx.api.extension.service.spi.Registry.{Changes, ReloadResult}
@@ -41,9 +41,9 @@ import scala.collection.JavaConversions._
 
 class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSugar {
 
-  val hwaRequest = HttpRequest.get("/x").build()
-  val laRequest = HttpRequest.get("/lp/x").build()
-  val baRequest = HttpRequest.get("/ba/x").build()
+  val hwaRequest = LiveHttpRequest.get("/x").build()
+  val laRequest = LiveHttpRequest.get("/lp/x").build()
+  val baRequest = LiveHttpRequest.get("/ba/x").build()
 
   val environment = new Environment.Builder().build()
 
@@ -113,7 +113,7 @@ class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSu
 
   private def clientFactory() = new BackendServiceClientFactory() {
     override def createClient(backendService: BackendService, originsInventory: OriginsInventory, originStatsFactory: OriginStatsFactory): BackendServiceClient = new BackendServiceClient {
-      override def sendRequest(request: HttpRequest): Observable[HttpResponse] = Observable
+      override def sendRequest(request: LiveHttpRequest): Observable[HttpResponse] = Observable
         .just(HttpResponse
           .response(HttpResponseStatus.OK)
           .addHeader("X-Backend-Service", backendService.id())

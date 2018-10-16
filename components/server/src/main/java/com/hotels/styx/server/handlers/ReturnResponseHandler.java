@@ -16,7 +16,7 @@
 package com.hotels.styx.server.handlers;
 
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
@@ -36,7 +36,7 @@ public final class ReturnResponseHandler extends BaseHttpHandler {
         this.response = response;
     }
 
-    protected HttpResponse doHandle(HttpRequest request) {
+    protected HttpResponse doHandle(LiveHttpRequest request) {
         return response.get();
     }
 

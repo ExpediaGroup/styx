@@ -17,7 +17,7 @@ package com.hotels.styx.client.connectionpool;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Ticker;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.api.extension.Origin;
@@ -53,7 +53,7 @@ class ExpiringConnection implements Connection {
     }
 
     @Override
-    public Observable<HttpResponse> write(HttpRequest request) {
+    public Observable<HttpResponse> write(LiveHttpRequest request) {
         return nettyConnection.write(request);
     }
 

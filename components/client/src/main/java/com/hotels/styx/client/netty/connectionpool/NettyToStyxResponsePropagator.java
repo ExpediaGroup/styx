@@ -18,7 +18,7 @@ package com.hotels.styx.client.netty.connectionpool;
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.ByteStream;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
@@ -61,7 +61,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     private final AtomicBoolean responseCompleted = new AtomicBoolean(false);
     private final Subscriber<? super HttpResponse> responseObserver;
     private final boolean flowControlEnabled;
-    private final HttpRequest request;
+    private final LiveHttpRequest request;
 
     private final Origin origin;
     private final Long idleTimeoutMillis;
@@ -84,7 +84,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
                                   boolean flowControlEnabled,
                                   long idleTimeout,
                                   TimeUnit timeUnit,
-                                  HttpRequest request) {
+                                  LiveHttpRequest request) {
         this.responseObserver = responseObserver;
         this.flowControlEnabled = flowControlEnabled;
         this.origin = origin;
@@ -181,7 +181,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
         }
     }
 
-    private FlowControllingHttpContentProducer createProducer(ChannelHandlerContext ctx, HttpRequest request) {
+    private FlowControllingHttpContentProducer createProducer(ChannelHandlerContext ctx, LiveHttpRequest request) {
         String requestPrefix = request != null ? format("Request(method=%s, url=%s, id=%s)", request.method(), request.url(), request.id()) : "Request NA";
         String loggingPrefix = format("%s -> %s", ctx.channel().remoteAddress(), ctx.channel().localAddress());
 

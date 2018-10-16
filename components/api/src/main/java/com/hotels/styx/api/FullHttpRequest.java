@@ -303,15 +303,15 @@ public class FullHttpRequest implements FullHttpMessage {
     }
 
     /**
-     * Converts this request into a streaming form (HttpRequest).
+     * Converts this request into a streaming form (LiveHttpRequest).
      * <p>
-     * Converts this request into an HttpRequest object which represents the HTTP request as a
+     * Converts this request into an LiveHttpRequest object which represents the HTTP request as a
      * stream of bytes.
      *
-     * @return A streaming HttpRequest object
+     * @return A streaming LiveHttpRequest object
      */
-    public HttpRequest toStreamingRequest() {
-        HttpRequest.Builder streamingBuilder = new HttpRequest.Builder(this)
+    public LiveHttpRequest toStreamingRequest() {
+        LiveHttpRequest.Builder streamingBuilder = new LiveHttpRequest.Builder(this)
                 .disableValidation();
 
         if (this.body.length == 0) {
@@ -394,7 +394,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * @param request a streaming HTTP request object
          * @param body an HTTP body content array
          */
-        public Builder(HttpRequest request, byte[] body) {
+        public Builder(LiveHttpRequest request, byte[] body) {
             this.id = request.id();
             this.method = request.method();
             this.url = request.url();

@@ -17,7 +17,7 @@ package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpInterceptor.Chain;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.client.StyxHeaderConfig;
@@ -28,7 +28,7 @@ import java.net.InetSocketAddress;
 
 import static com.google.common.net.HttpHeaders.X_FORWARDED_FOR;
 import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.client.StyxHeaderConfig.REQUEST_ID_DEFAULT;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
@@ -107,7 +107,7 @@ public class RequestEnrichingInterceptorTest {
         }
 
         @Override
-        public Eventual<HttpResponse> proceed(HttpRequest request) {
+        public Eventual<HttpResponse> proceed(LiveHttpRequest request) {
             return Eventual.of(response().build());
         }
 

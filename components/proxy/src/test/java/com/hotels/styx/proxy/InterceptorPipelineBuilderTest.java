@@ -28,7 +28,7 @@ import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
@@ -38,7 +38,7 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 public class InterceptorPipelineBuilderTest {
     private Environment environment;
@@ -66,7 +66,7 @@ public class InterceptorPipelineBuilderTest {
         );
 
         handler = mock(HttpHandler.class);
-        when(handler.handle(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(Eventual.of(response(OK).build()));
+        when(handler.handle(any(LiveHttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(Eventual.of(response(OK).build()));
     }
 
     @Test

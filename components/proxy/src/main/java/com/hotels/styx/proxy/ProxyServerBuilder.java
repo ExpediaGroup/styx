@@ -17,7 +17,7 @@ package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.netty.NettyServerBuilderSpec;
@@ -56,7 +56,7 @@ public final class ProxyServerBuilder {
                 .build();
     }
 
-    private HttpResponse.Builder addInfoHeader(HttpResponse.Builder responseBuilder, HttpRequest request) {
+    private HttpResponse.Builder addInfoHeader(HttpResponse.Builder responseBuilder, LiveHttpRequest request) {
         return responseBuilder.header(styxInfoHeaderName, responseInfoFormat.format(request));
     }
 

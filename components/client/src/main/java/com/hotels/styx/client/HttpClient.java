@@ -17,7 +17,7 @@ package com.hotels.styx.client;
 
 import com.hotels.styx.api.FullHttpRequest;
 import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 
 import java.util.concurrent.CompletableFuture;
@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * This interface offers a fluent interface to build and configure HTTP
  * request transactions from a client instance. The requests can be consumed
- * either aggregated {@link FullHttpResponse} or streaming {@link HttpRequest}
+ * either aggregated {@link FullHttpResponse} or streaming {@link LiveHttpRequest}
  * messages.
  */
 public interface HttpClient {
@@ -105,7 +105,7 @@ public interface HttpClient {
      * fashion instead of being aggregated into a FullHttpResponse.
      */
     interface StreamingTransaction {
-        CompletableFuture<HttpResponse> send(HttpRequest request);
+        CompletableFuture<HttpResponse> send(LiveHttpRequest request);
         CompletableFuture<HttpResponse> send(FullHttpRequest request);
     }
 }

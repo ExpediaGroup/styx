@@ -21,7 +21,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.FullHttpRequest.get
-import com.hotels.styx.api.{Eventual, HttpRequest, HttpResponse}
+import com.hotels.styx.api.{Eventual, LiveHttpRequest, HttpResponse}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
@@ -81,8 +81,8 @@ import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class AsyncRequestDelayPlugin extends PluginAdapter {
-  override def intercept(request: HttpRequest, chain: Chain): Eventual[HttpResponse] = {
-    def asyncRequest(request: HttpRequest): Eventual[HttpRequest] = {
+  override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[HttpResponse] = {
+    def asyncRequest(request: LiveHttpRequest): Eventual[LiveHttpRequest] = {
       Eventual.from(
         Future {
           Thread.sleep(1000)

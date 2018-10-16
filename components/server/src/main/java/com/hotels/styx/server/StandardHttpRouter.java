@@ -18,7 +18,7 @@ package com.hotels.styx.server;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
@@ -32,7 +32,7 @@ public class StandardHttpRouter implements HttpHandler {
     private final PathTrie<HttpHandler> routes = new PathTrie<>();
 
     @Override
-    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<HttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         return routes.get(request.path())
                 .orElse(NOT_FOUND_HANDLER)
                 .handle(request, context);

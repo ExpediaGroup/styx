@@ -27,14 +27,14 @@ import static com.hotels.styx.api.HttpHeaderNames.TE;
 import static com.hotels.styx.api.HttpHeaderNames.TRAILER;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderNames.UPGRADE;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 /**
  * Removes Hop-By-Hop headers.
  */
 public class HopByHopHeadersRemovingInterceptor implements HttpInterceptor {
     @Override
-    public Eventual<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public Eventual<HttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         return chain.proceed(removeHopByHopHeaders(request))
                 .map(HopByHopHeadersRemovingInterceptor::removeHopByHopHeaders);
     }
@@ -62,8 +62,8 @@ public class HopByHopHeadersRemovingInterceptor implements HttpInterceptor {
         return newResponse.build();
     }
 
-    private static HttpRequest removeHopByHopHeaders(HttpRequest request) {
-        HttpRequest.Builder newRequest = request.newBuilder();
+    private static LiveHttpRequest removeHopByHopHeaders(LiveHttpRequest request) {
+        LiveHttpRequest.Builder newRequest = request.newBuilder();
 
         request.header(CONNECTION).ifPresent(connection -> {
             for (String connectToken : connection.split(",")) {

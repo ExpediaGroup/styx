@@ -22,7 +22,7 @@ import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpResponse;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
 
 /**
@@ -59,7 +59,7 @@ public final class ReturnResponseChain implements Chain {
     }
 
     @Override
-    public Eventual<HttpResponse> proceed(HttpRequest request) {
+    public Eventual<HttpResponse> proceed(LiveHttpRequest request) {
         return Eventual.of(response);
     }
 }

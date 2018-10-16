@@ -22,8 +22,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
-import com.hotels.styx.api.HttpRequest
-import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.LiveHttpRequest
+import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
@@ -159,7 +159,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
-    val request: HttpRequest = get("/version.txt").build
+    val request: LiveHttpRequest = get("/version.txt").build
 
     val response = waitForResponse(client.sendRequest(request))
 

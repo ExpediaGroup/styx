@@ -22,6 +22,7 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
@@ -30,7 +31,6 @@ import com.hotels.styx.routing.config.RouteHandlerConfig;
 import com.hotels.styx.routing.config.RouteHandlerDefinition;
 import com.hotels.styx.routing.config.RouteHandlerFactory;
 import com.hotels.styx.routing.config.RouteHandlerReference;
-import com.hotels.styx.api.HttpRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -55,7 +55,7 @@ public class HttpInterceptorPipeline implements HttpHandler {
     }
 
     @Override
-    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<HttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         return handler.handle(request, context);
     }
 

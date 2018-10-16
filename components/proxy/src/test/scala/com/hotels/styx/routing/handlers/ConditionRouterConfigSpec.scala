@@ -17,7 +17,7 @@ package com.hotels.styx.routing.handlers
 
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.{BAD_GATEWAY, OK}
-import com.hotels.styx.api.{HttpHandler, HttpInterceptor, HttpRequest, Eventual}
+import com.hotels.styx.api.{HttpHandler, HttpInterceptor, LiveHttpRequest, Eventual}
 import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.HttpHandlerAdapter
@@ -32,7 +32,7 @@ import scala.collection.JavaConversions._
 
 class ConditionRouterConfigSpec extends FunSpec with ShouldMatchers with MockitoSugar {
 
-  private val request = HttpRequest.get("/foo").build
+  private val request = LiveHttpRequest.get("/foo").build
   private val routeHandlerFactory = new RouteHandlerFactory(Map("StaticResponseHandler" -> new StaticResponseHandler.ConfigFactory), Map[String, HttpHandler]())
 
   private val config = configBlock(

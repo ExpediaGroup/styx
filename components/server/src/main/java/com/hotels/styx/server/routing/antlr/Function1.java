@@ -16,11 +16,11 @@
 package com.hotels.styx.server.routing.antlr;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 /**
  * A One argument function.
  */
 public interface Function1 {
-    String call(HttpRequest request, HttpInterceptor.Context context, String input);
+    String call(LiveHttpRequest request, HttpInterceptor.Context context, String input);
 }

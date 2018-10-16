@@ -16,12 +16,12 @@
 package com.hotels.styx.server.routing;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 /**
  * A matcher condition to match against HTTP requests.
  */
 public interface Matcher {
-    boolean apply(HttpRequest request, HttpInterceptor.Context context);
+    boolean apply(LiveHttpRequest request, HttpInterceptor.Context context);
 }
 

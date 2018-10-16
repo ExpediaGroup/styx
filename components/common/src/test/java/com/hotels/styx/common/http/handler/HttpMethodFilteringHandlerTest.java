@@ -17,12 +17,12 @@ package com.hotels.styx.common.http.handler;
 
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.post;
+import static com.hotels.styx.api.LiveHttpRequest.post;
 import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.api.HttpMethod.POST;
 import static com.hotels.styx.api.HttpResponseStatus.METHOD_NOT_ALLOWED;
@@ -39,7 +39,7 @@ public class HttpMethodFilteringHandlerTest {
         HttpHandler handler = mock(HttpHandler.class);
         HttpMethodFilteringHandler post = new HttpMethodFilteringHandler(POST, handler);
 
-        HttpRequest request = post("/some-uri").build();
+        LiveHttpRequest request = post("/some-uri").build();
         post.handle(request, mock(HttpInterceptor.Context.class));
 
         verify(handler).handle(eq(request), any(HttpInterceptor.Context.class));
@@ -50,7 +50,7 @@ public class HttpMethodFilteringHandlerTest {
         HttpHandler handler = mock(HttpHandler.class);
         HttpMethodFilteringHandler post = new HttpMethodFilteringHandler(GET, handler);
 
-        HttpRequest request = post("/some-uri").build();
+        LiveHttpRequest request = post("/some-uri").build();
         HttpResponse response = post.handle(request, HttpInterceptorContext.create()).asCompletableFuture().get();
 
         assertThat(response.status(), is(METHOD_NOT_ALLOWED));

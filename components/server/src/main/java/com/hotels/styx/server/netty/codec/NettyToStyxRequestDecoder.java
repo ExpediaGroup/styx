@@ -19,6 +19,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.HttpVersion;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.UniqueIdSupplier;
@@ -58,7 +59,7 @@ import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * This {@link MessageToMessageDecoder} is responsible for decode {@link io.netty.handler.codec.http.HttpRequest}
- * to {@link com.hotels.styx.api.HttpRequest}'s.
+ * to {@link LiveHttpRequest}'s.
  * <p/>
  * This implementation is {@link Sharable}.
  */
@@ -89,7 +90,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
                 });
 
                 HttpRequest request = (HttpRequest) httpObject;
-                com.hotels.styx.api.HttpRequest styxRequest = toStyxRequest(request, contentObservable);
+                LiveHttpRequest styxRequest = toStyxRequest(request, contentObservable);
                 out.add(styxRequest);
             } else if (httpObject instanceof HttpContent && this.producer != null) {
                 this.producer.onNext(content(httpObject));
@@ -134,7 +135,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
         }
     }
 
-    private com.hotels.styx.api.HttpRequest toStyxRequest(HttpRequest request, Observable<ByteBuf> contentObservable) {
+    private LiveHttpRequest toStyxRequest(HttpRequest request, Observable<ByteBuf> contentObservable) {
         validateHostHeader(request);
         return makeAStyxRequestFrom(request, contentObservable)
                 .removeHeader(EXPECT)
@@ -163,10 +164,10 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
 
     @VisibleForTesting
-    com.hotels.styx.api.HttpRequest.Builder makeAStyxRequestFrom(HttpRequest request, Observable<ByteBuf> content) {
+    LiveHttpRequest.Builder makeAStyxRequestFrom(HttpRequest request, Observable<ByteBuf> content) {
         Url url = url(unwiseCharEncoder.encode(request.uri()))
                 .build();
-        com.hotels.styx.api.HttpRequest.Builder requestBuilder = new com.hotels.styx.api.HttpRequest.Builder()
+        LiveHttpRequest.Builder requestBuilder = new LiveHttpRequest.Builder()
                 .method(toStyxMethod(request.method()))
                 .url(url)
                 .version(toStyxVersion(request.protocolVersion()))

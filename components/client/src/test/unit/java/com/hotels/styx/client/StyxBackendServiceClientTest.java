@@ -18,7 +18,7 @@ package com.hotels.styx.client;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.MetricRegistry;
@@ -46,7 +46,7 @@ import java.util.Optional;
 import static com.hotels.styx.api.HttpHeaderNames.CHUNKED;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
@@ -78,7 +78,7 @@ import static rx.RxReactiveStreams.toPublisher;
 
 public class StyxBackendServiceClientTest {
     private static final Origin SOME_ORIGIN = newOriginBuilder("localhost", 9090).applicationId(GENERIC_APP).build();
-    private static final HttpRequest SOME_REQ = get("/some-req").build();
+    private static final LiveHttpRequest SOME_REQ = get("/some-req").build();
 
     private static final Origin ORIGIN_1 = newOriginBuilder("localhost", 9091).applicationId("app").id("app-01").build();
     private static final Origin ORIGIN_2 = newOriginBuilder("localhost", 9092).applicationId("app").id("app-02").build();
@@ -253,7 +253,7 @@ public class StyxBackendServiceClientTest {
         ordered.verify(firstClient).sendRequest(eq(SOME_REQ));
         ordered.verify(secondClient).sendRequest(eq(SOME_REQ));
         ordered.verify(thirdClient).sendRequest(eq(SOME_REQ));
-        ordered.verify(fourthClient, never()).sendRequest(any(HttpRequest.class));
+        ordered.verify(fourthClient, never()).sendRequest(any(LiveHttpRequest.class));
     }
 
 
@@ -489,7 +489,7 @@ public class StyxBackendServiceClientTest {
 
     private StyxHostHttpClient mockHostClient(Observable<HttpResponse> responseObservable) {
         StyxHostHttpClient secondClient = mock(StyxHostHttpClient.class);
-        when(secondClient.sendRequest(any(HttpRequest.class))).thenReturn(responseObservable);
+        when(secondClient.sendRequest(any(LiveHttpRequest.class))).thenReturn(responseObservable);
         return secondClient;
     }
 

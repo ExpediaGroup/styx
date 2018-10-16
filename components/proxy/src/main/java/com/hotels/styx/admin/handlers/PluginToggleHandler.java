@@ -24,6 +24,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import org.slf4j.Logger;
 
@@ -48,7 +49,6 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Comparator.naturalOrder;
 import static org.slf4j.LoggerFactory.getLogger;
-import com.hotels.styx.api.HttpRequest;
 
 /**
  * Handler that will enable and disable plugins.
@@ -75,12 +75,12 @@ public class PluginToggleHandler implements HttpHandler {
     }
 
     @Override
-    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<HttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         return getCurrentOrPutNewState(request, context)
                 .onError(cause -> handleErrors(cause, context));
     }
 
-    private Eventual<HttpResponse> getCurrentOrPutNewState(HttpRequest request, HttpInterceptor.Context context) {
+    private Eventual<HttpResponse> getCurrentOrPutNewState(LiveHttpRequest request, HttpInterceptor.Context context) {
         if (GET.equals(request.method())) {
             return getCurrentState(request, context);
         } else if (PUT.equals(request.method())) {
@@ -90,7 +90,7 @@ public class PluginToggleHandler implements HttpHandler {
         }
     }
 
-    private Eventual<HttpResponse> getCurrentState(HttpRequest request, HttpInterceptor.Context context) {
+    private Eventual<HttpResponse> getCurrentState(LiveHttpRequest request, HttpInterceptor.Context context) {
         return Eventual.of(request)
                 .map(this::plugin)
                 .map(this::currentState)
@@ -101,13 +101,13 @@ public class PluginToggleHandler implements HttpHandler {
         return plugin.enabled() ? PluginEnabledState.ENABLED : PluginEnabledState.DISABLED;
     }
 
-    private Eventual<HttpResponse> putNewState(HttpRequest request, HttpInterceptor.Context context) {
+    private Eventual<HttpResponse> putNewState(LiveHttpRequest request, HttpInterceptor.Context context) {
         return Eventual.of(request)
                 .flatMap(this::requestedUpdate)
                 .map(this::applyUpdate);
     }
 
-    private Eventual<RequestedUpdate> requestedUpdate(HttpRequest request) {
+    private Eventual<RequestedUpdate> requestedUpdate(LiveHttpRequest request) {
         return requestedNewState(request)
                 .map(state -> {
                     NamedPlugin plugin = plugin(request);
@@ -142,7 +142,7 @@ public class PluginToggleHandler implements HttpHandler {
         return format("State of '%s' changed to '%s'", requestedUpdate.plugin().name(), requestedUpdate.newState());
     }
 
-    private NamedPlugin plugin(HttpRequest request) {
+    private NamedPlugin plugin(LiveHttpRequest request) {
         Matcher matcher = urlMatcher(request);
         String pluginName = matcher.group(1);
         return plugin(pluginName);
@@ -157,7 +157,7 @@ public class PluginToggleHandler implements HttpHandler {
         return plugin;
     }
 
-    private Matcher urlMatcher(HttpRequest request) {
+    private Matcher urlMatcher(LiveHttpRequest request) {
         Matcher matcher = URL_PATTERN.matcher(request.path());
 
         if (!matcher.matches()) {
@@ -166,7 +166,7 @@ public class PluginToggleHandler implements HttpHandler {
         return matcher;
     }
 
-    private static Eventual<PluginEnabledState> requestedNewState(HttpRequest request) {
+    private static Eventual<PluginEnabledState> requestedNewState(LiveHttpRequest request) {
         return request.toFullRequest(MAX_CONTENT_SIZE)
                 .map(fullRequest -> fullRequest.bodyAs(UTF_8))
                 .map(PluginToggleHandler::parseToBoolean)

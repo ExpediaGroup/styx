@@ -21,7 +21,7 @@ import com.hotels.styx.admin.CachingSupplier;
 import com.hotels.styx.admin.dashboard.JsonSupplier;
 import com.hotels.styx.admin.handlers.json.JsonReformatter;
 import com.hotels.styx.api.Clock;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import org.slf4j.Logger;
@@ -88,7 +88,7 @@ public class JsonHandler<E> extends BaseHttpHandler {
     }
 
     @Override
-    protected HttpResponse doHandle(HttpRequest request) {
+    protected HttpResponse doHandle(LiveHttpRequest request) {
         try {
             String jsonContent = jsonSupplier(request).get();
 
@@ -107,7 +107,7 @@ public class JsonHandler<E> extends BaseHttpHandler {
         }
     }
 
-    private Supplier<String> jsonSupplier(HttpRequest request) {
+    private Supplier<String> jsonSupplier(LiveHttpRequest request) {
         if (request.queryParam("reformat").isPresent()) {
             return reformatSupplier;
         }

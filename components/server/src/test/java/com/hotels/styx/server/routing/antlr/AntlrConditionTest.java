@@ -16,7 +16,7 @@
 package com.hotels.styx.server.routing.antlr;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.RequestCookie;
 import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.server.HttpInterceptorContext;
@@ -26,8 +26,8 @@ import org.testng.annotations.Test;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
-import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.HttpRequest.post;
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.post;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -42,11 +42,11 @@ public class AntlrConditionTest {
                     request.cookie(input).map(RequestCookie::value).orElse(""))
             .build();
 
-    private static HttpRequest.Builder newRequest(String uri) {
-        return new HttpRequest.Builder(HttpMethod.GET, uri);
+    private static LiveHttpRequest.Builder newRequest(String uri) {
+        return new LiveHttpRequest.Builder(HttpMethod.GET, uri);
     }
 
-    private static HttpRequest.Builder newRequest() {
+    private static LiveHttpRequest.Builder newRequest() {
         return get("/blah");
     }
 
@@ -71,17 +71,17 @@ public class AntlrConditionTest {
     @Test
     public void matchesHttpHeader() {
         Condition condition = condition("header('Host') == 'bbc.co.uk'");
-        HttpRequest request = newRequest("/path")
+        LiveHttpRequest request = newRequest("/path")
                 .header(HOST, "bbc.co.uk")
                 .build();
         assertThat(condition.evaluate(request, context), is(true));
 
-        HttpRequest request2 = newRequest("/path")
+        LiveHttpRequest request2 = newRequest("/path")
                 .header(HOST, "hotels.com")
                 .build();
         assertThat(condition.evaluate(request2, context), is(false));
 
-        HttpRequest request3 = newRequest("/path")
+        LiveHttpRequest request3 = newRequest("/path")
                 .build();
         assertThat(condition.evaluate(request3, context), is(false));
     }
@@ -104,7 +104,7 @@ public class AntlrConditionTest {
     public void acceptsSingleQuotesAsFunctionArgument() throws Exception {
         Condition condition = condition("header('Host') =~ '.*\\.co\\.uk'");
 
-        HttpRequest request = newRequest()
+        LiveHttpRequest request = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .build();
         assertThat(condition.evaluate(request, context), is(true));
@@ -114,7 +114,7 @@ public class AntlrConditionTest {
     public void acceptsDoubleQuotesAsFunctionArgument() throws Exception {
         Condition condition = condition("header(\"Host\") =~ '.*\\.co\\.uk'");
 
-        HttpRequest request = newRequest()
+        LiveHttpRequest request = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .build();
         assertThat(condition.evaluate(request, context), is(true));
@@ -139,12 +139,12 @@ public class AntlrConditionTest {
     public void matchesHeaderPresence() {
         Condition condition = condition("header('Host')");
 
-        HttpRequest request = newRequest("/foo")
+        LiveHttpRequest request = newRequest("/foo")
                 .header(HOST, "bbc.co.uk")
                 .build();
         assertThat(condition.evaluate(request, context), is(true));
 
-        HttpRequest request2 = newRequest("/foo")
+        LiveHttpRequest request2 = newRequest("/foo")
                 .build();
 
         assertThat(condition.evaluate(request2, context), is(false));
@@ -154,22 +154,22 @@ public class AntlrConditionTest {
     public void regexpMatchesHttpHeader() {
         Condition condition = condition("header('Host') =~ '.*\\.co\\.uk'");
 
-        HttpRequest request = newRequest()
+        LiveHttpRequest request = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .build();
         assertThat(condition.evaluate(request, context), is(true));
 
-        HttpRequest request2 = request.newBuilder()
+        LiveHttpRequest request2 = request.newBuilder()
                 .header(HOST, "hotels.com")
                 .build();
         assertThat(condition.evaluate(request2, context), is(false));
 
-        HttpRequest request3 = request.newBuilder()
+        LiveHttpRequest request3 = request.newBuilder()
                 .header(HOST, "hotels.co.uk")
                 .build();
         assertThat(condition.evaluate(request3, context), is(true));
 
-        HttpRequest request4 = newRequest()
+        LiveHttpRequest request4 = newRequest()
                 .build();
         assertThat(condition.evaluate(request4, context), is(false));
     }
@@ -187,30 +187,30 @@ public class AntlrConditionTest {
     public void matchesAndExpressions() {
         Condition condition = condition("header('Host') == 'bbc.co.uk' AND header('Content-Length') == '7'");
 
-        HttpRequest request = newRequest()
+        LiveHttpRequest request = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header(CONTENT_LENGTH, "7")
                 .build();
         assertThat(condition.evaluate(request, context), is(true));
 
-        HttpRequest request2 = newRequest()
+        LiveHttpRequest request2 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header(CONTENT_LENGTH, "1")
                 .build();
         assertThat(condition.evaluate(request2, context), is(false));
 
-        HttpRequest request3 = newRequest()
+        LiveHttpRequest request3 = newRequest()
                 .header(HOST, "hotels.com")
                 .header(CONTENT_LENGTH, "7")
                 .build();
         assertThat(condition.evaluate(request3, context), is(false));
 
-        HttpRequest request4 = newRequest()
+        LiveHttpRequest request4 = newRequest()
                 .header(CONTENT_LENGTH, "7")
                 .build();
         assertThat(condition.evaluate(request4, context), is(false));
 
-        HttpRequest request5 = newRequest()
+        LiveHttpRequest request5 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .build();
         assertThat(condition.evaluate(request5, context), is(false));
@@ -219,13 +219,13 @@ public class AntlrConditionTest {
     @Test
     public void combinesStringEqualsAndStringRegexpMatchOperationsWithAndOperator() {
         Condition condition = condition("header('Host') == 'bbc.co.uk' AND header('Content-Length') =~ '[123][0-9]'");
-        HttpRequest request = newRequest()
+        LiveHttpRequest request = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header(CONTENT_LENGTH, "20")
                 .build();
         assertThat(condition.evaluate(request, context), is(true));
 
-        HttpRequest request2 = newRequest()
+        LiveHttpRequest request2 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header(CONTENT_LENGTH, "70")
                 .build();
@@ -237,7 +237,7 @@ public class AntlrConditionTest {
         Condition condition = condition(
                 "header('Host') == 'bbc.co.uk' AND header('Content-Length') == '7' AND header('App-Name')=='app1'");
 
-        HttpRequest request = newRequest()
+        LiveHttpRequest request = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header(CONTENT_LENGTH, "7")
                 .header("App-Name", "app1")
@@ -250,18 +250,18 @@ public class AntlrConditionTest {
     public void matchesOrExpressions() {
         Condition condition = condition("header('Host') == 'bbc.co.uk' OR header('Content-Length') == '7'");
 
-        HttpRequest request = newRequest()
+        LiveHttpRequest request = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .build();
         assertThat(condition.evaluate(request, context), is(true));
 
-        HttpRequest request2 = newRequest()
+        LiveHttpRequest request2 = newRequest()
                 .header(HOST, "hotels.com")
                 .header(CONTENT_LENGTH, "7")
                 .build();
         assertThat(condition.evaluate(request2, context), is(true));
 
-        HttpRequest request3 = newRequest()
+        LiveHttpRequest request3 = newRequest()
                 .header(HOST, "hotels.com")
                 .header(CONTENT_LENGTH, "8")
                 .build();
@@ -274,7 +274,7 @@ public class AntlrConditionTest {
                 "AND header('Content-Length') == '7' " +
                 "OR header('App-Name') =~ 'app[0-9]'");
 
-        HttpRequest request = newRequest()
+        LiveHttpRequest request = newRequest()
                 .header("App-Name", "app5")
                 .build();
         assertThat(condition.evaluate(request, context), is(true));
@@ -305,7 +305,7 @@ public class AntlrConditionTest {
                 "OR header('Host') == 'bbc.co.uk' " +
                 "AND header('Content-Length') == '7'");
 
-        HttpRequest request = newRequest()
+        LiveHttpRequest request = newRequest()
                 .header("App-Name", "app5")
                 .build();
         assertThat(condition.evaluate(request, context), is(true));
@@ -333,12 +333,12 @@ public class AntlrConditionTest {
     @Test
     public void notExpressionNegatesTheExpressionResult() {
         Condition condition = condition("NOT header('Host')");
-        HttpRequest request1 = newRequest()
+        LiveHttpRequest request1 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .build();
         assertThat(condition.evaluate(request1, context), is(false));
 
-        HttpRequest request2 = newRequest()
+        LiveHttpRequest request2 = newRequest()
                 .header(CONTENT_LENGTH, 7)
                 .build();
         assertThat(condition.evaluate(request2, context), is(true));
@@ -349,19 +349,19 @@ public class AntlrConditionTest {
         Condition condition = condition("header('Host') " +
                 "AND (header('App-Name') =~ 'app[0-9]' OR header('App-Name') =~ 'shop[0-9]')");
 
-        HttpRequest request1 = newRequest()
+        LiveHttpRequest request1 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header("App-Name", "app1")
                 .build();
         assertThat(condition.evaluate(request1, context), is(true));
 
-        HttpRequest request2 = newRequest()
+        LiveHttpRequest request2 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header("App-Name", "shop2")
                 .build();
         assertThat(condition.evaluate(request2, context), is(true));
 
-        HttpRequest request3 = newRequest()
+        LiveHttpRequest request3 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header("App-Name", "landing3")
                 .build();
@@ -373,19 +373,19 @@ public class AntlrConditionTest {
         Condition condition = condition("header('Host') " +
                 "AND NOT header('App-Name') =~ 'app[0-9]' OR header('App-Name') =~ 'shop[0-9]'");
 
-        HttpRequest request1 = newRequest()
+        LiveHttpRequest request1 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header("App-Name", "landing1")
                 .build();
         assertThat(condition.evaluate(request1, context), is(true));
 
-        HttpRequest request2 = newRequest()
+        LiveHttpRequest request2 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header("App-Name", "app2")
                 .build();
         assertThat(condition.evaluate(request2, context), is(false));
 
-        HttpRequest request3 = newRequest()
+        LiveHttpRequest request3 = newRequest()
                 .header(HOST, "bbc.co.uk")
                 .header("App-Name", "shop1")
                 .build();
@@ -396,7 +396,7 @@ public class AntlrConditionTest {
     @Test
     public void cookieValueIsPresent() {
         Condition condition = condition("cookie('TheCookie')");
-        HttpRequest request = newRequest()
+        LiveHttpRequest request = newRequest()
                 .cookies(requestCookie("TheCookie", "foobar-foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
@@ -418,7 +418,7 @@ public class AntlrConditionTest {
     @Test
     public void cookieValueMatchesWithString() {
         Condition condition = condition("cookie('TheCookie') == 'foobar-foobar-baz'");
-        HttpRequest request = newRequest()
+        LiveHttpRequest request = newRequest()
                 .cookies(requestCookie("TheCookie", "foobar-foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
@@ -440,7 +440,7 @@ public class AntlrConditionTest {
     public void cookieValueMatchesWithRegexp() {
         Condition condition = condition("cookie('TheCookie') =~ 'foobar-.*-baz'");
 
-        HttpRequest request = newRequest()
+        LiveHttpRequest request = newRequest()
                 .cookies(requestCookie("TheCookie", "foobar-foobar-baz"))
                 .header("App-Name", "app3")
                 .build();
@@ -461,7 +461,7 @@ public class AntlrConditionTest {
     @Test
     public void methodMatchesString() {
         Condition condition = condition("method() == 'GET'");
-        HttpRequest request = get("/blah")
+        LiveHttpRequest request = get("/blah")
                 .build();
         assertThat(condition.evaluate(request, context), is(true));
 
@@ -474,7 +474,7 @@ public class AntlrConditionTest {
     public void userAgentMatchesUserAgent() {
         Condition condition = condition("userAgent() == 'Mozilla Firefox 1.1.2' OR userAgent() =~ 'Safari.*'");
 
-        HttpRequest request = get("/blah")
+        LiveHttpRequest request = get("/blah")
                 .header(USER_AGENT, "Mozilla Firefox 1.1.2")
                 .build();
         assertThat(condition.evaluate(request, context), is(true));

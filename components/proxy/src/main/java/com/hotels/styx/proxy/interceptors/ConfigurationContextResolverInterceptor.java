@@ -21,7 +21,7 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationContextResolver;
 
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 import static java.util.Objects.requireNonNull;
 
@@ -36,7 +36,7 @@ public class ConfigurationContextResolverInterceptor implements HttpInterceptor 
     }
 
     @Override
-    public Eventual<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public Eventual<HttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         Configuration.Context context = configurationContextResolver.resolve(request);
         chain.context().add("config.context", context);
         return chain.proceed(request);

@@ -21,7 +21,7 @@ import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.StyxClientException;
@@ -62,7 +62,7 @@ import static com.google.common.collect.Iterables.toArray;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderValues.CLOSE;
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
@@ -109,7 +109,7 @@ public class HttpPipelineHandlerTest {
     // Cannot use lambda expression below, because spy() does not understand them.
     private final HttpHandler respondingPipeline = spy(new HttpHandler() {
         @Override
-        public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        public Eventual<HttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
             return respondingHandler.handle(request, context);
         }
     });
@@ -123,8 +123,8 @@ public class HttpPipelineHandlerTest {
     private HttpHandler pipeline;
     private HttpResponseWriterFactory responseWriterFactory;
     private RequestStatsCollector statsCollector;
-    private HttpRequest request;
-    private HttpRequest request2;
+    private LiveHttpRequest request;
+    private LiveHttpRequest request2;
     private HttpResponse response;
     private HttpResponse response2;
     private AtomicBoolean responseUnsubscribed;
@@ -156,7 +156,7 @@ public class HttpPipelineHandlerTest {
         response = response().build();
 
         responseEnhancer = mock(ResponseEnhancer.class);
-        when(responseEnhancer.enhance(any(HttpResponse.Builder.class), any(HttpRequest.class))).thenAnswer(invocationOnMock -> invocationOnMock.getArguments()[0]);
+        when(responseEnhancer.enhance(any(HttpResponse.Builder.class), any(LiveHttpRequest.class))).thenAnswer(invocationOnMock -> invocationOnMock.getArguments()[0]);
 
         setupHandlerTo(ACCEPTING_REQUESTS);
     }
@@ -236,8 +236,8 @@ public class HttpPipelineHandlerTest {
         DefaultHttpResponse response = (DefaultHttpResponse) channel.readOutbound();
 
         assertThat(response.status(), is(io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR));
-        verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), any(HttpRequest.class));
-        verify(errorListener, only()).proxyErrorOccurred(any(HttpRequest.class), any(InetSocketAddress.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
+        verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), any(LiveHttpRequest.class));
+        verify(errorListener, only()).proxyErrorOccurred(any(LiveHttpRequest.class), any(InetSocketAddress.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
     }
 
     @Test
@@ -373,7 +373,7 @@ public class HttpPipelineHandlerTest {
         ChannelHandlerContext ctx = mockCtx();
         adapter.channelActive(ctx);
 
-        HttpRequest request = get("/foo").build();
+        LiveHttpRequest request = get("/foo").build();
         adapter.channelRead0(ctx, request);
         assertThat(metrics.counter("outstanding").getCount(), is(1L));
 
@@ -429,8 +429,8 @@ public class HttpPipelineHandlerTest {
         requestProxiedOnlyOnce(pipeline, request);
     }
 
-    private static void requestProxiedOnlyOnce(HttpHandler pipeline, HttpRequest request) {
-        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+    private static void requestProxiedOnlyOnce(HttpHandler pipeline, LiveHttpRequest request) {
+        ArgumentCaptor<LiveHttpRequest> captor = ArgumentCaptor.forClass(LiveHttpRequest.class);
         verify(pipeline).handle(captor.capture(), any(HttpInterceptor.Context.class));
         assertThat(captor.getValue().id(), is(request.id()));
     }
@@ -461,8 +461,8 @@ public class HttpPipelineHandlerTest {
         requestProxiedTwice(pipeline, request, request2);
     }
 
-    private static void requestProxiedTwice(HttpHandler pipeline, HttpRequest request1, HttpRequest request2) {
-        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+    private static void requestProxiedTwice(HttpHandler pipeline, LiveHttpRequest request1, LiveHttpRequest request2) {
+        ArgumentCaptor<LiveHttpRequest> captor = ArgumentCaptor.forClass(LiveHttpRequest.class);
         verify(pipeline, times(2)).handle(captor.capture(), any(HttpInterceptor.Context.class));
         assertThat(captor.getAllValues().get(0).id(), is(request1.id()));
         assertThat(captor.getAllValues().get(1).id(), is(request2.id()));
@@ -528,7 +528,7 @@ public class HttpPipelineHandlerTest {
 
     @Test
     public void closesTheConnectionAfterProxyingWhenConnectionHeaderHasValueClose() throws Exception {
-        HttpRequest oneShotRequest = get("/closeAfterThis").header(CONNECTION, CLOSE).build();
+        LiveHttpRequest oneShotRequest = get("/closeAfterThis").header(CONNECTION, CLOSE).build();
 
         handler.channelRead0(ctx, oneShotRequest);
         assertThat(handler.state(), is(WAITING_FOR_RESPONSE));
@@ -677,7 +677,7 @@ public class HttpPipelineHandlerTest {
 
         writerFuture.complete(null);
         verify(statsCollector).onComplete(request.id(), 502);
-        verify(errorListener).proxyErrorOccurred(any(HttpRequest.class), any(InetSocketAddress.class), eq(BAD_GATEWAY), any(RuntimeException.class));
+        verify(errorListener).proxyErrorOccurred(any(LiveHttpRequest.class), any(InetSocketAddress.class), eq(BAD_GATEWAY), any(RuntimeException.class));
 
         // NOTE: channel closure is not verified. This is because cannot mock channel future.
         verify(ctx).close();
@@ -702,7 +702,7 @@ public class HttpPipelineHandlerTest {
 
         writerFuture.complete(null);
         verify(statsCollector).onComplete(request.id(), 500);
-        verify(errorListener).proxyErrorOccurred(any(HttpRequest.class), any(InetSocketAddress.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
+        verify(errorListener).proxyErrorOccurred(any(LiveHttpRequest.class), any(InetSocketAddress.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
 
         // NOTE: channel closure is not verified. This is because cannot mock channel future.
         verify(ctx).close();
@@ -796,7 +796,7 @@ public class HttpPipelineHandlerTest {
 
         assertThat(handler.state(), is(SENDING_RESPONSE));
 
-        verify(errorListener).proxyingFailure(any(HttpRequest.class), any(HttpResponse.class), any(Throwable.class));
+        verify(errorListener).proxyingFailure(any(LiveHttpRequest.class), any(HttpResponse.class), any(Throwable.class));
     }
 
     @Test
@@ -810,7 +810,7 @@ public class HttpPipelineHandlerTest {
 
         assertThat(responseUnsubscribed.get(), is(true));
         verify(statsCollector).onTerminate(request.id());
-        verify(errorListener).proxyWriteFailure(any(HttpRequest.class), eq(response(OK).build()), any(RuntimeException.class));
+        verify(errorListener).proxyWriteFailure(any(LiveHttpRequest.class), eq(response(OK).build()), any(RuntimeException.class));
 
         assertThat(handler.state(), is(TERMINATED));
     }
@@ -921,7 +921,7 @@ public class HttpPipelineHandlerTest {
         // - cancels the ongoing request on the HTTP pipeline
         LoggingTestSupport logger = new LoggingTestSupport(HttpPipelineHandler.class);
 
-        HttpRequest spurious = get("/bar").build();
+        LiveHttpRequest spurious = get("/bar").build();
         setupHandlerTo(WAITING_FOR_RESPONSE);
 
         handler.channelRead0(ctx, spurious);

@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.Eventual;
@@ -82,7 +82,7 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
     }
 
     @Override
-    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<HttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         MetricRequest metricRequest = new MetricRequest(request);
 
         return metricRequest.fullMetrics()
@@ -130,7 +130,7 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
         private final boolean prettyPrint;
         private final String prefix;
 
-        MetricRequest(HttpRequest request) {
+        MetricRequest(LiveHttpRequest request) {
             this.root = metricName(request.path()).orElse(null);
             this.searchTerm = request.queryParam(FILTER_PARAM).orElse(null);
             this.prettyPrint = request.queryParam(PRETTY_PRINT_PARAM).isPresent();

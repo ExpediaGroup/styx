@@ -17,7 +17,7 @@ package com.hotels.styx
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.Id.id
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer

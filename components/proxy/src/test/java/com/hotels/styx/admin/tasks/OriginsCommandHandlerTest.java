@@ -18,7 +18,7 @@ package com.hotels.styx.admin.tasks;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.OriginsSnapshot;
@@ -123,7 +123,7 @@ public class OriginsCommandHandlerTest {
     }
 
     private HttpResponse post(String path) {
-        HttpRequest request = HttpRequest.post(path).build();
+        LiveHttpRequest request = LiveHttpRequest.post(path).build();
         return getFirst(originsCommand.handle(request, HttpInterceptorContext.create()));
     }
 
