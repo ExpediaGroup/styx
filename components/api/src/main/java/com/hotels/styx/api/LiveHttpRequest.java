@@ -345,7 +345,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
      * @param maxContentBytes maximum expected content size
      * @return a {@link Eventual}
      */
-    public Eventual<HttpRequest> toFullRequest(int maxContentBytes) {
+    public Eventual<HttpRequest> aggregate(int maxContentBytes) {
         return Eventual.from(
                 body.aggregate(maxContentBytes)
                     .thenApply(it -> new HttpRequest.Builder(this, decodeAndRelease(it)).build())

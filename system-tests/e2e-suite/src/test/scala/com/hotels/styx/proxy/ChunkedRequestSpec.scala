@@ -104,7 +104,7 @@ class ChunkedRequestSpec extends FunSpec
       if (stream != null) stream.close()
     }
 
-    responseBuilder.build().toStreamingResponse
+    responseBuilder.build().stream
   }
 
   @throws(classOf[IOException])

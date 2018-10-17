@@ -108,7 +108,7 @@ public class JsonHandlerTest {
     private String responseFor(JsonHandler<?> handler, LiveHttpRequest request) {
         return await(
                 handler.handle(request, HttpInterceptorContext.create())
-                        .flatMap(response -> response.toFullResponse(1000000))
+                        .flatMap(response -> response.aggregate(1000000))
                         .map(response -> response.bodyAs(UTF_8))
                         .asCompletableFuture());
     }

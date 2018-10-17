@@ -37,6 +37,6 @@ public class PingHandler extends BaseHttpHandler {
                 .addHeader(CONTENT_TYPE, PLAIN_TEXT_UTF_8.toString())
                 .body("pong", UTF_8)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 }

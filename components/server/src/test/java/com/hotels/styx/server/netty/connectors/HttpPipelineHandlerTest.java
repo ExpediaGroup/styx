@@ -594,7 +594,7 @@ public class HttpPipelineHandlerTest {
                 .header(CONTENT_LENGTH, 29)
                 .body("Site temporarily unavailable.", UTF_8)
                 .build()
-                .toStreamingResponse());
+                .stream());
 
         verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(request));
         verify(errorListener).proxyErrorOccurred(request, InetSocketAddress.createUnresolved("localhost", 2), INTERNAL_SERVER_ERROR, cause);
@@ -672,7 +672,7 @@ public class HttpPipelineHandlerTest {
                 .header(CONTENT_LENGTH, "29")
                 .body("Site temporarily unavailable.", UTF_8)
                 .build()
-                .toStreamingResponse());
+                .stream());
         verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(request));
 
         writerFuture.complete(null);
@@ -698,7 +698,7 @@ public class HttpPipelineHandlerTest {
                 .header(CONTENT_LENGTH, "29")
                 .body("Site temporarily unavailable.", UTF_8)
                 .build()
-                .toStreamingResponse());
+                .stream());
 
         writerFuture.complete(null);
         verify(statsCollector).onComplete(request.id(), 500);

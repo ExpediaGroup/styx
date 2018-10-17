@@ -32,7 +32,7 @@ final class AdminHandlers {
         return ImmutableMap.of(endpoint, (request, context) -> Eventual.of(response(OK)
                 .body(responseContent, UTF_8)
                 .build()
-                .toStreamingResponse()
+                .stream()
         ));
     }
 }

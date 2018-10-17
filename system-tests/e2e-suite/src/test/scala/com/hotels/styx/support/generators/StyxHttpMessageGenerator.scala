@@ -42,7 +42,7 @@ class StyxHttpMessageGenerator {
       addContent(builder, headers, contentData)
     }
     addHeaders(builder, headers)
-    builder.build().toStreamingRequest
+    builder.build().stream
   }
 
   def addHeaders(builder: HttpRequest.Builder, headers: List[HeaderTuple]) = {

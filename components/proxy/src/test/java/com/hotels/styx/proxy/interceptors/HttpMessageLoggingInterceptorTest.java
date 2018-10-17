@@ -127,6 +127,6 @@ public class HttpMessageLoggingInterceptorTest {
     }
 
     private static void consume(Eventual<LiveHttpResponse> resp) {
-        await(resp.flatMap(it -> it.toFullResponse(1000000)).asCompletableFuture());
+        await(resp.flatMap(it -> it.aggregate(1000000)).asCompletableFuture());
     }
 }

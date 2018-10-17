@@ -50,13 +50,13 @@ public final class BlockingObservables {
 
     public static HttpResponse waitForResponse(Eventual<LiveHttpResponse> responseObs) {
         return futureGetAndPropagate(responseObs
-                .flatMap(response -> response.toFullResponse(120*1024))
+                .flatMap(response -> response.aggregate(120*1024))
                 .asCompletableFuture());
     }
 
     public static HttpResponse waitForResponse(Observable<LiveHttpResponse> responseObs) {
         return responseObs
-                .flatMap(response -> toObservable(response.toFullResponse(120*1024)))
+                .flatMap(response -> toObservable(response.aggregate(120*1024)))
                 .toBlocking()
                 .single();
     }

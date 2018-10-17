@@ -310,7 +310,7 @@ public class HttpRequest implements HttpMessage {
      *
      * @return A streaming LiveHttpRequest object
      */
-    public LiveHttpRequest toStreamingRequest() {
+    public LiveHttpRequest stream() {
         LiveHttpRequest.Builder streamingBuilder = new LiveHttpRequest.Builder(this)
                 .disableValidation();
 

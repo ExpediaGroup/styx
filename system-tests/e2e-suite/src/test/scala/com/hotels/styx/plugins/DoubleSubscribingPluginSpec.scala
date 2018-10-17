@@ -54,7 +54,7 @@ class DoubleSubscribingPluginSpec extends FunSpec
     mockServer.startAsync().awaitRunning()
 
     val function: () => LiveHttpResponse = () => {
-      HttpResponse.response(OK).build().toStreamingResponse
+      HttpResponse.response(OK).build().stream
     }
 
     mockServer.stub("/", responseSupplier(function))

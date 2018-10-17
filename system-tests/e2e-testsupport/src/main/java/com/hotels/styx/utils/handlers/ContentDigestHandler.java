@@ -40,7 +40,7 @@ public class ContentDigestHandler extends BaseHttpHandler {
 
     @Override
     protected LiveHttpResponse doHandle(LiveHttpRequest request) {
-        HttpRequest fullRequest = await(request.toFullRequest(0x100000).asCompletableFuture());
+        HttpRequest fullRequest = await(request.aggregate(0x100000).asCompletableFuture());
 
         String responseBody = format("Response From %s - %s, received content digest: %s",
                 origin.hostAndPortString(),
@@ -52,6 +52,6 @@ public class ContentDigestHandler extends BaseHttpHandler {
                 .header(CONTENT_LENGTH, responseBody.getBytes(UTF_8).length)
                 .body(responseBody, UTF_8)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 }

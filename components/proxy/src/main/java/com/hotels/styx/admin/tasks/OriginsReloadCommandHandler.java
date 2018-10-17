@@ -101,7 +101,7 @@ public class OriginsReloadCommandHandler implements HttpHandler {
                 .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
                 .body(content, UTF_8)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 
     private LiveHttpResponse errorResponse(Throwable cause) {
@@ -134,7 +134,7 @@ public class OriginsReloadCommandHandler implements HttpHandler {
                 .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
                 .body(content, UTF_8)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 
 }

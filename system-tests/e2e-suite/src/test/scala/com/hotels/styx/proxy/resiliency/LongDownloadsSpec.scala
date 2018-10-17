@@ -184,7 +184,7 @@ object SharedOrigins extends NettyOrigins {
         .header("X-File-Server", "true")
         .body(bigFileContent, UTF_8)
         .build()
-        .toStreamingResponse
+        .stream
       ))
 
     fileServer

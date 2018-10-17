@@ -43,6 +43,6 @@ public class NotFoundHandler extends BaseHttpHandler {
         return HttpResponse.response(NOT_FOUND)
                 .body(NOT_FOUND_MESSAGE, UTF_8)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 }

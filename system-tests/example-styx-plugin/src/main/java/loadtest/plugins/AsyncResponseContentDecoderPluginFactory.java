@@ -52,10 +52,10 @@ public class AsyncResponseContentDecoderPluginFactory implements PluginFactory {
         @Override
         public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
             return chain.proceed(request)
-                    .flatMap(response ->  response.toFullResponse(this.maxContentLength))
+                    .flatMap(response ->  response.aggregate(this.maxContentLength))
                     .flatMap(fullResponse -> Eventual.from(asyncEvent(this.delayMillis))
                             .map(x -> fullResponse))
-                    .map(HttpResponse::toStreamingResponse);
+                    .map(HttpResponse::stream);
         }
 
         static CompletableFuture<Void> asyncEvent(int delayMillis) {

@@ -64,7 +64,7 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
                     .body(resourceBody(path), true)
                     .header(CONTENT_TYPE, mediaTypeOf(path))
                     .build()
-                    .toStreamingResponse();
+                    .stream();
         } catch (FileNotFoundException e) {
             return error(NOT_FOUND);
         } catch (IOException e) {

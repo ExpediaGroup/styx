@@ -191,7 +191,7 @@ public class LiveHttpResponse implements LiveHttpMessage {
      * @param maxContentBytes maximum expected content size
      * @return a {@link Eventual}
      */
-    public Eventual<HttpResponse> toFullResponse(int maxContentBytes) {
+    public Eventual<HttpResponse> aggregate(int maxContentBytes) {
         return Eventual.from(body.aggregate(maxContentBytes))
                 .map(it -> new HttpResponse.Builder(this, decodeAndRelease(it))
                     .disableValidation()

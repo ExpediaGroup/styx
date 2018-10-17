@@ -50,7 +50,7 @@ class BigFileDownloadSpec extends FunSpec
     )
 
     val bigFile: File = newBigFile("big_file.dat")
-    fileServer.stub("/download", responseSupplier(() => response(OK).body(Files.toString(bigFile, UTF_8), UTF_8).build().toStreamingResponse))
+    fileServer.stub("/download", responseSupplier(() => response(OK).body(Files.toString(bigFile, UTF_8), UTF_8).build().stream))
   }
 
   override protected def afterAll(): Unit = {

@@ -87,7 +87,7 @@ public class MetricsHandler extends JsonHandler<MetricRegistry> {
 
         return metricRequest.fullMetrics()
                 ? super.handle(request, context)
-                : Eventual.of(restrictedMetricsResponse(metricRequest).build().toStreamingResponse());
+                : Eventual.of(restrictedMetricsResponse(metricRequest).build().stream());
     }
 
     private HttpResponse.Builder restrictedMetricsResponse(MetricRequest request) {

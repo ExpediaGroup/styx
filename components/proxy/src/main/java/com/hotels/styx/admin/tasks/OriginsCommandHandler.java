@@ -76,21 +76,21 @@ public class OriginsCommandHandler extends BaseHttpHandler implements OriginsCha
             return response(BAD_REQUEST)
                     .body(MISSING_ERROR_MESSAGE, UTF_8)
                     .build()
-                    .toStreamingResponse();
+                    .stream();
         }
 
         if (!originsInventorySnapshotMap.containsKey(id(appId))) {
             return response(BAD_REQUEST)
                     .body(format(INVALID_APP_ID_FORMAT, appId), UTF_8)
                     .build()
-                    .toStreamingResponse();
+                    .stream();
         }
 
         if (!validOriginId(id(appId), id(originId))) {
             return response(BAD_REQUEST)
                     .body(format(INVALID_ORIGIN_ID_FORMAT, originId, appId), UTF_8)
                     .build()
-                    .toStreamingResponse();
+                    .stream();
         }
 
         Object originCommand = newOriginCommand(cmd, id(appId), id(originId));
@@ -101,7 +101,7 @@ public class OriginsCommandHandler extends BaseHttpHandler implements OriginsCha
                 .header(LOCATION, "/admin/origins/status")
                 .header(CONTENT_LENGTH, 0)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 
     private boolean validOriginId(Id appId, Id originId) {

@@ -62,11 +62,11 @@ public class StaticFileHandler implements HttpHandler {
                             .addHeader(CONTENT_TYPE, resolvedFile.mediaType)
                             .body(resolvedFile.content, UTF_8)
                             .build()
-                            .toStreamingResponse())
+                            .stream())
                     .map(Eventual::of)
                     .orElseGet(() -> NOT_FOUND_HANDLER.handle(request, context));
         } catch (IOException e) {
-            return Eventual.of(HttpResponse.response(INTERNAL_SERVER_ERROR).build().toStreamingResponse());
+            return Eventual.of(HttpResponse.response(INTERNAL_SERVER_ERROR).build().stream());
         }
     }
 

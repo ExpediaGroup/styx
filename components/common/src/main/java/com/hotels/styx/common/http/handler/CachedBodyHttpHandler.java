@@ -76,7 +76,7 @@ public class CachedBodyHttpHandler extends BaseHttpHandler {
                     .header(CONTENT_LENGTH, contentLength)
                     .body(content, UTF_8)
                     .build()
-                    .toStreamingResponse();
+                    .stream();
         }
     }
 

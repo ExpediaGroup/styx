@@ -167,7 +167,7 @@ public class PluginToggleHandler implements HttpHandler {
     }
 
     private static Eventual<PluginEnabledState> requestedNewState(LiveHttpRequest request) {
-        return request.toFullRequest(MAX_CONTENT_SIZE)
+        return request.aggregate(MAX_CONTENT_SIZE)
                 .map(fullRequest -> fullRequest.bodyAs(UTF_8))
                 .map(PluginToggleHandler::parseToBoolean)
                 .map(PluginEnabledState::fromBoolean);
@@ -179,7 +179,7 @@ public class PluginToggleHandler implements HttpHandler {
                 .addHeader(CONTENT_TYPE, PLAIN_TEXT_UTF_8.toString())
                 .disableCaching()
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 
     private static boolean parseToBoolean(String string) {

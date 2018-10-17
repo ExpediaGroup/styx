@@ -94,7 +94,7 @@ public class StyxProxyTest extends SSLSetup {
         return Eventual.of(HttpResponse.response(OK)
                 .body("Response from http connector", UTF_8)
                 .build()
-                .toStreamingResponse());
+                .stream());
     }
 
     private ServerConnector connector(int port) {

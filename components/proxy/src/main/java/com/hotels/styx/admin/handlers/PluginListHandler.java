@@ -57,7 +57,7 @@ public class PluginListHandler implements HttpHandler {
                 .body(output, UTF_8)
                 .addHeader(CONTENT_TYPE, HTML_UTF_8.toString())
                 .build()
-                .toStreamingResponse());
+                .stream());
     }
 
     private String section(String toggleState, Stream<NamedPlugin> plugins) {

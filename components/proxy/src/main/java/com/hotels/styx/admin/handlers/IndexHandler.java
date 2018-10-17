@@ -62,7 +62,7 @@ public class IndexHandler extends BaseHttpHandler {
                 .header(CONTENT_LANGUAGE, "en")
                 .body(html, UTF_8)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 
     private static String buildIndexContent(Iterable<String> links) {

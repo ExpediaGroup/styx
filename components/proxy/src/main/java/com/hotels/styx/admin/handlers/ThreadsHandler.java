@@ -48,7 +48,7 @@ public class ThreadsHandler extends BaseHttpHandler {
                 .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
                 .body(threadDumpContent(), true)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 
     private byte[] threadDumpContent() {

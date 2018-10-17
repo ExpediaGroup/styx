@@ -120,6 +120,6 @@ public class StyxServerComponentsTest {
     }
 
     private static Plugin stubPlugin(String response) {
-        return (request, chain) -> Eventual.of(response().body(response, UTF_8).build().toStreamingResponse());
+        return (request, chain) -> Eventual.of(response().body(response, UTF_8).build().stream());
     }
 }

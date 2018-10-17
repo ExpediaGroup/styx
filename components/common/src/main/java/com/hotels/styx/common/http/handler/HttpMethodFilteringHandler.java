@@ -51,7 +51,7 @@ public class HttpMethodFilteringHandler implements HttpHandler {
                     HttpResponse.response(METHOD_NOT_ALLOWED)
                             .body(errorBody, StandardCharsets.UTF_8)
                             .build()
-                            .toStreamingResponse()
+                            .stream()
             );
         }
 

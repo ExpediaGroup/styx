@@ -97,13 +97,13 @@ public class JsonHandler<E> extends BaseHttpHandler {
                     .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
                     .body(jsonContent, UTF_8)
                     .build()
-                    .toStreamingResponse();
+                    .stream();
 
         } catch (Exception e) {
             return response(INTERNAL_SERVER_ERROR)
                     .body(e.getMessage(), UTF_8)
                     .build()
-                    .toStreamingResponse();
+                    .stream();
         }
     }
 

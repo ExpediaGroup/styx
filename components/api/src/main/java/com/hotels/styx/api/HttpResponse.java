@@ -180,7 +180,7 @@ public class HttpResponse implements HttpMessage {
      *
      * @return A streaming LiveHttpResponse object
      */
-    public LiveHttpResponse toStreamingResponse() {
+    public LiveHttpResponse stream() {
         if (this.body.length == 0) {
             return new LiveHttpResponse.Builder(this, new ByteStream(Flux.empty())).build();
         } else {

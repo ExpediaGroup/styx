@@ -66,7 +66,7 @@ public class LoggingConfigurationHandler implements HttpHandler {
                 .header(CONTENT_LENGTH, content.length)
                 .body(content.content, UTF_8)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 
     private Content loadContent() {

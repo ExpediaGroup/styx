@@ -41,7 +41,7 @@ public final class ReturnResponseHandler extends BaseHttpHandler {
     }
 
     public static HttpHandler returnsResponse(String response) {
-        return returnsResponse(() -> response().body(response, UTF_8).build().toStreamingResponse());
+        return returnsResponse(() -> response().body(response, UTF_8).build().stream());
     }
 
     public static HttpHandler returnsResponse(Supplier<LiveHttpResponse> responseSupplier) {

@@ -70,7 +70,7 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsC
                 .disableCaching()
                 .body(content(isPrettyPrint(request)), UTF_8)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 
     private String content(boolean pretty) {

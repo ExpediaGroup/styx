@@ -51,7 +51,7 @@ public final class ReturnResponseChain implements Chain {
     }
 
     public static ReturnResponseChain returnsResponse(String response) {
-        return returnsResponse(HttpResponse.response().body(response, UTF_8).build().toStreamingResponse());
+        return returnsResponse(HttpResponse.response().body(response, UTF_8).build().stream());
     }
 
     public static ReturnResponseChain returnsResponse(LiveHttpResponse.Builder builder) {

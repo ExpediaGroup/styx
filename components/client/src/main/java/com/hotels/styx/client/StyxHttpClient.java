@@ -109,8 +109,8 @@ public final class StyxHttpClient implements HttpClient {
                 new ConnectionSettings(params.connectTimeoutMillis()),
                 sslContext
         ).flatMap(connection ->
-                connection.write(networkRequest.toStreamingRequest())
-                        .flatMap(response -> toObservable(response.toFullResponse(params.maxResponseSize())))
+                connection.write(networkRequest.stream())
+                        .flatMap(response -> toObservable(response.aggregate(params.maxResponseSize())))
                         .doOnTerminate(connection::close)
         );
 

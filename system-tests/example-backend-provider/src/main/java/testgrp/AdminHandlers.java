@@ -31,6 +31,6 @@ final class AdminHandlers {
     static ImmutableMap<String, HttpHandler> adminHandlers(String endpoint, String responseContent) {
         return ImmutableMap.of(endpoint, (request, context) -> Eventual.of(response(OK)
                 .body(responseContent, UTF_8)
-                .build().toStreamingResponse()));
+                .build().stream()));
     }
 }

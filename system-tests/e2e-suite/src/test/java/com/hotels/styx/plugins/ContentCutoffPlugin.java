@@ -31,7 +31,7 @@ public class ContentCutoffPlugin implements Plugin {
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest httpRequest, Chain chain) {
         return chain
                 .proceed(httpRequest)
-                .flatMap(response -> response.toFullResponse(1000000)
+                .flatMap(response -> response.aggregate(1000000)
                         .flatMap(it -> {
                             LOGGER.info("do something with full content: " + it.bodyAs(UTF_8));
 

@@ -31,13 +31,13 @@ public class AggregationTesterPlugin implements Plugin {
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         return chain.proceed(request)
                 .flatMap(response ->
-                        response.toFullResponse(maxContentBytes)
+                        response.aggregate(maxContentBytes)
                         .map(fullHttpResponse ->
                                 fullHttpResponse.newBuilder()
                                         .addHeader("test_plugin", "yes")
                                         .addHeader("bytes_aggregated", fullHttpResponse.body().length)
                                         .build()
-                                        .toStreamingResponse()
+                                        .stream()
                         ));
     }
 }

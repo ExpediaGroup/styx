@@ -36,7 +36,7 @@ public class StyxHostHttpClientTest {
 
     @BeforeMethod
     public void setUp() {
-        request =  HttpRequest.get("/").build().toStreamingRequest();
+        request =  HttpRequest.get("/").build().stream();
     }
 
     @Test

@@ -67,6 +67,6 @@ public class StaticBodyHttpHandler extends BaseHttpHandler {
                 .header(CONTENT_LENGTH, this.contentLength)
                 .body(this.body, StandardCharsets.UTF_8)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 }

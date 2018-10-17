@@ -63,7 +63,7 @@ public class HttpRequestTest {
                 .cookies(requestCookie("CookieName", "CookieValue"))
                 .build();
 
-        LiveHttpRequest streaming = fullRequest.toStreamingRequest();
+        LiveHttpRequest streaming = fullRequest.stream();
 
         assertThat(streaming.method(), is(HttpMethod.POST));
         assertThat(streaming.url(), is(url("/foo/bar").build()));
@@ -74,7 +74,7 @@ public class HttpRequestTest {
                 header("Cookie", "CookieName=CookieValue")));
         assertThat(streaming.cookies(), contains(requestCookie("CookieName", "CookieValue")));
 
-        String body = streaming.toFullRequest(0x10000)
+        String body = streaming.aggregate(0x10000)
                 .asCompletableFuture()
                 .get()
                 .bodyAs(UTF_8);
@@ -84,7 +84,7 @@ public class HttpRequestTest {
 
     @Test(dataProvider = "emptyBodyRequests")
     public void convertsToStreamingHttpRequestWithEmptyBody(HttpRequest fullRequest) {
-        LiveHttpRequest streaming = fullRequest.toStreamingRequest();
+        LiveHttpRequest streaming = fullRequest.stream();
 
         StepVerifier.create(streaming.body())
                 .expectComplete()
@@ -230,7 +230,7 @@ public class HttpRequestTest {
                 .body("original", UTF_8)
                 .build();
 
-        Flux.from(original.toStreamingRequest()
+        Flux.from(original.stream()
                 .body()
                 .map(buffer -> {
                     buffer.delegate().array()[0] = 'A';

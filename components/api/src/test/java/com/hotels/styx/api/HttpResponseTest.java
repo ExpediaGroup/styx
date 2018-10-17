@@ -62,7 +62,7 @@ public class HttpResponseTest {
                 .body("message content", UTF_8)
                 .build();
 
-        LiveHttpResponse streaming = response.toStreamingResponse();
+        LiveHttpResponse streaming = response.stream();
 
         assertThat(streaming.version(), is(HTTP_1_1));
         assertThat(streaming.status(), is(CREATED));
@@ -73,7 +73,7 @@ public class HttpResponseTest {
         ));
         assertThat(streaming.cookies(), contains(responseCookie("CookieName", "CookieValue").build()));
 
-        String body = streaming.toFullResponse(0x100000)
+        String body = streaming.aggregate(0x100000)
                 .asCompletableFuture()
                 .get()
                 .bodyAs(UTF_8);
@@ -322,7 +322,7 @@ public class HttpResponseTest {
 
     @Test(dataProvider = "emptyBodyResponses")
     public void convertsToStreamingHttpResponseWithEmptyBody(HttpResponse response) throws ExecutionException, InterruptedException {
-        LiveHttpResponse streaming = response.toStreamingResponse();
+        LiveHttpResponse streaming = response.stream();
 
         byte[] result = streaming.body().aggregate(1000)
                 .get()
@@ -429,7 +429,7 @@ public class HttpResponseTest {
                 .body("original", UTF_8)
                 .build();
 
-        Flux.from(original.toStreamingResponse()
+        Flux.from(original.stream()
                 .body()
                 .map(buf -> {
                     buf.delegate().array()[0] = 'A';
@@ -448,7 +448,7 @@ public class HttpResponseTest {
                 .body(new ByteStream(Flux.just(content)))
                 .build();
 
-        original.toFullResponse(100)
+        original.aggregate(100)
                 .asCompletableFuture()
                 .get();
 

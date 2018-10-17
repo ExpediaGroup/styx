@@ -103,7 +103,7 @@ public abstract class AbstractStyxService implements StyxService {
                         .addHeader(CONTENT_TYPE, APPLICATION_JSON)
                         .body(format("{ name: \"%s\" status: \"%s\" }", name, status), UTF_8)
                         .build()
-                        .toStreamingResponse()));
+                        .stream()));
     }
 
     public String serviceName() {

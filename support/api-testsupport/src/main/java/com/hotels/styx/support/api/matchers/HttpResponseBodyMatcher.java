@@ -47,12 +47,12 @@ public class HttpResponseBodyMatcher<T extends LiveHttpResponse> extends TypeSaf
 
     @Override
     public boolean matchesSafely(T actual) {
-        return matcher.matches(await(actual.toFullResponse(0x100000).asCompletableFuture()).bodyAs(UTF_8));
+        return matcher.matches(await(actual.aggregate(0x100000).asCompletableFuture()).bodyAs(UTF_8));
     }
 
     @Override
     protected void describeMismatchSafely(T item, Description mismatchDescription) {
-        mismatchDescription.appendText("content was '" + await(item.toFullResponse(0x100000).asCompletableFuture()).bodyAs(UTF_8) + "'");
+        mismatchDescription.appendText("content was '" + await(item.aggregate(0x100000).asCompletableFuture()).bodyAs(UTF_8) + "'");
     }
 
     @Override

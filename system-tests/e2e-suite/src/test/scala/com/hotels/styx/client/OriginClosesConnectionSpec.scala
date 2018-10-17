@@ -123,7 +123,7 @@ class OriginClosesConnectionSpec extends FunSuite
       get("/foo/3")
         .addHeader(HOST, originHost)
         .build()
-        .toStreamingRequest)
+        .stream)
 
     responseObservable
       .doOnNext((t: LiveHttpResponse) => toObservable(t.body()).subscribe(contentSubscriber))
