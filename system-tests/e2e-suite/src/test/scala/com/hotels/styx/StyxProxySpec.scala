@@ -28,7 +28,7 @@ import org.scalatest._
 trait StyxProxySpec extends StyxClientSupplier
   with BeforeAndAfterAll
   with BeforeAndAfterEach
-  with ShouldMatchers
+  with Matchers
   with ImplicitOriginConversions
   with ImplicitStyxConversions
   with StyxConfiguration

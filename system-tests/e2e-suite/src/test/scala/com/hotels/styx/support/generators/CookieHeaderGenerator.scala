@@ -55,7 +55,7 @@ class CookieHeaderGenerator {
 
   def perturbedCookieHeader(cookies: List[CookieTemplate]): Gen[String] = {
     for {
-      action <- Gen.wrap(
+      action <- Gen.delay(
         genInsertInvalidCharacterIntoName(cookies)
       )
     } yield action(cookies)

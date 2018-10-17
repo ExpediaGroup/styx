@@ -17,10 +17,10 @@ package com.hotels.styx.routing.config
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 
 
-class RoutingConfigParserSpec extends FunSpec with ShouldMatchers {
+class RoutingConfigParserSpec extends FunSpec with Matchers {
 
   it("Parses strings as RoutingConfigReferences") {
     val jsonNode = jsonNodeFromConfig(

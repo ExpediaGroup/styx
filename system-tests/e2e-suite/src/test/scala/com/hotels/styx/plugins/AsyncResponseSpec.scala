@@ -27,7 +27,7 @@ import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -36,7 +36,7 @@ import scala.concurrent.duration._
 class AsyncPluginResponseSpec extends FunSpec
   with StyxProxySpec
   with StyxClientSupplier
-  with ShouldMatchers {
+  with Matchers {
   val mockServer = FakeHttpServer.HttpStartupConfig().start()
 
   override val styxConfig = StyxConfig(plugins = List("asyncDelayPlugin" -> new AsyncContentDelayPlugin()))
@@ -75,9 +75,8 @@ class AsyncPluginResponseSpec extends FunSpec
   }
 }
 
-import rx.lang.scala.ImplicitFunctionConversions._
-import scala.compat.java8.FutureConverters.FutureOps
 import scala.compat.java8.FunctionConverters.asJavaFunction
+import scala.compat.java8.FutureConverters.FutureOps
 
 
 class AsyncContentDelayPlugin extends PluginAdapter {

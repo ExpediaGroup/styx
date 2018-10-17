@@ -21,12 +21,12 @@ import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import org.mockito.Matchers.any
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.mock.MockitoSugar
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 
-class RouteHandlerFactorySpec extends FunSpec with ShouldMatchers with MockitoSugar {
+class RouteHandlerFactorySpec extends FunSpec with Matchers with MockitoSugar {
 
   private val mockHandler = mock[HttpHandler]
   private val aHandlerInstance = mock[HttpHandler]

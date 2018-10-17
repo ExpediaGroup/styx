@@ -16,11 +16,11 @@
 package com.hotels.styx.routing.config
 
 import com.hotels.styx.StyxConfig
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 import com.hotels.styx.routing.config.ConfigVersionResolver.Version.ROUTING_CONFIG_V1
 import com.hotels.styx.routing.config.ConfigVersionResolver.Version.ROUTING_CONFIG_V2
 
-class ConfigVersionResolverSpec extends FunSpec with ShouldMatchers {
+class ConfigVersionResolverSpec extends FunSpec with Matchers {
 
   it ("returns v2 when 'httpPipeline' is present") {
     val config = StyxConfig.fromYaml(

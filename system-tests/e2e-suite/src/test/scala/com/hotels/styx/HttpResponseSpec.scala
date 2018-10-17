@@ -45,7 +45,6 @@ import scala.concurrent.duration._
 class HttpResponseSpec extends FunSuite
   with ImplicitOriginConversions
   with BeforeAndAfterAll
-  with ShouldMatchers
   with BeforeAndAfter
   with Matchers
   with NettyOrigins {

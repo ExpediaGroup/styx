@@ -22,9 +22,9 @@ import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition
 import com.hotels.styx.api.HttpResponseStatus.OK
 import org.scalatest.mock.MockitoSugar
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 
-class RewriteInterceptorSpec extends FunSpec with ShouldMatchers with MockitoSugar {
+class RewriteInterceptorSpec extends FunSpec with Matchers with MockitoSugar {
 
   it("performs replacement") {
     val config = configBlock(

@@ -25,13 +25,13 @@ import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.{SSLSetup, StyxClientSupplier, StyxProxySpec}
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 
 class HttpsSpec extends FunSpec
   with StyxProxySpec
   with HttpResponseImplicits
   with StyxClientSupplier
-  with ShouldMatchers
+  with Matchers
   with SSLSetup {
 
   val crtFile = fixturesHome(this.getClass, "/ssl/testCredentials.crt").toString

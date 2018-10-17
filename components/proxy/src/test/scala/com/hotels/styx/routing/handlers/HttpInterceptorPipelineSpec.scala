@@ -28,13 +28,13 @@ import com.hotels.styx.support.api.BlockingObservables
 import org.mockito.Matchers.{any, eq => meq}
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.mock.MockitoSugar
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 import rx.lang.scala.Observable
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 
-class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with MockitoSugar {
+class HttpInterceptorPipelineSpec extends FunSpec with Matchers with MockitoSugar {
 
   val hwaRequest = LiveHttpRequest.get("/x").build()
 //

@@ -124,7 +124,7 @@ class BadCookiesSpec extends FunSpec
       """In case of a test failure, use this seed to re-run the test.
         |It will generate an identical sequence of inputs for
         |debugging purposes.""".stripMargin)
-    Test.Parameters.default.rng.setSeed(seed)
+    Test.Parameters.default.withInitialSeed(seed)
   }
 
   def sendRequestObjects(requestObjects: Seq[HttpObject]): Unit = {

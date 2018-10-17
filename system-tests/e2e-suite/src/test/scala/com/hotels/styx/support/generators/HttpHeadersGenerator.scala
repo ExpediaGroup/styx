@@ -53,7 +53,7 @@ object HttpHeadersGenerator {
 
   def httpHeaders: Gen[List[HeaderTuple]] = for {
     count <- Gen.choose(0, knownHeaders.size)
-    headers <- Gen.sequence[List, HeaderTuple](genlist).flatMap(Gen.pick(count, _))
+    headers <- Gen.sequence[List[HeaderTuple], HeaderTuple](genlist).flatMap(Gen.pick(count, _))
   } yield headers.toList
 
   def randomHeader(header: String): Gen[HeaderTuple] = for {

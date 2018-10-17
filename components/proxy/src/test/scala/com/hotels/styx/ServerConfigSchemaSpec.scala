@@ -22,9 +22,9 @@ import com.hotels.styx.infrastructure.configuration.ConfigurationParser
 import com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 
-class ServerConfigSchemaSpec extends FunSpec with ShouldMatchers {
+class ServerConfigSchemaSpec extends FunSpec with Matchers {
 
   describe("Styx Server Configuration") {
     it("Validates a minimal server configuration") {

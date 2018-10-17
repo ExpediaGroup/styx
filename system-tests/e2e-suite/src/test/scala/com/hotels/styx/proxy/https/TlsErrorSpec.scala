@@ -31,7 +31,7 @@ import com.hotels.styx.{SSLSetup, StyxProxySpec}
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.hasItem
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 
 import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.Await
@@ -40,7 +40,7 @@ import scala.concurrent.duration._
 class TlsErrorSpec extends FunSpec
   with StyxProxySpec
   with HttpResponseImplicits
-  with ShouldMatchers
+  with Matchers
   with SSLSetup
   with Eventually {
 

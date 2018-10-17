@@ -38,7 +38,7 @@ class OriginsCommandsSpec extends FeatureSpec
   with StyxProxySpec
   with DefaultStyxConfiguration
   with GivenWhenThen
-  with ShouldMatchers
+  with Matchers
   with BeforeAndAfterAll
   with Eventually {
   info("As a tech ops person")

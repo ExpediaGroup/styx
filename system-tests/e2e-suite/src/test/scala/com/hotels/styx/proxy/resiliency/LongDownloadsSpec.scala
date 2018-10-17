@@ -35,7 +35,7 @@ import com.hotels.styx.support.DownloadClient._
 import com.hotels.styx.support.configuration.{HttpBackend, ImplicitOriginConversions, Origins, StyxConfig}
 import com.hotels.styx.support.{DownloadClient, NettyOrigins, TestClientSupport}
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, SequentialNestedSuiteExecution, ShouldMatchers}
+import org.scalatest.{BeforeAndAfterAll, SequentialNestedSuiteExecution, Matchers}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -46,7 +46,7 @@ class LongDownloadsSpec extends org.scalatest.fixture.WordSpec
   with SequentialNestedSuiteExecution
   with BeforeAndAfterAll
   with TestClientSupport
-  with ShouldMatchers
+  with Matchers
   with NettyOrigins
   with Eventually
 {
