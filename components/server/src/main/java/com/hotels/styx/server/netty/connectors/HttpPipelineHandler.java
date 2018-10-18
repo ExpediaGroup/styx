@@ -71,7 +71,6 @@ import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
 import static com.hotels.styx.api.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.server.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.server.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
@@ -86,6 +85,7 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
+import static rx.RxReactiveStreams.toObservable;
 
 /**
  * Passes request to HTTP Pipeline.
@@ -159,13 +159,13 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
                 .transition(SENDING_RESPONSE, ResponseWriteErrorEvent.class, event -> onResponseWriteError(event.ctx, event.cause))
                 .transition(SENDING_RESPONSE, ChannelInactiveEvent.class, event -> SENDING_RESPONSE_CLIENT_CLOSED)
                 .transition(SENDING_RESPONSE, ChannelExceptionEvent.class, event -> onChannelExceptionWhenSendingResponse(event.ctx, event.cause))
-                .transition(SENDING_RESPONSE, ResponseObservableErrorEvent.class, event -> logError(SENDING_RESPONSE,  event.cause))
+                .transition(SENDING_RESPONSE, ResponseObservableErrorEvent.class, event -> logError(SENDING_RESPONSE, event.cause))
                 .transition(SENDING_RESPONSE, ResponseObservableCompletedEvent.class, event -> SENDING_RESPONSE)
                 .transition(SENDING_RESPONSE, RequestReceivedEvent.class, event -> onPrematureRequest(event.request, event.ctx))
 
                 .transition(SENDING_RESPONSE_CLIENT_CLOSED, ResponseSentEvent.class, event -> onResponseSentAfterClientClosed(event.ctx))
                 .transition(SENDING_RESPONSE_CLIENT_CLOSED, ResponseWriteErrorEvent.class, event -> onResponseWriteError(event.ctx, event.cause))
-                .transition(SENDING_RESPONSE_CLIENT_CLOSED, ChannelExceptionEvent.class, event -> logError(SENDING_RESPONSE_CLIENT_CLOSED,  event.cause))
+                .transition(SENDING_RESPONSE_CLIENT_CLOSED, ChannelExceptionEvent.class, event -> logError(SENDING_RESPONSE_CLIENT_CLOSED, event.cause))
                 .transition(SENDING_RESPONSE_CLIENT_CLOSED, ResponseObservableErrorEvent.class, event -> logError(SENDING_RESPONSE_CLIENT_CLOSED, event.cause))
                 .transition(SENDING_RESPONSE_CLIENT_CLOSED, ResponseObservableCompletedEvent.class, event -> SENDING_RESPONSE_CLIENT_CLOSED)
 
@@ -256,7 +256,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
         // the same call stack as "onLegitimateRequest" handler. This happens when a plugin
         // generates a response.
         try {
-            Observable<HttpResponse> responseObservable = toRxObservable(httpPipeline.handle(v11Request, newInterceptorContext(ctx)));
+            Observable<HttpResponse> responseObservable = toObservable(httpPipeline.handle(v11Request, newInterceptorContext(ctx)));
             subscription = responseObservable
                     .subscribe(new Subscriber<HttpResponse>() {
                                    @Override
@@ -388,12 +388,12 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<HttpRequest
             }
 
             LOGGER.info("SSL handshake failure from incoming connection "
-                    + "cause=\"{}\", "
-                    + "serverAddress={}, "
-                    + "clientAddress={}",
-                    new Object [] {sslException.getMessage(),
-                    ctx.channel().localAddress(),
-                    ctx.channel().remoteAddress()});
+                            + "cause=\"{}\", "
+                            + "serverAddress={}, "
+                            + "clientAddress={}",
+                    new Object[]{sslException.getMessage(),
+                            ctx.channel().localAddress(),
+                            ctx.channel().remoteAddress()});
 
             return TERMINATED;
         }

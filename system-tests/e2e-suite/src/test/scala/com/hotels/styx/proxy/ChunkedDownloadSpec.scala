@@ -106,6 +106,7 @@ class ChunkedDownloadSpec extends FunSpec
       eventually(timeout(5 seconds)) {
         assert(noBusyConnectionsToOrigin(originTwo), "Connection remains busy.")
         assert(noAvailableConnectionsInPool(originTwo), "Connection was not closed.")
+        styxServer.metricsSnapshot.count("origins.appTwo.requests.cancelled").get should be(1)
       }
     }
   }

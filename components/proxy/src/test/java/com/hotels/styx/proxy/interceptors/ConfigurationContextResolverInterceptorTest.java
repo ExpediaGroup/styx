@@ -16,10 +16,10 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.google.common.collect.ImmutableMap;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationContextResolver;
 import com.hotels.styx.server.HttpInterceptorContext;
@@ -47,7 +47,7 @@ public class ConfigurationContextResolverInterceptorTest {
 
         TestChain chain = new TestChain();
 
-        StyxObservable<HttpResponse> responseObservable = interceptor.intercept(request, chain);
+        Eventual<HttpResponse> responseObservable = interceptor.intercept(request, chain);
 
         assertThat(await(responseObservable.asCompletableFuture()), hasStatus(OK));
         assertThat(chain.proceedWasCalled, is(true));
@@ -76,10 +76,10 @@ public class ConfigurationContextResolverInterceptorTest {
         }
 
         @Override
-        public StyxObservable<HttpResponse> proceed(HttpRequest request) {
+        public Eventual<HttpResponse> proceed(HttpRequest request) {
             proceedWasCalled = true;
 
-            return StyxObservable.of(response(OK).build());
+            return Eventual.of(response(OK).build());
         }
     }
 }

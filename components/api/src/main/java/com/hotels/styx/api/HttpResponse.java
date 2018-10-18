@@ -69,7 +69,7 @@ import static java.util.stream.Collectors.toList;
  * <ul>
  * <li>{@code response()}</li>
  * <li>{@code response(HttpResponseStatus)}</li>
- * <li>{@code response(HttpResponseStatus, StyxObservable<ByteBuf>)}</li>
+ * <li>{@code response(HttpResponseStatus, Eventual<ByteBuf>)}</li>
  * </ul>
  * <p>
  * A builder can also be created with one of the {@code Builder} constructors.
@@ -174,13 +174,13 @@ public class HttpResponse implements StreamingHttpMessage {
     /**
      * Aggregates content stream and converts this response to a {@link FullHttpResponse}.
      * <p>
-     * Returns a {@link StyxObservable<FullHttpResponse>} that eventually produces a
+     * Returns a {@link Eventual <FullHttpResponse>} that eventually produces a
      * {@link FullHttpResponse}. The resulting full response object has the same
      * response line, headers, and content as this response.
      * <p>
      * The content stream is aggregated asynchronously. The stream may be connected
      * to a network socket or some other content producer. Once aggregated, a
-     * FullHttpResponse object is emitted on the returned {@link StyxObservable}.
+     * FullHttpResponse object is emitted on the returned {@link Eventual}.
      * <p>
      * A sole {@code maxContentBytes} argument is a backstop defence against excessively
      * long content streams. The {@code maxContentBytes} should be set to a sensible
@@ -189,10 +189,10 @@ public class HttpResponse implements StreamingHttpMessage {
      * is emitted on the returned observable.
      *
      * @param maxContentBytes maximum expected content size
-     * @return a {@link StyxObservable}
+     * @return a {@link Eventual}
      */
-    public StyxObservable<FullHttpResponse> toFullResponse(int maxContentBytes) {
-        return StyxObservable.from(body.aggregate(maxContentBytes))
+    public Eventual<FullHttpResponse> toFullResponse(int maxContentBytes) {
+        return Eventual.from(body.aggregate(maxContentBytes))
                 .map(it -> new FullHttpResponse.Builder(this, decodeAndRelease(it))
                     .disableValidation()
                     .build()

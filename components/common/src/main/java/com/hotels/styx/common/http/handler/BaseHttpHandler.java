@@ -15,21 +15,21 @@
  */
 package com.hotels.styx.common.http.handler;
 
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
 
 /**
  * This class provides a skeleton implementation of the {@link HttpHandler} interface, that can be used when no
- * complex {@link StyxObservable} mechanism is required.
+ * complex {@link Eventual} mechanism is required.
  */
 public abstract class BaseHttpHandler implements HttpHandler {
 
     @Override
-    public  StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return StyxObservable.of(doHandle(request));
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return Eventual.of(doHandle(request));
     }
 
     /**

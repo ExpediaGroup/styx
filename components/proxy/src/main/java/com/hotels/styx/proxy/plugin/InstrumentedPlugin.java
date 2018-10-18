@@ -17,10 +17,10 @@ package com.hotels.styx.proxy.plugin;
 
 import com.codahale.metrics.Meter;
 import com.hotels.styx.api.Environment;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
@@ -30,13 +30,13 @@ import org.slf4j.Logger;
 import java.util.Map;
 
 import static com.google.common.base.Throwables.propagate;
-import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 import static rx.Observable.error;
+import static rx.RxReactiveStreams.toObservable;
+import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * Collects metrics on plugin.
@@ -84,16 +84,16 @@ public class InstrumentedPlugin implements Plugin {
     }
 
     @Override
-    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain originalChain) {
+    public Eventual<HttpResponse> intercept(HttpRequest request, Chain originalChain) {
         StatusRecordingChain chain = new StatusRecordingChain(originalChain);
         try {
-            return fromRxObservable(
-                    toRxObservable(plugin.intercept(request, chain))
+            return new Eventual<>(toPublisher(
+                    toObservable(plugin.intercept(request, chain))
                             .doOnNext(response -> recordStatusCode(chain, response))
-                            .onErrorResumeNext(error -> error(recordAndWrapError(chain, error))));
+                            .onErrorResumeNext(error -> error(recordAndWrapError(chain, error)))));
         } catch (Throwable e) {
             recordException(e);
-            return StyxObservable.error(new PluginException(e, plugin.name()));
+            return Eventual.error(new PluginException(e, plugin.name()));
         }
     }
 
@@ -140,11 +140,12 @@ public class InstrumentedPlugin implements Plugin {
         }
 
         @Override
-        public StyxObservable<HttpResponse> proceed(HttpRequest request) {
+        public Eventual<HttpResponse> proceed(HttpRequest request) {
             try {
-                return fromRxObservable(toRxObservable(chain.proceed(request))
-                        .doOnNext(response -> upstreamStatus = response.status())
-                        .doOnError(error -> upstreamException = true));
+                return new Eventual<>(
+                        toPublisher(toObservable(chain.proceed(request))
+                                .doOnNext(response -> upstreamStatus = response.status())
+                                .doOnError(error -> upstreamException = true)));
             } catch (Throwable e) {
                 upstreamException = true;
                 throw propagate(e);

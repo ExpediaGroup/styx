@@ -15,11 +15,11 @@
  */
 package com.hotels.styx.proxy.interceptors;
 
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import com.hotels.styx.api.HttpRequest;
@@ -59,7 +59,7 @@ public final class ReturnResponseChain implements Chain {
     }
 
     @Override
-    public StyxObservable<HttpResponse> proceed(HttpRequest request) {
-        return StyxObservable.of(response);
+    public Eventual<HttpResponse> proceed(HttpRequest request) {
+        return Eventual.of(response);
     }
 }

@@ -18,12 +18,12 @@ package com.hotels.styx.client;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import rx.Observable;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
@@ -51,31 +51,14 @@ class Transport {
         });
 
         return new HttpTransaction() {
-            private final AtomicBoolean cancelled = new AtomicBoolean(false);
-
             @Override
             public Observable<HttpResponse> response() {
-                return observableResponse
-                        .doOnError(throwable -> {
-                            if (!cancelled.get()) {
-                                closeIfConnected(origin, connectionRef);
-                            }
-                        })
-                        .doOnCompleted(() -> {
-                            if (!cancelled.get()) {
-                                returnIfConnected(origin, connectionRef);
-                            }
-                        })
-                        .doOnUnsubscribe(() -> {
-                            if (!cancelled.get()) {
-                                closeIfConnected(origin, connectionRef);
-                            }
-                        });
-            }
-
-            @Override
-            public boolean isCancelled() {
-                return cancelled.get();
+                return ResponseEventListener.from(observableResponse)
+                        .whenCancelled(() -> closeIfConnected(origin, connectionRef))
+                        .whenResponseError(cause -> closeIfConnected(origin, connectionRef))
+                        .whenContentError(cause -> closeIfConnected(origin, connectionRef))
+                        .whenCompleted(() -> returnIfConnected(origin, connectionRef))
+                        .apply();
             }
 
             private synchronized void closeIfConnected(Optional<ConnectionPool> connectionPool, AtomicReference<Connection> connectionRef) {

@@ -328,13 +328,13 @@ public class HttpRequest implements StreamingHttpMessage {
     /**
      * Aggregates content stream and converts this request to a {@link FullHttpRequest}.
      * <p>
-     * Returns a {@link StyxObservable} that eventually produces a
+     * Returns a {@link Eventual} that eventually produces a
      * {@link FullHttpRequest}. The resulting full request object has the same
      * request line, headers, and content as this request.
      * <p>
      * The content stream is aggregated asynchronously. The stream may be connected
      * to a network socket or some other content producer. Once aggregated, a
-     * FullHttpRequest object is emitted on the returned {@link StyxObservable}.
+     * FullHttpRequest object is emitted on the returned {@link Eventual}.
      * <p>
      * A sole {@code maxContentBytes} argument is a backstop defence against excessively
      * long content streams. The {@code maxContentBytes} should be set to a sensible
@@ -343,10 +343,10 @@ public class HttpRequest implements StreamingHttpMessage {
      * is emitted on the returned observable.
      *
      * @param maxContentBytes maximum expected content size
-     * @return a {@link StyxObservable}
+     * @return a {@link Eventual}
      */
-    public StyxObservable<FullHttpRequest> toFullRequest(int maxContentBytes) {
-        return StyxObservable.from(
+    public Eventual<FullHttpRequest> toFullRequest(int maxContentBytes) {
+        return Eventual.from(
                 body.aggregate(maxContentBytes)
                     .thenApply(it -> new FullHttpRequest.Builder(this, decodeAndRelease(it)).build())
         );

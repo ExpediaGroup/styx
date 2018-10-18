@@ -16,9 +16,9 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.StyxConfig;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
@@ -88,7 +88,7 @@ public class StyxConfigurationHandlerTest {
         return path;
     }
 
-    private static StyxObservable<HttpResponse> browseForCurrentConfiguration(String yaml, boolean pretty) {
+    private static Eventual<HttpResponse> browseForCurrentConfiguration(String yaml, boolean pretty) {
         return configurationBrowserHandler(yaml).handle(adminRequest(pretty), HttpInterceptorContext.create());
     }
 

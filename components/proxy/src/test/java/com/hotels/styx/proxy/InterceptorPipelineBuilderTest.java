@@ -19,10 +19,10 @@ import com.google.common.collect.ImmutableList;
 import com.hotels.styx.AggregatedConfiguration;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
@@ -66,7 +66,7 @@ public class InterceptorPipelineBuilderTest {
         );
 
         handler = mock(HttpHandler.class);
-        when(handler.handle(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(StyxObservable.of(response(OK).build()));
+        when(handler.handle(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(Eventual.of(response(OK).build()));
     }
 
     @Test

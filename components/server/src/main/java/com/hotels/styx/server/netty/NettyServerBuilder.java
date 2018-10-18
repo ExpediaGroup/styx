@@ -18,7 +18,7 @@ package com.hotels.styx.server.netty;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
@@ -49,7 +49,7 @@ public final class NettyServerBuilder {
     private Optional<ServerConnector> httpConnector = Optional.empty();
     private Optional<ServerConnector> httpsConnector = Optional.empty();
     private final List<Runnable> startupActions = newCopyOnWriteArrayList();
-    private HttpHandler httpHandler = (request, context) -> StyxObservable.of(HttpResponse.response(NOT_FOUND).build());
+    private HttpHandler httpHandler = (request, context) -> Eventual.of(HttpResponse.response(NOT_FOUND).build());
 
     public static NettyServerBuilder newBuilder() {
         return new NettyServerBuilder();

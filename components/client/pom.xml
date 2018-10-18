@@ -83,6 +83,11 @@
       <artifactId>rxjava-reactive-streams</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-test</artifactId>
+    </dependency>
+
   </dependencies>
 
   <build>

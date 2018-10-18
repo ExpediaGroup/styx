@@ -19,7 +19,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpInterceptor.Chain;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.client.StyxHeaderConfig;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
@@ -107,8 +107,8 @@ public class RequestEnrichingInterceptorTest {
         }
 
         @Override
-        public StyxObservable<HttpResponse> proceed(HttpRequest request) {
-            return StyxObservable.of(response().build());
+        public Eventual<HttpResponse> proceed(HttpRequest request) {
+            return Eventual.of(response().build());
         }
 
         @Override

@@ -15,16 +15,16 @@
  */
 package com.hotels.styx.support.api;
 
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
 import rx.Observable;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static java.lang.Thread.currentThread;
+import static rx.RxReactiveStreams.toObservable;
 
 public final class BlockingObservables {
 
@@ -32,7 +32,7 @@ public final class BlockingObservables {
         return observable.toBlocking().single();
     }
 
-    public static <T> T getFirst(StyxObservable<T> observable) {
+    public static <T> T getFirst(Eventual<T> observable) {
         return futureGetAndPropagate(observable.asCompletableFuture());
     }
 
@@ -48,7 +48,7 @@ public final class BlockingObservables {
 
     }
 
-    public static FullHttpResponse waitForResponse(StyxObservable<HttpResponse> responseObs) {
+    public static FullHttpResponse waitForResponse(Eventual<HttpResponse> responseObs) {
         return futureGetAndPropagate(responseObs
                 .flatMap(response -> response.toFullResponse(120*1024))
                 .asCompletableFuture());
@@ -56,7 +56,7 @@ public final class BlockingObservables {
 
     public static FullHttpResponse waitForResponse(Observable<HttpResponse> responseObs) {
         return responseObs
-                .flatMap(response -> toRxObservable(response.toFullResponse(120*1024)))
+                .flatMap(response -> toObservable(response.toFullResponse(120*1024)))
                 .toBlocking()
                 .single();
     }

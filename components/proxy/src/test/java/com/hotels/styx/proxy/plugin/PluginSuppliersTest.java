@@ -22,7 +22,7 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.support.api.SimpleEnvironment;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
@@ -318,7 +318,7 @@ public class PluginSuppliersTest {
         }
 
         @Override
-        public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+        public Eventual<HttpResponse> intercept(HttpRequest request, Chain chain) {
             return null;
         }
     }

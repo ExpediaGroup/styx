@@ -21,6 +21,9 @@ import io.netty.buffer.ByteBuf;
  * Conversions between Styx Buffer and Netty ByteBuf objects.
  */
 public final class Buffers {
+    private Buffers() {
+    }
+
     /**
      * Builds a Styx Buffer from Netty ByteBuf.
      *

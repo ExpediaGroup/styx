@@ -20,7 +20,7 @@ import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import io.netty.buffer.ByteBuf;
@@ -43,7 +43,7 @@ public class TestPlugin implements Plugin {
 
 
     @Override
-    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public Eventual<HttpResponse> intercept(HttpRequest request, Chain chain) {
         String header = xHcomPluginsHeader(request);
 
         final String configPath = environment.pluginConfig(String.class);

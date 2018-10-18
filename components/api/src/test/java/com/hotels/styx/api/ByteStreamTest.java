@@ -179,6 +179,22 @@ public class ByteStreamTest {
                 .verify();
     }
 
+    @Test
+    public void runsOnCancelActionWhenCancelled() {
+        AtomicBoolean cancelled = new AtomicBoolean();
+        ByteStream stream = new ByteStream(Flux.just(buf1, buf2))
+                .doOnCancel(() -> cancelled.set(true));
+
+        StepVerifier.create(stream)
+                .thenRequest(1)
+                .expectNext(buf1)
+                .then(() -> assertThat(cancelled.get(), is(false)))
+                .thenCancel()
+                .verify();
+
+        assertThat(cancelled.get(), is(true));
+    }
+
     private String decodeUtf8String(Buffer buffer) {
         return new String(buffer.content(), UTF_8);
     }

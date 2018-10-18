@@ -21,6 +21,7 @@ import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpVersion;
+import com.hotels.styx.api.Requests;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Operation;
@@ -74,6 +75,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
 
     /**
      * Constructs an instance with flow-control disabled and a default response time (1s).
+     *
      * @param request            HTTP request
      * @param originStatsFactory OriginStats factory
      */
@@ -154,16 +156,17 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
                     });
         }
 
-        return observable.doOnTerminate(() -> {
-            if (nettyConnection.isConnected()) {
-                removeProxyBridgeHandlers(nettyConnection);
-                if (requestIsOngoing(requestRequestBodyChunkSubscriber.get())) {
-                    LOGGER.warn("Origin responded too quickly to an ongoing request, or it was cancelled. Connection={}, Request={}.",
-                            new Object[]{nettyConnection.channel(), this.request});
-                    nettyConnection.close();
-                }
-            }
-        }).map(response -> response.newBuilder().build());
+        return observable.map(response ->
+                        Requests.doFinally(response, cause -> {
+                            if (nettyConnection.isConnected()) {
+                                removeProxyBridgeHandlers(nettyConnection);
+                                if (requestIsOngoing(requestRequestBodyChunkSubscriber.get())) {
+                                    LOGGER.warn("Origin responded too quickly to an ongoing request, or it was cancelled. Connection={}, Request={}.",
+                                            new Object[]{nettyConnection.channel(), this.request});
+                                    nettyConnection.close();
+                                }
+                            }
+                        }));
     }
 
     private void addProxyBridgeHandlers(NettyConnection nettyConnection, Subscriber<? super HttpResponse> observer) {

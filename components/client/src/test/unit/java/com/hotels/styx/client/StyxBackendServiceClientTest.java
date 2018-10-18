@@ -16,12 +16,12 @@
 package com.hotels.styx.client;
 
 import com.google.common.net.HostAndPort;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.StyxInternalObservables;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.extension.Origin;
@@ -31,7 +31,6 @@ import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.StickySessionConfig;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.client.connectionpool.ConnectionPool;
 import org.hamcrest.Matchers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -75,6 +74,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static rx.Observable.error;
 import static rx.Observable.just;
+import static rx.RxReactiveStreams.toPublisher;
 
 public class StyxBackendServiceClientTest {
     private static final Origin SOME_ORIGIN = newOriginBuilder("localhost", 9090).applicationId(GENERIC_APP).build();
@@ -366,7 +366,6 @@ public class StyxBackendServiceClientTest {
 
         Observable<HttpResponse> transaction = styxHttpClient.sendRequest(SOME_REQ);
         Subscription subscription = transaction.subscribe();
-        responseSubject.onNext(response(OK).build());
 
         subscription.unsubscribe();
 
@@ -457,7 +456,7 @@ public class StyxBackendServiceClientTest {
     }
 
     private HttpHandler toHandler(StyxHostHttpClient hostClient) {
-        return (request, ctx) -> StyxInternalObservables.fromRxObservable(hostClient.sendRequest(request));
+        return (request, ctx) -> new Eventual<>(toPublisher(hostClient.sendRequest(request)));
     }
 
     private RetryPolicy mockRetryPolicy(Boolean first, Boolean... outcomes) {
@@ -492,16 +491,6 @@ public class StyxBackendServiceClientTest {
         StyxHostHttpClient secondClient = mock(StyxHostHttpClient.class);
         when(secondClient.sendRequest(any(HttpRequest.class))).thenReturn(responseObservable);
         return secondClient;
-    }
-
-    private ConnectionPool mockPool(Origin someOrigin) {
-        ConnectionPool firstPool = mock(ConnectionPool.class);
-        when(firstPool.getOrigin()).thenReturn(someOrigin);
-        return firstPool;
-    }
-
-    private static BackendService backendWithOrigins(int originPort) {
-        return backendBuilderWithOrigins(originPort).build();
     }
 
     private static BackendService.Builder backendBuilderWithOrigins(int originPort) {

@@ -32,8 +32,8 @@ import com.github.tomakehurst.wiremock.http.StubRequestHandler;
 import com.github.tomakehurst.wiremock.http.StubResponseRenderer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ServiceManager;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.HttpServers;
@@ -129,7 +129,7 @@ public final class MockOriginServer {
                         .flatMap(fullRequest -> {
                             Request wmRequest = new WiremockStyxRequestAdapter(fullRequest);
                             com.github.tomakehurst.wiremock.http.Response wmResponse = wireMockHandler.handle(wmRequest);
-                            return StyxObservable.of(toStyxResponse(wmResponse).toStreamingResponse());
+                            return Eventual.of(toStyxResponse(wmResponse).toStreamingResponse());
                         });
     }
 
@@ -239,7 +239,7 @@ public final class MockOriginServer {
                         .flatMap(fullRequest -> {
                             Request wmRequest = new WiremockStyxRequestAdapter(fullRequest);
                             com.github.tomakehurst.wiremock.http.Response wmResponse = wireMockHandler.handle(wmRequest);
-                            return StyxObservable.of(toStyxResponse(wmResponse).toStreamingResponse());
+                            return Eventual.of(toStyxResponse(wmResponse).toStreamingResponse());
                         });
     }
 }

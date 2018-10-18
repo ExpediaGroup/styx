@@ -18,11 +18,11 @@ package com.hotels.styx.admin.handlers;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import org.slf4j.Logger;
@@ -75,23 +75,23 @@ public class PluginToggleHandler implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return getCurrentOrPutNewState(request, context)
                 .onError(cause -> handleErrors(cause, context));
     }
 
-    private StyxObservable<HttpResponse> getCurrentOrPutNewState(HttpRequest request, HttpInterceptor.Context context) {
+    private Eventual<HttpResponse> getCurrentOrPutNewState(HttpRequest request, HttpInterceptor.Context context) {
         if (GET.equals(request.method())) {
             return getCurrentState(request, context);
         } else if (PUT.equals(request.method())) {
             return putNewState(request, context);
         } else {
-            return StyxObservable.of(response(METHOD_NOT_ALLOWED).build());
+            return Eventual.of(response(METHOD_NOT_ALLOWED).build());
         }
     }
 
-    private StyxObservable<HttpResponse> getCurrentState(HttpRequest request, HttpInterceptor.Context context) {
-        return StyxObservable.of(request)
+    private Eventual<HttpResponse> getCurrentState(HttpRequest request, HttpInterceptor.Context context) {
+        return Eventual.of(request)
                 .map(this::plugin)
                 .map(this::currentState)
                 .map(state -> responseWith(OK, state.toString()));
@@ -101,13 +101,13 @@ public class PluginToggleHandler implements HttpHandler {
         return plugin.enabled() ? PluginEnabledState.ENABLED : PluginEnabledState.DISABLED;
     }
 
-    private StyxObservable<HttpResponse> putNewState(HttpRequest request, HttpInterceptor.Context context) {
-        return StyxObservable.of(request)
+    private Eventual<HttpResponse> putNewState(HttpRequest request, HttpInterceptor.Context context) {
+        return Eventual.of(request)
                 .flatMap(this::requestedUpdate)
                 .map(this::applyUpdate);
     }
 
-    private StyxObservable<RequestedUpdate> requestedUpdate(HttpRequest request) {
+    private Eventual<RequestedUpdate> requestedUpdate(HttpRequest request) {
         return requestedNewState(request)
                 .map(state -> {
                     NamedPlugin plugin = plugin(request);
@@ -166,7 +166,7 @@ public class PluginToggleHandler implements HttpHandler {
         return matcher;
     }
 
-    private static StyxObservable<PluginEnabledState> requestedNewState(HttpRequest request) {
+    private static Eventual<PluginEnabledState> requestedNewState(HttpRequest request) {
         return request.toFullRequest(MAX_CONTENT_SIZE)
                 .map(fullRequest -> fullRequest.bodyAs(UTF_8))
                 .map(PluginToggleHandler::parseToBoolean)
@@ -193,17 +193,17 @@ public class PluginToggleHandler implements HttpHandler {
         }
     }
 
-    private static StyxObservable<HttpResponse> handleErrors(Throwable e, HttpInterceptor.Context context) {
+    private static Eventual<HttpResponse> handleErrors(Throwable e, HttpInterceptor.Context context) {
         if (e instanceof PluginNotFoundException) {
-            return StyxObservable.of(responseWith(NOT_FOUND, e.getMessage()));
+            return Eventual.of(responseWith(NOT_FOUND, e.getMessage()));
         }
 
         if (e instanceof BadPluginToggleRequestException) {
-            return StyxObservable.of(responseWith(BAD_REQUEST, e.getMessage()));
+            return Eventual.of(responseWith(BAD_REQUEST, e.getMessage()));
         }
 
         LOGGER.error("Plugin toggle error", e);
-        return StyxObservable.of(responseWith(INTERNAL_SERVER_ERROR, ""));
+        return Eventual.of(responseWith(INTERNAL_SERVER_ERROR, ""));
     }
 
     private enum PluginEnabledState {
