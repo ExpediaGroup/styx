@@ -15,24 +15,24 @@
  */
 package com.hotels.styx.plugins;
 
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 
-import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
-import com.hotels.styx.api.HttpRequest;
+import static rx.RxReactiveStreams.toObservable;
+import static rx.RxReactiveStreams.toPublisher;
 
 public class OnCompleteErrorPlugin implements Plugin {
 
     @Override
-    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
 
-        return fromRxObservable(toRxObservable(chain.proceed(request))
+        return new Eventual<>(toPublisher(toObservable(chain.proceed(request))
                 .doOnCompleted(() -> {
                     if (request.header("Fail_at_onCompleted").isPresent()) {
                         throw new RuntimeException("foobar");
                     }
-                }));
+                })));
     }
 }

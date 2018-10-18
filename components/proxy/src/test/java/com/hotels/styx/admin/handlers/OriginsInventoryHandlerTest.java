@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.admin.tasks.StubConnectionPool;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
@@ -67,7 +67,7 @@ public class OriginsInventoryHandlerTest {
 
         eventBus.post(new OriginsSnapshot(APP_ID, pool(activeOrigins), pool(inactiveOrigins), pool(disabledOrigins)));
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
         assertThat(response.bodyAs(UTF_8).split("\n").length, is(1));
 
         Map<Id, OriginsSnapshot> output = deserialiseJson(response.bodyAs(UTF_8));
@@ -91,7 +91,7 @@ public class OriginsInventoryHandlerTest {
 
         eventBus.post(new OriginsSnapshot(APP_ID, pool(emptySet()), pool(emptySet()), pool(disabledOrigins)));
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/?pretty=1").build(), HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(get("/?pretty=1").build(), HttpInterceptorContext.create()));
         assertThat(body(response).replace("\r\n", "\n"),
                 matchesRegex("\\{\n" +
                         "  \"" + APP_ID + "\" : \\{\n" +
@@ -113,7 +113,7 @@ public class OriginsInventoryHandlerTest {
     public void returnsEmptyObjectWhenNoOrigins() {
         OriginsInventoryHandler handler = new OriginsInventoryHandler(new EventBus());
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
 
         assertThat(response.bodyAs(UTF_8), is("{}"));
     }
@@ -140,7 +140,7 @@ public class OriginsInventoryHandlerTest {
                 .collect(toList());
     }
 
-    private String body(FullHttpResponse response){
+    private String body(HttpResponse response){
         return response.bodyAs(Charsets.UTF_8).replace("\r\n", "\n");
     }
 }

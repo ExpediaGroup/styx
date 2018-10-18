@@ -20,11 +20,11 @@ import java.nio.charset.StandardCharsets.UTF_8
 import ch.qos.logback.classic.Level._
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
 import com.hotels.styx.api.HttpInterceptor.Chain
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.plugins.spi.PluginException
-import com.hotels.styx.api.{HttpRequest, HttpResponse, StyxObservable}
+import com.hotels.styx.api.{Eventual, LiveHttpRequest, LiveHttpResponse}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.matchers.LoggingEventMatcher._
@@ -103,7 +103,7 @@ class LoggingSpec extends FunSpec
         assertThat(logger.log(), hasItem(
           loggingEvent(
             ERROR,
-            """Failure status="500 Internal Server Error" during request=HttpRequest.*""",
+            """Failure status="500 Internal Server Error" during request=LiveHttpRequest.*""",
             classOf[PluginException],
             "bad-plugin: Throw exception at Request")))
       }
@@ -124,7 +124,7 @@ class LoggingSpec extends FunSpec
         assertThat(logger.log(), hasItem(
           loggingEvent(
             ERROR,
-            """Failure status="500 Internal Server Error" during request=HttpRequest.*""",
+            """Failure status="500 Internal Server Error" during request=LiveHttpRequest.*""",
             classOf[PluginException],
             "bad-plugin: Throw exception at Response")))
       }
@@ -137,13 +137,13 @@ class LoggingSpec extends FunSpec
 
 
   class BadPlugin extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
+    override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
       Option(request.header(X_THROW_AT).orElse(null)) match {
         case Some(AT_REQUEST) =>
           throw new RuntimeException("Throw exception at Request")
         case Some(AT_RESPONSE) =>
           chain.proceed(request)
-            .map(asJavaFunction((response: HttpResponse) => throw new RuntimeException("Throw exception at Response")))
+            .map(asJavaFunction((response: LiveHttpResponse) => throw new RuntimeException("Throw exception at Response")))
         case _ =>
           chain.proceed(request)
       }

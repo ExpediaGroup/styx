@@ -21,18 +21,19 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.hotels.styx.api.extension.Announcer;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.ActiveOrigins;
-import com.hotels.styx.client.connectionpool.ConnectionPool;
+import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.OriginsChangeListener;
 import com.hotels.styx.api.extension.OriginsSnapshot;
 import com.hotels.styx.api.extension.RemoteHost;
-import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.healthcheck.monitors.NoOriginHealthStatusMonitor;
 import com.hotels.styx.client.origincommands.DisableOrigin;
@@ -52,7 +53,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
@@ -71,6 +71,7 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
 import static org.slf4j.LoggerFactory.getLogger;
+import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * An inventory of the origins configured for a single application.
@@ -398,7 +399,7 @@ public final class OriginsInventory
         return origins.values().stream()
                 .filter(origin -> origin.state().equals(state))
                 .map(origin -> {
-                    HttpHandler hostClient = (request, context) -> fromRxObservable(origin.hostClient.sendRequest(request));
+                    HttpHandler hostClient = (request, context) -> new Eventual<>(toPublisher(origin.hostClient.sendRequest(request)));
                     return remoteHost(origin.origin, hostClient, origin.hostClient);
                 })
                 .collect(toList());

@@ -24,7 +24,7 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 
 /**
- * Styx Plugins are used to intercept the HttpRequest/HttpResponse proxy call.
+ * Styx Plugins are used to intercept the LiveHttpRequest/LiveHttpResponse proxy call.
  *
  * They can be used to log/record information and to modify requests and/or responses.
  */

@@ -18,13 +18,13 @@ package com.hotels.styx.api;
 import com.google.common.collect.ImmutableSet;
 import reactor.core.publisher.Flux;
 
-import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.google.common.base.Objects.toStringHelper;
@@ -41,9 +41,12 @@ import static com.hotels.styx.api.HttpMethod.METHODS;
 import static com.hotels.styx.api.HttpMethod.PATCH;
 import static com.hotels.styx.api.HttpMethod.POST;
 import static com.hotels.styx.api.HttpMethod.PUT;
+import static com.hotels.styx.api.HttpMethod.httpMethod;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
+import static com.hotels.styx.api.HttpVersion.httpVersion;
 import static com.hotels.styx.api.RequestCookie.decode;
 import static com.hotels.styx.api.RequestCookie.encode;
+import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
@@ -53,40 +56,51 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 
 /**
- * An immutable HTTP request object including full body content.
+ * An HTTP request object with a byte stream body.
  * <p>
- * A {@link FullHttpRequest} is useful for requests with a
- * finite body content, such as when PUT or POST are used to create or
- * modify a RESTful object.
+ * An {@code LiveHttpRequest} is used in {@link HttpInterceptor} where each content
+ * chunk must be processed as they arrive. It is also useful for dealing with
+ * very large content sizes, and in situations where content size is not known
+ * upfront.
  * <p>
- * A FullHttpRequest is created via {@link FullHttpRequest.Builder}. A new builder
- * can be obtained by a call to following static methods:
+ * An {@code LiveHttpRequest} object is immutable with respect to the request line
+ * attributes and HTTP headers. Once an instance is created, they cannot change.
+ * <p>
+ * An {@code LiveHttpRequest} body is a byte buffer stream that can be consumed
+ * as sequence of asynchronous events. Once consumed, the stream is exhausted and
+ * can not be reused. Conceptually each {@code LiveHttpRequest} object
+ * has an associated producer object that publishes data to the stream.
+ * For example, a Styx Server implements a content producer for {@link HttpInterceptor}
+ * extensions. The producer receives data chunks from a network socket and publishes
+ * them to an appropriate content stream.
+ * <p>
+ * HTTP requests are created via {@code Builder} object, which can be created
+ * with static helper methods:
  *
  * <ul>
- *     <li>{@code get}</li>
- *     <li>{@code head}</li>
- *     <li>{@code post}</li>
- *     <li>{@code put}</li>
- *     <li>{@code delete}</li>
- *     <li>{@code patch}</li>
+ * <li>{@code get}</li>
+ * <li>{@code head}</li>
+ * <li>{@code post}</li>
+ * <li>{@code put}</li>
+ * <li>{@code delete}</li>
+ * <li>{@code patch}</li>
  * </ul>
- *
+ * <p>
  * A builder can also be created with one of the {@code Builder} constructors.
- *
- * FullHttpRequest is immutable. Once created it cannot be modified.
- * However a request can be transformed to another using the {@link this#newBuilder}
- * method. It creates a new {@link Builder} with all message properties and
- * body content cloned in.
+ * <p>
+ * A special method {@code newBuilder} creates a prepopulated {@code Builder}
+ * from the current request object. It is useful for transforming a request
+ * to another one my modifying one or more of its attributes.
  */
-public class FullHttpRequest implements FullHttpMessage {
+public class LiveHttpRequest implements LiveHttpMessage {
     private final Object id;
     private final HttpVersion version;
     private final HttpMethod method;
     private final Url url;
     private final HttpHeaders headers;
-    private final byte[] body;
+    private final ByteStream body;
 
-    FullHttpRequest(Builder builder) {
+    LiveHttpRequest(Builder builder) {
         this.id = builder.id == null ? randomUUID() : builder.id;
         this.version = builder.version;
         this.method = builder.method;
@@ -99,7 +113,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the GET method.
      *
      * @param uri URI
-     * @return {@link FullHttpRequest.Builder}
+     * @return {@code this}
      */
     public static Builder get(String uri) {
         return new Builder(GET, uri);
@@ -109,7 +123,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the HEAD method.
      *
      * @param uri URI
-     * @return {@link FullHttpRequest.Builder}
+     * @return {@code this}
      */
     public static Builder head(String uri) {
         return new Builder(HEAD, uri);
@@ -119,7 +133,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the POST method.
      *
      * @param uri URI
-     * @return {@link FullHttpRequest.Builder}
+     * @return {@code this}
      */
     public static Builder post(String uri) {
         return new Builder(POST, uri);
@@ -129,7 +143,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the DELETE method.
      *
      * @param uri URI
-     * @return {@link FullHttpRequest.Builder}
+     * @return {@code this}
      */
     public static Builder delete(String uri) {
         return new Builder(DELETE, uri);
@@ -139,7 +153,7 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the PUT method.
      *
      * @param uri URI
-     * @return {@link FullHttpRequest.Builder}
+     * @return {@code this}
      */
     public static Builder put(String uri) {
         return new Builder(PUT, uri);
@@ -149,10 +163,43 @@ public class FullHttpRequest implements FullHttpMessage {
      * Creates a request with the PATCH method.
      *
      * @param uri URI
-     * @return {@link FullHttpRequest.Builder}
+     * @return {@code this}
      */
     public static Builder patch(String uri) {
         return new Builder(PATCH, uri);
+    }
+
+    /**
+     * Creates a request with the POST method.
+     *
+     * @param uri  URI
+     * @param body body
+     * @return {@code this}
+     */
+    public static Builder post(String uri, ByteStream body) {
+        return new Builder(POST, uri).body(body);
+    }
+
+    /**
+     * Creates a request with the PUT method.
+     *
+     * @param uri  URI
+     * @param body body
+     * @return {@code this}
+     */
+    public static Builder put(String uri, ByteStream body) {
+        return new Builder(PUT, uri).body(body);
+    }
+
+    /**
+     * Creates a request with the PATCH method.
+     *
+     * @param uri  URI
+     * @param body body
+     * @return {@code this}
+     */
+    public static Builder patch(String uri, ByteStream body) {
+        return new Builder(PATCH, uri).body(body);
     }
 
     /**
@@ -181,35 +228,11 @@ public class FullHttpRequest implements FullHttpMessage {
     }
 
     /**
-     * Returns message body as a byte array.
-     * <p>
-     * Returns the body of this message as a byte array, in its unencoded form.
-     * Because FullHttpRequest is an immutable object, the returned byte array
-     * reference cannot be used to modify the message content.
-     * <p>
-     *
-     * @return message body content
+     * @return request body as a byte stream
      */
     @Override
-    public byte[] body() {
-        return body.clone();
-    }
-
-    /**
-     * Returns the message body as a String decoded with provided character set.
-     * <p>
-     * Decodes the message body into a Java String object with a provided charset.
-     * The caller must ensure the provided charset is compatible with message content
-     * type and encoding.
-     *
-     * @param charset Charset used to decode message body
-     * @return message body as a String
-     */
-    @Override
-    public String bodyAs(Charset charset) {
-        // CHECKSTYLE:OFF
-        return new String(this.body, charset);
-        // CHECKSTYLE:ON
+    public ByteStream body() {
+        return body;
     }
 
     /**
@@ -252,7 +275,6 @@ public class FullHttpRequest implements FullHttpMessage {
         return HttpMessageSupport.keepAlive(headers, version);
     }
 
-
     /**
      * Get a query parameter by name if present.
      *
@@ -293,8 +315,9 @@ public class FullHttpRequest implements FullHttpMessage {
 
     /**
      * Return a new {@link Builder} that will inherit properties from this request.
-     * This allows a new request to be made that will be identical to this one except for the properties
-     * overridden by the builder methods.
+     * <p>
+     * This allows a new request to be made that is identical to this one
+     * except for the properties overridden by the builder methods.
      *
      * @return new builder based on this request
      */
@@ -303,21 +326,37 @@ public class FullHttpRequest implements FullHttpMessage {
     }
 
     /**
-     * Converts this request into a streaming form (HttpRequest).
+     * Aggregates content stream and converts this request to a {@link HttpRequest}.
      * <p>
-     * Converts this request into an HttpRequest object which represents the HTTP request as a
-     * stream of bytes.
+     * Returns a {@link Eventual} that eventually produces a
+     * {@link HttpRequest}. The resulting full request object has the same
+     * request line, headers, and content as this request.
+     * <p>
+     * The content stream is aggregated asynchronously. The stream may be connected
+     * to a network socket or some other content producer. Once aggregated, a
+     * HttpRequest object is emitted on the returned {@link Eventual}.
+     * <p>
+     * A sole {@code maxContentBytes} argument is a backstop defence against excessively
+     * long content streams. The {@code maxContentBytes} should be set to a sensible
+     * value according to your application requirements and heap size. When the content
+     * size stream exceeds the {@code maxContentBytes}, a @{link ContentOverflowException}
+     * is emitted on the returned observable.
      *
-     * @return A streaming HttpRequest object
+     * @param maxContentBytes maximum expected content size
+     * @return a {@link Eventual}
      */
-    public HttpRequest toStreamingRequest() {
-        HttpRequest.Builder streamingBuilder = new HttpRequest.Builder(this)
-                .disableValidation();
+    public Eventual<HttpRequest> aggregate(int maxContentBytes) {
+        return Eventual.from(
+                body.aggregate(maxContentBytes)
+                    .thenApply(it -> new HttpRequest.Builder(this, decodeAndRelease(it)).build())
+        );
+    }
 
-        if (this.body.length == 0) {
-            return streamingBuilder.body(new ByteStream(Flux.empty())).build();
-        } else {
-            return streamingBuilder.body(new ByteStream(Flux.just(new Buffer(copiedBuffer(body))))).build();
+    private static byte[] decodeAndRelease(Buffer aggregate) {
+        try {
+            return getBytes(aggregate.delegate());
+        } finally {
+            aggregate.delegate().release();
         }
     }
 
@@ -356,7 +395,7 @@ public class FullHttpRequest implements FullHttpMessage {
     }
 
     /**
-     * Builder.
+     * An HTTP request builder.
      */
     public static final class Builder {
         private Object id;
@@ -365,7 +404,7 @@ public class FullHttpRequest implements FullHttpMessage {
         private Url url;
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
-        private byte[] body;
+        private ByteStream body;
 
         /**
          * Creates a new {@link Builder} object with default attributes.
@@ -373,14 +412,14 @@ public class FullHttpRequest implements FullHttpMessage {
         public Builder() {
             this.url = Url.Builder.url("/").build();
             this.headers = new HttpHeaders.Builder();
-            this.body = new byte[0];
+            this.body = new ByteStream(Flux.empty());
         }
 
         /**
-         * Creates a new  {@link Builder} object with specified and URI.
+         * Creates a new {@link Builder} with specified HTTP method and URI.
          *
          * @param method a HTTP method
-         * @param uri URI
+         * @param uri    a HTTP URI
          */
         public Builder(HttpMethod method, String uri) {
             this();
@@ -389,27 +428,36 @@ public class FullHttpRequest implements FullHttpMessage {
         }
 
         /**
-         * Creates a new  {@link Builder} from streaming request and a content byte array.
+         * Creates a new {@link Builder} from an existing request with a new body content stream.
          *
-         * @param request a streaming HTTP request object
-         * @param body an HTTP body content array
+         * @param request       a HTTP request object
+         * @param contentStream a body content stream
          */
-        public Builder(HttpRequest request, byte[] body) {
+        public Builder(LiveHttpRequest request, ByteStream contentStream) {
             this.id = request.id();
-            this.method = request.method();
+            this.method = httpMethod(request.method().name());
             this.url = request.url();
-            this.version = request.version();
+            this.version = httpVersion(request.version().toString());
             this.headers = request.headers().newBuilder();
             this.body = body;
         }
 
-        Builder(FullHttpRequest request) {
+        Builder(LiveHttpRequest request) {
             this.id = request.id();
             this.method = request.method();
             this.url = request.url();
             this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = request.body();
+        }
+
+        Builder(HttpRequest request) {
+            this.id = request.id();
+            this.method = request.method();
+            this.url = request.url();
+            this.version = request.version();
+            this.headers = request.headers().newBuilder();
+            this.body = new ByteStream(Flux.just(new Buffer(copiedBuffer(request.body()))));
         }
 
         /**
@@ -424,54 +472,23 @@ public class FullHttpRequest implements FullHttpMessage {
 
         /**
          * Sets the request body.
-         * <p>
-         * This method encodes a String content to a byte array using the specified
-         * charset, and sets the Content-Length header accordingly.
          *
          * @param content request body
-         * @param charset Charset for string encoding
          * @return {@code this}
          */
-        public Builder body(String content, Charset charset) {
-            return body(content, charset, true);
+        public Builder body(ByteStream content) {
+            this.body = content;
+            return this;
         }
 
         /**
-         * Sets the request body.
-         * <p>
-         * This method encodes the content to a byte array using the specified
-         * charset, and sets the Content-Length header *if* the setContentLength
-         * argument is true.
+         * Transforms request body.
          *
-         * @param content          request body
-         * @param charset          charset used for encoding request body
-         * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
-         * @return {@code this}
+         * @param transformation a Function from ByteStream to ByteStream.
+         * @return a LiveHttpRequest builder with a transformed message body.
          */
-        public Builder body(String content, Charset charset, boolean setContentLength) {
-            requireNonNull(charset, "Charset is not provided.");
-            String sanitised = content == null ? "" : content;
-            return body(sanitised.getBytes(charset), setContentLength);
-        }
-
-        /**
-         * Sets the request body.
-         * <p>
-         * This method encodes the content to a byte array provided, and
-         * sets the Content-Length header *if* the setContentLength
-         * argument is true.
-         *
-         * @param content          request body
-         * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
-         * @return {@code this}
-         */
-        public Builder body(byte[] content, boolean setContentLength) {
-            this.body = content != null ? content.clone() : new byte[0];
-
-            if (setContentLength) {
-                header(CONTENT_LENGTH, this.body.length);
-            }
-
+        public Builder body(Function<ByteStream, ByteStream> transformation) {
+            this.body = transformation.apply(this.body);
             return this;
         }
 
@@ -516,8 +533,8 @@ public class FullHttpRequest implements FullHttpMessage {
          * <p/>
          * Will not replace any existing values for the header.
          *
-         * @param name  the name of the header
-         * @param value the value of the header
+         * @param name  The name of the header
+         * @param value The value of the header
          * @return {@code this}
          */
         public Builder addHeader(CharSequence name, Object value) {
@@ -570,10 +587,29 @@ public class FullHttpRequest implements FullHttpMessage {
         }
 
         /**
+         * Enable validation of uri and some headers.
+         *
+         * @return {@code this}
+         */
+        public Builder disableValidation() {
+            this.validate = false;
+            return this;
+        }
+
+        /**
+         * Enables Keep-Alive.
+         *
+         * @return {@code this}
+         */
+        public Builder enableKeepAlive() {
+            return header(CONNECTION, KEEP_ALIVE);
+        }
+
+        /**
          * Sets the cookies on this request by overwriting the value of the "Cookie" header.
          *
          * @param cookies cookies
-         * @return {@code this}
+         * @return this builder
          */
         public Builder cookies(RequestCookie... cookies) {
             return cookies(asList(cookies));
@@ -583,10 +619,11 @@ public class FullHttpRequest implements FullHttpMessage {
          * Sets the cookies on this request by overwriting the value of the "Cookie" header.
          *
          * @param cookies cookies
-         * @return {@code this}
+         * @return this builder
          */
         public Builder cookies(Collection<RequestCookie> cookies) {
             requireNonNull(cookies);
+
             headers.remove(COOKIE);
 
             if (!cookies.isEmpty()) {
@@ -602,7 +639,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * add all new cookies in one call to the method rather than spreading them out.
          *
          * @param cookies new cookies
-         * @return {@code this}
+         * @return this builder
          */
         public Builder addCookies(RequestCookie... cookies) {
             return addCookies(asList(cookies));
@@ -615,10 +652,11 @@ public class FullHttpRequest implements FullHttpMessage {
          * add all new cookies in one call to the method rather than spreading them out.
          *
          * @param cookies new cookies
-         * @return {@code this}
+         * @return this builder
          */
         public Builder addCookies(Collection<RequestCookie> cookies) {
             requireNonNull(cookies);
+
             Set<RequestCookie> currentCookies = decode(headers.get(COOKIE));
             List<RequestCookie> newCookies = concat(cookies.stream(), currentCookies.stream()).collect(toList());
 
@@ -629,7 +667,7 @@ public class FullHttpRequest implements FullHttpMessage {
          * Removes all cookies matching one of the supplied names by overwriting the value of the "Cookie" header.
          *
          * @param names cookie names
-         * @return {@code this}
+         * @return this builder
          */
         public Builder removeCookies(String... names) {
             return removeCookies(asList(names));
@@ -639,10 +677,11 @@ public class FullHttpRequest implements FullHttpMessage {
          * Removes all cookies matching one of the supplied names by overwriting the value of the "Cookie" header.
          *
          * @param names cookie names
-         * @return {@code this}
+         * @return this builder
          */
         public Builder removeCookies(Collection<String> names) {
             requireNonNull(names);
+
             return removeCookiesIf(toSet(names)::contains);
         }
 
@@ -661,25 +700,6 @@ public class FullHttpRequest implements FullHttpMessage {
         }
 
         /**
-         * Enables Keep-Alive.
-         *
-         * @return {@code this}
-         */
-        public Builder enableKeepAlive() {
-            return header(CONNECTION, KEEP_ALIVE);
-        }
-
-        /**
-         * Enable validation of uri and some headers.
-         *
-         * @return {@code this}
-         */
-        public Builder disableValidation() {
-            this.validate = false;
-            return this;
-        }
-
-        /**
          * Builds a new full request based on the settings configured in this builder.
          * If {@code validate} is set to true:
          * <ul>
@@ -690,7 +710,7 @@ public class FullHttpRequest implements FullHttpMessage {
          *
          * @return a new full request
          */
-        public FullHttpRequest build() {
+        public LiveHttpRequest build() {
             if (validate) {
                 ensureContentLengthIsValid();
                 requireNotDuplicatedHeader(COOKIE);
@@ -698,7 +718,7 @@ public class FullHttpRequest implements FullHttpMessage {
                 setHostHeader();
             }
 
-            return new FullHttpRequest(this);
+            return new LiveHttpRequest(this);
         }
 
         private void setHostHeader() {

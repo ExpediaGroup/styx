@@ -20,8 +20,8 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
-import com.hotels.styx.api.FullHttpRequest.get
-import com.hotels.styx.api.{HttpRequest, HttpResponse, StyxObservable}
+import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.{Eventual, LiveHttpRequest, LiveHttpResponse}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
@@ -81,9 +81,9 @@ import scala.compat.java8.FunctionConverters.asJavaFunction
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class AsyncRequestDelayPlugin extends PluginAdapter {
-  override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
-    def asyncRequest(request: HttpRequest): StyxObservable[HttpRequest] = {
-      StyxObservable.from(
+  override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
+    def asyncRequest(request: LiveHttpRequest): Eventual[LiveHttpRequest] = {
+      Eventual.from(
         Future {
           Thread.sleep(1000)
         }.map(_ => request)
@@ -91,7 +91,7 @@ class AsyncRequestDelayPlugin extends PluginAdapter {
       )
     }
 
-    StyxObservable.of(request)
+    Eventual.of(request)
       .flatMap(asJavaFunction(x => asyncRequest(request)))
       .flatMap(asJavaFunction(y => chain.proceed(y)))
   }

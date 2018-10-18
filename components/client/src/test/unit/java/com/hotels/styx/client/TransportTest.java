@@ -18,22 +18,23 @@ package com.hotels.styx.client;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import reactor.test.StepVerifier;
+import reactor.test.publisher.TestPublisher;
 import rx.Observable;
-import rx.Subscription;
 import rx.observers.TestSubscriber;
 import rx.subjects.PublishSubject;
 
 import java.util.Optional;
 
 import static com.hotels.styx.api.Buffers.toByteBuf;
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.Id.id;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -44,6 +45,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 import static rx.Observable.just;
 import static rx.RxReactiveStreams.toPublisher;
 
@@ -51,127 +54,166 @@ public class TransportTest {
     private static final String X_STYX_ORIGIN_ID = "X-Styx-Origin-Id";
     private static final Id APP_ID = id("app-01");
 
-    private HttpRequest request;
-    private HttpResponse response;
+    private LiveHttpRequest request;
+    private LiveHttpResponse response;
     private Transport transport;
-    private PublishSubject<HttpResponse> responseProvider;
-    private TestSubscriber<HttpResponse> subscriber;
+    private PublishSubject<LiveHttpResponse> responseProvider;
+    private TestSubscriber<LiveHttpResponse> subscriber;
 
     @BeforeMethod
     public void setUp() {
         request = get("/").build();
-        response = HttpResponse.response(OK).build();
+        response = LiveHttpResponse.response(OK).build();
         transport = new Transport(id("x"), X_STYX_ORIGIN_ID);
         responseProvider = PublishSubject.create();
         subscriber = new TestSubscriber<>();
     }
 
     @Test
-    public void returnsConnectionBackToPoolWhenResponseCompletes() {
+    public void returnsConnectionBackToPool() {
         Connection connection = mockConnection(just(response));
         ConnectionPool pool = mockPool(connection);
 
         HttpTransaction transaction = transport.send(request, Optional.of(pool), APP_ID);
 
-        transaction.response().subscribe(subscriber);
-        subscriber.awaitTerminalEvent();
+        transaction.response()
+                .toBlocking()
+                .single()
+                .consume();
 
         verify(pool).borrowConnection();
-        verify(connection).write(any(HttpRequest.class));
+        verify(connection).write(any(LiveHttpRequest.class));
         verify(pool).returnConnection(any(Connection.class));
     }
 
     @Test
-    public void releasesConnectionWhenRequestFailsBeforeHeaders() {
-        Connection connection = mockConnection(responseProvider);
+    public void returnsConnectionBackToPoolDueToCancelledHeaders() {
+        Connection connection = mockConnection(just(response));
         ConnectionPool pool = mockPool(connection);
-
-        HttpTransaction transaction = transport.send(request, Optional.of(pool), APP_ID);
-
-        transaction.response().subscribe(new TestSubscriber<>());
-
-        responseProvider.onError(new RuntimeException("Connection failed - before receiving headers."));
-
-        verify(pool).borrowConnection();
-        verify(connection).write(any(HttpRequest.class));
-        verify(pool).closeConnection(any(Connection.class));
-    }
-
-    @Test
-    public void releasesConnectionWhenRequestFailsAfterHeaders() {
-        ConnectionPool pool = mockPool(mockConnection(responseProvider));
 
         transport.send(request, Optional.of(pool), APP_ID)
                 .response()
-                .subscribe(new TestSubscriber<>());
+                .subscribe(subscriber);
 
-        responseProvider.onNext(response);
+        LiveHttpResponse response2 = subscriber.getOnNextEvents().get(0);
 
+        subscriber.unsubscribe();
+
+        response2.consume();
+
+        verify(pool).returnConnection(any(Connection.class));
+    }
+
+    @Test
+    public void releasesIfRequestIsCancelledBeforeHeaders() {
+        Connection connection = mockConnection(PublishSubject.create());
+        ConnectionPool pool = mockPool(connection);
+
+        transport.send(request, Optional.of(pool), APP_ID)
+                .response()
+                .subscribe(subscriber);
+
+        assertTrue(subscriber.getOnNextEvents().isEmpty());
+        assertTrue(subscriber.getOnCompletedEvents().isEmpty());
+        assertTrue(subscriber.getOnErrorEvents().isEmpty());
+
+        subscriber.unsubscribe();
+
+        verify(pool).closeConnection(any(Connection.class));
+    }
+
+    @Test
+    public void ignoresRequestCancellationAfterHeaders() {
+        // Request observable unsubscribe/cancel has to be ignored after "onNext" event.
+        // This is because Reactor Mono will automatically cancel after an event has
+        // been published.
+
+        TestPublisher<Buffer> testPublisher = TestPublisher.create();
+        Connection connection = mockConnection(responseProvider);
+        ConnectionPool pool = mockPool(connection);
+
+        transport.send(request, Optional.of(pool), APP_ID)
+                .response()
+                .subscribe(subscriber);
+
+        responseProvider.onNext(LiveHttpResponse.response(OK).body(new ByteStream(testPublisher)).build());
+
+        assertEquals(subscriber.getOnNextEvents().size(), 1);
+        assertTrue(subscriber.getOnCompletedEvents().isEmpty());
+        assertTrue(subscriber.getOnErrorEvents().isEmpty());
+
+        subscriber.unsubscribe();
+
+        verify(pool, never()).closeConnection(any(Connection.class));
         verify(pool, never()).returnConnection(any(Connection.class));
-        verify(pool, never()).closeConnection(any(Connection.class));
-
-        responseProvider.onError(new RuntimeException("Connection failed - after the headers"));
-
-        verify(pool).closeConnection(any(Connection.class));
     }
 
     @Test
-    public void releasesIfRequestIsUnsubscribedBeforeHeaders() {
+    public void returnsConnectionBackToPoolDueToDelayedResponseError() {
         Connection connection = mockConnection(responseProvider);
         ConnectionPool pool = mockPool(connection);
 
-        HttpTransaction transaction = transport.send(request, Optional.of(pool), APP_ID);
+        transport.send(request, Optional.of(pool), APP_ID)
+                .response()
+                .subscribe(subscriber);
 
-        transaction.response().subscribe(subscriber);
+        responseProvider.onNext(response);
+        responseProvider.onError(new RuntimeException("oh dear ..."));
 
-        subscriber.unsubscribe();
-        verify(pool).closeConnection(any(Connection.class));
+        subscriber.getOnNextEvents().get(0).consume();
+
+        verify(pool).returnConnection(any(Connection.class));
     }
 
     @Test
-    public void releasesIfRequestIsUnsubscribedAfterHeaders() {
-        Connection connection = mockConnection(responseProvider);
+    public void terminatesConnectionDueToObservableEmittingOnCompleteWithoutHeaders() {
+        Connection connection = mockConnection(Observable.empty());
         ConnectionPool pool = mockPool(connection);
 
-        HttpTransaction transaction = transport.send(request, Optional.of(pool), APP_ID);
+        transport.send(request, Optional.of(pool), APP_ID)
+                .response()
+                .subscribe(subscriber);
 
-        transaction.response().subscribe(subscriber);
+        assertThat(subscriber.getOnNextEvents().isEmpty(), is(true));
+        assertThat(subscriber.getOnCompletedEvents().size(), is(1));
 
-        responseProvider.onNext(response);
-
-        subscriber.unsubscribe();
         verify(pool).closeConnection(any(Connection.class));
     }
 
     @Test
-    public void closesIfObservableUnsubscribedBeforeHeaders() {
-        ConnectionPool pool = mockPool(mockConnection(PublishSubject.<HttpResponse>create()));
+    public void releasesConnectionWhenRequestFailsBeforeHeaders() {
+        Connection connection = mockConnection(Observable.error(new RuntimeException()));
+        ConnectionPool pool = mockPool(connection);
 
-        Subscription subscription = transport.send(request, Optional.of(pool), APP_ID)
+        transport.send(request, Optional.of(pool), APP_ID)
                 .response()
-                .subscribe(new TestSubscriber<>());
+                .subscribe(subscriber);
 
-        verify(pool, never()).closeConnection(any(Connection.class));
+        assertThat(subscriber.getOnNextEvents().isEmpty(), is(true));
+        assertThat(subscriber.getOnErrorEvents().size(), is(1));
 
-        subscription.unsubscribe();
         verify(pool).closeConnection(any(Connection.class));
     }
 
     @Test
-    public void closesIfObservableUnsubscribedAfterHeaders() {
-        ConnectionPool pool = mockPool(mockConnection(responseProvider));
+    public void terminatesConnectionDueToUnsubscribedBody() {
+        TestPublisher<Buffer> testPublisher = TestPublisher.create();
+        Connection connection = mockConnection(Observable.just(LiveHttpResponse.response(OK).body(new ByteStream(testPublisher)).build()));
+        ConnectionPool pool = mockPool(connection);
 
-        Subscription subscription = transport.send(request, Optional.of(pool), APP_ID)
+        transport.send(request, Optional.of(pool), APP_ID)
                 .response()
-                .subscribe(new TestSubscriber<>());
+                .subscribe(subscriber);
 
-        responseProvider.onNext(response);
-        verify(pool, never()).closeConnection(any(Connection.class));
+        assertEquals(subscriber.getOnNextEvents().size(), 1);
+        assertEquals(subscriber.getOnCompletedEvents().size(), 1);
 
-        subscription.unsubscribe();
+        StepVerifier.create(subscriber.getOnNextEvents().get(0).body())
+                .thenCancel()
+                .verify();
+
         verify(pool).closeConnection(any(Connection.class));
     }
-
 
     @Test
     public void releasesContentStreamBuffersWhenPoolIsNotProvided() {
@@ -179,7 +221,7 @@ public class TransportTest {
         Buffer chunk2 = new Buffer("y", UTF_8);
         Buffer chunk3 = new Buffer("z", UTF_8);
 
-        HttpRequest aRequest = request
+        LiveHttpRequest aRequest = request
                 .newBuilder()
                 .body(new ByteStream(toPublisher(Observable.from(ImmutableList.of(chunk1, chunk2, chunk3)))))
                 .build();
@@ -206,7 +248,7 @@ public class TransportTest {
 
     Connection mockConnection(Observable responseObservable) {
         Connection connection = mock(Connection.class);
-        when(connection.write(any(HttpRequest.class))).thenReturn(responseObservable);
+        when(connection.write(any(LiveHttpRequest.class))).thenReturn(responseObservable);
         return connection;
     }
 

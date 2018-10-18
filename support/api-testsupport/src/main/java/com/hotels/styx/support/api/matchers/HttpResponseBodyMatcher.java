@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.support.api.matchers;
 
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
@@ -27,17 +27,17 @@ import java.util.concurrent.ExecutionException;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.equalTo;
 
-public class HttpResponseBodyMatcher<T extends HttpResponse> extends TypeSafeMatcher<T> {
+public class HttpResponseBodyMatcher<T extends LiveHttpResponse> extends TypeSafeMatcher<T> {
 
     private final Matcher<String> matcher;
 
     @Factory
-    public static <T extends HttpResponse> Matcher<T> hasBody(Matcher<String> matcher) {
+    public static <T extends LiveHttpResponse> Matcher<T> hasBody(Matcher<String> matcher) {
         return new HttpResponseBodyMatcher<>(matcher);
     }
 
     @Factory
-    public static <T extends HttpResponse> Matcher<T> hasBody(String content) {
+    public static <T extends LiveHttpResponse> Matcher<T> hasBody(String content) {
         return new HttpResponseBodyMatcher<>(equalTo(content));
     }
 
@@ -47,12 +47,12 @@ public class HttpResponseBodyMatcher<T extends HttpResponse> extends TypeSafeMat
 
     @Override
     public boolean matchesSafely(T actual) {
-        return matcher.matches(await(actual.toFullResponse(0x100000).asCompletableFuture()).bodyAs(UTF_8));
+        return matcher.matches(await(actual.aggregate(0x100000).asCompletableFuture()).bodyAs(UTF_8));
     }
 
     @Override
     protected void describeMismatchSafely(T item, Description mismatchDescription) {
-        mismatchDescription.appendText("content was '" + await(item.toFullResponse(0x100000).asCompletableFuture()).bodyAs(UTF_8) + "'");
+        mismatchDescription.appendText("content was '" + await(item.aggregate(0x100000).asCompletableFuture()).bodyAs(UTF_8) + "'");
     }
 
     @Override

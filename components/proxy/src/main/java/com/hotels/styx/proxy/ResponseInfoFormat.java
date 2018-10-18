@@ -18,7 +18,7 @@ package com.hotels.styx.proxy;
 import com.hotels.styx.Environment;
 
 import static com.hotels.styx.StyxConfig.NO_JVM_ROUTE_SET;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 /**
  * Formats response info into a string.
@@ -38,7 +38,7 @@ public class ResponseInfoFormat {
                 .replace("{REQUEST_ID}", "%s");
     }
 
-    public String format(HttpRequest request) {
+    public String format(LiveHttpRequest request) {
         return String.format(format, request == null ? "" : request.id());
     }
 }

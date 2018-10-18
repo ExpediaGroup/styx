@@ -20,8 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.OriginsChangeListener;
 import com.hotels.styx.api.extension.OriginsSnapshot;
@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
@@ -64,13 +64,13 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsC
     }
 
     @Override
-    protected HttpResponse doHandle(HttpRequest request) {
+    protected LiveHttpResponse doHandle(LiveHttpRequest request) {
         return response(OK)
                 .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
                 .disableCaching()
                 .body(content(isPrettyPrint(request)), UTF_8)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 
     private String content(boolean pretty) {
@@ -91,7 +91,7 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsC
                 : this.mapper.writer();
     }
 
-    private static boolean isPrettyPrint(HttpRequest request) {
+    private static boolean isPrettyPrint(LiveHttpRequest request) {
         return request.queryParam("pretty").isPresent();
     }
 

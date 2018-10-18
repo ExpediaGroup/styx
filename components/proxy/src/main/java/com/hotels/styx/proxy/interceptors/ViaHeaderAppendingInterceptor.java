@@ -15,11 +15,11 @@
  */
 package com.hotels.styx.proxy.interceptors;
 
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpVersion;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.hotels.styx.api.HttpHeaderNames.VIA;
@@ -35,8 +35,8 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
     private static final CharSequence VIA_STYX_1_1 = newEntity("1.1 styx");
 
     @Override
-    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-        HttpRequest newRequest = request.newBuilder()
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
+        LiveHttpRequest newRequest = request.newBuilder()
                 .header(VIA, viaHeader(request))
                 .build();
 
@@ -46,7 +46,7 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
                         .build());
     }
 
-    private static CharSequence viaHeader(HttpRequest httpMessage) {
+    private static CharSequence viaHeader(LiveHttpRequest httpMessage) {
         CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
 
         return httpMessage.headers().get(VIA)
@@ -54,7 +54,7 @@ public class ViaHeaderAppendingInterceptor implements HttpInterceptor {
                 .orElse(styxViaEntry);
     }
 
-    private static CharSequence viaHeader(HttpResponse httpMessage) {
+    private static CharSequence viaHeader(LiveHttpResponse httpMessage) {
         CharSequence styxViaEntry = styxViaEntry(httpMessage.version());
 
         return httpMessage.headers().get(VIA)

@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.proxy;
 
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.configuration.Configuration;
@@ -24,12 +24,12 @@ import com.hotels.styx.client.StyxHeaderConfig;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class ResponseInfoFormatTest {
-    private HttpRequest request;
+    private LiveHttpRequest request;
 
     @BeforeMethod
     public void setUp() {

@@ -16,11 +16,12 @@
 package com.hotels.styx.admin.tasks;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
@@ -33,7 +34,6 @@ import java.util.concurrent.ExecutorService;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -45,7 +45,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static org.slf4j.LoggerFactory.getLogger;
-import com.hotels.styx.api.HttpRequest;
+import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * Handler for the origins reloading command.
@@ -62,12 +62,12 @@ public class OriginsReloadCommandHandler implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return fromRxObservable(Observable.<HttpResponse>create(this::reload)
-                .subscribeOn(Schedulers.from(executor)));
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+        return new Eventual<>(toPublisher(Observable.<LiveHttpResponse>create(this::reload)
+                .subscribeOn(Schedulers.from(executor))));
     }
 
-    private void reload(Subscriber<? super HttpResponse> subscriber) {
+    private void reload(Subscriber<? super LiveHttpResponse> subscriber) {
         backendServicesRegistry.reload()
                 .handle((result, exception) -> {
                     if (exception == null) {
@@ -96,15 +96,15 @@ public class OriginsReloadCommandHandler implements HttpHandler {
         }
     }
 
-    private HttpResponse okResponse(String content) {
-        return FullHttpResponse.response(OK)
+    private LiveHttpResponse okResponse(String content) {
+        return HttpResponse.response(OK)
                 .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
                 .body(content, UTF_8)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 
-    private HttpResponse errorResponse(Throwable cause) {
+    private LiveHttpResponse errorResponse(Throwable cause) {
         String errorId = randomUUID().toString();
         LOG.error("id={}", errorId, cause);
 
@@ -129,12 +129,12 @@ public class OriginsReloadCommandHandler implements HttpHandler {
         return false;
     }
 
-    private HttpResponse errorResponse(HttpResponseStatus code, String content) {
-        return FullHttpResponse.response(code)
+    private LiveHttpResponse errorResponse(HttpResponseStatus code, String content) {
+        return HttpResponse.response(code)
                 .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
                 .body(content, UTF_8)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 
 }

@@ -16,7 +16,7 @@
 package com.hotels.styx.server.routing;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.RequestCookie;
 import com.hotels.styx.server.routing.antlr.AntlrConditionParser;
 
@@ -46,7 +46,7 @@ public final class AntlrMatcher implements Matcher {
     }
 
     @Override
-    public boolean apply(HttpRequest request, HttpInterceptor.Context context) {
+    public boolean apply(LiveHttpRequest request, HttpInterceptor.Context context) {
         return this.condition.evaluate(request, context);
     }
 }

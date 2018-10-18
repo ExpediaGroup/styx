@@ -17,11 +17,12 @@ package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.Environment;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.extension.service.BackendService;
@@ -39,12 +40,11 @@ import com.hotels.styx.routing.config.RouteHandlerFactory;
 
 import java.util.List;
 
-import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
-import com.hotels.styx.api.HttpRequest;
+import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * Routing object that proxies a request to a configured backend.
@@ -57,8 +57,8 @@ public class ProxyToBackend implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return fromRxObservable(client.sendRequest(request));
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+        return new Eventual<>(toPublisher(client.sendRequest(request)));
     }
 
     /**

@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.api;
 
+import reactor.core.publisher.Flux;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -24,7 +26,7 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 /**
  * All behaviour common to both streaming requests and streaming responses.
  */
-interface StreamingHttpMessage {
+interface LiveHttpMessage {
     /**
      * Returns the protocol version of this.
      *
@@ -92,5 +94,22 @@ interface StreamingHttpMessage {
     default boolean chunked() {
         return HttpMessageSupport.chunked(headers());
     }
+
+    /**
+     * Consume the message by discarding the message body.
+     * <p>
+     * This method reads the entire message body from the networks and black holes
+     * all the traffic. This has the benefit of keeping the underlying TCP connection
+     * open for connection pooling.
+     * <p>
+     */
+    default void consume() {
+        body().drop().aggregate(1)
+                .thenApply(buffer -> {
+                    buffer.delegate().release();
+                    return null;
+                });
+    }
+
 
 }

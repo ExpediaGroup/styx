@@ -17,9 +17,8 @@ package com.hotels.styx.client;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.hotels.styx.api.FullHttpRequest;
-import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.exceptions.OriginUnreachableException;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
@@ -38,7 +37,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static com.hotels.styx.api.FullHttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
@@ -55,8 +54,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class StyxHttpClientTest {
-    private FullHttpRequest httpRequest;
-    private FullHttpRequest secureRequest;
+    private HttpRequest httpRequest;
+    private HttpRequest secureRequest;
     private WireMockServer server;
 
     @BeforeMethod
@@ -123,7 +122,7 @@ public class StyxHttpClientTest {
                 .userAgent("Simple-Client-Parent-Settings")
                 .build();
 
-        FullHttpResponse response = client
+        HttpResponse response = client
                 .send(httpRequest)
                 .get();
 
@@ -153,7 +152,7 @@ public class StyxHttpClientTest {
                 .userAgent("My default user agent value")
                 .build();
 
-        FullHttpRequest request = get("/")
+        HttpRequest request = get("/")
                 .header(HOST, hostString(server.port()))
                 .header(USER_AGENT, "My previous user agent")
                 .build();
@@ -173,7 +172,7 @@ public class StyxHttpClientTest {
                 .tlsSettings(new TlsSettings.Builder().build())
                 .build();
 
-        FullHttpResponse response = client
+        HttpResponse response = client
                 .send(secureRequest)
                 .get();
 
@@ -185,7 +184,7 @@ public class StyxHttpClientTest {
         StyxHttpClient client = new StyxHttpClient.Builder()
                 .build();
 
-        FullHttpResponse response = client
+        HttpResponse response = client
                 .secure()
                 .send(secureRequest)
                 .get();
@@ -198,7 +197,7 @@ public class StyxHttpClientTest {
         StyxHttpClient client = new StyxHttpClient.Builder()
                 .build();
 
-        FullHttpResponse response = client
+        HttpResponse response = client
                 .secure(true)
                 .send(secureRequest)
                 .get();
@@ -212,7 +211,7 @@ public class StyxHttpClientTest {
                 .tlsSettings(new TlsSettings.Builder().build())
                 .build();
 
-        FullHttpResponse response = client
+        HttpResponse response = client
                 .secure(false)
                 .send(httpRequest)
                 .get();
@@ -229,7 +228,7 @@ public class StyxHttpClientTest {
 
     @Test
     public void sendsMessagesInOriginUrlFormat() throws ExecutionException, InterruptedException {
-        FullHttpResponse response = new StyxHttpClient.Builder()
+        HttpResponse response = new StyxHttpClient.Builder()
                 .build()
                 .send(get("/index.html").header(HOST, hostString(server.port())).build())
                 .get();
@@ -272,7 +271,7 @@ public class StyxHttpClientTest {
      * request is indeed sent in absolute form.
      */
     public void sendsMessagesInAbsoluteUrlFormat() throws ExecutionException, InterruptedException {
-        FullHttpResponse response = new StyxHttpClient.Builder()
+        HttpResponse response = new StyxHttpClient.Builder()
                 .build()
                 .send(get(format("http://%s/index.html", hostString(server.port()))).build())
                 .get();
@@ -290,7 +289,7 @@ public class StyxHttpClientTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void requestWithNoHostOrUrlAuthorityCausesException() {
-        FullHttpRequest request = get("/foo.txt").build();
+        HttpRequest request = get("/foo.txt").build();
 
         StyxHttpClient client = new StyxHttpClient.Builder().build();
 

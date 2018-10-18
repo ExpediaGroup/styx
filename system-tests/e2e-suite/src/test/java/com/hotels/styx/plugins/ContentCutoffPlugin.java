@@ -15,9 +15,9 @@
  */
 package com.hotels.styx.plugins;
 
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import org.slf4j.Logger;
 
@@ -28,15 +28,15 @@ public class ContentCutoffPlugin implements Plugin {
     private static final Logger LOGGER = getLogger(ContentCutoffPlugin.class);
 
     @Override
-    public StyxObservable<HttpResponse> intercept(HttpRequest httpRequest, Chain chain) {
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest httpRequest, Chain chain) {
         return chain
                 .proceed(httpRequest)
-                .flatMap(response -> response.toFullResponse(1000000)
+                .flatMap(response -> response.aggregate(1000000)
                         .flatMap(it -> {
                             LOGGER.info("do something with full content: " + it.bodyAs(UTF_8));
 
                             // Error: Returns an already consumed response.
-                            return StyxObservable.of(response);
+                            return Eventual.of(response);
                         })
                 );
     }

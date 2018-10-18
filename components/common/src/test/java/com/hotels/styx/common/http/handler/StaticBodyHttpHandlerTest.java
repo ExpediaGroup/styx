@@ -16,13 +16,13 @@
 package com.hotels.styx.common.http.handler;
 
 
-import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -34,8 +34,8 @@ public class StaticBodyHttpHandlerTest {
     public void respondsWithStaticBody() throws Exception {
         StaticBodyHttpHandler handler = new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "foo", UTF_8);
 
-        HttpResponse response = handler.handle(get("/").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
-        FullHttpResponse fullResponse = response.toFullResponse(1024)
+        LiveHttpResponse response = handler.handle(get("/").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
+        HttpResponse fullResponse = response.aggregate(1024)
                 .asCompletableFuture()
                 .get();
 

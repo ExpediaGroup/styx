@@ -15,12 +15,12 @@
  */
 package com.hotels.styx.infrastructure
 
-import com.hotels.styx.api.FullHttpResponse
+import com.hotels.styx.api.HttpResponse
 
 
 trait HttpResponseImplicits {
 
-  class RichHttpResponse(val response: FullHttpResponse) {
+  class RichHttpResponse(val response: HttpResponse) {
 
     def isNotCacheAble(): Boolean = {
       response.header("Pragma").get().equals("no-cache") &&
@@ -30,7 +30,7 @@ trait HttpResponseImplicits {
 
   }
 
-  implicit def toRichHttpResponse(response: FullHttpResponse): RichHttpResponse = {
+  implicit def toRichHttpResponse(response: HttpResponse): RichHttpResponse = {
     new RichHttpResponse(response)
   }
 }

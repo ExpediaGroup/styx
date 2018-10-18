@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.{ByteStream, _}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -85,7 +85,7 @@ import rx.lang.scala.schedulers._
 import scala.compat.java8.FunctionConverters.asJavaFunction
 
 class AsyncRequestContentDelayPlugin extends PluginAdapter {
-  override def intercept(request: HttpRequest, chain: Chain): StyxObservable[HttpResponse] = {
+  override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
     val contentTransformation: rx.Observable[Buffer] =
       toObservable(request.body())
         .observeOn(ComputationScheduler())
@@ -94,11 +94,11 @@ class AsyncRequestContentDelayPlugin extends PluginAdapter {
           Observable.just(byteBuf)
         })
 
-    // This was split apart as it no longer compiles without the type annotation StyxObservable[HttpRequest]
-    val mapped: StyxObservable[HttpRequest] = StyxObservable.of(request)
-      .map(asJavaFunction((request: HttpRequest) => request.newBuilder().body(new ByteStream(toPublisher(contentTransformation))).build()))
+    // This was split apart as it no longer compiles without the type annotation Eventual[LiveHttpRequest]
+    val mapped: Eventual[LiveHttpRequest] = Eventual.of(request)
+      .map(asJavaFunction((request: LiveHttpRequest) => request.newBuilder().body(new ByteStream(toPublisher(contentTransformation))).build()))
 
     mapped
-      .flatMap(asJavaFunction((request: HttpRequest) => chain.proceed(request)))
+      .flatMap(asJavaFunction((request: LiveHttpRequest) => chain.proceed(request)))
   }
 }

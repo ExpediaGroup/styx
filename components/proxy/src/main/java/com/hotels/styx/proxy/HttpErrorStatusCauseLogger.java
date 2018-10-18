@@ -15,9 +15,9 @@
  */
 package com.hotels.styx.proxy;
 
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpErrorStatusListener;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import org.slf4j.Logger;
 
@@ -42,7 +42,7 @@ public class HttpErrorStatusCauseLogger implements HttpErrorStatusListener {
     }
 
     @Override
-    public void proxyErrorOccurred(HttpRequest request, InetSocketAddress clientAddress, HttpResponseStatus status, Throwable cause) {
+    public void proxyErrorOccurred(LiveHttpRequest request, InetSocketAddress clientAddress, HttpResponseStatus status, Throwable cause) {
         if (status.code() == 500) {
             LOG.error("Failure status=\"{}\" during request={}, clientAddress={}", new Object[]{status, request, clientAddress, cause});
         } else {
@@ -56,12 +56,12 @@ public class HttpErrorStatusCauseLogger implements HttpErrorStatusListener {
     }
 
     @Override
-    public void proxyWriteFailure(HttpRequest request, HttpResponse response, Throwable cause) {
+    public void proxyWriteFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) {
         LOG.error("Error writing response. request={}, response={}, cause={}", new Object[]{request, response, cause});
     }
 
     @Override
-    public void proxyingFailure(HttpRequest request, HttpResponse response, Throwable cause) {
+    public void proxyingFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) {
         LOG.error("Error proxying request. request={} response={} cause={}", new Object[]{request, response, cause});
     }
 

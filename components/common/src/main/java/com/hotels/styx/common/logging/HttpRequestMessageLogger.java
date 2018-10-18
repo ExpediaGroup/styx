@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.common.logging;
 
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;
 import org.slf4j.Logger;
 
@@ -34,7 +34,7 @@ public class HttpRequestMessageLogger {
         logger = getLogger(name);
     }
 
-    public void logRequest(HttpRequest request, Origin origin) {
+    public void logRequest(LiveHttpRequest request, Origin origin) {
         if (request == null) {
             logger.warn("requestId=N/A, request=null, origin={}", origin);
         } else {
@@ -42,7 +42,7 @@ public class HttpRequestMessageLogger {
         }
     }
 
-    public void logRequest(HttpRequest request, Origin origin, boolean secure) {
+    public void logRequest(LiveHttpRequest request, Origin origin, boolean secure) {
         if (request == null) {
             logger.warn("requestId=N/A, request=null, origin={}", origin);
         } else {
@@ -50,7 +50,7 @@ public class HttpRequestMessageLogger {
         }
     }
 
-    public void logResponse(HttpRequest request, HttpResponse response) {
+    public void logResponse(LiveHttpRequest request, LiveHttpResponse response) {
         if (response == null) {
             logger.warn("requestId={}, response=null", id(request));
         } else {
@@ -58,7 +58,7 @@ public class HttpRequestMessageLogger {
         }
     }
 
-    public void logResponse(HttpRequest request, HttpResponse response, boolean secure) {
+    public void logResponse(LiveHttpRequest request, LiveHttpResponse response, boolean secure) {
         if (response == null) {
             logger.warn("requestId={}, response=null", id(request));
         } else {
@@ -66,11 +66,11 @@ public class HttpRequestMessageLogger {
         }
     }
 
-    private static Object id(HttpRequest request) {
+    private static Object id(LiveHttpRequest request) {
         return request != null ? request.id() : null;
     }
 
-    private static Info information(HttpResponse response, boolean longFormatEnabled) {
+    private static Info information(LiveHttpResponse response, boolean longFormatEnabled) {
         Info info = new Info().add("status", response.status());
 
         if (longFormatEnabled) {
@@ -79,7 +79,7 @@ public class HttpRequestMessageLogger {
         return info;
     }
 
-    private static Info information(HttpRequest request, Origin origin, boolean longFormatEnabled) {
+    private static Info information(LiveHttpRequest request, Origin origin, boolean longFormatEnabled) {
         Info info = new Info()
                 .add("method", request.method())
                 .add("uri", request.url())

@@ -17,8 +17,8 @@ package com.hotels.styx.server.handlers;
 
 import com.google.common.io.Files;
 import com.google.common.net.MediaType;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -41,7 +41,7 @@ import static com.google.common.net.MediaType.OCTET_STREAM;
 import static com.google.common.net.MediaType.PDF;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.net.MediaType.PNG;
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.server.handlers.MediaTypes.ICON;
@@ -138,7 +138,7 @@ public class StaticFileHandlerTest {
 
         handler = new StaticFileHandler(dir);
 
-        HttpResponse response = handle(get("/" + path).build());
+        LiveHttpResponse response = handle(get("/" + path).build());
         assertThat(response, hasStatus(OK));
         assertThat(response.contentType(), isValue(mediaType.toString()));
     }
@@ -180,7 +180,7 @@ public class StaticFileHandlerTest {
         }
     }
 
-    private HttpResponse handle(HttpRequest request) {
+    private LiveHttpResponse handle(LiveHttpRequest request) {
         return getFirst(handler.handle(request, new HttpInterceptorContext()));
     }
 }

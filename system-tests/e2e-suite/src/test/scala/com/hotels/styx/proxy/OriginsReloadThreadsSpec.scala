@@ -17,7 +17,7 @@ package com.hotels.styx.proxy
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import com.hotels.styx.api.FullHttpRequest
+import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HealthCheckConfig, HttpBackend, Origins}
 import com.hotels.styx.threads.Threads
@@ -112,6 +112,6 @@ class OriginsReloadThreadsSpec extends FunSpec
   }
 
   private def get(url: String) = {
-    decodedRequest(FullHttpRequest.get(url).build())
+    decodedRequest(HttpRequest.get(url).build())
   }
 }

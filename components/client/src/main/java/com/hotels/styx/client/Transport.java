@@ -15,15 +15,15 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Id;
+import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import rx.Observable;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
@@ -40,42 +40,25 @@ class Transport {
         this.originIdHeaderName = requireNonNull(originIdHeaderName);
     }
 
-    public HttpTransaction send(HttpRequest request, Optional<ConnectionPool> origin, Id originId) {
+    public HttpTransaction send(LiveHttpRequest request, Optional<ConnectionPool> origin, Id originId) {
         Observable<Connection> connection = connection(request, origin);
 
         AtomicReference<Connection> connectionRef = new AtomicReference<>(null);
-        Observable<HttpResponse> observableResponse = connection.flatMap(tConnection -> {
+        Observable<LiveHttpResponse> observableResponse = connection.flatMap(tConnection -> {
             connectionRef.set(tConnection);
             return tConnection.write(request)
                     .map(response -> addOriginId(originId, response));
         });
 
         return new HttpTransaction() {
-            private final AtomicBoolean cancelled = new AtomicBoolean(false);
-
             @Override
-            public Observable<HttpResponse> response() {
-                return observableResponse
-                        .doOnError(throwable -> {
-                            if (!cancelled.get()) {
-                                closeIfConnected(origin, connectionRef);
-                            }
-                        })
-                        .doOnCompleted(() -> {
-                            if (!cancelled.get()) {
-                                returnIfConnected(origin, connectionRef);
-                            }
-                        })
-                        .doOnUnsubscribe(() -> {
-                            if (!cancelled.get()) {
-                                closeIfConnected(origin, connectionRef);
-                            }
-                        });
-            }
-
-            @Override
-            public boolean isCancelled() {
-                return cancelled.get();
+            public Observable<LiveHttpResponse> response() {
+                return ResponseEventListener.from(observableResponse)
+                        .whenCancelled(() -> closeIfConnected(origin, connectionRef))
+                        .whenResponseError(cause -> closeIfConnected(origin, connectionRef))
+                        .whenContentError(cause -> closeIfConnected(origin, connectionRef))
+                        .whenCompleted(() -> returnIfConnected(origin, connectionRef))
+                        .apply();
             }
 
             private synchronized void closeIfConnected(Optional<ConnectionPool> connectionPool, AtomicReference<Connection> connectionRef) {
@@ -96,7 +79,7 @@ class Transport {
         };
     }
 
-    private Observable<Connection> connection(HttpRequest request, Optional<ConnectionPool> origin) {
+    private Observable<Connection> connection(LiveHttpRequest request, Optional<ConnectionPool> origin) {
         return origin
                 .map(ConnectionPool::borrowConnection)
                 .orElseGet(() -> {
@@ -106,7 +89,7 @@ class Transport {
                 });
     }
 
-    private HttpResponse addOriginId(Id originId, HttpResponse response) {
+    private LiveHttpResponse addOriginId(Id originId, LiveHttpResponse response) {
         return response.newBuilder()
                 .header(originIdHeaderName, originId)
                 .build();

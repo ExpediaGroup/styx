@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
@@ -24,7 +24,7 @@ import org.testng.annotations.Test;
 import java.util.Optional;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
@@ -44,7 +44,7 @@ public class MetricsHandlerTest {
 
     @Test
     public void respondsToRequestWithJsonResponse() {
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics").build(), HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(get("/admin/metrics").build(), HttpInterceptorContext.create()));
         assertThat(response.status(), is(OK));
         assertThat(response.contentType().get(), is(JSON_UTF_8.toString()));
     }
@@ -52,7 +52,7 @@ public class MetricsHandlerTest {
     @Test
     public void exposesRegisteredMetrics() {
         metricRegistry.counter("foo").inc();
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics").build(), HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(get("/admin/metrics").build(), HttpInterceptorContext.create()));
         assertThat(response.bodyAs(UTF_8), is("{\"version\":\"3.1.3\",\"gauges\":{},\"counters\":{\"foo\":{\"count\":1}},\"histograms\":{},\"meters\":{},\"timers\":{}}"));
     }
 
@@ -62,13 +62,13 @@ public class MetricsHandlerTest {
         metricRegistry.counter("foo.bar.baz").inc(1);
         metricRegistry.counter("foo.barx").inc(1); // should not be included
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo.bar").build(), HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo.bar").build(), HttpInterceptorContext.create()));
         assertThat(response.bodyAs(UTF_8), is("{\"foo.bar\":{\"count\":1},\"foo.bar.baz\":{\"count\":1}}"));
     }
 
     @Test
     public void ifNoMetricsMatchNameThen404NotFoundIsReturned() {
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo.bar").build(), HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo.bar").build(), HttpInterceptorContext.create()));
         assertThat(response.status(), is(NOT_FOUND));
     }
 
@@ -79,7 +79,7 @@ public class MetricsHandlerTest {
         metricRegistry.counter("baz.bar.foo").inc(1);
         metricRegistry.counter("foo.baz.a").inc(1);
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics?filter=bar").build(), HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(get("/admin/metrics?filter=bar").build(), HttpInterceptorContext.create()));
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), is("{" +
                 "\"baz.bar.foo\":{\"count\":1}," +
@@ -96,7 +96,7 @@ public class MetricsHandlerTest {
         metricRegistry.counter("foo.baz.a").inc(1);
         metricRegistry.counter("foo.baz.a.bar").inc(1);
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo?filter=bar").build(), HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(get("/admin/metrics/foo?filter=bar").build(), HttpInterceptorContext.create()));
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), is("{" +
                 "\"foo.bar.a\":{\"count\":1}," +
@@ -110,7 +110,7 @@ public class MetricsHandlerTest {
         metricRegistry.counter("foo.bar.a").inc(1);
         metricRegistry.counter("foo.bar.b").inc(1);
 
-        FullHttpResponse response = waitForResponse(handler.handle(get("/admin/metrics?filter=notpresent").build(), HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(get("/admin/metrics?filter=notpresent").build(), HttpInterceptorContext.create()));
         assertThat(response.status(), is(OK));
         assertThat(response.bodyAs(UTF_8), is("{}"));
     }

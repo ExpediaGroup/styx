@@ -15,9 +15,9 @@
  */
 package loadtest.plugins;
 
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 
@@ -43,9 +43,9 @@ public class AsyncRequestContentDecoderPluginFactory implements PluginFactory {
         }
 
         @Override
-        public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-            return request.toFullRequest(config.maxContentLength())
-                            .flatMap(fullHttpRequest -> StyxObservable.from(asyncOperation(config.delayMillis())))
+        public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
+            return request.aggregate(config.maxContentLength())
+                            .flatMap(fullHttpRequest -> Eventual.from(asyncOperation(config.delayMillis())))
                             .map(outcome -> request.newBuilder().header("X-Outcome", outcome.result()))
                             .flatMap(x -> chain.proceed(request));
         }

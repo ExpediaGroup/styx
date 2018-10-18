@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.FullHttpRequest;
-import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * This interface offers a fluent interface to build and configure HTTP
  * request transactions from a client instance. The requests can be consumed
- * either aggregated {@link FullHttpResponse} or streaming {@link HttpRequest}
+ * either aggregated {@link HttpResponse} or streaming {@link LiveHttpRequest}
  * messages.
  */
 public interface HttpClient {
@@ -41,7 +41,7 @@ public interface HttpClient {
      * @return a future of full HTTP request object
      */
     @Deprecated
-    default CompletableFuture<FullHttpResponse> sendRequest(FullHttpRequest request) {
+    default CompletableFuture<HttpResponse> sendRequest(HttpRequest request) {
         return send(request);
     }
 
@@ -51,7 +51,7 @@ public interface HttpClient {
      * @param request a full HTTP request object
      * @return a future of full HTTP request object
      */
-    CompletableFuture<FullHttpResponse> send(FullHttpRequest request);
+    CompletableFuture<HttpResponse> send(HttpRequest request);
 
     /**
      * A HTTP request transaction.
@@ -95,17 +95,17 @@ public interface HttpClient {
          * @param request a full HTTP request object
          * @return a future of full HTTP request object
          */
-        CompletableFuture<FullHttpResponse> send(FullHttpRequest request);
+        CompletableFuture<HttpResponse> send(HttpRequest request);
     }
 
     /**
      * A streaming HTTP request transaction.
      *
      * This interface allows the response object to be consumed in a streaming
-     * fashion instead of being aggregated into a FullHttpResponse.
+     * fashion instead of being aggregated into a HttpResponse.
      */
     interface StreamingTransaction {
-        CompletableFuture<HttpResponse> send(HttpRequest request);
-        CompletableFuture<HttpResponse> send(FullHttpRequest request);
+        CompletableFuture<LiveHttpResponse> send(LiveHttpRequest request);
+        CompletableFuture<LiveHttpResponse> send(HttpRequest request);
     }
 }

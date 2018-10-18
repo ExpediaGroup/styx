@@ -15,21 +15,21 @@
  */
 package com.hotels.styx.routing.handlers;
 
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import rx.Observable;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static rx.Observable.create;
-import com.hotels.styx.api.HttpRequest;
+import static rx.RxReactiveStreams.toObservable;
+import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * The pipeline consists of a chain of interceptors followed by a handler.
@@ -48,7 +48,7 @@ class StandardHttpPipeline implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         HttpInterceptorChain interceptorsChain = new HttpInterceptorChain(interceptors, 0, handler, context);
 
         return interceptorsChain.proceed(request);
@@ -77,7 +77,7 @@ class StandardHttpPipeline implements HttpHandler {
         }
 
         @Override
-        public StyxObservable<HttpResponse> proceed(HttpRequest request) {
+        public Eventual<LiveHttpResponse> proceed(LiveHttpRequest request) {
             if (index < interceptors.size()) {
                 HttpInterceptor.Chain chain = new HttpInterceptorChain(this, index + 1);
                 HttpInterceptor interceptor = interceptors.get(index);
@@ -85,15 +85,15 @@ class StandardHttpPipeline implements HttpHandler {
                 try {
                     return interceptor.intercept(request, chain);
                 } catch (Throwable e) {
-                    return StyxObservable.error(e);
+                    return Eventual.error(e);
                 }
             }
-            return fromRxObservable(toRxObservable(client.handle(request, this.context))
-                    .compose(StandardHttpPipeline::sendErrorOnDoubleSubscription));
+            return new Eventual<>(toPublisher(toObservable(client.handle(request, this.context))
+                    .compose(StandardHttpPipeline::sendErrorOnDoubleSubscription)));
         }
     }
 
-    private static Observable<HttpResponse> sendErrorOnDoubleSubscription(Observable<HttpResponse> original) {
+    private static Observable<LiveHttpResponse> sendErrorOnDoubleSubscription(Observable<LiveHttpResponse> original) {
         AtomicInteger subscriptionCounter = new AtomicInteger();
 
         return create(subscriber -> {

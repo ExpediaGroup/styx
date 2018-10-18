@@ -36,7 +36,7 @@ import scala.collection.JavaConverters._
 
 class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with MockitoSugar {
 
-  val hwaRequest = HttpRequest.get("/x").build()
+  val hwaRequest = LiveHttpRequest.get("/x").build()
 //
 //  it("errors when there is a reference to non-existing pipeline") {
 //    val config = configBlock(
@@ -191,7 +191,7 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
 //
 //    val builtinsFactory = mock[RouteHandlerFactory]
 //    when(builtinsFactory.build(any[java.util.List[String]], any[RouteHandlerConfig]))
-//      .thenReturn(new HttpHandlerAdapter(_ => StyxObservable.of(HttpResponse.Builder.response(OK).build())))
+//      .thenReturn(new HttpHandlerAdapter(_ => Eventual.of(LiveHttpResponse.Builder.response(OK).build())))
 //
 //    val handler = new HttpInterceptorPipeline.ConfigFactory(interceptors(), null)
 //          .build(list("config", "config"), builtinsFactory, config)
@@ -207,7 +207,7 @@ class HttpInterceptorPipelineSpec extends FunSpec with ShouldMatchers with Mocki
   def mockHandlerFactory(): HttpHandlerFactory = {
     val handlerFactory = mock[HttpHandlerFactory]
     when(handlerFactory.build(any[java.util.List[String]], any[RouteHandlerFactory], any[RouteHandlerDefinition]))
-      .thenReturn(new HttpHandlerAdapter((_, _) => StyxObservable.of(HttpResponse.response(OK).build())))
+      .thenReturn(new HttpHandlerAdapter((_, _) => Eventual.of(LiveHttpResponse.response(OK).build())))
     handlerFactory
   }
 

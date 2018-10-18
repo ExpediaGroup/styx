@@ -16,7 +16,8 @@
 package com.hotels.styx.admin.handlers;
 
 import com.codahale.metrics.Gauge;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.hamcrest.Description;
@@ -31,7 +32,7 @@ import java.util.Optional;
 import static com.google.common.collect.Iterables.all;
 import static com.hotels.styx.admin.handlers.JVMMetricsHandlerTest.StringsContains.containsStrings;
 import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
@@ -41,7 +42,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import com.hotels.styx.api.HttpRequest;
 
 public class JVMMetricsHandlerTest {
     JVMMetricsHandler handler;
@@ -66,20 +66,20 @@ public class JVMMetricsHandlerTest {
 
     @Test
     public void respondsToRequestWithJsonResponse() {
-        HttpResponse response = call(get("/jvm").build());
+        LiveHttpResponse response = call(get("/jvm").build());
         assertThat(response, hasStatus(OK));
         assertThat(response.contentType().get(), is(APPLICATION_JSON.toString()));
     }
 
     @Test
     public void doesNotExposeIrrelevantMetrics() {
-        HttpResponse response = call(get("/jvm").build());
+        LiveHttpResponse response = call(get("/jvm").build());
         assertThat(response, hasBody(not(containsString("irrelevant"))));
     }
 
     @Test
     public void exposesAllMetricsStartingWithJvm() {
-        HttpResponse response = call(get("/jvm").build());
+        LiveHttpResponse response = call(get("/jvm").build());
         assertThat(response, hasBody(containsStrings(
                 "jvm.foo.gauge",
                 "jvm.bar.counter",
@@ -89,7 +89,7 @@ public class JVMMetricsHandlerTest {
         )));
     }
 
-    private HttpResponse call(HttpRequest request) {
+    private LiveHttpResponse call(LiveHttpRequest request) {
         return getFirst(handler.handle(request, HttpInterceptorContext.create()));
     }
 

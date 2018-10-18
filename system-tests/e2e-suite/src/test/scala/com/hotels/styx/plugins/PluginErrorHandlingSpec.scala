@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Optional
 
 import com.hotels.styx._
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api._
 import HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins, StyxConfig}
@@ -80,7 +80,7 @@ class PluginErrorHandlingSpec extends FunSpec
   }
 
   private class FailBeforeHandleInterceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): StyxObservable[HttpResponse] = {
+    override def intercept(request: LiveHttpRequest, chain: HttpInterceptor.Chain): Eventual[LiveHttpResponse] = {
       failIfHeaderPresent(request)
       chain.proceed(request)
     }
@@ -88,9 +88,9 @@ class PluginErrorHandlingSpec extends FunSpec
   import scala.compat.java8.FunctionConverters.asJavaFunction
 
   private class FailAfterHandleInterceptor extends PluginAdapter {
-    override def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): StyxObservable[HttpResponse] = {
+    override def intercept(request: LiveHttpRequest, chain: HttpInterceptor.Chain): Eventual[LiveHttpResponse] = {
       chain.proceed(request).map(
-        asJavaFunction((response: HttpResponse) => {
+        asJavaFunction((response: LiveHttpResponse) => {
           val fail: Optional[String] = request.header("Fail_after_handle")
           if (isTrue(fail)) {
             throw new RuntimeException("something went wrong")
@@ -100,7 +100,7 @@ class PluginErrorHandlingSpec extends FunSpec
     }
   }
 
-  private def failIfHeaderPresent(request: HttpRequest) {
+  private def failIfHeaderPresent(request: LiveHttpRequest) {
     val fail: Optional[String] = request.header("Fail_before_handle")
     if (isTrue(fail)) {
       throw new RuntimeException("something went wrong")

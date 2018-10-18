@@ -16,7 +16,7 @@
 package com.hotels.styx.server.routing.antlr;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.server.routing.Condition;
 
 import static java.util.Objects.requireNonNull;
@@ -33,7 +33,7 @@ class AntlrCondition implements Condition {
     }
 
     @Override
-    public boolean evaluate(HttpRequest request, HttpInterceptor.Context context) {
+    public boolean evaluate(LiveHttpRequest request, HttpInterceptor.Context context) {
         return expression.evaluate(request, context);
     }
 

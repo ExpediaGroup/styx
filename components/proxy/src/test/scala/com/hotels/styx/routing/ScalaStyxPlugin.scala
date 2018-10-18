@@ -24,11 +24,11 @@ import rx.lang.scala.Observable
 import rx.{Observable => JavaObservable}
 
 private class ChainAdapter(javaChain: HttpInterceptor.Chain) {
-  def proceed(request: HttpRequest): StyxObservable[HttpResponse] = javaChain.proceed(request)
+  def proceed(request: LiveHttpRequest): Eventual[LiveHttpResponse] = javaChain.proceed(request)
 }
 
 private trait ScalaInterceptor {
-  def intercept(request: HttpRequest, chain: ChainAdapter): Observable[HttpResponse]
+  def intercept(request: LiveHttpRequest, chain: ChainAdapter): Observable[LiveHttpResponse]
 }
 
 object ImplicitScalaRxConversions {
@@ -39,16 +39,16 @@ object ImplicitScalaRxConversions {
   implicit def toJavaObservable[T](s: rx.lang.scala.Observable[T]): rx.Observable[T] = rx.lang.scala.JavaConversions.toJavaObservable(s).asInstanceOf[rx.Observable[T]]
 }
 
-class PluginAdapter(scalaInterceptor: (HttpRequest, ChainAdapter) => StyxObservable[HttpResponse]) extends Plugin {
-  def intercept(request: HttpRequest, chain: HttpInterceptor.Chain): StyxObservable[HttpResponse] =
+class PluginAdapter(scalaInterceptor: (LiveHttpRequest, ChainAdapter) => Eventual[LiveHttpResponse]) extends Plugin {
+  def intercept(request: LiveHttpRequest, chain: HttpInterceptor.Chain): Eventual[LiveHttpResponse] =
     scalaInterceptor(request, new ChainAdapter(chain))
 }
 
-class HttpClientAdapter(sendRequest: HttpRequest => Observable[HttpResponse]) extends BackendServiceClient {
-  override def sendRequest(request: HttpRequest): JavaObservable[HttpResponse] =
+class HttpClientAdapter(sendRequest: LiveHttpRequest => Observable[LiveHttpResponse]) extends BackendServiceClient {
+  override def sendRequest(request: LiveHttpRequest): JavaObservable[LiveHttpResponse] =
     toJavaObservable(sendRequest(request))
 }
 
-class HttpHandlerAdapter(handler: (HttpRequest, Context) => StyxObservable[HttpResponse]) extends HttpHandler {
-  override def handle(request: HttpRequest, context: Context): StyxObservable[HttpResponse] = handler(request, context)
+class HttpHandlerAdapter(handler: (LiveHttpRequest, Context) => Eventual[LiveHttpResponse]) extends HttpHandler {
+  override def handle(request: LiveHttpRequest, context: Context): Eventual[LiveHttpResponse] = handler(request, context)
 }

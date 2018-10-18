@@ -17,12 +17,12 @@ package com.hotels.styx.server.netty.connectors;
 
 import com.google.common.collect.ObjectArrays;
 import com.hotels.styx.api.ContentOverflowException;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.server.BadRequestException;
@@ -62,15 +62,14 @@ import static com.google.common.collect.Iterables.toArray;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderValues.CLOSE;
-import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
-import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE_CLIENT_CLOSED;
@@ -98,10 +97,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
+import static rx.RxReactiveStreams.toPublisher;
 
 public class HttpPipelineHandlerTest {
-    private final HttpHandler respondingHandler = (request, context) -> StyxObservable.of(response(OK).build());
-    private final HttpHandler doNotRespondHandler = (request, context) -> fromRxObservable(Observable.never());
+    private final HttpHandler respondingHandler = (request, context) -> Eventual.of(response(OK).build());
+    private final HttpHandler doNotRespondHandler = (request, context) -> new Eventual<>(toPublisher(Observable.never()));
 
     private HttpErrorStatusListener errorListener;
     private CodaHaleMetricRegistry metrics;
@@ -109,24 +109,24 @@ public class HttpPipelineHandlerTest {
     // Cannot use lambda expression below, because spy() does not understand them.
     private final HttpHandler respondingPipeline = spy(new HttpHandler() {
         @Override
-        public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
             return respondingHandler.handle(request, context);
         }
     });
 
     private ChannelHandlerContext ctx;
-    private PublishSubject<HttpResponse> responseObservable;
-    private PublishSubject<HttpResponse> responseObservable2;
+    private PublishSubject<LiveHttpResponse> responseObservable;
+    private PublishSubject<LiveHttpResponse> responseObservable2;
     private CompletableFuture<Void> writerFuture;
     private HttpResponseWriter responseWriter;
     private HttpPipelineHandler handler;
     private HttpHandler pipeline;
     private HttpResponseWriterFactory responseWriterFactory;
     private RequestStatsCollector statsCollector;
-    private HttpRequest request;
-    private HttpRequest request2;
-    private HttpResponse response;
-    private HttpResponse response2;
+    private LiveHttpRequest request;
+    private LiveHttpRequest request2;
+    private LiveHttpResponse response;
+    private LiveHttpResponse response2;
     private AtomicBoolean responseUnsubscribed;
     private AtomicBoolean responseUnsubscribed2;
 
@@ -143,20 +143,20 @@ public class HttpPipelineHandlerTest {
         writerFuture = new CompletableFuture<>();
 
         responseWriter = mock(HttpResponseWriter.class);
-        when(responseWriter.write(any(HttpResponse.class))).thenReturn(writerFuture);
+        when(responseWriter.write(any(LiveHttpResponse.class))).thenReturn(writerFuture);
 
         responseWriterFactory = mock(HttpResponseWriterFactory.class);
         when(responseWriterFactory.create(anyObject()))
                 .thenReturn(responseWriter);
 
         pipeline = mock(HttpHandler.class);
-        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(fromRxObservable(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true))));
+        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(new Eventual<>(toPublisher(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true)))));
 
         request = get("/foo").id("REQUEST-1-ID").build();
         response = response().build();
 
         responseEnhancer = mock(ResponseEnhancer.class);
-        when(responseEnhancer.enhance(any(HttpResponse.Builder.class), any(HttpRequest.class))).thenAnswer(invocationOnMock -> invocationOnMock.getArguments()[0]);
+        when(responseEnhancer.enhance(any(LiveHttpResponse.Builder.class), any(LiveHttpRequest.class))).thenAnswer(invocationOnMock -> invocationOnMock.getArguments()[0]);
 
         setupHandlerTo(ACCEPTING_REQUESTS);
     }
@@ -169,7 +169,7 @@ public class HttpPipelineHandlerTest {
         CompletableFuture<Void> writerFuture2 = new CompletableFuture<>();
 
         HttpResponseWriter responseWriter2 = mock(HttpResponseWriter.class);
-        when(responseWriter2.write(any(HttpResponse.class))).thenReturn(writerFuture2);
+        when(responseWriter2.write(any(LiveHttpResponse.class))).thenReturn(writerFuture2);
 
         responseWriterFactory = mock(HttpResponseWriterFactory.class);
         when(responseWriterFactory.create(anyObject()))
@@ -178,8 +178,8 @@ public class HttpPipelineHandlerTest {
 
         pipeline = mock(HttpHandler.class);
         when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class)))
-                .thenReturn(fromRxObservable(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true))))
-                .thenReturn(fromRxObservable(responseObservable2.doOnUnsubscribe(() -> responseUnsubscribed2.set(true))));
+                .thenReturn(new Eventual<>(toPublisher(responseObservable.doOnUnsubscribe(() -> responseUnsubscribed.set(true)))))
+                .thenReturn(new Eventual<>(toPublisher(responseObservable2.doOnUnsubscribe(() -> responseUnsubscribed2.set(true)))));
 
         request2 = get("/bar").id("REQUEST-2-ID").build();
 
@@ -221,7 +221,7 @@ public class HttpPipelineHandlerTest {
         DefaultHttpResponse response = (DefaultHttpResponse) channel.readOutbound();
 
         assertThat(response.getStatus(), is(io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST));
-        verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), eq(null));
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(null));
         verify(errorListener, only()).proxyErrorOccurred(eq(BAD_REQUEST), any(BadRequestException.class));
     }
 
@@ -236,8 +236,8 @@ public class HttpPipelineHandlerTest {
         DefaultHttpResponse response = (DefaultHttpResponse) channel.readOutbound();
 
         assertThat(response.status(), is(io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR));
-        verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), any(HttpRequest.class));
-        verify(errorListener, only()).proxyErrorOccurred(any(HttpRequest.class), any(InetSocketAddress.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), any(LiveHttpRequest.class));
+        verify(errorListener, only()).proxyErrorOccurred(any(LiveHttpRequest.class), any(InetSocketAddress.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
     }
 
     @Test
@@ -373,7 +373,7 @@ public class HttpPipelineHandlerTest {
         ChannelHandlerContext ctx = mockCtx();
         adapter.channelActive(ctx);
 
-        HttpRequest request = get("/foo").build();
+        LiveHttpRequest request = get("/foo").build();
         adapter.channelRead0(ctx, request);
         assertThat(metrics.counter("outstanding").getCount(), is(1L));
 
@@ -383,7 +383,7 @@ public class HttpPipelineHandlerTest {
         adapter.channelInactive(ctx);
         assertThat(metrics.counter("outstanding").getCount(), is(0L));
 
-        verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), eq(request));
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(request));
     }
 
     @Test
@@ -429,8 +429,8 @@ public class HttpPipelineHandlerTest {
         requestProxiedOnlyOnce(pipeline, request);
     }
 
-    private static void requestProxiedOnlyOnce(HttpHandler pipeline, HttpRequest request) {
-        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+    private static void requestProxiedOnlyOnce(HttpHandler pipeline, LiveHttpRequest request) {
+        ArgumentCaptor<LiveHttpRequest> captor = ArgumentCaptor.forClass(LiveHttpRequest.class);
         verify(pipeline).handle(captor.capture(), any(HttpInterceptor.Context.class));
         assertThat(captor.getValue().id(), is(request.id()));
     }
@@ -449,7 +449,7 @@ public class HttpPipelineHandlerTest {
         responseObservable.onNext(response);
         responseObservable.onCompleted();
         assertThat(handler.state(), is(SENDING_RESPONSE));
-        verify(responseWriter).write(any(HttpResponse.class));
+        verify(responseWriter).write(any(LiveHttpResponse.class));
 
         // Receive second request.
         handler.channelRead0(ctx, request2);
@@ -461,8 +461,8 @@ public class HttpPipelineHandlerTest {
         requestProxiedTwice(pipeline, request, request2);
     }
 
-    private static void requestProxiedTwice(HttpHandler pipeline, HttpRequest request1, HttpRequest request2) {
-        ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
+    private static void requestProxiedTwice(HttpHandler pipeline, LiveHttpRequest request1, LiveHttpRequest request2) {
+        ArgumentCaptor<LiveHttpRequest> captor = ArgumentCaptor.forClass(LiveHttpRequest.class);
         verify(pipeline, times(2)).handle(captor.capture(), any(HttpInterceptor.Context.class));
         assertThat(captor.getAllValues().get(0).id(), is(request1.id()));
         assertThat(captor.getAllValues().get(1).id(), is(request2.id()));
@@ -481,7 +481,7 @@ public class HttpPipelineHandlerTest {
         responseObservable.onNext(response);
         responseObservable.onCompleted();
         assertThat(handler.state(), is(SENDING_RESPONSE));
-        verify(responseWriter).write(any(HttpResponse.class));
+        verify(responseWriter).write(any(LiveHttpResponse.class));
 
         // Receive second request, while still responding to the previous request.
         // This request will be queued.
@@ -522,13 +522,13 @@ public class HttpPipelineHandlerTest {
 
     private void setupIdleHandlerWithPluginResponse() throws Exception {
         pipeline = mock(HttpHandler.class);
-        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(StyxObservable.of(response));
+        when(pipeline.handle(anyObject(), any(HttpInterceptor.Context.class))).thenReturn(Eventual.of(response));
         handler = createHandler(pipeline);
     }
 
     @Test
     public void closesTheConnectionAfterProxyingWhenConnectionHeaderHasValueClose() throws Exception {
-        HttpRequest oneShotRequest = get("/closeAfterThis").header(CONNECTION, CLOSE).build();
+        LiveHttpRequest oneShotRequest = get("/closeAfterThis").header(CONNECTION, CLOSE).build();
 
         handler.channelRead0(ctx, oneShotRequest);
         assertThat(handler.state(), is(WAITING_FOR_RESPONSE));
@@ -590,13 +590,13 @@ public class HttpPipelineHandlerTest {
 
         handler.channelRead0(ctx, request);
 
-        verify(responseWriter).write(FullHttpResponse.response(INTERNAL_SERVER_ERROR)
+        verify(responseWriter).write(HttpResponse.response(INTERNAL_SERVER_ERROR)
                 .header(CONTENT_LENGTH, 29)
                 .body("Site temporarily unavailable.", UTF_8)
                 .build()
-                .toStreamingResponse());
+                .stream());
 
-        verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), eq(request));
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(request));
         verify(errorListener).proxyErrorOccurred(request, InetSocketAddress.createUnresolved("localhost", 2), INTERNAL_SERVER_ERROR, cause);
         verify(statsCollector).onTerminate(request.id());
         assertThat(handler.state(), is(TERMINATED));
@@ -608,7 +608,7 @@ public class HttpPipelineHandlerTest {
         handler.exceptionCaught(ctx, cause);
 
         verify(errorListener).proxyErrorOccurred(REQUEST_TIMEOUT, cause);
-        verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), eq(null));
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(null));
         verify(responseWriter).write(response(REQUEST_TIMEOUT)
                 .header(CONTENT_LENGTH, 15)
                 .build());
@@ -622,7 +622,7 @@ public class HttpPipelineHandlerTest {
         handler.exceptionCaught(ctx, cause);
 
         verify(errorListener).proxyErrorOccurred(REQUEST_ENTITY_TOO_LARGE, cause);
-        verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), eq(request));
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(request));
         verify(responseWriter).write(response(REQUEST_ENTITY_TOO_LARGE)
                 .header(CONTENT_LENGTH, 24)
                 .build());
@@ -636,7 +636,7 @@ public class HttpPipelineHandlerTest {
         handler.exceptionCaught(ctx, cause);
 
         verify(errorListener).proxyErrorOccurred(BAD_REQUEST, cause);
-        verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), eq(request));
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(request));
         verify(responseWriter).write(response(BAD_REQUEST)
                 .header(CONTENT_LENGTH, 11)
                 .build());
@@ -668,16 +668,16 @@ public class HttpPipelineHandlerTest {
         responseObservable.onError(new ContentOverflowException("Request Send Error"));
 
         assertThat(responseUnsubscribed.get(), is(true));
-        verify(responseWriter).write(FullHttpResponse.response(BAD_GATEWAY)
+        verify(responseWriter).write(HttpResponse.response(BAD_GATEWAY)
                 .header(CONTENT_LENGTH, "29")
                 .body("Site temporarily unavailable.", UTF_8)
                 .build()
-                .toStreamingResponse());
-        verify(responseEnhancer).enhance(any(HttpResponse.Builder.class), eq(request));
+                .stream());
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(request));
 
         writerFuture.complete(null);
         verify(statsCollector).onComplete(request.id(), 502);
-        verify(errorListener).proxyErrorOccurred(any(HttpRequest.class), any(InetSocketAddress.class), eq(BAD_GATEWAY), any(RuntimeException.class));
+        verify(errorListener).proxyErrorOccurred(any(LiveHttpRequest.class), any(InetSocketAddress.class), eq(BAD_GATEWAY), any(RuntimeException.class));
 
         // NOTE: channel closure is not verified. This is because cannot mock channel future.
         verify(ctx).close();
@@ -694,15 +694,15 @@ public class HttpPipelineHandlerTest {
         responseObservable.onError(new StyxClientException("Client error occurred", new RuntimeException("Something went wrong")));
 
         assertThat(responseUnsubscribed.get(), is(true));
-        verify(responseWriter).write(FullHttpResponse.response(INTERNAL_SERVER_ERROR)
+        verify(responseWriter).write(HttpResponse.response(INTERNAL_SERVER_ERROR)
                 .header(CONTENT_LENGTH, "29")
                 .body("Site temporarily unavailable.", UTF_8)
                 .build()
-                .toStreamingResponse());
+                .stream());
 
         writerFuture.complete(null);
         verify(statsCollector).onComplete(request.id(), 500);
-        verify(errorListener).proxyErrorOccurred(any(HttpRequest.class), any(InetSocketAddress.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
+        verify(errorListener).proxyErrorOccurred(any(LiveHttpRequest.class), any(InetSocketAddress.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
 
         // NOTE: channel closure is not verified. This is because cannot mock channel future.
         verify(ctx).close();
@@ -796,7 +796,7 @@ public class HttpPipelineHandlerTest {
 
         assertThat(handler.state(), is(SENDING_RESPONSE));
 
-        verify(errorListener).proxyingFailure(any(HttpRequest.class), any(HttpResponse.class), any(Throwable.class));
+        verify(errorListener).proxyingFailure(any(LiveHttpRequest.class), any(LiveHttpResponse.class), any(Throwable.class));
     }
 
     @Test
@@ -810,7 +810,7 @@ public class HttpPipelineHandlerTest {
 
         assertThat(responseUnsubscribed.get(), is(true));
         verify(statsCollector).onTerminate(request.id());
-        verify(errorListener).proxyWriteFailure(any(HttpRequest.class), eq(response(OK).build()), any(RuntimeException.class));
+        verify(errorListener).proxyWriteFailure(any(LiveHttpRequest.class), eq(response(OK).build()), any(RuntimeException.class));
 
         assertThat(handler.state(), is(TERMINATED));
     }
@@ -906,7 +906,7 @@ public class HttpPipelineHandlerTest {
         HttpResponseWriterFactory writerFactory = mock(HttpResponseWriterFactory.class);
         HttpResponseWriter responseWriter = mock(HttpResponseWriter.class);
         when(writerFactory.create(any(ChannelHandlerContext.class))).thenReturn(responseWriter);
-        when(responseWriter.write(any(HttpResponse.class))).thenReturn(future);
+        when(responseWriter.write(any(LiveHttpResponse.class))).thenReturn(future);
         return writerFactory;
     }
 
@@ -921,7 +921,7 @@ public class HttpPipelineHandlerTest {
         // - cancels the ongoing request on the HTTP pipeline
         LoggingTestSupport logger = new LoggingTestSupport(HttpPipelineHandler.class);
 
-        HttpRequest spurious = get("/bar").build();
+        LiveHttpRequest spurious = get("/bar").build();
         setupHandlerTo(WAITING_FOR_RESPONSE);
 
         handler.channelRead0(ctx, spurious);

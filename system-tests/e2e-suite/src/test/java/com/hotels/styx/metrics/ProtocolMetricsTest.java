@@ -17,31 +17,25 @@ package com.hotels.styx.metrics;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.HttpClient;
-import com.hotels.styx.api.FullHttpRequest;
-import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.testapi.StyxServer;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import java.util.stream.Stream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static com.hotels.styx.api.FullHttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -80,7 +74,7 @@ public class ProtocolMetricsTest {
                 .addRoute("/", origin.port())
                 .start();
 
-        FullHttpResponse response = doGet("/");
+        HttpResponse response = doGet("/");
 
         assertThat(response.status(), is(OK));
 
@@ -97,7 +91,7 @@ public class ProtocolMetricsTest {
                 .addRoute("/", origin.port())
                 .start();
 
-        FullHttpResponse response = doHttpsGet("/");
+        HttpResponse response = doHttpsGet("/");
 
         assertThat(response.status(), is(OK));
 
@@ -108,32 +102,23 @@ public class ProtocolMetricsTest {
         assertThat(styxServer.metrics().meter("styx.server.https.responses.200").getCount(), is(1L));
     }
 
-    private FullHttpResponse doGet(String path) {
+    private HttpResponse doGet(String path) {
         return doRequest(client, "http", styxServer.proxyHttpPort(), startWithSlash(path));
     }
 
-    private FullHttpResponse doHttpsGet(String path) {
+    private HttpResponse doHttpsGet(String path) {
         HttpClient client1 = new StyxHttpClient.Builder().build();
         return doRequest(client1, "https", styxServer.proxyHttpsPort(), path);
     }
 
-    private static FullHttpResponse doRequest(HttpClient client, String protocol, int port, String path) {
+    private static HttpResponse doRequest(HttpClient client, String protocol, int port, String path) {
         String url = format("%s://localhost:%s%s", protocol, port, startWithSlash(path));
 
-        FullHttpRequest request = get(url)
+        HttpRequest request = get(url)
                 .body("foobarbaz", UTF_8)
                 .build();
 
         return await(client.sendRequest(request));
-    }
-
-    // used to ensure that we do not increment counters for successive chunks
-    private static StyxObservable<ByteBuf> body(String... chunks) {
-        return StyxObservable.from(
-                Stream.of(chunks)
-                        .map(chunk -> Unpooled.copiedBuffer(chunk, UTF_8))
-                        .collect(toList())
-        );
     }
 
     private static String startWithSlash(String path) {

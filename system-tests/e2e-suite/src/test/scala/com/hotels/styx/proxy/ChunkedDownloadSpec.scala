@@ -33,7 +33,7 @@ import io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT
 import io.netty.handler.codec.http._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.extension.Origin
 
 import scala.concurrent.duration.{Duration, _}
@@ -106,6 +106,7 @@ class ChunkedDownloadSpec extends FunSpec
       eventually(timeout(5 seconds)) {
         assert(noBusyConnectionsToOrigin(originTwo), "Connection remains busy.")
         assert(noAvailableConnectionsInPool(originTwo), "Connection was not closed.")
+        styxServer.metricsSnapshot.count("origins.appTwo.requests.cancelled").get should be(1)
       }
     }
   }

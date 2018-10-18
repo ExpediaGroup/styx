@@ -16,12 +16,12 @@
 package com.hotels.styx.admin.handlers;
 
 
-import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
@@ -30,21 +30,21 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.StringContains.containsString;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 public class ThreadsHandlerTest {
     final ThreadsHandler handler = new ThreadsHandler();
 
     @Test
     public void dumpsCurrentThreadsState() {
-        FullHttpResponse response = waitForResponse(handler.handle(get("/threads").build(), HttpInterceptorContext.create()));
+        HttpResponse response = waitForResponse(handler.handle(get("/threads").build(), HttpInterceptorContext.create()));
         assertThat(response.status(), is(OK));
         assertThat(response.headers(), isNotCacheable());
         assertThat(response.contentType().get(), is("text/plain; charset=utf-8"));
         assertThat(response.bodyAs(UTF_8), containsString("Finalizer"));
     }
 
-    private HttpResponse handle(HttpRequest request) {
+    private LiveHttpResponse handle(LiveHttpRequest request) {
         return getFirst(handler.handle(request, HttpInterceptorContext.create()));
     }
 }

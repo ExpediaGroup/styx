@@ -20,16 +20,16 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, WireMock}
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.MockServer.responseSupplier
-import com.hotels.styx.api.FullHttpRequest.get
-import com.hotels.styx.api.FullHttpRequest.head
+import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.HttpRequest.head
 import com.hotels.styx.api.HttpHeaderNames._
-import com.hotels.styx.api.HttpResponse.response
+import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.api.HttpVersion._
 import com.hotels.styx.common.FreePorts._
-import com.hotels.styx.api.FullHttpResponse
+import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
-import com.hotels.styx.client.{ConnectionSettings, HttpClient, StyxHttpClient}
+import com.hotels.styx.client.{HttpClient, StyxHttpClient}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origin, Origins}
 import com.hotels.styx.support.matchers.IsOptional.{isValue, matches}
@@ -237,7 +237,7 @@ class ProxySpec extends FunSpec
     }
 
 
-    def assertThatResponseIsBodiless(response: FullHttpResponse) {
+    def assertThatResponseIsBodiless(response: HttpResponse) {
       val headers = response.headers()
       assert(response.contentLength().orElse(0) == 0, s"\nexpected headers with no Content-Length header but found $headers")
       assert(!response.chunked(), s"\nexpected headers with no Transfer-Encoding header but found $headers")

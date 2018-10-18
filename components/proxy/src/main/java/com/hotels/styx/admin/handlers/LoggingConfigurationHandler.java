@@ -16,11 +16,12 @@
 package com.hotels.styx.admin.handlers;
 
 import com.google.common.net.MediaType;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.Resource;
-import com.hotels.styx.api.StyxObservable;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -31,13 +32,12 @@ import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.net.MediaType.XML_UTF_8;
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
-import com.hotels.styx.api.HttpRequest;
 
 /**
  * Displays contents of logging configuration file.
@@ -54,11 +54,11 @@ public class LoggingConfigurationHandler implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return StyxObservable.of(generateResponse());
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+        return Eventual.of(generateResponse());
     }
 
-    private HttpResponse generateResponse() {
+    private LiveHttpResponse generateResponse() {
         Content content = contentSupplier.get();
 
         return response(OK)
@@ -66,7 +66,7 @@ public class LoggingConfigurationHandler implements HttpHandler {
                 .header(CONTENT_LENGTH, content.length)
                 .body(content.content, UTF_8)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 
     private Content loadContent() {

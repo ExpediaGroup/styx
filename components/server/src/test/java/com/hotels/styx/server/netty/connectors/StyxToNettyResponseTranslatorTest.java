@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.server.netty.connectors;
 
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.ResponseCookie;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -35,7 +35,7 @@ public class StyxToNettyResponseTranslatorTest {
 
     @Test
     public void shouldCreateNettyResponseWithoutHeaders() throws Exception {
-        HttpResponse styxResponse = new HttpResponse.Builder(OK)
+        LiveHttpResponse styxResponse = new LiveHttpResponse.Builder(OK)
                 .version(HTTP_1_1)
                 .build();
         io.netty.handler.codec.http.HttpResponse nettyResponse = translator.toNettyResponse(styxResponse);
@@ -45,7 +45,7 @@ public class StyxToNettyResponseTranslatorTest {
 
     @Test
     public void shouldCreateNettyResponseWithHostHeader() {
-        HttpResponse styxResponse = new HttpResponse.Builder(OK)
+        LiveHttpResponse styxResponse = new LiveHttpResponse.Builder(OK)
                 .header("Host", "localhost")
                 .build();
         io.netty.handler.codec.http.HttpResponse nettyResponse = translator.toNettyResponse(styxResponse);
@@ -62,7 +62,7 @@ public class StyxToNettyResponseTranslatorTest {
                 .secure(true)
                 .build();
 
-        HttpResponse styxResponse = new HttpResponse.Builder(OK)
+        LiveHttpResponse styxResponse = new LiveHttpResponse.Builder(OK)
                 .cookies(cookie)
                 .build();
 

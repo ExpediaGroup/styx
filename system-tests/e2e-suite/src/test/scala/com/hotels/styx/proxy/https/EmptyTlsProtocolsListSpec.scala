@@ -16,8 +16,8 @@
 package com.hotels.styx.proxy.https
 
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.FullHttpRequest
 import com.hotels.styx.client.{HttpClient, StyxHttpClient}
 import com.hotels.styx.infrastructure.HttpResponseImplicits
 import com.hotels.styx.support.ResourcePaths.fixturesHome
@@ -74,7 +74,7 @@ class EmptyTlsProtocolsListSpec extends FunSpec
     recordingBackend.stub(urlPathEqualTo("/secure"), aResponse.withStatus(OK.code()))
 
     it("Empty TLS protocols list activates all supported protocols") {
-      val req = FullHttpRequest.get(styxServer.secureRouterURL("/secure"))
+      val req = HttpRequest.get(styxServer.secureRouterURL("/secure"))
         .header(HOST, styxServer.httpsProxyHost)
         .build()
 

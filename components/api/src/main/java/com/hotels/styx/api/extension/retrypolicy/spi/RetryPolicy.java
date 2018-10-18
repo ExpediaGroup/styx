@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.api.extension.retrypolicy.spi;
 
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
@@ -49,7 +49,7 @@ public interface RetryPolicy {
          *
          * @return current request
          */
-        HttpRequest currentRequest();
+        LiveHttpRequest currentRequest();
 
         /**
          * The exception that occurred while processing the request, if one occurred.

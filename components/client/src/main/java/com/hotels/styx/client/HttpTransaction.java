@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import rx.Observable;
 
 /**
@@ -28,29 +28,20 @@ interface HttpTransaction {
      *
      * @return response observable
      */
-    Observable<HttpResponse> response();
-
-    /**
-     * Checks whether the current transaction is cancelled (non-consumable). Default implementation always returns false.
-     *
-     * @return true if the transaction was cancelled
-     */
-    default boolean isCancelled() {
-        return false;
-    }
+    Observable<LiveHttpResponse> response();
 
     /**
      * Non cancellable txn.
      */
     class NonCancellableHttpTransaction implements HttpTransaction {
-        private final Observable<HttpResponse> response;
+        private final Observable<LiveHttpResponse> response;
 
-        public NonCancellableHttpTransaction(Observable<HttpResponse> response) {
+        public NonCancellableHttpTransaction(Observable<LiveHttpResponse> response) {
             this.response = response;
         }
 
         @Override
-        public Observable<HttpResponse> response() {
+        public Observable<LiveHttpResponse> response() {
             return response;
         }
     }

@@ -13,9 +13,9 @@ the builder as desired, construct a new version, and pass it to the `chain.proce
 as the example demonstrates:
 
 ```java
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.plugins.spi.Plugin;
 
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
@@ -39,9 +39,9 @@ use a `StyxObservable.map` method to add an "X-Foo" header to the response.
 
 ```java
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.plugins.spi.Plugin;
 
 public class SyncResponsePlugin implements Plugin {
@@ -64,9 +64,9 @@ shows how to modify a request URL path based on an asynchronous lookup to an ext
  	
 ```java
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.plugins.spi.Plugin;
 
@@ -129,9 +129,9 @@ will call this function when the HTTP response is received.
 
 ```java
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.plugins.spi.Plugin;
 
 import java.util.concurrent.CompletableFuture;
@@ -186,9 +186,9 @@ all content has been received.
 ### Aggregating Content into Full Messages
 
 ```java
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.plugins.spi.Plugin;
 
 public class RequestAggregationPlugin implements Plugin {

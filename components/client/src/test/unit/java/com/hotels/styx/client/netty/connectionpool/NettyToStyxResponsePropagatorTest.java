@@ -17,7 +17,7 @@ package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.base.Throwables;
 import com.hotels.styx.api.Buffers;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.extension.Origin;
@@ -68,7 +68,7 @@ import static rx.RxReactiveStreams.toObservable;
 public class NettyToStyxResponsePropagatorTest {
     private ByteBuf firstContentChunk = copiedBuffer("first chunk", UTF_8);
     private ByteBuf secondContentChunk = copiedBuffer("second chunk", UTF_8);
-    private TestSubscriber<HttpResponse> responseSubscriber;
+    private TestSubscriber<LiveHttpResponse> responseSubscriber;
     private DefaultHttpResponse httpResponseHeaders = new DefaultHttpResponse(HTTP_1_1, OK);
     private DefaultHttpContent httpContentOne = new DefaultHttpContent(firstContentChunk);
     private DefaultHttpContent httpContentTwo = new DefaultHttpContent(secondContentChunk);
@@ -82,7 +82,7 @@ public class NettyToStyxResponsePropagatorTest {
 
     @Test
     public void notifiesSubscriberForNettyPipelineExceptions() {
-        Subscriber<HttpResponse> subscriber = mock(Subscriber.class);
+        Subscriber<LiveHttpResponse> subscriber = mock(Subscriber.class);
         NettyToStyxResponsePropagator handler = new NettyToStyxResponsePropagator(subscriber, SOME_ORIGIN);
         EmbeddedChannel channel = new EmbeddedChannel(handler);
 
@@ -123,7 +123,7 @@ public class NettyToStyxResponsePropagatorTest {
         channel.writeInbound(httpResponseHeaders);
         channel.writeInbound(newHttpContent("one"));
 
-        HttpResponse response = responseSubscriber.getOnNextEvents().get(0);
+        LiveHttpResponse response = responseSubscriber.getOnNextEvents().get(0);
         subscribeToContent(response);
 
         channel.writeInbound(EMPTY_LAST_CONTENT);
@@ -141,7 +141,7 @@ public class NettyToStyxResponsePropagatorTest {
         channel.writeInbound(httpResponseHeaders);
         channel.writeInbound(newHttpContent("one"));
 
-        HttpResponse response = responseSubscriber.getOnNextEvents().get(0);
+        LiveHttpResponse response = responseSubscriber.getOnNextEvents().get(0);
         subscribeToContent(response);
 
         channel.pipeline().fireExceptionCaught(new RuntimeException("Simulated exception: something went horribly wrong!"));
@@ -171,7 +171,7 @@ public class NettyToStyxResponsePropagatorTest {
         EmbeddedChannel channel = new EmbeddedChannel(new NettyToStyxResponsePropagator(responseSubscriber, SOME_ORIGIN));
 
         channel.writeInbound(httpResponseHeaders);
-        HttpResponse response = onNextEvent(responseSubscriber, 0);
+        LiveHttpResponse response = onNextEvent(responseSubscriber, 0);
         TestSubscriber<ByteBuf> contentSubscriber = subscribeToContent(response);
 
         HttpContent contentOne = newHttpContent("one");
@@ -196,7 +196,7 @@ public class NettyToStyxResponsePropagatorTest {
 
         assertThat(onCompletedEvents(responseSubscriber), is(0));
         assertThat(onNextEvents(responseSubscriber), is(1));
-        HttpResponse response = onNextEvent(responseSubscriber, 0);
+        LiveHttpResponse response = onNextEvent(responseSubscriber, 0);
 
         TestSubscriber<ByteBuf> contentSubscriber = subscribeToContent(response);
         channel.runPendingTasks();
@@ -228,7 +228,7 @@ public class NettyToStyxResponsePropagatorTest {
         channel.writeInbound(httpResponseHeaders);
         channel.writeInbound(EMPTY_LAST_CONTENT);
 
-        HttpResponse response = onNextEvent(responseSubscriber, 0);
+        LiveHttpResponse response = onNextEvent(responseSubscriber, 0);
         TestSubscriber<ByteBuf> contentSubscriber = subscribeToContent(response);
         channel.runPendingTasks();
 
@@ -240,7 +240,7 @@ public class NettyToStyxResponsePropagatorTest {
     public void shouldConvertNettyCookieHeaderToStyxCookies() {
         DefaultHttpResponse nettyResponse = new DefaultHttpResponse(HTTP_1_1, OK);
         nettyResponse.headers().add("Set-Cookie", "SESSID=sessId; Domain=.foo.com; Path=/; HttpOnly");
-        HttpResponse styxResponse = toStyxResponse(nettyResponse).build();
+        LiveHttpResponse styxResponse = toStyxResponse(nettyResponse).build();
 
         assertThat(styxResponse.header("Set-Cookie"), isValue("SESSID=sessId; Domain=.foo.com; Path=/; HttpOnly"));
         assertThat(styxResponse.cookie("SESSID"), equalTo(
@@ -255,7 +255,7 @@ public class NettyToStyxResponsePropagatorTest {
     public void shouldLeaveIntactQuotedCookieValues() {
         DefaultHttpResponse nettyResponse = new DefaultHttpResponse(HTTP_1_1, OK);
         nettyResponse.headers().add("Set-Cookie", "SESSID=\"sessId\"; Domain=.foo.com; Path=/; HttpOnly");
-        HttpResponse styxResponse = toStyxResponse(nettyResponse).build();
+        LiveHttpResponse styxResponse = toStyxResponse(nettyResponse).build();
 
         assertThat(styxResponse.header("Set-Cookie"), isValue("SESSID=\"sessId\"; Domain=.foo.com; Path=/; HttpOnly"));
         assertThat(styxResponse.cookie("SESSID"), equalTo(
@@ -326,7 +326,7 @@ public class NettyToStyxResponsePropagatorTest {
     }
 
 
-    private TestSubscriber<ByteBuf> subscribeToContent(HttpResponse response) {
+    private TestSubscriber<ByteBuf> subscribeToContent(LiveHttpResponse response) {
         TestSubscriber<ByteBuf> contentSubscriber = new TestSubscriber<>();
         toObservable(response.body())
                 .map(Buffers::toByteBuf)

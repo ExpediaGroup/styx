@@ -15,12 +15,12 @@
  */
 package com.hotels.styx.common.http.handler;
 
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpMethod;
 
 import java.nio.charset.StandardCharsets;
@@ -45,13 +45,13 @@ public class HttpMethodFilteringHandler implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         if (!method.equals(request.method())) {
-            return StyxObservable.of(
-                    FullHttpResponse.response(METHOD_NOT_ALLOWED)
+            return Eventual.of(
+                    HttpResponse.response(METHOD_NOT_ALLOWED)
                             .body(errorBody, StandardCharsets.UTF_8)
                             .build()
-                            .toStreamingResponse()
+                            .stream()
             );
         }
 

@@ -16,13 +16,13 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.api.extension.service.HealthCheckConfig;
@@ -51,13 +51,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import static com.google.common.collect.Iterables.concat;
-import static com.hotels.styx.api.StyxInternalObservables.fromRxObservable;
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
+import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * A {@link HttpHandler} implementation.
@@ -84,7 +84,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     }
 
     @Override
-    public Optional<HttpHandler> route(HttpRequest request, HttpInterceptor.Context ignore) {
+    public Optional<HttpHandler> route(LiveHttpRequest request, HttpInterceptor.Context ignore) {
         String path = request.path();
 
         return routes.entrySet().stream()
@@ -208,7 +208,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
     private HttpHandler newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
         BackendServiceClient client = clientFactory.createClient(backendService, originsInventory, originStatsFactory);
-        return (request, context) -> fromRxObservable(client.sendRequest(request));
+        return (request, context) -> new Eventual<>(toPublisher(client.sendRequest(request)));
     }
 
     private static OriginHealthCheckFunction originHealthCheckFunction(
@@ -233,7 +233,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         }
 
         @Override
-        public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
             return client.handle(request, context);
         }
 

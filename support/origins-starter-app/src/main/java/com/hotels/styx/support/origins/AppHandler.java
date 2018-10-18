@@ -17,12 +17,12 @@ package com.hotels.styx.support.origins;
 
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
-import com.hotels.styx.api.StyxObservable;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 import reactor.core.publisher.Flux;
@@ -47,10 +47,10 @@ public class AppHandler implements HttpHandler {
     }
 
     @Override
-    public StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         return handler.handle(request, context)
                 .map(response -> {
-                    HttpResponse.Builder responseBuilder = response.newBuilder()
+                    LiveHttpResponse.Builder responseBuilder = response.newBuilder()
                             .headers(request.headers())
                             .header(STUB_ORIGIN_INFO, origin.applicationInfo());
 

@@ -15,12 +15,12 @@
  */
 package com.hotels.styx.client;
 
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
-import com.hotels.styx.api.FullHttpRequest;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 import java.util.Optional;
 
@@ -32,18 +32,18 @@ import static org.mockito.Mockito.when;
 
 public class StyxHostHttpClientTest {
 
-    private HttpRequest request;
+    private LiveHttpRequest request;
 
     @BeforeMethod
     public void setUp() {
-        request =  FullHttpRequest.get("/").build().toStreamingRequest();
+        request =  HttpRequest.get("/").build().stream();
     }
 
     @Test
     public void sendsRequestUsingTransport() {
         ConnectionPool pool = mock(ConnectionPool.class);
         Transport transport = mock(Transport.class);
-        when(transport.send(any(HttpRequest.class), any(Optional.class), any(Id.class))).thenReturn(mock(HttpTransaction.class));
+        when(transport.send(any(LiveHttpRequest.class), any(Optional.class), any(Id.class))).thenReturn(mock(HttpTransaction.class));
 
         new StyxHostHttpClient(Id.id("app-01"), pool, transport)
                 .sendRequest(request);
@@ -55,7 +55,7 @@ public class StyxHostHttpClientTest {
     public void closesTheConnectionPool() {
         ConnectionPool pool = mock(ConnectionPool.class);
         Transport transport = mock(Transport.class);
-        when(transport.send(any(HttpRequest.class), any(Optional.class), any(Id.class))).thenReturn(mock(HttpTransaction.class));
+        when(transport.send(any(LiveHttpRequest.class), any(Optional.class), any(Id.class))).thenReturn(mock(HttpTransaction.class));
 
         StyxHostHttpClient hostClient = new StyxHostHttpClient(Id.id("app-01"), pool, transport);
 

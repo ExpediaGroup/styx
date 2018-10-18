@@ -20,6 +20,7 @@ import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.HttpHeader;
 import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.api.ByteStream;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;
@@ -119,7 +120,7 @@ public class NettyToStyxRequestDecoderTest {
         originalRequestHeaders.add("Bar", "Bar");
         originalRequestHeaders.add("Host", "foo.com");
 
-        com.hotels.styx.api.HttpRequest styxRequest = decode(originalRequest);
+        LiveHttpRequest styxRequest = decode(originalRequest);
 
         assertThat(styxRequest.id().toString(), is("1"));
         assertThat(styxRequest.url().encodedUri(), is(originalRequest.getUri()));
@@ -133,7 +134,7 @@ public class NettyToStyxRequestDecoderTest {
         originalRequest.headers().set(EXPECT, CONTINUE);
         originalRequest.headers().set(HOST, "foo.com");
 
-        com.hotels.styx.api.HttpRequest styxRequest = decode(originalRequest);
+        LiveHttpRequest styxRequest = decode(originalRequest);
 
         assertThat(styxRequest.header(EXPECT).isPresent(), is(false));
     }
@@ -141,7 +142,7 @@ public class NettyToStyxRequestDecoderTest {
     @Test
     public void streamsIncomingHttpContentToTheContentSubscriber() throws Exception {
         channel.writeInbound(chunkedRequestHeaders);
-        com.hotels.styx.api.HttpRequest request = (com.hotels.styx.api.HttpRequest) channel.readInbound();
+        LiveHttpRequest request = (LiveHttpRequest) channel.readInbound();
 
         StringBuilder content = subscribeToContent(request.body(), bodyCompletedLatch);
 
@@ -156,7 +157,7 @@ public class NettyToStyxRequestDecoderTest {
     @Test
     public void buffersIncomingDataUntilSubscriberHasSubscribed() throws Exception {
         channel.writeInbound(chunkedRequestHeaders);
-        com.hotels.styx.api.HttpRequest request = (com.hotels.styx.api.HttpRequest) channel.readInbound();
+        LiveHttpRequest request = (LiveHttpRequest) channel.readInbound();
 
         channel.writeInbound(contentChunkOne);
         channel.writeInbound(contentChunkTwo);
@@ -169,7 +170,7 @@ public class NettyToStyxRequestDecoderTest {
     @Test
     public void completesContentObservableWhenLastHttpContentIsSeen() {
         channel.writeInbound(chunkedRequestHeaders);
-        com.hotels.styx.api.HttpRequest request = (com.hotels.styx.api.HttpRequest) channel.readInbound();
+        LiveHttpRequest request = (LiveHttpRequest) channel.readInbound();
 
         TestSubscriber<?> contentSubscriber = subscribeTo(request.body());
         assertThat(contentSubscriber.getOnCompletedEvents().size(), is(0));
@@ -183,7 +184,7 @@ public class NettyToStyxRequestDecoderTest {
         HttpRequest request = newHttpRequest(URI.create("http://example.net/foo").toString());
         request.headers().set(HOST, "www.example.com:8000");
 
-        com.hotels.styx.api.HttpRequest styxRequest = decode(request);
+        LiveHttpRequest styxRequest = decode(request);
 
         assertThat(styxRequest.headers().get(HOST).get(), is("example.net"));
     }
@@ -260,10 +261,10 @@ public class NettyToStyxRequestDecoderTest {
                 .flowControlEnabled(true)
                 .build();
 
-        com.hotels.styx.api.HttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Observable.<ByteBuf>empty())
+        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Observable.<ByteBuf>empty())
                 .build();
 
-        com.hotels.styx.api.HttpRequest expected = new com.hotels.styx.api.HttpRequest.Builder(
+        LiveHttpRequest expected = new LiveHttpRequest.Builder(
                 HttpMethod.GET, "http://foo.com/")
                 .cookies(
                         requestCookie("ABC01", "\"1\""),
@@ -285,10 +286,10 @@ public class NettyToStyxRequestDecoderTest {
                 .flowControlEnabled(true)
                 .build();
 
-        com.hotels.styx.api.HttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Observable.<ByteBuf>empty())
+        LiveHttpRequest styxRequest = decoder.makeAStyxRequestFrom(request, Observable.<ByteBuf>empty())
                 .build();
 
-        com.hotels.styx.api.HttpRequest expected = new com.hotels.styx.api.HttpRequest.Builder(
+        LiveHttpRequest expected = new LiveHttpRequest.Builder(
                 HttpMethod.GET, "http://foo.com/")
                 .cookies(
                         requestCookie("ABC01", "\"1\""),
@@ -399,7 +400,7 @@ public class NettyToStyxRequestDecoderTest {
         return new DefaultFullHttpRequest(HTTP_1_1, GET, uri);
     }
 
-    private com.hotels.styx.api.HttpRequest decode(HttpRequest request) {
+    private LiveHttpRequest decode(HttpRequest request) {
         HttpRequestRecorder requestRecorder = new HttpRequestRecorder();
         EmbeddedChannel channel = new EmbeddedChannel(new NettyToStyxRequestDecoder.Builder()
                 .uniqueIdSupplier(uniqueIdSupplier)
@@ -414,11 +415,11 @@ public class NettyToStyxRequestDecoderTest {
                 .build();
     }
 
-    private static class HttpRequestRecorder extends SimpleChannelInboundHandler<com.hotels.styx.api.HttpRequest> {
-        private com.hotels.styx.api.HttpRequest styxRequest;
+    private static class HttpRequestRecorder extends SimpleChannelInboundHandler<LiveHttpRequest> {
+        private LiveHttpRequest styxRequest;
 
         @Override
-        protected void channelRead0(ChannelHandlerContext ctx, com.hotels.styx.api.HttpRequest styxRequest) throws Exception {
+        protected void channelRead0(ChannelHandlerContext ctx, LiveHttpRequest styxRequest) throws Exception {
             this.styxRequest = styxRequest;
         }
     }

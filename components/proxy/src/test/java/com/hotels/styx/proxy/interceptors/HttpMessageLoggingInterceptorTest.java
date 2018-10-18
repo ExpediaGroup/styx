@@ -16,9 +16,9 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.AfterMethod;
@@ -26,8 +26,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static ch.qos.logback.classic.Level.INFO;
-import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
@@ -53,7 +53,7 @@ public class HttpMessageLoggingInterceptorTest {
 
     @Test
     public void logsRequestsAndResponses() {
-        HttpRequest request = get("/")
+        LiveHttpRequest request = get("/")
                 .header("ReqHeader", "ReqHeaderValue")
                 .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
                 .build();
@@ -75,7 +75,7 @@ public class HttpMessageLoggingInterceptorTest {
     @Test
     public void logsRequestsAndResponsesShort() {
         interceptor = new HttpMessageLoggingInterceptor(false);
-        HttpRequest request = get("/")
+        LiveHttpRequest request = get("/")
                 .header("ReqHeader", "ReqHeaderValue")
                 .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
                 .build();
@@ -96,7 +96,7 @@ public class HttpMessageLoggingInterceptorTest {
 
     @Test
     public void logsSecureRequests() {
-        HttpRequest request = get("/")
+        LiveHttpRequest request = get("/")
                 .header("ReqHeader", "ReqHeaderValue")
                 .cookies(requestCookie("ReqCookie", "ReqCookieValue"))
                 .build();
@@ -112,11 +112,11 @@ public class HttpMessageLoggingInterceptorTest {
     }
 
 
-    private static HttpInterceptor.Chain chain(HttpResponse.Builder resp) {
+    private static HttpInterceptor.Chain chain(LiveHttpResponse.Builder resp) {
         return new HttpInterceptor.Chain() {
             @Override
-            public StyxObservable<HttpResponse> proceed(HttpRequest request) {
-                return StyxObservable.of(resp.build());
+            public Eventual<LiveHttpResponse> proceed(LiveHttpRequest request) {
+                return Eventual.of(resp.build());
             }
 
             @Override
@@ -126,7 +126,7 @@ public class HttpMessageLoggingInterceptorTest {
         };
     }
 
-    private static void consume(StyxObservable<HttpResponse> resp) {
-        await(resp.flatMap(it -> it.toFullResponse(1000000)).asCompletableFuture());
+    private static void consume(Eventual<LiveHttpResponse> resp) {
+        await(resp.flatMap(it -> it.aggregate(1000000)).asCompletableFuture());
     }
 }

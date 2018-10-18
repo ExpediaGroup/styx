@@ -25,13 +25,13 @@
  * interface. A Styx plugin extends this interface to provide additional features
  * for shaping or modifying proxied HTTP messages, including requests and responses.
  * <p></p>
- * Styx represents proxied live traffic as instances of {@link com.hotels.styx.api.HttpRequest} and
- * {@link com.hotels.styx.api.HttpResponse} classes. They offer an interface for processing
+ * Styx represents proxied live traffic as instances of {@link com.hotels.styx.api.LiveHttpRequest} and
+ * {@link com.hotels.styx.api.LiveHttpResponse} classes. They offer an interface for processing
  * a HTTP message content as a stream of network events. These classes are used
  * (1) from HttpInterceptors to process live traffic or (2) to deal with arbitrarily
  * large HTTP content.
  * <p></p>
- * {@link com.hotels.styx.api.FullHttpRequest} and {@link com.hotels.styx.api.FullHttpResponse} classes provide an immutable
+ * {@link com.hotels.styx.api.HttpRequest} and {@link com.hotels.styx.api.HttpResponse} classes provide an immutable
  * aggregate view of a HTTP messages with full headers and content.
  * They are useful for dealing with HTTP messages with limited content sizes,
  * such as most RESTful API endpoints, or when "real-time" content processing

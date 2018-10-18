@@ -15,14 +15,16 @@
  */
 package com.hotels.styx.api;
 
+import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Stream;
 
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
@@ -35,15 +37,13 @@ import static com.hotels.styx.api.HttpResponseStatus.NO_CONTENT;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.HttpResponseStatus.SEE_OTHER;
 import static com.hotels.styx.api.HttpResponseStatus.TEMPORARY_REDIRECT;
-import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
 import static com.hotels.styx.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
-import static io.netty.buffer.Unpooled.copiedBuffer;
+import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -53,72 +53,60 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 public class HttpResponseTest {
-
     @Test
-    public void encodesToFullHttpResponse() throws Exception {
+    public void convertsToStreamingHttpResponse() throws Exception {
         HttpResponse response = response(CREATED)
-                .version(HTTP_1_0)
+                .version(HTTP_1_1)
                 .header("HeaderName", "HeaderValue")
                 .cookies(responseCookie("CookieName", "CookieValue").build())
-                .body(new ByteStream(Flux.just("foo", "bar").map(it -> new Buffer(copiedBuffer(it, UTF_8)))))
+                .body("message content", UTF_8)
                 .build();
 
-        FullHttpResponse full = response.toFullResponse(0x1000)
+        LiveHttpResponse streaming = response.stream();
+
+        assertThat(streaming.version(), is(HTTP_1_1));
+        assertThat(streaming.status(), is(CREATED));
+        assertThat(streaming.headers(), containsInAnyOrder(
+                header("Content-Length", "15"),
+                header("HeaderName", "HeaderValue"),
+                header("Set-Cookie", "CookieName=CookieValue")
+        ));
+        assertThat(streaming.cookies(), contains(responseCookie("CookieName", "CookieValue").build()));
+
+        String body = streaming.aggregate(0x100000)
                 .asCompletableFuture()
-                .get();
+                .get()
+                .bodyAs(UTF_8);
 
-        assertThat(full.status(), is(CREATED));
-        assertThat(full.version(), is(HTTP_1_0));
-        assertThat(full.headers(), containsInAnyOrder(header("HeaderName", "HeaderValue"), header("Set-Cookie", "CookieName=CookieValue")));
-        assertThat(full.cookies(), contains(responseCookie("CookieName", "CookieValue").build()));
-
-        assertThat(full.body(), is(bytes("foobar")));
-    }
-
-    @Test(dataProvider = "emptyBodyResponses")
-    public void encodesToFullHttpResponseWithEmptyBody(HttpResponse response) throws Exception {
-        FullHttpResponse full = response.toFullResponse(0x1000)
-                .asCompletableFuture()
-                .get();
-
-        assertThat(full.body(), is(new byte[0]));
-    }
-
-    // We want to ensure that these are all considered equivalent
-    @DataProvider(name = "emptyBodyResponses")
-    private Object[][] emptyBodyResponses() {
-        return new Object[][]{
-                {response().build()},
-                {response().body(new ByteStream(Flux.empty())).build()},
-        };
+        assertThat(body, is("message content"));
     }
 
     @Test
-    public void createsAResponseWithDefaultValues() throws Exception {
-        HttpResponse response = response().build();
+    public void createsAResponseWithDefaultValues() {
+        HttpResponse response = HttpResponse.response().build();
         assertThat(response.version(), is(HTTP_1_1));
         assertThat(response.cookies(), is(emptyIterable()));
         assertThat(response.headers(), is(emptyIterable()));
-        assertThat(bytesToString(response.body()), is(""));
+        assertThat(response.body().length, is(0));
     }
 
     @Test
-    public void createsResponseWithMinimalInformation() throws Exception {
-        HttpResponse response = response()
+    public void createsResponseWithMinimalInformation() {
+        HttpResponse response = HttpResponse.response()
                 .status(BAD_GATEWAY)
-                .version(HTTP_1_0)
+                .version(HTTP_1_1)
                 .build();
 
         assertThat(response.status(), is(BAD_GATEWAY));
-        assertThat(response.version(), is(HTTP_1_0));
+        assertThat(response.version(), is(HTTP_1_1));
         assertThat(response.cookies(), is(emptyIterable()));
         assertThat(response.headers(), is(emptyIterable()));
-        assertThat(bytesToString(response.body()), is(""));
+        assertThat(response.body().length, is(0));
     }
 
     @Test
     public void setsASingleOutboundCookie() {
-        HttpResponse response = response()
+        HttpResponse response = HttpResponse.response()
                 .cookies(responseCookie("user", "QSplbl9HX1VL").domain(".hotels.com").path("/").maxAge(3600).build())
                 .build();
 
@@ -127,7 +115,7 @@ public class HttpResponseTest {
 
     @Test
     public void setsMultipleOutboundCookies() {
-        HttpResponse response = response()
+        HttpResponse response = HttpResponse.response()
                 .cookies(
                         responseCookie("a", "b").build(),
                         responseCookie("c", "d").build())
@@ -137,12 +125,13 @@ public class HttpResponseTest {
 
         assertThat(cookies, containsInAnyOrder(
                 responseCookie("a", "b").build(),
-                responseCookie("c", "d").build()));
+                responseCookie("c", "d").build()
+        ));
     }
 
     @Test
     public void getASingleCookieValue() {
-        HttpResponse response = response()
+        HttpResponse response = HttpResponse.response()
                 .cookies(
                         responseCookie("a", "b").build(),
                         responseCookie("c", "d").build())
@@ -154,7 +143,7 @@ public class HttpResponseTest {
     @Test
     public void canRemoveAHeader() {
         Object headerValue = "b";
-        HttpResponse response = response()
+        HttpResponse response = HttpResponse.response()
                 .header("a", headerValue)
                 .addHeader("c", headerValue)
                 .build();
@@ -166,22 +155,16 @@ public class HttpResponseTest {
     }
 
     @Test
-    public void canRemoveResponseBody() throws ExecutionException, InterruptedException {
-        Buffer originalContent = new Buffer("I'm going to get removed.", UTF_8);
-
+    public void canRemoveResponseBody() {
         HttpResponse response = response(NO_CONTENT)
-                .body(new ByteStream(Flux.just(originalContent)))
+                .body("shouldn't be here", UTF_8)
                 .build();
 
-        FullHttpResponse fullResponse = response.newBuilder()
-                .body(ByteStream::drop)
-                .build()
-                .toFullResponse(1000)
-                .asCompletableFuture()
-                .get();
+        HttpResponse shouldClearBody = response.newBuilder()
+                .body("", UTF_8)
+                .build();
 
-        assertThat(fullResponse.body().length, is(0));
-        assertThat(originalContent.delegate().refCnt(), is(0));
+        assertThat(shouldClearBody.bodyAs(UTF_8), is(""));
     }
 
     @Test
@@ -198,18 +181,18 @@ public class HttpResponseTest {
 
     @Test
     public void createsANonCacheableResponse() {
-        assertThat(response().disableCaching().build().headers(), is(isNotCacheable()));
+        assertThat(HttpResponse.response().disableCaching().build().headers(), is(isNotCacheable()));
     }
 
     @Test
     public void shouldCreateAChunkedResponse() {
-        assertThat(response().build().chunked(), is(false));
-        assertThat(response().setChunked().build().chunked(), is(true));
+        assertThat(HttpResponse.response().build().chunked(), is(false));
+        assertThat(HttpResponse.response().setChunked().build().chunked(), is(true));
     }
 
     @Test
     public void shouldRemoveContentLengthFromChunkedMessages() {
-        HttpResponse response = response().header(CONTENT_LENGTH, 5).build();
+        HttpResponse response = HttpResponse.response().header(CONTENT_LENGTH, 5).build();
         HttpResponse chunkedResponse = response.newBuilder().setChunked().build();
 
         assertThat(chunkedResponse.chunked(), is(true));
@@ -218,7 +201,7 @@ public class HttpResponseTest {
 
     @Test
     public void shouldNotFailToRemoveNonExistentContentLength() {
-        HttpResponse response = response().build();
+        HttpResponse response = HttpResponse.response().build();
         HttpResponse chunkedResponse = response.newBuilder().setChunked().build();
 
         assertThat(chunkedResponse.chunked(), is(true));
@@ -227,7 +210,7 @@ public class HttpResponseTest {
 
     @Test
     public void addsHeaderValue() {
-        HttpResponse response = response()
+        HttpResponse response = HttpResponse.response()
                 .header("name", "value1")
                 .addHeader("name", "value2")
                 .build();
@@ -243,17 +226,17 @@ public class HttpResponseTest {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookie() {
-        response().cookies((ResponseCookie) null).build();
+        HttpResponse.response().cookies((ResponseCookie) null).build();
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookieName() {
-        response().cookies(responseCookie(null, "value").build()).build();
+        HttpResponse.response().cookies(responseCookie(null, "value").build()).build();
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void rejectsNullCookieValue() {
-        response().cookies(responseCookie("name", null).build()).build();
+        HttpResponse.response().cookies(responseCookie("name", null).build()).build();
     }
 
     @DataProvider(name = "responses")
@@ -274,7 +257,7 @@ public class HttpResponseTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void rejectsMultipleContentLengthInSingleHeader() {
-        response()
+        HttpResponse.response()
                 .addHeader(CONTENT_LENGTH, "15, 16")
                 .ensureContentLengthIsValid()
                 .build();
@@ -282,7 +265,7 @@ public class HttpResponseTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void rejectsMultipleContentLength() {
-        response()
+        HttpResponse.response()
                 .addHeader(CONTENT_LENGTH, "15")
                 .addHeader(CONTENT_LENGTH, "16")
                 .ensureContentLengthIsValid()
@@ -291,10 +274,199 @@ public class HttpResponseTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void rejectsInvalidContentLength() {
-        response()
+        HttpResponse.response()
                 .addHeader(CONTENT_LENGTH, "foo")
                 .ensureContentLengthIsValid()
                 .build();
+    }
+
+    @Test
+    public void allowsModificationOfHeadersBasedOnBody() {
+        HttpResponse response = HttpResponse.response()
+                .body("foobar", UTF_8)
+                .build();
+
+        assertThat(response.header("some-header"), isAbsent());
+
+        HttpResponse newResponse = response.newBuilder()
+                .header("some-header", response.body().length)
+                .build();
+
+        assertThat(newResponse.header("some-header"), isValue("6"));
+        assertThat(newResponse.bodyAs(UTF_8), is("foobar"));
+    }
+
+    @Test
+    public void allowsModificationOfBodyBasedOnExistingBody() {
+        HttpResponse response = HttpResponse.response()
+                .body("foobar", UTF_8)
+                .build();
+
+        HttpResponse newResponse = response.newBuilder()
+                .body(response.bodyAs(UTF_8) + "x", UTF_8)
+                .build();
+
+        assertThat(newResponse.bodyAs(UTF_8), is("foobarx"));
+    }
+
+    @Test
+    public void overridesContent() {
+        HttpResponse response = HttpResponse.response()
+                .body("Response content.", UTF_8)
+                .body(" ", UTF_8)
+                .body("Extra content", UTF_8)
+                .build();
+
+        assertThat(response.bodyAs(UTF_8), is("Extra content"));
+    }
+
+    @Test(dataProvider = "emptyBodyResponses")
+    public void convertsToStreamingHttpResponseWithEmptyBody(HttpResponse response) throws ExecutionException, InterruptedException {
+        LiveHttpResponse streaming = response.stream();
+
+        byte[] result = streaming.body().aggregate(1000)
+                .get()
+                .content();
+
+        assertThat(result.length, is(0));
+    }
+
+    // We want to ensure that these are all considered equivalent
+    @DataProvider(name = "emptyBodyResponses")
+    private Object[][] emptyBodyResponses() {
+        return new Object[][]{
+                {HttpResponse.response()
+                        .build()},
+                {HttpResponse.response()
+                        .body(null, UTF_8)
+                        .build()},
+                {HttpResponse.response()
+                        .body("", UTF_8)
+                        .build()},
+                {HttpResponse.response()
+                        .body(null, UTF_8, true)
+                        .build()},
+                {HttpResponse.response()
+                        .body("", UTF_8, true)
+                        .build()},
+                {HttpResponse.response()
+                        .body(null, true)
+                        .build()},
+                {HttpResponse.response()
+                        .body(new byte[0], true)
+                        .build()},
+        };
+    }
+
+    @Test
+    public void encodesBodyWithGivenCharset() {
+        HttpResponse response = HttpResponse.response()
+                .body("Response content.", UTF_16, true)
+                .build();
+
+        assertThat(response.body().length, is(36));
+    }
+
+    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Charset is not provided.")
+    public void contentFromStringOnlyThrowsNPEWhenCharsetIsNull() {
+        HttpResponse.response()
+                .body("Response content.", null)
+                .build();
+    }
+
+    @Test
+    public void contentFromStringSetsContentLengthIfRequired() {
+        HttpResponse response1 = HttpResponse.response()
+                .body("Response content.", UTF_8, true)
+                .build();
+
+        assertThat(response1.header("Content-Length"), is(Optional.of("17")));
+
+        HttpResponse response2 = HttpResponse.response()
+                .body("Response content.", UTF_8, false)
+                .build();
+
+        assertThat(response2.header("Content-Length"), is(Optional.empty()));
+    }
+
+    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Charset is not provided.")
+    public void contentFromStringThrowsNPEWhenCharsetIsNull() {
+        HttpResponse.response()
+                .body("Response content.", null, false)
+                .build();
+    }
+
+    @Test
+    public void contentFromByteArraySetsContentLengthIfRequired() {
+        HttpResponse response1 = HttpResponse.response()
+                .body("Response content.".getBytes(UTF_16), true)
+                .build();
+        assertThat(response1.body(), is("Response content.".getBytes(UTF_16)));
+        assertThat(response1.header("Content-Length"), is(Optional.of("36")));
+
+        HttpResponse response2 = HttpResponse.response()
+                .body("Response content.".getBytes(UTF_8), false)
+                .build();
+
+        assertThat(response2.body(), is("Response content.".getBytes(UTF_8)));
+        assertThat(response2.header("Content-Length"), is(Optional.empty()));
+    }
+
+    @Test
+    public void responseBodyIsImmutable() {
+        HttpResponse response = response(OK)
+                .body("Original body", UTF_8)
+                .build();
+
+        response.body()[0] = 'A';
+
+        assertThat(response.bodyAs(UTF_8), is("Original body"));
+    }
+
+    @Test
+    public void responseBodyCannotBeChangedViaStreamingMessage() {
+        HttpResponse original = response(OK)
+                .body("original", UTF_8)
+                .build();
+
+        Flux.from(original.stream()
+                .body()
+                .map(buf -> {
+                    buf.delegate().array()[0] = 'A';
+                    return buf;
+                }))
+                .subscribe();
+
+        assertThat(original.bodyAs(UTF_8), is("original"));
+    }
+
+    @Test
+    public void toFullResponseReleasesOriginalRefCountedBuffers() throws ExecutionException, InterruptedException {
+        Buffer content = new Buffer(Unpooled.copiedBuffer("original", UTF_8));
+
+        LiveHttpResponse original = LiveHttpResponse.response(OK)
+                .body(new ByteStream(Flux.just(content)))
+                .build();
+
+        original.aggregate(100)
+                .asCompletableFuture()
+                .get();
+
+        assertThat(content.delegate().refCnt(), is(0));
+    }
+
+    @Test
+    public void transformedBodyIsNewCopy() {
+        HttpResponse request = response()
+                .body("Original body", UTF_8)
+                .build();
+
+        HttpResponse newRequest = response()
+                .body("New body", UTF_8)
+                .build();
+
+        assertThat(request.bodyAs(UTF_8), is("Original body"));
+        assertThat(newRequest.bodyAs(UTF_8), is("New body"));
     }
 
     @Test
@@ -351,28 +523,5 @@ public class HttpResponseTest {
                 .build();
 
         assertThat(r1.cookie("x"), isAbsent());
-    }
-
-    private static HttpResponse.Builder response() {
-        return HttpResponse.response();
-    }
-
-    private static HttpResponse.Builder response(HttpResponseStatus status) {
-        return HttpResponse.response(status);
-    }
-
-    private static ByteStream body(String... contents) {
-        return new ByteStream(Flux.fromIterable(
-                Stream.of(contents)
-                        .map(content -> new Buffer(copiedBuffer(content, UTF_8)))
-                        .collect(toList())));
-    }
-
-    private static String bytesToString(ByteStream body) throws Exception {
-        return new String(body.aggregate(100000).get().content(), UTF_8);
-    }
-
-    private static byte[] bytes(String s) {
-        return s.getBytes(UTF_8);
     }
 }

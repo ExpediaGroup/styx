@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.routing.handlers;
 
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -29,10 +29,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.api.StyxInternalObservables.toRxObservable;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -40,6 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static rx.RxReactiveStreams.toObservable;
 
 public class StandardHttpPipelineTest {
     @Test
@@ -53,7 +53,7 @@ public class StandardHttpPipelineTest {
                 recordingInterceptor("interceptor 3", requestReceivers::add, responseReceivers::add)
         );
 
-        HttpResponse response = sendRequestTo(pipeline);
+        LiveHttpResponse response = sendRequestTo(pipeline);
 
         assertThat(response.status(), is(OK));
 
@@ -77,7 +77,7 @@ public class StandardHttpPipelineTest {
 
         StandardHttpPipeline pipeline = pipeline(addsToContext, takesFromContext);
 
-        HttpResponse response = sendRequestTo(pipeline);
+        LiveHttpResponse response = sendRequestTo(pipeline);
 
         assertThat(response.status(), is(OK));
         assertThat(foundInContext.get(), is("expected"));
@@ -104,7 +104,7 @@ public class StandardHttpPipelineTest {
         // add + take happens on the way back, so order must be reserved
         StandardHttpPipeline pipeline = pipeline(takesFromContext, addsToContext);
 
-        HttpResponse response = sendRequestTo(pipeline);
+        LiveHttpResponse response = sendRequestTo(pipeline);
 
         assertThat(response.status(), is(OK));
         assertThat(foundInContext.get(), is("expected"));
@@ -128,7 +128,7 @@ public class StandardHttpPipelineTest {
 
         StandardHttpPipeline pipeline = pipeline(addsToContext, takesFromContext);
 
-        HttpResponse response = sendRequestTo(pipeline);
+        LiveHttpResponse response = sendRequestTo(pipeline);
 
         assertThat(response.status(), is(OK));
         assertThat(foundInContext.get(), is("expected"));
@@ -152,26 +152,26 @@ public class StandardHttpPipelineTest {
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void sendsExceptionUponMultipleSubscription() throws Exception {
-        HttpHandler handler = (request, context) -> StyxObservable.of(response(OK).build());
+        HttpHandler handler = (request, context) -> Eventual.of(response(OK).build());
 
         StandardHttpPipeline pipeline = new StandardHttpPipeline(handler);
 
-        StyxObservable<HttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
-        HttpResponse response = responseObservable.asCompletableFuture().get();
+        Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
+        LiveHttpResponse response = responseObservable.asCompletableFuture().get();
         assertThat(response.status(), is(OK));
 
-        toRxObservable(responseObservable).toBlocking().first();
+        toObservable(responseObservable).toBlocking().first();
     }
 
     @Test(expectedExceptions = IllegalStateException.class, dataProvider = "multipleSubscriptionInterceptors")
     public void sendsExceptionUponExtraSubscriptionInsideInterceptor(HttpInterceptor interceptor) throws Exception {
-        HttpHandler handler = (request, context) -> StyxObservable.of(response(OK).build());
+        HttpHandler handler = (request, context) -> Eventual.of(response(OK).build());
 
         List<HttpInterceptor> interceptors = singletonList(interceptor);
         StandardHttpPipeline pipeline = new StandardHttpPipeline(interceptors, handler);
 
-        StyxObservable<HttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
-        toRxObservable(responseObservable).toBlocking().first();
+        Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
+        toObservable(responseObservable).toBlocking().first();
     }
 
     @DataProvider(name = "multipleSubscriptionInterceptors")
@@ -185,7 +185,7 @@ public class StandardHttpPipelineTest {
 
     private HttpInterceptor subscribeInPluginBeforeSubscription() {
         return (request, chain) -> {
-            StyxObservable<HttpResponse> responseObservable = chain.proceed(request);
+            Eventual<LiveHttpResponse> responseObservable = chain.proceed(request);
 
             await(responseObservable.asCompletableFuture());
 
@@ -225,13 +225,13 @@ public class StandardHttpPipelineTest {
         };
     }
 
-    private HttpResponse sendRequestTo(StandardHttpPipeline pipeline) {
+    private LiveHttpResponse sendRequestTo(StandardHttpPipeline pipeline) {
         HttpInterceptor.Context context = new HttpInterceptorContext(InetSocketAddress.createUnresolved("127.0.0.1", 0));
 
         return await(pipeline.handle(get("/").build(), context).asCompletableFuture());
     }
 
     private StandardHttpPipeline pipeline(HttpInterceptor... interceptors) {
-        return new StandardHttpPipeline(asList(interceptors), (request, context) -> StyxObservable.of(response(OK).build()));
+        return new StandardHttpPipeline(asList(interceptors), (request, context) -> Eventual.of(response(OK).build()));
     }
 }
