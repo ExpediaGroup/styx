@@ -16,7 +16,7 @@
 package com.hotels.styx.api;
 
 /**
- * Handles an {@link HttpRequest}, returning an {@link Eventual} that is expected to publish a single {@link HttpResponse} value.
+ * Handles an {@link LiveHttpRequest}, returning an {@link Eventual} that is expected to publish a single {@link LiveHttpResponse} value.
  */
 @FunctionalInterface
 public interface HttpHandler {
@@ -26,5 +26,5 @@ public interface HttpHandler {
      * @param request the current incoming request
      * @return an {@link Eventual} that is expected to publish a single response
      */
-    Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context);
+    Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context);
 }

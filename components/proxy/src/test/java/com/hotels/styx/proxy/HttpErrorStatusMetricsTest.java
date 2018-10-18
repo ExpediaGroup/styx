@@ -18,7 +18,7 @@ package com.hotels.styx.proxy;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricFilter;
 import com.hotels.styx.server.HttpErrorStatusListener;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
@@ -31,7 +31,7 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.stream.Stream;
 
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.CONFLICT;
@@ -125,7 +125,7 @@ public class HttpErrorStatusMetricsTest {
 
     @Test
     public void updatesCountersForProxyErrorsWithResponse() {
-        HttpRequest request = get("/foo").build();
+        LiveHttpRequest request = get("/foo").build();
         errorListener.proxyErrorOccurred(request, InetSocketAddress.createUnresolved("127.0.0.1", 0), INTERNAL_SERVER_ERROR, new CustomException());
 
         assertThat(count("styx.response.status.500"), is(1));

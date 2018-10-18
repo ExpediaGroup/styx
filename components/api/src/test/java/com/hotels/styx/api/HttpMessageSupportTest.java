@@ -49,8 +49,8 @@ public class HttpMessageSupportTest {
         assertThat(chunked(headers2), is(true));
     }
 
-    private HttpRequest.Builder requestBuilder() {
-        return HttpRequest.get("/");
+    private LiveHttpRequest.Builder requestBuilder() {
+        return LiveHttpRequest.get("/");
     }
 
     @Test

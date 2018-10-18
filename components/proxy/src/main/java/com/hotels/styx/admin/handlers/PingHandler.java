@@ -15,12 +15,12 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -31,12 +31,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class PingHandler extends BaseHttpHandler {
     @Override
-    protected HttpResponse doHandle(HttpRequest request) {
+    protected LiveHttpResponse doHandle(LiveHttpRequest request) {
         return response(OK)
                 .disableCaching()
                 .addHeader(CONTENT_TYPE, PLAIN_TEXT_UTF_8.toString())
                 .body("pong", UTF_8)
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 }

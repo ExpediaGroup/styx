@@ -18,8 +18,8 @@ package com.hotels.styx.proxy.interceptors;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpInterceptor.Chain;
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
 
 /**
  * Request recording handler. useful for testing.
@@ -27,7 +27,7 @@ import com.hotels.styx.api.HttpRequest;
  */
 public final class RequestRecordingChain implements Chain {
     private final Chain delegate;
-    private HttpRequest request;
+    private LiveHttpRequest request;
 
     private RequestRecordingChain(Chain delegate) {
         this.delegate = delegate;
@@ -38,7 +38,7 @@ public final class RequestRecordingChain implements Chain {
     }
 
     @Override
-    public Eventual<HttpResponse> proceed(HttpRequest request) {
+    public Eventual<LiveHttpResponse> proceed(LiveHttpRequest request) {
         this.request = request;
         return delegate.proceed(request);
     }
@@ -48,7 +48,7 @@ public final class RequestRecordingChain implements Chain {
         return delegate.context();
     }
 
-    public HttpRequest recordedRequest() {
+    public LiveHttpRequest recordedRequest() {
         return request;
     }
 }

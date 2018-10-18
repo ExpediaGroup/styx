@@ -16,7 +16,7 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Eventual;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
@@ -27,20 +27,20 @@ import static com.hotels.styx.api.HttpHeaderNames.TE;
 import static com.hotels.styx.api.HttpHeaderNames.TRAILER;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderNames.UPGRADE;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 /**
  * Removes Hop-By-Hop headers.
  */
 public class HopByHopHeadersRemovingInterceptor implements HttpInterceptor {
     @Override
-    public Eventual<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         return chain.proceed(removeHopByHopHeaders(request))
                 .map(HopByHopHeadersRemovingInterceptor::removeHopByHopHeaders);
     }
 
-    private static HttpResponse removeHopByHopHeaders(HttpResponse response) {
-        HttpResponse.Builder newResponse = response.newBuilder();
+    private static LiveHttpResponse removeHopByHopHeaders(LiveHttpResponse response) {
+        LiveHttpResponse.Builder newResponse = response.newBuilder();
 
         response.header(CONNECTION).ifPresent(connection -> {
             for (String connectToken : connection.split(",")) {
@@ -62,8 +62,8 @@ public class HopByHopHeadersRemovingInterceptor implements HttpInterceptor {
         return newResponse.build();
     }
 
-    private static HttpRequest removeHopByHopHeaders(HttpRequest request) {
-        HttpRequest.Builder newRequest = request.newBuilder();
+    private static LiveHttpRequest removeHopByHopHeaders(LiveHttpRequest request) {
+        LiveHttpRequest.Builder newRequest = request.newBuilder();
 
         request.header(CONNECTION).ifPresent(connection -> {
             for (String connectToken : connection.split(",")) {

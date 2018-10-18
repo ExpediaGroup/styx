@@ -16,7 +16,7 @@
 package com.hotels.styx.server.netty.connectors;
 
 import com.hotels.styx.api.Buffers;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -61,7 +61,7 @@ class HttpResponseWriter {
     }
 
     // CHECKSTYLE:OFF
-    public CompletableFuture<Void> write(HttpResponse response) {
+    public CompletableFuture<Void> write(LiveHttpResponse response) {
         CompletableFuture<Void> future = new CompletableFuture<>();
         try {
             writeHeaders(response).addListener((ChannelFutureListener) writeOp -> {
@@ -172,7 +172,7 @@ class HttpResponseWriter {
         }
     }
 
-    private ChannelFuture writeHeaders(HttpResponse response) {
+    private ChannelFuture writeHeaders(LiveHttpResponse response) {
         io.netty.handler.codec.http.HttpResponse nettyResponse = responseTranslator.toNettyResponse(response);
         if (!(response.contentLength().isPresent() || response.chunked())) {
             setTransferEncodingChunked(nettyResponse);

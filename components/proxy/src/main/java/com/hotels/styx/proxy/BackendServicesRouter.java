@@ -19,8 +19,8 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
@@ -84,7 +84,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
     }
 
     @Override
-    public Optional<HttpHandler> route(HttpRequest request, HttpInterceptor.Context ignore) {
+    public Optional<HttpHandler> route(LiveHttpRequest request, HttpInterceptor.Context ignore) {
         String path = request.path();
 
         return routes.entrySet().stream()
@@ -233,7 +233,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
         }
 
         @Override
-        public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
             return client.handle(request, context);
         }
 

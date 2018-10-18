@@ -25,7 +25,7 @@ import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 /**
  * All behaviour common to both full requests and full responses.
  */
-interface FullHttpMessage {
+interface HttpMessage {
     /**
      * Returns the protocol version of this.
      *

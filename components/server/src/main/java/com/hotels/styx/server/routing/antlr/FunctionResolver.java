@@ -16,7 +16,7 @@
 package com.hotels.styx.server.routing.antlr;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -63,6 +63,6 @@ class FunctionResolver {
     }
 
     interface PartialFunction {
-        String call(HttpRequest request, HttpInterceptor.Context context);
+        String call(LiveHttpRequest request, HttpInterceptor.Context context);
     }
 }

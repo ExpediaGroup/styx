@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client.healthcheck;
 
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.extension.Origin;
@@ -27,7 +27,7 @@ import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
@@ -101,13 +101,13 @@ public class UrlRequestHealthCheckTest {
         assertThat(metricRegistry.getMeters().size(), is(2));
     }
 
-    private static CompletableFuture<FullHttpResponse> respondWith(Throwable error) {
-        CompletableFuture<FullHttpResponse> f = new CompletableFuture<>();
+    private static CompletableFuture<HttpResponse> respondWith(Throwable error) {
+        CompletableFuture<HttpResponse> f = new CompletableFuture<>();
         f.completeExceptionally(error);
         return f;
     }
 
-    private static CompletableFuture<FullHttpResponse> respondWith(HttpResponseStatus status) {
+    private static CompletableFuture<HttpResponse> respondWith(HttpResponseStatus status) {
         return CompletableFuture.completedFuture(response(status).build());
     }
 }

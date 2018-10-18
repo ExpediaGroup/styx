@@ -25,47 +25,47 @@ public final class Requests {
     private Requests() {
     }
 
-    public static HttpRequest doFinally(HttpRequest request, Consumer<Optional<Throwable>> action) {
+    public static LiveHttpRequest doFinally(LiveHttpRequest request, Consumer<Optional<Throwable>> action) {
         return request.newBuilder()
                 .body(it -> it.doOnEnd(action))
                 .build();
     }
 
-    public static HttpResponse doFinally(HttpResponse response, Consumer<Optional<Throwable>> action) {
+    public static LiveHttpResponse doFinally(LiveHttpResponse response, Consumer<Optional<Throwable>> action) {
         return response.newBuilder()
                 .body(it -> it.doOnEnd(action::accept))
                 .build();
     }
 
-    public static HttpRequest doOnComplete(HttpRequest request, Runnable action) {
+    public static LiveHttpRequest doOnComplete(LiveHttpRequest request, Runnable action) {
         return request.newBuilder()
                 .body(it -> it.doOnEnd(ifSuccessful(action)))
                 .build();
     }
 
-    public static HttpResponse doOnComplete(HttpResponse response, Runnable action) {
+    public static LiveHttpResponse doOnComplete(LiveHttpResponse response, Runnable action) {
         return response.newBuilder()
                 .body(it -> it.doOnEnd(ifSuccessful(action)))
                 .build();
     }
 
-    public static HttpRequest doOnError(HttpRequest request, Consumer<Throwable> action) {
+    public static LiveHttpRequest doOnError(LiveHttpRequest request, Consumer<Throwable> action) {
         return request.newBuilder()
                 .body(it -> it.doOnEnd(ifError(action)))
                 .build();
     }
 
-    public static HttpResponse doOnError(HttpResponse response, Consumer<Throwable> action) {
+    public static LiveHttpResponse doOnError(LiveHttpResponse response, Consumer<Throwable> action) {
         return response.newBuilder()
                 .body(it -> it.doOnEnd(ifError(action)))
                 .build();
     }
 
-    public static HttpRequest doOnCancel(HttpRequest request, Runnable action) {
+    public static LiveHttpRequest doOnCancel(LiveHttpRequest request, Runnable action) {
         return request.newBuilder().body(it -> it.doOnCancel(action)).build();
     }
 
-    public static HttpResponse doOnCancel(HttpResponse response, Runnable action) {
+    public static LiveHttpResponse doOnCancel(LiveHttpResponse response, Runnable action) {
         return response.newBuilder().body(it -> it.doOnCancel(action)).build();
     }
 

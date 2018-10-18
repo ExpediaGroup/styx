@@ -19,7 +19,7 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
@@ -34,8 +34,8 @@ import rx.Observable;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
@@ -52,7 +52,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static rx.Observable.just;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 public class BackendServicesRouterTest {
     private static final String APP_A = "appA";
@@ -91,7 +91,7 @@ public class BackendServicesRouterTest {
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(changes);
 
-        HttpRequest request = get("/appB/hotel/details.html").build();
+        LiveHttpRequest request = get("/appB/hotel/details.html").build();
         Optional<HttpHandler> route = router.route(request, context);
 
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
@@ -106,7 +106,7 @@ public class BackendServicesRouterTest {
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(changes);
 
-        HttpRequest request = get("/appB/hotel/details.html").build();
+        LiveHttpRequest request = get("/appB/hotel/details.html").build();
         Optional<HttpHandler> route = router.route(request, context);
 
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
@@ -122,7 +122,7 @@ public class BackendServicesRouterTest {
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(changes);
 
-        HttpRequest request = get("/").build();
+        LiveHttpRequest request = get("/").build();
         Optional<HttpHandler> route = router.route(request, context);
 
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_A));
@@ -137,7 +137,7 @@ public class BackendServicesRouterTest {
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(changes);
 
-        HttpRequest request = get("/").build();
+        LiveHttpRequest request = get("/").build();
         Optional<HttpHandler> route = router.route(request, context);
 
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_A));
@@ -152,7 +152,7 @@ public class BackendServicesRouterTest {
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(changes);
 
-        HttpRequest request = get("/appB/").build();
+        LiveHttpRequest request = get("/appB/").build();
         Optional<HttpHandler> route = router.route(request, context);
 
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
@@ -163,7 +163,7 @@ public class BackendServicesRouterTest {
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(added(appB().newCopy().path("/appB/hotel/details.html").build()));
 
-        HttpRequest request = get("/ba/").build();
+        LiveHttpRequest request = get("/ba/").build();
         Optional<HttpHandler> route = router.route(request, context);
         System.out.println("route: " + route);
 
@@ -175,7 +175,7 @@ public class BackendServicesRouterTest {
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
         router.onChange(added(appB().newCopy().path("/appB/hotel/details.html").build()));
 
-        HttpRequest request = get("/qwertyuiop").build();
+        LiveHttpRequest request = get("/qwertyuiop").build();
         assertThat(router.route(request, context), is(Optional.empty()));
     }
 
@@ -189,7 +189,7 @@ public class BackendServicesRouterTest {
                 .removed(appB())
                 .build());
 
-        HttpRequest request = get("/appB/").build();
+        LiveHttpRequest request = get("/appB/").build();
         Optional<HttpHandler> route = router.route(request, context);
         assertThat(proxyTo(route, request).header(ORIGIN_ID_DEFAULT), isValue("X"));
     }
@@ -198,7 +198,7 @@ public class BackendServicesRouterTest {
     public void updatesRoutesOnBackendServicesChange() throws Exception {
         BackendServicesRouter router = new BackendServicesRouter(serviceClientFactory, environment);
 
-        HttpRequest request = get("/appB/").build();
+        LiveHttpRequest request = get("/appB/").build();
 
         router.onChange(added(appB()));
 
@@ -211,7 +211,7 @@ public class BackendServicesRouterTest {
         assertThat(proxyTo(route2, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
     }
 
-    private HttpResponse proxyTo(Optional<HttpHandler> pipeline, HttpRequest request) throws ExecutionException, InterruptedException {
+    private LiveHttpResponse proxyTo(Optional<HttpHandler> pipeline, LiveHttpRequest request) throws ExecutionException, InterruptedException {
         return pipeline.get().handle(request, context).asCompletableFuture().get();
     }
 
@@ -345,7 +345,7 @@ public class BackendServicesRouterTest {
                 .build();
     }
 
-    private static Observable<HttpResponse> responseWithOriginIdHeader(BackendService backendService) {
+    private static Observable<LiveHttpResponse> responseWithOriginIdHeader(BackendService backendService) {
         return just(response(OK)
                 .header(ORIGIN_ID_DEFAULT, backendService.id())
                 .build());

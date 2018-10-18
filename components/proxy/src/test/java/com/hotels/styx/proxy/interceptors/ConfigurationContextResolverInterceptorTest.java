@@ -18,15 +18,15 @@ package com.hotels.styx.proxy.interceptors;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationContextResolver;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
 public class ConfigurationContextResolverInterceptorTest {
     @Test
     public void resolvesConfigurationContext() {
-        HttpRequest request = get("/").build();
+        LiveHttpRequest request = get("/").build();
         Configuration.Context context = context(ImmutableMap.of("key1", "value1", "key2", "value2"));
 
         ConfigurationContextResolver configurationContextResolver = configurationContextResolver(request, context);
@@ -47,14 +47,14 @@ public class ConfigurationContextResolverInterceptorTest {
 
         TestChain chain = new TestChain();
 
-        Eventual<HttpResponse> responseObservable = interceptor.intercept(request, chain);
+        Eventual<LiveHttpResponse> responseObservable = interceptor.intercept(request, chain);
 
         assertThat(await(responseObservable.asCompletableFuture()), hasStatus(OK));
         assertThat(chain.proceedWasCalled, is(true));
         assertThat(chain.context.get("config.context", Configuration.Context.class), is(context));
     }
 
-    private ConfigurationContextResolver configurationContextResolver(HttpRequest request, Configuration.Context context) {
+    private ConfigurationContextResolver configurationContextResolver(LiveHttpRequest request, Configuration.Context context) {
         ConfigurationContextResolver configurationContextResolver = mock(ConfigurationContextResolver.class);
         when(configurationContextResolver.resolve(request)).thenReturn(context);
         return configurationContextResolver;
@@ -76,7 +76,7 @@ public class ConfigurationContextResolverInterceptorTest {
         }
 
         @Override
-        public Eventual<HttpResponse> proceed(HttpRequest request) {
+        public Eventual<LiveHttpResponse> proceed(LiveHttpRequest request) {
             proceedWasCalled = true;
 
             return Eventual.of(response(OK).build());

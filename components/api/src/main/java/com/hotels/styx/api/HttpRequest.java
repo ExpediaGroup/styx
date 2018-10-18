@@ -18,13 +18,13 @@ package com.hotels.styx.api;
 import com.google.common.collect.ImmutableSet;
 import reactor.core.publisher.Flux;
 
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.google.common.base.Objects.toStringHelper;
@@ -41,12 +41,9 @@ import static com.hotels.styx.api.HttpMethod.METHODS;
 import static com.hotels.styx.api.HttpMethod.PATCH;
 import static com.hotels.styx.api.HttpMethod.POST;
 import static com.hotels.styx.api.HttpMethod.PUT;
-import static com.hotels.styx.api.HttpMethod.httpMethod;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
-import static com.hotels.styx.api.HttpVersion.httpVersion;
 import static com.hotels.styx.api.RequestCookie.decode;
 import static com.hotels.styx.api.RequestCookie.encode;
-import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
@@ -56,49 +53,38 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 
 /**
- * An HTTP request object with a byte stream body.
+ * An immutable HTTP request object including full body content.
  * <p>
- * An {@code HttpRequest} is used in {@link HttpInterceptor} where each content
- * chunk must be processed as they arrive. It is also useful for dealing with
- * very large content sizes, and in situations where content size is not known
- * upfront.
+ * A {@link HttpRequest} is useful for requests with a
+ * finite body content, such as when PUT or POST are used to create or
+ * modify a RESTful object.
  * <p>
- * An {@code HttpRequest} object is immutable with respect to the request line
- * attributes and HTTP headers. Once an instance is created, they cannot change.
- * <p>
- * An {@code HttpRequest} body is a byte buffer stream that can be consumed
- * as sequence of asynchronous events. Once consumed, the stream is exhausted and
- * can not be reused. Conceptually each {@code HttpRequest} object
- * has an associated producer object that publishes data to the stream.
- * For example, a Styx Server implements a content producer for {@link HttpInterceptor}
- * extensions. The producer receives data chunks from a network socket and publishes
- * them to an appropriate content stream.
- * <p>
- * HTTP requests are created via {@code Builder} object, which can be created
- * with static helper methods:
+ * A HttpRequest is created via {@link HttpRequest.Builder}. A new builder
+ * can be obtained by a call to following static methods:
  *
  * <ul>
- * <li>{@code get}</li>
- * <li>{@code head}</li>
- * <li>{@code post}</li>
- * <li>{@code put}</li>
- * <li>{@code delete}</li>
- * <li>{@code patch}</li>
+ *     <li>{@code get}</li>
+ *     <li>{@code head}</li>
+ *     <li>{@code post}</li>
+ *     <li>{@code put}</li>
+ *     <li>{@code delete}</li>
+ *     <li>{@code patch}</li>
  * </ul>
- * <p>
+ *
  * A builder can also be created with one of the {@code Builder} constructors.
- * <p>
- * A special method {@code newBuilder} creates a prepopulated {@code Builder}
- * from the current request object. It is useful for transforming a request
- * to another one my modifying one or more of its attributes.
+ *
+ * HttpRequest is immutable. Once created it cannot be modified.
+ * However a request can be transformed to another using the {@link this#newBuilder}
+ * method. It creates a new {@link Builder} with all message properties and
+ * body content cloned in.
  */
-public class HttpRequest implements StreamingHttpMessage {
+public class HttpRequest implements HttpMessage {
     private final Object id;
     private final HttpVersion version;
     private final HttpMethod method;
     private final Url url;
     private final HttpHeaders headers;
-    private final ByteStream body;
+    private final byte[] body;
 
     HttpRequest(Builder builder) {
         this.id = builder.id == null ? randomUUID() : builder.id;
@@ -113,7 +99,7 @@ public class HttpRequest implements StreamingHttpMessage {
      * Creates a request with the GET method.
      *
      * @param uri URI
-     * @return {@code this}
+     * @return {@link HttpRequest.Builder}
      */
     public static Builder get(String uri) {
         return new Builder(GET, uri);
@@ -123,7 +109,7 @@ public class HttpRequest implements StreamingHttpMessage {
      * Creates a request with the HEAD method.
      *
      * @param uri URI
-     * @return {@code this}
+     * @return {@link HttpRequest.Builder}
      */
     public static Builder head(String uri) {
         return new Builder(HEAD, uri);
@@ -133,7 +119,7 @@ public class HttpRequest implements StreamingHttpMessage {
      * Creates a request with the POST method.
      *
      * @param uri URI
-     * @return {@code this}
+     * @return {@link HttpRequest.Builder}
      */
     public static Builder post(String uri) {
         return new Builder(POST, uri);
@@ -143,7 +129,7 @@ public class HttpRequest implements StreamingHttpMessage {
      * Creates a request with the DELETE method.
      *
      * @param uri URI
-     * @return {@code this}
+     * @return {@link HttpRequest.Builder}
      */
     public static Builder delete(String uri) {
         return new Builder(DELETE, uri);
@@ -153,7 +139,7 @@ public class HttpRequest implements StreamingHttpMessage {
      * Creates a request with the PUT method.
      *
      * @param uri URI
-     * @return {@code this}
+     * @return {@link HttpRequest.Builder}
      */
     public static Builder put(String uri) {
         return new Builder(PUT, uri);
@@ -163,43 +149,10 @@ public class HttpRequest implements StreamingHttpMessage {
      * Creates a request with the PATCH method.
      *
      * @param uri URI
-     * @return {@code this}
+     * @return {@link HttpRequest.Builder}
      */
     public static Builder patch(String uri) {
         return new Builder(PATCH, uri);
-    }
-
-    /**
-     * Creates a request with the POST method.
-     *
-     * @param uri  URI
-     * @param body body
-     * @return {@code this}
-     */
-    public static Builder post(String uri, ByteStream body) {
-        return new Builder(POST, uri).body(body);
-    }
-
-    /**
-     * Creates a request with the PUT method.
-     *
-     * @param uri  URI
-     * @param body body
-     * @return {@code this}
-     */
-    public static Builder put(String uri, ByteStream body) {
-        return new Builder(PUT, uri).body(body);
-    }
-
-    /**
-     * Creates a request with the PATCH method.
-     *
-     * @param uri  URI
-     * @param body body
-     * @return {@code this}
-     */
-    public static Builder patch(String uri, ByteStream body) {
-        return new Builder(PATCH, uri).body(body);
     }
 
     /**
@@ -228,11 +181,35 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * @return request body as a byte stream
+     * Returns message body as a byte array.
+     * <p>
+     * Returns the body of this message as a byte array, in its unencoded form.
+     * Because HttpRequest is an immutable object, the returned byte array
+     * reference cannot be used to modify the message content.
+     * <p>
+     *
+     * @return message body content
      */
     @Override
-    public ByteStream body() {
-        return body;
+    public byte[] body() {
+        return body.clone();
+    }
+
+    /**
+     * Returns the message body as a String decoded with provided character set.
+     * <p>
+     * Decodes the message body into a Java String object with a provided charset.
+     * The caller must ensure the provided charset is compatible with message content
+     * type and encoding.
+     *
+     * @param charset Charset used to decode message body
+     * @return message body as a String
+     */
+    @Override
+    public String bodyAs(Charset charset) {
+        // CHECKSTYLE:OFF
+        return new String(this.body, charset);
+        // CHECKSTYLE:ON
     }
 
     /**
@@ -275,6 +252,7 @@ public class HttpRequest implements StreamingHttpMessage {
         return HttpMessageSupport.keepAlive(headers, version);
     }
 
+
     /**
      * Get a query parameter by name if present.
      *
@@ -315,9 +293,8 @@ public class HttpRequest implements StreamingHttpMessage {
 
     /**
      * Return a new {@link Builder} that will inherit properties from this request.
-     * <p>
-     * This allows a new request to be made that is identical to this one
-     * except for the properties overridden by the builder methods.
+     * This allows a new request to be made that will be identical to this one except for the properties
+     * overridden by the builder methods.
      *
      * @return new builder based on this request
      */
@@ -326,37 +303,21 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * Aggregates content stream and converts this request to a {@link FullHttpRequest}.
+     * Converts this request into a streaming form (LiveHttpRequest).
      * <p>
-     * Returns a {@link Eventual} that eventually produces a
-     * {@link FullHttpRequest}. The resulting full request object has the same
-     * request line, headers, and content as this request.
-     * <p>
-     * The content stream is aggregated asynchronously. The stream may be connected
-     * to a network socket or some other content producer. Once aggregated, a
-     * FullHttpRequest object is emitted on the returned {@link Eventual}.
-     * <p>
-     * A sole {@code maxContentBytes} argument is a backstop defence against excessively
-     * long content streams. The {@code maxContentBytes} should be set to a sensible
-     * value according to your application requirements and heap size. When the content
-     * size stream exceeds the {@code maxContentBytes}, a @{link ContentOverflowException}
-     * is emitted on the returned observable.
+     * Converts this request into an LiveHttpRequest object which represents the HTTP request as a
+     * stream of bytes.
      *
-     * @param maxContentBytes maximum expected content size
-     * @return a {@link Eventual}
+     * @return A streaming LiveHttpRequest object
      */
-    public Eventual<FullHttpRequest> toFullRequest(int maxContentBytes) {
-        return Eventual.from(
-                body.aggregate(maxContentBytes)
-                    .thenApply(it -> new FullHttpRequest.Builder(this, decodeAndRelease(it)).build())
-        );
-    }
+    public LiveHttpRequest stream() {
+        LiveHttpRequest.Builder streamingBuilder = new LiveHttpRequest.Builder(this)
+                .disableValidation();
 
-    private static byte[] decodeAndRelease(Buffer aggregate) {
-        try {
-            return getBytes(aggregate.delegate());
-        } finally {
-            aggregate.delegate().release();
+        if (this.body.length == 0) {
+            return streamingBuilder.body(new ByteStream(Flux.empty())).build();
+        } else {
+            return streamingBuilder.body(new ByteStream(Flux.just(new Buffer(copiedBuffer(body))))).build();
         }
     }
 
@@ -395,7 +356,7 @@ public class HttpRequest implements StreamingHttpMessage {
     }
 
     /**
-     * An HTTP request builder.
+     * Builder.
      */
     public static final class Builder {
         private Object id;
@@ -404,7 +365,7 @@ public class HttpRequest implements StreamingHttpMessage {
         private Url url;
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
-        private ByteStream body;
+        private byte[] body;
 
         /**
          * Creates a new {@link Builder} object with default attributes.
@@ -412,14 +373,14 @@ public class HttpRequest implements StreamingHttpMessage {
         public Builder() {
             this.url = Url.Builder.url("/").build();
             this.headers = new HttpHeaders.Builder();
-            this.body = new ByteStream(Flux.empty());
+            this.body = new byte[0];
         }
 
         /**
-         * Creates a new {@link Builder} with specified HTTP method and URI.
+         * Creates a new  {@link Builder} object with specified and URI.
          *
          * @param method a HTTP method
-         * @param uri    a HTTP URI
+         * @param uri URI
          */
         public Builder(HttpMethod method, String uri) {
             this();
@@ -428,16 +389,16 @@ public class HttpRequest implements StreamingHttpMessage {
         }
 
         /**
-         * Creates a new {@link Builder} from an existing request with a new body content stream.
+         * Creates a new  {@link Builder} from streaming request and a content byte array.
          *
-         * @param request       a HTTP request object
-         * @param contentStream a body content stream
+         * @param request a streaming HTTP request object
+         * @param body an HTTP body content array
          */
-        public Builder(HttpRequest request, ByteStream contentStream) {
+        public Builder(LiveHttpRequest request, byte[] body) {
             this.id = request.id();
-            this.method = httpMethod(request.method().name());
+            this.method = request.method();
             this.url = request.url();
-            this.version = httpVersion(request.version().toString());
+            this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = body;
         }
@@ -449,15 +410,6 @@ public class HttpRequest implements StreamingHttpMessage {
             this.version = request.version();
             this.headers = request.headers().newBuilder();
             this.body = request.body();
-        }
-
-        Builder(FullHttpRequest request) {
-            this.id = request.id();
-            this.method = request.method();
-            this.url = request.url();
-            this.version = request.version();
-            this.headers = request.headers().newBuilder();
-            this.body = new ByteStream(Flux.just(new Buffer(copiedBuffer(request.body()))));
         }
 
         /**
@@ -472,23 +424,54 @@ public class HttpRequest implements StreamingHttpMessage {
 
         /**
          * Sets the request body.
+         * <p>
+         * This method encodes a String content to a byte array using the specified
+         * charset, and sets the Content-Length header accordingly.
          *
          * @param content request body
+         * @param charset Charset for string encoding
          * @return {@code this}
          */
-        public Builder body(ByteStream content) {
-            this.body = content;
-            return this;
+        public Builder body(String content, Charset charset) {
+            return body(content, charset, true);
         }
 
         /**
-         * Transforms request body.
+         * Sets the request body.
+         * <p>
+         * This method encodes the content to a byte array using the specified
+         * charset, and sets the Content-Length header *if* the setContentLength
+         * argument is true.
          *
-         * @param transformation a Function from ByteStream to ByteStream.
-         * @return a HttpRequest builder with a transformed message body.
+         * @param content          request body
+         * @param charset          charset used for encoding request body
+         * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
+         * @return {@code this}
          */
-        public Builder body(Function<ByteStream, ByteStream> transformation) {
-            this.body = transformation.apply(this.body);
+        public Builder body(String content, Charset charset, boolean setContentLength) {
+            requireNonNull(charset, "Charset is not provided.");
+            String sanitised = content == null ? "" : content;
+            return body(sanitised.getBytes(charset), setContentLength);
+        }
+
+        /**
+         * Sets the request body.
+         * <p>
+         * This method encodes the content to a byte array provided, and
+         * sets the Content-Length header *if* the setContentLength
+         * argument is true.
+         *
+         * @param content          request body
+         * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
+         * @return {@code this}
+         */
+        public Builder body(byte[] content, boolean setContentLength) {
+            this.body = content != null ? content.clone() : new byte[0];
+
+            if (setContentLength) {
+                header(CONTENT_LENGTH, this.body.length);
+            }
+
             return this;
         }
 
@@ -533,8 +516,8 @@ public class HttpRequest implements StreamingHttpMessage {
          * <p/>
          * Will not replace any existing values for the header.
          *
-         * @param name  The name of the header
-         * @param value The value of the header
+         * @param name  the name of the header
+         * @param value the value of the header
          * @return {@code this}
          */
         public Builder addHeader(CharSequence name, Object value) {
@@ -587,29 +570,10 @@ public class HttpRequest implements StreamingHttpMessage {
         }
 
         /**
-         * Enable validation of uri and some headers.
-         *
-         * @return {@code this}
-         */
-        public Builder disableValidation() {
-            this.validate = false;
-            return this;
-        }
-
-        /**
-         * Enables Keep-Alive.
-         *
-         * @return {@code this}
-         */
-        public Builder enableKeepAlive() {
-            return header(CONNECTION, KEEP_ALIVE);
-        }
-
-        /**
          * Sets the cookies on this request by overwriting the value of the "Cookie" header.
          *
          * @param cookies cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder cookies(RequestCookie... cookies) {
             return cookies(asList(cookies));
@@ -619,11 +583,10 @@ public class HttpRequest implements StreamingHttpMessage {
          * Sets the cookies on this request by overwriting the value of the "Cookie" header.
          *
          * @param cookies cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder cookies(Collection<RequestCookie> cookies) {
             requireNonNull(cookies);
-
             headers.remove(COOKIE);
 
             if (!cookies.isEmpty()) {
@@ -639,7 +602,7 @@ public class HttpRequest implements StreamingHttpMessage {
          * add all new cookies in one call to the method rather than spreading them out.
          *
          * @param cookies new cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder addCookies(RequestCookie... cookies) {
             return addCookies(asList(cookies));
@@ -652,11 +615,10 @@ public class HttpRequest implements StreamingHttpMessage {
          * add all new cookies in one call to the method rather than spreading them out.
          *
          * @param cookies new cookies
-         * @return this builder
+         * @return {@code this}
          */
         public Builder addCookies(Collection<RequestCookie> cookies) {
             requireNonNull(cookies);
-
             Set<RequestCookie> currentCookies = decode(headers.get(COOKIE));
             List<RequestCookie> newCookies = concat(cookies.stream(), currentCookies.stream()).collect(toList());
 
@@ -667,7 +629,7 @@ public class HttpRequest implements StreamingHttpMessage {
          * Removes all cookies matching one of the supplied names by overwriting the value of the "Cookie" header.
          *
          * @param names cookie names
-         * @return this builder
+         * @return {@code this}
          */
         public Builder removeCookies(String... names) {
             return removeCookies(asList(names));
@@ -677,11 +639,10 @@ public class HttpRequest implements StreamingHttpMessage {
          * Removes all cookies matching one of the supplied names by overwriting the value of the "Cookie" header.
          *
          * @param names cookie names
-         * @return this builder
+         * @return {@code this}
          */
         public Builder removeCookies(Collection<String> names) {
             requireNonNull(names);
-
             return removeCookiesIf(toSet(names)::contains);
         }
 
@@ -697,6 +658,25 @@ public class HttpRequest implements StreamingHttpMessage {
 
         private static <T> Set<T> toSet(Collection<T> collection) {
             return collection instanceof Set ? (Set<T>) collection : ImmutableSet.copyOf(collection);
+        }
+
+        /**
+         * Enables Keep-Alive.
+         *
+         * @return {@code this}
+         */
+        public Builder enableKeepAlive() {
+            return header(CONNECTION, KEEP_ALIVE);
+        }
+
+        /**
+         * Enable validation of uri and some headers.
+         *
+         * @return {@code this}
+         */
+        public Builder disableValidation() {
+            this.validate = false;
+            return this;
         }
 
         /**

@@ -17,11 +17,12 @@ package com.hotels.styx
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.Id.id
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.HttpResponseStatus._
+import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.extension.service
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient
@@ -55,14 +56,14 @@ class HttpResponseSpec extends FunSuite
 
   val responseTimeout = 1000.millis
 
-  var testSubscriber: TestSubscriber[com.hotels.styx.api.HttpResponse] = _
+  var testSubscriber: TestSubscriber[LiveHttpResponse] = _
 
   override protected def afterAll(): Unit = {
     originOneServer.stopAsync().awaitTerminated()
   }
 
   before {
-    testSubscriber = new TestSubscriber[com.hotels.styx.api.HttpResponse]()
+    testSubscriber = new TestSubscriber[LiveHttpResponse]()
 
     val backendService = BackendService(
       origins = Origins(originOne),

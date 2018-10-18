@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
@@ -30,7 +30,7 @@ import static org.hamcrest.core.Is.is;
 public class HttpRequestOperationTest {
     @Test
     public void shouldTransformStyxRequestToNettyRequestWithAllRelevantInformation() {
-        HttpRequest request = new HttpRequest.Builder()
+        LiveHttpRequest request = new LiveHttpRequest.Builder()
                 .method(GET)
                 .header("X-Forwarded-Proto", "https")
                 .cookies(
@@ -54,15 +54,15 @@ public class HttpRequestOperationTest {
 
     @Test
     public void shouldTransformUrlQueryParametersToNettyRequest() {
-        HttpRequest request = new HttpRequest.Builder()
+        LiveHttpRequest request = new LiveHttpRequest.Builder()
                 .method(GET)
                 .header("X-Forwarded-Proto", "https")
                 .uri("https://www.example.com/foo?some=value&blah=blah")
                 .build();
 
-        HttpRequest.Builder builder = request.newBuilder();
+        LiveHttpRequest.Builder builder = request.newBuilder();
 
-        HttpRequest newRequest = builder.url(
+        LiveHttpRequest newRequest = builder.url(
                 request.url().newBuilder()
                         .addQueryParam("format", "json")
                         .build())

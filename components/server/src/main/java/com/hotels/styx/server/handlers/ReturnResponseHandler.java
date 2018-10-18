@@ -16,13 +16,13 @@
 package com.hotels.styx.server.handlers;
 
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 
 import java.util.function.Supplier;
 
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -30,21 +30,21 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *
  */
 public final class ReturnResponseHandler extends BaseHttpHandler {
-    private final Supplier<HttpResponse> response;
+    private final Supplier<LiveHttpResponse> response;
 
-    private ReturnResponseHandler(Supplier<HttpResponse> response) {
+    private ReturnResponseHandler(Supplier<LiveHttpResponse> response) {
         this.response = response;
     }
 
-    protected HttpResponse doHandle(HttpRequest request) {
+    protected LiveHttpResponse doHandle(LiveHttpRequest request) {
         return response.get();
     }
 
     public static HttpHandler returnsResponse(String response) {
-        return returnsResponse(() -> response().body(response, UTF_8).build().toStreamingResponse());
+        return returnsResponse(() -> response().body(response, UTF_8).build().stream());
     }
 
-    public static HttpHandler returnsResponse(Supplier<HttpResponse> responseSupplier) {
+    public static HttpHandler returnsResponse(Supplier<LiveHttpResponse> responseSupplier) {
         return new ReturnResponseHandler(responseSupplier);
     }
 }

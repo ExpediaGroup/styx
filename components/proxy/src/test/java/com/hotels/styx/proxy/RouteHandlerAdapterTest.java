@@ -18,37 +18,37 @@ package com.hotels.styx.proxy;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.HttpRouter;
 import org.testng.annotations.Test;
 
 import java.util.Optional;
 
-import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.hotels.styx.api.HttpRequest;
 
 public class RouteHandlerAdapterTest {
 
-    private HttpRequest request = get("/").build();
-    private HttpResponse respOk = response(OK).build();
+    private LiveHttpRequest request = get("/").build();
+    private LiveHttpResponse respOk = response(OK).build();
 
     @Test
     public void injectsToPipelineWhenRouteFound() throws Exception {
         HttpHandler pipeline = mock(HttpHandler.class);
-        when(pipeline.handle(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(Eventual.of(respOk));
+        when(pipeline.handle(any(LiveHttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(Eventual.of(respOk));
 
         HttpRouter router = mock(HttpRouter.class);
-        when(router.route(any(HttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(Optional.of(pipeline));
+        when(router.route(any(LiveHttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(Optional.of(pipeline));
 
-        HttpResponse response = new RouteHandlerAdapter(router).handle(request, HttpInterceptorContext.create()).asCompletableFuture().get();
+        LiveHttpResponse response = new RouteHandlerAdapter(router).handle(request, HttpInterceptorContext.create()).asCompletableFuture().get();
 
         assertThat(response.status(), is(OK));
     }

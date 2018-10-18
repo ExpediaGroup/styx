@@ -16,8 +16,8 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.client.StyxHeaderConfig;
 import org.slf4j.Logger;
@@ -43,12 +43,12 @@ public class RequestEnrichingInterceptor implements HttpInterceptor {
     }
 
     @Override
-    public Eventual<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         return chain.proceed(enrich(request, chain.context()));
     }
 
-    private HttpRequest enrich(HttpRequest request, Context context) {
-        HttpRequest.Builder builder = request.newBuilder();
+    private LiveHttpRequest enrich(LiveHttpRequest request, Context context) {
+        LiveHttpRequest.Builder builder = request.newBuilder();
 
         xForwardedFor(request, context)
                 .ifPresent(headerValue -> builder.header(X_FORWARDED_FOR, headerValue));
@@ -59,7 +59,7 @@ public class RequestEnrichingInterceptor implements HttpInterceptor {
                 .build();
     }
 
-    private static Optional<String> xForwardedFor(HttpRequest request, HttpInterceptor.Context context) {
+    private static Optional<String> xForwardedFor(LiveHttpRequest request, HttpInterceptor.Context context) {
         Optional<String> maybeClientAddress = context.clientAddress()
                 .map(InetSocketAddress::getHostString)
                 .map(hostName -> request
@@ -74,7 +74,7 @@ public class RequestEnrichingInterceptor implements HttpInterceptor {
         return maybeClientAddress;
     }
 
-    private static CharSequence xForwardedProto(HttpRequest request, boolean secure) {
+    private static CharSequence xForwardedProto(LiveHttpRequest request, boolean secure) {
         return request
                 .header(X_FORWARDED_PROTO)
                 .orElse(secure ? "https" : "http");

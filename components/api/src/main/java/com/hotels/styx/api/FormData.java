@@ -32,7 +32,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * Provides a representation of Form Url Encoded parameters extracted from an {@link HttpRequest}.
+ * Provides a representation of Form Url Encoded parameters extracted from an {@link LiveHttpRequest}.
  */
 public final class FormData {
 

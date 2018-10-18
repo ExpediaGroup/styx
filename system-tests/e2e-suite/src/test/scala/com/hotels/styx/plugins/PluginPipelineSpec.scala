@@ -17,7 +17,7 @@ package com.hotels.styx.plugins
 
 import com.google.common.net.HostAndPort
 import com.google.common.net.HostAndPort._
-import com.hotels.styx.api.FullHttpRequest
+import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{ExamplePluginJarLocation, StyxProxySpec}
@@ -70,8 +70,8 @@ class PluginPipelineSpec extends FunSpec with StyxProxySpec {
     fromParts("localhost", styxServer.httpPort)
   }
 
-  def anHttpRequest: FullHttpRequest = {
-    FullHttpRequest.get(styxServer.routerURL("/pluginPipelineSpec/")).build()
+  def anHttpRequest: HttpRequest = {
+    HttpRequest.get(styxServer.routerURL("/pluginPipelineSpec/")).build()
   }
 
 }

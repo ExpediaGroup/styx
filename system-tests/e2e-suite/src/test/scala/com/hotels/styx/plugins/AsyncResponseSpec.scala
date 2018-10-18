@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx._
 import com.hotels.styx.api.HttpInterceptor.Chain
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api._
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
@@ -81,9 +81,9 @@ import scala.compat.java8.FunctionConverters.asJavaFunction
 
 
 class AsyncContentDelayPlugin extends PluginAdapter {
-  override def intercept(request: HttpRequest, chain: Chain): Eventual[HttpResponse] = {
+  override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
     chain.proceed(request)
-      .flatMap(asJavaFunction((response: HttpResponse) => {
+      .flatMap(asJavaFunction((response: LiveHttpResponse) => {
         Eventual.from(
           Future {
             Thread.sleep(1000)

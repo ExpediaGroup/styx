@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.api.configuration;
 
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 import static com.hotels.styx.api.configuration.Configuration.Context.EMPTY_CONFIGURATION_CONTEXT;
 
@@ -31,5 +31,5 @@ public interface ConfigurationContextResolver {
      * @param request the current request
      * @return resolved context
      */
-    Configuration.Context resolve(HttpRequest request);
+    Configuration.Context resolve(LiveHttpRequest request);
 }

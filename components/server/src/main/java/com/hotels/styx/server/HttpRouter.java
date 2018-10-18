@@ -17,7 +17,7 @@ package com.hotels.styx.server;
 
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 import java.util.Optional;
 
@@ -25,5 +25,5 @@ import java.util.Optional;
  * Http Router.
  */
 public interface HttpRouter {
-    Optional<HttpHandler> route(HttpRequest request, HttpInterceptor.Context context);
+    Optional<HttpHandler> route(LiveHttpRequest request, HttpInterceptor.Context context);
 }

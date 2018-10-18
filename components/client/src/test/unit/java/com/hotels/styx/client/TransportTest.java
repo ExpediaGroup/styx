@@ -18,8 +18,8 @@ package com.hotels.styx.client;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
@@ -34,7 +34,7 @@ import rx.subjects.PublishSubject;
 import java.util.Optional;
 
 import static com.hotels.styx.api.Buffers.toByteBuf;
-import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.Id.id;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -54,16 +54,16 @@ public class TransportTest {
     private static final String X_STYX_ORIGIN_ID = "X-Styx-Origin-Id";
     private static final Id APP_ID = id("app-01");
 
-    private HttpRequest request;
-    private HttpResponse response;
+    private LiveHttpRequest request;
+    private LiveHttpResponse response;
     private Transport transport;
-    private PublishSubject<HttpResponse> responseProvider;
-    private TestSubscriber<HttpResponse> subscriber;
+    private PublishSubject<LiveHttpResponse> responseProvider;
+    private TestSubscriber<LiveHttpResponse> subscriber;
 
     @BeforeMethod
     public void setUp() {
         request = get("/").build();
-        response = HttpResponse.response(OK).build();
+        response = LiveHttpResponse.response(OK).build();
         transport = new Transport(id("x"), X_STYX_ORIGIN_ID);
         responseProvider = PublishSubject.create();
         subscriber = new TestSubscriber<>();
@@ -82,7 +82,7 @@ public class TransportTest {
                 .consume();
 
         verify(pool).borrowConnection();
-        verify(connection).write(any(HttpRequest.class));
+        verify(connection).write(any(LiveHttpRequest.class));
         verify(pool).returnConnection(any(Connection.class));
     }
 
@@ -95,7 +95,7 @@ public class TransportTest {
                 .response()
                 .subscribe(subscriber);
 
-        HttpResponse response2 = subscriber.getOnNextEvents().get(0);
+        LiveHttpResponse response2 = subscriber.getOnNextEvents().get(0);
 
         subscriber.unsubscribe();
 
@@ -136,7 +136,7 @@ public class TransportTest {
                 .response()
                 .subscribe(subscriber);
 
-        responseProvider.onNext(HttpResponse.response(OK).body(new ByteStream(testPublisher)).build());
+        responseProvider.onNext(LiveHttpResponse.response(OK).body(new ByteStream(testPublisher)).build());
 
         assertEquals(subscriber.getOnNextEvents().size(), 1);
         assertTrue(subscriber.getOnCompletedEvents().isEmpty());
@@ -198,7 +198,7 @@ public class TransportTest {
     @Test
     public void terminatesConnectionDueToUnsubscribedBody() {
         TestPublisher<Buffer> testPublisher = TestPublisher.create();
-        Connection connection = mockConnection(Observable.just(HttpResponse.response(OK).body(new ByteStream(testPublisher)).build()));
+        Connection connection = mockConnection(Observable.just(LiveHttpResponse.response(OK).body(new ByteStream(testPublisher)).build()));
         ConnectionPool pool = mockPool(connection);
 
         transport.send(request, Optional.of(pool), APP_ID)
@@ -221,7 +221,7 @@ public class TransportTest {
         Buffer chunk2 = new Buffer("y", UTF_8);
         Buffer chunk3 = new Buffer("z", UTF_8);
 
-        HttpRequest aRequest = request
+        LiveHttpRequest aRequest = request
                 .newBuilder()
                 .body(new ByteStream(toPublisher(Observable.from(ImmutableList.of(chunk1, chunk2, chunk3)))))
                 .build();
@@ -248,7 +248,7 @@ public class TransportTest {
 
     Connection mockConnection(Observable responseObservable) {
         Connection connection = mock(Connection.class);
-        when(connection.write(any(HttpRequest.class))).thenReturn(responseObservable);
+        when(connection.write(any(LiveHttpRequest.class))).thenReturn(responseObservable);
         return connection;
     }
 

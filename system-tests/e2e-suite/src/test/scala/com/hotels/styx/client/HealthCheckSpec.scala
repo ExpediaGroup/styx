@@ -23,9 +23,9 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.client.{ValueMatchingStrategy, WireMock}
-import com.hotels.styx.api.FullHttpRequest
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpHeaderNames.HOST
+import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -104,7 +104,7 @@ class HealthCheckSpec extends FunSpec
     it("Marks origins healthy") {
       Thread.sleep(1000L)
 
-      val response = decodedRequest(FullHttpRequest
+      val response = decodedRequest(HttpRequest
         .post("/admin/origins/status?pretty")
         .header(HOST, "localhost:" + styxServer.adminPort)
         .build())

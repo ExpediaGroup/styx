@@ -19,7 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.Eventual;
 
-import static com.hotels.styx.api.FullHttpResponse.response;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -32,7 +32,7 @@ final class AdminHandlers {
         return ImmutableMap.of(endpoint, (request, context) -> Eventual.of(response(OK)
                 .body(responseContent, UTF_8)
                 .build()
-                .toStreamingResponse()
+                .stream()
         ));
     }
 }

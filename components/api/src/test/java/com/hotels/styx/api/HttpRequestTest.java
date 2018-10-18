@@ -19,20 +19,20 @@ import com.google.common.collect.ImmutableMap;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
 
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Stream;
+import java.util.Optional;
 
+import static com.hotels.styx.api.HttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.patch;
+import static com.hotels.styx.api.HttpRequest.put;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
+import static com.hotels.styx.api.HttpHeaderNames.COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpMethod.DELETE;
 import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.api.HttpMethod.POST;
-import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.HttpRequest.patch;
-import static com.hotels.styx.api.HttpRequest.post;
-import static com.hotels.styx.api.HttpRequest.put;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
@@ -40,10 +40,11 @@ import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.MapMatcher.isMap;
+import static java.lang.String.valueOf;
+import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -52,53 +53,42 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
+
 public class HttpRequestTest {
     @Test
-    public void decodesToFullHttpRequest() throws Exception {
-        HttpRequest streamingRequest = post("/foo/bar", body("foo", "bar"))
-                .version(HTTP_1_0)
+    public void convertsToStreamingHttpRequest() throws Exception {
+        HttpRequest fullRequest = new HttpRequest.Builder(POST, "/foo/bar").body("foobar", UTF_8)
+                .version(HTTP_1_1)
                 .header("HeaderName", "HeaderValue")
                 .cookies(requestCookie("CookieName", "CookieValue"))
                 .build();
 
-        FullHttpRequest full = streamingRequest.toFullRequest(0x1000)
-                .asCompletableFuture()
-                .get();
+        LiveHttpRequest streaming = fullRequest.stream();
 
-        assertThat(full.method(), is(POST));
-        assertThat(full.url(), is(url("/foo/bar").build()));
-        assertThat(full.version(), is(HTTP_1_0));
-        assertThat(full.headers(), containsInAnyOrder(
+        assertThat(streaming.method(), is(HttpMethod.POST));
+        assertThat(streaming.url(), is(url("/foo/bar").build()));
+        assertThat(streaming.version(), is(HTTP_1_1));
+        assertThat(streaming.headers(), containsInAnyOrder(
+                header("Content-Length", "6"),
                 header("HeaderName", "HeaderValue"),
                 header("Cookie", "CookieName=CookieValue")));
-        assertThat(full.cookies(), contains(requestCookie("CookieName", "CookieValue")));
-        assertThat(full.body(), is(bytes("foobar")));
-    }
+        assertThat(streaming.cookies(), contains(requestCookie("CookieName", "CookieValue")));
 
-    @Test
-    public void toFullRequestReleasesOriginalReferenceCountedBuffers() throws ExecutionException, InterruptedException {
-        Buffer content = new Buffer("original", UTF_8);
-
-        HttpRequest original = HttpRequest.get("/foo")
-                .body(new ByteStream(Flux.just(content)))
-                .build();
-
-        FullHttpRequest fullRequest = original.toFullRequest(100)
+        String body = streaming.aggregate(0x10000)
                 .asCompletableFuture()
-                .get();
+                .get()
+                .bodyAs(UTF_8);
 
-        assertThat(content.delegate().refCnt(), is(0));
-
-        assertThat(fullRequest.bodyAs(UTF_8), is("original"));
+        assertThat(body, is("foobar"));
     }
 
     @Test(dataProvider = "emptyBodyRequests")
-    public void encodesToStreamingHttpRequestWithEmptyBody(HttpRequest streamingRequest) throws Exception {
-        FullHttpRequest full = streamingRequest.toFullRequest(0x1000)
-                .asCompletableFuture()
-                .get();
+    public void convertsToStreamingHttpRequestWithEmptyBody(HttpRequest fullRequest) {
+        LiveHttpRequest streaming = fullRequest.stream();
 
-        assertThat(full.body(), is(new byte[0]));
+        StepVerifier.create(streaming.body())
+                .expectComplete()
+                .verify();
     }
 
     // We want to ensure that these are all considered equivalent
@@ -106,7 +96,12 @@ public class HttpRequestTest {
     private Object[][] emptyBodyRequests() {
         return new Object[][]{
                 {get("/foo/bar").build()},
-                {post("/foo/bar", new ByteStream(Flux.empty())).build()},
+                {new HttpRequest.Builder(POST, "/foo/bar").body(null, UTF_8).build()},
+                {new HttpRequest.Builder(POST, "/foo/bar").body("", UTF_8).build()},
+                {new HttpRequest.Builder(POST, "/foo/bar").body(null, UTF_8, true).build()},
+                {new HttpRequest.Builder(POST, "/foo/bar").body("", UTF_8, true).build()},
+                {new HttpRequest.Builder(POST, "/foo/bar").body(null, true).build()},
+                {new HttpRequest.Builder(POST, "/foo/bar").body(new byte[0], true).build()},
         };
     }
 
@@ -121,7 +116,7 @@ public class HttpRequestTest {
         assertThat(request.headers(), is(emptyIterable()));
         assertThat(request.headers("any"), is(emptyIterable()));
 
-        assertThat(bytesToString(request.body()), is(""));
+        assertThat(request.body().length, is(0));
         assertThat(request.cookie("any"), isAbsent());
         assertThat(request.header("any"), isAbsent());
         assertThat(request.keepAlive(), is(true));
@@ -133,19 +128,20 @@ public class HttpRequestTest {
     @Test
     public void canUseBuilderToSetRequestProperties() {
         HttpRequest request = patch("https://hotels.com")
-                .version(HTTP_1_0)
+                .version(HTTP_1_1)
                 .id("id")
                 .header("headerName", "a")
                 .cookies(requestCookie("cfoo", "bar"))
                 .build();
 
-        assertThat(request.toString(), is("HttpRequest{version=HTTP/1.0, method=PATCH, uri=https://hotels.com, headers=[headerName=a, Cookie=cfoo=bar, Host=hotels.com], id=id}"));
+        assertThat(request.toString(), is("HttpRequest{version=HTTP/1.1, method=PATCH, uri=https://hotels.com, " +
+                "headers=[headerName=a, Cookie=cfoo=bar, Host=hotels.com], id=id}"));
 
         assertThat(request.headers("headerName"), is(singletonList("a")));
     }
 
     @Test
-    public void canModifyPreviouslyCreatedRequest() {
+    public void transformsRequest() {
         HttpRequest request = get("/foo")
                 .header("remove", "remove")
                 .build();
@@ -162,9 +158,106 @@ public class HttpRequestTest {
     }
 
     @Test
-    public void decodesQueryParams() {
-        HttpRequest request = get("http://example.com/?foo=bar")
+    public void contentFromStringOnlySetsContentLength() {
+        HttpRequest request = HttpRequest.get("/")
+                .body("Response content.", UTF_16)
                 .build();
+
+        assertThat(request.body(), is("Response content.".getBytes(UTF_16)));
+        assertThat(request.header("Content-Length"), is(Optional.of("36")));
+    }
+
+    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Charset is not provided.")
+    public void contentFromStringOnlyThrowsNPEWhenCharsetIsNull() {
+        HttpRequest.get("/")
+                .body("Response content.", null)
+                .build();
+    }
+
+    @Test
+    public void contentFromStringSetsContentLengthIfRequired() {
+        HttpRequest request1 = HttpRequest.get("/")
+                .body("Response content.", UTF_8, true)
+                .build();
+
+        assertThat(request1.header("Content-Length"), is(Optional.of("17")));
+
+        HttpRequest request2 = HttpRequest.get("/")
+                .body("Response content.", UTF_8, false)
+                .build();
+
+        assertThat(request2.header("Content-Length"), is(Optional.empty()));
+    }
+
+    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Charset is not provided.")
+    public void contentFromStringThrowsNPEWhenCharsetIsNull() {
+        HttpRequest.get("/")
+                .body("Response content.", null, false)
+                .build();
+    }
+
+    @Test
+    public void contentFromByteArraySetsContentLengthIfRequired() {
+        HttpRequest response1 = HttpRequest.get("/")
+                .body("Response content.".getBytes(UTF_16), true)
+                .build();
+        assertThat(response1.body(), is("Response content.".getBytes(UTF_16)));
+        assertThat(response1.header("Content-Length"), is(Optional.of("36")));
+
+        HttpRequest response2 = HttpRequest.get("/")
+                .body("Response content.".getBytes(UTF_8), false)
+                .build();
+
+        assertThat(response2.body(), is("Response content.".getBytes(UTF_8)));
+        assertThat(response2.header("Content-Length"), is(Optional.empty()));
+    }
+
+
+    @Test
+    public void requestBodyIsImmutable() {
+        HttpRequest request = get("/foo")
+                .body("Original body", UTF_8)
+                .build();
+
+        request.body()[0] = 'A';
+
+        assertThat(request.bodyAs(UTF_8), is("Original body"));
+    }
+
+    @Test
+    public void requestBodyCannotBeChangedViaStreamingRequest() {
+        HttpRequest original = HttpRequest.get("/foo")
+                .body("original", UTF_8)
+                .build();
+
+        Flux.from(original.stream()
+                .body()
+                .map(buffer -> {
+                    buffer.delegate().array()[0] = 'A';
+                    return buffer;
+                }))
+                .subscribe();
+
+        assertThat(original.bodyAs(UTF_8), is("original"));
+    }
+
+    @Test
+    public void transformedBodyIsNewCopy() {
+        HttpRequest request = get("/foo")
+                .body("Original body", UTF_8)
+                .build();
+
+        HttpRequest newRequest = request.newBuilder()
+                .body("New body", UTF_8)
+                .build();
+
+        assertThat(request.bodyAs(UTF_8), is("Original body"));
+        assertThat(newRequest.bodyAs(UTF_8), is("New body"));
+    }
+
+    @Test
+    public void decodesQueryParams() {
+        HttpRequest request = get("http://example.com/?foo=bar").build();
         assertThat(request.queryParam("foo"), isValue("bar"));
     }
 
@@ -291,9 +384,20 @@ public class HttpRequestTest {
         assertThat(shouldRemoveHeader.headers(), contains(header("a", "b")));
     }
 
+    @DataProvider(name = "cookieHeaderName")
+    private Object[][] cookieHeaderName() {
+        return new Object[][]{
+                {COOKIE},
+                {"Cookie"},
+                {"cookie"},
+                {"COOKIE"}
+        };
+    }
+
     @Test
     public void shouldSetsContentLengthForNonStreamingBodyMessage() {
-        assertThat(put("/home").body(new ByteStream(Flux.just(new Buffer("Hello", UTF_8)))).build().header(CONTENT_LENGTH), isAbsent());
+        assertThat(put("/home").body("", UTF_8).build().header(CONTENT_LENGTH), isValue("0"));
+        assertThat(put("/home").body("Hello", UTF_8).build().header(CONTENT_LENGTH), isValue(valueOf(bytes("Hello").length)));
     }
 
     @Test
@@ -303,11 +407,8 @@ public class HttpRequestTest {
         assertThat(get("/index").version(HTTP_1_0).build().keepAlive(), is(false));
     }
 
-    @Test
-    public void builderSetsRequestContent() throws Exception {
-        HttpRequest request = post("/foo/bar", body("Foo bar")).build();
-
-        assertThat(bytesToString(request.body()), is("Foo bar"));
+    private static byte[] bytes(String content) {
+        return content.getBytes(UTF_8);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
@@ -348,7 +449,7 @@ public class HttpRequestTest {
     }
 
     @Test
-    public void createARequestWithStreamingUrl() {
+    public void createARequestWithFullUrl() {
         HttpRequest request = get("http://www.hotels.com").build();
 
         assertThat(request.url(), is(url("http://www.hotels.com").build()));
@@ -399,7 +500,7 @@ public class HttpRequestTest {
                 requestCookie("y", "y2"))
                 .build();
 
-        assertThat(r2.cookies(), contains(requestCookie("y", "y2")));
+        assertThat(r2.cookies(), containsInAnyOrder(requestCookie("y", "y2")));
     }
 
     @Test
@@ -424,29 +525,5 @@ public class HttpRequestTest {
                 .build();
 
         assertThat(r1.cookie("x"), isAbsent());
-    }
-
-    private static ByteStream body(String... contents) {
-
-        return new ByteStream(
-                Flux.fromIterable(
-                        Stream.of(contents)
-                                .map(content -> new Buffer(content, UTF_8))
-                                .collect(toList())));
-    }
-
-    private static String bytesToString(ByteStream body) {
-        try {
-            return new String(body.aggregate(100000).get().content(), UTF_8);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static byte[] bytes(String content) {
-        return content.getBytes(UTF_8);
     }
 }

@@ -16,8 +16,8 @@
 package com.hotels.styx.server.routing.antlr;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 interface Expression<T> {
-    T evaluate(HttpRequest request, HttpInterceptor.Context context);
+    T evaluate(LiveHttpRequest request, HttpInterceptor.Context context);
 }

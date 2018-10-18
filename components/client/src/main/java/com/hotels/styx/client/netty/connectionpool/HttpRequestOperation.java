@@ -18,8 +18,8 @@ package com.hotels.styx.client.netty.connectionpool;
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffers;
 import com.hotels.styx.api.HttpMethod;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpVersion;
 import com.hotels.styx.api.Requests;
 import com.hotels.styx.api.exceptions.TransportLostException;
@@ -59,11 +59,11 @@ import static rx.RxReactiveStreams.toObservable;
 /**
  * An operation that writes an HTTP request to an origin.
  */
-public class HttpRequestOperation implements Operation<NettyConnection, HttpResponse> {
+public class HttpRequestOperation implements Operation<NettyConnection, LiveHttpResponse> {
     private static final String IDLE_HANDLER_NAME = "idle-handler";
     private static final Logger LOGGER = getLogger(HttpRequestOperation.class);
 
-    private final HttpRequest request;
+    private final LiveHttpRequest request;
     private final Optional<OriginStatsFactory> originStatsFactory;
     private final boolean flowControlEnabled;
     private final int responseTimeoutMillis;
@@ -80,7 +80,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
      * @param originStatsFactory OriginStats factory
      */
     @VisibleForTesting
-    public HttpRequestOperation(HttpRequest request, OriginStatsFactory originStatsFactory) {
+    public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory) {
         this(request, originStatsFactory, false, DEFAULT_RESPONSE_TIMEOUT_MILLIS, false, false);
     }
 
@@ -93,7 +93,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
      * @param responseTimeoutMillis response timeout in milliseconds
      * @param requestLoggingEnabled
      */
-    public HttpRequestOperation(HttpRequest request, OriginStatsFactory originStatsFactory, boolean flowControlEnabled,
+    public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory, boolean flowControlEnabled,
                                 int responseTimeoutMillis, boolean requestLoggingEnabled, boolean longFormat) {
         this.request = requireNonNull(request);
         this.originStatsFactory = Optional.ofNullable(originStatsFactory);
@@ -104,7 +104,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
     }
 
     @VisibleForTesting
-    static DefaultHttpRequest toNettyRequest(HttpRequest request) {
+    static DefaultHttpRequest toNettyRequest(LiveHttpRequest request) {
         HttpVersion version = request.version();
         HttpMethod method = request.method();
         String url = request.url().toString();
@@ -131,12 +131,12 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
     }
 
     @Override
-    public Observable<HttpResponse> execute(NettyConnection nettyConnection) {
+    public Observable<LiveHttpResponse> execute(NettyConnection nettyConnection) {
         AtomicReference<RequestBodyChunkSubscriber> requestRequestBodyChunkSubscriber = new AtomicReference<>();
         requestTime = System.currentTimeMillis();
         executeCount.incrementAndGet();
 
-        Observable<HttpResponse> observable = Observable.create(subscriber -> {
+        Observable<LiveHttpResponse> observable = Observable.create(subscriber -> {
             if (nettyConnection.isConnected()) {
                 RequestBodyChunkSubscriber bodyChunkSubscriber = new RequestBodyChunkSubscriber(nettyConnection);
                 requestRequestBodyChunkSubscriber.set(bodyChunkSubscriber);
@@ -169,7 +169,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
                         }));
     }
 
-    private void addProxyBridgeHandlers(NettyConnection nettyConnection, Subscriber<? super HttpResponse> observer) {
+    private void addProxyBridgeHandlers(NettyConnection nettyConnection, Subscriber<? super LiveHttpResponse> observer) {
         Origin origin = nettyConnection.getOrigin();
         Channel channel = nettyConnection.channel();
         channel.pipeline().addLast(IDLE_HANDLER_NAME, new IdleStateHandler(0, 0, responseTimeoutMillis, MILLISECONDS));
@@ -225,13 +225,13 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
     }
 
     private static final class WriteRequestToOrigin {
-        private final Subscriber<? super HttpResponse> responseFromOriginObserver;
+        private final Subscriber<? super LiveHttpResponse> responseFromOriginObserver;
         private final ReadOrCloseChannelListener readOrCloseChannelListener;
         private final NettyConnection nettyConnection;
-        private final HttpRequest request;
+        private final LiveHttpRequest request;
         private final RequestBodyChunkSubscriber requestBodyChunkSubscriber;
 
-        private WriteRequestToOrigin(Subscriber<? super HttpResponse> responseFromOriginObserver, NettyConnection nettyConnection, HttpRequest request,
+        private WriteRequestToOrigin(Subscriber<? super LiveHttpResponse> responseFromOriginObserver, NettyConnection nettyConnection, LiveHttpRequest request,
                                      RequestBodyChunkSubscriber requestBodyChunkSubscriber) {
             this.responseFromOriginObserver = responseFromOriginObserver;
             this.nettyConnection = nettyConnection;
@@ -264,7 +264,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, HttpResp
             };
         }
 
-        private io.netty.handler.codec.http.HttpRequest makeRequest(HttpRequest request) {
+        private io.netty.handler.codec.http.HttpRequest makeRequest(LiveHttpRequest request) {
             DefaultHttpRequest nettyRequest = toNettyRequest(request);
             Optional<String> host = request.header(HOST);
             if (!host.isPresent()) {

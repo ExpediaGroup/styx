@@ -19,7 +19,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.support.Meter;
 import com.hotels.styx.utils.MetricsSnapshot;
@@ -36,7 +36,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.hotels.styx.api.FullHttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -159,7 +159,7 @@ public class StyxMetrics {
 
     private static String downloadJsonString(String host, int port) {
         StyxHttpClient client = new StyxHttpClient.Builder().build();
-        FullHttpResponse response = await(client.sendRequest(get(format("http://%s:%d/admin/metrics", host, port)).build()));
+        HttpResponse response = await(client.sendRequest(get(format("http://%s:%d/admin/metrics", host, port)).build()));
         await(client.shutdown());
         return response.bodyAs(UTF_8);
     }

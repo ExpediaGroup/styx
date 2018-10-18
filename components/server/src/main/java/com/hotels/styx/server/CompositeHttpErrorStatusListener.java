@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.server;
 
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 
 import java.net.InetSocketAddress;
@@ -36,12 +36,12 @@ class CompositeHttpErrorStatusListener implements HttpErrorStatusListener {
     }
 
     @Override
-    public void proxyWriteFailure(HttpRequest request, HttpResponse response, Throwable cause) {
+    public void proxyWriteFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) {
         listeners.forEach(listener -> listener.proxyWriteFailure(request, response, cause));
     }
 
     @Override
-    public void proxyingFailure(HttpRequest request, HttpResponse response, Throwable cause) {
+    public void proxyingFailure(LiveHttpRequest request, LiveHttpResponse response, Throwable cause) {
         listeners.forEach(listener -> listener.proxyingFailure(request, response, cause));
     }
 
@@ -51,7 +51,7 @@ class CompositeHttpErrorStatusListener implements HttpErrorStatusListener {
     }
 
     @Override
-    public void proxyErrorOccurred(HttpRequest request, InetSocketAddress clientAddress, HttpResponseStatus status, Throwable cause) {
+    public void proxyErrorOccurred(LiveHttpRequest request, InetSocketAddress clientAddress, HttpResponseStatus status, Throwable cause) {
         listeners.forEach(listener -> listener.proxyErrorOccurred(request, clientAddress, status, cause));
     }
 }

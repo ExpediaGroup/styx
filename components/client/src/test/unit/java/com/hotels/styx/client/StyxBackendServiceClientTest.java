@@ -18,8 +18,8 @@ package com.hotels.styx.client;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
@@ -46,8 +46,8 @@ import java.util.Optional;
 import static com.hotels.styx.api.HttpHeaderNames.CHUNKED;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
-import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_IMPLEMENTED;
@@ -78,7 +78,7 @@ import static rx.RxReactiveStreams.toPublisher;
 
 public class StyxBackendServiceClientTest {
     private static final Origin SOME_ORIGIN = newOriginBuilder("localhost", 9090).applicationId(GENERIC_APP).build();
-    private static final HttpRequest SOME_REQ = get("/some-req").build();
+    private static final LiveHttpRequest SOME_REQ = get("/some-req").build();
 
     private static final Origin ORIGIN_1 = newOriginBuilder("localhost", 9091).applicationId("app").id("app-01").build();
     private static final Origin ORIGIN_2 = newOriginBuilder("localhost", 9092).applicationId("app").id("app-02").build();
@@ -108,7 +108,7 @@ public class StyxBackendServiceClientTest {
                         ))
                 .build();
 
-        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
 
         assertThat(response.status(), is(OK));
         verify(hostClient).sendRequest(eq(SOME_REQ));
@@ -128,7 +128,7 @@ public class StyxBackendServiceClientTest {
                 .retryPolicy(retryPolicy)
                 .build();
 
-        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
 
         ArgumentCaptor<RetryPolicy.Context> retryContext = ArgumentCaptor.forClass(RetryPolicy.Context.class);
         ArgumentCaptor<LoadBalancer> lbPreference = ArgumentCaptor.forClass(LoadBalancer.class);
@@ -167,7 +167,7 @@ public class StyxBackendServiceClientTest {
                 .retryPolicy(retryPolicy)
                 .build();
 
-        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
 
         ArgumentCaptor<RetryPolicy.Context> retryContext = ArgumentCaptor.forClass(RetryPolicy.Context.class);
         ArgumentCaptor<LoadBalancer> lbPreference = ArgumentCaptor.forClass(LoadBalancer.class);
@@ -208,7 +208,7 @@ public class StyxBackendServiceClientTest {
                 .retryPolicy(mockRetryPolicy(true, false))
                 .build();
 
-        TestSubscriber<HttpResponse> testSubscriber = new TestSubscriber<>();
+        TestSubscriber<LiveHttpResponse> testSubscriber = new TestSubscriber<>();
         styxHttpClient.sendRequest(SOME_REQ).subscribe(testSubscriber);
         testSubscriber.awaitTerminalEvent();
 
@@ -242,7 +242,7 @@ public class StyxBackendServiceClientTest {
                         mockRetryPolicy(true, true, true, true))
                 .build();
 
-        TestSubscriber<HttpResponse> testSubscriber = new TestSubscriber<>();
+        TestSubscriber<LiveHttpResponse> testSubscriber = new TestSubscriber<>();
         styxHttpClient.sendRequest(SOME_REQ).subscribe(testSubscriber);
         testSubscriber.awaitTerminalEvent();
 
@@ -253,7 +253,7 @@ public class StyxBackendServiceClientTest {
         ordered.verify(firstClient).sendRequest(eq(SOME_REQ));
         ordered.verify(secondClient).sendRequest(eq(SOME_REQ));
         ordered.verify(thirdClient).sendRequest(eq(SOME_REQ));
-        ordered.verify(fourthClient, never()).sendRequest(any(HttpRequest.class));
+        ordered.verify(fourthClient, never()).sendRequest(any(LiveHttpRequest.class));
     }
 
 
@@ -267,7 +267,7 @@ public class StyxBackendServiceClientTest {
                         mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient))))
                 .build();
 
-        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
 
         assertThat(response.status(), is(BAD_REQUEST));
         verify(hostClient).sendRequest(eq(SOME_REQ));
@@ -285,7 +285,7 @@ public class StyxBackendServiceClientTest {
                 )
                 .build();
 
-        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
 
         assertThat(response.status(), is(UNAUTHORIZED));
         verify(hostClient).sendRequest(eq(SOME_REQ));
@@ -303,7 +303,7 @@ public class StyxBackendServiceClientTest {
                 )
                 .build();
 
-        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
         verify(hostClient).sendRequest(eq(SOME_REQ));
@@ -321,7 +321,7 @@ public class StyxBackendServiceClientTest {
                 )
                 .build();
 
-        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
         assertThat(response.status(), is(NOT_IMPLEMENTED));
         verify(hostClient).sendRequest(SOME_REQ);
         assertThat(metricRegistry.counter("origins.response.status.501").getCount(), is(1L));
@@ -343,7 +343,7 @@ public class StyxBackendServiceClientTest {
                 .enableContentValidation()
                 .build();
 
-        HttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
 
         assertThat(response.status(), is(OK));
 
@@ -354,7 +354,7 @@ public class StyxBackendServiceClientTest {
     @Test
     public void updatesCountersWhenTransactionIsCancelled() {
         Origin origin = originWithId("localhost:234", "App-X", "Origin-Y");
-        PublishSubject<HttpResponse> responseSubject = PublishSubject.create();
+        PublishSubject<LiveHttpResponse> responseSubject = PublishSubject.create();
         StyxHostHttpClient hostClient = mockHostClient(responseSubject);
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
@@ -364,7 +364,7 @@ public class StyxBackendServiceClientTest {
                 .metricsRegistry(metricRegistry)
                 .build();
 
-        Observable<HttpResponse> transaction = styxHttpClient.sendRequest(SOME_REQ);
+        Observable<LiveHttpResponse> transaction = styxHttpClient.sendRequest(SOME_REQ);
         Subscription subscription = transaction.subscribe();
 
         subscription.unsubscribe();
@@ -385,7 +385,7 @@ public class StyxBackendServiceClientTest {
                 .metricsRegistry(metricRegistry)
                 .build();
 
-        HttpResponse response = styxHttpClient.sendRequest(
+        LiveHttpResponse response = styxHttpClient.sendRequest(
                 get("/foo")
                         .cookies(requestCookie("styx_origin_" + Id.GENERIC_APP, "Origin-Y"))
                         .build())
@@ -412,7 +412,7 @@ public class StyxBackendServiceClientTest {
                 .originsRestrictionCookieName("restrictedOrigin")
                 .build();
 
-        HttpResponse response = styxHttpClient.sendRequest(
+        LiveHttpResponse response = styxHttpClient.sendRequest(
                 get("/foo")
                         .cookies(requestCookie("restrictedOrigin", "Origin-Y"))
                         .build())
@@ -438,7 +438,7 @@ public class StyxBackendServiceClientTest {
                 .metricsRegistry(metricRegistry)
                 .build();
 
-        HttpResponse response = styxHttpClient.sendRequest(
+        LiveHttpResponse response = styxHttpClient.sendRequest(
                 get("/foo")
                         .cookies(
                                 requestCookie("restrictedOrigin", "Origin-Y"),
@@ -487,9 +487,9 @@ public class StyxBackendServiceClientTest {
         return lbStategy;
     }
 
-    private StyxHostHttpClient mockHostClient(Observable<HttpResponse> responseObservable) {
+    private StyxHostHttpClient mockHostClient(Observable<LiveHttpResponse> responseObservable) {
         StyxHostHttpClient secondClient = mock(StyxHostHttpClient.class);
-        when(secondClient.sendRequest(any(HttpRequest.class))).thenReturn(responseObservable);
+        when(secondClient.sendRequest(any(LiveHttpRequest.class))).thenReturn(responseObservable);
         return secondClient;
     }
 

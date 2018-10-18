@@ -18,14 +18,14 @@ package com.hotels.styx.routing.interceptors;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.service.RewriteConfig;
 import com.hotels.styx.api.extension.service.RewriteRule;
 import com.hotels.styx.client.RewriteRuleset;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.config.HttpInterceptorFactory;
 import com.hotels.styx.routing.config.RouteHandlerDefinition;
-import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.LiveHttpRequest;
 
 /**
  * A built-in interceptor for URL rewrite.
@@ -38,7 +38,7 @@ public class RewriteInterceptor implements HttpInterceptor {
     }
 
     @Override
-    public Eventual<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         return chain.proceed(this.rewriteRuleset.rewrite(request));
     }
 

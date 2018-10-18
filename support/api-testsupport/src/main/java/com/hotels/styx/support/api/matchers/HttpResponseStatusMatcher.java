@@ -15,7 +15,7 @@
  */
 package com.hotels.styx.support.api.matchers;
 
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
@@ -24,11 +24,11 @@ import org.hamcrest.TypeSafeMatcher;
 
 import java.util.Objects;
 
-public class HttpResponseStatusMatcher extends TypeSafeMatcher<HttpResponse> {
+public class HttpResponseStatusMatcher extends TypeSafeMatcher<LiveHttpResponse> {
     private final HttpResponseStatus status;
 
     @Factory
-    public static Matcher<HttpResponse> hasStatus(HttpResponseStatus status) {
+    public static Matcher<LiveHttpResponse> hasStatus(HttpResponseStatus status) {
         return new HttpResponseStatusMatcher(status);
     }
 
@@ -37,12 +37,12 @@ public class HttpResponseStatusMatcher extends TypeSafeMatcher<HttpResponse> {
     }
 
     @Override
-    public boolean matchesSafely(HttpResponse request) {
+    public boolean matchesSafely(LiveHttpResponse request) {
         return Objects.equals(status, request.status());
     }
 
     @Override
-    protected void describeMismatchSafely(HttpResponse response, Description mismatchDescription) {
+    protected void describeMismatchSafely(LiveHttpResponse response, Description mismatchDescription) {
         mismatchDescription.appendText("status with value of ").appendValue(response.status());
     }
 

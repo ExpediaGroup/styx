@@ -19,11 +19,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.FullHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import org.slf4j.Logger;
 
@@ -36,7 +37,7 @@ import java.util.stream.Stream;
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.METHOD_NOT_ALLOWED;
@@ -48,7 +49,6 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Comparator.naturalOrder;
 import static org.slf4j.LoggerFactory.getLogger;
-import com.hotels.styx.api.HttpRequest;
 
 /**
  * Handler that will enable and disable plugins.
@@ -75,12 +75,12 @@ public class PluginToggleHandler implements HttpHandler {
     }
 
     @Override
-    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         return getCurrentOrPutNewState(request, context)
                 .onError(cause -> handleErrors(cause, context));
     }
 
-    private Eventual<HttpResponse> getCurrentOrPutNewState(HttpRequest request, HttpInterceptor.Context context) {
+    private Eventual<LiveHttpResponse> getCurrentOrPutNewState(LiveHttpRequest request, HttpInterceptor.Context context) {
         if (GET.equals(request.method())) {
             return getCurrentState(request, context);
         } else if (PUT.equals(request.method())) {
@@ -90,7 +90,7 @@ public class PluginToggleHandler implements HttpHandler {
         }
     }
 
-    private Eventual<HttpResponse> getCurrentState(HttpRequest request, HttpInterceptor.Context context) {
+    private Eventual<LiveHttpResponse> getCurrentState(LiveHttpRequest request, HttpInterceptor.Context context) {
         return Eventual.of(request)
                 .map(this::plugin)
                 .map(this::currentState)
@@ -101,13 +101,13 @@ public class PluginToggleHandler implements HttpHandler {
         return plugin.enabled() ? PluginEnabledState.ENABLED : PluginEnabledState.DISABLED;
     }
 
-    private Eventual<HttpResponse> putNewState(HttpRequest request, HttpInterceptor.Context context) {
+    private Eventual<LiveHttpResponse> putNewState(LiveHttpRequest request, HttpInterceptor.Context context) {
         return Eventual.of(request)
                 .flatMap(this::requestedUpdate)
                 .map(this::applyUpdate);
     }
 
-    private Eventual<RequestedUpdate> requestedUpdate(HttpRequest request) {
+    private Eventual<RequestedUpdate> requestedUpdate(LiveHttpRequest request) {
         return requestedNewState(request)
                 .map(state -> {
                     NamedPlugin plugin = plugin(request);
@@ -116,7 +116,7 @@ public class PluginToggleHandler implements HttpHandler {
                 });
     }
 
-    private HttpResponse applyUpdate(RequestedUpdate requestedUpdate) {
+    private LiveHttpResponse applyUpdate(RequestedUpdate requestedUpdate) {
         boolean changed = requestedUpdate.apply();
 
         String message = responseMessage(requestedUpdate, changed);
@@ -142,7 +142,7 @@ public class PluginToggleHandler implements HttpHandler {
         return format("State of '%s' changed to '%s'", requestedUpdate.plugin().name(), requestedUpdate.newState());
     }
 
-    private NamedPlugin plugin(HttpRequest request) {
+    private NamedPlugin plugin(LiveHttpRequest request) {
         Matcher matcher = urlMatcher(request);
         String pluginName = matcher.group(1);
         return plugin(pluginName);
@@ -157,7 +157,7 @@ public class PluginToggleHandler implements HttpHandler {
         return plugin;
     }
 
-    private Matcher urlMatcher(HttpRequest request) {
+    private Matcher urlMatcher(LiveHttpRequest request) {
         Matcher matcher = URL_PATTERN.matcher(request.path());
 
         if (!matcher.matches()) {
@@ -166,20 +166,20 @@ public class PluginToggleHandler implements HttpHandler {
         return matcher;
     }
 
-    private static Eventual<PluginEnabledState> requestedNewState(HttpRequest request) {
-        return request.toFullRequest(MAX_CONTENT_SIZE)
+    private static Eventual<PluginEnabledState> requestedNewState(LiveHttpRequest request) {
+        return request.aggregate(MAX_CONTENT_SIZE)
                 .map(fullRequest -> fullRequest.bodyAs(UTF_8))
                 .map(PluginToggleHandler::parseToBoolean)
                 .map(PluginEnabledState::fromBoolean);
     }
 
-    private static HttpResponse responseWith(HttpResponseStatus status, String message) {
-        return FullHttpResponse.response(status)
+    private static LiveHttpResponse responseWith(HttpResponseStatus status, String message) {
+        return HttpResponse.response(status)
                 .body(message + "\n", UTF_8)
                 .addHeader(CONTENT_TYPE, PLAIN_TEXT_UTF_8.toString())
                 .disableCaching()
                 .build()
-                .toStreamingResponse();
+                .stream();
     }
 
     private static boolean parseToBoolean(String string) {
@@ -193,7 +193,7 @@ public class PluginToggleHandler implements HttpHandler {
         }
     }
 
-    private static Eventual<HttpResponse> handleErrors(Throwable e, HttpInterceptor.Context context) {
+    private static Eventual<LiveHttpResponse> handleErrors(Throwable e, HttpInterceptor.Context context) {
         if (e instanceof PluginNotFoundException) {
             return Eventual.of(responseWith(NOT_FOUND, e.getMessage()));
         }

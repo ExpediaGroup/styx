@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.routing.handlers
 
-import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponseStatus.CREATED
+import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition
@@ -40,7 +40,7 @@ class StaticResponseHandlerSpec extends FunSpec with ShouldMatchers {
 
   it("builds static response handler") {
     val handler = new StaticResponseHandler.ConfigFactory().build(List(), null, config)
-    val response = StyxFutures.await(handler.handle(HttpRequest.get("/foo").build(), HttpInterceptorContext.create).asCompletableFuture())
+    val response = StyxFutures.await(handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create).asCompletableFuture())
 
     response.status should be (CREATED)
   }

@@ -17,11 +17,11 @@ package com.hotels.styx.proxy;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.client.HttpClient;
-import com.hotels.styx.api.FullHttpRequest;
-import com.hotels.styx.api.FullHttpResponse;
-import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.client.HttpClient;
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
@@ -83,18 +83,18 @@ public class StyxProxyTest extends SSLSetup {
         server.startAsync().awaitRunning();
         assertThat("Server should be running", server.isRunning());
 
-        FullHttpResponse secureResponse = get("http://localhost:" + server.httpAddress().getPort());
+        HttpResponse secureResponse = get("http://localhost:" + server.httpAddress().getPort());
         assertThat(secureResponse.bodyAs(UTF_8), containsString("Response from http connector"));
 
         server.stopAsync().awaitTerminated();
         assertThat("Server should not be running", !server.isRunning());
     }
 
-    private Eventual<HttpResponse> textResponse(String body) {
-        return Eventual.of(FullHttpResponse.response(OK)
+    private Eventual<LiveHttpResponse> textResponse(String body) {
+        return Eventual.of(HttpResponse.response(OK)
                 .body("Response from http connector", UTF_8)
                 .build()
-                .toStreamingResponse());
+                .stream());
     }
 
     private ServerConnector connector(int port) {
@@ -116,10 +116,10 @@ public class StyxProxyTest extends SSLSetup {
 
         System.out.println("server is running: " + server.isRunning());
 
-        FullHttpResponse clearResponse = get("http://localhost:8080/search?q=fanta");
+        HttpResponse clearResponse = get("http://localhost:8080/search?q=fanta");
         assertThat(clearResponse.bodyAs(UTF_8), containsString("Response from http Connector"));
 
-        FullHttpResponse secureResponse = get("https://localhost:8443/secure");
+        HttpResponse secureResponse = get("https://localhost:8443/secure");
         assertThat(secureResponse.bodyAs(UTF_8), containsString("Response from https Connector"));
 
 
@@ -127,12 +127,12 @@ public class StyxProxyTest extends SSLSetup {
         assertThat("Server should not be running", !server.isRunning());
     }
 
-    private FullHttpResponse get(String uri) {
-        FullHttpRequest secureRequest = FullHttpRequest.get(uri).build();
+    private HttpResponse get(String uri) {
+        HttpRequest secureRequest = HttpRequest.get(uri).build();
         return execute(secureRequest);
     }
 
-    private FullHttpResponse execute(FullHttpRequest request) {
+    private HttpResponse execute(HttpRequest request) {
         return await(client.sendRequest(request));
     }
 }

@@ -25,7 +25,7 @@ import com.google.common.base.Charsets._
 import com.google.common.io.Files
 import com.hotels.styx.MockServer.responseSupplier
 import com.hotels.styx._
-import com.hotels.styx.api.FullHttpResponse
+import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.infrastructure.{MemoryBackedRegistry, RegistryServiceAdapter}
@@ -180,11 +180,11 @@ object SharedOrigins extends NettyOrigins {
     fileServer.startAsync().awaitRunning()
 
     fileServer.stub("/download",
-      responseSupplier(() => FullHttpResponse.response(OK)
+      responseSupplier(() => HttpResponse.response(OK)
         .header("X-File-Server", "true")
         .body(bigFileContent, UTF_8)
         .build()
-        .toStreamingResponse
+        .stream
       ))
 
     fileServer

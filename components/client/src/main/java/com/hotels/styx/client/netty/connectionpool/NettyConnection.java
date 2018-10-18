@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Connection;
@@ -81,7 +81,7 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
     }
 
     @Override
-    public Observable<HttpResponse> write(HttpRequest request) {
+    public Observable<LiveHttpResponse> write(LiveHttpRequest request) {
         return this.requestOperationFactory.newHttpRequestOperation(request).execute(this);
     }
 

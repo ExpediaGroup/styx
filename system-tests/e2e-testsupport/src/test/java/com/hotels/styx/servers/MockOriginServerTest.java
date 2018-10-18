@@ -17,8 +17,8 @@ package com.hotels.styx.servers;
 
 import com.github.tomakehurst.wiremock.client.ValueMatchingStrategy;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.client.HttpClient;
-import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.extension.service.TlsSettings;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.server.HttpConnectorConfig;
@@ -34,7 +34,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static com.hotels.styx.api.FullHttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.String.format;
@@ -73,7 +73,7 @@ public class MockOriginServerTest {
                         .withHeader("a", "b")
                         .withBody("Hello, World!"));
 
-        FullHttpResponse response = await(client.sendRequest(
+        HttpResponse response = await(client.sendRequest(
                 get(format("http://localhost:%d/mock", server.port()))
                         .header("X-Forwarded-Proto", "http")
                         .build()));
@@ -98,7 +98,7 @@ public class MockOriginServerTest {
                         .withHeader("a", "b")
                         .withBody("Hello, World!"));
 
-        FullHttpResponse response = await(
+        HttpResponse response = await(
                 tlsClient.sendRequest(
                         get(format("https://localhost:%d/mock", server.port()))
                                 .header("X-Forwarded-Proto", "http")

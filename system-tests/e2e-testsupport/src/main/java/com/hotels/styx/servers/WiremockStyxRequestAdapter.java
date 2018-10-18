@@ -22,7 +22,7 @@ import com.github.tomakehurst.wiremock.http.QueryParameter;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.RequestMethod;
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.api.FullHttpRequest;
+import com.hotels.styx.api.HttpRequest;
 
 import java.util.HashSet;
 import java.util.List;
@@ -37,9 +37,9 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 
 public class WiremockStyxRequestAdapter implements Request {
-    private final FullHttpRequest styxRequest;
+    private final HttpRequest styxRequest;
 
-    public WiremockStyxRequestAdapter(FullHttpRequest styxRequest) {
+    public WiremockStyxRequestAdapter(HttpRequest styxRequest) {
         this.styxRequest = requireNonNull(styxRequest);
     }
 

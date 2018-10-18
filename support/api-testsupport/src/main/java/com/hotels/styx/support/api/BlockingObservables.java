@@ -16,8 +16,8 @@
 package com.hotels.styx.support.api;
 
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.FullHttpResponse;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import rx.Observable;
 
 import java.util.concurrent.CompletableFuture;
@@ -48,20 +48,20 @@ public final class BlockingObservables {
 
     }
 
-    public static FullHttpResponse waitForResponse(Eventual<HttpResponse> responseObs) {
+    public static HttpResponse waitForResponse(Eventual<LiveHttpResponse> responseObs) {
         return futureGetAndPropagate(responseObs
-                .flatMap(response -> response.toFullResponse(120*1024))
+                .flatMap(response -> response.aggregate(120*1024))
                 .asCompletableFuture());
     }
 
-    public static FullHttpResponse waitForResponse(Observable<HttpResponse> responseObs) {
+    public static HttpResponse waitForResponse(Observable<LiveHttpResponse> responseObs) {
         return responseObs
-                .flatMap(response -> toObservable(response.toFullResponse(120*1024)))
+                .flatMap(response -> toObservable(response.aggregate(120*1024)))
                 .toBlocking()
                 .single();
     }
 
-    public static HttpResponse waitForStreamingResponse(Observable<HttpResponse> responseObs) {
+    public static LiveHttpResponse waitForStreamingResponse(Observable<LiveHttpResponse> responseObs) {
         return responseObs
                 .toBlocking()
                 .first();

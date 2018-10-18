@@ -17,7 +17,7 @@ package com.hotels.styx.proxy
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import com.hotels.styx.api.FullHttpRequest
+import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpResponseStatus.{METHOD_NOT_ALLOWED, OK}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
@@ -95,10 +95,10 @@ class OriginsReloadSpec extends FunSpec
   }
 
   private def post(url: String, content: String = "") = {
-    decodedRequest(FullHttpRequest.post(url).body(content, UTF_8).build())
+    decodedRequest(HttpRequest.post(url).body(content, UTF_8).build())
   }
 
   private def get(url: String) = {
-    decodedRequest(FullHttpRequest.get(url).build())
+    decodedRequest(HttpRequest.get(url).build())
   }
 }

@@ -33,7 +33,7 @@ import static java.util.Objects.requireNonNull;
  * Associate callbacks to Streaming Response object.
  */
 public class ResponseEventListener {
-    private final Observable<HttpResponse> publisher;
+    private final Observable<LiveHttpResponse> publisher;
     private Consumer<Throwable> responseErrorAction = cause -> { };
     private Consumer<Throwable> contentErrorAction = cause -> { };
     private Runnable onCompletedAction = () -> { };
@@ -65,11 +65,11 @@ public class ResponseEventListener {
             .onInappropriateEvent((state, event) -> state)
             .build();
 
-    private ResponseEventListener(Observable<HttpResponse> publisher) {
+    private ResponseEventListener(Observable<LiveHttpResponse> publisher) {
         this.publisher = requireNonNull(publisher);
     }
 
-    public static ResponseEventListener from(Observable<HttpResponse> publisher) {
+    public static ResponseEventListener from(Observable<LiveHttpResponse> publisher) {
         return new ResponseEventListener(publisher);
     }
 
@@ -93,7 +93,7 @@ public class ResponseEventListener {
         return this;
     }
 
-    public Observable<HttpResponse> apply() {
+    public Observable<LiveHttpResponse> apply() {
         EventProcessor eventProcessor = new QueueDrainingEventProcessor(
                 new FsmEventProcessor<>(fsm, (throwable, state) -> {
                 }, ""));

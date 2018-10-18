@@ -19,11 +19,11 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import reactor.core.publisher.Flux;
 
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.google.common.base.Objects.toStringHelper;
@@ -33,62 +33,48 @@ import static com.hotels.styx.api.HttpHeaderNames.SET_COOKIE;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.HttpHeaderValues.CHUNKED;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
-import static com.hotels.styx.api.HttpVersion.httpVersion;
 import static com.hotels.styx.api.ResponseCookie.decode;
 import static com.hotels.styx.api.ResponseCookie.encode;
-import static io.netty.buffer.ByteBufUtil.getBytes;
+import static io.netty.buffer.Unpooled.copiedBuffer;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 /**
- * An HTTP response object with a byte stream body.
+ * An immutable HTTP response object including full body content.
  * <p>
- * An {@code HttpResponse} is used in {@link HttpInterceptor} where each content
- * chunk must be processed as they arrive. It is also useful for dealing with
- * very large content sizes, and in situations where content size is not known
- * upfront.
+ * A {@link HttpResponse} is useful for responses with a
+ * finite body content, such as when a REST API object is returned as a
+ * response to a GET request.
  * <p>
- * An {@code HttpResponse} object is immutable with respect to the response
- * attributes and HTTP headers. Once an instance is created, they cannot change.
- * <p>
- * An {@code HttpResponse} body is a byte buffer stream that can be consumed
- * as sequence of asynchronous events. Once consumed, the stream is exhausted and
- * can not be reused. Conceptually each {@code HttpResponse} object has an
- * associated producer object that publishes data to the stream. For example,
- * a Styx Server implements a content producer for {@link HttpInterceptor}
- * extensions. The producer receives data chunks from a network socket and
- * publishes them to an appropriate content stream.
- * <p>
- * HTTP responses are created via {@code Builder} object, which can be created
- * with static helper methods:
+ * A HttpResponse is created via {@link HttpResponse.Builder}. A new builder
+ * can be obtained by a call to following static methods:
  *
  * <ul>
- * <li>{@code response()}</li>
- * <li>{@code response(HttpResponseStatus)}</li>
- * <li>{@code response(HttpResponseStatus, Eventual<ByteBuf>)}</li>
+ *     <li>{@code response()}</li>
+ *     <li>{@code response(HttpResponseStatus)}</li>
  * </ul>
- * <p>
+ *
  * A builder can also be created with one of the {@code Builder} constructors.
  *
- * A special method {@code newBuilder} creates a prepopulated {@code Builder}
- * from the current response object. It is useful for transforming a response
- * to another one my modifying one or more of its attributes.
+ * HttpResponse is immutable. Once created it cannot be modified.
+ * However a response can be transformed to another using the {@link this#newBuilder}
+ * method. It creates a new {@link Builder} with all message properties and
+ * body content cloned in.
  */
-public class HttpResponse implements StreamingHttpMessage {
+public class HttpResponse implements HttpMessage {
     private final HttpVersion version;
     private final HttpResponseStatus status;
     private final HttpHeaders headers;
-    private final ByteStream body;
+    private final byte[] body;
 
-    HttpResponse(Builder builder) {
+    private HttpResponse(Builder builder) {
         this.version = builder.version;
         this.status = builder.status;
         this.headers = builder.headers.build();
-        this.body = builder.body;
+        this.body = requireNonNull(builder.body);
     }
 
     /**
@@ -110,31 +96,46 @@ public class HttpResponse implements StreamingHttpMessage {
         return new Builder(status);
     }
 
-    /**
-     * Creates an HTTP response builder with a given status and body.
-     *
-     * @param status response status
-     * @param body   response body
-     * @return a new builder
-     */
-    public static Builder response(HttpResponseStatus status, ByteStream body) {
-        return new Builder(status).body(body);
+    @Override
+    public Optional<String> header(CharSequence name) {
+        return headers.get(name);
     }
 
-    /**
-     * @return all HTTP headers as an {@link HttpHeaders} object
-     */
+    @Override
+    public List<String> headers(CharSequence name) {
+        return headers.getAll(name);
+    }
+
     @Override
     public HttpHeaders headers() {
         return headers;
     }
 
     /**
-     * @return the response body as a byte stream
+     * Returns the body of this message in its unencoded form.
+     *
+     * @return the body
      */
     @Override
-    public ByteStream body() {
-        return body;
+    public byte[] body() {
+        return body.clone();
+    }
+
+    /**
+     * Returns the message body as a String decoded with provided character set.
+     * <p>
+     * Decodes the message body into a Java String object with a provided charset.
+     * The caller must ensure the provided charset is compatible with message content
+     * type and encoding.
+     *
+     * @param charset Charset used to decode message body
+     * @return message body as a String
+     */
+    @Override
+    public String bodyAs(Charset charset) {
+        // CHECKSTYLE:OFF
+        return new String(body, charset);
+        // CHECKSTYLE:ON
     }
 
     /**
@@ -172,57 +173,35 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     /**
-     * Aggregates content stream and converts this response to a {@link FullHttpResponse}.
+     * Converts this response to a streaming form (LiveHttpResponse).
      * <p>
-     * Returns a {@link Eventual <FullHttpResponse>} that eventually produces a
-     * {@link FullHttpResponse}. The resulting full response object has the same
-     * response line, headers, and content as this response.
-     * <p>
-     * The content stream is aggregated asynchronously. The stream may be connected
-     * to a network socket or some other content producer. Once aggregated, a
-     * FullHttpResponse object is emitted on the returned {@link Eventual}.
-     * <p>
-     * A sole {@code maxContentBytes} argument is a backstop defence against excessively
-     * long content streams. The {@code maxContentBytes} should be set to a sensible
-     * value according to your application requirements and heap size. When the content
-     * size stream exceeds the {@code maxContentBytes}, a @{link ContentOverflowException}
-     * is emitted on the returned observable.
+     * Converts this response to an LiveHttpResponse object which represents the HTTP response as a
+     * stream of bytes.
      *
-     * @param maxContentBytes maximum expected content size
-     * @return a {@link Eventual}
+     * @return A streaming LiveHttpResponse object
      */
-    public Eventual<FullHttpResponse> toFullResponse(int maxContentBytes) {
-        return Eventual.from(body.aggregate(maxContentBytes))
-                .map(it -> new FullHttpResponse.Builder(this, decodeAndRelease(it))
-                    .disableValidation()
-                    .build()
-                );
-    }
-
-    private static byte[] decodeAndRelease(Buffer aggregate) {
-        try {
-            return getBytes(aggregate.delegate());
-        } finally {
-            aggregate.delegate().release();
+    public LiveHttpResponse stream() {
+        if (this.body.length == 0) {
+            return new LiveHttpResponse.Builder(this, new ByteStream(Flux.empty())).build();
+        } else {
+            return new LiveHttpResponse.Builder(this, new ByteStream(Flux.just(new Buffer(copiedBuffer(this.body))))).build();
         }
     }
 
-
     /**
-     * Decodes "Set-Cookie" header values and returns them as set of {@link ResponseCookie} objects.
+     * Decodes the "Set-Cookie" headers in this response and returns the cookies.
      *
-     * @return a set of {@link ResponseCookie} objects
+     * @return a set of cookies
      */
     public Set<ResponseCookie> cookies() {
         return decode(headers.getAll(SET_COOKIE));
     }
 
     /**
-     * Decodes a specified Set-Cookie header and returns it as a {@link ResponseCookie} object.
+     * Decodes the "Set-Cookie" headers in this response and returns the specified cookie.
      *
      * @param name cookie name
-     * @return an optional {@link ResponseCookie} value if corresponding cookie name is present,
-     * or {@link Optional#empty} if not.
+     * @return an optional cookie
      */
     public Optional<ResponseCookie> cookie(String name) {
         return cookies().stream()
@@ -259,27 +238,27 @@ public class HttpResponse implements StreamingHttpMessage {
     }
 
     /**
-     * An HTTP response builder.
+     * Builder.
      */
     public static final class Builder {
         private HttpResponseStatus status = OK;
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
         private boolean validate = true;
-        private ByteStream body;
+        private byte[] body;
 
         /**
          * Creates a new {@link Builder} object with default attributes.
          */
         public Builder() {
             this.headers = new HttpHeaders.Builder();
-            this.body = new ByteStream(Flux.empty());
+            this.body = new byte[0];
         }
 
         /**
          * Creates a new {@link Builder} object with specified response status.
          *
-         * @param status a HTTP response status
+         * @param status an HTTP response status
          */
         public Builder(HttpResponseStatus status) {
             this();
@@ -287,10 +266,10 @@ public class HttpResponse implements StreamingHttpMessage {
         }
 
         /**
-         * Creates a new {@link Builder} object from an existing {@link HttpResponse} object.
+         * Creates a new {@link Builder} object from an existing {@link LiveHttpResponse} object.
          * Similar to {@link this.newBuilder} method.
          *
-         * @param response a response object for which the builder is based on
+         * @param response a full HTTP response instance
          */
         public Builder(HttpResponse response) {
             this.status = response.status();
@@ -300,19 +279,16 @@ public class HttpResponse implements StreamingHttpMessage {
         }
 
         /**
-         * Creates a new {@link Builder} object from a response code and a content stream.
-         * <p>
-         * Builder's response status line parameters and the HTTP headers are populated from
-         * the given {@code response} object, but the content stream is set to {@code ByteStream}.
+         * Creates a new {@link Builder} object from a response code and a content byte array.
          *
-         * @param response      a full response for which the builder is based on
-         * @param byteStream a content byte stream
+         * @param response a streaming HTTP response instance
+         * @param body a HTTP message body
          */
-        public Builder(FullHttpResponse response, ByteStream byteStream) {
-            this.status = statusWithCode(response.status().code());
-            this.version = httpVersion(response.version().toString());
+        public Builder(LiveHttpResponse response, byte[] body) {
+            this.status = response.status();
+            this.version = response.version();
             this.headers = response.headers().newBuilder();
-            this.body = requireNonNull(byteStream);
+            this.body = body;
         }
 
         /**
@@ -327,24 +303,55 @@ public class HttpResponse implements StreamingHttpMessage {
         }
 
         /**
-         * Sets the response body.
+         * Sets the request body.
+         * <p>
+         * This method encodes a String content to a byte array using the specified
+         * charset, and sets the Content-Length header accordingly.
          *
-         * @param content response body
+         * @param content request body
+         * @param charset charset for string encoding
          * @return {@code this}
          */
-        public Builder body(ByteStream content) {
-            this.body = requireNonNull(content);
-            return this;
+        public Builder body(String content, Charset charset) {
+            return body(content, charset, true);
         }
 
         /**
-         * Transforms request body.
+         * Sets the response body.
+         * <p>
+         * This method encodes the content to a byte array using the specified
+         * charset, and sets the Content-Length header *if* the setContentLength
+         * argument is true.
          *
-         * @param transformation a Function from ByteStream to ByteStream.
-         * @return a HttpResponhse builder with a transformed message body.
+         * @param content          response body
+         * @param charset          charset used for encoding response body
+         * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
+         * @return {@code this}
          */
-        public Builder body(Function<ByteStream, ByteStream> transformation) {
-            this.body = requireNonNull(transformation.apply(this.body));
+        public Builder body(String content, Charset charset, boolean setContentLength) {
+            requireNonNull(charset, "Charset is not provided.");
+            String sanitised = content == null ? "" : content;
+            return body(sanitised.getBytes(charset), setContentLength);
+        }
+
+        /**
+         * Sets the response body.
+         * <p>
+         * This method encodes the content to a byte array provided, and
+         * sets the Content-Length header *if* the setContentLength
+         * argument is true.
+         *
+         * @param content          response body
+         * @param setContentLength If true, Content-Length header is set, otherwise it is not set.
+         * @return {@code this}
+         */
+        public Builder body(byte[] content, boolean setContentLength) {
+            this.body = content == null ? new byte[0] : content.clone();
+
+            if (setContentLength) {
+                header(CONTENT_LENGTH, this.body.length);
+            }
+
             return this;
         }
 
@@ -450,7 +457,7 @@ public class HttpResponse implements StreamingHttpMessage {
          * @param names cookie names
          * @return {@code this}
          */
-        public <T> Builder removeCookies(Collection<String> names) {
+        public Builder removeCookies(Collection<String> names) {
             requireNonNull(names);
 
             if (names.isEmpty()) {
@@ -514,26 +521,6 @@ public class HttpResponse implements StreamingHttpMessage {
         }
 
         /**
-         * (UNSTABLE) Removes body stream from this request.
-         * <p>
-         * This method is unstable until Styx 1.0 API is frozen.
-         * <p>
-         * Inappropriate use can lead to stability issues. These issues
-         * will be addressed before Styx 1.0 API is frozen. Therefore
-         * it is best to avoid until then. Consult
-         * https://github.com/HotelsDotCom/styx/issues/201 for more
-         * details.
-         *
-         * @return {@code this}
-         */
-        // TODO: See https://github.com/HotelsDotCom/styx/issues/201
-        public Builder removeBody() {
-            this.body = body.drop();
-            return this;
-        }
-
-
-        /**
          * Sets the headers.
          *
          * @param headers headers
@@ -545,15 +532,7 @@ public class HttpResponse implements StreamingHttpMessage {
         }
 
         /**
-         * Disables automatic validation of some HTTP headers.
-         * <p>
-         * Normally the {@link Builder} validates the message when {@code build}
-         * method is invoked. Specifically that:
-         *
-         * <li>
-         * <ul>There is maximum of only one {@code Content-Length} header</ul>
-         * <ul>The {@code Content-Length} header is zero or positive integer</ul>
-         * </li>
+         * Enable validation of uri and some headers.
          *
          * @return {@code this}
          */
@@ -564,19 +543,12 @@ public class HttpResponse implements StreamingHttpMessage {
 
         /**
          * Builds a new full response based on the settings configured in this builder.
-         * <p>
-         * Validates and builds a {link HttpResponse} object. Object validation can be
-         * disabled with {@link this.disableValidation} method.
-         * <p>
-         * When validation is enabled (by default), ensures that:
+         * If {@code validate} is set to true:
+         * <ul>
+         * <li>an exception will be thrown if the content length is not an integer, or more than one content length exists</li>
+         * </ul>
          *
-         * <li>
-         * <ul>There is maximum of only one {@code Content-Length} header</ul>
-         * <ul>The {@code Content-Length} header is zero or positive integer</ul>
-         * </li>
-         *
-         * @return a new full response.
-         * @throws IllegalArgumentException when validation fails
+         * @return a new full response
          */
         public HttpResponse build() {
             if (validate) {

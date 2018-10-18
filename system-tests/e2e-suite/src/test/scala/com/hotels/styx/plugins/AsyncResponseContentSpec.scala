@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import _root_.io.netty.handler.codec.http.HttpHeaders.Names._
 import _root_.io.netty.handler.codec.http.HttpHeaders.Values._
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api._
 import com.hotels.styx.support._
@@ -82,9 +82,9 @@ import rx.lang.scala.ImplicitFunctionConversions._
 import scala.compat.java8.FunctionConverters.asJavaFunction
 
 class AsyncDelayPlugin extends PluginAdapter {
-  override def intercept(request: HttpRequest, chain: Chain): Eventual[HttpResponse] = {
+  override def intercept(request: LiveHttpRequest, chain: Chain): Eventual[LiveHttpResponse] = {
     chain.proceed(request)
-      .flatMap(asJavaFunction((response: HttpResponse) => {
+      .flatMap(asJavaFunction((response: LiveHttpResponse) => {
 
         val transformedContent: Observable[Buffer] = toObservable(response.body())
           .observeOn(Schedulers.computation())

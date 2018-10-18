@@ -19,8 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 
@@ -50,7 +50,7 @@ public class StyxConfigurationHandler implements HttpHandler {
     }
 
     @Override
-    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         return configHandler(request.queryParam("pretty").isPresent())
                 .handle(request, context)
                 .map(StyxConfigurationHandler::disableCaching);
@@ -60,7 +60,7 @@ public class StyxConfigurationHandler implements HttpHandler {
         return pretty ? prettyStyxConfigHandler : styxConfigHandler;
     }
 
-    private static HttpResponse disableCaching(HttpResponse response) {
+    private static LiveHttpResponse disableCaching(LiveHttpResponse response) {
         return response.newBuilder()
                 .disableCaching()
                 .build();

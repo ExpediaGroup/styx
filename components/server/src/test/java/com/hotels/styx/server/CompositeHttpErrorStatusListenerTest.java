@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.server;
 
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -34,8 +34,8 @@ public class CompositeHttpErrorStatusListenerTest {
     HttpErrorStatusListener delegate1;
     HttpErrorStatusListener delegate2;
     HttpErrorStatusListener delegate3;
-    HttpRequest request = HttpRequest.get("/foo").build();
-    HttpResponse response = HttpResponse.response(OK).build();
+    LiveHttpRequest request = LiveHttpRequest.get("/foo").build();
+    LiveHttpResponse response = LiveHttpResponse.response(OK).build();
 
     @BeforeMethod
     public void setUp() {
@@ -87,7 +87,7 @@ public class CompositeHttpErrorStatusListenerTest {
 
     @Test
     public void propagatesProxyErrorsWithRequests() {
-        HttpRequest request = HttpRequest.get("/foo").build();
+        LiveHttpRequest request = LiveHttpRequest.get("/foo").build();
         IOException cause = new IOException();
         InetSocketAddress clientAddress = InetSocketAddress.createUnresolved("127.0.0.1", 0);
         listener.proxyErrorOccurred(request, clientAddress, INTERNAL_SERVER_ERROR, cause);

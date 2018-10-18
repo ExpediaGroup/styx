@@ -18,8 +18,8 @@ package com.hotels.styx.spi
 import com.google.common.net.HostAndPort
 import com.google.common.net.HostAndPort._
 import com.hotels.styx.StyxProxySpec
-import com.hotels.styx.api.FullHttpRequest
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.StyxConfig
@@ -83,7 +83,7 @@ class BackendServiceProviderSpec extends FunSpec with StyxProxySpec {
     fromParts("localhost", styxServer.httpPort)
   }
 
-  def anHttpRequest: FullHttpRequest = {
+  def anHttpRequest: HttpRequest = {
     get(styxServer.routerURL("/pluginPipelineSpec/")).build()
   }
 

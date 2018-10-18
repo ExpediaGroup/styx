@@ -18,7 +18,7 @@ package com.hotels.styx.proxy
 import _root_.io.netty.handler.codec.http.HttpHeaders.Names.{UPGRADE, _}
 import _root_.io.netty.handler.codec.http.HttpHeaders.Values._
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.hotels.styx.api.FullHttpRequest.get
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpHeaderNames.X_FORWARDED_FOR
 import com.hotels.styx.api.HttpHeaderValues
 import com.hotels.styx.api.RequestCookie.requestCookie

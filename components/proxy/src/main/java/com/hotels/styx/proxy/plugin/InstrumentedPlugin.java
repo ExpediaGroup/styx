@@ -19,8 +19,8 @@ import com.codahale.metrics.Meter;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginException;
@@ -84,7 +84,7 @@ public class InstrumentedPlugin implements Plugin {
     }
 
     @Override
-    public Eventual<HttpResponse> intercept(HttpRequest request, Chain originalChain) {
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain originalChain) {
         StatusRecordingChain chain = new StatusRecordingChain(originalChain);
         try {
             return new Eventual<>(toPublisher(
@@ -112,7 +112,7 @@ public class InstrumentedPlugin implements Plugin {
         return new PluginException(error, plugin.name());
     }
 
-    private void recordStatusCode(StatusRecordingChain chain, HttpResponse response) {
+    private void recordStatusCode(StatusRecordingChain chain, LiveHttpResponse response) {
         boolean isError = response.status().code() >= BAD_REQUEST.code();
         boolean fromPlugin = response.status() != chain.upstreamStatus;
 
@@ -140,7 +140,7 @@ public class InstrumentedPlugin implements Plugin {
         }
 
         @Override
-        public Eventual<HttpResponse> proceed(HttpRequest request) {
+        public Eventual<LiveHttpResponse> proceed(LiveHttpRequest request) {
             try {
                 return new Eventual<>(
                         toPublisher(toObservable(chain.proceed(request))

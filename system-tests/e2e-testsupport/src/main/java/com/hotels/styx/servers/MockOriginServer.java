@@ -121,7 +121,7 @@ public final class MockOriginServer {
 
     private static HttpHandler newHandler(String originId, RequestHandler wireMockHandler) {
         return (httpRequest, ctx) ->
-                httpRequest.toFullRequest(MAX_CONTENT_LENGTH)
+                httpRequest.aggregate(MAX_CONTENT_LENGTH)
                         .map(fullRequest -> {
                             LOGGER.info("{} received: {}\n{}", new Object[]{originId, fullRequest.url(), fullRequest.body()});
                             return fullRequest;
@@ -129,7 +129,7 @@ public final class MockOriginServer {
                         .flatMap(fullRequest -> {
                             Request wmRequest = new WiremockStyxRequestAdapter(fullRequest);
                             com.github.tomakehurst.wiremock.http.Response wmResponse = wireMockHandler.handle(wmRequest);
-                            return Eventual.of(toStyxResponse(wmResponse).toStreamingResponse());
+                            return Eventual.of(toStyxResponse(wmResponse).stream());
                         });
     }
 
@@ -231,7 +231,7 @@ public final class MockOriginServer {
 
     private static HttpHandler newHandler(RequestHandler wireMockHandler) {
         return (httpRequest, ctx) ->
-                httpRequest.toFullRequest(MAX_CONTENT_LENGTH)
+                httpRequest.aggregate(MAX_CONTENT_LENGTH)
                         .map(fullRequest -> {
                             LOGGER.info("Received: {}\n{}", new Object[]{fullRequest.url(), fullRequest.body()});
                             return fullRequest;
@@ -239,7 +239,7 @@ public final class MockOriginServer {
                         .flatMap(fullRequest -> {
                             Request wmRequest = new WiremockStyxRequestAdapter(fullRequest);
                             com.github.tomakehurst.wiremock.http.Response wmResponse = wireMockHandler.handle(wmRequest);
-                            return Eventual.of(toStyxResponse(wmResponse).toStreamingResponse());
+                            return Eventual.of(toStyxResponse(wmResponse).stream());
                         });
     }
 }

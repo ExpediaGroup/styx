@@ -18,8 +18,8 @@ package com.hotels.styx.proxy;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpRouter;
 import com.hotels.styx.server.NoServiceConfiguredException;
 
@@ -34,7 +34,7 @@ public class RouteHandlerAdapter implements HttpHandler {
     }
 
     @Override
-    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         return router.route(request, context)
                 .map(pipeline -> pipeline.handle(request, context))
                 .orElseGet(() -> Eventual.error(new NoServiceConfiguredException(request.path())));

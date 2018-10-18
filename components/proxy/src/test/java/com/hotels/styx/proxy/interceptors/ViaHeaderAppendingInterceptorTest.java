@@ -16,15 +16,15 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import org.testng.annotations.Test;
 
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.VIA;
-import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.HttpRequest.post;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.LiveHttpRequest.post;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
 import static com.hotels.styx.proxy.interceptors.ReturnResponseChain.returnsResponse;
@@ -35,7 +35,7 @@ public class ViaHeaderAppendingInterceptorTest {
     final ReturnResponseChain ANY_RESPONSE_HANDLER = returnsResponse(response().build());
     final HttpInterceptor interceptor = new ViaHeaderAppendingInterceptor();
 
-    private HttpRequest interceptRequest(HttpRequest request) {
+    private LiveHttpRequest interceptRequest(LiveHttpRequest request) {
         RequestRecordingChain recording = requestRecordingChain(ANY_RESPONSE_HANDLER);
         interceptor.intercept(request, recording);
         return recording.recordedRequest();
@@ -43,54 +43,54 @@ public class ViaHeaderAppendingInterceptorTest {
 
     @Test
     public void addsViaHeaderToRequestIfNotAlreadyPresent() throws Exception {
-        HttpRequest request = post("/foo")
+        LiveHttpRequest request = post("/foo")
                 .header(HOST, "www.example.com:8000")
                 .build();
 
-        HttpRequest interceptedRequest = interceptRequest(request);
+        LiveHttpRequest interceptedRequest = interceptRequest(request);
         assertThat(interceptedRequest.headers().get(VIA), isValue("1.1 styx"));
     }
 
     @Test
     public void addsViaHeaderToRequestWhenItIsPresentButEmpty() throws Exception {
-        HttpRequest request = post("/foo")
+        LiveHttpRequest request = post("/foo")
                 .header(VIA, "")
                 .build();
 
-        HttpRequest interceptedRequest = interceptRequest(request);
+        LiveHttpRequest interceptedRequest = interceptRequest(request);
         assertThat(interceptedRequest.headers().get(VIA), isValue("1.1 styx"));
     }
 
     @Test
     public void appendsHttp10RequestVersionInRequestViaHeader() throws Exception {
-        HttpRequest request = post("/foo")
+        LiveHttpRequest request = post("/foo")
                 .version(HTTP_1_0)
                 .header(VIA, "")
                 .build();
 
-        HttpRequest interceptedRequest = interceptRequest(request);
+        LiveHttpRequest interceptedRequest = interceptRequest(request);
         assertThat(interceptedRequest.headers().get(VIA), isValue("1.0 styx"));
     }
 
     @Test
     public void appendsHttp10RequestVersionInResponseViaHeader() throws Exception {
-        HttpResponse response = interceptor.intercept(get("/foo").build(), ANY_RESPONSE_HANDLER).asCompletableFuture().get();
+        LiveHttpResponse response = interceptor.intercept(get("/foo").build(), ANY_RESPONSE_HANDLER).asCompletableFuture().get();
         assertThat(response.headers().get(VIA), isValue("1.1 styx"));
     }
 
     @Test
     public void appendsViaHeaderValueAtEndOfTheViaList() throws Exception {
-        HttpRequest request = post("/foo")
+        LiveHttpRequest request = post("/foo")
                 .header(VIA, "1.0 ricky, 1.1 mertz, 1.0 lucy")
                 .build();
 
-        HttpRequest interceptedRequest = interceptRequest(request);
+        LiveHttpRequest interceptedRequest = interceptRequest(request);
         assertThat(interceptedRequest.headers().get(VIA), isValue("1.0 ricky, 1.1 mertz, 1.0 lucy, 1.1 styx"));
     }
 
     @Test
     public void appendsViaHeaderValueAtEndOfListInResponse() throws Exception {
-        HttpResponse response = interceptor.intercept(get("/foo").build(), returnsResponse(response()
+        LiveHttpResponse response = interceptor.intercept(get("/foo").build(), returnsResponse(response()
                         .header(VIA, "1.0 ricky, 1.1 mertz, 1.0 lucy")
                         .build())
         ).asCompletableFuture().get();

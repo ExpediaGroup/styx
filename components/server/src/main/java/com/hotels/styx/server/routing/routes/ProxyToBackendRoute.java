@@ -18,8 +18,8 @@ package com.hotels.styx.server.routing.routes;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.client.BackendServiceClient;
 
 import static java.util.Objects.requireNonNull;
@@ -40,7 +40,7 @@ public final class ProxyToBackendRoute implements HttpHandler {
     }
 
     @Override
-    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         return new Eventual<>(toPublisher(client.sendRequest(request)));
     }
 }
