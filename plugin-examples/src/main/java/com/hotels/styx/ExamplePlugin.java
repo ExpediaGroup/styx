@@ -18,7 +18,9 @@ package com.hotels.styx;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 
 import java.util.Map;
@@ -56,7 +58,7 @@ public class ExamplePlugin implements Plugin {
      * @return
      */
     @Override
-    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
         /* the intercept method is where you can modify the request, modify the response and
          handle side-effects.
 
@@ -68,7 +70,7 @@ public class ExamplePlugin implements Plugin {
         * */
 
         // Here is a simple example of modifying an incoming request.
-        HttpRequest newRequest = request.newBuilder()
+        LiveHttpRequest newRequest = request.newBuilder()
                 .header("myRequestHeader", config.requestHeaderValue())
                 .build();
 
