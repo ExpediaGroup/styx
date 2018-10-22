@@ -15,15 +15,19 @@
  */
 package com.hotels.styx;
 
+import com.hotels.styx.api.Buffer;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.StyxObservable;
+import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import org.testng.annotations.Test;
 
 
-import static com.hotels.styx.api.HttpRequest.get;
-import static com.hotels.styx.api.HttpResponse.response;
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -44,15 +48,16 @@ public class ExamplePluginTest {
         HttpInterceptor.Chain chain = request -> {
             assertThat(request.header("myRequestHeader").orElse(null), is("foo"));
 
-            return StyxObservable.of(response(OK).build());
+            return Eventual.of(response(OK).build());
         };
 
         // an example request you expect your plugin to receive
-        HttpRequest request = get("/foo")
+        LiveHttpRequest request = get("/foo")
                 .build();
 
+
         //The method StyxFutures.await() in styx-common wraps future.get() including appropriate Exception handling.
-        HttpResponse response = plugin.intercept(request, chain).asCompletableFuture().get();
+        LiveHttpResponse response = plugin.intercept(request, chain).asCompletableFuture().get();
         assertThat(response.header("myResponseheader").orElse(null), is("bar"));
     }
 }
