@@ -45,7 +45,7 @@ class CookieHeaderGenerator {
 
   def cookieList: Gen[List[CookieTemplate]] = for {
     count <- Gen.choose(1, 50)
-    cookies <- Gen.resize(count, Gen.listOf(httpCookie))
+    cookies <- Gen.resize(count, Gen.nonEmptyListOf(httpCookie))
   } yield cookies
 
   def httpCookie: Gen[CookieTemplate] = for {
@@ -75,7 +75,7 @@ class CookieHeaderGenerator {
 
   def genInsertInvalidCharacterIntoName(cookies: List[CookieTemplate]): Gen[ActionFunction] = for {
     cookieIndex <- Gen.choose(0, cookies.length - 1)
-    position <- Gen.choose(1, cookies(cookieIndex).name.length - 2)
+    position <- Gen.choose(0, cookies(cookieIndex).name.length - 1)
     replacement <- genInvalidCookieNameCharacter
   } yield insertInvalidCharacterInCookieName(cookieIndex, position, replacement)
 
