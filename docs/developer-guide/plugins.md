@@ -50,7 +50,7 @@ When Styx starts, it sets up the HTTP interceptor chain as follows:
 A plugin project can be started by using one of examples in `examples` submodule. All plugins share the same skeleton of a project, containing a:
 
 * main/java/com/hotels/styx/ExamplePlugin.java - The plugin's main class which extends 
-  the Plugin interface, and most notably implements the `intercept(HttpRequest, Chain)` method.
+  the Plugin interface, and most notably implements the `intercept(LiveHttpRequest, Chain)` method.
 * main/java/com/hotels/styx/ExamplePluginConfig.java - A class that represents plugin 
   configuration, as it appears in styx_conf.yml.
 * main/java/com/hotels/styx/ExamplePluginFactory.java - A class that implements 
@@ -62,10 +62,9 @@ There are examples of plugins providing simple examples of how to:
 * perform an action response object  - `loadtest.plugins.AsyncResponseContentDecoderPluginFactory`
 
 ### Plugin class
-A Styx plugin must implement a Plugin interface, which extends from HttpInterceptor 
-interface. Thus every Styx plugin is an HttpInterceptor. As the name suggests, 
-HttpInterceptor(s) can intercept and transform, or perform some other action, HTTP 
-traffic as it is being proxied through. The interceptors are organised linearly in 
+A Styx plugin must implement a `Plugin` interface, which extends from `HttpInterceptor`. 
+As name suggests, an HttpInterceptor intercepts, transforms, or performs other actions, 
+as HTTP traffic is being proxied through. The interceptors are organised linearly in 
 a specific order to form a  pipeline. Styx injects the HTTP request to the head of 
 the pipeline. Each interceptor then processes the request in turn until the request 
 reaches to the tail of the pipeline. After that the request is proxied out to the 
@@ -87,52 +86,55 @@ returns an observable of the response. It can be used to modify the request and/
 
 #### The intercept() method
 
-The intercept() method is called when an HTTP request is available for plugin to process. Note that, however:
+The `intercept` is a callback that exposes a proxied request to a HttpInterceptor (plugin). 
+Note that:
 
-* intercept() methods are called serially, in order they are configured in the pipeline, 
+* `intercept` methods are called serially, in order they are configured in the pipeline, 
   starting from the first interceptor.
-* an interceptor "owns" the request until it is ready to pass it on to the next one. 
-  It is at this point the intercept() of the next interceptor is called.
-* A plugin may choose to respond to the request, in which case the request will not 
+* an interceptor "owns" the request until it passes it to the next interceptor, by
+  calling `chain.proceed`. At this point Styx calls `intercept` of the next interceptor.
+* If a plugin chooses to respond to the request, the request will not 
   get propagated any further down the pipeline.
 
-The intercept method is called with two arguments, a HttpRequest instance (self-explanatory), 
-and Chain. The Chain object represents a view of the Styx interceptor pipeline as for this 
-particular request. The `intercept()` method will use the Chain object, most importantly, to 
-pass the request object onwards in the pipeline. It can also be used to store some 
-request-specific context that is visible for other plugins.
+The `intercept` is called with two arguments: HTTP request, and a `Chain`. 
+The `Chain` represents a Styx interceptor pipeline as for this request, and
+it is used to pass the request on in the pipeline. Chain also stores request
+context attributes and exposes them to interceptors.
 
-The main structure of the intercept() method is always the same:
+The `intercept` always has the same structure:
 
-1. Transform HTTP request object in any way necessary.
-2. Call the chain.proceed() to pass the request forward in the pipeline. 
-   This returns a `StyxObservable<HttpResponse>`.
-3. Create a new HTTP response observable by applying any necessary 
-   transformations to the HTTP response observable obtained from a call to `chain.proceed()`.
-4. Return the new HTTP response observable.
+1. Transform HTTP request.
+2. Pass the request on by calling `chain.proceed`. 
+   This returns a `Eventual<LiveHttpResponse>`.
+3. Apply response transformations on the response `Eventual`.    
+4. Return an `Eventual` of the transformed response.
 
 Alternatively, when the interceptor responds to the request:
 
-1. Construct a response object.
-2. Return the response object wrapped inside a HTTP response Observable. Eg: `StyxObservable.of(response)`.
+1. Consume request body.
+2. Construct a response.
+3. Return an `Eventual` of the response.
 
 ### Plugin factory class
-A plugin factory class is responsible for creating an instance of the plugin. 
+
+A plugin factory class instantiates the plugin. 
 There is only one method to implement: `Plugin create(Environment environment);`
 
-The `create()` method can perform any necessary initialisation before starting 
-the plugin. Styx passes in an Environment object that contains plugin's 
+The `create` method performs any necessary initialisation before starting 
+the plugin. Styx passes in an `Environment` object that contains plugin's 
 configuration, a view of Styx configuration, and also a metrics registry.
 
-Styx will not start forwarding traffic until `create()` is successfully called 
+Styx will not start forwarding traffic until `create` is successfully called 
 for all active plugins. Therefore it is acceptable to perform blocking operations 
-in `create()` until plugin is ready to start. This may include reading local 
-files or querying remote servers, such as Redis. However use this capability 
+on `create` until plugin is ready to start. This may include reading local 
+files or querying remote servers. However use this capability 
 judiciously. Plugins are loaded serially, and initialisation time for the full 
-plugin chain will add up. Future versions of Styx may offer proper lifecycle management.
+plugin chain adds up. Future versions of Styx may offer more sophisticated 
+lifecycle management.
  
 
 ### Running a plugin
+
 To build a single jar with dependencies, please execute maven command `mvn -Pstyx clean package`. 
 This single jar can be referenced in a styx configuration file. All the details regarding 
 running styx server with additional plugins locally can be found in [User Guide](user-guide.md) section. 
@@ -176,6 +178,7 @@ As long as the class passed to that method has properties matching the YAML, it 
 For details of styx configuration file please refer to [User Guide](user-guide.md) section.
 
 ## Development best practices
+
 To ensure that plugins are correct, perform well and are maintainable, best practices must be followed. 
 
 ### Performance
