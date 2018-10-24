@@ -26,12 +26,12 @@ import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.config.RouteHandlerDefinition
 import com.hotels.styx.server.HttpInterceptorContext
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 import rx.Observable
 
 import scala.collection.JavaConversions._
 
-class ProxyToBackendSpec extends FunSpec with ShouldMatchers {
+class ProxyToBackendSpec extends FunSpec with Matchers {
 
   val environment = new Environment.Builder().build()
 

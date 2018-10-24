@@ -20,11 +20,11 @@ import com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.configuration.StyxConfig
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 
 class StyxServerStartupSpec extends FunSpec
   with StyxClientSupplier
-  with ShouldMatchers
+  with Matchers
   with Eventually {
 
   val origins = fixturesHome(classOf[StyxServerStartupSpec], "/conf/origins/origins-incorrect.yml")

@@ -42,7 +42,7 @@ import org.scalatest._
 import org.scalatest.mock.MockitoSugar
 import rx.observers.TestSubscriber
 
-class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with ShouldMatchers with BeforeAndAfter with Matchers with MockitoSugar {
+class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matchers with BeforeAndAfter with MockitoSugar {
   var webappOrigin: Origin = _
 
   val originOneServer = new FakeHttpServer(0)

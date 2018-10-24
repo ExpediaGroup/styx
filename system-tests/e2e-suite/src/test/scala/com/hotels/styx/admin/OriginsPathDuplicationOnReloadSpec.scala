@@ -26,7 +26,7 @@ import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.{StyxClientSupplier, StyxServer, StyxServerSupport}
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, FunSpec, ShouldMatchers}
+import org.scalatest.{BeforeAndAfterAll, FunSpec, Matchers}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
@@ -34,7 +34,7 @@ import scala.concurrent.duration._
 class OriginsPathDuplicationOnReloadSpec extends FunSpec
   with StyxServerSupport
   with StyxClientSupplier
-  with ShouldMatchers
+  with Matchers
   with BeforeAndAfterAll
   with Eventually {
 

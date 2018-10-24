@@ -34,12 +34,12 @@ import com.hotels.styx.routing.config.RouteHandlerDefinition
 import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.support.api.BlockingObservables
 import org.scalatest.mock.MockitoSugar
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 import rx.Observable
 
 import scala.collection.JavaConversions._
 
-class BackendServiceProxySpec extends FunSpec with ShouldMatchers with MockitoSugar {
+class BackendServiceProxySpec extends FunSpec with Matchers with MockitoSugar {
 
   val hwaRequest = LiveHttpRequest.get("/x").build()
   val laRequest = LiveHttpRequest.get("/lp/x").build()

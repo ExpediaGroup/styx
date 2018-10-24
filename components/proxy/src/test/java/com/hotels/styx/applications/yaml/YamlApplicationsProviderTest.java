@@ -210,7 +210,7 @@ public class YamlApplicationsProviderTest {
         loadFromPath("/sadiusadasd");
     }
 
-    @Test(expectedExceptions = Exception.class, expectedExceptionsMessageRegExp = "Invalid YAML from classpath:conf/origins/origins-with-syntax-error-for-configtest.yml: Can not deserialize instance of java.util.ArrayList out of VALUE_STRING token\n at \\[Source: .*\\]")
+    @Test(expectedExceptions = Exception.class, expectedExceptionsMessageRegExp = "Invalid YAML from classpath:conf/origins/origins-with-syntax-error-for-configtest.yml: Cannot deserialize instance of `java.util.ArrayList` out of VALUE_STRING token\n at \\[Source: .*\\]")
     public void cannotLoadWithSyntaxErrors() throws IOException {
         loadFromPath("classpath:/conf/origins/origins-with-syntax-error-for-configtest.yml");
     }

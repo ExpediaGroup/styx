@@ -21,11 +21,11 @@ import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition
 import com.hotels.styx.server.HttpInterceptorContext
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 
 import scala.collection.JavaConversions._
 
-class StaticResponseHandlerSpec extends FunSpec with ShouldMatchers {
+class StaticResponseHandlerSpec extends FunSpec with Matchers {
 
   private val config = configBlock(
     """

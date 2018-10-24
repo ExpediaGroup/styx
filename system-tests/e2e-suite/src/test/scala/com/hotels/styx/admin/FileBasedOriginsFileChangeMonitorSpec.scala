@@ -43,12 +43,12 @@ import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.{StyxClientSupplier, StyxServerSupport}
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, ConfigMap, FunSpec, ShouldMatchers}
+import org.scalatest.{BeforeAndAfterAll, ConfigMap, FunSpec, Matchers}
 
 class FileBasedOriginsFileChangeMonitorSpec extends FunSpec
   with StyxServerSupport
   with StyxClientSupplier
-  with ShouldMatchers
+  with Matchers
   with BeforeAndAfterAll
   with Eventually {
 
@@ -104,7 +104,7 @@ class FileBasedOriginsFileChangeMonitorSpec extends FunSpec
   val reqToApp02 = get(s"http://localhost:${styxServer.proxyHttpAddress().getPort}/app02/x").build()
 
 
-  override protected def beforeAll(configMap: ConfigMap) {
+  override protected def beforeAll() {
     styxServer.isRunning should be(true)
   }
 

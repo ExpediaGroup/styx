@@ -26,7 +26,7 @@ import com.hotels.styx.support.ResourcePaths.fixturesHome
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration._
 import com.hotels.styx.{SSLSetup, StyxProxySpec}
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 
 import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.Await
@@ -35,7 +35,7 @@ import scala.concurrent.duration._
 class Tls12Spec extends FunSpec
   with StyxProxySpec
   with HttpResponseImplicits
-  with ShouldMatchers
+  with Matchers
   with SSLSetup {
 
   val crtFile = fixturesHome(classOf[ProtocolsSpec], "/ssl/testCredentials.crt").toString

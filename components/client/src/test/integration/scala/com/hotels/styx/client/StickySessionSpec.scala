@@ -37,11 +37,11 @@ import com.hotels.styx.support.api.BlockingObservables._
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import org.scalatest.mock.MockitoSugar
-import org.scalatest.{BeforeAndAfter, FunSuite, ShouldMatchers}
+import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
 
 import scala.collection.JavaConverters._
 
-class StickySessionSpec extends FunSuite with BeforeAndAfter with ShouldMatchers with OriginSupport with MockitoSugar {
+class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with OriginSupport with MockitoSugar {
 
   val server1 = new FakeHttpServer(0, "app", "app-01")
   val server2 = new FakeHttpServer(0, "app", "app-02")

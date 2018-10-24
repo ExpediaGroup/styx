@@ -26,11 +26,11 @@ import com.hotels.styx.server.HttpInterceptorContext
 import org.mockito.Matchers.{any, eq => meq}
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.mock.MockitoSugar
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 
 import scala.collection.JavaConversions._
 
-class ConditionRouterConfigSpec extends FunSpec with ShouldMatchers with MockitoSugar {
+class ConditionRouterConfigSpec extends FunSpec with Matchers with MockitoSugar {
 
   private val request = LiveHttpRequest.get("/foo").build
   private val routeHandlerFactory = new RouteHandlerFactory(Map("StaticResponseHandler" -> new StaticResponseHandler.ConfigFactory), Map[String, HttpHandler]())

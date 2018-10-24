@@ -48,7 +48,7 @@ import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration
 import com.hotels.styx.support.configuration._
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSpec, ShouldMatchers}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSpec, Matchers}
 
 import scala.compat.java8.OptionConverters.RichOptionalGeneric
 import scala.concurrent.duration._
@@ -58,7 +58,7 @@ class ErrorMetricsSpec extends FunSpec
   with BeforeAndAfterAll
   with BackendServicesRegistrySupplier
   with BeforeAndAfterEach
-  with ShouldMatchers
+  with Matchers
   with ImplicitOriginConversions
   with ImplicitStyxConversions
   with StyxConfiguration
