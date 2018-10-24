@@ -62,8 +62,8 @@ There are examples of plugins providing simple examples of how to:
 * perform an action response object  - `loadtest.plugins.AsyncResponseContentDecoderPluginFactory`
 
 ### Plugin class
-A Styx plugin must implement a `Plugin` interface, which extends from `HttpInterceptor`. 
-As name suggests, an HttpInterceptor intercepts, transforms, or performs other actions, 
+A Styx plugin must implement the `Plugin` interface, which extends from `HttpInterceptor`. 
+As the name suggests, an HttpInterceptor intercepts, transforms, or performs other actions 
 as HTTP traffic is being proxied through. The interceptors are organised linearly in 
 a specific order to form a  pipeline. Styx injects the HTTP request to the head of 
 the pipeline. Each interceptor then processes the request in turn until the request 
@@ -86,7 +86,7 @@ returns an observable of the response. It can be used to modify the request and/
 
 #### The intercept() method
 
-The `intercept` is a callback that exposes a proxied request to a HttpInterceptor (plugin). 
+The `intercept` method is a callback that exposes a proxied request to an `HttpInterceptor` (plugin). 
 Note that:
 
 * `intercept` methods are called serially, in order they are configured in the pipeline, 
@@ -97,11 +97,12 @@ Note that:
   get propagated any further down the pipeline.
 
 The `intercept` is called with two arguments: HTTP request, and a `Chain`. 
-The `Chain` represents a Styx interceptor pipeline as for this request, and
+The `Chain` represents the section of the Styx interceptor pipeline further
+upstream from this plugin, and
 it is used to pass the request on in the pipeline. Chain also stores request
 context attributes and exposes them to interceptors.
 
-The `intercept` always has the same structure:
+Implementations of `intercept` operate in this order:
 
 1. Transform HTTP request.
 2. Pass the request on by calling `chain.proceed`. 
@@ -121,13 +122,13 @@ A plugin factory class instantiates the plugin.
 There is only one method to implement: `Plugin create(Environment environment);`
 
 The `create` method performs any necessary initialisation before starting 
-the plugin. Styx passes in an `Environment` object that contains plugin's 
+the plugin. Styx passes in an `Environment` object that contains the plugin's 
 configuration, a view of Styx configuration, and also a metrics registry.
 
-Styx will not start forwarding traffic until `create` is successfully called 
+Styx will not start forwarding traffic until the call to `create` returns successfully
 for all active plugins. Therefore it is acceptable to perform blocking operations 
-on `create` until plugin is ready to start. This may include reading local 
-files or querying remote servers. However use this capability 
+on `create` until the plugin is ready to start. This may include reading local 
+files or querying remote servers. However, use this capability 
 judiciously. Plugins are loaded serially, and initialisation time for the full 
 plugin chain adds up. Future versions of Styx may offer more sophisticated 
 lifecycle management.

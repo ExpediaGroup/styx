@@ -136,9 +136,9 @@ message object into as many streaming objects as necessary. For example:
  
 ### Http Interceptor Interface
 
-Styx has a HTTP pipeline that processes all received HTTP messages.
+Styx has an HTTP pipeline that processes all received HTTP messages.
 The pipeline is made of a linear chain of HTTP interceptors. An HTTP interceptor 
-transforms, responds, or runs side-effecting actions on a live HTTP traffic.
+transforms, responds, or runs side-effecting actions on live HTTP traffic.
   
 Styx provides some internal interceptors. You can also implement your own
 interceptor plugins. An extension point for a 
@@ -152,10 +152,10 @@ custom plugin is the `HttpInterceptor` interface. It has only one method:
     }
 ```
 
-The interface shows that `intercept` method receives a live HTTP request, 
+The interface shows that the `intercept` method receives a live HTTP request, 
 and eventually returns a live HTTP response. 
 
-The `intercept` may transform or run side effecting actions on request or response objects. 
+`intercept` may transform or run side effecting actions on request or response objects. 
 As an event based system, all implementations must be strictly non-blocking. 
 Blocking a thread stalls the Styx event processing loop. So take care to 
 stick with asynchronous implementation.
@@ -186,7 +186,7 @@ Styx core also add snippets of information like sender IP address, and so on.
 
 ### Http Handler Interface
 
-A `HttpHandler` interface is the basis for Styx admin interfaces and routing objects. 
+An `HttpHandler` interface is the basis for Styx admin interfaces and routing objects. 
 It *consumes* the HTTP requests and asynchronously responds with HTTP responses. 
 It has a simple interface:
 
@@ -196,8 +196,8 @@ It has a simple interface:
     }
 ```
 
-It accepts a live HTTP request as its first argument, and eventually responds with live HTTP reponse. 
-The second argument is a `HttpInterceptor.Context`. The request context contains contextual
+It accepts a live HTTP request as its first argument, and eventually responds with a live HTTP reponse. 
+The second argument is an `HttpInterceptor.Context`. The request context contains contextual
 information such as the sender of the request and whether it was delivered over a secure protocol or not.
 
 As with `HttpInterceptor` implementations, the `handle` method must never block. Blocking the
@@ -206,10 +206,10 @@ thread will block the Styx event loop.
 
 ### Eventual
 
-Styx `Eventual` class is an envelope for a value that is available some time in future.
+The `Eventual` class is an envelope for a value that is available some time in future.
 It represents a deferred value that becomes eventually available, and thus enables 
 asynchronous operations in Styx. If `Eventual` appears as a method return type then that
 method is asynchronous. 
 
-The `Eventual` behaves much like a futures (such as the Java 8+ `CompletableFuture`) but it
+The `Eventual` behaves much like a future (such as the Java 8+ `CompletableFuture`) but it
 implements the Reactive Streams `Publisher` interface and is much simpler overall. 
