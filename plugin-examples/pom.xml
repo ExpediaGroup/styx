@@ -19,7 +19,7 @@
     <!-- Styx Version -->
     <styx.version>0.9-SNAPSHOT</styx.version>
     <rxjava.version>1.1.6</rxjava.version>
-    <jackson.version>2.7.5</jackson.version>
+    <jackson.version>2.9.7</jackson.version>
     <!--Testing-->
     <testng.version>6.8</testng.version>
 
