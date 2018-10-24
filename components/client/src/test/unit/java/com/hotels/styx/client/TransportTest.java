@@ -113,52 +113,6 @@ public class TransportTest {
         verify(pool).closeConnection(any(Connection.class));
     }
 
-    @Test
-    public void releasesIfRequestIsCancelledBeforeHeaders() {
-        Connection connection = mockConnection(responseProvider);
-        ConnectionPool pool = mockPool(connection);
-
-        HttpTransaction transaction = transport.send(request, Optional.of(pool), APP_ID);
-
-        transaction.response().subscribe(subscriber);
-
-        transaction.cancel();
-        verify(pool).closeConnection(any(Connection.class));
-    }
-
-    @Test
-    public void releasesIfRequestIsCancelledAfterHeaders() {
-        Connection connection = mockConnection(responseProvider);
-        ConnectionPool pool = mockPool(connection);
-
-        HttpTransaction transaction = transport.send(request, Optional.of(pool), APP_ID);
-
-        transaction.response().subscribe(subscriber);
-
-        responseProvider.onNext(response);
-
-        transaction.cancel();
-        verify(pool).closeConnection(any(Connection.class));
-    }
-
-    @Test
-    public void closesConnectionOnlyOnce() {
-        ConnectionPool pool = mockPool(mockConnection(responseProvider));
-
-        HttpTransaction transaction = transport.send(request, Optional.of(pool), APP_ID);
-
-        transaction.response().subscribe(new TestSubscriber<>());
-
-        responseProvider.onNext(response);
-
-        verify(pool, never()).closeConnection(any(Connection.class));
-
-        transaction.cancel();
-        transaction.cancel();
-        transaction.cancel();
-
-        verify(pool).closeConnection(any(Connection.class));
-    }
 
     @Test
     public void closesIfObservableUnsubscribedBeforeHeaders() {
@@ -173,7 +127,6 @@ public class TransportTest {
         subscription.unsubscribe();
         verify(pool).closeConnection(any(Connection.class));
     }
-
     @Test
     public void closesIfObservableUnsubscribedAfterHeaders() {
         ConnectionPool pool = mockPool(mockConnection(responseProvider));
@@ -188,7 +141,6 @@ public class TransportTest {
         subscription.unsubscribe();
         verify(pool).closeConnection(any(Connection.class));
     }
-
 
     @Test
     public void releasesContentStreamBuffersWhenPoolIsNotProvided() {
@@ -211,7 +163,6 @@ public class TransportTest {
         assertThat(chunk2.refCnt(), is(0));
         assertThat(chunk3.refCnt(), is(0));
     }
-
     @Test
     public void emitsNoAvailableHostsExceptionWhenPoolIsNotProvided() {
 

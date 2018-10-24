@@ -15,17 +15,17 @@
  */
 package com.hotels.styx.client;
 
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.client.Connection;
 import com.hotels.styx.api.client.ConnectionPool;
 import com.hotels.styx.api.netty.exceptions.NoAvailableHostsException;
-import rx.Observable;
 
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import rx.Observable;
 
 import static java.util.Objects.requireNonNull;
 
@@ -43,62 +43,43 @@ class Transport {
 
     public HttpTransaction send(HttpRequest request, Optional<ConnectionPool> origin, Id originId) {
         Observable<Connection> connection = connection(request, origin);
-
-        AtomicReference<Connection> connectionRef = new AtomicReference<>(null);
-        Observable<HttpResponse> observableResponse = connection.flatMap(tConnection -> {
-            connectionRef.set(tConnection);
-            return tConnection.write(request)
-                    .map(response -> addOriginId(originId, response));
-        });
+        AtomicBoolean returned = new AtomicBoolean(false);
 
         return new HttpTransaction() {
-            private final AtomicBoolean cancelled = new AtomicBoolean(false);
-
-            @Override
-            public void cancel() {
-                if (!cancelled.getAndSet(true)) {
-                    closeIfConnected(origin, connectionRef);
-                }
-            }
-
             @Override
             public Observable<HttpResponse> response() {
-                return observableResponse
+                return connection.flatMap(tConnection ->
+                    tConnection.write(request)
+                        .map(response -> addOriginId(originId, response))
                         .doOnError(throwable -> {
-                            if (!cancelled.get()) {
-                                closeIfConnected(origin, connectionRef);
-                            }
+                            closeIfConnected(origin, tConnection);
                         })
                         .doOnCompleted(() -> {
-                            if (!cancelled.get()) {
-                                returnIfConnected(origin, connectionRef);
-                            }
+                            returnIfConnected(origin, tConnection);
                         })
                         .doOnUnsubscribe(() -> {
-                            if (!cancelled.get()) {
-                                closeIfConnected(origin, connectionRef);
-                            }
-                        });
+                            closeIfConnected(origin, tConnection);
+                        }));
             }
 
-            @Override
-            public boolean isCancelled() {
-                return cancelled.get();
-            }
 
-            private synchronized void closeIfConnected(Optional<ConnectionPool> connectionPool, AtomicReference<Connection> connectionRef) {
-                Connection connection = connectionRef.get();
-                if (connection != null && connectionPool.isPresent()) {
-                    connectionPool.get().closeConnection(connection);
-                    connectionRef.set(null);
+            private synchronized void closeIfConnected(Optional<ConnectionPool> connectionPool, Connection connection) {
+                if(connection==null){
+                    return;
+                }
+                if (!returned.get()) {
+                    returned.set(true);
+                    connectionPool.ifPresent(pool-> pool.closeConnection(connection));
                 }
             }
 
-            private synchronized void returnIfConnected(Optional<ConnectionPool> connectionPool, AtomicReference<Connection> connectionRef) {
-                Connection connection = connectionRef.get();
-                if (connection != null && connectionPool.isPresent()) {
-                    connectionPool.get().returnConnection(connection);
-                    connectionRef.set(null);
+            private synchronized void returnIfConnected(Optional<ConnectionPool> connectionPool, Connection connection) {
+                if(connection==null){
+                    return;
+                }
+                if (!returned.get()) {
+                    returned.set(true);
+                    connectionPool.ifPresent(pool-> pool.returnConnection(connection));
                 }
             }
         };
