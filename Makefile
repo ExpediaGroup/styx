@@ -57,8 +57,8 @@ RATE=3000
 TIMES=3
 DURATION=30
 CONNECTIONS=200
-ENDPOINT=http://localhost:8080/lp/demo
-SSL_ENDPOINT=https://localhost:8443/lp/demo
+ENDPOINT=http://localhost:8080/landing/demo
+SSL_ENDPOINT=https://localhost:8443/landing/demo
 LOAD_TEST_TOOL=scripts/load-test-tool/load_test.py
 PERF_DIR=system-tests/performance
 
