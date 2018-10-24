@@ -51,8 +51,9 @@ public class ExamplePluginTest {
                 .build();
 
 
-        //The method StyxFutures.await() in styx-common wraps future.get() including appropriate Exception handling.
+        // since this is a test, we want to wait for the response, so we call CompletableFuture.get
         LiveHttpResponse response = plugin.intercept(request, chain).asCompletableFuture().get();
+
         assertThat(response.header("myResponseheader").orElse(null), is("bar"));
     }
 }

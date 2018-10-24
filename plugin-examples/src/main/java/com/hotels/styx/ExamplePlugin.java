@@ -45,15 +45,13 @@ public class ExamplePlugin implements Plugin {
     }
 
     /**
-     * When a request is processed, the response is not returned immediately - instead we return an Observable.
+     * When a request is processed, the response is not returned immediately - instead we return an Eventual.
      * This is similar to a Future in that it is not immediately available, instead it informs us that a response
      * will be available at some point.
      *
-     * Please consult RxJava documentation to learn more.
-     *
-     * @param request
-     * @param chain
-     * @return
+     * @param request request to intercept
+     * @param chain chain linking to the next plugins
+     * @return eventual response
      */
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
@@ -63,8 +61,6 @@ public class ExamplePlugin implements Plugin {
          Resource-intensive actions, such as external calls should be done in separate threads,
          otherwise you will block worker threads. Worker threads are shared by multiple channels, meaning
          that blocking a thread will also impact other customers.
-
-         Please consult RxJava documentation to learn how to use other threads.
         * */
 
         // Here is a simple example of modifying an incoming request.
@@ -84,7 +80,6 @@ public class ExamplePlugin implements Plugin {
     * The method below has default implementations in the interface, so you do not need to include it if you
     * don't want to add anything. See the Plugin interface documentation for more information.
     * */
-
     @Override
     public Map<String, HttpHandler> adminInterfaceHandlers() {
         return emptyMap();

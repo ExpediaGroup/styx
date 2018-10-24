@@ -30,8 +30,8 @@ public class ExamplePluginConfig {
     /**
      * The constructor will be called using the values provided in the YAML configuration files.
      *
-     * @param requestHeaderValue
-     * @param responseHeaderValue
+     * @param requestHeaderValue value from config
+     * @param responseHeaderValue value from config
      */
     public ExamplePluginConfig(
             @JsonProperty("requestHeaderValue") String requestHeaderValue,

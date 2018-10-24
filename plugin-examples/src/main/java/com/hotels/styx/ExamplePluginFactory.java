@@ -25,18 +25,18 @@ public class ExamplePluginFactory implements PluginFactory {
     /**
      * The environment object will provide this plugin with the configuration you created in the YAML file.
      *
-     * @param environment
-     * @return
+     * @param environment environment as described above
+     * @return created plugin
      */
     @Override
     public Plugin create(PluginFactory.Environment environment) {
         /* Note that it is not necessary for the Config to be a separate object from the plugin.
-        * You could have your configuration object implement "Plugin" and simply return that,
-        * If you consider it more suited to your use case.
-        *
-        * However, using a separate config object has the advantage that your PluginFactory is
-        * free to select a Plugin implementation at runtime.
-        */
+         * You could have your configuration object implement "Plugin" and simply return that,
+         * If you consider it more suited to your use case.
+         *
+         * However, using a separate config object has the advantage that your PluginFactory is
+         * free to select a Plugin implementation at runtime.
+         */
         ExamplePluginConfig config = environment.pluginConfig(ExamplePluginConfig.class);
 
         return new ExamplePlugin(config);
