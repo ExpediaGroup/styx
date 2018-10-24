@@ -100,7 +100,7 @@ public class AsyncRequestInterceptor implements Plugin {
 
 Step 1. We call the `asyncUrlReplacement`, which returns an `Eventual<Url>`.
 The `asyncUrlReplacement` wraps a call to the remote service and converts 
-the outcome into a `Eventual`, which is the basis for our response observable.
+the outcome into a `Eventual`.
 
 Step 2. A call to `pathReplacementService` makes a non-blocking call to the remote key/value store.
 Well, at least we pretend to call the key value store, but in this example we'll just return a 
@@ -113,10 +113,10 @@ Step 4. The eventual outcome from the `asyncUrlReplacement` yields a new, modifi
 We'll transform the `request` by substituting the URL path with the new one. 
 This is a quick synchronous operation so we'll do it in a `map` operator. 
 
-Step 5. Finally, we will bind the outcome from `chain.proceed` into the response observable.
-Remember that `chain.proceed` returns an `Eventual<LiveHttpResponse>` it is therefore 
-interface compatible and can be `flatMap`'d to the response observable. The resulting
-response observable chain is returned from the `intercept`.
+Step 5. Finally, we will bind the outcome from `chain.proceed` into the response eventual.
+Remember that `chain.proceed` returns an `Eventual<LiveHttpResponse>`. It is therefore 
+interface compatible and can be `flatMap`'d to the response eventual. The resulting
+response eventual chain is returned from the `intercept`.
 
 
 ### Asynchronously transform response object
@@ -163,7 +163,7 @@ Step 1. We start by calling `chain.proceed(request)` to obtain a response `Event
 Step 2. A `callTo3rdParty` returns a `CompletableFuture`. It is converted to an `Eventual` with
 `Eventual.from` and bound to response `Eventual`. 
 
-Step 3. The `flatMap` operator binds `callToThirdParty` into the response observable.
+Step 3. The `flatMap` operator binds `callToThirdParty` into the response `Eventual`.
 
 Step 4. We will transform the HTTP response by inserting an outcome of `callToThirdParty`, or `value`, 
 into the response headers.	
@@ -215,12 +215,12 @@ and running out of memory. Styx only accumulates up to `maxContentBytes` of cont
 Streaming HTTP body content can be transformed both synchronously and asynchronously.
 However there are some pitfalls you need to know:
 
- - Reference counting. Styx exposes the content stream as a `ByteStream` of reference counted
+ - **Reference counting.** Styx exposes the content stream as a `ByteStream` of reference counted
   `Buffer` objects. 
   
- - Continuity (or discontinuity) of Styx content `ByteStream`. Each content transformation with 
+ - **Continuity (or discontinuity) of Styx content `ByteStream`:** each content transformation with 
   `map` or `flatMap` is a composition of another `ByteStream`. So is each content transformation 
-  linked to some source observable, an ultimate source being the Styx server core.
+  linked to some source `ByteStream`, an ultimate source being the Styx server core.
   It is the consumer's responsibility to ensure this link never gets broken. That is, you 
   are not allowed to just replace the content stream with another one, unless it composes
   to the previous content source.
@@ -248,7 +248,8 @@ public class MyPlugin extends Plugin {
 }    
 ```
 
-A call to `request.newBuilder` opens up a new request builder that allows request to be transformed.
+A call to `request.newBuilder` opens up a new request builder that allows the request 
+to be transformed to.
 
 The body transformation involves two lambda methods:
 
@@ -260,7 +261,8 @@ The body transformation involves two lambda methods:
      each `Buffer` that streams through. The `map` involves another lambda that accepts a
      `Buffer` and returns a modified buffer.
   
-  3. In this example the buffer is converted to an upper case. 
+  3. In this example, the content of the buffer buffer is interpreted as `String` and 
+     converted to an upper case. 
   
 
 ### Synchronously transforming streaming response content
@@ -285,14 +287,14 @@ public class AsyncResponseContentStreamTransformation implements Plugin {
 ```
 
 This is quite similar to the request transformation but it involves an additional lambda
-expression to capture the HTTP response from `Eventual` envelope:
+expression to capture the HTTP response from its `Eventual` envelope:
 
-  1. `chain.proceed` returns an `Eventual` HTTP response. We apply a `Eventual.map` operator
+  1. `chain.proceed` returns an `Eventual` HTTP response. We apply an `Eventual.map` operator
      to tap into this response. The `map` operator accepts a lambda expression that handles the
-     response when it eventually is available.
+     response when it is available.
      
-After that, we will transform the response just like we did in the previous example for
-     response content transformations.
+After that, we will transform the response just like we did in the previous example for 
+response content transformations.
 
 
 
