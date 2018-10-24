@@ -29,7 +29,8 @@ Important API concepts are:
 ### HTTP Message Abstractions
 
 Styx provides two kinds of HTTP message abstractions: (1) Streaming HTTP message classes for 
-intercepting live traffic and (2) Immutable HTTP message classes all other applications.
+intercepting live traffic and (2) Immutable HTTP message classes that are generally easier 
+to work with.
 
 The `LiveHttpRequest` and `LiveHttpResponse` classes have immutable headers, but the message
 body is a stream of byte buffer events, represented by a `ByteStream` class. 
@@ -48,16 +49,16 @@ prefix is meant to serve as a mnemonic for the API consumers to treat them appro
   * When a `ByteStream` has been consumed, it has been consumed for good. 
 
 The main Styx extension points, `HttpInterceptor` and `HttpHandler` interfaces 
-(described later) interact only on the live requests. Hardly surprising 
-given that internally the Styx core sees everything as a HTTP stream. 
+(described later) interact only on the live requests. This is because internally Styx
+core processes everything as a HTTP stream. 
 
-For most other applications it is more convenient to use "full" HTTP messages
+For most other situations it is more convenient to use "full" HTTP messages
 that provide the HTTP headers and the full body in one immutable unit.
 For this purpose Styx provides `HttpRequest` and `HttpResponse` classes. They are immutable, 
 fully re-usable HTTP message classes that are more convenient for unit testing, admin interfaces,
 and for other applications built on Styx libraries.
 
-Few words about message interoperability. The live and immutable variants are not 
+A few words about message interoperability: the live and immutable variants are not 
 interface compatible as per
 [Liskov substitution principle](https://en.wikipedia.org/wiki/Liskov_substitution_principle) 
 and therefore they form two separate class hierarchies. This is evident in the
@@ -99,12 +100,12 @@ HTTP object. Note that `aggregate` consumes the underlying live HTTP message `By
 The type signature illustrates other facts about the content stream:
 
 * Return type of `Eventual` shows that `aggregate` is asynchronous. 
-  Obviously because it needs to wait for all of the byte stream to be fully 
-  available.
+  We can see that `aggregate` is asynchronous by its return type, `Eventual`. 
+  This is because it needs to wait for all of the byte stream to be fully available.
 
 * The `maxContentBytes` sets an upper limit for the aggregated message 
-  body. This acts as a safety valve protecting Styx from exhausting heap in face 
-  of very long message bodies, or perhaps from denial of service attacks. 
+  body. This acts as a safety valve, protecting Styx from exhausting the heap memory
+  when very long message bodies are received. 
   If the limit is reached, the conversion fails with `ContentOverflowException`. 
 
 Call the `stream` method to convert an immutable `HttpRequest` 
@@ -139,8 +140,8 @@ Styx has a HTTP pipeline that processes all received HTTP messages.
 The pipeline is made of a linear chain of HTTP interceptors. An HTTP interceptor 
 transforms, responds, or runs side-effecting actions on a live HTTP traffic.
   
-Styx provides some internal interceptors. You can also implement own
-interceptor plugins. That's what Styx is for! An extension point for a 
+Styx provides some internal interceptors. You can also implement your own
+interceptor plugins. An extension point for a 
 custom plugin is the `HttpInterceptor` interface. It has only one method:
 
 ```java
@@ -160,7 +161,7 @@ Blocking a thread stalls the Styx event processing loop. So take care to
 stick with asynchronous implementation.
 
 A HTTP request is passed in as its first argument. The second argument, `Chain`, is
-a handle to the next `HttpInterceptor` in the pipeline. The `Chain` has a `proceed` mehtod
+a handle to the next `HttpInterceptor` in the pipeline. The `Chain` has a `proceed` method
 that passes the request to the next interceptor. It returns an `Eventual<Response>`, in 
 which you bind any response transformations. For example:
 
@@ -210,5 +211,5 @@ It represents a deferred value that becomes eventually available, and thus enabl
 asynchronous operations in Styx. If `Eventual` appears as a method return type then that
 method is asynchronous. 
 
-The `Eventual` behaves much like a futures (Java 8 `CompletableFuture` etc) but it
-implements Reactive Streams `Publisher` interface and has much simpler interface. 
+The `Eventual` behaves much like a futures (such as the Java 8+ `CompletableFuture`) but it
+implements the Reactive Streams `Publisher` interface and is much simpler overall. 
