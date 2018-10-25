@@ -160,7 +160,7 @@ As an event based system, all implementations must be strictly non-blocking.
 Blocking a thread stalls the Styx event processing loop. So take care to 
 stick with asynchronous implementation.
 
-A HTTP request is passed in as its first argument. The second argument, `Chain`, is
+An HTTP request is passed in as its first argument. The second argument, `Chain`, is
 a handle to the next `HttpInterceptor` in the pipeline. The `Chain` has a `proceed` method
 that passes the request to the next interceptor. It returns an `Eventual<Response>`, in 
 which you bind any response transformations. For example:
