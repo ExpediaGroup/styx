@@ -43,37 +43,31 @@ class Transport {
     public HttpTransaction send(LiveHttpRequest request, Optional<ConnectionPool> origin, Id originId) {
         Observable<Connection> connection = connection(request, origin);
 
-        AtomicReference<Connection> connectionRef = new AtomicReference<>(null);
-        Observable<LiveHttpResponse> observableResponse = connection.flatMap(tConnection -> {
-            connectionRef.set(tConnection);
-            return tConnection.write(request)
-                    .map(response -> addOriginId(originId, response));
-        });
 
         return new HttpTransaction() {
             @Override
             public Observable<LiveHttpResponse> response() {
-                return ResponseEventListener.from(observableResponse)
-                        .whenCancelled(() -> closeIfConnected(origin, connectionRef))
-                        .whenResponseError(cause -> closeIfConnected(origin, connectionRef))
-                        .whenContentError(cause -> closeIfConnected(origin, connectionRef))
-                        .whenCompleted(() -> returnIfConnected(origin, connectionRef))
-                        .apply();
+
+                Observable<ResponseEventListener> responseEventListenerObservable = connection.flatMap(tConnection ->
+                    tConnection.write(request)
+                        .map(response -> addOriginId(originId, response))
+                        .map(c -> ResponseEventListener.from(Observable.just(c))
+                            .whenCancelled(() -> closeIfConnected(origin, tConnection))
+                            .whenResponseError(cause -> closeIfConnected(origin, tConnection))
+                            .whenContentError(cause -> closeIfConnected(origin, tConnection))
+                            .whenCompleted(() -> returnIfConnected(origin, tConnection))));
+                return responseEventListenerObservable.flatMap(ResponseEventListener::apply);
             }
 
-            private synchronized void closeIfConnected(Optional<ConnectionPool> connectionPool, AtomicReference<Connection> connectionRef) {
-                Connection connection = connectionRef.get();
+            private synchronized void closeIfConnected(Optional<ConnectionPool> connectionPool, Connection connection) {
                 if (connection != null && connectionPool.isPresent()) {
                     connectionPool.get().closeConnection(connection);
-                    connectionRef.set(null);
                 }
             }
 
-            private synchronized void returnIfConnected(Optional<ConnectionPool> connectionPool, AtomicReference<Connection> connectionRef) {
-                Connection connection = connectionRef.get();
+            private synchronized void returnIfConnected(Optional<ConnectionPool> connectionPool, Connection connection) {
                 if (connection != null && connectionPool.isPresent()) {
                     connectionPool.get().returnConnection(connection);
-                    connectionRef.set(null);
                 }
             }
         };
