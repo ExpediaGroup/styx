@@ -41,7 +41,7 @@ immediately, it is able to minimise proxying latency, and because the message bo
 is never fully buffered, Styx is able to proxy arbitrarily long and large message bodies
 with minimal memory pressure. 
  
-These classes are "live" because they stream through Styx core in "real time". The "live" 
+These classes are "live" because they stream through the Styx pipeline in "real time". The "live" 
 prefix is meant to serve as a mnemonic for the API consumers to treat them appropriately:
   
   * A `ByteStream` can be transformed and aggregated, but it can not be replayed. 
