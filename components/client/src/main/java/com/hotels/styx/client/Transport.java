@@ -43,7 +43,7 @@ class Transport {
 
     public HttpTransaction send(HttpRequest request, Optional<ConnectionPool> origin, Id originId) {
         Observable<Connection> connection = connection(request, origin);
-        AtomicBoolean returned = new AtomicBoolean(false);
+        AtomicBoolean outstandingRequest = new AtomicBoolean(true);
 
         return new HttpTransaction() {
             @Override
@@ -67,8 +67,7 @@ class Transport {
                 if(connection==null){
                     return;
                 }
-                if (!returned.get()) {
-                    returned.set(true);
+                if (outstandingRequest.getAndSet(false)) {
                     connectionPool.ifPresent(pool-> pool.closeConnection(connection));
                 }
             }
@@ -77,8 +76,7 @@ class Transport {
                 if(connection==null){
                     return;
                 }
-                if (!returned.get()) {
-                    returned.set(true);
+                if (outstandingRequest.getAndSet(false)) {
                     connectionPool.ifPresent(pool-> pool.returnConnection(connection));
                 }
             }
