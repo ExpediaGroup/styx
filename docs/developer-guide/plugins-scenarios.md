@@ -267,7 +267,7 @@ The body transformation involves two lambda methods:
 
 ### Synchronously transforming streaming response content
 
-This example demonstrates how an HTTP response content can be transformed synchronously.
+This example demonstrates how HTTP response content can be transformed synchronously.
 
 ```java
 public class AsyncResponseContentStreamTransformation implements Plugin {
