@@ -43,6 +43,7 @@ import com.hotels.styx.routing.handlers.ConditionRouter;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.routing.handlers.ProxyToBackend;
 import com.hotels.styx.routing.handlers.StaticResponseHandler;
+import com.hotels.styx.proxy.interceptors.TcpTunnelRequestRejector;
 import com.hotels.styx.routing.interceptors.RewriteInterceptor;
 
 import java.util.Map;
@@ -90,11 +91,12 @@ public final class StyxPipelineFactory implements PipelineFactory {
             builder.add(new HttpMessageLoggingInterceptor(longFormatEnabled));
         }
 
-        builder.add(new ConfigurationContextResolverInterceptor(EMPTY_CONFIGURATION_CONTEXT_RESOLVER));
-        builder.add(new UnexpectedRequestContentLengthRemover());
-        builder.add(new ViaHeaderAppendingInterceptor());
-        builder.add(new HopByHopHeadersRemovingInterceptor());
-        builder.add(new RequestEnrichingInterceptor(config.styxHeaderConfig()));
+        builder.add(new TcpTunnelRequestRejector()).
+                add(new ConfigurationContextResolverInterceptor(EMPTY_CONFIGURATION_CONTEXT_RESOLVER)).
+                add(new UnexpectedRequestContentLengthRemover()).
+                add(new ViaHeaderAppendingInterceptor()).
+                add(new HopByHopHeadersRemovingInterceptor()).
+                add(new RequestEnrichingInterceptor(config.styxHeaderConfig()));
 
         return new HttpInterceptorPipeline(builder.build(), interceptorsPipeline);
     }
