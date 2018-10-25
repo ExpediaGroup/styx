@@ -286,7 +286,7 @@ public class AsyncResponseContentStreamTransformation implements Plugin {
 }
 ```
 
-This is quite similar to the request transformation but it involves an additional lambda
+This is quite similar to the request transformation, but it involves an additional lambda
 expression to capture the HTTP response from its `Eventual` envelope:
 
   1. `chain.proceed` returns an `Eventual` HTTP response. We apply an `Eventual.map` operator
