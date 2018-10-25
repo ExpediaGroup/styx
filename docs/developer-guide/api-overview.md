@@ -87,7 +87,7 @@ HTTP content accessors:
 
 ### Conversion Between HTTP Message Types 
 
-Call the `aggregate` method to convert a `LiveHttpRequest` (`LiveHttpResponse`) 
+Call the `aggregate` method to convert a `LiveHttpRequest`/`LiveHttpResponse`
 to an immutable `HttpRequest`/`HttpResponse` object: 
 
 ```java
