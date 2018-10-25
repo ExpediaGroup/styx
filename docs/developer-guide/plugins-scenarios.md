@@ -261,7 +261,7 @@ The body transformation involves two lambda methods:
      each `Buffer` that streams through. The `map` involves another lambda that accepts a
      `Buffer` and returns a modified buffer.
   
-  3. In this example, the content of the buffer buffer is interpreted as `String` and 
+  3. In this example, the content of the buffer is interpreted as `String` and 
      converted to upper case. 
   
 
