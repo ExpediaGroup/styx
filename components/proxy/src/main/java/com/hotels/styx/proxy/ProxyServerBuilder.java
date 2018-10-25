@@ -56,7 +56,7 @@ public final class ProxyServerBuilder {
                 .build();
     }
 
-    private LiveHttpResponse.Builder addInfoHeader(LiveHttpResponse.Builder responseBuilder, LiveHttpRequest request) {
+    private LiveHttpResponse.Transformer addInfoHeader(LiveHttpResponse.Transformer responseBuilder, LiveHttpRequest request) {
         return responseBuilder.header(styxInfoHeaderName, responseInfoFormat.format(request));
     }
 

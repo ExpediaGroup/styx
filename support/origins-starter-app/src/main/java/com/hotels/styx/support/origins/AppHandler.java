@@ -15,21 +15,20 @@
  */
 package com.hotels.styx.support.origins;
 
-import com.hotels.styx.api.Buffer;
-import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
-import reactor.core.publisher.Flux;
+
+import java.util.Optional;
 
 import static com.google.common.net.MediaType.HTML_UTF_8;
-import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.utils.StubOriginHeader.STUB_ORIGIN_INFO;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -38,37 +37,34 @@ import static java.util.Arrays.fill;
 import static java.util.UUID.randomUUID;
 
 public class AppHandler implements HttpHandler {
-    private final HttpHandler handler;
     private final Origin origin;
+    private final HttpResponse standardResponse;
 
     public AppHandler(Origin origin) {
         this.origin = origin;
-        this.handler = new StaticBodyHttpHandler(HTML_UTF_8, makeAResponse(origin));
+        this.standardResponse = HttpResponse.response(OK)
+                .header(CONTENT_TYPE, HTML_UTF_8.toString())
+                .body(makeAResponse(origin), UTF_8)
+                .build();
     }
 
     @Override
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
-        return handler.handle(request, context)
-                .map(response -> {
-                    LiveHttpResponse.Builder responseBuilder = response.newBuilder()
-                            .headers(request.headers())
-                            .header(STUB_ORIGIN_INFO, origin.applicationInfo());
+        HttpResponse.Builder responseBuilder = standardResponse.newBuilder()
+                .headers(request.headers())
+                .header(STUB_ORIGIN_INFO, origin.applicationInfo());
 
-                    response.contentLength().ifPresent(contentLength -> responseBuilder.header(CONTENT_LENGTH, contentLength));
-                    response.contentType().ifPresent(contentType -> responseBuilder.header(CONTENT_TYPE, contentType));
-
-                    request.queryParam("status").ifPresent(status ->
-                            responseBuilder
-                                    .status(httpResponseStatus(status))
-                                    .body(new ByteStream(Flux.just(new Buffer("Returning requested status (" + status + ")", UTF_8))))
-                    );
-
-                    request.queryParam("length").ifPresent(length ->
-                            responseBuilder.body(new ByteStream(Flux.just(new Buffer(generateContent(parseInt(length)), UTF_8))))
-                    );
-
-                    return responseBuilder.build();
-                });
+        return Eventual.of(Optional.ofNullable(responseBuilder)
+                .map(it -> request.queryParam("status")
+                        .map(status -> it.status(httpResponseStatus(status))
+                                .body("Returning requested status (" + status + ")", UTF_8))
+                        .orElse(it))
+                .map(it -> request.queryParam("length")
+                        .map(length -> it.body(generateContent(parseInt(length)), UTF_8))
+                        .orElse(it))
+                .orElse(responseBuilder)
+                .build()
+                .stream());
     }
 
     private static String makeAResponse(Origin origin) {

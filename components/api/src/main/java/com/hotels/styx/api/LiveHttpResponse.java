@@ -153,8 +153,8 @@ public class LiveHttpResponse implements LiveHttpMessage {
      *
      * @return new builder based on this response
      */
-    public Builder newBuilder() {
-        return new Builder(this);
+    public Transformer newBuilder() {
+        return new Transformer(this);
     }
 
     /**
@@ -258,10 +258,299 @@ public class LiveHttpResponse implements LiveHttpMessage {
                 && Objects.equal(this.headers, other.headers);
     }
 
+    private interface BuilderTransformer {
+        /**
+         * Sets the response status.
+         *
+         * @param status response status
+         * @return {@code this}
+         */
+        BuilderTransformer status(HttpResponseStatus status);
+
+
+        /**
+         * Sets the HTTP version.
+         *
+         * @param version HTTP version
+         * @return {@code this}
+         */
+        BuilderTransformer version(HttpVersion version);
+
+        /**
+         * Disables client-side caching of this response.
+         *
+         * @return {@code this}
+         */
+        BuilderTransformer disableCaching();
+
+        /**
+         * Makes this response chunked.
+         *
+         * @return {@code this}
+         */
+        BuilderTransformer setChunked();
+
+        /**
+         * Sets the cookies on this response by removing existing "Set-Cookie" headers and adding new ones.
+         *
+         * @param cookies cookies
+         * @return {@code this}
+         */
+        BuilderTransformer cookies(ResponseCookie... cookies);
+
+        /**
+         * Sets the cookies on this response by removing existing "Set-Cookie" headers and adding new ones.
+         *
+         * @param cookies cookies
+         * @return {@code this}
+         */
+        BuilderTransformer cookies(Collection<ResponseCookie> cookies);
+
+        /**
+         * Adds cookies into this response by adding "Set-Cookie" headers.
+         *
+         * @param cookies cookies
+         * @return {@code this}
+         */
+        BuilderTransformer addCookies(ResponseCookie... cookies);
+        /**
+         * Adds cookies into this response by adding "Set-Cookie" headers.
+         *
+         * @param cookies cookies
+         * @return {@code this}
+         */
+        BuilderTransformer addCookies(Collection<ResponseCookie> cookies);
+
+        /**
+         * Removes all cookies matching one of the supplied names by removing their "Set-Cookie" headers.
+         *
+         * @param names cookie names
+         * @return {@code this}
+         */
+        BuilderTransformer removeCookies(String... names);
+
+        /**
+         * Removes all cookies matching one of the supplied names by removing their "Set-Cookie" headers.
+         *
+         * @param names cookie names
+         * @return {@code this}
+         */
+        BuilderTransformer removeCookies(Collection<String> names);
+
+        /**
+         * Sets the (only) value for the header with the specified name.
+         * <p/>
+         * All existing values for the same header will be removed.
+         *
+         * @param name  The name of the header
+         * @param value The value of the header
+         * @return {@code this}
+         */
+        BuilderTransformer header(CharSequence name, Object value);
+
+        /**
+         * Adds a new header with the specified {@code name} and {@code value}.
+         * <p/>
+         * Will not replace any existing values for the header.
+         *
+         * @param name  The name of the header
+         * @param value The value of the header
+         * @return {@code this}
+         */
+        BuilderTransformer addHeader(CharSequence name, Object value);
+
+        /**
+         * Removes the header with the specified name.
+         *
+         * @param name The name of the header to remove
+         * @return {@code this}
+         */
+        BuilderTransformer removeHeader(CharSequence name);
+
+        /**
+         * (UNSTABLE) Removes body stream from this request.
+         * <p>
+         * This method is unstable until Styx 1.0 API is frozen.
+         * <p>
+         * Inappropriate use can lead to stability issues. These issues
+         * will be addressed before Styx 1.0 API is frozen. Therefore
+         * it is best to avoid until then. Consult
+         * https://github.com/HotelsDotCom/styx/issues/201 for more
+         * details.
+         *
+         * @return {@code this}
+         */
+        // TODO: See https://github.com/HotelsDotCom/styx/issues/201
+        BuilderTransformer removeBody();
+
+
+        /**
+         * Sets the headers.
+         *
+         * @param headers headers
+         * @return {@code this}
+         */
+        BuilderTransformer headers(HttpHeaders headers);
+
+        /**
+         * Disables automatic validation of some HTTP headers.
+         * <p>
+         * Normally the {@link Builder} validates the message when {@code build}
+         * method is invoked. Specifically that:
+         *
+         * <li>
+         * <ul>There is maximum of only one {@code Content-Length} header</ul>
+         * <ul>The {@code Content-Length} header is zero or positive integer</ul>
+         * </li>
+         *
+         * @return {@code this}
+         */
+        BuilderTransformer disableValidation();
+
+        /**
+         * Builds a new full response based on the settings configured in this builder.
+         * <p>
+         * Validates and builds a {link LiveHttpResponse} object. Object validation can be
+         * disabled with {@link this.disableValidation} method.
+         * <p>
+         * When validation is enabled (by default), ensures that:
+         *
+         * <li>
+         * <ul>There is maximum of only one {@code Content-Length} header</ul>
+         * <ul>The {@code Content-Length} header is zero or positive integer</ul>
+         * </li>
+         *
+         * @return a new full response.
+         * @throws IllegalArgumentException when validation fails
+         */
+        LiveHttpResponse build();
+
+    }
+
+    public static final class Transformer implements BuilderTransformer {
+        private final Builder builder;
+
+        public Transformer(LiveHttpResponse response) {
+            this.builder = new Builder(response);
+        }
+
+        /**
+         * Transforms request body.
+         *
+         * @param transformation a Function from ByteStream to ByteStream.
+         * @return a HttpResponhse builder with a transformed message body.
+         */
+        public Transformer body(Function<ByteStream, ByteStream> transformation) {
+            this.builder.body(requireNonNull(transformation.apply(this.builder.body)));
+            return this;
+        }
+
+        @Override
+        public Transformer status(HttpResponseStatus status) {
+            builder.status(status);
+            return this;
+        }
+
+        @Override
+        public Transformer version(HttpVersion version) {
+            builder.version(version);
+            return this;
+        }
+
+        @Override
+        public Transformer disableCaching() {
+            builder.disableCaching();
+            return this;
+        }
+
+        @Override
+        public Transformer setChunked() {
+            builder.setChunked();
+            return this;
+        }
+
+        @Override
+        public Transformer cookies(ResponseCookie... cookies) {
+            builder.cookies(cookies);
+            return this;
+        }
+
+        @Override
+        public Transformer cookies(Collection<ResponseCookie> cookies) {
+            builder.cookies(cookies);
+            return this;
+        }
+
+        @Override
+        public Transformer addCookies(ResponseCookie... cookies) {
+            builder.addCookies(cookies);
+            return this;
+        }
+
+        @Override
+        public Transformer addCookies(Collection<ResponseCookie> cookies) {
+            builder.addCookies(cookies);
+            return this;
+        }
+
+        @Override
+        public Transformer removeCookies(String... names) {
+            builder.removeCookies(names);
+            return this;
+        }
+
+        @Override
+        public Transformer removeCookies(Collection<String> names) {
+            builder.removeCookies(names);
+            return this;
+        }
+
+        @Override
+        public Transformer header(CharSequence name, Object value) {
+            builder.header(name, value);
+            return this;
+        }
+
+        @Override
+        public Transformer addHeader(CharSequence name, Object value) {
+            builder.addHeader(name, value);
+            return this;
+        }
+
+        @Override
+        public Transformer removeHeader(CharSequence name) {
+            builder.removeHeader(name);
+            return this;
+        }
+
+        @Override
+        public Transformer removeBody() {
+            builder.removeBody();
+            return this;
+        }
+
+        @Override
+        public Transformer headers(HttpHeaders headers) {
+            builder.headers(headers);
+            return this;
+        }
+
+        @Override
+        public Transformer disableValidation() {
+            builder.disableValidation();
+            return this;
+        }
+
+        @Override
+        public LiveHttpResponse build() {
+            return this.builder.build();
+        }
+    }
+
     /**
      * An HTTP response builder.
      */
-    public static final class Builder {
+    public static final class Builder implements BuilderTransformer {
         private HttpResponseStatus status = OK;
         private HttpHeaders.Builder headers;
         private HttpVersion version = HTTP_1_1;
@@ -334,17 +623,6 @@ public class LiveHttpResponse implements LiveHttpMessage {
          */
         public Builder body(ByteStream content) {
             this.body = requireNonNull(content);
-            return this;
-        }
-
-        /**
-         * Transforms request body.
-         *
-         * @param transformation a Function from ByteStream to ByteStream.
-         * @return a HttpResponhse builder with a transformed message body.
-         */
-        public Builder body(Function<ByteStream, ByteStream> transformation) {
-            this.body = requireNonNull(transformation.apply(this.body));
             return this;
         }
 
@@ -450,7 +728,7 @@ public class LiveHttpResponse implements LiveHttpMessage {
          * @param names cookie names
          * @return {@code this}
          */
-        public <T> Builder removeCookies(Collection<String> names) {
+        public Builder removeCookies(Collection<String> names) {
             requireNonNull(names);
 
             if (names.isEmpty()) {

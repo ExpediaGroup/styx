@@ -15,10 +15,12 @@
  */
 package com.hotels.styx.api;
 
+import com.google.common.collect.ImmutableList;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
@@ -164,25 +166,6 @@ public class LiveHttpResponseTest {
                 .build();
 
         assertThat(shouldRemoveHeader.headers(), contains(header("a", "b")));
-    }
-
-    @Test
-    public void canRemoveResponseBody() throws ExecutionException, InterruptedException {
-        Buffer originalContent = new Buffer("I'm going to get removed.", UTF_8);
-
-        LiveHttpResponse response = response(NO_CONTENT)
-                .body(new ByteStream(Flux.just(originalContent)))
-                .build();
-
-        HttpResponse fullResponse = response.newBuilder()
-                .body(ByteStream::drop)
-                .build()
-                .aggregate(1000)
-                .asCompletableFuture()
-                .get();
-
-        assertThat(fullResponse.body().length, is(0));
-        assertThat(originalContent.delegate().refCnt(), is(0));
     }
 
     @Test
@@ -367,6 +350,129 @@ public class LiveHttpResponseTest {
 
         assertEquals(buf1.delegate().refCnt(), 0);
         assertEquals(buf2.delegate().refCnt(), 0);
+    }
+
+    @Test
+    public void transformsStatus() {
+        LiveHttpResponse response = response(OK).build()
+                .newBuilder()
+                .status(MOVED_PERMANENTLY)
+                .build();
+
+        assertEquals(response.status(), MOVED_PERMANENTLY);
+    }
+
+    @Test
+    public void transformsCookies() {
+        LiveHttpResponse response = response().build()
+                .newBuilder()
+                .cookies(responseCookie("x", "y").build())
+                .build();
+
+        assertEquals(response.cookie("x"), Optional.of(responseCookie("x", "y").build()));
+    }
+
+    @Test
+    public void transformsWithCookieList() {
+        LiveHttpResponse response = response().build()
+                .newBuilder()
+                .cookies(ImmutableList.of(responseCookie("x", "y").build()))
+                .build();
+
+        assertEquals(response.cookie("x"), Optional.of(responseCookie("x", "y").build()));
+    }
+
+    @Test
+    public void transformerAddsCookies() {
+        LiveHttpResponse response = response().build()
+                .newBuilder()
+                .addCookies(responseCookie("x", "y").build())
+                .build();
+
+        assertEquals(response.cookie("x"), Optional.of(responseCookie("x", "y").build()));
+    }
+
+    @Test
+    public void transformerAddsCookiesList() {
+        LiveHttpResponse response = response().build()
+                .newBuilder()
+                .addCookies(ImmutableList.of(responseCookie("x", "y").build()))
+                .build();
+
+        assertEquals(response.cookie("x"), Optional.of(responseCookie("x", "y").build()));
+    }
+
+    @Test
+    public void transformerRemovesCookies() {
+        LiveHttpResponse response = response()
+                .addCookies(ImmutableList.of(responseCookie("x", "y").build()))
+                .build()
+                .newBuilder()
+                .removeCookies("x")
+                .build();
+
+        assertEquals(response.cookie("x"), Optional.empty());
+    }
+
+    @Test
+    public void transformerRemovesCookiesWithList() {
+        LiveHttpResponse response = response()
+                .addCookies(ImmutableList.of(responseCookie("x", "y").build()))
+                .build()
+                .newBuilder()
+                .removeCookies(ImmutableList.of("x"))
+                .build();
+
+        assertEquals(response.cookie("x"), Optional.empty());
+    }
+
+    @Test
+    public void transformerAddsHeaders() {
+        LiveHttpResponse response = response().build()
+                .newBuilder()
+                .addHeader("X-Styx-ID", "y")
+                .build();
+
+        assertEquals(response.header("X-Styx-ID"), Optional.of("y"));
+    }
+
+    @Test
+    public void transformerRemovesHeaders() {
+        LiveHttpResponse response = response().addHeader("X-Styx-ID", "y").build()
+                .newBuilder()
+                .removeHeader("X-Styx-ID")
+                .build();
+
+        assertEquals(response.header("X-Styx-ID"), Optional.empty());
+    }
+
+    @Test
+    public void transformerSetsHeaders() {
+        LiveHttpResponse response = response().build()
+                .newBuilder()
+                .headers(new HttpHeaders.Builder().add("X-Styx-ID", "z").build())
+                .build();
+
+        assertEquals(response.header("X-Styx-ID"), Optional.of("z"));
+    }
+
+    @Test
+    public void transformsBody() throws ExecutionException, InterruptedException {
+        Buffer buffer = new Buffer("I'm going to get removed.", UTF_8);
+
+        LiveHttpResponse response = response(NO_CONTENT)
+                .body(new ByteStream(Flux.just(buffer)))
+                .build();
+
+        HttpResponse fullResponse = response.newBuilder()
+                .body(ByteStream::drop)
+                .build()
+                .aggregate(1000)
+                .asCompletableFuture()
+                .get();
+
+        assertThat(fullResponse.body().length, is(0));
+        assertThat(buffer.delegate().refCnt(), is(0));
     }
 
     private static LiveHttpResponse.Builder response() {

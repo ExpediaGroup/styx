@@ -495,9 +495,13 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
         String message = status.code() >= 500 ? "Site temporarily unavailable." : status.description();
 
-        return responseEnhancer.enhance(LiveHttpResponse.response(status), request)
+        return responseEnhancer.enhance(
+                LiveHttpResponse
+                        .response(status)
+                        .body(new ByteStream(Flux.just(new Buffer(message, UTF_8))))
+                        .build()
+                        .newBuilder(), request)
                 .header(CONTENT_LENGTH, message.getBytes(UTF_8).length)
-                .body(new ByteStream(Flux.just(new Buffer(message, UTF_8))))
                 .build();
     }
 
