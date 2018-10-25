@@ -2,7 +2,7 @@
 # Styx API Overview
 
 Styx provides an Application Programming Interface (API) for implementing custom extensions.
-As of writing the extensions can be (1) HTTP interceptor plugins, or (2) backend service 
+As of writing, the extensions can be (1) HTTP interceptor plugins, or (2) backend service 
 providers. Other extension points will be opened in future.
 
 Besides Styx extensions, Styx modules can be used as libraries in other software projects. 
