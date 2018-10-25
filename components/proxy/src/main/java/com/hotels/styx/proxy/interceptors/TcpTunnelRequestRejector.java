@@ -21,8 +21,6 @@ import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.routing.config.HttpInterceptorFactory;
-import com.hotels.styx.routing.config.RouteHandlerDefinition;
 
 import static com.hotels.styx.api.LiveHttpResponse.response;
 
