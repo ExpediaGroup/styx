@@ -22,7 +22,7 @@ The relevant modules are available in Maven Central:
 
 Important API concepts are:
 
-   * HTTP Message Abstractions: `HttpRequest`, `HttpResponse`, `LiveHttpRequest`, `LiveHttpResponse`
+   * HTTP message abstractions: `HttpRequest`, `HttpResponse`, `LiveHttpRequest`, `LiveHttpResponse`
    * HTTP message consumers: `HttpInterceptor`, `HttpHandler`
    * Asynchronous event support: `Eventual`
    
