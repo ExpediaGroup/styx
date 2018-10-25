@@ -253,7 +253,7 @@ to be transformed to.
 
 The body transformation involves two lambda methods:
 
-  1. A `.body(Function<ByteStream, ByteStream>)` accepts a lambda that modifies the request
+  1. `.body(Function<ByteStream, ByteStream>)` accepts a lambda that modifies the request
      byte stream. Here we provide a lambda that accepts a `ByteStream` and returns another
      by applying a synchronous `map` operator on the stream.
      
