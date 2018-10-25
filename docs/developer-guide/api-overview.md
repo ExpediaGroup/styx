@@ -206,7 +206,7 @@ thread will block the Styx event loop.
 
 ### Eventual
 
-The `Eventual` class is an envelope for a value that is available some time in future.
+The `Eventual` class is an envelope for a value that will be available some time in the future.
 It represents a deferred value that becomes eventually available, and thus enables 
 asynchronous operations in Styx. If `Eventual` appears as a method return type then that
 method is asynchronous. 
