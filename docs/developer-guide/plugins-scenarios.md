@@ -262,7 +262,7 @@ The body transformation involves two lambda methods:
      `Buffer` and returns a modified buffer.
   
   3. In this example, the content of the buffer buffer is interpreted as `String` and 
-     converted to an upper case. 
+     converted to upper case. 
   
 
 ### Synchronously transforming streaming response content
