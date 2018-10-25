@@ -161,7 +161,7 @@ public class AsyncResponseInterceptor implements Plugin {
 Step 1. We start by calling `chain.proceed(request)` to obtain a response `Eventual`. 
 
 Step 2. A `callTo3rdParty` returns a `CompletableFuture`. It is converted to an `Eventual` with
-`Eventual.from` and bound to response `Eventual`. 
+`Eventual.from` and bound to the response `Eventual`.
 
 Step 3. The `flatMap` operator binds `callToThirdParty` into the response `Eventual`.
 
