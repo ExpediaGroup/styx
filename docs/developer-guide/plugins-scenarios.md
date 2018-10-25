@@ -113,7 +113,7 @@ Step 4. The eventual outcome from the `asyncUrlReplacement` yields a new, modifi
 We'll transform the `request` by substituting the URL path with the new one. 
 This is a quick synchronous operation so we'll do it in a `map` operator. 
 
-Step 5. Finally, we will bind the outcome from `chain.proceed` into the response eventual.
+Step 5. Finally, we will bind the outcome from `chain.proceed` into the response `Eventual`.
 Remember that `chain.proceed` returns an `Eventual<LiveHttpResponse>`. It is therefore 
 interface compatible and can be `flatMap`'d to the response eventual. The resulting
 response eventual chain is returned from the `intercept`.
@@ -215,7 +215,7 @@ and running out of memory. Styx only accumulates up to `maxContentBytes` of cont
 Streaming HTTP body content can be transformed both synchronously and asynchronously.
 However there are some pitfalls you need to know:
 
- - **Reference counting.** Styx exposes the content stream as a `ByteStream` of reference counted
+ - **Reference counting:** Styx exposes the content stream as a `ByteStream` of reference counted
   `Buffer` objects. 
   
  - **Continuity (or discontinuity) of Styx content `ByteStream`:** each content transformation with 
