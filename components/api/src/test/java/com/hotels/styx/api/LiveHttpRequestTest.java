@@ -15,26 +15,27 @@
  */
 package com.hotels.styx.api;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
 
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.api.HttpMethod.DELETE;
 import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.api.HttpMethod.POST;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
+import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpRequest.patch;
 import static com.hotels.styx.api.LiveHttpRequest.post;
 import static com.hotels.styx.api.LiveHttpRequest.put;
-import static com.hotels.styx.api.HttpVersion.HTTP_1_0;
-import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
@@ -51,6 +52,7 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.testng.Assert.assertEquals;
 
 public class LiveHttpRequestTest {
     @Test
@@ -151,12 +153,10 @@ public class LiveHttpRequestTest {
                 .build();
 
         LiveHttpRequest newRequest = request.newBuilder()
-                .method(DELETE)
                 .uri("/home")
                 .header("remove", "notanymore")
                 .build();
 
-        assertThat(newRequest.method(), is(DELETE));
         assertThat(newRequest.url().path(), is("/home"));
         assertThat(newRequest.headers(), hasItem(header("remove", "notanymore")));
     }
@@ -424,6 +424,144 @@ public class LiveHttpRequestTest {
                 .build();
 
         assertThat(r1.cookie("x"), isAbsent());
+    }
+
+    @Test
+    public void transformsUri() {
+        LiveHttpRequest request = LiveHttpRequest.get("/x").build()
+                .newBuilder()
+                .uri("/y")
+                .build();
+
+        assertEquals(request.url().path(), "/y");
+    }
+
+    @Test
+    public void transformsId() {
+        LiveHttpRequest request = LiveHttpRequest.get("/").id("abc").build()
+                .newBuilder()
+                .id("xyz")
+                .build();
+
+        assertEquals(request.id(), "xyz");
+    }
+
+    @Test
+    public void transformsHeader() {
+        LiveHttpRequest request = LiveHttpRequest.get("/").header("X-Styx-ID", "test").build()
+                .newBuilder()
+                .header("X-Styx-ID", "bar")
+                .build();
+
+        assertEquals(request.header("X-Styx-ID"), Optional.of("bar"));
+    }
+
+    @Test
+    public void transformsHeaders() {
+        LiveHttpRequest request = LiveHttpRequest.get("/").headers(
+                new HttpHeaders.Builder()
+                        .add("x", "y")
+                        .build())
+                .build()
+                .newBuilder()
+                .headers(
+                        new HttpHeaders.Builder()
+                        .add("a", "b")
+                        .build())
+                .build();
+
+        assertThat(request.header("x"), is(Optional.empty()));
+        assertThat(request.header("a"), is(Optional.of("b")));
+    }
+
+    @Test
+    public void transformerAddsHeader() {
+        LiveHttpRequest request = LiveHttpRequest.get("/").build()
+                .newBuilder()
+                .addHeader("x", "y")
+                .build();
+
+        assertEquals(request.header("x"), Optional.of("y"));
+    }
+
+    @Test
+    public void transformerRemovesHeader() {
+        LiveHttpRequest request = LiveHttpRequest.get("/").addHeader("x", "y").build()
+                .newBuilder()
+                .removeHeader("x")
+                .build();
+
+        assertEquals(request.header("x"), Optional.empty());
+    }
+
+    @Test
+    public void transformsUrl() {
+        LiveHttpRequest request = LiveHttpRequest.get("/").build()
+                .newBuilder()
+                .url(url("/z").build())
+                .build();
+
+        assertEquals(request.url().path(), "/z");
+    }
+
+    @Test
+    public void transformsCookies() {
+        LiveHttpRequest request = LiveHttpRequest.get("/").addCookies(requestCookie("cookie", "xyz010")).build()
+                .newBuilder()
+                .cookies(requestCookie("cookie", "xyz202"))
+                .build();
+
+        assertEquals(request.cookie("cookie"), Optional.of(requestCookie("cookie", "xyz202")));
+    }
+
+    @Test
+    public void transformsCookiesViaList() {
+        LiveHttpRequest request = LiveHttpRequest.get("/").addCookies(requestCookie("cookie", "xyz010")).build()
+                .newBuilder()
+                .cookies(ImmutableList.of(requestCookie("cookie", "xyz202")))
+                .build();
+
+        assertEquals(request.cookie("cookie"), Optional.of(requestCookie("cookie", "xyz202")));
+    }
+
+    @Test
+    public void transformsByAddingCookies() {
+        LiveHttpRequest request = LiveHttpRequest.get("/").build()
+                .newBuilder()
+                .addCookies(requestCookie("cookie", "xyz202"))
+                .build();
+
+        assertEquals(request.cookie("cookie"), Optional.of(requestCookie("cookie", "xyz202")));
+    }
+
+    @Test
+    public void transformsByAddingCookiesList() {
+        LiveHttpRequest request = LiveHttpRequest.get("/").build()
+                .newBuilder()
+                .addCookies(ImmutableList.of(requestCookie("cookie", "xyz202")))
+                .build();
+
+        assertEquals(request.cookie("cookie"), Optional.of(requestCookie("cookie", "xyz202")));
+    }
+
+    @Test
+    public void transformsByRemovingCookies() {
+        LiveHttpRequest request = LiveHttpRequest.get("/").addCookies(requestCookie("cookie", "xyz202")).build()
+                .newBuilder()
+                .removeCookies("cookie")
+                .build();
+
+        assertEquals(request.cookie("cookie"), Optional.empty());
+    }
+
+    @Test
+    public void transformsByRemovingCookieList() {
+        LiveHttpRequest request = LiveHttpRequest.get("/").addCookies(requestCookie("cookie", "xyz202")).build()
+                .newBuilder()
+                .removeCookies(ImmutableList.of("cookie"))
+                .build();
+
+        assertEquals(request.cookie("cookie"), Optional.empty());
     }
 
     private static ByteStream body(String... contents) {

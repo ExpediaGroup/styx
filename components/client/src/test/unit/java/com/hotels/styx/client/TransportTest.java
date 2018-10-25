@@ -18,9 +18,9 @@ package com.hotels.styx.client;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
+import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Id;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import org.testng.annotations.BeforeMethod;
@@ -34,9 +34,9 @@ import rx.subjects.PublishSubject;
 import java.util.Optional;
 
 import static com.hotels.styx.api.Buffers.toByteBuf;
-import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.Id.id;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -221,8 +221,7 @@ public class TransportTest {
         Buffer chunk2 = new Buffer("y", UTF_8);
         Buffer chunk3 = new Buffer("z", UTF_8);
 
-        LiveHttpRequest aRequest = request
-                .newBuilder()
+        LiveHttpRequest aRequest = get("/")
                 .body(new ByteStream(toPublisher(Observable.from(ImmutableList.of(chunk1, chunk2, chunk3)))))
                 .build();
 

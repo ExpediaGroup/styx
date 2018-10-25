@@ -321,8 +321,8 @@ public class LiveHttpRequest implements LiveHttpMessage {
      *
      * @return new builder based on this request
      */
-    public Builder newBuilder() {
-        return new Builder(this);
+    public Transformer newBuilder() {
+        return new Transformer(this);
     }
 
     /**
@@ -394,10 +394,271 @@ public class LiveHttpRequest implements LiveHttpMessage {
                 .toString();
     }
 
+    private interface BuilderTransformer {
+        BuilderTransformer uri(String uri);
+
+        BuilderTransformer id(Object id);
+
+        /**
+         * Sets the (only) value for the header with the specified name.
+         * <p/>
+         * All existing values for the same header will be removed.
+         *
+         * @param name  The name of the header
+         * @param value The value of the header
+         * @return {@code this}
+         */
+        BuilderTransformer header(CharSequence name, Object value);
+
+        /**
+         * Sets the headers.
+         *
+         * @param headers headers
+         * @return {@code this}
+         */
+        BuilderTransformer headers(HttpHeaders headers);
+
+        /**
+         * Adds a new header with the specified {@code name} and {@code value}.
+         * <p/>
+         * Will not replace any existing values for the header.
+         *
+         * @param name  The name of the header
+         * @param value The value of the header
+         * @return {@code this}
+         */
+        BuilderTransformer addHeader(CharSequence name, Object value);
+
+        /**
+         * Removes the header with the specified name.
+         *
+         * @param name The name of the header to remove
+         * @return {@code this}
+         */
+        BuilderTransformer removeHeader(CharSequence name);
+
+        /**
+         * Sets the request fully qualified url.
+         *
+         * @param url fully qualified url
+         * @return {@code this}
+         */
+        BuilderTransformer url(Url url);
+
+        /**
+         * Sets the HTTP version.
+         *
+         * @param version HTTP version
+         * @return {@code this}
+         */
+        BuilderTransformer version(HttpVersion version);
+
+        /**
+         * Enable validation of uri and some headers.
+         *
+         * @return {@code this}
+         */
+        BuilderTransformer disableValidation();
+
+        /**
+         * Enables Keep-Alive.
+         *
+         * @return {@code this}
+         */
+        BuilderTransformer enableKeepAlive();
+
+        /**
+         * Sets the cookies on this request by overwriting the value of the "Cookie" header.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        BuilderTransformer cookies(RequestCookie... cookies);
+
+        /**
+         * Sets the cookies on this request by overwriting the value of the "Cookie" header.
+         *
+         * @param cookies cookies
+         * @return this builder
+         */
+        BuilderTransformer cookies(Collection<RequestCookie> cookies);
+
+        /**
+         * Adds cookies into the "Cookie" header. If the name matches an already existing cookie, the value will be overwritten.
+         * <p>
+         * Note that this requires decoding the current header value before re-encoding, so it is most efficient to
+         * add all new cookies in one call to the method rather than spreading them out.
+         *
+         * @param cookies new cookies
+         * @return this builder
+         */
+        BuilderTransformer addCookies(RequestCookie... cookies);
+
+        /**
+         * Adds cookies into the "Cookie" header. If the name matches an already existing cookie, the value will be overwritten.
+         * <p>
+         * Note that this requires decoding the current header value before re-encoding, so it is most efficient to
+         * add all new cookies in one call to the method rather than spreading them out.
+         *
+         * @param cookies new cookies
+         * @return this builder
+         */
+        BuilderTransformer addCookies(Collection<RequestCookie> cookies);
+
+        /**
+         * Removes all cookies matching one of the supplied names by overwriting the value of the "Cookie" header.
+         *
+         * @param names cookie names
+         * @return this builder
+         */
+        BuilderTransformer removeCookies(String... names);
+
+        /**
+         * Removes all cookies matching one of the supplied names by overwriting the value of the "Cookie" header.
+         *
+         * @param names cookie names
+         * @return this builder
+         */
+        BuilderTransformer removeCookies(Collection<String> names);
+
+        /**
+         * Builds a new full request based on the settings configured in this builder.
+         * If {@code validate} is set to true:
+         * <ul>
+         * <li>the host header will be set if absent</li>
+         * <li>an exception will be thrown if the content length is not an integer, or more than one content length exists</li>
+         * <li>an exception will be thrown if the request method is not a valid HTTP method</li>
+         * </ul>
+         *
+         * @return a new full request
+         */
+        LiveHttpRequest build();
+    }
+
+    public static final class Transformer implements BuilderTransformer {
+        private final Builder builder;
+
+        public Transformer(LiveHttpRequest liveHttpRequest) {
+            this.builder = new Builder(liveHttpRequest);
+        }
+
+        @Override
+        public Transformer uri(String uri) {
+            builder.uri(uri);
+            return this;
+        }
+
+        /**
+         * Transforms request body.
+         *
+         * @param transformation a Function from ByteStream to ByteStream.
+         * @return a LiveHttpRequest builder with a transformed message body.
+         */
+        public Transformer body(Function<ByteStream, ByteStream> transformation) {
+            builder.body(transformation.apply(builder.body));
+            return this;
+        }
+
+        @Override
+        public Transformer id(Object id) {
+            builder.id(id);
+            return this;
+        }
+
+        @Override
+        public Transformer header(CharSequence name, Object value) {
+            builder.header(name, value);
+            return this;
+        }
+
+        @Override
+        public Transformer headers(HttpHeaders headers) {
+            builder.headers(headers);
+            return this;
+        }
+
+        @Override
+        public Transformer addHeader(CharSequence name, Object value) {
+            builder.addHeader(name, value);
+            return this;
+        }
+
+        @Override
+        public Transformer removeHeader(CharSequence name) {
+            builder.removeHeader(name);
+            return this;
+        }
+
+        @Override
+        public Transformer url(Url url) {
+            builder.url(url);
+            return this;
+        }
+
+        @Override
+        public Transformer version(HttpVersion version) {
+            builder.version(version);
+            return this;
+        }
+
+        @Override
+        public Transformer disableValidation() {
+            builder.disableValidation();
+            return this;
+        }
+
+        @Override
+        public Transformer enableKeepAlive() {
+            builder.enableKeepAlive();
+            return this;
+        }
+
+        @Override
+        public Transformer cookies(RequestCookie... cookies) {
+            builder.cookies(cookies);
+            return this;
+        }
+
+        @Override
+        public Transformer cookies(Collection<RequestCookie> cookies) {
+            builder.cookies(cookies);
+            return this;
+        }
+
+        @Override
+        public Transformer addCookies(RequestCookie... cookies) {
+            builder.addCookies(cookies);
+            return this;
+        }
+
+        @Override
+        public Transformer addCookies(Collection<RequestCookie> cookies) {
+            builder.addCookies(cookies);
+            return this;
+        }
+
+        @Override
+        public Transformer removeCookies(String... names) {
+            builder.removeCookies(names);
+            return this;
+        }
+
+        @Override
+        public Transformer removeCookies(Collection<String> names) {
+            builder.removeCookies(names);
+            return this;
+        }
+
+        @Override
+        public LiveHttpRequest build() {
+            return builder.build();
+        }
+    }
+
     /**
      * An HTTP request builder.
      */
-    public static final class Builder {
+    public static final class Builder implements BuilderTransformer {
         private Object id;
         private HttpMethod method = HttpMethod.GET;
         private boolean validate = true;
@@ -466,6 +727,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          * @param uri URI
          * @return {@code this}
          */
+        @Override
         public Builder uri(String uri) {
             return this.url(Url.Builder.url(uri).build());
         }
@@ -482,22 +744,12 @@ public class LiveHttpRequest implements LiveHttpMessage {
         }
 
         /**
-         * Transforms request body.
-         *
-         * @param transformation a Function from ByteStream to ByteStream.
-         * @return a LiveHttpRequest builder with a transformed message body.
-         */
-        public Builder body(Function<ByteStream, ByteStream> transformation) {
-            this.body = transformation.apply(this.body);
-            return this;
-        }
-
-        /**
          * Sets the unique ID for this request.
          *
          * @param id request ID
          * @return {@code this}
          */
+        @Override
         public Builder id(Object id) {
             this.id = id;
             return this;
@@ -512,6 +764,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          * @param value The value of the header
          * @return {@code this}
          */
+        @Override
         public Builder header(CharSequence name, Object value) {
             this.headers.set(name, value);
             return this;
@@ -523,6 +776,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          * @param headers headers
          * @return {@code this}
          */
+        @Override
         public Builder headers(HttpHeaders headers) {
             this.headers = headers.newBuilder();
             return this;
@@ -537,6 +791,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          * @param value The value of the header
          * @return {@code this}
          */
+        @Override
         public Builder addHeader(CharSequence name, Object value) {
             this.headers.add(name, value);
             return this;
@@ -548,6 +803,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          * @param name The name of the header to remove
          * @return {@code this}
          */
+        @Override
         public Builder removeHeader(CharSequence name) {
             headers.remove(name);
             return this;
@@ -559,6 +815,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          * @param url fully qualified url
          * @return {@code this}
          */
+        @Override
         public Builder url(Url url) {
             this.url = url;
             return this;
@@ -570,6 +827,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          * @param version HTTP version
          * @return {@code this}
          */
+        @Override
         public Builder version(HttpVersion version) {
             this.version = requireNonNull(version);
             return this;
@@ -591,6 +849,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          *
          * @return {@code this}
          */
+        @Override
         public Builder disableValidation() {
             this.validate = false;
             return this;
@@ -601,6 +860,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          *
          * @return {@code this}
          */
+        @Override
         public Builder enableKeepAlive() {
             return header(CONNECTION, KEEP_ALIVE);
         }
@@ -611,6 +871,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          * @param cookies cookies
          * @return this builder
          */
+        @Override
         public Builder cookies(RequestCookie... cookies) {
             return cookies(asList(cookies));
         }
@@ -621,6 +882,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          * @param cookies cookies
          * @return this builder
          */
+        @Override
         public Builder cookies(Collection<RequestCookie> cookies) {
             requireNonNull(cookies);
 
@@ -641,6 +903,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          * @param cookies new cookies
          * @return this builder
          */
+        @Override
         public Builder addCookies(RequestCookie... cookies) {
             return addCookies(asList(cookies));
         }
@@ -654,6 +917,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          * @param cookies new cookies
          * @return this builder
          */
+        @Override
         public Builder addCookies(Collection<RequestCookie> cookies) {
             requireNonNull(cookies);
 
@@ -669,6 +933,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          * @param names cookie names
          * @return this builder
          */
+        @Override
         public Builder removeCookies(String... names) {
             return removeCookies(asList(names));
         }
@@ -679,6 +944,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          * @param names cookie names
          * @return this builder
          */
+        @Override
         public Builder removeCookies(Collection<String> names) {
             requireNonNull(names);
 
@@ -710,6 +976,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
          *
          * @return a new full request
          */
+        @Override
         public LiveHttpRequest build() {
             if (validate) {
                 ensureContentLengthIsValid();
