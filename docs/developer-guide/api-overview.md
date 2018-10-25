@@ -54,7 +54,7 @@ core processes everything as a HTTP stream.
 
 For most other situations it is more convenient to use "full" HTTP messages
 that provide the HTTP headers and the full body in one immutable unit.
-For this purpose Styx provides `HttpRequest` and `HttpResponse` classes. They are immutable, 
+For this purpose, Styx provides `HttpRequest` and `HttpResponse` classes. They are immutable, 
 fully re-usable HTTP message classes that are more convenient for unit testing, admin interfaces,
 and for other applications built on Styx libraries.
 
