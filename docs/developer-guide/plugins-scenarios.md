@@ -114,7 +114,7 @@ We'll transform the `request` by substituting the URL path with the new one.
 This is a quick synchronous operation so we'll do it in a `map` operator. 
 
 Step 5. Finally, we will bind the outcome from `chain.proceed` into the response `Eventual`.
-Remember that `chain.proceed` returns an `Eventual<LiveHttpResponse>`. It is therefore 
+Remember that `chain.proceed` returns an `Eventual<LiveHttpResponse>`. It is, therefore,
 interface compatible and can be `flatMap`'d to the response eventual. The resulting
 response eventual chain is returned from the `intercept`.
 
