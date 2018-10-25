@@ -109,7 +109,7 @@ The type signature illustrates other facts about the content stream:
   If the limit is reached, the conversion fails with `ContentOverflowException`. 
 
 Call the `stream` method to convert an immutable `HttpRequest` 
-(`HttpResponse`) to a `LiveHttpRequest` (`LiveHttpResponse`):
+/`HttpResponse` to a `LiveHttpRequest`/`LiveHttpResponse`:
  
 ```java
     public LiveHttpRequest stream()
