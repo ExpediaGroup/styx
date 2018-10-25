@@ -64,7 +64,7 @@ class Transport {
 
 
             private synchronized void closeIfConnected(Optional<ConnectionPool> connectionPool, Connection connection) {
-                if(connection==null){
+                if (connection == null) {
                     return;
                 }
                 if (outstandingRequest.getAndSet(false)) {
@@ -73,7 +73,7 @@ class Transport {
             }
 
             private synchronized void returnIfConnected(Optional<ConnectionPool> connectionPool, Connection connection) {
-                if(connection==null){
+                if (connection == null) {
                     return;
                 }
                 if (outstandingRequest.getAndSet(false)) {
