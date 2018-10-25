@@ -99,8 +99,7 @@ HTTP object. Note that `aggregate` consumes the underlying live HTTP message `By
 
 The type signature illustrates other facts about the content stream:
 
-* Return type of `Eventual` shows that `aggregate` is asynchronous. 
-  We can see that `aggregate` is asynchronous by its return type, `Eventual`. 
+* We can see that `aggregate` is asynchronous by its return type, `Eventual`. 
   This is because it needs to wait for all of the byte stream to be fully available.
 
 * The `maxContentBytes` sets an upper limit for the aggregated message 
