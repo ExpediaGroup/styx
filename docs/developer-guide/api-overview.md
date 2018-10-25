@@ -6,7 +6,7 @@ As of writing, the extensions can be (1) HTTP interceptor plugins, or (2) backen
 providers. Other extension points will be opened in future.
 
 Besides Styx extensions, Styx modules can be used as libraries in other software projects. 
-The `styx-server` module makes it really easy to start Styx based HTTP(s) servers with just a 
+The `styx-server` module makes it really easy to start Styx-based HTTP(s) servers with just a 
 few lines of code. The `styx-client` can be used as a reactive HTTP client.
 
 The `styx-api-testsupport` provides helpers for unit testing Styx extensions. 
