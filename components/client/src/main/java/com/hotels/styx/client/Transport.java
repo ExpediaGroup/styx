@@ -84,7 +84,7 @@ class Transport {
                 .map(ConnectionPool::borrowConnection)
                 .orElseGet(() -> {
                     // Aggregates an empty body:
-                    request.body().drop().aggregate(1);
+                    request.consume();
                     return Observable.error(new NoAvailableHostsException(appId));
                 });
     }
