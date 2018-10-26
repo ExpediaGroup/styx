@@ -17,11 +17,11 @@ package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.HttpMethod;
-import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 
+import static com.hotels.styx.api.HttpMethod.CONNECT;
+import static com.hotels.styx.api.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 
 /**
@@ -30,13 +30,11 @@ import static com.hotels.styx.api.LiveHttpResponse.response;
  */
 public class TcpTunnelRequestRejector implements HttpInterceptor {
 
-
-
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
 
-        if (HttpMethod.CONNECT.equals(request.method())) {
-            return Eventual.of(response(HttpResponseStatus.METHOD_NOT_ALLOWED).build());
+        if (CONNECT.equals(request.method())) {
+            return Eventual.of(response(METHOD_NOT_ALLOWED).build());
         } else {
             return chain.proceed(request);
         }
