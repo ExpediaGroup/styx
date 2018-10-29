@@ -2,11 +2,11 @@
 # Styx API Overview
 
 Styx provides an Application Programming Interface (API) for implementing custom extensions.
-As of writing the extensions can be (1) HTTP intercepting plugins, or (2) backend service 
-providers. Some other extension points will be opened in future.
+As of writing, the extensions can be (1) HTTP interceptor plugins, or (2) backend service 
+providers. Other extension points will be opened in future.
 
-Besides Styx extensions, the API can be used as a library in other software projects. The
-`styx-server` module makes it really easy to start Styx based HTTP(s) servers with just a 
+Besides Styx extensions, Styx modules can be used as libraries in other software projects. 
+The `styx-server` module makes it really easy to start Styx-based HTTP(s) servers with just a 
 few lines of code. The `styx-client` can be used as a reactive HTTP client.
 
 The `styx-api-testsupport` provides helpers for unit testing Styx extensions. 
@@ -20,54 +20,64 @@ The relevant modules are available in Maven Central:
   
 ## Main Components
 
-The main API components are:
+Important API concepts are:
 
-   * HTTP Message Abstractions: HttpRequest, HttpResponse, FullHttpRequest, FullHttpResponse
-   * HttpInterceptor
-   * HttpHandler
-   * StyxObservable
+   * HTTP message abstractions: `HttpRequest`, `HttpResponse`, `LiveHttpRequest`, `LiveHttpResponse`
+   * HTTP message consumers: `HttpInterceptor`, `HttpHandler`
+   * Asynchronous event support: `Eventual`
    
 ### HTTP Message Abstractions
 
-Styx HTTP message abstractions are the cornerstone of the API. They come in two flavours, 
-supporting (1) streaming HTTP messages, and (2) "full" HTTP messages.
+Styx provides two kinds of HTTP message abstractions: (1) Streaming HTTP message classes for 
+intercepting live traffic and (2) Immutable HTTP message classes that are generally easier 
+to work with.
 
-To achieve high performance with reduced memory footprint, Styx treats the proxied 
-HTTP messages as byte streams. It decodes HTTP message headers into a HTTP message object,
-but the message body flows through as a stream of content chunks. This way Styx is
-able to deal with arbitrarily large content streams.
+The `LiveHttpRequest` and `LiveHttpResponse` classes have immutable headers, but the message
+body is a stream of byte buffer events, represented by a `ByteStream` class. 
 
-Streaming HTTP messages, represented by `HttpRequest` and `HttpResponse` classes,
-are the keys to the Styx core. The main Styx extension points, `HttpInterceptor` 
-and `HttpHandler` interfaces (described later) interact only on the streaming requests. 
-Hardly surprising  given that internally Styx core sees everything as a HTTP stream. 
+Styx proxy uses these live messages internally. It propagates all HTTP body content received 
+on the proxy ingress interface as `ByteStream` events. Because all content chunks are processed
+immediately, it is able to minimise proxying latency, and because the message body 
+is never fully buffered, Styx is able to proxy arbitrarily long and large message bodies
+with minimal memory pressure. 
+ 
+These classes are "live" because they stream through the Styx pipeline in "real time". The "live" 
+prefix is meant to serve as a mnemonic for the API consumers to treat them appropriately:
+  
+  * A `ByteStream` can be transformed and aggregated, but it can not be replayed. 
 
-However often times it is much more convenient to deal with HTTP messages when both
-the headers and content come together in one atomic unit. The API therefore provides
-`FullHttpRequest` and `FullHttpResponse` classes. They are immutable, fully re-usable
-HTTP message abstractions that are really convenient in unit testing, admin interfaces,
-and in 3rd party software built on Styx libraries.
+  * When a `ByteStream` has been consumed, it has been consumed for good. 
 
-Few words about message interoperability. The streaming and full variants are not 
+The main Styx extension points, `HttpInterceptor` and `HttpHandler` interfaces 
+(described later) interact only on the live requests. This is because internally Styx
+core processes everything as a HTTP stream. 
+
+For most other situations it is more convenient to use "full" HTTP messages
+that provide the HTTP headers and the full body in one immutable unit.
+For this purpose, Styx provides `HttpRequest` and `HttpResponse` classes. They are immutable, 
+fully re-usable HTTP message classes that are more convenient for unit testing, admin interfaces,
+and for other applications built on Styx libraries.
+
+A few words about message interoperability: the live and immutable variants are not 
 interface compatible as per
 [Liskov substitution principle](https://en.wikipedia.org/wiki/Liskov_substitution_principle) 
-and therefore they form two separate class hierarchies. The nature of the content,
-streaming vs full, is reflected in the type signatures of the content accessors:
+and therefore they form two separate class hierarchies. This is evident in the
+HTTP content accessors:
 
-* Streaming HTTP messages: 
+* `LiveHttpRequest` (and `LiveHttpResponse`): 
 
 ```java
-    public class HttpRequest { 
+    public class LiveHttpRequest { 
         ...
         
-        public StyxObservable<ByteBuf> body() { .. }
+        public ByteStream body() { .. }
     }
 ```
 
-* Full HTTP messages:
+* `HttpRequest` (and `HttpResponse`)
    
 ```java
-    public class FullHttpRequest { 
+    public class HttpRequest { 
         ...       
         public byte[] body() { .. }
         
@@ -75,98 +85,89 @@ streaming vs full, is reflected in the type signatures of the content accessors:
     }
 ```
 
-### Conversion Between HTTP Message Types
- 
-It is easy to convert between the streaming and full HTTP messages.  
+### Conversion Between HTTP Message Types 
 
-Streaming `HttpRequest` has a `toFullRequest` method (`toFullResponse` for `HttpResponse`).
-It aggregates a HTTP message body stream into one continuous byte array and creates a 
-corresponding `FullHttpRequest` (`FullHttpResponse`). Its type signature is:
+Call the `aggregate` method to convert a `LiveHttpRequest`/`LiveHttpResponse`
+to an immutable `HttpRequest`/`HttpResponse` object: 
 
 ```java
-   public StyxObservable<FullHttpRequest> toFullRequest(int maxContentBytes);
+   public Eventual<HttpRequest> aggregate(int maxContentBytes);
 ```
 
-Note that the HTTP content streams represents live network traffic streaming
-through Styx core. The content stream is not memoized nor stored. 
-When the content is gone, it is gone for good. 
-Therefore a `HttpRequest` (`HttpResponse`) can be aggregated to a full 
-message strictly once only.
+This aggregates a HTTP message body stream and creates a corresponding immutable 
+HTTP object. Note that `aggregate` consumes the underlying live HTTP message `ByteStream`.
 
 The type signature illustrates other facts about the content stream:
 
-* Return type of `StyxObservable` shows that HTTP content stream is 
-  aggregated asynchronously. Obviously because the rest of the content 
-  stream are yet to be received from the network.
+* We can see that `aggregate` is asynchronous by its return type, `Eventual`. 
+  This is because it needs to wait for all of the byte stream to be fully available.
 
-* The `maxContentBytes` sets an upper limit for the message 
-  body, protecting Styx from exhausting memory in face of very long message
-  bodies, or perhaps from denial of service attacks. If the limit is reached,
-  the conversion fails with `ContentOverflowException`. 
+* The `maxContentBytes` sets an upper limit for the aggregated message 
+  body. This acts as a safety valve, protecting Styx from exhausting the heap memory
+  when very long message bodies are received. 
+  If the limit is reached, the conversion fails with `ContentOverflowException`. 
 
-Converting a full message to a stream is much easier. The `FullHttpRequest` 
-(`FullHttpResponse`) has a method called `toStreamingRequest` (or `toStreamingResponse`): 
+Call the `stream` method to convert an immutable `HttpRequest` 
+/`HttpResponse` to a `LiveHttpRequest`/`LiveHttpResponse`:
+ 
 ```java
-    public HttpRequest toStreamingRequest()
+    public LiveHttpRequest stream()
 ``` 
 
-The method signature reveals that `HttpResponse` is available immediately.
-Because the content is permanently stored in full, you can clone a
-full message object into as many streaming objects as necessary. For example:
+The method signature reveals that `LiveHttpResponse` is available immediately.
+Because the content is permanently stored in full, you can clone an immutable
+message object into as many streaming objects as necessary. For example:
 
 ```java
     public class PingHandler extends BaseHttpHandler {
-        private static final FullHttpResponse PONG = response(OK)
+        private static final HttpResponse PONG = response(OK)
                 .disableCaching()
                 .contentType(PLAIN_TEXT_UTF_8)
                 .body("pong", UTF_8)
                 .build();
         
         @Override
-        protected HttpResponse doHandle(HttpRequest request) {
-            return PONG.toStreamingResponse();
+        protected LiveHttpResponse doHandle(LiveHttpRequest request) {
+            return PONG.stream();
         }
     }   
 ```
  
 ### Http Interceptor Interface
 
-A HTTP interceptor is an object that transforms, responds, or runs side-effecting actions 
-for HTTP traffic passing through. 
-
-Styx arranges interceptors in a linear chain, forming a core of its proxying pipeline.
-All recieved traffic goes through the interceptor chain which then acts on the traffic
-accordingly.  
+Styx has an HTTP pipeline that processes all received HTTP messages.
+The pipeline is made of a linear chain of HTTP interceptors. An HTTP interceptor 
+transforms, responds, or runs side-effecting actions on live HTTP traffic.
   
-Styx has some internal Styx interceptors. But normally it is the custom plugins that
-add value for Styx deployments. An extension point for a custom plugin is the 
-`HttpInterceptor` interface. It has only one method:
+Styx provides some internal interceptors. You can also implement your own
+interceptor plugins. An extension point for a 
+custom plugin is the `HttpInterceptor` interface. It has only one method:
 
 ```java
     public interface HttpInterceptor {
        ...
-       StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain);
+       Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain);
+       ...
     }
 ```
 
-A Styx plugin is an implementation of this method. 
+The interface shows that the `intercept` method receives a live HTTP request, 
+and eventually returns a live HTTP response. 
 
-It is the `intercept` method which transforms or acts on a received request, 
-and its corresponding response. As an event based system, all implementations 
-must be strictly non-blocking. Blocking the thread would stall Styx event processing 
-loop. So take care to stick with asynchronous implementation.
+`intercept` may transform or run side effecting actions on request or response objects. 
+As an event based system, all implementations must be strictly non-blocking. 
+Blocking a thread stalls the Styx event processing loop. So take care to 
+stick with asynchronous implementation.
 
-The received request is passed in as its first argument. The second argument, `Chain`, is
-a handle to the remaining tail of the `HttpInterceptor` chain. The most important
-function of the chain is the `proceed` method. It passes the request to the
-next interceptor in the chain. It returns a response observable, in which you
-bind any response transformations. For example:
-
+An HTTP request is passed in as its first argument. The second argument, `Chain`, is
+a handle to the next `HttpInterceptor` in the pipeline. The `Chain` has a `proceed` method
+that passes the request to the next interceptor. It returns an `Eventual<Response>`, in 
+which you bind any response transformations. For example:
 
 ```java
     @Override
-    public StyxObservable<HttpResponse> intercept(HttpRequest request, Chain chain) {
-        HttpRequest newRequest = request.newBuilder()
+    public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
+        LiveHttpRequest newRequest = request.newBuilder()
                 .header(VIA, viaHeader(request))
                 .build();
 
@@ -184,45 +185,30 @@ Styx core also add snippets of information like sender IP address, and so on.
 
 ### Http Handler Interface
 
-Http Handler interface forms a basis for Styx admin interfaces and routing objects. 
-As opposed to `HttpInterceptor`s, which just pass the messages down the pipeline,
-the `HttpHandler` is meant to *consume* the HTTP request. It is a similarly simple
-interface:
+An `HttpHandler` interface is the basis for Styx admin interfaces and routing objects. 
+It *consumes* the HTTP requests and asynchronously responds with HTTP responses. 
+It has a simple interface:
 
 ```java
     public interface HttpHandler {
-        StyxObservable<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context);
+        Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context);
     }
 ```
 
-It asynchronously processes the request, and returns the response within a context of 
-`StyxObservable`. It is given the `HttpInterceptor.Context` as a second argument, so that it is able
-to access the request context properties.
-
-Notice the absence of `Chain`. Therefore it is not able to proceed the message any further.
+It accepts a live HTTP request as its first argument, and eventually responds with a live HTTP reponse. 
+The second argument is an `HttpInterceptor.Context`. The request context contains contextual
+information such as the sender of the request and whether it was delivered over a secure protocol or not.
 
 As with `HttpInterceptor` implementations, the `handle` method must never block. Blocking the
 thread will block the Styx event loop.  
 
 
-### Styx Observable
+### Eventual
 
-Conceptually similar to Futures, `StyxObservable` is a data type that 
-facilitates asynchronous event handling, modelled after Rx 
-[observables](http://reactivex.io/documentation/observable.html).
+The `Eventual` class is an envelope for a value that will be available some time in the future.
+It represents a deferred value that becomes eventually available, and thus enables 
+asynchronous operations in Styx. If `Eventual` appears as a method return type then that
+method is asynchronous. 
 
-However `rx.Observable` is a very generic reactive stream abstraction. 
-The `StyxObservable` is an observable that has been adapted 
-for the specific Styx use case, which is of processing live network data 
-streams. 
-
-Another key difference between the two observables is that `StyxObservable`
-does not have a `subscribe` method. More precisely it has been hidden 
-to prevent 3rd party extensions from subscribing to live data streams. 
-This is a privileged operation that for the reliable operation is exclusive 
-for Styx core only.  
-
-Styx `HttpInterceptor` and `HttpHandler` objects merely build a pipeline of 
-`StyxObservable` operators modelling a data path for HTTP response processing. 
-The interceptors operate in a  "sand-boxed" environment and Styx core 
-triggers the subscription when it sees fit.  
+The `Eventual` behaves much like a future (such as the Java 8+ `CompletableFuture`) but it
+implements the Reactive Streams `Publisher` interface and is much simpler overall. 
