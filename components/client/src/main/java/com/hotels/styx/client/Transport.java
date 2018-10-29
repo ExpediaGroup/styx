@@ -15,16 +15,15 @@
  */
 package com.hotels.styx.client;
 
+import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Id;
 import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import rx.Observable;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
 
@@ -43,20 +42,20 @@ class Transport {
     public HttpTransaction send(LiveHttpRequest request, Optional<ConnectionPool> origin, Id originId) {
         Observable<Connection> connection = connection(request, origin);
 
-
         return new HttpTransaction() {
             @Override
             public Observable<LiveHttpResponse> response() {
+                return connection.flatMap(connection -> {
+                    Observable<LiveHttpResponse> responseObservable = connection.write(request)
+                            .map(response -> addOriginId(originId, response));
 
-                Observable<ResponseEventListener> responseEventListenerObservable = connection.flatMap(tConnection ->
-                    tConnection.write(request)
-                        .map(response -> addOriginId(originId, response))
-                        .map(c -> ResponseEventListener.from(Observable.just(c))
-                            .whenCancelled(() -> closeIfConnected(origin, tConnection))
-                            .whenResponseError(cause -> closeIfConnected(origin, tConnection))
-                            .whenContentError(cause -> closeIfConnected(origin, tConnection))
-                            .whenCompleted(() -> returnIfConnected(origin, tConnection))));
-                return responseEventListenerObservable.flatMap(ResponseEventListener::apply);
+                    return ResponseEventListener.from(responseObservable)
+                            .whenCancelled(() -> closeIfConnected(origin, connection))
+                            .whenResponseError(cause -> closeIfConnected(origin, connection))
+                            .whenContentError(cause -> closeIfConnected(origin, connection))
+                            .whenCompleted(() -> returnIfConnected(origin, connection))
+                            .apply();
+                });
             }
 
             private synchronized void closeIfConnected(Optional<ConnectionPool> connectionPool, Connection connection) {
