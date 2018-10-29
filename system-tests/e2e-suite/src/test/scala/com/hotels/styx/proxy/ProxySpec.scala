@@ -17,19 +17,19 @@ package com.hotels.styx.proxy
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, WireMock}
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.{RequestPatternBuilder, WireMock}
 import com.hotels.styx.MockServer.responseSupplier
-import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.HttpRequest.head
 import com.hotels.styx.api.HttpHeaderNames._
-import com.hotels.styx.api.LiveHttpResponse.response
+import com.hotels.styx.api.HttpMethod.CONNECT
+import com.hotels.styx.api.HttpRequest.{get, head}
+import com.hotels.styx.api.HttpResponse
 import com.hotels.styx.api.HttpResponseStatus._
 import com.hotels.styx.api.HttpVersion._
-import com.hotels.styx.common.FreePorts._
-import com.hotels.styx.api.HttpResponse
+import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.client.StyxHeaderConfig.STYX_INFO_DEFAULT
 import com.hotels.styx.client.{HttpClient, StyxHttpClient}
+import com.hotels.styx.common.FreePorts._
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origin, Origins}
 import com.hotels.styx.support.matchers.IsOptional.{isValue, matches}
@@ -243,6 +243,18 @@ class ProxySpec extends FunSpec
       assert(!response.chunked(), s"\nexpected headers with no Transfer-Encoding header but found $headers")
       assert(response.bodyAs(UTF_8).isEmpty, s"\nexpected response with no body but found ${response.bodyAs(UTF_8)}")
     }
+  }
+
+  describe("Handling CONNECT method") {
+    it("Should reject CONNECT requests") {
+      val request = get("/connectTest")
+        .addHeader(HOST, styxServer.proxyHost)
+        .method(CONNECT)
+        .build();
+
+      assert(decodedRequest(request).status() == METHOD_NOT_ALLOWED)
+    }
+
   }
 
 }
