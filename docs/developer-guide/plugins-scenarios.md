@@ -35,7 +35,7 @@ public class SyncRequestPlugin implements Plugin {
 ### Synchronously transforming response
 
 This example demonstrates how to synchronously transform a HTTP response. We will
-use a `Eventual.map` method to add an "X-Foo" header to the response.
+call `Eventual.map` to add an "X-Foo" header to the response.
 
 ```java
 import com.hotels.styx.api.HttpInterceptor;
