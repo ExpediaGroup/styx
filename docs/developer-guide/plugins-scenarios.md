@@ -100,7 +100,7 @@ public class AsyncRequestInterceptor implements Plugin {
 
 Step 1. We call the `asyncUrlReplacement`, which returns an `Eventual<Url>`.
 The `asyncUrlReplacement` wraps a call to the remote service and converts 
-the outcome into a `Eventual`.
+the outcome into an `Eventual`.
 
 Step 2. A call to `pathReplacementService` makes a non-blocking call to the remote key/value store.
 Well, at least we pretend to call the key value store, but in this example we'll just return a 
