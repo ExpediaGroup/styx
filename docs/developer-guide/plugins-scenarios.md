@@ -249,7 +249,7 @@ public class MyPlugin extends Plugin {
 ```
 
 A call to `request.newBuilder` opens up a new request builder that allows the request 
-to be transformed to.
+to be transformed.
 
 The body transformation involves two lambda methods:
 
