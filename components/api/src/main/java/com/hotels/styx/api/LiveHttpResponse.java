@@ -792,19 +792,13 @@ public class LiveHttpResponse implements LiveHttpMessage {
         }
 
         /**
-         * (UNSTABLE) Removes body stream from this request.
+         * Removes message body content from this request.
          * <p>
-         * This method is unstable until Styx 1.0 API is frozen.
-         * <p>
-         * Inappropriate use can lead to stability issues. These issues
-         * will be addressed before Styx 1.0 API is frozen. Therefore
-         * it is best to avoid until then. Consult
-         * https://github.com/HotelsDotCom/styx/issues/201 for more
-         * details.
+         * Transforms the content {@link ByteStream} to an empty stream such
+         * that all received content events are discarded.
          *
          * @return {@code this}
          */
-        // TODO: See https://github.com/HotelsDotCom/styx/issues/201
         public Builder removeBody() {
             this.body = body.drop();
             return this;
