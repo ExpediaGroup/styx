@@ -132,7 +132,7 @@ public class ByteStream implements Publisher<Buffer> {
      * @param maxContentBytes maximum size for the aggregated buffer
      * @return a future of aggregated buffer
      */
-    public CompletableFuture<Buffer> aggregate(int maxContentBytes) {
+    CompletableFuture<Buffer> aggregate(int maxContentBytes) {
         return new ByteStreamAggregator(this.stream, maxContentBytes)
                 .apply();
     }
