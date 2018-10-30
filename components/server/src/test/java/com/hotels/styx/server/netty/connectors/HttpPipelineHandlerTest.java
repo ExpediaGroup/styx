@@ -156,7 +156,7 @@ public class HttpPipelineHandlerTest {
         response = response().build();
 
         responseEnhancer = mock(ResponseEnhancer.class);
-        when(responseEnhancer.enhance(any(LiveHttpResponse.Builder.class), any(LiveHttpRequest.class))).thenAnswer(invocationOnMock -> invocationOnMock.getArguments()[0]);
+        when(responseEnhancer.enhance(any(LiveHttpResponse.Transformer.class), any(LiveHttpRequest.class))).thenAnswer(invocationOnMock -> invocationOnMock.getArguments()[0]);
 
         setupHandlerTo(ACCEPTING_REQUESTS);
     }
@@ -221,7 +221,7 @@ public class HttpPipelineHandlerTest {
         DefaultHttpResponse response = (DefaultHttpResponse) channel.readOutbound();
 
         assertThat(response.getStatus(), is(io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST));
-        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(null));
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(null));
         verify(errorListener, only()).proxyErrorOccurred(eq(BAD_REQUEST), any(BadRequestException.class));
     }
 
@@ -236,7 +236,7 @@ public class HttpPipelineHandlerTest {
         DefaultHttpResponse response = (DefaultHttpResponse) channel.readOutbound();
 
         assertThat(response.status(), is(io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR));
-        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), any(LiveHttpRequest.class));
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), any(LiveHttpRequest.class));
         verify(errorListener, only()).proxyErrorOccurred(any(LiveHttpRequest.class), any(InetSocketAddress.class), eq(INTERNAL_SERVER_ERROR), any(RuntimeException.class));
     }
 
@@ -383,7 +383,7 @@ public class HttpPipelineHandlerTest {
         adapter.channelInactive(ctx);
         assertThat(metrics.counter("outstanding").getCount(), is(0L));
 
-        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(request));
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(request));
     }
 
     @Test
@@ -596,7 +596,7 @@ public class HttpPipelineHandlerTest {
                 .build()
                 .stream());
 
-        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(request));
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(request));
         verify(errorListener).proxyErrorOccurred(request, InetSocketAddress.createUnresolved("localhost", 2), INTERNAL_SERVER_ERROR, cause);
         verify(statsCollector).onTerminate(request.id());
         assertThat(handler.state(), is(TERMINATED));
@@ -608,7 +608,7 @@ public class HttpPipelineHandlerTest {
         handler.exceptionCaught(ctx, cause);
 
         verify(errorListener).proxyErrorOccurred(REQUEST_TIMEOUT, cause);
-        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(null));
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(null));
         verify(responseWriter).write(response(REQUEST_TIMEOUT)
                 .header(CONTENT_LENGTH, 15)
                 .build());
@@ -622,7 +622,7 @@ public class HttpPipelineHandlerTest {
         handler.exceptionCaught(ctx, cause);
 
         verify(errorListener).proxyErrorOccurred(REQUEST_ENTITY_TOO_LARGE, cause);
-        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(request));
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(request));
         verify(responseWriter).write(response(REQUEST_ENTITY_TOO_LARGE)
                 .header(CONTENT_LENGTH, 24)
                 .build());
@@ -636,7 +636,7 @@ public class HttpPipelineHandlerTest {
         handler.exceptionCaught(ctx, cause);
 
         verify(errorListener).proxyErrorOccurred(BAD_REQUEST, cause);
-        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(request));
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(request));
         verify(responseWriter).write(response(BAD_REQUEST)
                 .header(CONTENT_LENGTH, 11)
                 .build());
@@ -673,7 +673,7 @@ public class HttpPipelineHandlerTest {
                 .body("Site temporarily unavailable.", UTF_8)
                 .build()
                 .stream());
-        verify(responseEnhancer).enhance(any(LiveHttpResponse.Builder.class), eq(request));
+        verify(responseEnhancer).enhance(any(LiveHttpResponse.Transformer.class), eq(request));
 
         writerFuture.complete(null);
         verify(statsCollector).onComplete(request.id(), 502);

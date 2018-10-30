@@ -48,7 +48,7 @@ public class RequestEnrichingInterceptor implements HttpInterceptor {
     }
 
     private LiveHttpRequest enrich(LiveHttpRequest request, Context context) {
-        LiveHttpRequest.Builder builder = request.newBuilder();
+        LiveHttpRequest.Transformer builder = request.newBuilder();
 
         xForwardedFor(request, context)
                 .ifPresent(headerValue -> builder.header(X_FORWARDED_FOR, headerValue));

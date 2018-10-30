@@ -31,11 +31,11 @@ public interface ResponseEnhancer {
      * @param request request to which Styx is responding
      * @return enhanced response builder
      */
-    LiveHttpResponse.Builder enhance(LiveHttpResponse.Builder responseBuilder, LiveHttpRequest request);
+    LiveHttpResponse.Transformer enhance(LiveHttpResponse.Transformer responseBuilder, LiveHttpRequest request);
 
     /**
      * Create a new enhanced response, based on an existing one. This is less efficient than
-     * {@link #enhance(LiveHttpResponse.Builder, LiveHttpRequest)} as it has to create a new builder
+     * {@link #enhance(LiveHttpResponse.Transformer, LiveHttpRequest)} as it has to create a new builder
      * and build, but it suitable for cases where that would have to happen anyway.
      *
      * @param response response

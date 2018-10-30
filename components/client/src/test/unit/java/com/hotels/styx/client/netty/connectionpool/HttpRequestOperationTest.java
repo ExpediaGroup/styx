@@ -60,7 +60,7 @@ public class HttpRequestOperationTest {
                 .uri("https://www.example.com/foo?some=value&blah=blah")
                 .build();
 
-        LiveHttpRequest.Builder builder = request.newBuilder();
+        LiveHttpRequest.Transformer builder = request.newBuilder();
 
         LiveHttpRequest newRequest = builder.url(
                 request.url().newBuilder()

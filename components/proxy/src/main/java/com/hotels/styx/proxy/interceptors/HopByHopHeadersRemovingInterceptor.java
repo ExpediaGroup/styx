@@ -40,7 +40,7 @@ public class HopByHopHeadersRemovingInterceptor implements HttpInterceptor {
     }
 
     private static LiveHttpResponse removeHopByHopHeaders(LiveHttpResponse response) {
-        LiveHttpResponse.Builder newResponse = response.newBuilder();
+        LiveHttpResponse.Transformer newResponse = response.newBuilder();
 
         response.header(CONNECTION).ifPresent(connection -> {
             for (String connectToken : connection.split(",")) {
@@ -63,7 +63,7 @@ public class HopByHopHeadersRemovingInterceptor implements HttpInterceptor {
     }
 
     private static LiveHttpRequest removeHopByHopHeaders(LiveHttpRequest request) {
-        LiveHttpRequest.Builder newRequest = request.newBuilder();
+        LiveHttpRequest.Transformer newRequest = request.newBuilder();
 
         request.header(CONNECTION).ifPresent(connection -> {
             for (String connectToken : connection.split(",")) {
