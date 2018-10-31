@@ -1,4 +1,24 @@
 
+<<<<<<< HEAD
+=======
+<a name="styx-styx-1.0.0.beta2"></a>
+## [styx-styx-1.0.0.beta2](https://github.com/HotelsDotCom/styx/compare/styx-1.0.0.beta1...styx-styx-1.0.0.beta2) (2018-10-31)
+
+### Pull Requests
+
+* Add Transformer class for live HTTP objects ([#328](https://github.com/HotelsDotCom/styx/issues/328))
+* Restrict visibility of ByteStream.aggregate ([#325](https://github.com/HotelsDotCom/styx/issues/325))
+* Update plugins-scenarios.md to Styx 1.0 API ([#320](https://github.com/HotelsDotCom/styx/issues/320))
+* Developer documentation: Update API overview to Styx 1.0. ([#319](https://github.com/HotelsDotCom/styx/issues/319))
+* Backport to 0.7 - Reject requests using the CONNECT method ( Fixes [#312](https://github.com/HotelsDotCom/styx/issues/312)) ([#331](https://github.com/HotelsDotCom/styx/issues/331))
+* Reject requests using the CONNECT method ( Fixes [#312](https://github.com/HotelsDotCom/styx/issues/312)) ([#327](https://github.com/HotelsDotCom/styx/issues/327))
+* Add maven javadoc plugin ([#330](https://github.com/HotelsDotCom/styx/issues/330))
+* Upgrade fasterxml version in plugin-examples ([#324](https://github.com/HotelsDotCom/styx/issues/324))
+* Fix an incorrect perf test URL. ([#323](https://github.com/HotelsDotCom/styx/issues/323))
+* Upgrade to a newer version of fasterxml ([#318](https://github.com/HotelsDotCom/styx/issues/318))
+
+
+>>>>>>> upstream/release-styx-styx-1.0.0.beta2
 <a name="styx-1.0.0.beta1"></a>
 ## [styx-1.0.0.beta1](https://github.com/HotelsDotCom/styx/compare/styx-0.7.10...styx-1.0.0.beta1) (2018-10-26)
 
