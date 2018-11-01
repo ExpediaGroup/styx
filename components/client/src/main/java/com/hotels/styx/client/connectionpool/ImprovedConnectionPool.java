@@ -15,7 +15,11 @@
  */
 package com.hotels.styx.client.connectionpool;
 
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.SlidingWindowReservoir;
+import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
 import org.reactivestreams.Publisher;
@@ -25,8 +29,13 @@ import reactor.core.publisher.MonoSink;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
+import static com.google.common.base.Objects.toStringHelper;
+import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static java.util.Objects.nonNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -35,16 +44,24 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class ImprovedConnectionPool implements Connection.Listener {
     private static final Logger LOG = getLogger(ImprovedConnectionPool.class);
 
+    private ConnectionPoolSettings poolSettings;
     private final ConnectionSettings connectionSettings;
     private final Connection.Factory connectionFactory;
     private final Origin origin;
 
     private final ConcurrentLinkedDeque<MonoSink<Connection>> waitingSubscribers;
     private final Queue<Connection> activeConnections;
+    private final AtomicInteger activeCount = new AtomicInteger();
+    private final AtomicInteger borrowedCount = new AtomicInteger();
+    private final ConnectionPoolStats stats = new ConnectionPoolStats();
+    private final AtomicInteger connectionAttempts = new AtomicInteger();
+    private final AtomicInteger closedConnections = new AtomicInteger();
+    private final AtomicInteger terminatedConnections = new AtomicInteger();
 
 
-    public ImprovedConnectionPool(Origin origin, ConnectionSettings connectionSettings, Connection.Factory connectionFactory) {
+    public ImprovedConnectionPool(Origin origin, ConnectionPoolSettings poolSettings, ConnectionSettings connectionSettings, Connection.Factory connectionFactory) {
         this.origin = origin;
+        this.poolSettings = poolSettings;
         this.connectionSettings = connectionSettings;
         this.connectionFactory = connectionFactory;
         this.activeConnections = new ConcurrentLinkedDeque<>();
@@ -59,14 +76,27 @@ public class ImprovedConnectionPool implements Connection.Listener {
         return Mono.create(sink -> {
             Connection connection = dequeue();
             if (connection != null) {
-                sink.success(connection);
-            }
-            else {
-                this.waitingSubscribers.add(
-                        sink.onCancel(() -> waitingSubscribers.remove(sink))
-                );
-                this.connectionFactory.createConnection(this.origin, this.connectionSettings)
-                        .subscribe(this::queueNewConnection);
+                if (borrowedCount.getAndIncrement() < poolSettings.maxConnectionsPerHost()) {
+                    sink.success(connection);
+                } else {
+                    borrowedCount.decrementAndGet();
+                    queueNewConnection(connection);
+                }
+            } else {
+                if (waitingSubscribers.size() >= poolSettings.maxPendingConnectionsPerHost()) {
+                    sink.error(new MaxPendingConnectionsExceededException(
+                            origin,
+                            poolSettings.maxPendingConnectionsPerHost(),
+                            poolSettings.maxPendingConnectionsPerHost()));
+                } else {
+                    this.waitingSubscribers.add(sink.onCancel(() -> waitingSubscribers.remove(sink)));
+                    if (borrowedCount.get() < poolSettings.maxConnectionsPerHost()) {
+                        connectionAttempts.incrementAndGet();
+                        this.connectionFactory
+                                .createConnection(this.origin, this.connectionSettings)
+                                .subscribe(this::queueNewConnection);
+                    }
+                }
             }
         });
     }
@@ -86,11 +116,13 @@ public class ImprovedConnectionPool implements Connection.Listener {
         if (subscriber == null) {
             activeConnections.add(connection);
         } else {
+            borrowedCount.incrementAndGet();
             subscriber.success(connection);
         }
     }
 
     public boolean returnConnection(Connection connection) {
+        borrowedCount.decrementAndGet();
         if (connection.isConnected()) {
             queueNewConnection(connection);
         }
@@ -98,12 +130,90 @@ public class ImprovedConnectionPool implements Connection.Listener {
     }
 
     public boolean closeConnection(Connection connection) {
+        connection.close();
+        borrowedCount.decrementAndGet();
+        closedConnections.incrementAndGet();
+
+        connectionAttempts.incrementAndGet();
+        this.connectionFactory
+                .createConnection(this.origin, this.connectionSettings)
+                .subscribe(this::queueNewConnection);
         return true;
     }
 
     @Override
     public void connectionClosed(Connection connection) {
+        terminatedConnections.incrementAndGet();
+    }
 
+    public ConnectionPool.Stats stats() {
+        return this.stats;
+    }
+
+    @VisibleForTesting
+    private class ConnectionPoolStats implements ConnectionPoolStatsCounter {
+        final Histogram timeToFirstByteHistogram = new Histogram(new SlidingWindowReservoir(50));
+
+        private final Supplier<Long> ttfbSupplier = () -> (long) timeToFirstByteHistogram.getSnapshot().getMean();
+        private final Supplier<Long> memoizedTtfbSupplier = memoizeWithExpiration(ttfbSupplier::get, 5, MILLISECONDS)::get;
+
+        @Override
+        public int availableConnectionCount() {
+            return activeConnections.size();
+        }
+
+        @Override
+        public int busyConnectionCount() {
+            return borrowedCount.get();
+        }
+
+        @Override
+        public int pendingConnectionCount() {
+            return waitingSubscribers.size();
+        }
+
+        @Override
+        public long timeToFirstByteMs() {
+            return 0;
+        }
+
+        @Override
+        public int connectionAttempts() {
+            return connectionAttempts.get();
+        }
+
+        @Override
+        public int connectionFailures() {
+            return 0;
+        }
+
+        @Override
+        public int closedConnections() {
+            return closedConnections.get();
+        }
+
+        @Override
+        public int terminatedConnections() {
+            return terminatedConnections.get();
+        }
+
+        @Override
+        public void recordTimeToFirstByte(long msValue) {
+            if (msValue < 0) {
+                LOG.warn("illegal time to first byte registered {}", msValue);
+            } else {
+                timeToFirstByteHistogram.update(msValue);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return toStringHelper(this)
+                    .add("pendingConnections", pendingConnectionCount())
+                    .add("busyConnections", 0)
+                    .add("maxConnections", 0)
+                    .toString();
+        }
     }
 }
 
