@@ -15,16 +15,15 @@
  */
 package com.hotels.styx.client;
 
+import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Id;
 import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import rx.Observable;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
 
@@ -43,37 +42,31 @@ class Transport {
     public HttpTransaction send(LiveHttpRequest request, Optional<ConnectionPool> origin, Id originId) {
         Observable<Connection> connection = connection(request, origin);
 
-        AtomicReference<Connection> connectionRef = new AtomicReference<>(null);
-        Observable<LiveHttpResponse> observableResponse = connection.flatMap(tConnection -> {
-            connectionRef.set(tConnection);
-            return tConnection.write(request)
-                    .map(response -> addOriginId(originId, response));
-        });
-
         return new HttpTransaction() {
             @Override
             public Observable<LiveHttpResponse> response() {
-                return ResponseEventListener.from(observableResponse)
-                        .whenCancelled(() -> closeIfConnected(origin, connectionRef))
-                        .whenResponseError(cause -> closeIfConnected(origin, connectionRef))
-                        .whenContentError(cause -> closeIfConnected(origin, connectionRef))
-                        .whenCompleted(() -> returnIfConnected(origin, connectionRef))
-                        .apply();
+                return connection.flatMap(connection -> {
+                    Observable<LiveHttpResponse> responseObservable = connection.write(request)
+                            .map(response -> addOriginId(originId, response));
+
+                    return ResponseEventListener.from(responseObservable)
+                            .whenCancelled(() -> closeIfConnected(origin, connection))
+                            .whenResponseError(cause -> closeIfConnected(origin, connection))
+                            .whenContentError(cause -> closeIfConnected(origin, connection))
+                            .whenCompleted(() -> returnIfConnected(origin, connection))
+                            .apply();
+                });
             }
 
-            private synchronized void closeIfConnected(Optional<ConnectionPool> connectionPool, AtomicReference<Connection> connectionRef) {
-                Connection connection = connectionRef.get();
+            private synchronized void closeIfConnected(Optional<ConnectionPool> connectionPool, Connection connection) {
                 if (connection != null && connectionPool.isPresent()) {
                     connectionPool.get().closeConnection(connection);
-                    connectionRef.set(null);
                 }
             }
 
-            private synchronized void returnIfConnected(Optional<ConnectionPool> connectionPool, AtomicReference<Connection> connectionRef) {
-                Connection connection = connectionRef.get();
+            private synchronized void returnIfConnected(Optional<ConnectionPool> connectionPool, Connection connection) {
                 if (connection != null && connectionPool.isPresent()) {
                     connectionPool.get().returnConnection(connection);
-                    connectionRef.set(null);
                 }
             }
         };
