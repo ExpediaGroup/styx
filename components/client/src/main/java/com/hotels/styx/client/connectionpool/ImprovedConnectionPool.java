@@ -26,6 +26,7 @@ import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
+import rx.Observable;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -57,6 +58,7 @@ public class ImprovedConnectionPool implements Connection.Listener {
     private final AtomicInteger connectionAttempts = new AtomicInteger();
     private final AtomicInteger closedConnections = new AtomicInteger();
     private final AtomicInteger terminatedConnections = new AtomicInteger();
+    private final AtomicInteger connectionFailures = new AtomicInteger();
 
 
     public ImprovedConnectionPool(Origin origin, ConnectionPoolSettings poolSettings, ConnectionSettings connectionSettings, Connection.Factory connectionFactory) {
@@ -91,14 +93,29 @@ public class ImprovedConnectionPool implements Connection.Listener {
                 } else {
                     this.waitingSubscribers.add(sink.onCancel(() -> waitingSubscribers.remove(sink)));
                     if (borrowedCount.get() < poolSettings.maxConnectionsPerHost()) {
-                        connectionAttempts.incrementAndGet();
-                        this.connectionFactory
-                                .createConnection(this.origin, this.connectionSettings)
-                                .subscribe(this::queueNewConnection);
+                        newConnection();
                     }
                 }
             }
         });
+    }
+
+    private Observable<Connection> newConnection(int attempts) {
+        if (attempts > 0) {
+            return this.connectionFactory.createConnection(this.origin, this.connectionSettings)
+                    .onErrorResumeNext(cause -> newConnection(attempts - 1));
+        } else {
+            return Observable.error(new RuntimeException("Unable to create connection"));
+        }
+    }
+
+    private void newConnection() {
+        connectionAttempts.incrementAndGet();
+        newConnection(3)
+                .subscribe(
+                        this::queueNewConnection,
+                        cause -> connectionFailures.incrementAndGet()
+                );
     }
 
     private Connection dequeue() {
@@ -134,10 +151,7 @@ public class ImprovedConnectionPool implements Connection.Listener {
         borrowedCount.decrementAndGet();
         closedConnections.incrementAndGet();
 
-        connectionAttempts.incrementAndGet();
-        this.connectionFactory
-                .createConnection(this.origin, this.connectionSettings)
-                .subscribe(this::queueNewConnection);
+        newConnection();
         return true;
     }
 
@@ -184,7 +198,7 @@ public class ImprovedConnectionPool implements Connection.Listener {
 
         @Override
         public int connectionFailures() {
-            return 0;
+            return connectionFailures.get();
         }
 
         @Override

@@ -1,5 +1,6 @@
 package com.hotels.styx.client.connectionpool;
 
+import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
@@ -588,4 +589,118 @@ public class ImprovedConnectionPoolTest {
         assertEquals(pool.stats().closedConnections(), 0);
         assertEquals(pool.stats().terminatedConnections(), 1);
     }
+
+    @Test
+    public void connectionEstablishmentFailureRetryThreeTimesAtBorrow() {
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
+                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Observable.just(connection4));
+
+        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
+                .maxConnectionsPerHost(2)
+                .maxPendingConnectionsPerHost(2)
+                .build();
+
+        ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, poolSettings, settings, connectionFactory);
+
+        StepVerifier.create(pool.borrowConnection())
+                .expectNext(connection4)
+                .verifyComplete();
+    }
+
+    @Test
+    public void connectionEstablishmentFailureRetryThreeTimesAtConnectionClosure() {
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
+                .thenReturn(Observable.just(connection1))
+                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Observable.just(connection4));
+
+        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
+                .maxConnectionsPerHost(2)
+                .maxPendingConnectionsPerHost(2)
+                .build();
+
+        ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, poolSettings, settings, connectionFactory);
+
+        StepVerifier.create(pool.borrowConnection())
+                .expectNext(connection1)
+                .then(() -> {
+                    assertEquals(pool.stats().availableConnectionCount(), 0);
+                    assertEquals(pool.stats().closedConnections(), 0);
+                    assertEquals(pool.stats().pendingConnectionCount(), 0);
+                    assertEquals(pool.stats().busyConnectionCount(), 1);
+                })
+                .then(() -> pool.closeConnection(connection1))
+                .then(() -> {
+                    assertEquals(pool.stats().availableConnectionCount(), 1);
+                    assertEquals(pool.stats().closedConnections(), 1);
+                    assertEquals(pool.stats().pendingConnectionCount(), 0);
+                    assertEquals(pool.stats().busyConnectionCount(), 0);
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    public void connectionEstablishmentFailureRetryThreeTimesOnlyAtBorrow() {
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
+                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())));
+
+        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
+                .maxConnectionsPerHost(2)
+                .maxPendingConnectionsPerHost(2)
+                .build();
+
+        ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, poolSettings, settings, connectionFactory);
+
+        Mono.from(pool.borrowConnection()).subscribe();
+
+        assertEquals(pool.stats().pendingConnectionCount(), 1);
+        assertEquals(pool.stats().connectionFailures(), 1);
+        assertEquals(pool.stats().availableConnectionCount(), 0);
+        assertEquals(pool.stats().closedConnections(), 0);
+        assertEquals(pool.stats().terminatedConnections(), 0);
+    }
+
+    @Test
+    public void connectionEstablishmentFailureRetryThreeTimesOnlyAtConnectionClosure() {
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
+                .thenReturn(Observable.just(connection1))
+                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())));
+
+        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
+                .maxConnectionsPerHost(2)
+                .maxPendingConnectionsPerHost(2)
+                .build();
+
+        ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, poolSettings, settings, connectionFactory);
+
+        StepVerifier.create(pool.borrowConnection())
+                .expectNext(connection1)
+                .then(() -> {
+                    assertEquals(pool.stats().availableConnectionCount(), 0);
+                    assertEquals(pool.stats().closedConnections(), 0);
+                    assertEquals(pool.stats().pendingConnectionCount(), 0);
+                    assertEquals(pool.stats().busyConnectionCount(), 1);
+                })
+                .then(() -> {
+                    pool.closeConnection(connection1);
+                    pool.connectionClosed(connection1);
+                })
+                .then(() -> {
+                    assertEquals(pool.stats().connectionFailures(), 1);
+                    assertEquals(pool.stats().pendingConnectionCount(), 0);
+                    assertEquals(pool.stats().availableConnectionCount(), 0);
+                    assertEquals(pool.stats().closedConnections(), 1);
+                    assertEquals(pool.stats().terminatedConnections(), 1);
+                })
+                .verifyComplete();
+    }
+
 }
+
