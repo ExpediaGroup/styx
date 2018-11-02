@@ -15,25 +15,22 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.hotels.styx.client.Connection;
-import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
+import com.hotels.styx.client.Connection;
 
 import static java.util.Objects.requireNonNull;
 
-
 /**
- * A factory that creates connection pools using the connection pool settings supplied to the constructor.
- * <p/>
- * It also registers metrics for the connection pools.
+ * A factory for an improved connection pool.
  */
-public final class ConnectionPoolFactory implements ConnectionPool.Factory {
+public class ImprovedConnectionPoolFactory implements ConnectionPool.Factory {
     private final Connection.Factory connectionFactory;
     private final ConnectionPoolSettings poolSettings;
     private final MetricRegistry metricRegistry;
 
-    private ConnectionPoolFactory(Builder builder) {
+    private ImprovedConnectionPoolFactory(ImprovedConnectionPoolFactory.Builder builder) {
         this.connectionFactory = requireNonNull(builder.connectionFactory);
         this.poolSettings = new ConnectionPoolSettings.Builder(requireNonNull(builder.poolSettings)).build();
         this.metricRegistry = requireNonNull(builder.metricRegistry);
@@ -52,23 +49,23 @@ public final class ConnectionPoolFactory implements ConnectionPool.Factory {
         private ConnectionPoolSettings poolSettings;
         private MetricRegistry metricRegistry;
 
-        public Builder connectionFactory(Connection.Factory connectionFactory) {
+        public ImprovedConnectionPoolFactory.Builder connectionFactory(Connection.Factory connectionFactory) {
             this.connectionFactory = connectionFactory;
             return this;
         }
 
-        public Builder connectionPoolSettings(ConnectionPoolSettings poolSettings) {
+        public ImprovedConnectionPoolFactory.Builder connectionPoolSettings(ConnectionPoolSettings poolSettings) {
             this.poolSettings = poolSettings;
             return this;
         }
 
-        public Builder metricRegistry(MetricRegistry metricRegistry) {
+        public ImprovedConnectionPoolFactory.Builder metricRegistry(MetricRegistry metricRegistry) {
             this.metricRegistry = metricRegistry;
             return this;
         }
 
-        public ConnectionPoolFactory build() {
-            return new ConnectionPoolFactory(this);
+        public ImprovedConnectionPoolFactory build() {
+            return new ImprovedConnectionPoolFactory(this);
         }
     }
 }

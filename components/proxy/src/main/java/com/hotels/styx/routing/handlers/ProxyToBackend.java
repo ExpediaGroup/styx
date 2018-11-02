@@ -29,7 +29,7 @@ import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
+import com.hotels.styx.client.connectionpool.ImprovedConnectionPoolFactory;
 import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
@@ -115,7 +115,7 @@ public class ProxyToBackend implements HttpHandler {
                 connectionFactory = new ExpiringConnectionFactory(poolSettings.connectionExpirationSeconds(), connectionFactory);
             }
 
-            ConnectionPool.Factory connectionPoolFactory = new ConnectionPoolFactory.Builder()
+            ConnectionPool.Factory connectionPoolFactory = new ImprovedConnectionPoolFactory.Builder()
                     .connectionFactory(connectionFactory)
                     .connectionPoolSettings(poolSettings)
                     .metricRegistry(environment.metricRegistry())

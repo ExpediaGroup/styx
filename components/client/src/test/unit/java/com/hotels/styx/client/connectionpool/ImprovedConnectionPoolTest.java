@@ -1,3 +1,18 @@
+/*
+  Copyright (C) 2013-2018 Expedia Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
 package com.hotels.styx.client.connectionpool;
 
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
@@ -59,7 +74,7 @@ public class ImprovedConnectionPoolTest {
 
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, defaultConnectionPoolSettings(), settings, connectionFactory);
 
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection1)
                 .verifyComplete();
 
@@ -77,7 +92,7 @@ public class ImprovedConnectionPoolTest {
 
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, defaultConnectionPoolSettings(), settings, connectionFactory);
 
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection1)
                 .verifyComplete();
 
@@ -90,7 +105,7 @@ public class ImprovedConnectionPoolTest {
         assertEquals(pool.stats().busyConnectionCount(), 0);
         assertEquals(pool.stats().availableConnectionCount(), 1);
 
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection1)
                 .verifyComplete();
 
@@ -108,7 +123,7 @@ public class ImprovedConnectionPoolTest {
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, defaultConnectionPoolSettings(), settings, connectionFactory);
 
         // The pool is empty, so the `borrowConnection` triggers a connection establishment.
-        Publisher<Connection> future = pool.borrowConnection();
+        Publisher<Connection> future = pool.borrowConnection2();
 
         StepVerifier.create(future)
                 .then(() -> {
@@ -140,7 +155,7 @@ public class ImprovedConnectionPoolTest {
         // Create a new connection
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, defaultConnectionPoolSettings(), settings, connectionFactory);
 
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection1)
                 .then(() -> pool.returnConnection(connection1))
                 .verifyComplete();
@@ -148,7 +163,7 @@ public class ImprovedConnectionPoolTest {
         when(connection1.isConnected()).thenReturn(false);
         pool.connectionClosed(connection1);
 
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection2)
                 .verifyComplete();
 
@@ -170,13 +185,13 @@ public class ImprovedConnectionPoolTest {
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, defaultConnectionPoolSettings(), settings, connectionFactory);
 
         // The pool is empty, so the `borrowConnection` triggers a connection establishment.
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection1)
                 .verifyComplete();
 
         // Another borrow comes in, and triggers a connection establishment.
         // The subject keeps the connection perpetually in "3-way handshake"
-        Publisher<Connection> publisher = pool.borrowConnection();
+        Publisher<Connection> publisher = pool.borrowConnection2();
         CompletableFuture<Connection> future = Mono.from(publisher).toFuture();
 
         assertEquals(pool.stats().connectionAttempts(), 2);
@@ -205,13 +220,13 @@ public class ImprovedConnectionPoolTest {
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, defaultConnectionPoolSettings(), settings, connectionFactory);
 
         // The pool is empty, so the `borrowConnection` triggers a connection establishment.
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection1)
                 .verifyComplete();
 
         // Another borrow comes in, and triggers a connection establishment.
         // The subject keeps the connection perpetually in "3-way handshake"
-        CompletableFuture<Connection> future = Mono.from(pool.borrowConnection()).toFuture();
+        CompletableFuture<Connection> future = Mono.from(pool.borrowConnection2()).toFuture();
         assertFalse(future.isDone());
 
         assertEquals(pool.stats().connectionAttempts(), 2);
@@ -251,10 +266,10 @@ public class ImprovedConnectionPoolTest {
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, defaultConnectionPoolSettings(), settings, connectionFactory);
 
         // The subscriber is pending because the connection is still 3-way handshaking
-        CompletableFuture<Connection> future1 = Mono.from(pool.borrowConnection()).toFuture();
+        CompletableFuture<Connection> future1 = Mono.from(pool.borrowConnection2()).toFuture();
 
         // Borrow another one:
-        CompletableFuture<Connection> future2 = Mono.from(pool.borrowConnection()).toFuture();
+        CompletableFuture<Connection> future2 = Mono.from(pool.borrowConnection2()).toFuture();
 
         assertEquals(pool.stats().pendingConnectionCount(), 2);
 
@@ -290,10 +305,10 @@ public class ImprovedConnectionPoolTest {
 
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, poolSettings, settings, connectionFactory);
 
-        CompletableFuture<Connection> pending1 = Mono.from(pool.borrowConnection()).toFuture();
-        CompletableFuture<Connection> pending2 = Mono.from(pool.borrowConnection()).toFuture();
+        CompletableFuture<Connection> pending1 = Mono.from(pool.borrowConnection2()).toFuture();
+        CompletableFuture<Connection> pending2 = Mono.from(pool.borrowConnection2()).toFuture();
 
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectError(MaxPendingConnectionsExceededException.class)
                 .verify();
 
@@ -319,20 +334,20 @@ public class ImprovedConnectionPoolTest {
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, poolSettings, settings, connectionFactory);
 
         // Saturate active connections:
-        CompletableFuture<Connection> pending1 = Mono.from(pool.borrowConnection()).toFuture();
-        CompletableFuture<Connection> pending2 = Mono.from(pool.borrowConnection()).toFuture();
+        CompletableFuture<Connection> pending1 = Mono.from(pool.borrowConnection2()).toFuture();
+        CompletableFuture<Connection> pending2 = Mono.from(pool.borrowConnection2()).toFuture();
         assertTrue(pending1.isDone());
         assertTrue(pending2.isDone());
 
         // These are pending
-        CompletableFuture<Connection> pending3 = Mono.from(pool.borrowConnection()).toFuture();
-        CompletableFuture<Connection> pending4 = Mono.from(pool.borrowConnection()).toFuture();
+        CompletableFuture<Connection> pending3 = Mono.from(pool.borrowConnection2()).toFuture();
+        CompletableFuture<Connection> pending4 = Mono.from(pool.borrowConnection2()).toFuture();
 
         assertFalse(pending3.isDone());
         assertFalse(pending4.isDone());
 
         // This throws an error:
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectError(MaxPendingConnectionsExceededException.class)
                 .verify();
 
@@ -362,8 +377,8 @@ public class ImprovedConnectionPoolTest {
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, poolSettings, settings, connectionFactory);
 
         // Saturate active connections:
-        CompletableFuture<Connection> active1 = Mono.from(pool.borrowConnection()).toFuture();
-        CompletableFuture<Connection> active2 = Mono.from(pool.borrowConnection()).toFuture();
+        CompletableFuture<Connection> active1 = Mono.from(pool.borrowConnection2()).toFuture();
+        CompletableFuture<Connection> active2 = Mono.from(pool.borrowConnection2()).toFuture();
 
         assertTrue(active1.isDone());
         assertTrue(active2.isDone());
@@ -371,8 +386,8 @@ public class ImprovedConnectionPoolTest {
         assertEquals(pool.stats().busyConnectionCount(), 2);
 
         // Create two pending connections
-        CompletableFuture<Connection> pending1 = Mono.from(pool.borrowConnection()).toFuture();
-        CompletableFuture<Connection> pending2 = Mono.from(pool.borrowConnection()).toFuture();
+        CompletableFuture<Connection> pending1 = Mono.from(pool.borrowConnection2()).toFuture();
+        CompletableFuture<Connection> pending2 = Mono.from(pool.borrowConnection2()).toFuture();
 
         assertFalse(pending1.isDone());
         assertFalse(pending2.isDone());
@@ -400,11 +415,11 @@ public class ImprovedConnectionPoolTest {
         assertEquals(pool.stats().pendingConnectionCount(), 0);
 
         // .. allows more connections to be borrowed:
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection1)
                 .verifyComplete();
 
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection2)
                 .verifyComplete();
 
@@ -431,7 +446,7 @@ public class ImprovedConnectionPoolTest {
 
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, poolSettings, settings, connectionFactory);
 
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection1)
                 .verifyComplete();
 
@@ -458,11 +473,11 @@ public class ImprovedConnectionPoolTest {
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, poolSettings, settings, connectionFactory);
 
         // Saturate pool:
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection1)
                 .verifyComplete();
 
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection2)
                 .verifyComplete();
 
@@ -478,7 +493,7 @@ public class ImprovedConnectionPoolTest {
 
         // A new connection has been established ...
         // proving that the borrowed count was decremented
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection3)
                 .verifyComplete();
 
@@ -504,11 +519,11 @@ public class ImprovedConnectionPoolTest {
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, poolSettings, settings, connectionFactory);
 
         // Saturate pool:
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection1)
                 .verifyComplete();
 
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection2)
                 .verifyComplete();
 
@@ -516,7 +531,7 @@ public class ImprovedConnectionPoolTest {
         assertEquals(pool.stats().availableConnectionCount(), 0);
 
         // Create a pending connection
-        CompletableFuture<Connection> pending1 = Mono.from(pool.borrowConnection()).toFuture();
+        CompletableFuture<Connection> pending1 = Mono.from(pool.borrowConnection2()).toFuture();
         assertFalse(pending1.isDone());
 
         assertEquals(pool.stats().busyConnectionCount(), 2);
@@ -551,7 +566,7 @@ public class ImprovedConnectionPoolTest {
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, poolSettings, settings, connectionFactory);
 
         // Create a new connection
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection1)
                 .verifyComplete();
 
@@ -576,11 +591,11 @@ public class ImprovedConnectionPoolTest {
         assertEquals(pool.stats().terminatedConnections(), 1);
 
         // Connection closure doesn't affect subsequent borrows:
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection2)
                 .verifyComplete();
 
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection3)
                 .verifyComplete();
 
@@ -604,7 +619,7 @@ public class ImprovedConnectionPoolTest {
 
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, poolSettings, settings, connectionFactory);
 
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection4)
                 .verifyComplete();
     }
@@ -624,7 +639,7 @@ public class ImprovedConnectionPoolTest {
 
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, poolSettings, settings, connectionFactory);
 
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection1)
                 .then(() -> {
                     assertEquals(pool.stats().availableConnectionCount(), 0);
@@ -656,7 +671,7 @@ public class ImprovedConnectionPoolTest {
 
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, poolSettings, settings, connectionFactory);
 
-        Mono.from(pool.borrowConnection()).subscribe();
+        Mono.from(pool.borrowConnection2()).subscribe();
 
         assertEquals(pool.stats().pendingConnectionCount(), 1);
         assertEquals(pool.stats().connectionFailures(), 1);
@@ -680,7 +695,7 @@ public class ImprovedConnectionPoolTest {
 
         ImprovedConnectionPool pool = new ImprovedConnectionPool(origin, poolSettings, settings, connectionFactory);
 
-        StepVerifier.create(pool.borrowConnection())
+        StepVerifier.create(pool.borrowConnection2())
                 .expectNext(connection1)
                 .then(() -> {
                     assertEquals(pool.stats().availableConnectionCount(), 0);

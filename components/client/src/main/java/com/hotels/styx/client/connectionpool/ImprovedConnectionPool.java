@@ -38,11 +38,12 @@ import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static java.util.Objects.nonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
+import static rx.RxReactiveStreams.toObservable;
 
 /**
  * A connection pool implementation.
  */
-public class ImprovedConnectionPool implements Connection.Listener {
+public class ImprovedConnectionPool implements ConnectionPool, Connection.Listener {
     private static final Logger LOG = getLogger(ImprovedConnectionPool.class);
 
     private ConnectionPoolSettings poolSettings;
@@ -52,7 +53,6 @@ public class ImprovedConnectionPool implements Connection.Listener {
 
     private final ConcurrentLinkedDeque<MonoSink<Connection>> waitingSubscribers;
     private final Queue<Connection> activeConnections;
-    private final AtomicInteger activeCount = new AtomicInteger();
     private final AtomicInteger borrowedCount = new AtomicInteger();
     private final ConnectionPoolStats stats = new ConnectionPoolStats();
     private final AtomicInteger connectionAttempts = new AtomicInteger();
@@ -74,7 +74,12 @@ public class ImprovedConnectionPool implements Connection.Listener {
         return origin;
     }
 
-    public Publisher<Connection> borrowConnection() {
+    @Override
+    public Observable<Connection> borrowConnection() {
+        return toObservable(borrowConnection2());
+    }
+
+    public Publisher<Connection> borrowConnection2() {
         return Mono.create(sink -> {
             Connection connection = dequeue();
             if (connection != null) {
@@ -156,6 +161,19 @@ public class ImprovedConnectionPool implements Connection.Listener {
     }
 
     @Override
+    public boolean isExhausted() {
+        int usage = borrowedCount.get() + waitingSubscribers.size();
+        int limit = poolSettings.maxConnectionsPerHost() + poolSettings.maxPendingConnectionsPerHost();
+
+        return usage >= limit;
+    }
+
+    @Override
+    public ConnectionPoolSettings settings() {
+        return poolSettings;
+    }
+
+    @Override
     public void connectionClosed(Connection connection) {
         terminatedConnections.incrementAndGet();
     }
@@ -224,8 +242,8 @@ public class ImprovedConnectionPool implements Connection.Listener {
         public String toString() {
             return toStringHelper(this)
                     .add("pendingConnections", pendingConnectionCount())
-                    .add("busyConnections", 0)
-                    .add("maxConnections", 0)
+                    .add("busyConnections", busyConnectionCount())
+                    .add("maxConnections", poolSettings.maxConnectionsPerHost())
                     .toString();
         }
     }

@@ -71,6 +71,8 @@ public class ConnectionSettings {
     /**
      * Deprecated and due to be removed in a future release.
      *
+     * @deprecated In the next version.
+     *
      * @return Always returns a constant 0.
      */
     @Deprecated

@@ -35,7 +35,7 @@ import com.hotels.styx.client.StyxHeaderConfig;
 import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.StyxHttpClient;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
-import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
+import com.hotels.styx.client.connectionpool.ImprovedConnectionPoolFactory;
 import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
 import com.hotels.styx.client.healthcheck.OriginHealthCheckFunction;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
@@ -120,7 +120,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
                     originStatsFactory,
                     poolSettings.connectionExpirationSeconds());
 
-            ConnectionPool.Factory connectionPoolFactory = new ConnectionPoolFactory.Builder()
+            ConnectionPool.Factory connectionPoolFactory = new ImprovedConnectionPoolFactory.Builder()
                     .connectionFactory(connectionFactory)
                     .connectionPoolSettings(backendService.connectionPoolConfig())
                     .metricRegistry(environment.metricRegistry())

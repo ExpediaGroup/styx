@@ -24,7 +24,7 @@ import com.hotels.styx.api.extension.OriginsSnapshot;
 import com.hotels.styx.api.extension.OriginsChangeListener;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
+import com.hotels.styx.client.connectionpool.ImprovedConnectionPoolFactory;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.origincommands.DisableOrigin;
@@ -503,8 +503,8 @@ public class OriginsInventoryTest {
         return Optional.ofNullable(gauge);
     }
 
-    private static ConnectionPoolFactory connectionPoolFactory() {
-        return new ConnectionPoolFactory.Builder()
+    private static ImprovedConnectionPoolFactory connectionPoolFactory() {
+        return new ImprovedConnectionPoolFactory.Builder()
                 .connectionFactory(new StubConnectionFactory())
                 .connectionPoolSettings(defaultConnectionPoolSettings())
                 .metricRegistry(new CodaHaleMetricRegistry())
