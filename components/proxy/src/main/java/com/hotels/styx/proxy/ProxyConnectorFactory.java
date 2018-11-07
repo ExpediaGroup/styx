@@ -32,6 +32,7 @@ import com.hotels.styx.server.netty.connectors.ResponseEnhancer;
 import com.hotels.styx.server.netty.handlers.ChannelStatisticsHandler;
 import com.hotels.styx.server.netty.handlers.ExcessConnectionRejector;
 import com.hotels.styx.server.netty.handlers.RequestTimeoutHandler;
+import com.hotels.styx.server.track.CurrentRequestTracker;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -161,6 +162,7 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
                             .progressListener(requestStatsCollector)
                             .metricRegistry(metrics)
                             .secure(sslContext.isPresent())
+                            .requestTracker(CurrentRequestTracker.INSTANCE)
                             .build());
         }
 

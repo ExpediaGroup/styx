@@ -80,8 +80,6 @@ class StandardHttpPipeline implements HttpHandler {
 
         @Override
         public Eventual<LiveHttpResponse> proceed(LiveHttpRequest request) {
-
-
             CurrentRequestTracker.INSTANCE.trackRequest(request);
 
             if (index < interceptors.size()) {

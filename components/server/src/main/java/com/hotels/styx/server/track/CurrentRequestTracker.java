@@ -24,7 +24,7 @@ import com.hotels.styx.api.LiveHttpRequest;
 /**
  * Manger class to manage the current requests.
  */
-public class CurrentRequestTracker {
+public class CurrentRequestTracker implements RequestTracker {
 
     private static ConcurrentHashMap<Object, CurrentRequest> currentRequests = new ConcurrentHashMap<>();
 
@@ -34,7 +34,6 @@ public class CurrentRequestTracker {
     }
 
     public void trackRequest(LiveHttpRequest request, Supplier<String> state) {
-
         if (currentRequests.containsKey(request.id())) {
             currentRequests.get(request.id()).setCurrentThread(Thread.currentThread());
         } else {
@@ -43,7 +42,6 @@ public class CurrentRequestTracker {
     }
 
     public void trackRequest(LiveHttpRequest request) {
-
         if (currentRequests.containsKey(request.id())) {
             currentRequests.get(request.id()).setCurrentThread(Thread.currentThread());
         } else {
