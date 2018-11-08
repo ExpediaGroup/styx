@@ -41,7 +41,9 @@ public final class SimpleConnectionPoolFactory implements ConnectionPool.Factory
 
     @Override
     public ConnectionPool create(Origin origin) {
-        return new StatsReportingConnectionPool(new SimpleConnectionPool(origin, poolSettings, connectionFactory), metricRegistry);
+        return new StatsReportingConnectionPool(
+                new SimpleConnectionPool(origin, poolSettings, connectionFactory),
+                metricRegistry);
     }
 
     /**

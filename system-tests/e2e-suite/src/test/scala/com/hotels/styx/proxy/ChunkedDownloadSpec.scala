@@ -89,7 +89,7 @@ class ChunkedDownloadSpec extends FunSpec
     }
 
     it("Cancels the HTTP download request when browser closes the connection.") {
-      assert(noBusyConnectionsToOrigin(originTwo), "Connection remains busy.")
+      assert(busyConnections(originTwo) == 0, "Connection remains busy.")
       assert(noAvailableConnectionsInPool(originTwo), "Connection was not closed.")
 
       val messageBody = "Foo bar 0123456789012345678901234567890123456789\\n" * 100
@@ -104,15 +104,19 @@ class ChunkedDownloadSpec extends FunSpec
       client.disconnect()
 
       eventually(timeout(5 seconds)) {
-        assert(noBusyConnectionsToOrigin(originTwo), "Connection remains busy.")
-        assert(noAvailableConnectionsInPool(originTwo), "Connection was not closed.")
+        assert(busyConnections(originTwo) == 0, "Connection remains busy.")
+        assert(closedConnections(originTwo) == 1)
         styxServer.metricsSnapshot.count("origins.appTwo.requests.cancelled").get should be(1)
       }
     }
   }
 
-  def noBusyConnectionsToOrigin(origin: Origin) = {
-    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.port}.connectionspool.busy-connections").get == 0
+  def busyConnections(origin: Origin) = {
+    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.port}.connectionspool.busy-connections").get
+  }
+
+  def closedConnections(origin: Origin) = {
+    styxServer.metricsSnapshot.gauge(s"origins.appTwo.localhost:${origin.port}.connectionspool.connections-closed").get
   }
 
   def noAvailableConnectionsInPool(origin: Origin) = {
