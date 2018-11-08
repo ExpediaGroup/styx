@@ -16,14 +16,8 @@
 package com.hotels.styx.common;
 
 import com.google.common.base.Preconditions;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.StringDescription;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
 /**
  * Static convenience methods that help a method or constructor check whether it was invoked
@@ -93,17 +87,6 @@ public final class MorePreconditions {
             throw new IllegalArgumentException(description.toString());
         }
         return reference;
-    }
-
-    /**
-     * A matcher that checks whether an integer is between a given minimum and maximum (inclusive).
-     *
-     * @param minimum minimum value (inclusive)
-     * @param maximum maximum value (inclusive)
-     * @return the matcher
-     */
-    public static Matcher<Integer> inRange(int minimum, int maximum) {
-        return allOf(greaterThanOrEqualTo(minimum), lessThanOrEqualTo(maximum));
     }
 
     private MorePreconditions() {
