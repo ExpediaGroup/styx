@@ -18,6 +18,7 @@ package com.hotels.styx.client.connectionpool;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.SlidingWindowReservoir;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.MoreObjects;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
@@ -104,9 +105,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
                     }
                 }
             }
-        })
-                // TODO: Add unit test:
-                .timeout(Duration.ofMillis(poolSettings.pendingConnectionTimeoutMillis()),
+        }).timeout(Duration.ofMillis(poolSettings.pendingConnectionTimeoutMillis()),
                 Mono.error(new MaxPendingConnectionTimeoutException(origin, connectionSettings.connectTimeoutMillis())));
     }
 
@@ -123,9 +122,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         if (attempts > 0) {
             return this.connectionFactory.createConnection(this.origin, this.connectionSettings)
                     .onErrorResumeNext(cause -> newConnection(attempts - 1))
-                    // TODO: Add unit test:
                     .doOnNext(it -> it.addConnectionListener(SimpleConnectionPool.this));
-
         } else {
             return Observable.error(new RuntimeException("Unable to create connection"));
         }
@@ -250,8 +247,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
 
         @Override
         public String toString() {
-            // TODO: fix this:
-            return toStringHelper(this)
+            return MoreObjects.toStringHelper(this)
                     .add("\nactiveConnections", availableConnectionCount())
                     .add("\npendingConnections", pendingConnectionCount())
                     .add("\nbusyConnections", busyConnectionCount())
@@ -259,7 +255,6 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
                     .add("\nconnectionFailures", connectionFailures())
                     .add("\nclosedConnections", closedConnections())
                     .add("\nterminatedConnections", terminatedConnections())
-                    .add("\nmaxConnections", poolSettings.maxConnectionsPerHost())
                     .toString();
         }
     }

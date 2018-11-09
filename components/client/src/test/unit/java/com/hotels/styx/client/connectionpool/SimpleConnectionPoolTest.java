@@ -22,6 +22,7 @@ import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
+import org.mockito.Mockito;
 import org.reactivestreams.Publisher;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -45,6 +46,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -55,7 +57,6 @@ import static org.testng.Assert.assertTrue;
 
 public class SimpleConnectionPoolTest {
     private final Origin origin = newOriginBuilder("localhost", 9090).build();
-    private final ConnectionSettings settings = new ConnectionSettings(1000);
     private Connection.Factory connectionFactory;
     private Connection connection1;
     private Connection connection2;
@@ -726,5 +727,45 @@ public class SimpleConnectionPoolTest {
                     assertEquals(pool.stats().terminatedConnections(), 1);
                 })
                 .verifyComplete();
+    }
+
+    @Test
+    public void pendingConnectionTimeout() {
+        PublishSubject<Connection> subject = PublishSubject.create();
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
+                .thenReturn(subject);
+
+        ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
+                .pendingConnectionTimeout(500, MILLISECONDS)
+                .build();
+
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, poolSettings, connectionFactory);
+
+        StepVerifier.create(pool.borrowConnection2())
+                .expectError(MaxPendingConnectionTimeoutException.class)
+                .verifyThenAssertThat()
+                .tookMoreThan(Duration.ofMillis(500));
+
+        // And then ensure connection is placed in the active queue:
+        subject.onNext(mock(Connection.class));
+
+        assertEquals(pool.stats().availableConnectionCount(), 1);
+        assertEquals(pool.stats().pendingConnectionCount(), 0);
+        assertEquals(pool.stats().busyConnectionCount(), 0);
+        assertEquals(pool.stats().connectionAttempts(), 1);
+    }
+
+    @Test
+    public void registersAsConnectionListener() {
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
+                .thenReturn(Observable.just(connection1));
+
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
+
+        StepVerifier.create(pool.borrowConnection2())
+                .consumeNextWith(pool::returnConnection)
+                .verifyComplete();
+
+        verify(connection1).addConnectionListener(Mockito.eq(pool));
     }
 }
