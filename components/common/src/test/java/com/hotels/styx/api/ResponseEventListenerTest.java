@@ -32,6 +32,7 @@ import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
@@ -167,5 +168,19 @@ public class ResponseEventListenerTest {
         assertTrue(responseError.get() instanceof RuntimeException);
     }
 
+    @Test
+    public void firesErrorWhenResponseCompletesWithoutHeaders() {
+        TestSubscriber<LiveHttpResponse> testSubscriber = new TestSubscriber<>();
+        Observable<LiveHttpResponse> publisher = Observable.empty();
 
+        ResponseEventListener.from(publisher)
+                .whenResponseError(cause -> responseError.set(cause))
+                .apply()
+                .toBlocking()
+                .subscribe(testSubscriber);
+
+        testSubscriber.awaitTerminalEvent();
+        assertEquals(testSubscriber.getOnCompletedEvents().size(), 1);
+        assertTrue(responseError.get() instanceof RuntimeException);
+    }
 }
