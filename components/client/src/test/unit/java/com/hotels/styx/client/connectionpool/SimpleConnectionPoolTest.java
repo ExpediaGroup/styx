@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
@@ -26,26 +24,18 @@ import org.mockito.Mockito;
 import org.reactivestreams.Publisher;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import rx.Observable;
 import rx.subjects.PublishSubject;
 
 import java.time.Duration;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
-import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;

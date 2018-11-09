@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.SlidingWindowReservoir;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.hotels.styx.api.extension.Origin;
@@ -33,12 +31,8 @@ import java.time.Duration;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
-import static com.google.common.base.Objects.toStringHelper;
-import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static java.util.Objects.nonNull;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 import static rx.RxReactiveStreams.toObservable;
 
@@ -188,14 +182,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     }
 
     @VisibleForTesting
-    private class ConnectionPoolStats implements ConnectionPoolStatsCounter {
-        final Histogram timeToFirstByteHistogram = new Histogram(new SlidingWindowReservoir(50));
-
-        private final Supplier<Long> ttfbSupplier = () -> (long) timeToFirstByteHistogram.getSnapshot().getMean();
-
-        // TODO: Fix this:
-        private final Supplier<Long> memoizedTtfbSupplier = memoizeWithExpiration(ttfbSupplier::get, 5, MILLISECONDS)::get;
-
+    private class ConnectionPoolStats implements Stats {
         @Override
         public int availableConnectionCount() {
             return activeConnections.size();
@@ -209,11 +196,6 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         @Override
         public int pendingConnectionCount() {
             return waitingSubscribers.size();
-        }
-
-        @Override
-        public long timeToFirstByteMs() {
-            return 0;
         }
 
         @Override
@@ -234,15 +216,6 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         @Override
         public int terminatedConnections() {
             return terminatedConnections.get();
-        }
-
-        @Override
-        public void recordTimeToFirstByte(long msValue) {
-            if (msValue < 0) {
-                LOG.warn("illegal time to first byte registered {}", msValue);
-            } else {
-                timeToFirstByteHistogram.update(msValue);
-            }
         }
 
         @Override

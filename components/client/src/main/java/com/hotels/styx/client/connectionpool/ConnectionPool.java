@@ -55,13 +55,6 @@ public interface ConnectionPool extends Closeable {
         int pendingConnectionCount();
 
         /**
-         * Returns the mean time to first byte in milliseconds.
-         *
-         * @return time in milliseconds
-         */
-        long timeToFirstByteMs();
-
-        /**
          * Number of connections establishment attempts that have been initiated from the
          * connection pool.
          *

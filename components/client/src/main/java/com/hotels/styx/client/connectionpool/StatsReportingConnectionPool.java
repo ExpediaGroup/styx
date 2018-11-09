@@ -103,7 +103,6 @@ class StatsReportingConnectionPool implements ConnectionPool {
         scopedRegistry.register("busy-connections", (Gauge<Integer>) stats::busyConnectionCount);
         scopedRegistry.register("pending-connections", (Gauge<Integer>) stats::pendingConnectionCount);
         scopedRegistry.register("available-connections", (Gauge<Integer>) stats::availableConnectionCount);
-        scopedRegistry.register("ttfb", (Gauge<Integer>) () -> (int) stats.timeToFirstByteMs());
         scopedRegistry.register("connection-attempts", (Gauge<Integer>) () -> (int) stats.connectionAttempts());
         scopedRegistry.register("connection-failures", (Gauge<Integer>) () -> (int) stats.connectionFailures());
         scopedRegistry.register("connections-closed", (Gauge<Integer>) () -> (int) stats.closedConnections());
