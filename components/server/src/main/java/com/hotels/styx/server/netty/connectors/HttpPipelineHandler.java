@@ -313,6 +313,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         statsSink.onComplete(ongoingRequest.id(), ongoingResponse.status().code());
         if (ongoingRequest.keepAlive()) {
             ongoingRequest = null;
+            ongoingResponse = null;
 
             if (prematureRequest != null) {
                 eventProcessor.submit(new RequestReceivedEvent(prematureRequest, ctx));
