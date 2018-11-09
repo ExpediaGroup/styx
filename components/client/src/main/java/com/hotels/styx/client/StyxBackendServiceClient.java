@@ -48,6 +48,7 @@ import static com.google.common.collect.Lists.newArrayList;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
 import static com.hotels.styx.api.extension.service.StickySessionConfig.stickySessionDisabled;
+import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
 import static com.hotels.styx.client.stickysession.StickySessionCookie.newStickySessionCookie;
 import static io.netty.handler.codec.http.HttpMethod.HEAD;
 import static java.util.Collections.emptyList;
@@ -74,6 +75,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
     private final boolean contentValidation;
     private final String originsRestrictionCookieName;
     private final StickySessionConfig stickySessionConfig;
+    private final CharSequence originIdHeader;
 
     private StyxBackendServiceClient(Builder builder) {
         this.id = requireNonNull(builder.backendServiceId);
@@ -93,6 +95,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         this.metricsRegistry = builder.metricsRegistry;
         this.contentValidation = builder.contentValidation;
         this.originsRestrictionCookieName = builder.originsRestrictionCookieName;
+        this.originIdHeader = builder.originIdHeader;
     }
 
     @Override
@@ -146,8 +149,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
             newPreviousOrigins.add(remoteHost.get());
 
             return ResponseEventListener.from(
-                        toObservable(host.hostClient().handle(request, HttpInterceptorContext.create()))
-                        .map(response -> addStickySessionIdentifier(response, host.origin())))
+                        toObservable(host.hostClient().handle(request, HttpInterceptorContext.create())).map(response -> addStickySessionIdentifier(response, host.origin())))
                     .whenResponseError(cause -> logError(request, cause))
                     .whenCancelled(() -> originStatsFactory.originStats(host.origin()).requestCancelled())
                     .apply()
@@ -157,11 +159,27 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
                     .onErrorResumeNext(cause -> {
                         RetryPolicyContext retryContext = new RetryPolicyContext(this.id, attempt + 1, cause, request, previousOrigins);
                         return retry(request, retryContext, newPreviousOrigins, attempt + 1, cause);
-                    });
+                    })
+                    .map(response -> addOriginId(host.id(), response))
+                    .onErrorResumeNext(this::mapExceptionCauses);
         } else {
             RetryPolicyContext retryContext = new RetryPolicyContext(this.id, attempt + 1, null, request, previousOrigins);
             return retry(request, retryContext, previousOrigins, attempt + 1, new NoAvailableHostsException(this.id));
         }
+    }
+
+    private Observable<LiveHttpResponse> mapExceptionCauses(Throwable cause) {
+        if (cause instanceof NoAvailableHostsException) {
+            return Observable.error(new NoAvailableHostsException(id));
+        } else {
+            return Observable.error(cause);
+        }
+    }
+
+    private LiveHttpResponse addOriginId(Id originId, LiveHttpResponse response) {
+        return response.newBuilder()
+                .header(originIdHeader, originId)
+                .build();
     }
 
     Observable<LiveHttpResponse> retry(LiveHttpRequest request, RetryPolicyContext retryContext, List<RemoteHost> previousOrigins, int attempt, Throwable cause) {
@@ -274,8 +292,6 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
     }
 
     private Optional<RemoteHost> selectOrigin(LiveHttpRequest rewrittenRequest) {
-
-
         LoadBalancer.Preferences preferences = new LoadBalancer.Preferences() {
             @Override
             public Optional<String> preferredOrigins() {
@@ -337,6 +353,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         private OriginStatsFactory originStatsFactory;
         private String originsRestrictionCookieName;
         private StickySessionConfig stickySessionConfig = stickySessionDisabled();
+        private CharSequence originIdHeader = ORIGIN_ID_DEFAULT;
 
         public Builder(Id backendServiceId) {
             this.backendServiceId = requireNonNull(backendServiceId);
@@ -383,12 +400,16 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
             return this;
         }
 
+        public Builder originIdHeader(CharSequence originIdHeader) {
+            this.originIdHeader = originIdHeader;
+            return this;
+        }
+
         public StyxBackendServiceClient build() {
             if (originStatsFactory == null) {
                 originStatsFactory = new OriginStatsFactory(metricsRegistry);
             }
             return new StyxBackendServiceClient(this);
         }
-
     }
 }

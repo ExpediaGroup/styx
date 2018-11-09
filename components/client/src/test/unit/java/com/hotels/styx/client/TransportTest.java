@@ -64,7 +64,7 @@ public class TransportTest {
     public void setUp() {
         request = get("/").build();
         response = LiveHttpResponse.response(OK).build();
-        transport = new Transport(id("x"), X_STYX_ORIGIN_ID);
+        transport = new Transport();
         responseProvider = PublishSubject.create();
         subscriber = new TestSubscriber<>();
     }
@@ -74,7 +74,7 @@ public class TransportTest {
         Connection connection = mockConnection(just(response));
         ConnectionPool pool = mockPool(connection);
 
-        HttpTransaction transaction = transport.send(request, Optional.of(pool), APP_ID);
+        HttpTransaction transaction = transport.send(request, Optional.of(pool));
 
         transaction.response()
                 .toBlocking()
@@ -91,7 +91,7 @@ public class TransportTest {
         Connection connection = mockConnection(just(response));
         ConnectionPool pool = mockPool(connection);
 
-        transport.send(request, Optional.of(pool), APP_ID)
+        transport.send(request, Optional.of(pool))
                 .response()
                 .subscribe(subscriber);
 
@@ -109,7 +109,7 @@ public class TransportTest {
         Connection connection = mockConnection(PublishSubject.create());
         ConnectionPool pool = mockPool(connection);
 
-        transport.send(request, Optional.of(pool), APP_ID)
+        transport.send(request, Optional.of(pool))
                 .response()
                 .subscribe(subscriber);
 
@@ -132,7 +132,7 @@ public class TransportTest {
         Connection connection = mockConnection(responseProvider);
         ConnectionPool pool = mockPool(connection);
 
-        transport.send(request, Optional.of(pool), APP_ID)
+        transport.send(request, Optional.of(pool))
                 .response()
                 .subscribe(subscriber);
 
@@ -153,7 +153,7 @@ public class TransportTest {
         Connection connection = mockConnection(responseProvider);
         ConnectionPool pool = mockPool(connection);
 
-        transport.send(request, Optional.of(pool), APP_ID)
+        transport.send(request, Optional.of(pool))
                 .response()
                 .subscribe(subscriber);
 
@@ -170,7 +170,7 @@ public class TransportTest {
         Connection connection = mockConnection(Observable.empty());
         ConnectionPool pool = mockPool(connection);
 
-        transport.send(request, Optional.of(pool), APP_ID)
+        transport.send(request, Optional.of(pool))
                 .response()
                 .subscribe(subscriber);
 
@@ -185,7 +185,7 @@ public class TransportTest {
         Connection connection = mockConnection(Observable.error(new RuntimeException()));
         ConnectionPool pool = mockPool(connection);
 
-        transport.send(request, Optional.of(pool), APP_ID)
+        transport.send(request, Optional.of(pool))
                 .response()
                 .subscribe(subscriber);
 
@@ -201,7 +201,7 @@ public class TransportTest {
         Connection connection = mockConnection(Observable.just(LiveHttpResponse.response(OK).body(new ByteStream(testPublisher)).build()));
         ConnectionPool pool = mockPool(connection);
 
-        transport.send(request, Optional.of(pool), APP_ID)
+        transport.send(request, Optional.of(pool))
                 .response()
                 .subscribe(subscriber);
 
@@ -225,7 +225,7 @@ public class TransportTest {
                 .body(new ByteStream(toPublisher(Observable.from(ImmutableList.of(chunk1, chunk2, chunk3)))))
                 .build();
 
-        transport.send(aRequest, Optional.empty(), APP_ID)
+        transport.send(aRequest, Optional.empty())
                 .response()
                 .subscribe(subscriber);
 
@@ -237,7 +237,7 @@ public class TransportTest {
     @Test
     public void emitsNoAvailableHostsExceptionWhenPoolIsNotProvided() {
 
-        transport.send(request, Optional.empty(), APP_ID)
+        transport.send(request, Optional.empty())
                 .response()
                 .subscribe(subscriber);
 

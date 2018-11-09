@@ -17,10 +17,9 @@ package com.hotels.styx.client;
 
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Id;
-import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetric;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
 import rx.Observable;
 
 import java.util.Optional;
@@ -32,23 +31,21 @@ import static java.util.Objects.requireNonNull;
  */
 public class StyxHostHttpClient implements BackendServiceClient, LoadBalancingMetricSupplier {
     private final Transport transport;
-    private final Id originId;
     private final ConnectionPool pool;
 
-    public StyxHostHttpClient(Id originId, ConnectionPool pool, Transport transport) {
-        this.originId = requireNonNull(originId);
-        this.pool = requireNonNull(pool);
+    StyxHostHttpClient(ConnectionPool pool, Transport transport) {
         this.transport = requireNonNull(transport);
+        this.pool = requireNonNull(pool);
     }
 
-    public static StyxHostHttpClient create(Id appId, Id originId, CharSequence headerName, ConnectionPool pool) {
-        return new StyxHostHttpClient(originId, pool, new Transport(appId, headerName));
+    public static StyxHostHttpClient create(ConnectionPool pool) {
+        return new StyxHostHttpClient(pool, new Transport());
     }
 
     @Override
     public Observable<LiveHttpResponse> sendRequest(LiveHttpRequest request) {
         return transport
-                .send(request, Optional.of(pool), originId)
+                .send(request, Optional.of(pool))
                 .response();
     }
 

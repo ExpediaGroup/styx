@@ -25,29 +25,18 @@ import rx.Observable;
 
 import java.util.Optional;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * Encapsulates a single connection to remote server which we can use to send the messages.
  */
 class Transport {
-    private final Id appId;
-    private final CharSequence originIdHeaderName;
-
-    public Transport(Id appId, CharSequence originIdHeaderName) {
-        this.appId = requireNonNull(appId);
-        this.originIdHeaderName = requireNonNull(originIdHeaderName);
-    }
-
-    public HttpTransaction send(LiveHttpRequest request, Optional<ConnectionPool> origin, Id originId) {
+    public HttpTransaction send(LiveHttpRequest request, Optional<ConnectionPool> origin) {
         Observable<Connection> connection = connection(request, origin);
 
         return new HttpTransaction() {
             @Override
             public Observable<LiveHttpResponse> response() {
                 return connection.flatMap(connection -> {
-                    Observable<LiveHttpResponse> responseObservable = connection.write(request)
-                            .map(response -> addOriginId(originId, response));
+                    Observable<LiveHttpResponse> responseObservable = connection.write(request);
 
                     return ResponseEventListener.from(responseObservable)
                             .whenCancelled(() -> closeIfConnected(origin, connection))
@@ -78,13 +67,7 @@ class Transport {
                 .orElseGet(() -> {
                     // Aggregates an empty body:
                     request.consume();
-                    return Observable.error(new NoAvailableHostsException(appId));
+                    return Observable.error(new NoAvailableHostsException(Id.id("")));
                 });
-    }
-
-    private LiveHttpResponse addOriginId(Id originId, LiveHttpResponse response) {
-        return response.newBuilder()
-                .header(originIdHeaderName, originId)
-                .build();
     }
 }

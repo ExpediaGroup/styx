@@ -57,7 +57,6 @@ import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
 import static com.hotels.styx.client.OriginsInventory.OriginState.INACTIVE;
-import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
 import static com.hotels.styx.client.connectionpool.ConnectionPools.simplePoolFactory;
 import static com.hotels.styx.common.StyxFutures.await;
 import static java.util.Collections.emptyMap;
@@ -542,7 +541,7 @@ public final class OriginsInventory
             await(originHealthMonitor.start());
 
             if (hostClientFactory == null) {
-                hostClientFactory = (ConnectionPool connectionPool) -> StyxHostHttpClient.create(appId, connectionPool.getOrigin().id(), ORIGIN_ID_DEFAULT, connectionPool);
+                hostClientFactory = (ConnectionPool connectionPool) -> StyxHostHttpClient.create(connectionPool);
             }
 
             OriginsInventory originsInventory = new OriginsInventory(

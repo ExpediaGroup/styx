@@ -16,14 +16,15 @@
 package com.hotels.styx.client;
 
 import com.hotels.styx.api.HttpRequest;
-import com.hotels.styx.api.Id;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import com.hotels.styx.api.LiveHttpRequest;
+import rx.Observable;
 
 import java.util.Optional;
 
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -43,21 +44,24 @@ public class StyxHostHttpClientTest {
     public void sendsRequestUsingTransport() {
         ConnectionPool pool = mock(ConnectionPool.class);
         Transport transport = mock(Transport.class);
-        when(transport.send(any(LiveHttpRequest.class), any(Optional.class), any(Id.class))).thenReturn(mock(HttpTransaction.class));
+        HttpTransaction transaction = mock(HttpTransaction.class);
 
-        new StyxHostHttpClient(Id.id("app-01"), pool, transport)
+        when(transport.send(any(LiveHttpRequest.class), any(Optional.class))).thenReturn(transaction);
+        when(transaction.response()).thenReturn(Observable.just(response().build()));
+
+        new StyxHostHttpClient(pool, transport)
                 .sendRequest(request);
 
-        verify(transport).send(eq(request), eq(Optional.of(pool)), eq(Id.id("app-01")));
+        verify(transport).send(eq(request), eq(Optional.of(pool)));
     }
 
     @Test
     public void closesTheConnectionPool() {
         ConnectionPool pool = mock(ConnectionPool.class);
         Transport transport = mock(Transport.class);
-        when(transport.send(any(LiveHttpRequest.class), any(Optional.class), any(Id.class))).thenReturn(mock(HttpTransaction.class));
+        when(transport.send(any(LiveHttpRequest.class), any(Optional.class))).thenReturn(mock(HttpTransaction.class));
 
-        StyxHostHttpClient hostClient = new StyxHostHttpClient(Id.id("app-01"), pool, transport);
+        StyxHostHttpClient hostClient = new StyxHostHttpClient(pool, transport);
 
         hostClient.close();
 
