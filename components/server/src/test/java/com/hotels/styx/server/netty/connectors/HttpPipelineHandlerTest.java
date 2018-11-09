@@ -18,9 +18,9 @@ package com.hotels.styx.server.netty.connectors;
 import com.google.common.collect.ObjectArrays;
 import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
@@ -44,6 +44,7 @@ import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import org.mockito.ArgumentCaptor;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
@@ -62,14 +63,14 @@ import static com.google.common.collect.Iterables.toArray;
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderValues.CLOSE;
-import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.ACCEPTING_REQUESTS;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE;
 import static com.hotels.styx.server.netty.connectors.HttpPipelineHandler.State.SENDING_RESPONSE_CLIENT_CLOSED;
@@ -97,6 +98,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertTrue;
 import static rx.RxReactiveStreams.toPublisher;
 
 public class HttpPipelineHandlerTest {
@@ -132,8 +134,12 @@ public class HttpPipelineHandlerTest {
 
     private ResponseEnhancer responseEnhancer;
 
+    private LoggingTestSupport logger;
+
     @BeforeMethod
     public void setUp() throws Exception {
+        logger = new LoggingTestSupport(HttpPipelineHandler.class);
+
         statsCollector = mock(RequestStatsCollector.class);
         errorListener = mock(HttpErrorStatusListener.class);
         ctx = mockCtx();
@@ -184,6 +190,11 @@ public class HttpPipelineHandlerTest {
         request2 = get("/bar").id("REQUEST-2-ID").build();
 
         setupHandlerTo(ACCEPTING_REQUESTS);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        logger.stop();
     }
 
     private HttpPipelineHandler createHandler(HttpHandler pipeline) throws Exception {
@@ -902,6 +913,27 @@ public class HttpPipelineHandlerTest {
         assertThat(handler.state(), is(WAITING_FOR_RESPONSE));
     }
 
+    @Test
+    public void removesOngoingResponeFromLogMessages() throws Exception {
+        setUpFor2Requests();
+
+        handler.channelRead0(ctx, request);
+        assertThat(handler.state(), is(WAITING_FOR_RESPONSE));
+
+        responseObservable.onNext(response);
+        assertThat(handler.state(), is(SENDING_RESPONSE));
+
+        writerFuture.complete(null);
+        assertThat(handler.state(), is(ACCEPTING_REQUESTS));
+
+        handler.channelRead0(ctx, request);
+        assertThat(handler.state(), is(WAITING_FOR_RESPONSE));
+
+        responseObservable2.onError(new RuntimeException("error"));
+
+        assertTrue(logger.lastMessage().getMessage().contains("ongoingResponse=null"));
+    }
+
     private static HttpResponseWriterFactory responseWriterFactory(CompletableFuture<Void> future) {
         HttpResponseWriterFactory writerFactory = mock(HttpResponseWriterFactory.class);
         HttpResponseWriter responseWriter = mock(HttpResponseWriter.class);
@@ -919,7 +951,6 @@ public class HttpPipelineHandlerTest {
         // - writes EMPTY_LAST_CONTENT and closes the channel
         // - logs an error message
         // - cancels the ongoing request on the HTTP pipeline
-        LoggingTestSupport logger = new LoggingTestSupport(HttpPipelineHandler.class);
 
         LiveHttpRequest spurious = get("/bar").build();
         setupHandlerTo(WAITING_FOR_RESPONSE);
@@ -935,8 +966,6 @@ public class HttpPipelineHandlerTest {
 
     @Test
     public void logsSslHandshakeErrors() throws Exception {
-        LoggingTestSupport logger = new LoggingTestSupport(HttpPipelineHandler.class);
-
         setupHandlerTo(ACCEPTING_REQUESTS);
 
         handler.exceptionCaught(ctx, new DecoderException(new SSLHandshakeException("Client requested protocol TLSv1.1 not enabled or not supported")));
