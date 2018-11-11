@@ -32,8 +32,8 @@ public class CurrentRequest {
     private boolean requestSent;
 
     public CurrentRequest(LiveHttpRequest request, Supplier<String> stateSupplier) {
-        startingTimeMillies = currentTimeMillis();
-        currentThread = Thread.currentThread();
+        this.startingTimeMillies = currentTimeMillis();
+        this.currentThread = Thread.currentThread();
         this.request = request.toString();
         this.stateSupplier = stateSupplier;
     }
