@@ -132,7 +132,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
             StyxHostHttpClient.Factory hostClientFactory = (ConnectionPool connectionPool) -> {
                 StyxHeaderConfig headerConfig = environment.styxConfig().styxHeaderConfig();
-                return StyxHostHttpClient.create(backendService.id(), connectionPool.getOrigin().id(), headerConfig.originIdHeaderName(), connectionPool);
+                return StyxHostHttpClient.create(connectionPool);
             };
 
             OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())

@@ -16,11 +16,11 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
-import com.hotels.styx.client.BackendServiceClient;
+import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer;
 import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
-import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.OriginRestrictionLoadBalancingStrategy;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
@@ -50,6 +50,7 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
     @Override
     public BackendServiceClient createClient(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
         Configuration styxConfig = environment.configuration();
+
         String originRestrictionCookie = styxConfig.get("originRestrictionCookie").orElse(null);
         boolean stickySessionEnabled = backendService.stickySessionConfig().stickySessionEnabled();
 
@@ -80,6 +81,7 @@ public class StyxBackendServiceClientFactory implements BackendServiceClientFact
                 .rewriteRules(backendService.rewrites())
                 .originStatsFactory(originStatsFactory)
                 .originsRestrictionCookieName(originRestrictionCookie)
+                .originIdHeader(environment.styxConfig().styxHeaderConfig().originIdHeaderName())
                 .build();
     }
 
