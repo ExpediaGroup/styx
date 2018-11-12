@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 import static rx.RxReactiveStreams.toObservable;
 
@@ -42,8 +43,7 @@ import static rx.RxReactiveStreams.toObservable;
 public class SimpleConnectionPool implements ConnectionPool, Connection.Listener {
     private static final Logger LOG = getLogger(SimpleConnectionPool.class);
 
-
-    private ConnectionPoolSettings poolSettings;
+    private final ConnectionPoolSettings poolSettings;
     private final ConnectionSettings connectionSettings;
     private final Connection.Factory connectionFactory;
     private final Origin origin;
@@ -59,10 +59,10 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
 
 
     public SimpleConnectionPool(Origin origin, ConnectionPoolSettings poolSettings, Connection.Factory connectionFactory) {
-        this.origin = origin;
-        this.poolSettings = poolSettings;
+        this.origin = requireNonNull(origin);
+        this.poolSettings = requireNonNull(poolSettings);
         this.connectionSettings = new ConnectionSettings(poolSettings.connectTimeoutMillis());
-        this.connectionFactory = connectionFactory;
+        this.connectionFactory = requireNonNull(connectionFactory);
         this.activeConnections = new ConcurrentLinkedDeque<>();
         this.waitingSubscribers = new ConcurrentLinkedDeque<>();
     }
@@ -76,7 +76,8 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
         return toObservable(borrowConnection2());
     }
 
-    public Publisher<Connection> borrowConnection2() {
+    @VisibleForTesting
+    Publisher<Connection> borrowConnection2() {
         return Mono.<Connection>create(sink -> {
             Connection connection = dequeue();
             if (connection != null) {
