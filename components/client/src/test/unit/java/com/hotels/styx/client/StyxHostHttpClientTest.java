@@ -22,8 +22,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import rx.Observable;
 
-import java.util.Optional;
-
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -46,20 +44,20 @@ public class StyxHostHttpClientTest {
         Transport transport = mock(Transport.class);
         HttpTransaction transaction = mock(HttpTransaction.class);
 
-        when(transport.send(any(LiveHttpRequest.class), any(Optional.class))).thenReturn(transaction);
+        when(transport.send(any(LiveHttpRequest.class), any(ConnectionPool.class))).thenReturn(transaction);
         when(transaction.response()).thenReturn(Observable.just(response().build()));
 
         new StyxHostHttpClient(pool, transport)
                 .sendRequest(request);
 
-        verify(transport).send(eq(request), eq(Optional.of(pool)));
+        verify(transport).send(eq(request), eq(pool));
     }
 
     @Test
     public void closesTheConnectionPool() {
         ConnectionPool pool = mock(ConnectionPool.class);
         Transport transport = mock(Transport.class);
-        when(transport.send(any(LiveHttpRequest.class), any(Optional.class))).thenReturn(mock(HttpTransaction.class));
+        when(transport.send(any(LiveHttpRequest.class), any(ConnectionPool.class))).thenReturn(mock(HttpTransaction.class));
 
         StyxHostHttpClient hostClient = new StyxHostHttpClient(pool, transport);
 

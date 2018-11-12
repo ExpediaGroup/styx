@@ -15,13 +15,11 @@
  */
 package com.hotels.styx.client;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -31,13 +29,9 @@ import rx.Observable;
 import rx.observers.TestSubscriber;
 import rx.subjects.PublishSubject;
 
-import java.util.Optional;
-
-import static com.hotels.styx.api.Buffers.toByteBuf;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.LiveHttpRequest.get;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
@@ -48,7 +42,6 @@ import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static rx.Observable.just;
-import static rx.RxReactiveStreams.toPublisher;
 
 public class TransportTest {
     private static final String X_STYX_ORIGIN_ID = "X-Styx-Origin-Id";
@@ -74,7 +67,7 @@ public class TransportTest {
         Connection connection = mockConnection(just(response));
         ConnectionPool pool = mockPool(connection);
 
-        HttpTransaction transaction = transport.send(request, Optional.of(pool));
+        HttpTransaction transaction = transport.send(request, pool);
 
         transaction.response()
                 .toBlocking()
@@ -91,7 +84,7 @@ public class TransportTest {
         Connection connection = mockConnection(just(response));
         ConnectionPool pool = mockPool(connection);
 
-        transport.send(request, Optional.of(pool))
+        transport.send(request, pool)
                 .response()
                 .subscribe(subscriber);
 
@@ -109,7 +102,7 @@ public class TransportTest {
         Connection connection = mockConnection(PublishSubject.create());
         ConnectionPool pool = mockPool(connection);
 
-        transport.send(request, Optional.of(pool))
+        transport.send(request, pool)
                 .response()
                 .subscribe(subscriber);
 
@@ -132,7 +125,7 @@ public class TransportTest {
         Connection connection = mockConnection(responseProvider);
         ConnectionPool pool = mockPool(connection);
 
-        transport.send(request, Optional.of(pool))
+        transport.send(request, pool)
                 .response()
                 .subscribe(subscriber);
 
@@ -153,7 +146,7 @@ public class TransportTest {
         Connection connection = mockConnection(responseProvider);
         ConnectionPool pool = mockPool(connection);
 
-        transport.send(request, Optional.of(pool))
+        transport.send(request, pool)
                 .response()
                 .subscribe(subscriber);
 
@@ -170,7 +163,7 @@ public class TransportTest {
         Connection connection = mockConnection(Observable.empty());
         ConnectionPool pool = mockPool(connection);
 
-        transport.send(request, Optional.of(pool))
+        transport.send(request, pool)
                 .response()
                 .subscribe(subscriber);
 
@@ -185,7 +178,7 @@ public class TransportTest {
         Connection connection = mockConnection(Observable.error(new RuntimeException()));
         ConnectionPool pool = mockPool(connection);
 
-        transport.send(request, Optional.of(pool))
+        transport.send(request, pool)
                 .response()
                 .subscribe(subscriber);
 
@@ -201,7 +194,7 @@ public class TransportTest {
         Connection connection = mockConnection(Observable.just(LiveHttpResponse.response(OK).body(new ByteStream(testPublisher)).build()));
         ConnectionPool pool = mockPool(connection);
 
-        transport.send(request, Optional.of(pool))
+        transport.send(request, pool)
                 .response()
                 .subscribe(subscriber);
 
@@ -215,35 +208,6 @@ public class TransportTest {
         verify(pool).closeConnection(any(Connection.class));
     }
 
-    @Test
-    public void releasesContentStreamBuffersWhenPoolIsNotProvided() {
-        Buffer chunk1 = new Buffer("x", UTF_8);
-        Buffer chunk2 = new Buffer("y", UTF_8);
-        Buffer chunk3 = new Buffer("z", UTF_8);
-
-        LiveHttpRequest aRequest = get("/")
-                .body(new ByteStream(toPublisher(Observable.from(ImmutableList.of(chunk1, chunk2, chunk3)))))
-                .build();
-
-        transport.send(aRequest, Optional.empty())
-                .response()
-                .subscribe(subscriber);
-
-        assertThat(toByteBuf(chunk1).refCnt(), is(0));
-        assertThat(toByteBuf(chunk2).refCnt(), is(0));
-        assertThat(toByteBuf(chunk3).refCnt(), is(0));
-    }
-
-    @Test
-    public void emitsNoAvailableHostsExceptionWhenPoolIsNotProvided() {
-
-        transport.send(request, Optional.empty())
-                .response()
-                .subscribe(subscriber);
-
-        subscriber.awaitTerminalEvent();
-        subscriber.assertError(NoAvailableHostsException.class);
-    }
 
     Connection mockConnection(Observable responseObservable) {
         Connection connection = mock(Connection.class);

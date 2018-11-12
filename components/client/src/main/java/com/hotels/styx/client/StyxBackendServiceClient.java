@@ -149,7 +149,8 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
             newPreviousOrigins.add(remoteHost.get());
 
             return ResponseEventListener.from(
-                        toObservable(host.hostClient().handle(request, HttpInterceptorContext.create())).map(response -> addStickySessionIdentifier(response, host.origin())))
+                    toObservable(host.hostClient().handle(request, HttpInterceptorContext.create()))
+                            .map(response -> addStickySessionIdentifier(response, host.origin())))
                     .whenResponseError(cause -> logError(request, cause))
                     .whenCancelled(() -> originStatsFactory.originStats(host.origin()).requestCancelled())
                     .apply()
@@ -160,19 +161,10 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
                         RetryPolicyContext retryContext = new RetryPolicyContext(this.id, attempt + 1, cause, request, previousOrigins);
                         return retry(request, retryContext, newPreviousOrigins, attempt + 1, cause);
                     })
-                    .map(response -> addOriginId(host.id(), response))
-                    .onErrorResumeNext(this::mapExceptionCauses);
+                    .map(response -> addOriginId(host.id(), response));
         } else {
             RetryPolicyContext retryContext = new RetryPolicyContext(this.id, attempt + 1, null, request, previousOrigins);
             return retry(request, retryContext, previousOrigins, attempt + 1, new NoAvailableHostsException(this.id));
-        }
-    }
-
-    private Observable<LiveHttpResponse> mapExceptionCauses(Throwable cause) {
-        if (cause instanceof NoAvailableHostsException) {
-            return Observable.error(new NoAvailableHostsException(id));
-        } else {
-            return Observable.error(cause);
         }
     }
 
@@ -401,7 +393,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
         }
 
         public Builder originIdHeader(CharSequence originIdHeader) {
-            this.originIdHeader = originIdHeader;
+            this.originIdHeader = requireNonNull(originIdHeader);
             return this;
         }
 

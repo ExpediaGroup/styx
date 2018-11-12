@@ -15,22 +15,18 @@
  */
 package com.hotels.styx.client;
 
-import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.ResponseEventListener;
-import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import rx.Observable;
-
-import java.util.Optional;
 
 /**
  * Encapsulates a single connection to remote server which we can use to send the messages.
  */
 class Transport {
-    public HttpTransaction send(LiveHttpRequest request, Optional<ConnectionPool> origin) {
-        Observable<Connection> connection = connection(request, origin);
+    public HttpTransaction send(LiveHttpRequest request, ConnectionPool connectionPool) {
+        Observable<Connection> connection = connectionPool.borrowConnection();
 
         return new HttpTransaction() {
             @Override
@@ -39,35 +35,21 @@ class Transport {
                     Observable<LiveHttpResponse> responseObservable = connection.write(request);
 
                     return ResponseEventListener.from(responseObservable)
-                            .whenCancelled(() -> closeIfConnected(origin, connection))
-                            .whenResponseError(cause -> closeIfConnected(origin, connection))
-                            .whenContentError(cause -> closeIfConnected(origin, connection))
-                            .whenCompleted(() -> returnIfConnected(origin, connection))
+                            .whenCancelled(() -> closeIfConnected(connectionPool, connection))
+                            .whenResponseError(cause -> closeIfConnected(connectionPool, connection))
+                            .whenContentError(cause -> closeIfConnected(connectionPool, connection))
+                            .whenCompleted(() -> returnIfConnected(connectionPool, connection))
                             .apply();
                 });
             }
 
-            private synchronized void closeIfConnected(Optional<ConnectionPool> connectionPool, Connection connection) {
-                if (connection != null && connectionPool.isPresent()) {
-                    connectionPool.get().closeConnection(connection);
-                }
+            private synchronized void closeIfConnected(ConnectionPool connectionPool, Connection connection) {
+                connectionPool.closeConnection(connection);
             }
 
-            private synchronized void returnIfConnected(Optional<ConnectionPool> connectionPool, Connection connection) {
-                if (connection != null && connectionPool.isPresent()) {
-                    connectionPool.get().returnConnection(connection);
-                }
+            private synchronized void returnIfConnected(ConnectionPool connectionPool, Connection connection) {
+                connectionPool.returnConnection(connection);
             }
         };
-    }
-
-    private Observable<Connection> connection(LiveHttpRequest request, Optional<ConnectionPool> origin) {
-        return origin
-                .map(ConnectionPool::borrowConnection)
-                .orElseGet(() -> {
-                    // Aggregates an empty body:
-                    request.consume();
-                    return Observable.error(new NoAvailableHostsException(Id.id("")));
-                });
     }
 }

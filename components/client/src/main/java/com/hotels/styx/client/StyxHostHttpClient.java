@@ -22,8 +22,6 @@ import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSuppli
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import rx.Observable;
 
-import java.util.Optional;
-
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -45,7 +43,7 @@ public class StyxHostHttpClient implements BackendServiceClient, LoadBalancingMe
     @Override
     public Observable<LiveHttpResponse> sendRequest(LiveHttpRequest request) {
         return transport
-                .send(request, Optional.of(pool))
+                .send(request, pool)
                 .response();
     }
 
