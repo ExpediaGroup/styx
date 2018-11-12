@@ -47,7 +47,7 @@ class Transport {
                 connectionPool.closeConnection(connection);
             }
 
-            private synchronized void returnIfConnected(ConnectionPool connectionPool, Connection connection) {
+            private void returnIfConnected(ConnectionPool connectionPool, Connection connection) {
                 connectionPool.returnConnection(connection);
             }
         };
