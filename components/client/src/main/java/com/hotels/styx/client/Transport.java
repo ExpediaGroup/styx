@@ -43,7 +43,7 @@ class Transport {
                 });
             }
 
-            private synchronized void closeIfConnected(ConnectionPool connectionPool, Connection connection) {
+            private void closeIfConnected(ConnectionPool connectionPool, Connection connection) {
                 connectionPool.closeConnection(connection);
             }
 
