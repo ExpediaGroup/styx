@@ -29,6 +29,8 @@ Note that this endpoint must be externally secured.
 
 * `Threads` - a stack trace dump from all threads. 
 
+* `Current Request` - shows the state of proxied HTTP requests inside Styx. A stack trace is shown if the request is being processed in the interceptor pipeline.
+
 All endpoints are available from the admin menu:
 
 `http://<STYX_SERVER_URL>/admin/`

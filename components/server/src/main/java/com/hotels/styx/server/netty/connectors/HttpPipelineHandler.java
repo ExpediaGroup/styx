@@ -45,6 +45,9 @@ import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.NoServiceConfiguredException;
 import com.hotels.styx.server.RequestProgressListener;
 import com.hotels.styx.server.RequestTimeoutException;
+import com.hotels.styx.server.track.CurrentRequestTracker;
+
+import com.hotels.styx.server.track.RequestTracker;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -128,7 +131,9 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     private volatile CompletableFuture<Void> future;
     private volatile QueueDrainingEventProcessor eventProcessor;
 
-    private HttpPipelineHandler(Builder builder) {
+    private final RequestTracker tracker;
+
+    private HttpPipelineHandler(Builder builder, RequestTracker tracker) {
         this.responseEnhancer = requireNonNull(builder.responseEnhancer);
         this.httpPipeline = requireNonNull(builder.httpPipeline);
         this.httpErrorStatusListener = requireNonNull(builder.httpErrorStatusListener);
@@ -137,6 +142,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         this.stateMachine = createStateMachine();
         this.metrics = builder.metricRegistry.get();
         this.secure = builder.secure;
+        this.tracker = tracker;
     }
 
     private StateMachine<State> createStateMachine() {
@@ -227,6 +233,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
         metrics.counter("requests.cancelled.spuriousRequest").inc();
         statsSink.onTerminate(ongoingRequest.id());
+        tracker.endTrack(ongoingRequest);
         cancelSubscription();
         return TERMINATED;
     }
@@ -238,6 +245,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
             metrics.counter("requests.cancelled.spuriousRequest").inc();
             cancelSubscription();
             statsSink.onTerminate(ongoingRequest.id());
+            tracker.endTrack(ongoingRequest);
             future.cancel(false);
             ctx.close();
             return TERMINATED;
@@ -250,6 +258,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     private State onLegitimateRequest(LiveHttpRequest request, ChannelHandlerContext ctx) {
         statsSink.onRequest(request.id());
         LiveHttpRequest v11Request = request.newBuilder().version(HTTP_1_1).build();
+        tracker.trackRequest(request, () -> this.state().toString());
         ongoingRequest = request;
 
         // Note, it is possible for onCompleted, onError, and onNext events to be emitted in
@@ -281,6 +290,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
             LiveHttpResponse response = exceptionToResponse(cause, request);
             httpErrorStatusListener.proxyErrorOccurred(request, remoteAddress(ctx), response.status(), cause);
             statsSink.onTerminate(request.id());
+            tracker.endTrack(ongoingRequest);
             if (ctx.channel().isActive()) {
                 respondAndClose(ctx, response);
             }
@@ -311,6 +321,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
     private State onResponseSent(ChannelHandlerContext ctx) {
         statsSink.onComplete(ongoingRequest.id(), ongoingResponse.status().code());
+        tracker.endTrack(ongoingRequest);
         if (ongoingRequest.keepAlive()) {
             ongoingRequest = null;
             ongoingResponse = null;
@@ -330,6 +341,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
     private State onResponseSentAfterClientClosed(ChannelHandlerContext ctx) {
         statsSink.onComplete(ongoingRequest.id(), ongoingResponse.status().code());
+        tracker.endTrack(ongoingRequest);
         ongoingRequest = null;
         ctx.close();
         return TERMINATED;
@@ -339,6 +351,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         metrics.counter("requests.cancelled.responseWriteError").inc();
         cancelSubscription();
         statsSink.onTerminate(ongoingRequest.id());
+        tracker.endTrack(ongoingRequest);
         ctx.channel().writeAndFlush(EMPTY_LAST_CONTENT).addListener(CLOSE);
 
         httpErrorStatusListener.proxyWriteFailure(ongoingRequest, ongoingResponse, cause);
@@ -354,6 +367,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         }
         cancelSubscription();
         statsSink.onTerminate(ongoingRequest.id());
+        tracker.endTrack(ongoingRequest);
         return TERMINATED;
     }
 
@@ -361,7 +375,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         metrics.counter("requests.cancelled.channelExceptionWhileSendingResponse").inc();
         cancelSubscription();
         statsSink.onTerminate(ongoingRequest.id());
-
+        tracker.endTrack(ongoingRequest);
         ctx.channel().writeAndFlush(EMPTY_LAST_CONTENT).addListener(CLOSE);
         httpErrorStatusListener.proxyErrorOccurred(cause);
 
@@ -371,6 +385,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     private State onChannelExceptionWhenWaitingForResponse(ChannelHandlerContext ctx, Throwable cause) {
         metrics.counter("requests.cancelled.channelExceptionWhileWaitingForResponse").inc();
         statsSink.onTerminate(ongoingRequest.id());
+        tracker.endTrack(ongoingRequest);
         cancelSubscription();
         return handleChannelException(ctx, cause);
     }
@@ -447,21 +462,20 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         responseWriterFactory.create(ctx)
                 .write(response)
                 .handle((ignore, exception) -> {
-
                     if (exception != null) {
                         httpErrorStatusListener.proxyErrorOccurred(cause);
                         httpErrorStatusListener.proxyErrorOccurred(exception);
                     } else {
                         httpErrorStatusListener.proxyErrorOccurred(ongoingRequest, remoteAddress(ctx), response.status(), cause);
                         statsSink.onComplete(ongoingRequest.id(), response.status().code());
+                        tracker.endTrack(ongoingRequest);
                     }
-
                     ctx.close();
-
                     return null;
                 })
                 .handle((ignore, exception) -> {
                     statsSink.onTerminate(ongoingRequest.id());
+                    tracker.endTrack(ongoingRequest);
                     if (exception != null) {
                         LOGGER.error(warningMessage("message='Error during write completion handling'"), exception);
                     }
@@ -480,6 +494,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
         cancelSubscription();
         statsSink.onTerminate(ongoingRequest.id());
+        tracker.endTrack(ongoingRequest);
         responseWriterFactory.create(ctx).write(LiveHttpResponse.response(INTERNAL_SERVER_ERROR).build())
                 .handle((dontCare, ignore) -> ctx.close());
         return TERMINATED;
@@ -627,6 +642,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         private RequestProgressListener progressListener = IGNORE_REQUEST_PROGRESS;
         private HttpResponseWriterFactory responseWriterFactory = HttpResponseWriter::new;
         private Supplier<MetricRegistry> metricRegistry = CodaHaleMetricRegistry::new;
+        private RequestTracker tracker = RequestTracker.NO_OP;
         private boolean secure;
 
         /**
@@ -699,17 +715,22 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
             return this;
         }
 
+        public Builder requestTracker(CurrentRequestTracker tracker) {
+            this.tracker = requireNonNull(tracker);
+            return this;
+        }
+
         /**
          * Builds a new instance based on the configured properties.
          *
          * @return a new instance
          */
         public HttpPipelineHandler build() {
-            return new HttpPipelineHandler(this);
+            return new HttpPipelineHandler(this, this.tracker);
         }
 
         HttpPipelineHandler buildForIoExceptionTest() {
-            return new HttpPipelineHandler(this) {
+            return new HttpPipelineHandler(this, this.tracker) {
                 @Override
                 protected void channelRead0(ChannelHandlerContext ctx, LiveHttpRequest request) throws Exception {
                     throw new IOException("Connection reset by peer");
