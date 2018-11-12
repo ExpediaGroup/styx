@@ -608,7 +608,7 @@ public class SimpleConnectionPoolTest {
     }
 
     @Test
-    public void connectionEstablishmentFailureRetryThreeTimesAtBorrow() {
+    public void borrowRetriesThreeTimesOnConnectionEstablishmentFailure() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
                 .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
                 .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
