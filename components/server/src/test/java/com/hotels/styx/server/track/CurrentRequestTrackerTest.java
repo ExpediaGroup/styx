@@ -39,46 +39,46 @@ public class CurrentRequestTrackerTest {
     @Test
     public void testTrackRequest() {
         tracker.trackRequest(req1);
-        assertThat(tracker.getCurrentRequests().iterator().next().getRequest(), is(req1.toString()));
+        assertThat(tracker.currentRequests().iterator().next().getRequest(), is(req1.toString()));
     }
 
     @Test
     public void testChangeWorkingThread() {
         Thread.currentThread().setName("thread-1");
         tracker.trackRequest(req1);
-        assertThat("thread-1", is(tracker.getCurrentRequests().iterator().next().getCurrentThread().getName()));
+        assertThat("thread-1", is(tracker.currentRequests().iterator().next().getCurrentThread().getName()));
         Thread.currentThread().setName("thread-2");
         tracker.trackRequest(req1);
-        assertThat("thread-2", is(tracker.getCurrentRequests().iterator().next().getCurrentThread().getName()));
+        assertThat("thread-2", is(tracker.currentRequests().iterator().next().getCurrentThread().getName()));
     }
 
     @Test
     public void testTrackingSameReqMultipleTimesWillNotGenerateMultipleEntries() {
-        assertThat(tracker.getCurrentRequests().size(), is(0));
+        assertThat(tracker.currentRequests().size(), is(0));
         tracker.trackRequest(req1);
         tracker.trackRequest(req1);
         tracker.trackRequest(req1);
         tracker.trackRequest(req1);
-        assertThat(tracker.getCurrentRequests().size(), is(1));
-        assertThat(tracker.getCurrentRequests().iterator().next().getRequest(), is(req1.toString()));
+        assertThat(tracker.currentRequests().size(), is(1));
+        assertThat(tracker.currentRequests().iterator().next().getRequest(), is(req1.toString()));
     }
 
     @Test
     public void testEndTrack() {
         tracker.trackRequest(req1);
-        assertThat(tracker.getCurrentRequests().size(), is(1));
-        assertThat(tracker.getCurrentRequests().iterator().next().getRequest(), is(req1.toString()));
+        assertThat(tracker.currentRequests().size(), is(1));
+        assertThat(tracker.currentRequests().iterator().next().getRequest(), is(req1.toString()));
         tracker.endTrack(req1);
-        assertThat(tracker.getCurrentRequests().size(), is(0));
+        assertThat(tracker.currentRequests().size(), is(0));
     }
 
     @Test
     public void testEndTrackWillEffectOneRequest() {
         tracker.trackRequest(req1);
         tracker.trackRequest(req2);
-        assertThat(tracker.getCurrentRequests().size(), is(2));
+        assertThat(tracker.currentRequests().size(), is(2));
         tracker.endTrack(req1);
-        assertThat(tracker.getCurrentRequests().size(), is(1));
+        assertThat(tracker.currentRequests().size(), is(1));
     }
 
     @Test
@@ -86,6 +86,6 @@ public class CurrentRequestTrackerTest {
         tracker.trackRequest(req1);
         tracker.trackRequest(req2);
         tracker.endTrack(req1);
-        assertThat(tracker.getCurrentRequests().iterator().next().getRequest(), is(req2.toString()));
+        assertThat(tracker.currentRequests().iterator().next().getRequest(), is(req2.toString()));
     }
 }

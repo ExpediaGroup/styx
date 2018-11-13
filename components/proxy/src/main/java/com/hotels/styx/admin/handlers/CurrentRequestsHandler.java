@@ -25,7 +25,6 @@ import java.lang.management.LockInfo;
 import java.lang.management.MonitorInfo;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
-import java.nio.charset.Charset;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
@@ -34,13 +33,12 @@ import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.State.BLOCKED;
 import static java.lang.management.ManagementFactory.getThreadMXBean;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Admin handler that will help in tracking only the current HTTP requests to Styx.
  */
 public class CurrentRequestsHandler extends BaseHttpHandler {
-    private static final Charset UTF_8 = Charset.forName("UTF-8");
-
     private final ThreadMXBean threadMXBean;
     private final CurrentRequestTracker tracker;
 
@@ -67,7 +65,7 @@ public class CurrentRequestsHandler extends BaseHttpHandler {
     private String getCurrentRequestContent(boolean withStackTrace) {
         StringBuilder sb = new StringBuilder();
 
-        tracker.getCurrentRequests().forEach(req -> {
+        tracker.currentRequests().forEach(req -> {
             sb.append("[\n");
             sb.append(req.getRequest().replaceAll(",", "\n"));
             sb.append("\n\n");

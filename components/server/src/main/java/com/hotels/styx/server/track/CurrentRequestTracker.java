@@ -55,7 +55,7 @@ public class CurrentRequestTracker implements RequestTracker {
         currentRequests.remove(request.id());
     }
 
-    public Collection<CurrentRequest> getCurrentRequests() {
+    public Collection<CurrentRequest> currentRequests() {
         return currentRequests.values();
     }
 }
