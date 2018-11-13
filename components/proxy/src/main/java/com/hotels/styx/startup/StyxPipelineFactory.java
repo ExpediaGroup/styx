@@ -64,20 +64,24 @@ public final class StyxPipelineFactory implements PipelineFactory {
         BuiltinInterceptorsFactory builtinInterceptorsFactory = new BuiltinInterceptorsFactory(
                 ImmutableMap.of("Rewrite", new RewriteInterceptor.ConfigFactory()));
 
+        boolean requestTracking = config.environment().configuration().get("requestTracking", Boolean.class).orElse(false);
+
         Map<String, HttpHandlerFactory> objectFactories = createBuiltinRoutingObjectFactories(
                 config.environment(),
                 config.services(),
                 config.plugins(),
-                builtinInterceptorsFactory);
+                builtinInterceptorsFactory,
+                requestTracking);
 
         RouteHandlerFactory routeHandlerFactory = new RouteHandlerFactory(objectFactories, new ConcurrentHashMap<>());
 
         return styxHttpPipeline(
                 config.environment().styxConfig(),
-                configuredPipeline(config.environment(), config.services(), config.plugins(), routeHandlerFactory));
+                configuredPipeline(config.environment(), config.services(), config.plugins(), routeHandlerFactory),
+                requestTracking);
     }
 
-    private static HttpHandler styxHttpPipeline(StyxConfig config, HttpHandler interceptorsPipeline) {
+    private static HttpHandler styxHttpPipeline(StyxConfig config, HttpHandler interceptorsPipeline, boolean requestTracking) {
         ImmutableList.Builder<HttpInterceptor> builder = ImmutableList.builder();
 
         boolean loggingEnabled = config.get("request-logging.inbound.enabled", Boolean.class)
@@ -98,7 +102,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
                 .add(new HopByHopHeadersRemovingInterceptor())
                 .add(new RequestEnrichingInterceptor(config.styxHeaderConfig()));
 
-        return new HttpInterceptorPipeline(builder.build(), interceptorsPipeline);
+        return new HttpInterceptorPipeline(builder.build(), interceptorsPipeline, requestTracking);
     }
 
     private static HttpHandler configuredPipeline(
@@ -109,6 +113,8 @@ public final class StyxPipelineFactory implements PipelineFactory {
     ) {
         HttpPipelineFactory pipelineBuilder;
 
+        boolean requestTracking = environment.configuration().get("requestTracking", Boolean.class).orElse(false);
+
         if (environment.configuration().get("httpPipeline", RouteHandlerDefinition.class).isPresent()) {
             pipelineBuilder = () -> {
                 RouteHandlerDefinition pipelineConfig = environment.configuration().get("httpPipeline", RouteHandlerDefinition.class).get();
@@ -116,7 +122,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
             };
         } else {
             Registry<BackendService> backendServicesRegistry = (Registry<BackendService>) servicesFromConfig.get("backendServiceRegistry");
-            pipelineBuilder = new StaticPipelineFactory(environment, backendServicesRegistry, plugins);
+            pipelineBuilder = new StaticPipelineFactory(environment, backendServicesRegistry, plugins, requestTracking);
         }
 
         return pipelineBuilder.build();
@@ -126,13 +132,13 @@ public final class StyxPipelineFactory implements PipelineFactory {
             Environment environment,
             Map<String, StyxService> servicesFromConfig,
             Iterable<NamedPlugin> plugins,
-            BuiltinInterceptorsFactory builtinInterceptorsFactory
-    ) {
+            BuiltinInterceptorsFactory builtinInterceptorsFactory,
+            boolean requestTracking) {
         return ImmutableMap.of(
                 "StaticResponseHandler", new StaticResponseHandler.ConfigFactory(),
                 "ConditionRouter", new ConditionRouter.ConfigFactory(),
                 "BackendServiceProxy", new BackendServiceProxy.ConfigFactory(environment, backendRegistries(servicesFromConfig)),
-                "InterceptorPipeline", new HttpInterceptorPipeline.ConfigFactory(plugins, builtinInterceptorsFactory),
+                "InterceptorPipeline", new HttpInterceptorPipeline.ConfigFactory(plugins, builtinInterceptorsFactory, requestTracking),
                 "ProxyToBackend", new ProxyToBackend.ConfigFactory(environment, new StyxBackendServiceClientFactory(environment))
         );
     }

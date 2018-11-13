@@ -36,16 +36,18 @@ public class InterceptorPipelineBuilder {
     private final Environment environment;
     private final Iterable<NamedPlugin> plugins;
     private final HttpHandler handler;
+    private final boolean trackRequests;
 
-    public InterceptorPipelineBuilder(Environment environment, Iterable<NamedPlugin> plugins, HttpHandler handler) {
+    public InterceptorPipelineBuilder(Environment environment, Iterable<NamedPlugin> plugins, HttpHandler handler, boolean trackRequests) {
         this.environment = requireNonNull(environment);
         this.plugins = requireNonNull(plugins);
         this.handler = requireNonNull(handler);
+        this.trackRequests = trackRequests;
     }
 
     public HttpHandler build() {
         List<HttpInterceptor> interceptors = ImmutableList.copyOf(instrument(plugins, environment));
-        return new HttpInterceptorPipeline(interceptors, handler);
+        return new HttpInterceptorPipeline(interceptors, handler, trackRequests);
     }
 
     private static List<InstrumentedPlugin> instrument(Iterable<NamedPlugin> namedPlugins, Environment environment) {

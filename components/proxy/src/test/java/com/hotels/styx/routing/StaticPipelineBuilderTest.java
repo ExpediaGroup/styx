@@ -63,7 +63,7 @@ public class StaticPipelineBuilderTest {
     @Test
     public void buildsInterceptorPipelineForBackendServices() throws Exception {
 
-        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of()).build();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of(), false).build();
         LiveHttpResponse response = handler.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
         assertThat(response.status(), is(OK));
     }
@@ -75,7 +75,7 @@ public class StaticPipelineBuilderTest {
                 interceptor("Test-B", appendResponseHeader("X-From-Plugin", "B"))
         );
 
-        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins).build();
+        HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins, false).build();
 
         LiveHttpResponse response = handler.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
         assertThat(response.status(), is(OK));

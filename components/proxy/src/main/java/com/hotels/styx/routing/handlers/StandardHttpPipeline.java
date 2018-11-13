@@ -29,8 +29,8 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.server.track.CurrentRequestTracker;
 
+import com.hotels.styx.server.track.RequestTracker;
 import rx.Observable;
 
 /**
@@ -39,19 +39,21 @@ import rx.Observable;
 class StandardHttpPipeline implements HttpHandler {
     private final List<HttpInterceptor> interceptors;
     private final HttpHandler handler;
+    private final RequestTracker requestTracker;
 
     public StandardHttpPipeline(HttpHandler handler) {
-        this(emptyList(), handler);
+        this(emptyList(), handler, RequestTracker.NO_OP);
     }
 
-    public StandardHttpPipeline(List<HttpInterceptor> interceptors, HttpHandler handler) {
+    public StandardHttpPipeline(List<HttpInterceptor> interceptors, HttpHandler handler, RequestTracker requestTracker) {
         this.interceptors = requireNonNull(interceptors);
         this.handler = requireNonNull(handler);
+        this.requestTracker = requireNonNull(requestTracker);
     }
 
     @Override
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
-        HttpInterceptorChain interceptorsChain = new HttpInterceptorChain(interceptors, 0, handler, context);
+        HttpInterceptorChain interceptorsChain = new HttpInterceptorChain(interceptors, 0, handler, context, requestTracker);
 
         return interceptorsChain.proceed(request);
     }
@@ -61,16 +63,18 @@ class StandardHttpPipeline implements HttpHandler {
         private final int index;
         private final HttpHandler client;
         private final HttpInterceptor.Context context;
+        private final RequestTracker requestTracker;
 
-        HttpInterceptorChain(List<HttpInterceptor> interceptors, int index, HttpHandler client, HttpInterceptor.Context context) {
+        HttpInterceptorChain(List<HttpInterceptor> interceptors, int index, HttpHandler client, HttpInterceptor.Context context, RequestTracker requestTracker) {
             this.interceptors = interceptors;
             this.index = index;
             this.client = client;
             this.context = context;
+            this.requestTracker = requireNonNull(requestTracker);
         }
 
         HttpInterceptorChain(HttpInterceptorChain adapter, int index) {
-            this(adapter.interceptors, index, adapter.client, adapter.context);
+            this(adapter.interceptors, index, adapter.client, adapter.context, adapter.requestTracker);
         }
 
         @Override
@@ -80,7 +84,7 @@ class StandardHttpPipeline implements HttpHandler {
 
         @Override
         public Eventual<LiveHttpResponse> proceed(LiveHttpRequest request) {
-            CurrentRequestTracker.INSTANCE.trackRequest(request);
+            requestTracker.trackRequest(request);
 
             if (index < interceptors.size()) {
                 HttpInterceptor.Chain chain = new HttpInterceptorChain(this, index + 1);
@@ -93,7 +97,7 @@ class StandardHttpPipeline implements HttpHandler {
                 }
             }
 
-            CurrentRequestTracker.INSTANCE.markRequestAsSent(request);
+            requestTracker.markRequestAsSent(request);
 
             return new Eventual<>(toPublisher(toObservable(client.handle(request, this.context))
                     .compose(StandardHttpPipeline::sendErrorOnDoubleSubscription)));

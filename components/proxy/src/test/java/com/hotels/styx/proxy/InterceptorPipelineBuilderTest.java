@@ -71,7 +71,7 @@ public class InterceptorPipelineBuilderTest {
 
     @Test
     public void buildsPipelineWithInterceptors() throws Exception {
-        HttpHandler pipeline = new InterceptorPipelineBuilder(environment, plugins, handler).build();
+        HttpHandler pipeline = new InterceptorPipelineBuilder(environment, plugins, handler, false).build();
         LiveHttpResponse response = pipeline.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
 
         assertThat(response.header("plug1"), isValue("1"));

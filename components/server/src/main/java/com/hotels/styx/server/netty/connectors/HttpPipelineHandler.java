@@ -22,9 +22,9 @@ import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
@@ -45,8 +45,6 @@ import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.NoServiceConfiguredException;
 import com.hotels.styx.server.RequestProgressListener;
 import com.hotels.styx.server.RequestTimeoutException;
-import com.hotels.styx.server.track.CurrentRequestTracker;
-
 import com.hotels.styx.server.track.RequestTracker;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -715,7 +713,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
             return this;
         }
 
-        public Builder requestTracker(CurrentRequestTracker tracker) {
+        public Builder requestTracker(RequestTracker tracker) {
             this.tracker = requireNonNull(tracker);
             return this;
         }

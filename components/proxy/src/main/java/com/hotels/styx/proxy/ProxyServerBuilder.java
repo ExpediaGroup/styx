@@ -46,9 +46,10 @@ public final class ProxyServerBuilder {
     public HttpServer build() {
         ProxyServerConfig proxyConfig = environment.styxConfig().proxyServerConfig();
         String unwiseCharacters = environment.styxConfig().get(ENCODE_UNWISECHARS).orElse("");
+        boolean requestTracking = environment.configuration().get("requestTracking", Boolean.class).orElse(false);
 
         return new NettyServerBuilderSpec("Proxy", environment.serverEnvironment(),
-                new ProxyConnectorFactory(proxyConfig, environment.metricRegistry(), environment.errorListener(), unwiseCharacters, this::addInfoHeader))
+                new ProxyConnectorFactory(proxyConfig, environment.metricRegistry(), environment.errorListener(), unwiseCharacters, this::addInfoHeader, requestTracking))
                 .toNettyServerBuilder(proxyConfig)
                 .httpHandler(httpHandler)
                 // register health check
