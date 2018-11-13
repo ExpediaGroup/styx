@@ -157,7 +157,7 @@ public class StyxHostHttpClientTest {
     }
 
     @Test
-    public void releasesConnectionWhenRequestFailsBeforeHeaders() {
+    public void releasesConnectionWhenResponseFailsBeforeHeaders() {
         Connection connection = mockConnection(Observable.error(new RuntimeException()));
         ConnectionPool pool = mockPool(connection);
 
