@@ -18,6 +18,7 @@ package com.hotels.styx.admin.handlers;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.hotels.styx.api.Buffer;
@@ -33,42 +34,46 @@ import static org.hamcrest.Matchers.is;
 public class CurrentRequestsHandlerTest {
 
     LiveHttpRequest req1 = get("/requestId1").build();
-    LiveHttpRequest req2 = get("/requestId2").build();
+
+    CurrentRequestTracker tracker = new CurrentRequestTracker();
+    private CurrentRequestsHandler handler;
+
+    @BeforeMethod
+    public void setUp() {
+        tracker = new CurrentRequestTracker();
+        handler = new CurrentRequestsHandler(tracker);
+    }
 
     @Test
     public void testStackTrace() {
-        CurrentRequestTracker.INSTANCE.clear();
         Thread.currentThread().setName("Test-Thread");
-        CurrentRequestTracker.INSTANCE.trackRequest(req1);
-        LiveHttpResponse response = (new CurrentRequestsHandler(CurrentRequestTracker.INSTANCE)).doHandle(req1);
+        tracker.trackRequest(req1);
+        LiveHttpResponse response = handler.doHandle(req1);
         assertThat(Flux.from(response.body()).map(this::decodeUtf8String).blockFirst().contains("Test-Thread"), is(true));
     }
 
     @Test
     public void testStackTraceForSentRequest() {
-        CurrentRequestTracker.INSTANCE.clear();
         Thread.currentThread().setName("Test-Thread-1");
-        CurrentRequestTracker.INSTANCE.trackRequest(req1);
-        CurrentRequestTracker.INSTANCE.markRequestAsSent(req1);
-        LiveHttpResponse response = (new CurrentRequestsHandler(CurrentRequestTracker.INSTANCE)).doHandle(req1);
+        tracker.trackRequest(req1);
+        tracker.markRequestAsSent(req1);
+        LiveHttpResponse response = handler.doHandle(req1);
         assertThat(Flux.from(response.body()).map(this::decodeUtf8String).blockFirst().contains("Request state: Waiting response from origin."), is(true));
     }
 
     @Test
     public void testWithStackTrace() {
-        CurrentRequestTracker.INSTANCE.clear();
         Thread.currentThread().setName("Test-Thread");
-        CurrentRequestTracker.INSTANCE.trackRequest(req1);
-        LiveHttpResponse response = (new CurrentRequestsHandler(CurrentRequestTracker.INSTANCE)).doHandle(get("/req?withStackTrace=true").build());
+        tracker.trackRequest(req1);
+        LiveHttpResponse response = handler.doHandle(get("/req?withStackTrace=true").build());
         assertThat(Flux.from(response.body()).map(this::decodeUtf8String).blockFirst().contains("id=" + Thread.currentThread().getId()), is(true));
     }
 
     @Test
     public void testWithoutStackTrace() {
-        CurrentRequestTracker.INSTANCE.clear();
         Thread.currentThread().setName("Test-Thread");
-        CurrentRequestTracker.INSTANCE.trackRequest(req1);
-        LiveHttpResponse response = (new CurrentRequestsHandler(CurrentRequestTracker.INSTANCE)).doHandle(req1);
+        tracker.trackRequest(req1);
+        LiveHttpResponse response = handler.doHandle(req1);
         assertThat(Flux.from(response.body()).map(this::decodeUtf8String).blockFirst().contains("id=" + Thread.currentThread().getId()), is(false));
     }
 

@@ -18,20 +18,21 @@ package com.hotels.styx.server.track;
 import static java.lang.System.currentTimeMillis;
 
 import java.util.function.Supplier;
+
 import com.hotels.styx.api.LiveHttpRequest;
 
 /**
  * Bean that represent the current request.
  */
 public class CurrentRequest {
-
     private final String request;
     private final long startingTimeMillies;
-    private volatile Thread currentThread;
     private final Supplier<String> stateSupplier;
-    private boolean requestSent;
 
-    public CurrentRequest(LiveHttpRequest request, Supplier<String> stateSupplier) {
+    private volatile boolean requestSent;
+    private volatile Thread currentThread;
+
+    CurrentRequest(LiveHttpRequest request, Supplier<String> stateSupplier) {
         this.startingTimeMillies = currentTimeMillis();
         this.currentThread = Thread.currentThread();
         this.request = request.toString();
@@ -40,10 +41,6 @@ public class CurrentRequest {
 
     public Thread getCurrentThread() {
         return currentThread;
-    }
-
-    public void setCurrentThread(Thread currentThread) {
-        this.currentThread = currentThread;
     }
 
     public String getRequest() {
@@ -62,7 +59,11 @@ public class CurrentRequest {
         return requestSent;
     }
 
-    public void setRequestSent(boolean requestSent) {
-        this.requestSent = requestSent;
+    void setCurrentThread(Thread currentThread) {
+        this.currentThread = currentThread;
+    }
+
+    void requestSent() {
+        this.requestSent = true;
     }
 }

@@ -15,34 +15,32 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static java.lang.management.ManagementFactory.getThreadMXBean;
-import static java.lang.Thread.State.BLOCKED;
-import static java.lang.System.currentTimeMillis;
-import static java.lang.String.format;
-
-import java.lang.management.LockInfo;
-import java.lang.management.MonitorInfo;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
-import java.nio.charset.Charset;
-
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 
+import java.lang.management.LockInfo;
+import java.lang.management.MonitorInfo;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
+
+import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
+import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static java.lang.String.format;
+import static java.lang.System.currentTimeMillis;
+import static java.lang.Thread.State.BLOCKED;
+import static java.lang.management.ManagementFactory.getThreadMXBean;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Admin handler that will help in tracking only the current HTTP requests to Styx.
  */
 public class CurrentRequestsHandler extends BaseHttpHandler {
-
-    private static final Charset UTF_8 = Charset.forName("UTF-8");
     private final ThreadMXBean threadMXBean;
-    private CurrentRequestTracker tracker;
+    private final CurrentRequestTracker tracker;
 
     public CurrentRequestsHandler(CurrentRequestTracker tracker) {
         this.threadMXBean = getThreadMXBean();
@@ -52,7 +50,7 @@ public class CurrentRequestsHandler extends BaseHttpHandler {
     @Override
     public LiveHttpResponse doHandle(LiveHttpRequest request) {
         boolean withStackTrace = request.queryParam("withStackTrace")
-                .map(it -> "true".equals(it))
+                .map("true"::equals)
                 .orElse(false);
 
         return HttpResponse
@@ -66,7 +64,8 @@ public class CurrentRequestsHandler extends BaseHttpHandler {
 
     private String getCurrentRequestContent(boolean withStackTrace) {
         StringBuilder sb = new StringBuilder();
-        tracker.getCurrentRequests().forEach(req -> {
+
+        tracker.currentRequests().forEach(req -> {
             sb.append("[\n");
             sb.append(req.getRequest().replaceAll(",", "\n"));
             sb.append("\n\n");
@@ -93,10 +92,9 @@ public class CurrentRequestsHandler extends BaseHttpHandler {
     }
 
     private String getThreadInfo(long threadId) {
-
         StringBuilder sb = new StringBuilder();
 
-        final ThreadInfo t = threadMXBean.getThreadInfo(threadId, Integer.MAX_VALUE);
+        ThreadInfo t = threadMXBean.getThreadInfo(threadId, Integer.MAX_VALUE);
         sb.append(format("\"%s\" id=%d state=%s", t.getThreadName(), t.getThreadId(), t.getThreadState()));
         sb.append(getThreadState(t));
 
@@ -122,10 +120,9 @@ public class CurrentRequestsHandler extends BaseHttpHandler {
     }
 
     private String getThreadState(ThreadInfo t) {
-
         StringBuilder sb = new StringBuilder();
 
-        final LockInfo lock = t.getLockInfo();
+        LockInfo lock = t.getLockInfo();
         if (lock != null && t.getThreadState() != BLOCKED) {
             sb.append(format("%n    - waiting on <0x%08x> (a %s)", lock.getIdentityHashCode(), lock.getClassName()));
             sb.append(format("%n    - locked <0x%08x> (a %s)", lock.getIdentityHashCode(), lock.getClassName()));
@@ -137,10 +134,9 @@ public class CurrentRequestsHandler extends BaseHttpHandler {
     }
 
     private String getThreadLockedSynchronizer(ThreadInfo t) {
-
         StringBuilder sb = new StringBuilder();
 
-        final LockInfo[] locks = t.getLockedSynchronizers();
+        LockInfo[] locks = t.getLockedSynchronizers();
         if (locks.length > 0) {
             sb.append(format("    Locked synchronizers: count = %d%n", locks.length));
             for (LockInfo l : locks) {
@@ -153,16 +149,16 @@ public class CurrentRequestsHandler extends BaseHttpHandler {
     }
 
     private String getThreadElements(ThreadInfo t) {
-        final StackTraceElement[] elements = t.getStackTrace();
-        final MonitorInfo[] monitors = t.getLockedMonitors();
+        StackTraceElement[] elements = t.getStackTrace();
+        MonitorInfo[] monitors = t.getLockedMonitors();
 
         StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < elements.length; i++) {
-            final StackTraceElement element = elements[i];
+            StackTraceElement element = elements[i];
             sb.append(format("    at %s%n", element));
             for (int j = 1; j < monitors.length; j++) {
-                final MonitorInfo monitor = monitors[j];
+                MonitorInfo monitor = monitors[j];
                 if (monitor.getLockedStackDepth() == i) {
                     sb.append(format("      - locked %s%n", monitor));
                 }
