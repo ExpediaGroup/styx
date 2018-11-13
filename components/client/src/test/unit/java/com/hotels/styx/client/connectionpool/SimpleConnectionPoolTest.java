@@ -117,7 +117,7 @@ public class SimpleConnectionPoolTest {
 
 
     @Test
-    public void emitsConnectionWhenOnceEstablished() throws ExecutionException, InterruptedException {
+    public void emitsConnectionWhenOnceEstablished() {
         PublishSubject<Connection> subject = PublishSubject.create();
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
                 .thenReturn(subject);
@@ -293,7 +293,6 @@ public class SimpleConnectionPoolTest {
     }
 
 
-    // 2. The connection pool limits
     @Test
     public void limitsPendingConnectionsDueToConnectionEstablishment() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
@@ -307,8 +306,8 @@ public class SimpleConnectionPoolTest {
 
         SimpleConnectionPool pool = new SimpleConnectionPool(origin, poolSettings, connectionFactory);
 
-        CompletableFuture<Connection> pending1 = Mono.from(pool.borrowConnection2()).toFuture();
-        CompletableFuture<Connection> pending2 = Mono.from(pool.borrowConnection2()).toFuture();
+        Mono.from(pool.borrowConnection2()).toFuture();
+        Mono.from(pool.borrowConnection2()).toFuture();
 
         StepVerifier.create(pool.borrowConnection2())
                 .expectError(MaxPendingConnectionsExceededException.class)
@@ -319,7 +318,6 @@ public class SimpleConnectionPoolTest {
 
     }
 
-    // 2. The connection pool limits
     @Test
     public void limitsPendingConnectionsDueToPoolSaturation() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
@@ -362,7 +360,6 @@ public class SimpleConnectionPoolTest {
     }
 
 
-    // 2. The connection pool limits
     @Test
     public void returnConnectionDecrementsConnectionCount() throws ExecutionException, InterruptedException, TimeoutException {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
@@ -627,7 +624,7 @@ public class SimpleConnectionPoolTest {
     }
 
     @Test
-    public void connectionEstablishmentFailureRetryThreeTimesAtConnectionClosure() {
+    public void borrowRetriesThreeTimesOnFailureDueToConnectionClosure() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
                 .thenReturn(Observable.just(connection1))
                 .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
@@ -720,7 +717,7 @@ public class SimpleConnectionPoolTest {
     }
 
     @Test
-    public void pendingConnectionTimeout() {
+    public void emitsExceptionWhenPendingConnectionTimesOut() {
         PublishSubject<Connection> subject = PublishSubject.create();
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
                 .thenReturn(subject);
