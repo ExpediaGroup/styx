@@ -15,23 +15,19 @@
  */
 package com.hotels.styx.server.track;
 
+import com.hotels.styx.api.LiveHttpRequest;
+
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-
-import com.hotels.styx.api.LiveHttpRequest;
 
 /**
  * Manger class to manage the current requests.
  */
 public class CurrentRequestTracker implements RequestTracker {
-
-    private static ConcurrentHashMap<Object, CurrentRequest> currentRequests = new ConcurrentHashMap<>();
-
     public static final CurrentRequestTracker INSTANCE = new CurrentRequestTracker();
 
-    private CurrentRequestTracker() {
-    }
+    private final ConcurrentHashMap<Object, CurrentRequest> currentRequests = new ConcurrentHashMap<>();
 
     public void trackRequest(LiveHttpRequest request, Supplier<String> state) {
         if (currentRequests.containsKey(request.id())) {
@@ -50,9 +46,8 @@ public class CurrentRequestTracker implements RequestTracker {
     }
 
     public void markRequestAsSent(LiveHttpRequest request) {
-
         if (currentRequests.containsKey(request.id())) {
-            currentRequests.get(request.id()).setRequestSent(true);
+            currentRequests.get(request.id()).requestSent();
         }
     }
 
@@ -62,9 +57,5 @@ public class CurrentRequestTracker implements RequestTracker {
 
     public Collection<CurrentRequest> getCurrentRequests() {
         return currentRequests.values();
-    }
-
-    public void clear() {
-        currentRequests.clear();
     }
 }

@@ -29,61 +29,63 @@ public class CurrentRequestTrackerTest {
     LiveHttpRequest req1 = get("/requestId1").build();
     LiveHttpRequest req2 = get("/requestId2").build();
 
+    CurrentRequestTracker tracker = new CurrentRequestTracker();
+
     @BeforeMethod
     public void setUp() {
-        CurrentRequestTracker.INSTANCE.clear();
+        tracker = new CurrentRequestTracker();
     }
 
     @Test
     public void testTrackRequest() {
-        CurrentRequestTracker.INSTANCE.trackRequest(req1);
-        assertThat(CurrentRequestTracker.INSTANCE.getCurrentRequests().iterator().next().getRequest(), is(req1.toString()));
+        tracker.trackRequest(req1);
+        assertThat(tracker.getCurrentRequests().iterator().next().getRequest(), is(req1.toString()));
     }
 
     @Test
     public void testChangeWorkingThread() {
         Thread.currentThread().setName("thread-1");
-        CurrentRequestTracker.INSTANCE.trackRequest(req1);
-        assertThat("thread-1", is(CurrentRequestTracker.INSTANCE.getCurrentRequests().iterator().next().getCurrentThread().getName()));
+        tracker.trackRequest(req1);
+        assertThat("thread-1", is(tracker.getCurrentRequests().iterator().next().getCurrentThread().getName()));
         Thread.currentThread().setName("thread-2");
-        CurrentRequestTracker.INSTANCE.trackRequest(req1);
-        assertThat("thread-2", is(CurrentRequestTracker.INSTANCE.getCurrentRequests().iterator().next().getCurrentThread().getName()));
+        tracker.trackRequest(req1);
+        assertThat("thread-2", is(tracker.getCurrentRequests().iterator().next().getCurrentThread().getName()));
     }
 
     @Test
     public void testTrackingSameReqMultipleTimesWillNotGenerateMultipleEntries() {
-        assertThat(CurrentRequestTracker.INSTANCE.getCurrentRequests().size(), is(0));
-        CurrentRequestTracker.INSTANCE.trackRequest(req1);
-        CurrentRequestTracker.INSTANCE.trackRequest(req1);
-        CurrentRequestTracker.INSTANCE.trackRequest(req1);
-        CurrentRequestTracker.INSTANCE.trackRequest(req1);
-        assertThat(CurrentRequestTracker.INSTANCE.getCurrentRequests().size(), is(1));
-        assertThat(CurrentRequestTracker.INSTANCE.getCurrentRequests().iterator().next().getRequest(), is(req1.toString()));
+        assertThat(tracker.getCurrentRequests().size(), is(0));
+        tracker.trackRequest(req1);
+        tracker.trackRequest(req1);
+        tracker.trackRequest(req1);
+        tracker.trackRequest(req1);
+        assertThat(tracker.getCurrentRequests().size(), is(1));
+        assertThat(tracker.getCurrentRequests().iterator().next().getRequest(), is(req1.toString()));
     }
 
     @Test
     public void testEndTrack() {
-        CurrentRequestTracker.INSTANCE.trackRequest(req1);
-        assertThat(CurrentRequestTracker.INSTANCE.getCurrentRequests().size(), is(1));
-        assertThat(CurrentRequestTracker.INSTANCE.getCurrentRequests().iterator().next().getRequest(), is(req1.toString()));
-        CurrentRequestTracker.INSTANCE.endTrack(req1);
-        assertThat(CurrentRequestTracker.INSTANCE.getCurrentRequests().size(), is(0));
+        tracker.trackRequest(req1);
+        assertThat(tracker.getCurrentRequests().size(), is(1));
+        assertThat(tracker.getCurrentRequests().iterator().next().getRequest(), is(req1.toString()));
+        tracker.endTrack(req1);
+        assertThat(tracker.getCurrentRequests().size(), is(0));
     }
 
     @Test
     public void testEndTrackWillEffectOneRequest() {
-        CurrentRequestTracker.INSTANCE.trackRequest(req1);
-        CurrentRequestTracker.INSTANCE.trackRequest(req2);
-        assertThat(CurrentRequestTracker.INSTANCE.getCurrentRequests().size(), is(2));
-        CurrentRequestTracker.INSTANCE.endTrack(req1);
-        assertThat(CurrentRequestTracker.INSTANCE.getCurrentRequests().size(), is(1));
+        tracker.trackRequest(req1);
+        tracker.trackRequest(req2);
+        assertThat(tracker.getCurrentRequests().size(), is(2));
+        tracker.endTrack(req1);
+        assertThat(tracker.getCurrentRequests().size(), is(1));
     }
 
     @Test
     public void testEndTrackWillEffectTheCorrectRequest() {
-        CurrentRequestTracker.INSTANCE.trackRequest(req1);
-        CurrentRequestTracker.INSTANCE.trackRequest(req2);
-        CurrentRequestTracker.INSTANCE.endTrack(req1);
-        assertThat(CurrentRequestTracker.INSTANCE.getCurrentRequests().iterator().next().getRequest(), is(req2.toString()));
+        tracker.trackRequest(req1);
+        tracker.trackRequest(req2);
+        tracker.endTrack(req1);
+        assertThat(tracker.getCurrentRequests().iterator().next().getRequest(), is(req2.toString()));
     }
 }
