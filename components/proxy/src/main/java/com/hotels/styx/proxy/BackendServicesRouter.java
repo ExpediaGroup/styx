@@ -57,7 +57,6 @@ import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * A {@link HttpHandler} implementation.
@@ -208,7 +207,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
     private HttpHandler newClientHandler(BackendService backendService, OriginsInventory originsInventory, OriginStatsFactory originStatsFactory) {
         BackendServiceClient client = clientFactory.createClient(backendService, originsInventory, originStatsFactory);
-        return (request, context) -> new Eventual<>(toPublisher(client.sendRequest(request)));
+        return (request, context) -> new Eventual<>(client.sendRequest(request));
     }
 
     private static OriginHealthCheckFunction originHealthCheckFunction(

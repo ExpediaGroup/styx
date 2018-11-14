@@ -15,11 +15,11 @@
  */
 package com.hotels.styx.admin.tasks;
 
-import com.hotels.styx.client.Connection;
-import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
-import rx.Observable;
+import com.hotels.styx.client.Connection;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
+import org.reactivestreams.Publisher;
 
 /**
  * Stub implementation of a ConnectionPool.
@@ -37,7 +37,7 @@ public class StubConnectionPool implements ConnectionPool {
     }
 
     @Override
-    public Observable<Connection> borrowConnection() {
+    public Publisher<Connection> borrowConnection() {
         return null;
     }
 

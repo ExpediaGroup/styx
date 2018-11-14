@@ -19,11 +19,12 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 
 import com.hotels.styx.Environment
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.api.extension.service.spi.{AbstractRegistry, Registry}
 import com.hotels.styx.api.extension.service.spi.{AbstractRegistry, Registry}
-import com.hotels.styx.api.{LiveHttpRequest, LiveHttpResponse, HttpResponseStatus}
+import com.hotels.styx.api.{HttpResponseStatus, LiveHttpRequest, LiveHttpResponse}
 import com.hotels.styx.client.{BackendServiceClient, OriginStatsFactory, OriginsInventory}
 import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded
 import com.hotels.styx.api.extension.service.spi.Registry.{Changes, ReloadResult}
@@ -33,8 +34,10 @@ import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.config.RouteHandlerDefinition
 import com.hotels.styx.server.HttpInterceptorContext
 import com.hotels.styx.support.api.BlockingObservables
+import org.reactivestreams.Publisher
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, Matchers}
+import reactor.core.publisher.Mono
 import rx.Observable
 
 import scala.collection.JavaConversions._
@@ -76,7 +79,7 @@ class BackendServiceProxySpec extends FunSpec with Matchers with MockitoSugar {
     baResponse.header("X-Backend-Service").get() should be("ba")
   }
 
-  it ("errors when backendProvider attribute is not specified") {
+  it("errors when backendProvider attribute is not specified") {
     val config = configBlock(
       """
         |config:
@@ -90,10 +93,10 @@ class BackendServiceProxySpec extends FunSpec with Matchers with MockitoSugar {
     val e = intercept[IllegalArgumentException] {
       val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), registries).build(List("config", "config"), null, config)
     }
-    e.getMessage should be ("Routing object definition of type 'BackendServiceProxy', attribute='config.config', is missing a mandatory 'backendProvider' attribute.")
+    e.getMessage should be("Routing object definition of type 'BackendServiceProxy', attribute='config.config', is missing a mandatory 'backendProvider' attribute.")
   }
 
-  it ("errors when backendProvider does not exists") {
+  it("errors when backendProvider does not exists") {
     val config = configBlock(
       """
         |config:
@@ -106,19 +109,18 @@ class BackendServiceProxySpec extends FunSpec with Matchers with MockitoSugar {
       val registries: Map[String, Registry[BackendService]] = Map.empty
       val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), registries).build(List("config", "config"), null, config)
     }
-    e.getMessage should be ("No such backend service provider exists, attribute='config.config.backendProvider', name='bar'")
+    e.getMessage should be("No such backend service provider exists, attribute='config.config.backendProvider', name='bar'")
   }
 
   private def configBlock(text: String) = new YamlConfig(text).get("config", classOf[RouteHandlerDefinition]).get()
 
   private def clientFactory() = new BackendServiceClientFactory() {
     override def createClient(backendService: BackendService, originsInventory: OriginsInventory, originStatsFactory: OriginStatsFactory): BackendServiceClient = new BackendServiceClient {
-      override def sendRequest(request: LiveHttpRequest): Observable[LiveHttpResponse] = Observable
-        .just(LiveHttpResponse
-          .response(HttpResponseStatus.OK)
+      override def sendRequest(request: LiveHttpRequest): Publisher[LiveHttpResponse] = Mono.just(
+        LiveHttpResponse
+          .response(OK)
           .addHeader("X-Backend-Service", backendService.id())
-          .build()
-        )
+          .build())
     }
   }
 
@@ -126,7 +128,7 @@ class BackendServiceProxySpec extends FunSpec with Matchers with MockitoSugar {
     override def reload(): CompletableFuture[ReloadResult] = {
       notifyListeners(
         new Changes.Builder[BackendService]()
-          .added(backends:_*)
+          .added(backends: _*)
           .build())
       completedFuture(reloaded("ok"))
     }

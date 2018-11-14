@@ -19,7 +19,8 @@ import com.hotels.styx.common.EventProcessor;
 import com.hotels.styx.common.FsmEventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
 import com.hotels.styx.common.StateMachine;
-import rx.Observable;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 
 import java.util.function.Consumer;
 
@@ -33,7 +34,7 @@ import static java.util.Objects.requireNonNull;
  * Associate callbacks to Streaming Response object.
  */
 public class ResponseEventListener {
-    private final Observable<LiveHttpResponse> publisher;
+    private final Flux<LiveHttpResponse> publisher;
     private Consumer<Throwable> responseErrorAction = cause -> { };
     private Consumer<Throwable> contentErrorAction = cause -> { };
     private Runnable onCompletedAction = () -> { };
@@ -70,11 +71,11 @@ public class ResponseEventListener {
             .onInappropriateEvent((state, event) -> state)
             .build();
 
-    private ResponseEventListener(Observable<LiveHttpResponse> publisher) {
-        this.publisher = requireNonNull(publisher);
+    private ResponseEventListener(Publisher<LiveHttpResponse> publisher) {
+        this.publisher = Flux.from(requireNonNull(publisher));
     }
 
-    public static ResponseEventListener from(Observable<LiveHttpResponse> publisher) {
+    public static ResponseEventListener from(Publisher<LiveHttpResponse> publisher) {
         return new ResponseEventListener(publisher);
     }
 
@@ -98,16 +99,16 @@ public class ResponseEventListener {
         return this;
     }
 
-    public Observable<LiveHttpResponse> apply() {
+    public Flux<LiveHttpResponse> apply() {
         EventProcessor eventProcessor = new QueueDrainingEventProcessor(
                 new FsmEventProcessor<>(fsm, (throwable, state) -> {
                 }, ""));
 
         return publisher
                 .doOnNext(headers -> eventProcessor.submit(new MessageHeaders()))
-                .doOnCompleted(() -> eventProcessor.submit(new MessageCompleted()))
+                .doOnComplete(() -> eventProcessor.submit(new MessageCompleted()))
                 .doOnError(cause -> eventProcessor.submit(new MessageError(cause)))
-                .doOnUnsubscribe(() -> eventProcessor.submit(new MessageCancelled()))
+                .doOnCancel(() -> eventProcessor.submit(new MessageCancelled()))
                 .map(response -> Requests.doOnError(response, cause -> eventProcessor.submit(new ContentError(cause))))
                 .map(response -> Requests.doOnComplete(response, () -> eventProcessor.submit(new ContentEnd())))
                 .map(response -> Requests.doOnCancel(response, () -> eventProcessor.submit(new ContentCancelled())));

@@ -18,10 +18,7 @@ package com.hotels.styx.routing
 import com.hotels.styx.api.HttpInterceptor.Context
 import com.hotels.styx.api._
 import com.hotels.styx.api.plugins.spi.Plugin
-import com.hotels.styx.client.BackendServiceClient
-import com.hotels.styx.routing.ImplicitScalaRxConversions.toJavaObservable
 import rx.lang.scala.Observable
-import rx.{Observable => JavaObservable}
 
 private class ChainAdapter(javaChain: HttpInterceptor.Chain) {
   def proceed(request: LiveHttpRequest): Eventual[LiveHttpResponse] = javaChain.proceed(request)
@@ -44,10 +41,6 @@ class PluginAdapter(scalaInterceptor: (LiveHttpRequest, ChainAdapter) => Eventua
     scalaInterceptor(request, new ChainAdapter(chain))
 }
 
-class HttpClientAdapter(sendRequest: LiveHttpRequest => Observable[LiveHttpResponse]) extends BackendServiceClient {
-  override def sendRequest(request: LiveHttpRequest): JavaObservable[LiveHttpResponse] =
-    toJavaObservable(sendRequest(request))
-}
 
 class HttpHandlerAdapter(handler: (LiveHttpRequest, Context) => Eventual[LiveHttpResponse]) extends HttpHandler {
   override def handle(request: LiveHttpRequest, context: Context): Eventual[LiveHttpResponse] = handler(request, context)

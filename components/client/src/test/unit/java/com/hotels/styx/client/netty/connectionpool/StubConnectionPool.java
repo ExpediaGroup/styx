@@ -16,16 +16,16 @@
 package com.hotels.styx.client.netty.connectionpool;
 
 import com.google.common.base.Objects;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
-import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
-import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
-import rx.Observable;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 
 import static com.google.common.base.Objects.toStringHelper;
 import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
-import static rx.Observable.just;
 
 public class StubConnectionPool implements ConnectionPool, Comparable<ConnectionPool> {
     private Connection connection;
@@ -48,11 +48,6 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
         this.settings = defaultConnectionPoolSettings();
     }
 
-    public StubConnectionPool(Origin origin_one, ConnectionPoolSettings settings) {
-        this.origin = origin_one;
-        this.settings = settings;
-    }
-
     @Override
     public int compareTo(ConnectionPool other) {
         return this.connection.getOrigin().hostAndPortString().compareTo(other.getOrigin().hostAndPortString());
@@ -64,8 +59,8 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
     }
 
     @Override
-    public Observable<Connection> borrowConnection() {
-        return just(connection);
+    public Publisher<Connection> borrowConnection() {
+        return Flux.just(connection);
     }
 
     @Override

@@ -20,24 +20,23 @@ import java.util.concurrent.TimeUnit
 
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
+import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.Id.id
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpRequest.get
-import com.hotels.styx.api.Id.id
-import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
-import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
 import com.hotels.styx.api.RequestCookie.requestCookie
-import com.hotels.styx.api.HttpResponseStatus.OK
-import com.hotels.styx.api.extension.service.StickySessionConfig
-import com.hotels.styx.api.extension.service.BackendService
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
+import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
+import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
-import StyxBackendServiceClient.newHttpClientBuilder
+import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
-import com.hotels.styx.support.api.BlockingObservables._
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
+import reactor.core.publisher.Mono
 
 import scala.collection.JavaConverters._
 
@@ -98,7 +97,6 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
 
   def stickySessionStrategy(activeOrigins: ActiveOrigins) = new StickySessionLoadBalancingStrategy(activeOrigins, roundRobinStrategy(activeOrigins))
 
-
   test("Responds with sticky session cookie when STICKY_SESSION_ENABLED=true") {
     val stickySessionConfig = StickySessionConfig.newStickySessionConfigBuilder().timeout(100, TimeUnit.SECONDS).build()
 
@@ -110,7 +108,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
     val request: LiveHttpRequest = LiveHttpRequest.get("/")
       .build
 
-    val response = waitForResponse(client.sendRequest(request))
+    val response = Mono.from(client.sendRequest(request)).block()
     response.status() should be(OK)
     val cookie = response.cookie("styx_origin_app").get()
     cookie.value() should fullyMatch regex "app-0[12]"
@@ -130,7 +128,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
     val request: LiveHttpRequest = get("/")
       .build
 
-    val response = waitForResponse(client.sendRequest(request))
+    val response = Mono.from(client.sendRequest(request)).block()
     response.status() should be(OK)
     response.cookies().asScala should have size (0)
   }
@@ -144,9 +142,9 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
       .cookies(requestCookie("styx_origin_app", "app-02"))
       .build
 
-    val response1 = waitForResponse(client.sendRequest(request))
-    val response2 = waitForResponse(client.sendRequest(request))
-    val response3 = waitForResponse(client.sendRequest(request))
+    val response1 = Mono.from(client.sendRequest(request)).block()
+    val response2 = Mono.from(client.sendRequest(request)).block()
+    val response3 = Mono.from(client.sendRequest(request)).block()
 
     response1.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
     response2.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
@@ -166,9 +164,9 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
       .build()
 
 
-    val response1 = waitForResponse(client.sendRequest(request))
-    val response2 = waitForResponse(client.sendRequest(request))
-    val response3 = waitForResponse(client.sendRequest(request))
+    val response1 = Mono.from(client.sendRequest(request)).block()
+    val response2 = Mono.from(client.sendRequest(request)).block()
+    val response3 = Mono.from(client.sendRequest(request)).block()
 
     response1.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
     response2.header("Stub-Origin-Info").get() should be(s"APP-localhost:${server2.port}")
@@ -184,7 +182,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
       .cookies(requestCookie("styx_origin_app", "h3"))
       .build
 
-    val response = waitForResponse(client.sendRequest(request))
+    val response = Mono.from(client.sendRequest(request)).block()
 
     response.status() should be(OK)
     response.cookies().asScala should have size (1)
@@ -209,7 +207,7 @@ class StickySessionSpec extends FunSuite with BeforeAndAfter with Matchers with 
       .cookies(requestCookie("styx_origin_app", "app-02"))
       .build
 
-    val response = waitForResponse(client.sendRequest(request))
+    val response = Mono.from(client.sendRequest(request)).block()
 
     response.status() should be(OK)
     response.cookies() should have size 1

@@ -26,6 +26,9 @@ import java.util.concurrent.ExecutionException;
 import static java.lang.Thread.currentThread;
 import static rx.RxReactiveStreams.toObservable;
 
+
+// TODO: This class needs to be removed once we have migrated over to Reactor/Flux.
+
 public final class BlockingObservables {
 
     public static <T> T getFirst(Observable<T> observable) {
@@ -59,12 +62,6 @@ public final class BlockingObservables {
                 .flatMap(response -> toObservable(response.aggregate(120*1024)))
                 .toBlocking()
                 .single();
-    }
-
-    public static LiveHttpResponse waitForStreamingResponse(Observable<LiveHttpResponse> responseObs) {
-        return responseObs
-                .toBlocking()
-                .first();
     }
 
     private BlockingObservables() {

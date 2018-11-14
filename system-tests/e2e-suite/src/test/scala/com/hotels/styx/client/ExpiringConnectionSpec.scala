@@ -16,15 +16,14 @@
 package com.hotels.styx.client
 
 import com.github.tomakehurst.wiremock.client.WireMock.{get => _, _}
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest._
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.Origin.newOriginBuilder
-import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.extension.service.BackendService
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
-import StyxBackendServiceClient.newHttpClientBuilder
+import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
-import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{ConnectionPoolSettings, HttpBackend, Origins}
 import com.hotels.styx.support.server.UrlMatchingStrategies._
@@ -33,6 +32,7 @@ import org.hamcrest.MatcherAssert._
 import org.hamcrest.Matchers._
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
+import reactor.core.publisher.Mono
 
 import scala.concurrent.duration._
 
@@ -74,7 +74,7 @@ class ExpiringConnectionSpec extends FunSpec
   it("Should expire connection after 1 second") {
     val request = get(styxServer.routerURL("/app1")).build()
 
-    val response1 = waitForResponse(pooledClient.sendRequest(request))
+    val response1 = Mono.from(pooledClient.sendRequest(request)).block()
 
     assertThat(response1.status(), is(OK))
 
@@ -85,7 +85,7 @@ class ExpiringConnectionSpec extends FunSpec
 
     Thread.sleep(1000)
 
-    val response2 = waitForResponse(pooledClient.sendRequest(request))
+    val response2 = Mono.from(pooledClient.sendRequest(request)).block()
     assertThat(response2.status(), is(OK))
 
     eventually(timeout(2.seconds)) {
