@@ -16,8 +16,6 @@
 package com.hotels.styx.startup;
 
 import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.jvm.BufferPoolMetricSet;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
@@ -25,17 +23,13 @@ import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.hotels.styx.Version;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.metrics.reporting.sets.NettyAllocatorMetricSet;
-import com.sun.management.OperatingSystemMXBean;
-import com.sun.management.UnixOperatingSystemMXBean;
+import com.hotels.styx.metrics.reporting.sets.OperatingSystemMetricSet;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import org.slf4j.Logger;
 
-import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import static java.lang.String.format;
@@ -98,38 +92,4 @@ public final class CoreMetrics {
         return format("%dd %dh %dm", days, hours, minutes);
     }
 
-    private static final class OperatingSystemMetricSet implements MetricSet {
-        private final OperatingSystemMXBean bean;
-
-        OperatingSystemMetricSet() {
-            this.bean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-        }
-
-        @Override
-        public Map<String, Metric> getMetrics() {
-            Map<String, Metric> metrics = new HashMap<>();
-
-            castIfInstance(bean, UnixOperatingSystemMXBean.class).ifPresent(unixBean -> {
-                metrics.put("fileDescriptors.max", (Gauge<Long>) unixBean::getMaxFileDescriptorCount);
-                metrics.put("fileDescriptors.open", (Gauge<Long>) unixBean::getOpenFileDescriptorCount);
-            });
-
-            metrics.put("cpu.process.load", (Gauge<Double>) bean::getProcessCpuLoad);
-            metrics.put("cpu.process.time", (Gauge<Long>) bean::getProcessCpuTime);
-            metrics.put("cpu.system.load", (Gauge<Double>) bean::getSystemCpuLoad);
-
-            metrics.put("memory.physical.free", (Gauge<Long>) bean::getFreePhysicalMemorySize);
-            metrics.put("memory.physical.total", (Gauge<Long>) bean::getTotalPhysicalMemorySize);
-            metrics.put("memory.virtual.committed", (Gauge<Long>) bean::getCommittedVirtualMemorySize);
-
-            metrics.put("swapSpace.free", (Gauge<Long>) bean::getFreeSwapSpaceSize);
-            metrics.put("swapSpace.total", (Gauge<Long>) bean::getTotalSwapSpaceSize);
-
-            return metrics;
-        }
-
-        private static <T> Optional<T> castIfInstance(Object o, Class<T> type) {
-            return type.isInstance(o) ? Optional.of(type.cast(o)) : Optional.empty();
-        }
-    }
 }
