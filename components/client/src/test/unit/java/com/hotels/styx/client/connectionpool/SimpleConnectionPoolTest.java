@@ -361,7 +361,7 @@ public class SimpleConnectionPoolTest {
 
 
     @Test
-    public void returnConnectionDecrementsConnectionCount() throws ExecutionException, InterruptedException, TimeoutException {
+    public void givesReturnedConnectionsToPendingSubscibers() throws ExecutionException, InterruptedException, TimeoutException {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
                 .thenReturn(Observable.just(connection1))
                 .thenReturn(Observable.just(connection2))
@@ -398,36 +398,12 @@ public class SimpleConnectionPoolTest {
         pool.returnConnection(active1.get());
         pool.returnConnection(active2.get());
 
-        // And ensure pending connections complete
+        // Show that returned connections are given to pending subscribers
         assertEquals(pending1.get(), connection1);
         assertEquals(pending2.get(), connection2);
         assertEquals(pool.stats().connectionAttempts(), 2);
         assertEquals(pool.stats().busyConnectionCount(), 2);
         assertEquals(pool.stats().pendingConnectionCount(), 0);
-
-        // Returning connections ...
-        pool.returnConnection(connection1);
-        pool.returnConnection(connection2);
-
-        assertEquals(pool.stats().connectionAttempts(), 2);
-        assertEquals(pool.stats().busyConnectionCount(), 0);
-        assertEquals(pool.stats().pendingConnectionCount(), 0);
-
-        // .. allows more connections to be borrowed:
-        StepVerifier.create(pool.borrowConnection2())
-                .expectNext(connection1)
-                .verifyComplete();
-
-        StepVerifier.create(pool.borrowConnection2())
-                .expectNext(connection2)
-                .verifyComplete();
-
-        assertEquals(pool.stats().connectionAttempts(), 2);
-        assertEquals(pool.stats().pendingConnectionCount(), 0);
-        assertEquals(pool.stats().busyConnectionCount(), 2);
-        assertEquals(pool.stats().availableConnectionCount(), 0);
-        assertEquals(pool.stats().terminatedConnections(), 0);
-        assertEquals(pool.stats().closedConnections(), 0);
     }
 
     @Test
