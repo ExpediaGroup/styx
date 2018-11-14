@@ -20,6 +20,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
+import com.hotels.styx.server.track.RequestTracker;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -168,7 +169,7 @@ public class StandardHttpPipelineTest {
         HttpHandler handler = (request, context) -> Eventual.of(response(OK).build());
 
         List<HttpInterceptor> interceptors = singletonList(interceptor);
-        StandardHttpPipeline pipeline = new StandardHttpPipeline(interceptors, handler);
+        StandardHttpPipeline pipeline = new StandardHttpPipeline(interceptors, handler, RequestTracker.NO_OP);
 
         Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
         toObservable(responseObservable).toBlocking().first();
@@ -193,27 +194,6 @@ public class StandardHttpPipelineTest {
         };
     }
 
-    // TOOD: Mikko: Styx 2.0 API: Probably can be removed because the
-    // Rx Observables are not available for for API consumers.
-//    private HttpInterceptor reSubscribeDuringSubscriptionOriginalErrorCause() {
-//        return (request, chain) ->
-//                just(request)
-//                        .map(chain::proceed)
-//                        .flatMap(responseObservable -> responseObservable
-//                                .filter(response -> false)
-//                                .switchIfEmpty(responseObservable));
-//    }
-
-//    private HttpInterceptor reSubscribeDuringSubscription() {
-//        return (request, chain) ->
-//                just(request).map(chain::proceed)
-//                        .flatMap(responseObservable -> {
-//                            responseObservable.toBlocking().single();
-//
-//                            return responseObservable;
-//                        });
-//    }
-
     private HttpInterceptor recordingInterceptor(String name, Consumer<String> onInterceptRequest, Consumer<String> onInterceptResponse) {
         return (request, chain) -> {
             onInterceptRequest.accept(name);
@@ -232,6 +212,6 @@ public class StandardHttpPipelineTest {
     }
 
     private StandardHttpPipeline pipeline(HttpInterceptor... interceptors) {
-        return new StandardHttpPipeline(asList(interceptors), (request, context) -> Eventual.of(response(OK).build()));
+        return new StandardHttpPipeline(asList(interceptors), (request, context) -> Eventual.of(response(OK).build()), RequestTracker.NO_OP);
     }
 }

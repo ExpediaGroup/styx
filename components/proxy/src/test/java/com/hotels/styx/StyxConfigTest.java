@@ -15,11 +15,9 @@
  */
 package com.hotels.styx;
 
-import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.proxy.ProxyServerConfig;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.StartupConfig.defaultStartupConfig;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.lang.Runtime.getRuntime;
 import static org.hamcrest.MatcherAssert.assertThat;

@@ -36,17 +36,26 @@ public class StaticPipelineFactory implements HttpPipelineFactory {
     private final Environment environment;
     private final Registry<BackendService> registry;
     private final Iterable<NamedPlugin> plugins;
+    private final boolean trackRequests;
 
     @VisibleForTesting
-    StaticPipelineFactory(BackendServiceClientFactory clientFactory, Environment environment, Registry<BackendService> registry, Iterable<NamedPlugin> plugins) {
+    StaticPipelineFactory(BackendServiceClientFactory clientFactory,
+                          Environment environment,
+                          Registry<BackendService> registry,
+                          Iterable<NamedPlugin> plugins,
+                          boolean trackRequests) {
         this.clientFactory = clientFactory;
         this.environment = environment;
         this.registry = registry;
         this.plugins = plugins;
+        this.trackRequests = trackRequests;
     }
 
-    public StaticPipelineFactory(Environment environment, Registry<BackendService> registry, Iterable<NamedPlugin> plugins) {
-        this(createClientFactory(environment), environment, registry, plugins);
+    public StaticPipelineFactory(Environment environment,
+                                 Registry<BackendService> registry,
+                                 Iterable<NamedPlugin> plugins,
+                                 boolean trackRequests) {
+        this(createClientFactory(environment), environment, registry, plugins, trackRequests);
     }
 
     private static BackendServiceClientFactory createClientFactory(Environment environment) {
@@ -59,6 +68,6 @@ public class StaticPipelineFactory implements HttpPipelineFactory {
         registry.addListener(backendServicesRouter);
         RouteHandlerAdapter router = new RouteHandlerAdapter(backendServicesRouter);
 
-        return new InterceptorPipelineBuilder(environment, plugins, router).build();
+        return new InterceptorPipelineBuilder(environment, plugins, router, trackRequests).build();
     }
 }

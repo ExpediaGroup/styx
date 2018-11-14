@@ -130,6 +130,10 @@ using environment variables with the same name as the property.
         name: "X-Styx-Origin-Id"
       requestId:
         name: "X-Styx-Request-Id"
+        
+    # Enables request tracking. This is a debugging feature that shows information about
+    # each proxied request. Accepts a boolean value (true/false).
+    requestTracking: false
  ```
 
 Without the comments, it looks like this:
@@ -193,4 +197,6 @@ Without the comments, it looks like this:
         name: "X-Styx-Origin-Id"
       requestId:
         name: "X-Styx-Request-Id"
+        
+    requestTracking: false
 ```

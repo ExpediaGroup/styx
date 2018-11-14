@@ -31,6 +31,8 @@ import com.hotels.styx.routing.config.RouteHandlerConfig;
 import com.hotels.styx.routing.config.RouteHandlerDefinition;
 import com.hotels.styx.routing.config.RouteHandlerFactory;
 import com.hotels.styx.routing.config.RouteHandlerReference;
+import com.hotels.styx.server.track.CurrentRequestTracker;
+import com.hotels.styx.server.track.RequestTracker;
 
 import java.util.List;
 import java.util.Map;
@@ -50,8 +52,9 @@ import static java.util.stream.StreamSupport.stream;
 public class HttpInterceptorPipeline implements HttpHandler {
     private final StandardHttpPipeline handler;
 
-    public HttpInterceptorPipeline(List<HttpInterceptor> interceptors, HttpHandler handler) {
-        this.handler = new StandardHttpPipeline(interceptors, handler);
+    public HttpInterceptorPipeline(List<HttpInterceptor> interceptors, HttpHandler handler, boolean trackRequests) {
+        RequestTracker tracker = trackRequests ? CurrentRequestTracker.INSTANCE : RequestTracker.NO_OP;
+        this.handler = new StandardHttpPipeline(interceptors, handler, tracker);
     }
 
     @Override
@@ -65,10 +68,12 @@ public class HttpInterceptorPipeline implements HttpHandler {
     public static class ConfigFactory implements HttpHandlerFactory {
         private final Map<String, NamedPlugin> interceptors;
         private final BuiltinInterceptorsFactory interceptorFactory;
+        private final boolean requestTracking;
 
-        public ConfigFactory(Iterable<NamedPlugin> interceptors, BuiltinInterceptorsFactory interceptorFactory) {
+        public ConfigFactory(Iterable<NamedPlugin> interceptors, BuiltinInterceptorsFactory interceptorFactory, boolean requestTracking) {
             this.interceptors = toMap(interceptors);
             this.interceptorFactory = interceptorFactory;
+            this.requestTracking = requestTracking;
         }
 
         private static List<RouteHandlerConfig> styxHttpPipeline(JsonNode pipeline) {
@@ -100,7 +105,10 @@ public class HttpInterceptorPipeline implements HttpHandler {
                     .get("handler", RouteHandlerDefinition.class)
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "handler"));
 
-            return new HttpInterceptorPipeline(interceptors, builtinsFactory.build(append(parents, "handler"), handlerConfig));
+            return new HttpInterceptorPipeline(
+                    interceptors,
+                    builtinsFactory.build(append(parents, "handler"), handlerConfig),
+                    requestTracking);
         }
 
         private List<HttpInterceptor> getHttpInterceptors(List<String> parents, JsonNode pipeline) {

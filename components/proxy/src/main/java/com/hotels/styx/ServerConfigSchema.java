@@ -145,7 +145,8 @@ final class ServerConfigSchema {
                     optional("responseInfoHeaderFormat", string()),
                     optional("httpPipeline", object(opaque())),
                     optional("logFormat", string()),
-                    optional("userDefined", object(opaque()))
+                    optional("userDefined", object(opaque())),
+                    optional("requestTracking", bool())
             ))
             .build();
 
