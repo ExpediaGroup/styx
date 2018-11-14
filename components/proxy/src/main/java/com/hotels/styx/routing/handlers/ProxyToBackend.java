@@ -17,20 +17,20 @@ package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.client.BackendServiceClient;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Eventual;
-import com.hotels.styx.client.Connection;
-import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
+import com.hotels.styx.client.BackendServiceClient;
+import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
-import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
+import com.hotels.styx.client.connectionpool.SimpleConnectionPoolFactory;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
@@ -115,7 +115,7 @@ public class ProxyToBackend implements HttpHandler {
                 connectionFactory = new ExpiringConnectionFactory(poolSettings.connectionExpirationSeconds(), connectionFactory);
             }
 
-            ConnectionPool.Factory connectionPoolFactory = new ConnectionPoolFactory.Builder()
+            ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(connectionFactory)
                     .connectionPoolSettings(poolSettings)
                     .metricRegistry(environment.metricRegistry())

@@ -16,9 +16,9 @@
 package com.hotels.styx.client.connectionpool;
 
 
-import com.hotels.styx.client.Connection;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
+import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import com.hotels.styx.support.MultithreadedStressTester;
 import org.testng.annotations.Test;

@@ -27,13 +27,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.mockito.Mockito.mock;
 
-public class ConnectionPoolFactoryTest {
+public class SimpleConnectionPoolFactoryTest {
     private final Origin origin = newOriginBuilder("localhost", 12345).id("origin-X").applicationId("test-app").build();
 
     @Test
     public void registersMetricsUnderOriginsScope() {
         MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
-        ConnectionPoolFactory factory = new ConnectionPoolFactory.Builder()
+        SimpleConnectionPoolFactory factory = new SimpleConnectionPoolFactory.Builder()
                 .connectionFactory(mock(Connection.Factory.class))
                 .connectionPoolSettings(defaultConnectionPoolSettings())
                 .metricRegistry(metricRegistry)

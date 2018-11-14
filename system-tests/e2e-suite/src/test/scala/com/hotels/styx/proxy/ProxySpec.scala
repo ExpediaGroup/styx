@@ -170,7 +170,12 @@ class ProxySpec extends FunSpec
     }
 
     describe("backend services unavailable") {
-      it("should return a 502 BAD_GATEWAY if the connection to the backend is refused") {
+      // The specific behaviour depends on the pool implementation.
+      // The improved connection pool attempts to recreate failed connections in the background.
+      // The connection failures are no longer visible for the pool consumers. Instead they just
+      // stay in the pending subscriber queue and time out.
+
+      it("should return a 503 Service Unavailable if the connection to the backend is refused") {
         styxServer.setBackends(
           "/" -> HttpBackend("app-1", Origins(recordingBackend)),
           "/unavailable" -> HttpBackend("http10", Origins(Origin("localhost", freePort(), "app-1-01")))
@@ -181,7 +186,7 @@ class ProxySpec extends FunSpec
           .build()
 
         val resp = decodedRequest(req)
-        assert(resp.status() == BAD_GATEWAY)
+        assert(resp.status() == SERVICE_UNAVAILABLE)
       }
     }
 

@@ -48,7 +48,6 @@ class AggregatingPluginContentOverflowSpec extends FunSpec
   override protected def afterAll(): Unit = {
     mockServer.stopAsync().awaitTerminated()
     val metrics = styxServer.metricsSnapshot
-    println("Styx metrics after AggregatingPluginContentOverflowSpec:\n" + metrics)
     super.afterAll()
   }
 
@@ -84,9 +83,8 @@ class AggregatingPluginContentOverflowSpec extends FunSpec
 
       eventually(timeout(3 seconds)) {
         val metrics = styxServer.metricsSnapshot
-        metrics.gauge("origins.app1.origin-1.connectionspool.available-connections").get should be(0)
         metrics.gauge("origins.app1.origin-1.connectionspool.busy-connections").get should be(0)
-        metrics.gauge("origins.app1.origin-1.connectionspool.pending-connections").get should be(0)
+        metrics.gauge("origins.app1.origin-1.connectionspool.connections-closed").get should be(1)
       }
     }
   }

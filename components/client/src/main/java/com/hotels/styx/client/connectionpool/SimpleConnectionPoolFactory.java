@@ -28,12 +28,12 @@ import static java.util.Objects.requireNonNull;
  * <p/>
  * It also registers metrics for the connection pools.
  */
-public final class ConnectionPoolFactory implements ConnectionPool.Factory {
+public final class SimpleConnectionPoolFactory implements ConnectionPool.Factory {
     private final Connection.Factory connectionFactory;
     private final ConnectionPoolSettings poolSettings;
     private final MetricRegistry metricRegistry;
 
-    private ConnectionPoolFactory(Builder builder) {
+    private SimpleConnectionPoolFactory(Builder builder) {
         this.connectionFactory = requireNonNull(builder.connectionFactory);
         this.poolSettings = new ConnectionPoolSettings.Builder(requireNonNull(builder.poolSettings)).build();
         this.metricRegistry = requireNonNull(builder.metricRegistry);
@@ -41,7 +41,9 @@ public final class ConnectionPoolFactory implements ConnectionPool.Factory {
 
     @Override
     public ConnectionPool create(Origin origin) {
-        return new StatsReportingConnectionPool(new SimpleConnectionPool(origin, poolSettings, connectionFactory), metricRegistry);
+        return new StatsReportingConnectionPool(
+                new SimpleConnectionPool(origin, poolSettings, connectionFactory),
+                metricRegistry);
     }
 
     /**
@@ -67,8 +69,8 @@ public final class ConnectionPoolFactory implements ConnectionPool.Factory {
             return this;
         }
 
-        public ConnectionPoolFactory build() {
-            return new ConnectionPoolFactory(this);
+        public SimpleConnectionPoolFactory build() {
+            return new SimpleConnectionPoolFactory(this);
         }
     }
 }

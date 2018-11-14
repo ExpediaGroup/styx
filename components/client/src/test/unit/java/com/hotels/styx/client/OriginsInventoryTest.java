@@ -18,13 +18,13 @@ package com.hotels.styx.client;
 import com.codahale.metrics.Gauge;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
-import com.hotels.styx.client.connectionpool.ConnectionPool;
-import com.hotels.styx.api.extension.Origin;
-import com.hotels.styx.api.extension.OriginsSnapshot;
-import com.hotels.styx.api.extension.OriginsChangeListener;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.api.extension.OriginsChangeListener;
+import com.hotels.styx.api.extension.OriginsSnapshot;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.client.connectionpool.ConnectionPoolFactory;
+import com.hotels.styx.client.connectionpool.ConnectionPool;
+import com.hotels.styx.client.connectionpool.SimpleConnectionPoolFactory;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import com.hotels.styx.client.healthcheck.OriginHealthStatusMonitor;
 import com.hotels.styx.client.origincommands.DisableOrigin;
@@ -41,9 +41,9 @@ import static ch.qos.logback.classic.Level.INFO;
 import static com.hotels.styx.api.Id.GENERIC_APP;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
+import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.client.OriginsInventory.OriginState.ACTIVE;
 import static com.hotels.styx.client.OriginsInventory.OriginState.DISABLED;
-import static com.hotels.styx.api.extension.service.ConnectionPoolSettings.defaultConnectionPoolSettings;
 import static com.hotels.styx.common.testing.matcher.TransformingMatcher.hasDerivedValue;
 import static com.hotels.styx.support.matchers.ContainsExactlyOneMatcher.containsExactlyOne;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
@@ -503,8 +503,8 @@ public class OriginsInventoryTest {
         return Optional.ofNullable(gauge);
     }
 
-    private static ConnectionPoolFactory connectionPoolFactory() {
-        return new ConnectionPoolFactory.Builder()
+    private static SimpleConnectionPoolFactory connectionPoolFactory() {
+        return new SimpleConnectionPoolFactory.Builder()
                 .connectionFactory(new StubConnectionFactory())
                 .connectionPoolSettings(defaultConnectionPoolSettings())
                 .metricRegistry(new CodaHaleMetricRegistry())

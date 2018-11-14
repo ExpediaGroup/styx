@@ -102,11 +102,6 @@ public class StubConnectionPool implements ConnectionPool, Comparable<Connection
             }
 
             @Override
-            public long timeToFirstByteMs() {
-                return timeToFirstByte;
-            }
-
-            @Override
             public int connectionAttempts() {
                 return 0;
             }

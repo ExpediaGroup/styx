@@ -1,6 +1,6 @@
 # Connection Pool Configuration
 
-Styx uses TCP connection pooling to reduce latency. A TCP connection pool
+Styx uses TCP connection pooling to reduce latency. A pool
 is created for each origin server. Connection pool settings are configured at 
 the backend service level, and they are applied individually to each member 
 origin server.
@@ -27,23 +27,37 @@ It is important to notice that, initially,  the pool has no established TCP conn
 They are created lazily when needed.
 
 * *connectTimeoutMillis*: maximum allowed time for TCP connection establishment.
+
 * *socketTimeoutMillis*: maximum length of time a TCP connection can remain idle before being closed. 
 *Warning:* this property is reserved for future usage and not currently honoured by Styx.
 
-* *connectionExpirationSeconds*: allows connections to be terminated after the configured number of seconds has elapsed since the connection was created.
-This is useful when an origin host is specified as a DNS domain name, and you want to ensure that domain names are re-resolved periodically.
-If the value of the setting is non-positive, connections will not expire. 
-Connection age is checked on each incoming request, so connections may live longer than their expiration time if they do not serve any requests.
+* *connectionExpirationSeconds*: allows connections to be terminated after the configured 
+number of seconds has elapsed since the connection was created. This is useful when an origin 
+host is specified as a DNS domain name, and you want to ensure that domain names are re-resolved 
+periodically. If the value of the setting is non-positive, connections will not expire. 
+Connection age is checked on each incoming request, so connections may live longer than their 
+expiration time if they do not serve any requests.
 
 ## Connection pending settings.
 
-When the connection pool gets full, any additional requests 
-for the connections are queued. 
-These requests are called *pending connections*. 
+Sometimes the pool doesn't have a connection available immediately, and a 
+subscriber must wait for one. The waiting subscribers are queued in a fixed-size waiting 
+queue. The waiting subscribers are also called *pending connections*  
 
-* *maxPendingConnectionsPerHost*: maximum number of pending connections for an origin.
+A subscriber can be waiting for two reasons:
 
-* *pendingConnectionTimeoutMillis*: maximum time a connection can be "pending". 
+ 1. The pool doesn't have a readily available TCP connection. A new connection must be
+    established, and the subscriber is placed in the waiting queue until a TCP connection
+    is established.
+
+ 2. The pool is full. In this case the subscribers are queued until a connection 
+    becomes available. 
+
+Returned or newly established connections are given to the longest waiting subscriber first.
+
+* *maxPendingConnectionsPerHost*: maximum number of waiting subscribers for an origin.
+
+* *pendingConnectionTimeoutMillis*: maximum time a subscriber can be "pending". 
 When this timeout expires, a connection request is removed from the queue,
  resulting in a *503 Service Unavailable* response (1).
 
