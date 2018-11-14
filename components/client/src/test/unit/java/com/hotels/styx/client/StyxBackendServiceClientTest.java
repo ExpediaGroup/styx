@@ -18,9 +18,9 @@ package com.hotels.styx.client;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.Id;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Id;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.exceptions.NoAvailableHostsException;
 import com.hotels.styx.api.exceptions.OriginUnreachableException;
@@ -34,26 +34,29 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import org.hamcrest.Matchers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.reactivestreams.Processor;
+import org.reactivestreams.Publisher;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import reactor.core.publisher.EmitterProcessor;
+import reactor.core.publisher.Flux;
 import rx.Observable;
 import rx.Subscription;
 import rx.observers.TestSubscriber;
-import rx.subjects.PublishSubject;
 
 import java.util.Optional;
 
 import static com.hotels.styx.api.HttpHeaderNames.CHUNKED;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
 import static com.hotels.styx.api.HttpHeaderNames.TRANSFER_ENCODING;
-import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_IMPLEMENTED;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.HttpResponseStatus.UNAUTHORIZED;
 import static com.hotels.styx.api.Id.GENERIC_APP;
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
@@ -72,9 +75,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static rx.Observable.error;
-import static rx.Observable.just;
-import static rx.RxReactiveStreams.toPublisher;
 
 public class StyxBackendServiceClientTest {
     private static final Origin SOME_ORIGIN = newOriginBuilder("localhost", 9090).applicationId(GENERIC_APP).build();
@@ -98,7 +98,7 @@ public class StyxBackendServiceClientTest {
 
     @Test
     public void sendsRequestToHostChosenByLoadBalancer() {
-        StyxHostHttpClient hostClient = mockHostClient(just(response(OK).build()));
+        StyxHostHttpClient hostClient = mockHostClient(Flux.just(response(OK).build()));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
@@ -117,7 +117,7 @@ public class StyxBackendServiceClientTest {
     @Test
     public void constructsRetryContextWhenLoadBalancerDoesNotFindAvailableOrigins() {
         RetryPolicy retryPolicy = mockRetryPolicy(true, true, true);
-        StyxHostHttpClient hostClient = mockHostClient(just(response(OK).build()));
+        StyxHostHttpClient hostClient = mockHostClient(Flux.just(response(OK).build()));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
@@ -152,10 +152,10 @@ public class StyxBackendServiceClientTest {
     public void retriesWhenRetryPolicyTellsToRetry() {
         RetryPolicy retryPolicy = mockRetryPolicy(true, false);
 
-        StyxHostHttpClient firstClient = mockHostClient(error(
+        StyxHostHttpClient firstClient = mockHostClient(Flux.error(
                 new OriginUnreachableException(ORIGIN_1, new RuntimeException("An error occurred"))));
 
-        StyxHostHttpClient secondClient = mockHostClient(just(response(OK).build()));
+        StyxHostHttpClient secondClient = mockHostClient(Flux.just(response(OK).build()));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
@@ -193,9 +193,9 @@ public class StyxBackendServiceClientTest {
 
     @Test
     public void stopsRetriesWhenRetryPolicyTellsToStop() {
-        StyxHostHttpClient firstClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_1, new RuntimeException("An error occurred"))));
-        StyxHostHttpClient secondClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
-        StyxHostHttpClient thirdClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
+        StyxHostHttpClient firstClient = mockHostClient(Flux.error(new OriginUnreachableException(ORIGIN_1, new RuntimeException("An error occurred"))));
+        StyxHostHttpClient secondClient = mockHostClient(Flux.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
+        StyxHostHttpClient thirdClient = mockHostClient(Flux.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
@@ -224,10 +224,10 @@ public class StyxBackendServiceClientTest {
 
     @Test
     public void retriesAtMost3Times() {
-        StyxHostHttpClient firstClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_1, new RuntimeException("An error occurred"))));
-        StyxHostHttpClient secondClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
-        StyxHostHttpClient thirdClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_3, new RuntimeException("An error occurred"))));
-        StyxHostHttpClient fourthClient = mockHostClient(Observable.error(new OriginUnreachableException(ORIGIN_4, new RuntimeException("An error occurred"))));
+        StyxHostHttpClient firstClient = mockHostClient(Flux.error(new OriginUnreachableException(ORIGIN_1, new RuntimeException("An error occurred"))));
+        StyxHostHttpClient secondClient = mockHostClient(Flux.error(new OriginUnreachableException(ORIGIN_2, new RuntimeException("An error occurred"))));
+        StyxHostHttpClient thirdClient = mockHostClient(Flux.error(new OriginUnreachableException(ORIGIN_3, new RuntimeException("An error occurred"))));
+        StyxHostHttpClient fourthClient = mockHostClient(Flux.error(new OriginUnreachableException(ORIGIN_4, new RuntimeException("An error occurred"))));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
@@ -259,7 +259,7 @@ public class StyxBackendServiceClientTest {
 
     @Test
     public void incrementsResponseStatusMetricsForBadResponse() {
-        StyxHostHttpClient hostClient = mockHostClient(just(response(BAD_REQUEST).build()));
+        StyxHostHttpClient hostClient = mockHostClient(Flux.just(response(BAD_REQUEST).build()));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
@@ -276,7 +276,7 @@ public class StyxBackendServiceClientTest {
 
     @Test
     public void incrementsResponseStatusMetricsFor401() {
-        StyxHostHttpClient hostClient = mockHostClient(just(response(UNAUTHORIZED).build()));
+        StyxHostHttpClient hostClient = mockHostClient(Flux.just(response(UNAUTHORIZED).build()));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
@@ -294,7 +294,7 @@ public class StyxBackendServiceClientTest {
 
     @Test
     public void incrementsResponseStatusMetricsFor500() {
-        StyxHostHttpClient hostClient = mockHostClient(just(response(INTERNAL_SERVER_ERROR).build()));
+        StyxHostHttpClient hostClient = mockHostClient(Flux.just(response(INTERNAL_SERVER_ERROR).build()));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
@@ -312,7 +312,7 @@ public class StyxBackendServiceClientTest {
 
     @Test
     public void incrementsResponseStatusMetricsFor501() {
-        StyxHostHttpClient hostClient = mockHostClient(just(response(NOT_IMPLEMENTED).build()));
+        StyxHostHttpClient hostClient = mockHostClient(Flux.just(response(NOT_IMPLEMENTED).build()));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
                 .metricsRegistry(metricRegistry)
@@ -330,7 +330,7 @@ public class StyxBackendServiceClientTest {
     @Test
     public void removesBadContentLength() {
         StyxHostHttpClient hostClient = mockHostClient(
-                just(response(OK)
+                Flux.just(response(OK)
                         .addHeader(CONTENT_LENGTH, 50)
                         .addHeader(TRANSFER_ENCODING, CHUNKED)
                         .build()));
@@ -354,8 +354,9 @@ public class StyxBackendServiceClientTest {
     @Test
     public void updatesCountersWhenTransactionIsCancelled() {
         Origin origin = originWithId("localhost:234", "App-X", "Origin-Y");
-        PublishSubject<LiveHttpResponse> responseSubject = PublishSubject.create();
-        StyxHostHttpClient hostClient = mockHostClient(responseSubject);
+        Processor<LiveHttpResponse, LiveHttpResponse> processor = EmitterProcessor.create();
+
+        StyxHostHttpClient hostClient = mockHostClient(processor);
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
                 .loadBalancer(
@@ -376,7 +377,7 @@ public class StyxBackendServiceClientTest {
     @Test
     public void prefersStickyOrigins() {
         Origin origin = originWithId("localhost:234", "App-X", "Origin-Y");
-        StyxHostHttpClient hostClient = mockHostClient(just(response(OK).build()));
+        StyxHostHttpClient hostClient = mockHostClient(Flux.just(response(OK).build()));
 
         LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)));
 
@@ -402,7 +403,7 @@ public class StyxBackendServiceClientTest {
     @Test
     public void prefersRestrictedOrigins() {
         Origin origin = originWithId("localhost:234", "App-X", "Origin-Y");
-        StyxHostHttpClient hostClient = mockHostClient(just(response(OK).build()));
+        StyxHostHttpClient hostClient = mockHostClient(Flux.just(response(OK).build()));
 
         LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)));
 
@@ -429,7 +430,7 @@ public class StyxBackendServiceClientTest {
     @Test
     public void prefersRestrictedOriginsOverStickyOriginsWhenBothAreConfigured() {
         Origin origin = originWithId("localhost:234", "App-X", "Origin-Y");
-        StyxHostHttpClient hostClient = mockHostClient(just(response(OK).build()));
+        StyxHostHttpClient hostClient = mockHostClient(Flux.just(response(OK).build()));
         LoadBalancer loadBalancer = mockLoadBalancer(Optional.of(remoteHost(origin, toHandler(hostClient), hostClient)));
 
         StyxBackendServiceClient styxHttpClient = new StyxBackendServiceClient.Builder(backendService.id())
@@ -456,7 +457,7 @@ public class StyxBackendServiceClientTest {
     }
 
     private HttpHandler toHandler(StyxHostHttpClient hostClient) {
-        return (request, ctx) -> new Eventual<>(toPublisher(hostClient.sendRequest(request)));
+        return (request, ctx) -> new Eventual<>(hostClient.sendRequest(request));
     }
 
     private RetryPolicy mockRetryPolicy(Boolean first, Boolean... outcomes) {
@@ -487,9 +488,9 @@ public class StyxBackendServiceClientTest {
         return lbStategy;
     }
 
-    private StyxHostHttpClient mockHostClient(Observable<LiveHttpResponse> responseObservable) {
+    private StyxHostHttpClient mockHostClient(Publisher<LiveHttpResponse> responsePublisher) {
         StyxHostHttpClient secondClient = mock(StyxHostHttpClient.class);
-        when(secondClient.sendRequest(any(LiveHttpRequest.class))).thenReturn(responseObservable);
+        when(secondClient.sendRequest(any(LiveHttpRequest.class))).thenReturn(responsePublisher);
         return secondClient;
     }
 

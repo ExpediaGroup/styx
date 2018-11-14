@@ -33,6 +33,7 @@ import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.StyxBackendServiceClient;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Flux;
 
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
@@ -183,7 +184,7 @@ public class StyxBackendServiceClientFactoryTest {
 
     private StyxHostHttpClient hostClient(LiveHttpResponse response) {
         StyxHostHttpClient mockClient = mock(StyxHostHttpClient.class);
-        when(mockClient.sendRequest(any(LiveHttpRequest.class))).thenReturn(just(response));
+        when(mockClient.sendRequest(any(LiveHttpRequest.class))).thenReturn(Flux.just(response));
         when(mockClient.loadBalancingMetric()).thenReturn(new LoadBalancingMetric(1));
         return mockClient;
     }

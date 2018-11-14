@@ -46,6 +46,11 @@ public class ResponseEventListener {
                 cancelAction.run();
                 return TERMINATED;
             })
+            .transition(INITIAL, MessageCompleted.class, event -> {
+                // TODO: Add custom exception type?
+                responseErrorAction.accept(new RuntimeException("Response Observable completed without message headers."));
+                return TERMINATED;
+            })
             .transition(INITIAL, MessageError.class, event -> {
                 responseErrorAction.accept(event.cause());
                 return TERMINATED;
@@ -100,6 +105,7 @@ public class ResponseEventListener {
 
         return publisher
                 .doOnNext(headers -> eventProcessor.submit(new MessageHeaders()))
+                .doOnCompleted(() -> eventProcessor.submit(new MessageCompleted()))
                 .doOnError(cause -> eventProcessor.submit(new MessageError(cause)))
                 .doOnUnsubscribe(() -> eventProcessor.submit(new MessageCancelled()))
                 .map(response -> Requests.doOnError(response, cause -> eventProcessor.submit(new ContentError(cause))))
@@ -131,6 +137,10 @@ public class ResponseEventListener {
         public Throwable cause() {
             return cause;
         }
+    }
+
+    private static class MessageCompleted {
+
     }
 
     private static class MessageCancelled {

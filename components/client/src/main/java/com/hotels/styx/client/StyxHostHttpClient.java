@@ -17,34 +17,43 @@ package com.hotels.styx.client;
 
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.ResponseEventListener;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetric;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
+import org.reactivestreams.Publisher;
 import rx.Observable;
+import rx.RxReactiveStreams;
 
 import static java.util.Objects.requireNonNull;
 
 /**
  * A Styx HTTP Client for proxying to an individual origin host.
  */
-public class StyxHostHttpClient implements BackendServiceClient, LoadBalancingMetricSupplier {
-    private final Transport transport;
+public class StyxHostHttpClient implements LoadBalancingMetricSupplier {
     private final ConnectionPool pool;
 
-    StyxHostHttpClient(ConnectionPool pool, Transport transport) {
-        this.transport = requireNonNull(transport);
+    StyxHostHttpClient(ConnectionPool pool) {
         this.pool = requireNonNull(pool);
     }
 
     public static StyxHostHttpClient create(ConnectionPool pool) {
-        return new StyxHostHttpClient(pool, new Transport());
+        return new StyxHostHttpClient(pool);
     }
 
-    @Override
-    public Observable<LiveHttpResponse> sendRequest(LiveHttpRequest request) {
-        return transport
-                .send(request, pool)
-                .response();
+    public Publisher<LiveHttpResponse> sendRequest(LiveHttpRequest request) {
+        return RxReactiveStreams.toPublisher(
+                pool.borrowConnection()
+                        .flatMap(connection -> {
+                            Observable<LiveHttpResponse> write = connection.write(request);
+
+                            return ResponseEventListener.from(write)
+                                    .whenCancelled(() -> pool.closeConnection(connection))
+                                    .whenResponseError(cause -> pool.closeConnection(connection))
+                                    .whenContentError(cause -> pool.closeConnection(connection))
+                                    .whenCompleted(() -> pool.returnConnection(connection))
+                                    .apply();
+                        }));
     }
 
     public void close() {

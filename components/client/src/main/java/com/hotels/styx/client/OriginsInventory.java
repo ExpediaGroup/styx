@@ -70,7 +70,6 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * An inventory of the origins configured for a single application.
@@ -398,7 +397,7 @@ public final class OriginsInventory
         return origins.values().stream()
                 .filter(origin -> origin.state().equals(state))
                 .map(origin -> {
-                    HttpHandler hostClient = (request, context) -> new Eventual<>(toPublisher(origin.hostClient.sendRequest(request)));
+                    HttpHandler hostClient = (request, context) -> new Eventual<>(origin.hostClient.sendRequest(request));
                     return remoteHost(origin.origin, hostClient, origin.hostClient);
                 })
                 .collect(toList());
