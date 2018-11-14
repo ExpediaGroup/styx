@@ -28,7 +28,7 @@ import org.mockito.ArgumentCaptor;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import rx.Observable;
+import reactor.core.publisher.Mono;
 
 import java.util.concurrent.ExecutionException;
 
@@ -37,9 +37,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.server.UrlMatchingStrategies.urlStartingWith;
@@ -327,7 +327,7 @@ public class StyxHttpClientTest {
     private static NettyConnectionFactory mockConnectionFactory() {
         NettyConnectionFactory factory = mock(NettyConnectionFactory.class);
         when(factory.createConnection(any(Origin.class), any(ConnectionSettings.class), any(SslContext.class)))
-                .thenReturn(Observable.just(mock(Connection.class)));
+                .thenReturn(Mono.just(mock(Connection.class)));
         return factory;
     }
 }

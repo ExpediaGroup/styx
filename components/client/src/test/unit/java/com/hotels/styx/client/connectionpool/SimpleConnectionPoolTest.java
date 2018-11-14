@@ -24,10 +24,9 @@ import org.mockito.Mockito;
 import org.reactivestreams.Publisher;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import rx.Observable;
-import rx.subjects.PublishSubject;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -72,7 +71,7 @@ public class SimpleConnectionPoolTest {
 
     @Test
     public void borrowsConnection() {
-        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class))).thenReturn(Observable.just(connection1));
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class))).thenReturn(Mono.just(connection1));
 
         SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
 
@@ -89,8 +88,8 @@ public class SimpleConnectionPoolTest {
     @Test
     public void borrowsReturnedConnection() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.just(connection1))
-                .thenReturn(Observable.just(connection2));
+                .thenReturn(Mono.just(connection1))
+                .thenReturn(Mono.just(connection2));
 
         SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
 
@@ -118,9 +117,9 @@ public class SimpleConnectionPoolTest {
 
     @Test
     public void emitsConnectionWhenOnceEstablished() {
-        PublishSubject<Connection> subject = PublishSubject.create();
+        EmitterProcessor<Connection> processor = EmitterProcessor.create();
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(subject);
+                .thenReturn(Mono.from(processor));
 
         SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
 
@@ -135,8 +134,8 @@ public class SimpleConnectionPoolTest {
                 })
                 .expectNextCount(0)
                 .then(() -> {
-                    subject.onNext(connection1);
-                    subject.onCompleted();
+                    processor.onNext(connection1);
+                    processor.onComplete();
                 })
                 .expectNext(connection1)
                 .verifyComplete();
@@ -151,8 +150,8 @@ public class SimpleConnectionPoolTest {
     @Test
     public void purgesTerminatedConnections() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.just(connection1))
-                .thenReturn(Observable.just(connection2));
+                .thenReturn(Mono.just(connection1))
+                .thenReturn(Mono.just(connection2));
 
         // Create a new connection
         SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
@@ -180,10 +179,10 @@ public class SimpleConnectionPoolTest {
 
     @Test
     public void returnsConnectionToWaitingSubscribers() throws ExecutionException, InterruptedException {
-        PublishSubject<Connection> subject = PublishSubject.create();
+        EmitterProcessor<Connection> processor = EmitterProcessor.create();
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.just(connection1))
-                .thenReturn(subject);
+                .thenReturn(Mono.just(connection1))
+                .thenReturn(Mono.from(processor));
         SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
 
         // The pool is empty, so the `borrowConnection` triggers a connection establishment.
@@ -192,7 +191,7 @@ public class SimpleConnectionPoolTest {
                 .verifyComplete();
 
         // Another borrow comes in, and triggers a connection establishment.
-        // The subject keeps the connection perpetually in "3-way handshake"
+        // The processor keeps the connection perpetually in "3-way handshake"
         Publisher<Connection> publisher = pool.borrowConnection();
         CompletableFuture<Connection> future = Mono.from(publisher).toFuture();
 
@@ -215,10 +214,10 @@ public class SimpleConnectionPoolTest {
 
     @Test
     public void returnConnectionChecksIfConnectionIsClosed() {
-        PublishSubject<Connection> subject = PublishSubject.create();
+        EmitterProcessor<Connection> processor = EmitterProcessor.create();
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.just(connection1))
-                .thenReturn(subject);
+                .thenReturn(Mono.just(connection1))
+                .thenReturn(Mono.from(processor));
         SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
 
         // The pool is empty, so the `borrowConnection` triggers a connection establishment.
@@ -227,7 +226,7 @@ public class SimpleConnectionPoolTest {
                 .verifyComplete();
 
         // Another borrow comes in, and triggers a connection establishment.
-        // The subject keeps the connection perpetually in "3-way handshake"
+        // The processor keeps the connection perpetually in "3-way handshake"
         CompletableFuture<Connection> future = Mono.from(pool.borrowConnection()).toFuture();
         assertFalse(future.isDone());
 
@@ -260,11 +259,11 @@ public class SimpleConnectionPoolTest {
 
     @Test
     public void unsubscribingRemovesTheWaitingSubscriber() throws ExecutionException, InterruptedException {
-        PublishSubject<Connection> subject1 = PublishSubject.create();
-        PublishSubject<Connection> subject2 = PublishSubject.create();
+        EmitterProcessor<Connection> processor1 = EmitterProcessor.create();
+        EmitterProcessor<Connection> processor2 = EmitterProcessor.create();
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(subject1)
-                .thenReturn(subject2);
+                .thenReturn(Mono.from(processor1))
+                .thenReturn(Mono.from(processor2));
         SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
 
         // The subscriber is pending because the connection is still 3-way handshaking
@@ -281,8 +280,8 @@ public class SimpleConnectionPoolTest {
 
         assertEquals(pool.stats().pendingConnectionCount(), 1);
 
-        subject1.onNext(connection1);
-        subject1.onCompleted();
+        processor1.onNext(connection1);
+        processor1.onComplete();
 
         assertEquals(pool.stats().pendingConnectionCount(), 0);
         assertEquals(pool.stats().availableConnectionCount(), 0);
@@ -296,9 +295,9 @@ public class SimpleConnectionPoolTest {
     @Test
     public void limitsPendingConnectionsDueToConnectionEstablishment() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(PublishSubject.create())
-                .thenReturn(PublishSubject.create())
-                .thenReturn(PublishSubject.create());
+                .thenReturn(Mono.from(EmitterProcessor.create()))
+                .thenReturn(Mono.from(EmitterProcessor.create()))
+                .thenReturn(Mono.from(EmitterProcessor.create()));
 
         ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
                 .maxPendingConnectionsPerHost(2)
@@ -321,10 +320,10 @@ public class SimpleConnectionPoolTest {
     @Test
     public void limitsPendingConnectionsDueToPoolSaturation() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.just(connection1))
-                .thenReturn(Observable.just(connection2))
-                .thenReturn(Observable.just(connection3))
-                .thenReturn(Observable.just(connection4));
+                .thenReturn(Mono.just(connection1))
+                .thenReturn(Mono.just(connection2))
+                .thenReturn(Mono.just(connection3))
+                .thenReturn(Mono.just(connection4));
 
         ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
                 .maxConnectionsPerHost(2)
@@ -363,10 +362,10 @@ public class SimpleConnectionPoolTest {
     @Test
     public void givesReturnedConnectionsToPendingSubscibers() throws ExecutionException, InterruptedException, TimeoutException {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.just(connection1))
-                .thenReturn(Observable.just(connection2))
-                .thenReturn(Observable.just(connection3))
-                .thenReturn(Observable.just(connection4));
+                .thenReturn(Mono.just(connection1))
+                .thenReturn(Mono.just(connection2))
+                .thenReturn(Mono.just(connection3))
+                .thenReturn(Mono.just(connection4));
 
         ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
                 .maxConnectionsPerHost(2)
@@ -409,10 +408,10 @@ public class SimpleConnectionPoolTest {
     @Test
     public void closesConnections() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.just(connection1))
-                .thenReturn(Observable.just(connection2))
-                .thenReturn(Observable.just(connection3))
-                .thenReturn(Observable.just(connection4));
+                .thenReturn(Mono.just(connection1))
+                .thenReturn(Mono.just(connection2))
+                .thenReturn(Mono.just(connection3))
+                .thenReturn(Mono.just(connection4));
 
         ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
                 .maxConnectionsPerHost(2)
@@ -435,10 +434,10 @@ public class SimpleConnectionPoolTest {
     @Test
     public void closeConnectionDecrementsBorrowedCount() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.just(connection1))
-                .thenReturn(Observable.just(connection2))
-                .thenReturn(Observable.just(connection3))
-                .thenReturn(Observable.just(connection4));
+                .thenReturn(Mono.just(connection1))
+                .thenReturn(Mono.just(connection2))
+                .thenReturn(Mono.just(connection3))
+                .thenReturn(Mono.just(connection4));
 
         ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
                 .maxConnectionsPerHost(2)
@@ -481,10 +480,10 @@ public class SimpleConnectionPoolTest {
     @Test
     public void closeConnectionTriggersConnectionEstablishment() throws ExecutionException, InterruptedException {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.just(connection1))
-                .thenReturn(Observable.just(connection2))
-                .thenReturn(Observable.just(connection3))
-                .thenReturn(Observable.just(connection4));
+                .thenReturn(Mono.just(connection1))
+                .thenReturn(Mono.just(connection2))
+                .thenReturn(Mono.just(connection3))
+                .thenReturn(Mono.just(connection4));
 
         ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
                 .maxConnectionsPerHost(2)
@@ -528,10 +527,10 @@ public class SimpleConnectionPoolTest {
     @Test
     public void idleActiveConnectionMakesRoomForOthers() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.just(connection1))
-                .thenReturn(Observable.just(connection2))
-                .thenReturn(Observable.just(connection3))
-                .thenReturn(Observable.just(connection4));
+                .thenReturn(Mono.just(connection1))
+                .thenReturn(Mono.just(connection2))
+                .thenReturn(Mono.just(connection3))
+                .thenReturn(Mono.just(connection4));
 
         ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
                 .maxConnectionsPerHost(2)
@@ -583,9 +582,9 @@ public class SimpleConnectionPoolTest {
     @Test
     public void borrowRetriesThreeTimesOnConnectionEstablishmentFailure() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
-                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
-                .thenReturn(Observable.just(connection4));
+                .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Mono.just(connection4));
 
         ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
                 .maxConnectionsPerHost(2)
@@ -602,10 +601,10 @@ public class SimpleConnectionPoolTest {
     @Test
     public void borrowRetriesThreeTimesOnFailureDueToConnectionClosure() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.just(connection1))
-                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
-                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
-                .thenReturn(Observable.just(connection4));
+                .thenReturn(Mono.just(connection1))
+                .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Mono.just(connection4));
 
         ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
                 .maxConnectionsPerHost(2)
@@ -635,9 +634,9 @@ public class SimpleConnectionPoolTest {
     @Test
     public void borrowGivesUpConnectionEstablishmentAttemptAfterThreeTries() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
-                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
-                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())));
+                .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())));
 
         ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
                 .maxConnectionsPerHost(2)
@@ -658,10 +657,10 @@ public class SimpleConnectionPoolTest {
     @Test
     public void connectionEstablishmentFailureRetryThreeTimesOnlyAtConnectionClosure() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.just(connection1))
-                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
-                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())))
-                .thenReturn(Observable.error(new OriginUnreachableException(origin, new RuntimeException())));
+                .thenReturn(Mono.just(connection1))
+                .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())))
+                .thenReturn(Mono.error(new OriginUnreachableException(origin, new RuntimeException())));
 
         ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
                 .maxConnectionsPerHost(2)
@@ -694,9 +693,9 @@ public class SimpleConnectionPoolTest {
 
     @Test
     public void emitsExceptionWhenPendingConnectionTimesOut() {
-        PublishSubject<Connection> subject = PublishSubject.create();
+        EmitterProcessor<Connection> processor = EmitterProcessor.create();
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(subject);
+                .thenReturn(Mono.from(processor));
 
         ConnectionPoolSettings poolSettings = new ConnectionPoolSettings.Builder()
                 .pendingConnectionTimeout(500, MILLISECONDS)
@@ -710,7 +709,7 @@ public class SimpleConnectionPoolTest {
                 .tookMoreThan(Duration.ofMillis(500));
 
         // And then ensure connection is placed in the active queue:
-        subject.onNext(mock(Connection.class));
+        processor.onNext(mock(Connection.class));
 
         assertEquals(pool.stats().availableConnectionCount(), 1);
         assertEquals(pool.stats().pendingConnectionCount(), 0);
@@ -721,7 +720,7 @@ public class SimpleConnectionPoolTest {
     @Test
     public void registersAsConnectionListener() {
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(Observable.just(connection1));
+                .thenReturn(Mono.just(connection1));
 
         SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
 

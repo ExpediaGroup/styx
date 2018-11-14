@@ -33,7 +33,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
-import rx.Observable;
+import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -69,20 +69,19 @@ public class NettyConnectionFactory implements Connection.Factory {
     }
 
     @Override
-    public Observable<Connection> createConnection(Origin origin, ConnectionSettings connectionSettings) {
+    public Mono<Connection> createConnection(Origin origin, ConnectionSettings connectionSettings) {
         return createConnection(origin, connectionSettings, sslContext);
     }
 
-    public Observable<Connection> createConnection(Origin origin, ConnectionSettings connectionSettings, SslContext sslContext) {
-        return Observable.create(subscriber -> {
+    public Mono<Connection> createConnection(Origin origin, ConnectionSettings connectionSettings, SslContext sslContext) {
+        return Mono.create(sink -> {
             ChannelFuture channelFuture = openConnection(origin, connectionSettings);
 
             channelFuture.addListener(future -> {
                 if (future.isSuccess()) {
-                    subscriber.onNext(new NettyConnection(origin, channelFuture.channel(), httpRequestOperationFactory, httpConfig, sslContext));
-                    subscriber.onCompleted();
+                    sink.success(new NettyConnection(origin, channelFuture.channel(), httpRequestOperationFactory, httpConfig, sslContext));
                 } else {
-                    subscriber.onError(new OriginUnreachableException(origin, future.cause()));
+                    sink.error(new OriginUnreachableException(origin, future.cause()));
                 }
             });
         });

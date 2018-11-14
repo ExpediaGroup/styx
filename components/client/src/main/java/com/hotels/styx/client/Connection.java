@@ -18,6 +18,7 @@ package com.hotels.styx.client;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;
+import reactor.core.publisher.Mono;
 import rx.Observable;
 
 import java.io.Closeable;
@@ -39,7 +40,7 @@ public interface Connection extends Closeable {
          * @param connectionSettings connection pool configuration
          * @return the newly created connection
          */
-        Observable<Connection> createConnection(Origin origin, ConnectionSettings connectionSettings);
+        Mono<Connection> createConnection(Origin origin, ConnectionSettings connectionSettings);
     }
 
     /**

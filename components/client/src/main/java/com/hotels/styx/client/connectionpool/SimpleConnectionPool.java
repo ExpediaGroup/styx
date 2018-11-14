@@ -25,7 +25,6 @@ import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
-import rx.Observable;
 
 import java.time.Duration;
 import java.util.Queue;
@@ -108,13 +107,13 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
                 );
     }
 
-    private Observable<Connection> newConnection(int attempts) {
+    private Mono<Connection> newConnection(int attempts) {
         if (attempts > 0) {
             return this.connectionFactory.createConnection(this.origin, this.connectionSettings)
-                    .onErrorResumeNext(cause -> newConnection(attempts - 1))
+                    .onErrorResume(cause -> newConnection(attempts - 1))
                     .doOnNext(it -> it.addConnectionListener(SimpleConnectionPool.this));
         } else {
-            return Observable.error(new RuntimeException("Unable to create connection"));
+            return Mono.error(new RuntimeException("Unable to create connection"));
         }
     }
 

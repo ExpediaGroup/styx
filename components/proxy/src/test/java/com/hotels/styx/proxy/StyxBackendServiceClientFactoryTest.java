@@ -53,7 +53,6 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static rx.Observable.just;
 
 public class StyxBackendServiceClientFactoryTest {
     private Environment environment;
@@ -71,7 +70,7 @@ public class StyxBackendServiceClientFactoryTest {
                 .build();
 
         when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
-                .thenReturn(just(mock(Connection.class)));
+                .thenReturn(Mono.just(mock(Connection.class)));
     }
 
     @Test

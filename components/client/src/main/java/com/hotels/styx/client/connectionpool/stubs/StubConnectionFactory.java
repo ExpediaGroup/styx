@@ -16,11 +16,12 @@
 package com.hotels.styx.client.connectionpool.stubs;
 
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.extension.Announcer;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.extension.Announcer;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
-import com.hotels.styx.api.extension.Origin;
+import reactor.core.publisher.Mono;
 import rx.Observable;
 
 import static com.google.common.base.Objects.toStringHelper;
@@ -30,10 +31,9 @@ import static com.google.common.base.Objects.toStringHelper;
  */
 public class StubConnectionFactory implements Connection.Factory {
     @Override
-    public Observable<Connection> createConnection(Origin origin, ConnectionSettings connectionPoolConfiguration) {
-        return Observable.create(subscriber -> {
-            subscriber.onNext(new StubConnection(origin));
-            subscriber.onCompleted();
+    public Mono<Connection> createConnection(Origin origin, ConnectionSettings connectionPoolConfiguration) {
+        return Mono.create(sink -> {
+            sink.success(new StubConnection(origin));
         });
     }
 
