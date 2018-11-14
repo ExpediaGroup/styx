@@ -207,6 +207,14 @@ Styx also measures metrics from the underlying JVM:
     jvm.memory.total.init
     jvm.memory.total.max
     jvm.memory.total.used
+    jvm.os.cpu.process.load
+    jvm.os.cpu.process.time
+    jvm.os.cpu.system.load
+    jvm.os.memory.physical.free
+    jvm.os.memory.physical.total
+    jvm.os.memory.virtual.committed
+    jvm.os.swapSpace.free
+    jvm.os.swapSpace.total
     jvm.thread.blocked.count
     jvm.thread.count
     jvm.thread.daemon.count
