@@ -49,6 +49,7 @@ public final class CoreMetrics {
     public static void registerCoreMetrics(Version buildInfo, MetricRegistry metrics) {
         registerVersionMetric(buildInfo, metrics);
         registerJvmMetrics(metrics);
+        metrics.register("os", new OperatingSystemMetricSet());
     }
 
     private static void registerVersionMetric(Version buildInfo, MetricRegistry metrics) {
@@ -79,7 +80,6 @@ public final class CoreMetrics {
         scoped.register("uptime.formatted", (Gauge<String>) () -> formatTime(runtimeMxBean.getUptime()));
         scoped.register("netty", new NettyAllocatorMetricSet("pooled-allocator", PooledByteBufAllocator.DEFAULT.metric()));
         scoped.register("netty", new NettyAllocatorMetricSet("unpooled-allocator", UnpooledByteBufAllocator.DEFAULT.metric()));
-        scoped.register("os", new OperatingSystemMetricSet());
     }
 
     private static String formatTime(long timeInMilliseconds) {

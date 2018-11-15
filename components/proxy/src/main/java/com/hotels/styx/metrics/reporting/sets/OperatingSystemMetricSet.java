@@ -45,9 +45,9 @@ public final class OperatingSystemMetricSet implements MetricSet {
             gauges.put("fileDescriptors.open", unixBean::getOpenFileDescriptorCount);
         });
 
-        gauges.put("cpu.process.load", bean::getProcessCpuLoad);
-        gauges.put("cpu.process.time", bean::getProcessCpuTime);
-        gauges.put("cpu.system.load", bean::getSystemCpuLoad);
+        gauges.put("process.cpu.load", bean::getProcessCpuLoad);
+        gauges.put("process.cpu.time", bean::getProcessCpuTime);
+        gauges.put("system.cpu.load", bean::getSystemCpuLoad);
 
         gauges.put("memory.physical.free", bean::getFreePhysicalMemorySize);
         gauges.put("memory.physical.total", bean::getTotalPhysicalMemorySize);
@@ -56,7 +56,7 @@ public final class OperatingSystemMetricSet implements MetricSet {
         gauges.put("swapSpace.free", bean::getFreeSwapSpaceSize);
         gauges.put("swapSpace.total", bean::getTotalSwapSpaceSize);
 
-        // Using the "wrong" type then casting it allows us to avoid writing (Gauge<...>) in every single "put" call above
+        // Using a Map<String, Gauge<?>> to avoid casting each metric provider to Gauge<?> above, but at the expense of having to cast the return value toMap`.
         return (Map) gauges;
     }
 

@@ -120,20 +120,30 @@ public class CoreMetricsTest {
                 "jvm.thread.timed_waiting.count",
                 "jvm.thread.waiting.count",
                 "jvm.uptime",
-                "jvm.uptime.formatted",
+                "jvm.uptime.formatted"
+        ));
+    }
 
+    @Test
+    public void registersOperatingSystemMetrics() {
+        MetricRegistry metrics = new CodaHaleMetricRegistry();
+        CoreMetrics.registerCoreMetrics(version, metrics);
+
+        Map<String, Gauge> gauges = metrics.getGauges();
+
+        assertThat(gauges.keySet(), hasItems(
 // Unix system only
-//                "jvm.os.fileDescriptors.max",
-//                "jvm.os.fileDescriptors.open",
+//                "os.fileDescriptors.max",
+//                "os.fileDescriptors.open",
 
-                "jvm.os.cpu.process.load",
-                "jvm.os.cpu.process.time",
-                "jvm.os.cpu.system.load",
-                "jvm.os.memory.physical.free",
-                "jvm.os.memory.physical.total",
-                "jvm.os.memory.virtual.committed",
-                "jvm.os.swapSpace.free",
-                "jvm.os.swapSpace.total"
-                ));
+                "os.process.cpu.load",
+                "os.process.cpu.time",
+                "os.system.cpu.load",
+                "os.memory.physical.free",
+                "os.memory.physical.total",
+                "os.memory.virtual.committed",
+                "os.swapSpace.free",
+                "os.swapSpace.total"
+        ));
     }
 }
