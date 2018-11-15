@@ -57,6 +57,11 @@ public final class OperatingSystemMetricSet implements MetricSet {
         gauges.put("swapSpace.total", bean::getTotalSwapSpaceSize);
 
         // Using a Map<String, Gauge<?>> to avoid casting each metric provider to Gauge<?> above, but at the expense of having to cast the return value toMap`.
+        return rawCast(gauges);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <K, V> Map<K, V> rawCast(Map<?, ?> gauges) {
         return (Map) gauges;
     }
 
