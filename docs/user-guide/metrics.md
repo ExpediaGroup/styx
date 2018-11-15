@@ -221,6 +221,25 @@ Styx also measures metrics from the underlying JVM:
     jvm.uptime.formatted
 
 
+### Operating System Metrics
+
+Styx also measures metrics from the underlying operating system:
+
+    os.process.cpu.load
+    os.process.cpu.time
+    os.system.cpu.load
+    os.memory.physical.free
+    os.memory.physical.total
+    os.memory.virtual.committed
+    os.swapSpace.free
+    os.swapSpace.total
+
+These ones are only available on a Unix-based system:
+
+    os.fileDescriptors.max
+    os.fileDescriptors.open
+
+
 ### Undocumented or unstable metrics
 
 

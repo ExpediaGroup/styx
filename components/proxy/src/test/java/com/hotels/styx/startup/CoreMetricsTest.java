@@ -123,4 +123,27 @@ public class CoreMetricsTest {
                 "jvm.uptime.formatted"
         ));
     }
+
+    @Test
+    public void registersOperatingSystemMetrics() {
+        MetricRegistry metrics = new CodaHaleMetricRegistry();
+        CoreMetrics.registerCoreMetrics(version, metrics);
+
+        Map<String, Gauge> gauges = metrics.getGauges();
+
+        assertThat(gauges.keySet(), hasItems(
+// Unix system only
+//                "os.fileDescriptors.max",
+//                "os.fileDescriptors.open",
+
+                "os.process.cpu.load",
+                "os.process.cpu.time",
+                "os.system.cpu.load",
+                "os.memory.physical.free",
+                "os.memory.physical.total",
+                "os.memory.virtual.committed",
+                "os.swapSpace.free",
+                "os.swapSpace.total"
+        ));
+    }
 }

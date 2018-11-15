@@ -23,6 +23,7 @@ import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.hotels.styx.Version;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.metrics.reporting.sets.NettyAllocatorMetricSet;
+import com.hotels.styx.metrics.reporting.sets.OperatingSystemMetricSet;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import org.slf4j.Logger;
@@ -48,6 +49,7 @@ public final class CoreMetrics {
     public static void registerCoreMetrics(Version buildInfo, MetricRegistry metrics) {
         registerVersionMetric(buildInfo, metrics);
         registerJvmMetrics(metrics);
+        metrics.register("os", new OperatingSystemMetricSet());
     }
 
     private static void registerVersionMetric(Version buildInfo, MetricRegistry metrics) {
@@ -89,4 +91,5 @@ public final class CoreMetrics {
 
         return format("%dd %dh %dm", days, hours, minutes);
     }
+
 }
