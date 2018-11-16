@@ -32,8 +32,9 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 import rx.Observable;
-import rx.observers.TestSubscriber;
 
 import java.util.List;
 
@@ -83,29 +84,21 @@ public class NettyConnectionFactoryTest {
 
     @Test
     public void createsAndOpensAConnection() {
-        Observable<Connection> connection = connectionFactory.createConnection(healthyOrigin, connectionSettings);
+        Mono<Connection> connection = connectionFactory.createConnection(healthyOrigin, connectionSettings);
         assertThat(connection, is(not(nullValue())));
     }
 
     @Test
     public void openingAConnectionFailsIfExceedsTimeOut() {
-        TestSubscriber<Connection> subscriber = new TestSubscriber<>();
-        connectionFactory.createConnection(deadOrigin, connectionSettings).subscribe(subscriber);
-        subscriber.awaitTerminalEvent();
-        assertThat(connectionError(subscriber), is(instanceOf(OriginUnreachableException.class)));
-    }
-
-    private static Throwable connectionError(TestSubscriber<Connection> subscriber) {
-        return subscriber.getOnErrorEvents().get(0);
+        StepVerifier.create(connectionFactory.createConnection(deadOrigin, connectionSettings))
+                .expectError(OriginUnreachableException.class);
     }
 
     @Test
     public void createsWorkingHttpConnection() {
         server.stub(urlStartingWith("/"), aResponse().withStatus(200));
 
-        NettyConnection connection = (NettyConnection) connectionFactory.createConnection(healthyOrigin, connectionSettings)
-                .toBlocking()
-                .single();
+        NettyConnection connection = (NettyConnection) connectionFactory.createConnection(healthyOrigin, connectionSettings).block();
 
         List<HttpObject> responseObjects = sendRequestAndReceiveResponse(requestToOrigin(), connection.channel());
 

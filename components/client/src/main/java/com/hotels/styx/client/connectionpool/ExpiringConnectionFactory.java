@@ -16,10 +16,10 @@
 package com.hotels.styx.client.connectionpool;
 
 import com.google.common.base.Ticker;
+import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.ConnectionSettings;
-import com.hotels.styx.api.extension.Origin;
-import rx.Observable;
+import reactor.core.publisher.Mono;
 
 import java.util.function.Supplier;
 
@@ -41,7 +41,7 @@ public class ExpiringConnectionFactory implements Connection.Factory {
     }
 
     @Override
-    public Observable<Connection> createConnection(Origin origin, ConnectionSettings connectionSettings) {
+    public Mono<Connection> createConnection(Origin origin, ConnectionSettings connectionSettings) {
         return connectionFactory
                 .createConnection(origin, connectionSettings)
                 .map(this::decorate);

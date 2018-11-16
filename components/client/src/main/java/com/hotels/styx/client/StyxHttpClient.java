@@ -26,7 +26,8 @@ import com.hotels.styx.client.netty.connectionpool.HttpRequestOperation;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.client.ssl.SslContextFactory;
 import io.netty.handler.ssl.SslContext;
-import rx.Observable;
+import reactor.core.publisher.Mono;
+import rx.RxReactiveStreams;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -37,7 +38,6 @@ import static com.hotels.styx.api.HttpHeaderNames.HOST;
 import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
-import static com.hotels.styx.common.CompletableFutures.fromSingleObservable;
 import static java.util.Objects.requireNonNull;
 import static rx.RxReactiveStreams.toObservable;
 
@@ -76,7 +76,7 @@ public final class StyxHttpClient implements HttpClient {
 
     /**
      * Indicates if a request should be sent over secure {@code https} or insecure {@code http} protocol.
-     *
+     * <p>
      * A value of {@code true} indicates that a request should be sent over a secure {@code https} protocol.
      * A value of (@code false} indicates that a request should be sent over an insecure {@code http} protocol.
      *
@@ -104,17 +104,18 @@ public final class StyxHttpClient implements HttpClient {
 
         SslContext sslContext = getSslContext(params.https(), params.tlsSettings());
 
-        Observable<HttpResponse> responseObservable = connectionFactory.createConnection(
+        Mono<HttpResponse> responseObservable = connectionFactory.createConnection(
                 origin,
                 new ConnectionSettings(params.connectTimeoutMillis()),
                 sslContext
         ).flatMap(connection ->
-                connection.write(networkRequest.stream())
-                        .flatMap(response -> toObservable(response.aggregate(params.maxResponseSize())))
-                        .doOnTerminate(connection::close)
+                Mono.from(RxReactiveStreams.toPublisher(
+                        connection.write(networkRequest.stream())
+                                .flatMap(response -> toObservable(response.aggregate(params.maxResponseSize())))
+                                .doOnTerminate(connection::close)))
         );
 
-        return fromSingleObservable(responseObservable);
+        return responseObservable.toFuture();
 
     }
 
@@ -229,11 +230,11 @@ public final class StyxHttpClient implements HttpClient {
 
         /**
          * Maximum time in milliseconds this client is willing to wait for the origin server to respond.
-         *
+         * <p>
          * Sets a maximum tolerated length of inactivity on TCP connection before remote origin is considered
          * unresponsive. After this time a {@link com.hotels.styx.api.exceptions.ResponseTimeoutException} is
          * thrown is emitted on the response future.
-         *
+         * <p>
          * Note that an actual response can take considerably longer time to arrive than @{code responseTimeoutMillis}.
          * This can happen if origin sends the response slowly. Origin may send headers first, and then
          * slowly drip feed the response body. This is acceptable as long as the TCP connection does not
