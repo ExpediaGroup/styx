@@ -135,8 +135,7 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
     val duration = System.currentTimeMillis() - start.get()
 
     assert(maybeResponse.failed.get.isInstanceOf[ResponseTimeoutException], "- Client emitted an incorrect exception!")
-    println("responseTimeout: " + duration)
-    duration shouldBe duration +- 250
+    duration shouldBe responseTimeout.toLong +- 250
   }
 
   def time[A](codeBlock: => A) = {

@@ -120,7 +120,6 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
     activeOrigins,
     new RoundRobinStrategy(activeOrigins, activeOrigins.snapshot()))
 
-  // TODO: fix them
   test("retries the next available origin on failure") {
     val backendService = new BackendService.Builder()
       .origins(unhealthyOriginOne, unhealthyOriginTwo, unhealthyOriginThree, healthyOriginTwo)

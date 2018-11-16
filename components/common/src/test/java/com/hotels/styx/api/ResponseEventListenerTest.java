@@ -48,7 +48,7 @@ public class ResponseEventListenerTest {
     }
 
     @Test
-    public void doesntFireUnnecessaryEvents() {
+    public void doesntFireEventsThatNeverOccurred() {
         Mono<LiveHttpResponse> publisher = Mono.just(response(OK).body(new ByteStream(Flux.just(new Buffer("hey", UTF_8)))).build());
 
         Flux<LiveHttpResponse> listener = ResponseEventListener.from(publisher)
