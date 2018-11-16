@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -63,9 +64,9 @@ public class LiveHttpRequestTest {
                 .cookies(requestCookie("CookieName", "CookieValue"))
                 .build();
 
-        HttpRequest full = streamingRequest.aggregate(0x1000)
-                .asCompletableFuture()
-                .get();
+
+
+        HttpRequest full = Mono.from(streamingRequest.aggregate(0x1000)).block();
 
         assertThat(full.method(), is(POST));
         assertThat(full.url(), is(url("/foo/bar").build()));
@@ -85,9 +86,7 @@ public class LiveHttpRequestTest {
                 .body(new ByteStream(Flux.just(content)))
                 .build();
 
-        HttpRequest fullRequest = original.aggregate(100)
-                .asCompletableFuture()
-                .get();
+        HttpRequest fullRequest = Mono.from(original.aggregate(100)).block();
 
         assertThat(content.delegate().refCnt(), is(0));
 
@@ -96,10 +95,7 @@ public class LiveHttpRequestTest {
 
     @Test(dataProvider = "emptyBodyRequests")
     public void encodesToStreamingHttpRequestWithEmptyBody(LiveHttpRequest streamingRequest) throws Exception {
-        HttpRequest full = streamingRequest.aggregate(0x1000)
-                .asCompletableFuture()
-                .get();
-
+        HttpRequest full = Mono.from(streamingRequest.aggregate(0x1000)).block();
         assertThat(full.body(), is(new byte[0]));
     }
 

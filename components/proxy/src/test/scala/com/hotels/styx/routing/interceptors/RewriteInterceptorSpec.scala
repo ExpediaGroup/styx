@@ -15,14 +15,14 @@
  */
 package com.hotels.styx.routing.interceptors
 
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.api._
-import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition
-import com.hotels.styx.api.HttpResponseStatus.OK
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, Matchers}
+import reactor.core.publisher.Mono
 
 class RewriteInterceptorSpec extends FunSpec with Matchers with MockitoSugar {
 
@@ -43,7 +43,7 @@ class RewriteInterceptorSpec extends FunSpec with Matchers with MockitoSugar {
     val interceptor = new RewriteInterceptor.ConfigFactory().build(config)
     val capturingChain = new CapturingChain
 
-    val response = StyxFutures.await(interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain).asCompletableFuture())
+    val response = Mono.from(interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain)).block()
     capturingChain.request().path() should be ("/app/foo")
   }
 
@@ -60,7 +60,7 @@ class RewriteInterceptorSpec extends FunSpec with Matchers with MockitoSugar {
     val interceptor = new RewriteInterceptor.ConfigFactory().build(config)
     val capturingChain = new CapturingChain
 
-    val response = StyxFutures.await(interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain).asCompletableFuture())
+    val response = Mono.from(interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain)).block()
     capturingChain.request().path() should be ("/foo")
   }
 

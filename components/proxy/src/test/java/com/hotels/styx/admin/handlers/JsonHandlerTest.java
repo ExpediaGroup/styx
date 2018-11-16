@@ -20,13 +20,13 @@ import com.hotels.styx.api.Clock;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.System.currentTimeMillis;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
@@ -106,11 +106,11 @@ public class JsonHandlerTest {
     }
 
     private String responseFor(JsonHandler<?> handler, LiveHttpRequest request) {
-        return await(
+        return Mono.from(
                 handler.handle(request, HttpInterceptorContext.create())
                         .flatMap(response -> response.aggregate(1000000))
                         .map(response -> response.bodyAs(UTF_8))
-                        .asCompletableFuture());
+        ).block();
     }
 
     private static class Convertible {

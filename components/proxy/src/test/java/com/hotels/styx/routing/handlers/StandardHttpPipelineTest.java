@@ -23,6 +23,7 @@ import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.server.track.RequestTracker;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -30,10 +31,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
-import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.common.StyxFutures.await;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -152,13 +152,13 @@ public class StandardHttpPipelineTest {
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
-    public void sendsExceptionUponMultipleSubscription() throws Exception {
+    public void sendsExceptionUponMultipleSubscription() {
         HttpHandler handler = (request, context) -> Eventual.of(response(OK).build());
 
         StandardHttpPipeline pipeline = new StandardHttpPipeline(handler);
 
         Eventual<LiveHttpResponse> responseObservable = pipeline.handle(get("/").build(), HttpInterceptorContext.create());
-        LiveHttpResponse response = responseObservable.asCompletableFuture().get();
+        LiveHttpResponse response = Mono.from(responseObservable).block();
         assertThat(response.status(), is(OK));
 
         toObservable(responseObservable).toBlocking().first();
@@ -188,7 +188,7 @@ public class StandardHttpPipelineTest {
         return (request, chain) -> {
             Eventual<LiveHttpResponse> responseObservable = chain.proceed(request);
 
-            await(responseObservable.asCompletableFuture());
+            Mono.from(responseObservable).block();
 
             return responseObservable;
         };
@@ -208,7 +208,7 @@ public class StandardHttpPipelineTest {
     private LiveHttpResponse sendRequestTo(StandardHttpPipeline pipeline) {
         HttpInterceptor.Context context = new HttpInterceptorContext(InetSocketAddress.createUnresolved("127.0.0.1", 0));
 
-        return await(pipeline.handle(get("/").build(), context).asCompletableFuture());
+        return Mono.from(pipeline.handle(get("/").build(), context)).block();
     }
 
     private StandardHttpPipeline pipeline(HttpInterceptor... interceptors) {

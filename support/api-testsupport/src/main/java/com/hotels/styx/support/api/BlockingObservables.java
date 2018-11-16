@@ -18,12 +18,9 @@ package com.hotels.styx.support.api;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpResponse;
+import reactor.core.publisher.Mono;
 import rx.Observable;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-
-import static java.lang.Thread.currentThread;
 import static rx.RxReactiveStreams.toObservable;
 
 
@@ -35,26 +32,8 @@ public final class BlockingObservables {
         return observable.toBlocking().single();
     }
 
-    public static <T> T getFirst(Eventual<T> observable) {
-        return futureGetAndPropagate(observable.asCompletableFuture());
-    }
-
-    private static <T> T futureGetAndPropagate(CompletableFuture<T> future) {
-        try {
-            return future.get();
-        } catch (InterruptedException e) {
-            currentThread().interrupt();
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
     public static HttpResponse waitForResponse(Eventual<LiveHttpResponse> responseObs) {
-        return futureGetAndPropagate(responseObs
-                .flatMap(response -> response.aggregate(120*1024))
-                .asCompletableFuture());
+        return Mono.from(responseObs.flatMap(response -> response.aggregate(120*1024))).block();
     }
 
     public static HttpResponse waitForResponse(Observable<LiveHttpResponse> responseObs) {

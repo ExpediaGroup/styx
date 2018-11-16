@@ -24,6 +24,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -41,14 +42,13 @@ import static com.google.common.net.MediaType.OCTET_STREAM;
 import static com.google.common.net.MediaType.PDF;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.net.MediaType.PNG;
-import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.server.handlers.MediaTypes.ICON;
 import static com.hotels.styx.server.handlers.MediaTypes.MICROSOFT_ASF_VIDEO;
 import static com.hotels.styx.server.handlers.MediaTypes.MICROSOFT_MS_VIDEO;
 import static com.hotels.styx.server.handlers.MediaTypes.WAV_AUDIO;
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -181,6 +181,6 @@ public class StaticFileHandlerTest {
     }
 
     private LiveHttpResponse handle(LiveHttpRequest request) {
-        return getFirst(handler.handle(request, new HttpInterceptorContext()));
+        return Mono.from(handler.handle(request, new HttpInterceptorContext())).block();
     }
 }

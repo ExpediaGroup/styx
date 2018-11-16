@@ -21,6 +21,7 @@ import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
@@ -33,13 +34,13 @@ import static org.mockito.Mockito.when;
 
 public class ProxyToBackendRouteTest {
     @Test
-    public void proxiesUsingClient() throws Exception {
+    public void proxiesUsingClient() {
         BackendServiceClient client = mock(BackendServiceClient.class);
         when(client.sendRequest(any(LiveHttpRequest.class))).thenReturn(Flux.just(response(OK).build()));
 
         ProxyToBackendRoute proxy = ProxyToBackendRoute.proxyToBackend(client);
 
-        LiveHttpResponse response = proxy.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
+        LiveHttpResponse response = Mono.from(proxy.handle(get("/foo").build(), HttpInterceptorContext.create())).block();
         assertThat(response.status(), is(OK));
     }
 }

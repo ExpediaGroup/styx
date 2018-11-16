@@ -22,23 +22,19 @@ import com.hotels.styx.Environment
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.extension.Origin.newOriginBuilder
 import com.hotels.styx.api.extension.service.BackendService
-import com.hotels.styx.api.extension.service.spi.{AbstractRegistry, Registry}
-import com.hotels.styx.api.extension.service.spi.{AbstractRegistry, Registry}
-import com.hotels.styx.api.{HttpResponseStatus, LiveHttpRequest, LiveHttpResponse}
-import com.hotels.styx.client.{BackendServiceClient, OriginStatsFactory, OriginsInventory}
 import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded
 import com.hotels.styx.api.extension.service.spi.Registry.{Changes, ReloadResult}
-import com.hotels.styx.common.StyxFutures
+import com.hotels.styx.api.extension.service.spi.{AbstractRegistry, Registry}
+import com.hotels.styx.api.{LiveHttpRequest, LiveHttpResponse}
+import com.hotels.styx.client.{BackendServiceClient, OriginStatsFactory, OriginsInventory}
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.config.RouteHandlerDefinition
 import com.hotels.styx.server.HttpInterceptorContext
-import com.hotels.styx.support.api.BlockingObservables
 import org.reactivestreams.Publisher
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{FunSpec, Matchers}
 import reactor.core.publisher.Mono
-import rx.Observable
 
 import scala.collection.JavaConversions._
 
@@ -69,13 +65,13 @@ class BackendServiceProxySpec extends FunSpec with Matchers with MockitoSugar {
     val handler = new BackendServiceProxy.ConfigFactory(environment, clientFactory(), services).build(List(), null, config)
     backendRegistry.reload()
 
-    val hwaResponse = StyxFutures.await(handler.handle(hwaRequest, HttpInterceptorContext.create).asCompletableFuture())
+    val hwaResponse = Mono.from(handler.handle(hwaRequest, HttpInterceptorContext.create)).block()
     hwaResponse.header("X-Backend-Service").get() should be("hwa")
 
-    val laResponse = StyxFutures.await(handler.handle(laRequest, HttpInterceptorContext.create).asCompletableFuture())
+    val laResponse = Mono.from(handler.handle(laRequest, HttpInterceptorContext.create)).block()
     laResponse.header("X-Backend-Service").get() should be("la")
 
-    val baResponse = StyxFutures.await(handler.handle(baRequest, HttpInterceptorContext.create).asCompletableFuture())
+    val baResponse = Mono.from(handler.handle(baRequest, HttpInterceptorContext.create)).block()
     baResponse.header("X-Backend-Service").get() should be("ba")
   }
 

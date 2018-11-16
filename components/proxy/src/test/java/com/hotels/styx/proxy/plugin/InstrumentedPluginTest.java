@@ -18,9 +18,9 @@ package com.hotels.styx.proxy.plugin;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor.Chain;
-import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -28,16 +28,15 @@ import com.hotels.styx.api.plugins.spi.PluginException;
 import com.hotels.styx.support.api.SimpleEnvironment;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 import rx.observers.TestSubscriber;
 
-import java.util.concurrent.ExecutionException;
-
-import static com.hotels.styx.api.LiveHttpRequest.get;
-import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.Eventual.error;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.plugins.spi.Plugin.PASS_THROUGH;
 import static com.hotels.styx.proxy.plugin.InstrumentedPlugin.formattedExceptionName;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
@@ -71,14 +70,14 @@ public class InstrumentedPluginTest {
     }
 
     @Test
-    public void metricIsRecordedWhenResponseIsMappedToErrorStatus() throws ExecutionException, InterruptedException {
+    public void metricIsRecordedWhenResponseIsMappedToErrorStatus() {
         Chain chain = request -> aResponse(OK);
 
         InstrumentedPlugin plugin = instrumentedPlugin("replaceStatusCode", (request, aChain) ->
                 aChain.proceed(request)
                         .map(response -> responseWithNewStatusCode(response, INTERNAL_SERVER_ERROR)));
 
-        LiveHttpResponse response = plugin.intercept(someRequest, chain).asCompletableFuture().get();
+        LiveHttpResponse response = Mono.from(plugin.intercept(someRequest, chain)).block();
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
         assertThat(metricRegistry.meter("plugins.replaceStatusCode.response.status.500").getCount(), is(1L));
@@ -86,11 +85,11 @@ public class InstrumentedPluginTest {
     }
 
     @Test
-    public void metricIsRecordedWhenPluginReturnsErrorStatusEarly() throws ExecutionException, InterruptedException {
+    public void metricIsRecordedWhenPluginReturnsErrorStatusEarly() {
         InstrumentedPlugin plugin = instrumentedPlugin("returnEarly",
                 (request, chain) -> aResponse(INTERNAL_SERVER_ERROR));
 
-        LiveHttpResponse response = plugin.intercept(someRequest, chain).asCompletableFuture().get();
+        LiveHttpResponse response = Mono.from(plugin.intercept(someRequest, chain)).block();
 
         verify(chain, never()).proceed(any(LiveHttpRequest.class));
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
@@ -99,12 +98,12 @@ public class InstrumentedPluginTest {
     }
 
     @Test
-    public void metricIsNotRecordedWhenErrorStatusIsReturnedByChain() throws ExecutionException, InterruptedException {
+    public void metricIsNotRecordedWhenErrorStatusIsReturnedByChain() {
         Chain chain = request -> aResponse(INTERNAL_SERVER_ERROR);
 
         InstrumentedPlugin plugin = instrumentedPlugin("doNotRecordMe", PASS_THROUGH);
 
-        LiveHttpResponse response = plugin.intercept(someRequest, chain).asCompletableFuture().get();
+        LiveHttpResponse response = Mono.from(plugin.intercept(someRequest, chain)).block();
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
         assertThat(metricRegistry.meter("plugins.doNotRecordMe.response.status.500").getCount(), is(0L));
@@ -112,14 +111,14 @@ public class InstrumentedPluginTest {
     }
 
     @Test
-    public void errorsMetricIsNotRecordedWhenResponseIsMappedToNon5005xxStatus() throws ExecutionException, InterruptedException {
+    public void errorsMetricIsNotRecordedWhenResponseIsMappedToNon5005xxStatus() {
         Chain chain = request -> aResponse(OK);
 
         InstrumentedPlugin plugin = instrumentedPlugin("replaceStatusCode", (request, aChain) ->
                 aChain.proceed(request)
                         .map(response -> responseWithNewStatusCode(response, BAD_GATEWAY)));
 
-        LiveHttpResponse response = plugin.intercept(someRequest, chain).asCompletableFuture().get();
+        LiveHttpResponse response = Mono.from(plugin.intercept(someRequest, chain)).block();
 
         assertThat(response.status(), is(BAD_GATEWAY));
         assertThat(metricRegistry.meter("plugins.replaceStatusCode.response.status.502").getCount(), is(1L));
@@ -127,11 +126,11 @@ public class InstrumentedPluginTest {
     }
 
     @Test
-    public void errorsMetricIsNotRecordedWhenPluginReturnsNon5005xxStatusEarly() throws ExecutionException, InterruptedException {
+    public void errorsMetricIsNotRecordedWhenPluginReturnsNon5005xxStatusEarly() {
         InstrumentedPlugin plugin = instrumentedPlugin("returnEarly",
                 (request, chain) -> aResponse(BAD_GATEWAY));
 
-        LiveHttpResponse response = plugin.intercept(someRequest, chain).asCompletableFuture().get();
+        LiveHttpResponse response = Mono.from(plugin.intercept(someRequest, chain)).block();
 
         verify(chain, never()).proceed(any(LiveHttpRequest.class));
         assertThat(response.status(), is(BAD_GATEWAY));

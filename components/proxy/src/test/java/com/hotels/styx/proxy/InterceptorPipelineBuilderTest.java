@@ -22,23 +22,24 @@ import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
-import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.hotels.styx.api.LiveHttpRequest;
 
 public class InterceptorPipelineBuilderTest {
     private Environment environment;
@@ -72,7 +73,7 @@ public class InterceptorPipelineBuilderTest {
     @Test
     public void buildsPipelineWithInterceptors() throws Exception {
         HttpHandler pipeline = new InterceptorPipelineBuilder(environment, plugins, handler, false).build();
-        LiveHttpResponse response = pipeline.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
+        LiveHttpResponse response = Mono.from(pipeline.handle(get("/foo").build(), HttpInterceptorContext.create())).block();
 
         assertThat(response.header("plug1"), isValue("1"));
         assertThat(response.header("plug2"), isValue("1"));

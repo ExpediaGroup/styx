@@ -31,6 +31,7 @@ import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -210,8 +211,8 @@ public class BackendServicesRouterTest {
         assertThat(proxyTo(route2, request).header(ORIGIN_ID_DEFAULT), isValue(APP_B));
     }
 
-    private LiveHttpResponse proxyTo(Optional<HttpHandler> pipeline, LiveHttpRequest request) throws ExecutionException, InterruptedException {
-        return pipeline.get().handle(request, context).asCompletableFuture().get();
+    private LiveHttpResponse proxyTo(Optional<HttpHandler> pipeline, LiveHttpRequest request) {
+        return Mono.from(pipeline.get().handle(request, context)).block();
     }
 
     @Test

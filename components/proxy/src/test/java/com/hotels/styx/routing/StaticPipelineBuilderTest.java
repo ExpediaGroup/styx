@@ -19,10 +19,10 @@ import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.AbstractRegistry;
 import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
@@ -32,10 +32,10 @@ import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
-import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded;
 import static java.util.Arrays.asList;
@@ -63,7 +63,7 @@ public class StaticPipelineBuilderTest {
     public void buildsInterceptorPipelineForBackendServices() throws Exception {
 
         HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, ImmutableList.of(), false).build();
-        LiveHttpResponse response = handler.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
+        LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).block();
         assertThat(response.status(), is(OK));
     }
 
@@ -76,7 +76,7 @@ public class StaticPipelineBuilderTest {
 
         HttpHandler handler = new StaticPipelineFactory(clientFactory, environment, registry, plugins, false).build();
 
-        LiveHttpResponse response = handler.handle(get("/foo").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
+        LiveHttpResponse response = Mono.from(handler.handle(get("/foo").build(), HttpInterceptorContext.create())).block();
         assertThat(response.status(), is(OK));
         assertThat(response.headers("X-From-Plugin"), hasItems("B", "A"));
     }

@@ -56,7 +56,7 @@ class ProxyToBackendSpec extends FunSpec with Matchers {
   it("builds ProxyToBackend handler") {
     val handler = new ProxyToBackend.ConfigFactory(environment, clientFactory()).build(List().asJava, null, config)
 
-    val response = StyxFutures.await(handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create).asCompletableFuture())
+    val response = Mono.from(handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create)).block()
     response.status should be (OK)
   }
 

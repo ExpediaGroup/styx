@@ -17,11 +17,11 @@ package com.hotels.styx.routing.handlers
 
 import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.LiveHttpRequest
-import com.hotels.styx.common.StyxFutures
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.config.RouteHandlerDefinition
 import com.hotels.styx.server.HttpInterceptorContext
 import org.scalatest.{FunSpec, Matchers}
+import reactor.core.publisher.Mono
 
 import scala.collection.JavaConversions._
 
@@ -40,7 +40,7 @@ class StaticResponseHandlerSpec extends FunSpec with Matchers {
 
   it("builds static response handler") {
     val handler = new StaticResponseHandler.ConfigFactory().build(List(), null, config)
-    val response = StyxFutures.await(handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create).asCompletableFuture())
+    val response = Mono.from(handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create)).block()
 
     response.status should be (CREATED)
   }

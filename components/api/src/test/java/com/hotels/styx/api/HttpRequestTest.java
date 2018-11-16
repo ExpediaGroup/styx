@@ -74,12 +74,9 @@ public class HttpRequestTest {
                 header("Cookie", "CookieName=CookieValue")));
         assertThat(streaming.cookies(), contains(requestCookie("CookieName", "CookieValue")));
 
-        String body = streaming.aggregate(0x10000)
-                .asCompletableFuture()
-                .get()
-                .bodyAs(UTF_8);
-
-        assertThat(body, is("foobar"));
+        StepVerifier.create(streaming.aggregate(0x10000).map(it -> it.bodyAs(UTF_8)))
+                .expectNext("foobar")
+                .verifyComplete();
     }
 
     @Test(dataProvider = "emptyBodyRequests")
