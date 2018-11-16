@@ -1,6 +1,3 @@
-
-<<<<<<< HEAD
-=======
 <a name="styx-styx-1.0.0.beta2"></a>
 ## [styx-styx-1.0.0.beta2](https://github.com/HotelsDotCom/styx/compare/styx-1.0.0.beta1...styx-styx-1.0.0.beta2) (2018-10-31)
 
@@ -18,7 +15,6 @@
 * Upgrade to a newer version of fasterxml ([#318](https://github.com/HotelsDotCom/styx/issues/318))
 
 
->>>>>>> upstream/release-styx-styx-1.0.0.beta2
 <a name="styx-1.0.0.beta1"></a>
 ## [styx-1.0.0.beta1](https://github.com/HotelsDotCom/styx/compare/styx-0.7.10...styx-1.0.0.beta1) (2018-10-26)
 
