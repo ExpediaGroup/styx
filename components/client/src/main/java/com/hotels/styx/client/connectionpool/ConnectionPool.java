@@ -15,13 +15,12 @@
  */
 package com.hotels.styx.client.connectionpool;
 
-import com.hotels.styx.client.Connection;
 import com.hotels.styx.api.extension.Origin;
-import rx.Observable;
+import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
+import com.hotels.styx.client.Connection;
+import org.reactivestreams.Publisher;
 
 import java.io.Closeable;
-import java.util.function.Function;
-import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 
 /**
  * A pool of connections.
@@ -116,7 +115,7 @@ public interface ConnectionPool extends Closeable {
      *
      * @return the borrowed connection
      */
-    Observable<Connection> borrowConnection();
+    Publisher<Connection> borrowConnection();
 
     /**
      * Returns back the connection to the host's pool. May close the connection if the
@@ -157,14 +156,6 @@ public interface ConnectionPool extends Closeable {
      * @return the pool settings
      */
     ConnectionPoolSettings settings();
-
-    default <T> Observable<T> withConnection(Function<Connection, Observable<T>> task) {
-        return borrowConnection()
-                .flatMap(connection ->
-                        task.apply(connection)
-                                .doOnCompleted(() -> returnConnection(connection))
-                                .doOnError(throwable -> closeConnection(connection)));
-    }
 
     /**
      * Closes this pool and releases any system resources associated with it.

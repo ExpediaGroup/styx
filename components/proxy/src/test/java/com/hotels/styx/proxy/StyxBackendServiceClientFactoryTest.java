@@ -34,6 +34,7 @@ import com.hotels.styx.client.StyxBackendServiceClient;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
@@ -128,9 +129,9 @@ public class StyxBackendServiceClientFactoryTest {
         LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("x").toString())).build();
         LiveHttpRequest requesty = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("y").toString())).build();
 
-        LiveHttpResponse responsez = styxBackendServiceClient.sendRequest(requestz).toBlocking().first();
-        LiveHttpResponse responsex = styxBackendServiceClient.sendRequest(requestx).toBlocking().first();
-        LiveHttpResponse responsey = styxBackendServiceClient.sendRequest(requesty).toBlocking().first();
+        LiveHttpResponse responsez = Mono.from(styxBackendServiceClient.sendRequest(requestz)).block();
+        LiveHttpResponse responsex = Mono.from(styxBackendServiceClient.sendRequest(requestx)).block();
+        LiveHttpResponse responsey = Mono.from(styxBackendServiceClient.sendRequest(requesty)).block();
 
         assertThat(responsex.header("X-Origin-Id").get(), is("x"));
         assertThat(responsey.header("X-Origin-Id").get(), is("y"));
@@ -173,9 +174,9 @@ public class StyxBackendServiceClientFactoryTest {
         LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString())).build();
         LiveHttpRequest requesty = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("y").toString())).build();
 
-        LiveHttpResponse responsez = styxBackendServiceClient.sendRequest(requestz).toBlocking().first();
-        LiveHttpResponse responsex = styxBackendServiceClient.sendRequest(requestx).toBlocking().first();
-        LiveHttpResponse responsey = styxBackendServiceClient.sendRequest(requesty).toBlocking().first();
+        LiveHttpResponse responsez = Mono.from(styxBackendServiceClient.sendRequest(requestz)).block();
+        LiveHttpResponse responsex = Mono.from(styxBackendServiceClient.sendRequest(requestx)).block();
+        LiveHttpResponse responsey = Mono.from(styxBackendServiceClient.sendRequest(requesty)).block();
 
         assertThat(responsex.header("X-Origin-Id").get(), is("x"));
         assertThat(responsey.header("X-Origin-Id").get(), is("y"));

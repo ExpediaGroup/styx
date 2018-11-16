@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
-import static rx.RxReactiveStreams.toObservable;
 
 /**
  * A connection pool implementation.
@@ -72,12 +71,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     }
 
     @Override
-    public Observable<Connection> borrowConnection() {
-        return toObservable(borrowConnection2());
-    }
-
-    @VisibleForTesting
-    Publisher<Connection> borrowConnection2() {
+    public Publisher<Connection> borrowConnection() {
         return Mono.<Connection>create(sink -> {
             Connection connection = dequeue();
             if (connection != null) {

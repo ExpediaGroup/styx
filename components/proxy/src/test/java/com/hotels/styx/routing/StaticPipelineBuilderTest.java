@@ -28,6 +28,7 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -42,8 +43,6 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
-import static rx.Observable.just;
-
 
 public class StaticPipelineBuilderTest {
 
@@ -55,7 +54,7 @@ public class StaticPipelineBuilderTest {
     @BeforeMethod
     public void staticPipelineBuilderTest() {
         environment = new Environment.Builder().build();
-        clientFactory = (backendService, originsInventory, originStatsFactory) -> request -> just(response(OK).build());
+        clientFactory = (backendService, originsInventory, originStatsFactory) -> request -> Mono.just(response(OK).build());
         registry = backendRegistry(newBackendServiceBuilder().origins(newOriginBuilder("localhost", 0).build())
                 .path("/foo").build());
     }

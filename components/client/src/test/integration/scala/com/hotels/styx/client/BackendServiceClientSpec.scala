@@ -15,21 +15,22 @@
  */
 package com.hotels.styx.client
 
+import java.util.concurrent.atomic.AtomicLong
+
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.google.common.base.Charsets._
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest.get
+import com.hotels.styx.api.LiveHttpResponse
+import com.hotels.styx.api.exceptions.ResponseTimeoutException
 import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
-import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
-import com.hotels.styx.api.exceptions.ResponseTimeoutException
-import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.extension.service.BackendService
+import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
-import StyxBackendServiceClient._
-import com.hotels.styx.api.LiveHttpResponse
+import com.hotels.styx.client.StyxBackendServiceClient._
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
-import com.hotels.styx.support.api.BlockingObservables.{waitForResponse, waitForStreamingResponse}
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import io.netty.buffer.Unpooled._
@@ -38,9 +39,13 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
+import org.reactivestreams.Subscription
 import org.scalatest._
 import org.scalatest.mock.MockitoSugar
+import reactor.core.publisher.Mono
 import rx.observers.TestSubscriber
+
+import scala.util.Try
 
 class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matchers with BeforeAndAfter with MockitoSugar {
   var webappOrigin: Origin = _
@@ -82,7 +87,7 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
 
   test("Emits an HTTP response even when content observable remains un-subscribed.") {
     originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
-    val response = waitForResponse(client.sendRequest(get("/foo/1").build()))
+    val response = Mono.from(client.sendRequest(get("/foo/1").build())).block()
     assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
   }
 
@@ -90,7 +95,11 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
   test("Emits an HTTP response containing Content-Length from persistent connection that stays open.") {
     originOneServer.stub(urlStartingWith("/"), response200OkWithContentLengthHeader("Test message body."))
 
-    val response = waitForResponse(client.sendRequest(get("/foo/2").build()))
+    val response = Mono.from(client.sendRequest(get("/foo/2").build()))
+      .flatMap((liveHttpResponse: LiveHttpResponse) => {
+        Mono.from(liveHttpResponse.aggregate(10000))
+      })
+      .block()
 
     assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
     assert(response.bodyAs(UTF_8) == "Test message body.", s"\nReceived wrong/unexpected response body.")
@@ -100,26 +109,33 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
   ignore("Determines response content length from server closing the connection.") {
     // originRespondingWith(response200OkFollowedFollowedByServerConnectionClose("Test message body."))
 
-    val response = waitForResponse(client.sendRequest(get("/foo/3").build()))
-    assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
+    val response = Mono.from(client.sendRequest(get("/foo/3").build()))
+      .flatMap((liveHttpResponse: LiveHttpResponse) => {
+        Mono.from(liveHttpResponse.aggregate(10000))
+      })
+      .block()
 
+    assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
     assert(response.body().nonEmpty, s"\nResponse body is absent.")
     assert(response.bodyAs(UTF_8) == "Test message body.", s"\nIncorrect response body.")
   }
 
   test("Emits onError when origin responds too slowly") {
+    val start = new AtomicLong()
     originOneServer.stub(urlStartingWith("/"), aResponse
       .withStatus(OK.code())
       .withFixedDelay(3000))
 
-    client.sendRequest(get("/foo/4").build()).subscribe(testSubscriber)
-    val duration = time {
-      testSubscriber.awaitTerminalEvent()
+    val maybeResponse = Try {
+      Mono.from(client.sendRequest(get("/foo/4").build()))
+        .doOnSubscribe((t: Subscription) => start.set(System.currentTimeMillis()))
+        .block()
     }
 
-    assert(testSubscriber.getOnErrorEvents.get(0).isInstanceOf[ResponseTimeoutException], "- Client emitted an incorrect exception!")
-    println("responseTimeout: " + duration)
-    duration shouldBe responseTimeout +- 250
+    val duration = System.currentTimeMillis() - start.get()
+
+    assert(maybeResponse.failed.get.isInstanceOf[ResponseTimeoutException], "- Client emitted an incorrect exception!")
+    duration shouldBe responseTimeout.toLong +- 250
   }
 
   def time[A](codeBlock: => A) = {
@@ -128,12 +144,11 @@ class BackendServiceClientSpec extends FunSuite with BeforeAndAfterAll with Matc
     ((System.nanoTime - s) / 1e6).asInstanceOf[Int]
   }
 
-  private def response200OkWithContentLengthHeader(content: String): ResponseDefinitionBuilder = {
-    return aResponse
+  private def response200OkWithContentLengthHeader(content: String): ResponseDefinitionBuilder = aResponse
       .withStatus(OK.code())
       .withHeader(CONTENT_LENGTH, content.length.toString)
       .withBody(content)
-  }
+
 
   def response200OkFollowedFollowedByServerConnectionClose(content: String): (ChannelHandlerContext, Any) => Any = {
     (ctx: ChannelHandlerContext, msg: scala.Any) => {

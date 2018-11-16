@@ -16,28 +16,29 @@
 package com.hotels.styx.proxy;
 
 import com.hotels.styx.Environment;
-import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.OriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import rx.Observable;
+import reactor.core.publisher.Flux;
 
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
-import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.extension.service.BackendService.newBackendServiceBuilder;
 import static com.hotels.styx.client.StyxHeaderConfig.ORIGIN_ID_DEFAULT;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
@@ -51,8 +52,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static rx.Observable.just;
-import com.hotels.styx.api.LiveHttpRequest;
 
 public class BackendServicesRouterTest {
     private static final String APP_A = "appA";
@@ -345,8 +344,8 @@ public class BackendServicesRouterTest {
                 .build();
     }
 
-    private static Observable<LiveHttpResponse> responseWithOriginIdHeader(BackendService backendService) {
-        return just(response(OK)
+    private static Flux<LiveHttpResponse> responseWithOriginIdHeader(BackendService backendService) {
+        return Flux.just(response(OK)
                 .header(ORIGIN_ID_DEFAULT, backendService.id())
                 .build());
     }

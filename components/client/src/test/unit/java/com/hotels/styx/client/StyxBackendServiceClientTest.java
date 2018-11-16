@@ -40,9 +40,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
-import rx.Observable;
-import rx.Subscription;
-import rx.observers.TestSubscriber;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.Optional;
 
@@ -65,7 +64,6 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.any;
@@ -108,7 +106,7 @@ public class StyxBackendServiceClientTest {
                         ))
                 .build();
 
-        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ)).block();
 
         assertThat(response.status(), is(OK));
         verify(hostClient).sendRequest(eq(SOME_REQ));
@@ -128,7 +126,7 @@ public class StyxBackendServiceClientTest {
                 .retryPolicy(retryPolicy)
                 .build();
 
-        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ)).block();
 
         ArgumentCaptor<RetryPolicy.Context> retryContext = ArgumentCaptor.forClass(RetryPolicy.Context.class);
         ArgumentCaptor<LoadBalancer> lbPreference = ArgumentCaptor.forClass(LoadBalancer.class);
@@ -167,7 +165,7 @@ public class StyxBackendServiceClientTest {
                 .retryPolicy(retryPolicy)
                 .build();
 
-        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ)).block();
 
         ArgumentCaptor<RetryPolicy.Context> retryContext = ArgumentCaptor.forClass(RetryPolicy.Context.class);
         ArgumentCaptor<LoadBalancer> lbPreference = ArgumentCaptor.forClass(LoadBalancer.class);
@@ -208,19 +206,14 @@ public class StyxBackendServiceClientTest {
                 .retryPolicy(mockRetryPolicy(true, false))
                 .build();
 
-        TestSubscriber<LiveHttpResponse> testSubscriber = new TestSubscriber<>();
-        styxHttpClient.sendRequest(SOME_REQ).subscribe(testSubscriber);
-        testSubscriber.awaitTerminalEvent();
-
-        assertThat(testSubscriber.getOnErrorEvents().size(), is(1));
-        assertThat(testSubscriber.getOnErrorEvents().get(0), instanceOf(OriginUnreachableException.class));
+        StepVerifier.create(styxHttpClient.sendRequest(SOME_REQ))
+                .verifyError(OriginUnreachableException.class);
 
         InOrder ordered = inOrder(firstClient, secondClient, thirdClient);
         ordered.verify(firstClient).sendRequest(eq(SOME_REQ));
         ordered.verify(secondClient).sendRequest(eq(SOME_REQ));
         ordered.verify(thirdClient, never()).sendRequest(eq(SOME_REQ));
     }
-
 
     @Test
     public void retriesAtMost3Times() {
@@ -242,12 +235,8 @@ public class StyxBackendServiceClientTest {
                         mockRetryPolicy(true, true, true, true))
                 .build();
 
-        TestSubscriber<LiveHttpResponse> testSubscriber = new TestSubscriber<>();
-        styxHttpClient.sendRequest(SOME_REQ).subscribe(testSubscriber);
-        testSubscriber.awaitTerminalEvent();
-
-        assertThat(testSubscriber.getOnErrorEvents().size(), is(1));
-        assertThat(testSubscriber.getOnErrorEvents().get(0), instanceOf(NoAvailableHostsException.class));
+        StepVerifier.create(styxHttpClient.sendRequest(SOME_REQ))
+                .verifyError(NoAvailableHostsException.class);
 
         InOrder ordered = inOrder(firstClient, secondClient, thirdClient, fourthClient);
         ordered.verify(firstClient).sendRequest(eq(SOME_REQ));
@@ -267,7 +256,7 @@ public class StyxBackendServiceClientTest {
                         mockLoadBalancer(Optional.of(remoteHost(SOME_ORIGIN, toHandler(hostClient), hostClient))))
                 .build();
 
-        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ)).block();
 
         assertThat(response.status(), is(BAD_REQUEST));
         verify(hostClient).sendRequest(eq(SOME_REQ));
@@ -285,7 +274,7 @@ public class StyxBackendServiceClientTest {
                 )
                 .build();
 
-        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ)).block();
 
         assertThat(response.status(), is(UNAUTHORIZED));
         verify(hostClient).sendRequest(eq(SOME_REQ));
@@ -303,7 +292,7 @@ public class StyxBackendServiceClientTest {
                 )
                 .build();
 
-        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ)).block();
 
         assertThat(response.status(), is(INTERNAL_SERVER_ERROR));
         verify(hostClient).sendRequest(eq(SOME_REQ));
@@ -321,7 +310,7 @@ public class StyxBackendServiceClientTest {
                 )
                 .build();
 
-        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ)).block();
         assertThat(response.status(), is(NOT_IMPLEMENTED));
         verify(hostClient).sendRequest(SOME_REQ);
         assertThat(metricRegistry.counter("origins.response.status.501").getCount(), is(1L));
@@ -343,7 +332,7 @@ public class StyxBackendServiceClientTest {
                 .enableContentValidation()
                 .build();
 
-        LiveHttpResponse response = styxHttpClient.sendRequest(SOME_REQ).toBlocking().first();
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(SOME_REQ)).block();
 
         assertThat(response.status(), is(OK));
 
@@ -365,10 +354,9 @@ public class StyxBackendServiceClientTest {
                 .metricsRegistry(metricRegistry)
                 .build();
 
-        Observable<LiveHttpResponse> transaction = styxHttpClient.sendRequest(SOME_REQ);
-        Subscription subscription = transaction.subscribe();
-
-        subscription.unsubscribe();
+        StepVerifier.create(styxHttpClient.sendRequest(SOME_REQ))
+                .thenCancel()
+                .verify();
 
         assertThat(metricRegistry.counter("origins.App-X.requests.cancelled").getCount(), is(1L));
         assertThat(metricRegistry.counter("origins.App-X.Origin-Y.requests.cancelled").getCount(), is(1L));
@@ -386,12 +374,11 @@ public class StyxBackendServiceClientTest {
                 .metricsRegistry(metricRegistry)
                 .build();
 
-        LiveHttpResponse response = styxHttpClient.sendRequest(
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(
                 get("/foo")
                         .cookies(requestCookie("styx_origin_" + Id.GENERIC_APP, "Origin-Y"))
-                        .build())
-                .toBlocking()
-                .first();
+                        .build()))
+                .block();
 
         assertThat(response.status(), is(OK));
 
@@ -413,12 +400,10 @@ public class StyxBackendServiceClientTest {
                 .originsRestrictionCookieName("restrictedOrigin")
                 .build();
 
-        LiveHttpResponse response = styxHttpClient.sendRequest(
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(
                 get("/foo")
                         .cookies(requestCookie("restrictedOrigin", "Origin-Y"))
-                        .build())
-                .toBlocking()
-                .first();
+                        .build())).block();
 
         assertThat(response.status(), is(OK));
 
@@ -439,15 +424,14 @@ public class StyxBackendServiceClientTest {
                 .metricsRegistry(metricRegistry)
                 .build();
 
-        LiveHttpResponse response = styxHttpClient.sendRequest(
+        LiveHttpResponse response = Mono.from(styxHttpClient.sendRequest(
                 get("/foo")
                         .cookies(
                                 requestCookie("restrictedOrigin", "Origin-Y"),
                                 requestCookie("styx_origin_" + Id.GENERIC_APP, "Origin-X")
                         )
-                        .build())
-                .toBlocking()
-                .first();
+                        .build()))
+                .block();
 
         assertThat(response.status(), is(OK));
 

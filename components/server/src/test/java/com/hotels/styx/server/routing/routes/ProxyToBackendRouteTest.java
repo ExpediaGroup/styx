@@ -15,27 +15,27 @@
  */
 package com.hotels.styx.server.routing.routes;
 
-import com.hotels.styx.client.BackendServiceClient;
+import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
-import rx.Observable;
+import reactor.core.publisher.Flux;
 
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
-import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.hotels.styx.api.LiveHttpRequest;
 
 public class ProxyToBackendRouteTest {
     @Test
     public void proxiesUsingClient() throws Exception {
         BackendServiceClient client = mock(BackendServiceClient.class);
-        when(client.sendRequest(any(LiveHttpRequest.class))).thenReturn(Observable.just(response(OK).build()));
+        when(client.sendRequest(any(LiveHttpRequest.class))).thenReturn(Flux.just(response(OK).build()));
 
         ProxyToBackendRoute proxy = ProxyToBackendRoute.proxyToBackend(client);
 

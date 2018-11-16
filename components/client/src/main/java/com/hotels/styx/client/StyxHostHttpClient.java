@@ -22,7 +22,7 @@ import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetric;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import org.reactivestreams.Publisher;
-import rx.Observable;
+import reactor.core.publisher.Flux;
 import rx.RxReactiveStreams;
 
 import static java.util.Objects.requireNonNull;
@@ -42,18 +42,17 @@ public class StyxHostHttpClient implements LoadBalancingMetricSupplier {
     }
 
     public Publisher<LiveHttpResponse> sendRequest(LiveHttpRequest request) {
-        return RxReactiveStreams.toPublisher(
-                pool.borrowConnection()
-                        .flatMap(connection -> {
-                            Observable<LiveHttpResponse> write = connection.write(request);
+        return Flux.from(pool.borrowConnection())
+                .flatMap(connection -> {
+                    Publisher<LiveHttpResponse> write = RxReactiveStreams.toPublisher(connection.write(request));
 
-                            return ResponseEventListener.from(write)
-                                    .whenCancelled(() -> pool.closeConnection(connection))
-                                    .whenResponseError(cause -> pool.closeConnection(connection))
-                                    .whenContentError(cause -> pool.closeConnection(connection))
-                                    .whenCompleted(() -> pool.returnConnection(connection))
-                                    .apply();
-                        }));
+                    return ResponseEventListener.from(write)
+                            .whenCancelled(() -> pool.closeConnection(connection))
+                            .whenResponseError(cause -> pool.closeConnection(connection))
+                            .whenContentError(cause -> pool.closeConnection(connection))
+                            .whenCompleted(() -> pool.returnConnection(connection))
+                            .apply();
+                });
     }
 
     public void close() {

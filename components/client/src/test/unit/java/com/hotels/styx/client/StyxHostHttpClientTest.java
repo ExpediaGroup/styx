@@ -22,8 +22,11 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
+import org.reactivestreams.Subscription;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import reactor.core.publisher.BaseSubscriber;
+import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 import reactor.test.publisher.TestPublisher;
 import rx.Observable;
@@ -108,12 +111,19 @@ public class StyxHostHttpClientTest {
         ConnectionPool pool = mockPool(connection);
 
         StyxHostHttpClient hostClient = new StyxHostHttpClient(pool);
+        AtomicReference<Subscription> subscription = new AtomicReference<>();
 
-        StepVerifier.create(hostClient.sendRequest(request), 0)
-                .expectNextCount(0)
-                .thenCancel()
-                .verify();
+        Flux.from(hostClient.sendRequest(request))
+                .subscribe(new BaseSubscriber<LiveHttpResponse>() {
+                    @Override
+                    protected void hookOnSubscribe(Subscription s) {
+                        super.hookOnSubscribe(s);
+                        s.request(1);
+                        subscription.set(s);
+                    }
+                });
 
+        subscription.get().cancel();
         verify(pool).closeConnection(any(Connection.class));
     }
 
@@ -210,7 +220,7 @@ public class StyxHostHttpClientTest {
 
     ConnectionPool mockPool(Connection connection) {
         ConnectionPool pool = mock(ConnectionPool.class);
-        when(pool.borrowConnection()).thenReturn(just(connection));
+        when(pool.borrowConnection()).thenReturn(Flux.just(connection));
         return pool;
     }
 }

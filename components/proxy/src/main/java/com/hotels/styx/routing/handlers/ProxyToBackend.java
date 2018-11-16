@@ -44,7 +44,6 @@ import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpReq
 import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
-import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * Routing object that proxies a request to a configured backend.
@@ -58,7 +57,7 @@ public class ProxyToBackend implements HttpHandler {
 
     @Override
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
-        return new Eventual<>(toPublisher(client.sendRequest(request)));
+        return new Eventual<>(client.sendRequest(request));
     }
 
     /**

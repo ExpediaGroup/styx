@@ -23,7 +23,6 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.client.BackendServiceClient;
 
 import static java.util.Objects.requireNonNull;
-import static rx.RxReactiveStreams.toPublisher;
 
 /**
  * A HTTP router route which proxies to Styx backend application.
@@ -41,6 +40,6 @@ public final class ProxyToBackendRoute implements HttpHandler {
 
     @Override
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
-        return new Eventual<>(toPublisher(client.sendRequest(request)));
+        return new Eventual<>(client.sendRequest(request));
     }
 }

@@ -22,19 +22,18 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpRequest.get
-import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.extension.Origin._
 import com.hotels.styx.api.extension.service.{BackendService, StickySessionConfig}
 import com.hotels.styx.api.extension.{ActiveOrigins, Origin}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
-import StyxBackendServiceClient.newHttpClientBuilder
+import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.RoundRobinStrategy
 import com.hotels.styx.client.retry.RetryNTimes
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.common.FreePorts.freePort
-import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.server.FakeHttpServer
 import com.hotels.styx.support.server.UrlMatchingStrategies._
 import io.netty.channel.ChannelHandlerContext
@@ -42,6 +41,7 @@ import io.netty.handler.codec.http.HttpHeaders.Names._
 import io.netty.handler.codec.http.HttpHeaders.Values._
 import io.netty.handler.codec.http.LastHttpContent
 import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import reactor.core.publisher.Mono
 
 class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers with OriginSupport {
 
@@ -130,7 +130,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
       .loadBalancer(stickySessionStrategy(activeOrigins(backendService)))
       .build
 
-    val response = waitForResponse(client.sendRequest(get("/version.txt").build))
+    val response = Mono.from(client.sendRequest(get("/version.txt").build)).block()
     response.status() should be (OK)
   }
 
@@ -161,7 +161,7 @@ class RetryHandlingSpec extends FunSuite with BeforeAndAfterAll with Matchers wi
 
     val request: LiveHttpRequest = get("/version.txt").build
 
-    val response = waitForResponse(client.sendRequest(request))
+    val response = Mono.from(client.sendRequest(request)).block()
 
     val cookie = response.cookie("styx_origin_generic-app").get()
 

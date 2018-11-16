@@ -18,11 +18,13 @@ package com.hotels.styx.client
 import ch.qos.logback.classic.Level
 import com.google.common.base.Charsets._
 import com.hotels.styx.api.HttpRequest.get
-import com.hotels.styx.api.{Buffer, LiveHttpResponse, extension}
+import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.exceptions.ResponseTimeoutException
+import com.hotels.styx.api.extension
 import com.hotels.styx.api.extension.ActiveOrigins
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
-import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
+import com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler
@@ -39,9 +41,8 @@ import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
-import rx.observers.TestSubscriber
-import com.hotels.styx.api.exceptions.ResponseTimeoutException
-import rx.RxReactiveStreams.toObservable
+import reactor.core.publisher.Mono
+import reactor.test.StepVerifier
 
 import scala.compat.java8.StreamConverters._
 import scala.concurrent.duration._
@@ -109,32 +110,26 @@ class OriginClosesConnectionSpec extends FunSuite
 
     val backendService = BackendService(
       origins = Origins(originOne),
-      responseTimeout = timeout.milliseconds).asJava
-    val styxClient = com.hotels.styx.client.StyxBackendServiceClient.newHttpClientBuilder(
-      backendService.id)
+      responseTimeout = TWO_SECONDS.milliseconds).asJava
+
+    val styxClient = newHttpClientBuilder(backendService.id)
         .loadBalancer(busyConnectionStrategy(activeOrigins(backendService)))
       .build
 
-    val responseSubscriber = new TestSubscriber[LiveHttpResponse]()
-    val contentSubscriber = new TestSubscriber[Buffer](1)
-
-    val startTime = System.currentTimeMillis()
-    val responseObservable = styxClient.sendRequest(
+    val clientResponse = styxClient.sendRequest(
       get("/foo/3")
         .addHeader(HOST, originHost)
         .build()
         .stream)
 
-    responseObservable
-      .doOnNext((t: LiveHttpResponse) => toObservable(t.body()).subscribe(contentSubscriber))
-      .subscribe(responseSubscriber)
+    val response = Mono.from(clientResponse).block()
 
-    responseSubscriber.awaitTerminalEvent()
-    val duration = System.currentTimeMillis() - startTime
+    val duration = StepVerifier.create(response.body(), 1)
+      .expectNextCount(1)
+      .thenAwait()
+      .verifyError(classOf[ResponseTimeoutException])
 
-    responseSubscriber.getOnErrorEvents.get(0) shouldBe a[ResponseTimeoutException]
-    contentSubscriber.getOnErrorEvents.get(0) shouldBe a[ResponseTimeoutException]
-    duration shouldBe (timeout.toLong +- 220.millis.toMillis)
+    duration.toMillis shouldBe (TWO_SECONDS.toLong +- 220.millis.toMillis)
   }
 
   def response200OkFollowedFollowedByServerConnectionClose(content: String): (ChannelHandlerContext, Any) => Any = {

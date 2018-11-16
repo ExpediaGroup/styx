@@ -22,10 +22,10 @@ import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.connectionpool.stubs.StubConnectionFactory;
 import com.hotels.styx.support.MultithreadedStressTester;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import java.util.Random;
 
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -71,7 +71,7 @@ public class SimpleConnectionPoolStressTest {
     }
 
     private Connection borrowConnectionSynchronously() {
-        return getFirst(pool.borrowConnection());
+        return Mono.from(pool.borrowConnection()).block();
     }
 
 }

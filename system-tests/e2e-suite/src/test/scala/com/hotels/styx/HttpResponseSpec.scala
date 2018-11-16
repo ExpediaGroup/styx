@@ -17,20 +17,18 @@ package com.hotels.styx
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import com.hotels.styx.api.LiveHttpRequest.get
-import com.hotels.styx.api.Id.id
-import com.hotels.styx.api.extension.ActiveOrigins
-import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
 import com.hotels.styx.api.HttpResponseStatus._
+import com.hotels.styx.api.Id.id
+import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.api.LiveHttpResponse
-import com.hotels.styx.api.extension.service
+import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancer
+import com.hotels.styx.api.extension.{ActiveOrigins, service}
 import com.hotels.styx.client.OriginsInventory.newOriginsInventoryBuilder
 import com.hotels.styx.client.StyxBackendServiceClient
 import com.hotels.styx.client.StyxBackendServiceClient._
 import com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy
 import com.hotels.styx.support.NettyOrigins
-import com.hotels.styx.support.api.BlockingObservables.waitForResponse
 import com.hotels.styx.support.configuration.{BackendService, ImplicitOriginConversions, Origins}
 import io.netty.buffer.Unpooled._
 import io.netty.channel.ChannelFutureListener.CLOSE
@@ -38,6 +36,7 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpVersion._
 import io.netty.handler.codec.http._
 import org.scalatest._
+import reactor.core.publisher.Mono
 import rx.observers.TestSubscriber
 
 import scala.concurrent.duration._
@@ -83,7 +82,9 @@ class HttpResponseSpec extends FunSuite
   test("Determines response content length from server closing the connection.") {
     originRespondingWith(response200OkFollowedFollowedByServerConnectionClose("Test message body."))
 
-    val response = waitForResponse(client.sendRequest(get("/foo/3").build()))
+    val response = Mono.from(client.sendRequest(get("/foo/3").build()))
+      .flatMap(live => Mono.from(live.aggregate(10000)))
+      .block()
 
     assert(response.status() == OK, s"\nDid not get response with 200 OK status.\n$response\n")
     assert(response.bodyAs(UTF_8) == "Test message body.", s"\nIncorrect response body.")

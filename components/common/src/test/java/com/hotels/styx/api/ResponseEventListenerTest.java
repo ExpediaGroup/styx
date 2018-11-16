@@ -15,24 +15,20 @@
  */
 package com.hotels.styx.api;
 
+import org.reactivestreams.Publisher;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import reactor.test.publisher.TestPublisher;
-import rx.Observable;
-import rx.observers.TestSubscriber;
-import rx.subjects.PublishSubject;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
@@ -52,60 +48,37 @@ public class ResponseEventListenerTest {
     }
 
     @Test
-    public void doesntFireUnnecessaryEvents() {
-        Observable<LiveHttpResponse> publisher = Observable.just(response(OK).body(new ByteStream(Flux.just(new Buffer("hey", UTF_8)))).build());
-        TestSubscriber<LiveHttpResponse> subscriber = TestSubscriber.create();
+    public void doesntFireEventsThatNeverOccurred() {
+        Mono<LiveHttpResponse> publisher = Mono.just(response(OK).body(new ByteStream(Flux.just(new Buffer("hey", UTF_8)))).build());
 
-        Observable<LiveHttpResponse> response = ResponseEventListener.from(publisher)
+        Flux<LiveHttpResponse> listener = ResponseEventListener.from(publisher)
                 .whenCancelled(() -> cancelled.set(true))
                 .whenResponseError(cause -> responseError.set(cause))
                 .whenContentError(cause -> contentError.set(cause))
                 .whenCompleted(() -> completed.set(true))
                 .apply();
 
-        response.subscribe(subscriber);
-
-        subscriber.getOnNextEvents().get(0).consume();
-
-        assertFalse(cancelled.get());
-        assertNull(responseError.get());
-        assertNull(contentError.get());
-        assertTrue(completed.get());
+        StepVerifier.create(listener)
+                .consumeNextWith(LiveHttpMessage::consume)
+                .then(() -> {
+                    assertFalse(cancelled.get());
+                    assertNull(responseError.get());
+                    assertNull(contentError.get());
+                    assertTrue(completed.get());
+                })
+                .verifyComplete();
     }
 
     @Test
     public void firesWhenResponseIsCancelledBeforeHeaders() {
-        PublishSubject<LiveHttpResponse> publisher = PublishSubject.create();
-        TestSubscriber<LiveHttpResponse> subscriber = TestSubscriber.create(0);
+        EmitterProcessor<LiveHttpResponse> publisher = EmitterProcessor.create();
 
-        Observable<LiveHttpResponse> response = ResponseEventListener.from(publisher)
+        Flux<LiveHttpResponse> listener = ResponseEventListener.from(publisher)
                 .whenCancelled(() -> cancelled.set(true))
                 .apply();
 
-        response.subscribe(subscriber);
-
-        subscriber.unsubscribe();
-
-        assertTrue(cancelled.get());
-    }
-
-    @Test
-    public void firesWhenContentCancelled() {
-        TestPublisher<Buffer> contentPublisher = TestPublisher.create();
-
-        LiveHttpResponse response = ResponseEventListener.from(
-                Observable.just(response(OK)
-                        .body(new ByteStream(contentPublisher))
-                        .build()))
-                .whenCancelled(() -> cancelled.set(true))
-                .apply()
-                .toBlocking()
-                .first();
-
-        assertThat(cancelled.get(), is(false));
-
-        StepVerifier.create(response.body())
-                .then(() -> assertThat(cancelled.get(), is(false)))
+        StepVerifier.create(listener)
+                .expectNextCount(0)
                 .thenCancel()
                 .verify();
 
@@ -113,37 +86,59 @@ public class ResponseEventListenerTest {
     }
 
     @Test
-    public void firesOnResponseError() {
-        Observable<LiveHttpResponse> publisher = Observable.error(new RuntimeException());
-        TestSubscriber<LiveHttpResponse> subscriber = TestSubscriber.create();
+    public void firesWhenContentCancelled() {
+        EmitterProcessor<Buffer> contentPublisher = EmitterProcessor.create();
 
-        Observable<LiveHttpResponse> response = ResponseEventListener.from(publisher)
+        Flux<LiveHttpResponse> listener = ResponseEventListener.from(
+                Flux.just(response(OK)
+                        .body(new ByteStream(contentPublisher))
+                        .build()))
+                .whenCancelled(() -> cancelled.set(true))
+                .apply();
+
+        StepVerifier.create(listener)
+                .consumeNextWith(response ->
+                        StepVerifier.create(response.body())
+                                .then(() -> assertFalse(cancelled.get()))
+                                .thenCancel()
+                                .verify())
+                .verifyComplete();
+
+        assertTrue(cancelled.get());
+    }
+
+    @Test
+    public void firesOnResponseError() {
+        Mono<LiveHttpResponse> publisher = Mono.error(new RuntimeException());
+
+        Flux<LiveHttpResponse> listener = ResponseEventListener.from(publisher)
                 .whenResponseError(cause -> responseError.set(cause))
                 .apply();
 
-        response.subscribe(subscriber);
+        StepVerifier.create(listener)
+                .expectError(RuntimeException.class)
+                .verify();
 
         assertTrue(responseError.get() instanceof RuntimeException);
     }
 
     @Test
     public void ignoresResponseErrorAfterHeaders() {
-        TestSubscriber<LiveHttpResponse> subscriber = TestSubscriber.create();
-        Observable<LiveHttpResponse> publisher = Observable.just(
+        Flux<LiveHttpResponse> publisher = Flux.just(
                 response(OK)
                         .body(new ByteStream(Flux.just(new Buffer("hey", UTF_8))))
                         .build())
-                .concatWith(Observable.error(new RuntimeException()));
+                .concatWith(Flux.error(new RuntimeException()));
 
-        Observable<LiveHttpResponse> response = ResponseEventListener.from(publisher)
+        Publisher<LiveHttpResponse> listener = ResponseEventListener.from(publisher)
                 .whenCancelled(() -> cancelled.set(true))
                 .whenResponseError(cause -> responseError.set(cause))
                 .whenContentError(cause -> contentError.set(cause))
                 .apply();
 
-        response.subscribe(subscriber);
-
-        subscriber.getOnNextEvents().get(0).consume();
+        StepVerifier.create(listener)
+                .consumeNextWith(LiveHttpMessage::consume)
+                .verifyError();
 
         assertFalse(cancelled.get());
         assertNull(responseError.get());
@@ -152,35 +147,33 @@ public class ResponseEventListenerTest {
 
     @Test
     public void firesResponseContentError() {
-        Observable<LiveHttpResponse> publisher = Observable.just(
+        Mono<LiveHttpResponse> publisher = Mono.just(
                 response(OK)
                         .body(new ByteStream(Flux.error(new RuntimeException())))
                         .build());
 
-        LiveHttpResponse response = ResponseEventListener.from(publisher)
+        Publisher<LiveHttpResponse> listener = ResponseEventListener.from(publisher)
                 .whenContentError(cause -> responseError.set(cause))
-                .apply()
-                .toBlocking()
-                .first();
+                .apply();
 
-        response.consume();
+        StepVerifier.create(listener)
+                .consumeNextWith(LiveHttpMessage::consume)
+                .verifyComplete();
 
         assertTrue(responseError.get() instanceof RuntimeException);
     }
 
     @Test
     public void firesErrorWhenResponseCompletesWithoutHeaders() {
-        TestSubscriber<LiveHttpResponse> testSubscriber = new TestSubscriber<>();
-        Observable<LiveHttpResponse> publisher = Observable.empty();
 
-        ResponseEventListener.from(publisher)
+        Publisher<LiveHttpResponse> listener = ResponseEventListener.from(Mono.empty())
                 .whenResponseError(cause -> responseError.set(cause))
-                .apply()
-                .toBlocking()
-                .subscribe(testSubscriber);
+                .apply();
 
-        testSubscriber.awaitTerminalEvent();
-        assertEquals(testSubscriber.getOnCompletedEvents().size(), 1);
+        StepVerifier.create(listener)
+                .expectNextCount(0)
+                .verifyComplete();
+
         assertTrue(responseError.get() instanceof RuntimeException);
     }
 }
