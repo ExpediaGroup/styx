@@ -72,8 +72,6 @@ class HealthCheckSpec extends FunSpec
       |  connectors:
       |    http:
       |      port: 0
-      |request-logging:
-      |  enabled: true
     """.stripMargin,
     logbackXmlLocation = logback)
 

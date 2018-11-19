@@ -106,9 +106,9 @@ using environment variables with the same name as the property.
         enabled: true
         
     request-logging:
-      # Enabled logging of requests and responses (with requestId to match them up)
-      # Logs are produced on server and client side, so there is an information on 
-      # how the server-side (inbound) and client-side (outbound) request/response look like.
+      # Enable logging of requests and responses (with requestId to match them up).
+      # Logs are produced on server and origin side, so there is an information on 
+      # how the server-side (inbound) and origin-side (outbound) request/response look like.
       # In long format log entry contains additionally headers and cookies. 
       inbound:
         enabled: true
@@ -187,8 +187,9 @@ Without the comments, it looks like this:
         enabled: true
 
     request-logging:
-      enabled: true
-
+      inbound:
+        enabled: true
+        
     styxHeaders:
       styxInfo:
         name: "X-Styx-Info"

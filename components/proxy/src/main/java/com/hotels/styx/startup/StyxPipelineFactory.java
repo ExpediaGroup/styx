@@ -85,7 +85,6 @@ public final class StyxPipelineFactory implements PipelineFactory {
         ImmutableList.Builder<HttpInterceptor> builder = ImmutableList.builder();
 
         boolean loggingEnabled = config.get("request-logging.inbound.enabled", Boolean.class)
-                .map(isEnabled -> isEnabled || config.get("request-logging.enabled", Boolean.class).orElse(false))
                 .orElse(false);
 
         boolean longFormatEnabled = config.get("request-logging.inbound.longFormat", Boolean.class)
