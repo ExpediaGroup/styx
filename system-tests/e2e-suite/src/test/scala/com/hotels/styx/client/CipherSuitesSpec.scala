@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.client
 
-import java.nio.charset.StandardCharsets
 import java.nio.charset.StandardCharsets.UTF_8
 
 import com.github.tomakehurst.wiremock.client.WireMock._
@@ -47,8 +46,6 @@ class CipherSuitesSpec extends FunSpec
       |  connectors:
       |    http:
       |      port: 0
-      |request-logging:
-      |  enabled: true
     """.stripMargin,
     logbackXmlLocation = logback)
 
