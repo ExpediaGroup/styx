@@ -120,11 +120,7 @@ public final class HttpResponseStatus {
      * @return a HttpResponseStatus instance.
      */
     public static HttpResponseStatus statusWithCode(int code) {
-        if (code < 0 || code >= STATUSES.length || STATUSES[code] == null) {
-            return new HttpResponseStatus(code, "Unknown status");
-        }
-
-        return STATUSES[code];
+        return statusWithCode(code, "Unknown status");
     }
 
     /**
