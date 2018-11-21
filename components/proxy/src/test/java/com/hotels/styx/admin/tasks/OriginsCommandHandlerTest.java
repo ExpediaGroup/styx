@@ -32,6 +32,7 @@ import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import java.util.Set;
 
@@ -39,7 +40,6 @@ import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
 import static com.hotels.styx.support.api.matchers.HttpResponseStatusMatcher.hasStatus;
 import static java.lang.String.format;
@@ -124,7 +124,7 @@ public class OriginsCommandHandlerTest {
 
     private LiveHttpResponse post(String path) {
         LiveHttpRequest request = LiveHttpRequest.post(path).build();
-        return getFirst(originsCommand.handle(request, HttpInterceptorContext.create()));
+        return Mono.from(originsCommand.handle(request, HttpInterceptorContext.create())).block();
     }
 
     static class RecordingOriginsCommandsListener implements OriginsCommandsListener {

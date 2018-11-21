@@ -17,47 +17,26 @@ package com.hotels.styx.api;
 
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
 
 public class EventualTest {
 
     @Test
-    public void createFromPublisher() throws ExecutionException, InterruptedException {
-        String value = new Eventual<>(Flux.just("hello"))
-                .asCompletableFuture()
-                .get();
-
+    public void createFromPublisher() {
+        String value = Mono.from(new Eventual<>(Flux.just("hello"))).block();
         assertEquals(value, "hello");
     }
 
     @Test
-    public void publishesOnlyOneElement() throws ExecutionException, InterruptedException {
-        AtomicInteger i = new AtomicInteger();
-        String value = new Eventual<>(Flux.just("hello", "world"))
-                .map(x -> {
-                    i.incrementAndGet();
-                    return x;
-                })
-                .asCompletableFuture()
-                .get();
-
-        assertEquals(i.get(), 1);
-        assertEquals(value, "hello");
-    }
-
-    @Test
-    public void createFromValue() throws ExecutionException, InterruptedException {
-        String value = Eventual.of("x")
-                .asCompletableFuture()
-                .get();
-
-        assertEquals(value, "x");
+    public void createFromValue() {
+        StepVerifier.create(Eventual.of("x"))
+                .expectNext("x")
+                .verifyComplete();
     }
 
     @Test
@@ -84,13 +63,10 @@ public class EventualTest {
     }
 
     @Test
-    public void mapsValues() throws ExecutionException, InterruptedException {
-        String value = new Eventual<>(Flux.just("hello"))
-                .map(String::toUpperCase)
-                .asCompletableFuture()
-                .get();
-
-        assertEquals(value, "HELLO");
+    public void mapsValues() {
+        StepVerifier.create(new Eventual<>(Flux.just("hello")).map(String::toUpperCase))
+                .expectNext("HELLO")
+                .verifyComplete();
     }
 
     @Test

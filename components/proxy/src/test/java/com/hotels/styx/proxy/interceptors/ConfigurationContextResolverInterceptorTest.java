@@ -24,11 +24,11 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationContextResolver;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
-import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -49,7 +49,7 @@ public class ConfigurationContextResolverInterceptorTest {
 
         Eventual<LiveHttpResponse> responseObservable = interceptor.intercept(request, chain);
 
-        assertThat(await(responseObservable.asCompletableFuture()), hasStatus(OK));
+        assertThat(Mono.from(responseObservable).block(), hasStatus(OK));
         assertThat(chain.proceedWasCalled, is(true));
         assertThat(chain.context.get("config.context", Configuration.Context.class), is(context));
     }

@@ -15,23 +15,23 @@
  */
 package com.hotels.styx.proxy.interceptors;
 
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.server.HttpInterceptorContext;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import static ch.qos.logback.classic.Level.INFO;
+import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpResponse.response;
-import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.RequestCookie.requestCookie;
 import static com.hotels.styx.api.ResponseCookie.responseCookie;
-import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -127,6 +127,6 @@ public class HttpMessageLoggingInterceptorTest {
     }
 
     private static void consume(Eventual<LiveHttpResponse> resp) {
-        await(resp.flatMap(it -> it.aggregate(1000000)).asCompletableFuture());
+        Mono.from(resp.flatMap(it -> it.aggregate(1000000))).block();
     }
 }

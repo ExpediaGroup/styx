@@ -19,6 +19,8 @@ import com.google.common.collect.ImmutableList;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.Optional;
 import java.util.Set;
@@ -58,7 +60,7 @@ import static org.testng.Assert.assertEquals;
 public class LiveHttpResponseTest {
 
     @Test
-    public void encodesToFullHttpResponse() throws Exception {
+    public void encodesToFullHttpResponse() {
         LiveHttpResponse response = response(CREATED)
                 .version(HTTP_1_0)
                 .header("HeaderName", "HeaderValue")
@@ -66,9 +68,7 @@ public class LiveHttpResponseTest {
                 .body(new ByteStream(Flux.just("foo", "bar").map(it -> new Buffer(copiedBuffer(it, UTF_8)))))
                 .build();
 
-        HttpResponse full = response.aggregate(0x1000)
-                .asCompletableFuture()
-                .get();
+        HttpResponse full = Mono.from(response.aggregate(0x1000)).block();
 
         assertThat(full.status(), is(CREATED));
         assertThat(full.version(), is(HTTP_1_0));
@@ -80,10 +80,7 @@ public class LiveHttpResponseTest {
 
     @Test(dataProvider = "emptyBodyResponses")
     public void encodesToFullHttpResponseWithEmptyBody(LiveHttpResponse response) throws Exception {
-        HttpResponse full = response.aggregate(0x1000)
-                .asCompletableFuture()
-                .get();
-
+        HttpResponse full = Mono.from(response.aggregate(0x1000)).block();
         assertThat(full.body(), is(new byte[0]));
     }
 
@@ -464,12 +461,10 @@ public class LiveHttpResponseTest {
                 .body(new ByteStream(Flux.just(buffer)))
                 .build();
 
-        HttpResponse fullResponse = response.newBuilder()
+        HttpResponse fullResponse = Mono.from(response.newBuilder()
                 .body(ByteStream::drop)
                 .build()
-                .aggregate(1000)
-                .asCompletableFuture()
-                .get();
+                .aggregate(1000)).block();
 
         assertThat(fullResponse.body().length, is(0));
         assertThat(buffer.delegate().refCnt(), is(0));

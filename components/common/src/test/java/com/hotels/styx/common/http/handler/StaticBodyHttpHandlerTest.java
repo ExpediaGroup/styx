@@ -20,10 +20,11 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -31,13 +32,11 @@ import static org.hamcrest.Matchers.is;
 
 public class StaticBodyHttpHandlerTest {
     @Test
-    public void respondsWithStaticBody() throws Exception {
+    public void respondsWithStaticBody() {
         StaticBodyHttpHandler handler = new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "foo", UTF_8);
 
-        LiveHttpResponse response = handler.handle(get("/").build(), HttpInterceptorContext.create()).asCompletableFuture().get();
-        HttpResponse fullResponse = response.aggregate(1024)
-                .asCompletableFuture()
-                .get();
+        LiveHttpResponse response = Mono.from(handler.handle(get("/").build(), HttpInterceptorContext.create())).block();
+        HttpResponse fullResponse = Mono.from(response.aggregate(1024)).block();
 
         assertThat(fullResponse.status(), is(OK));
         assertThat(fullResponse.contentType(), isValue(PLAIN_TEXT_UTF_8.toString()));

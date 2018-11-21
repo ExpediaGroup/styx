@@ -16,8 +16,8 @@
 package com.hotels.styx.admin.handlers;
 
 import com.codahale.metrics.Gauge;
-import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.hamcrest.Description;
@@ -26,15 +26,15 @@ import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
 import static com.google.common.collect.Iterables.all;
 import static com.hotels.styx.admin.handlers.JVMMetricsHandlerTest.StringsContains.containsStrings;
 import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
-import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
 import static com.hotels.styx.support.api.matchers.HttpResponseStatusMatcher.hasStatus;
 import static java.util.Arrays.asList;
@@ -90,7 +90,7 @@ public class JVMMetricsHandlerTest {
     }
 
     private LiveHttpResponse call(LiveHttpRequest request) {
-        return getFirst(handler.handle(request, HttpInterceptorContext.create()));
+        return Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
     }
 
     static class StringsContains extends TypeSafeMatcher<String> {

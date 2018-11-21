@@ -21,13 +21,13 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
+import reactor.core.publisher.Mono;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.common.StyxFutures.await;
 import static java.lang.String.format;
 import static java.util.UUID.randomUUID;
 
@@ -40,7 +40,7 @@ public class ContentDigestHandler extends BaseHttpHandler {
 
     @Override
     protected LiveHttpResponse doHandle(LiveHttpRequest request) {
-        HttpRequest fullRequest = await(request.aggregate(0x100000).asCompletableFuture());
+        HttpRequest fullRequest = Mono.from(request.aggregate(0x100000)).block();
 
         String responseBody = format("Response From %s - %s, received content digest: %s",
                 origin.hostAndPortString(),

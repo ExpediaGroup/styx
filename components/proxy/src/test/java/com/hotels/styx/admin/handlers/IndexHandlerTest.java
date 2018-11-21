@@ -18,11 +18,11 @@ package com.hotels.styx.admin.handlers;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import static com.hotels.styx.admin.handlers.IndexHandler.Link.link;
-import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.support.api.BlockingObservables.getFirst;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.support.api.matchers.HttpResponseBodyMatcher.hasBody;
 import static com.hotels.styx.support.api.matchers.HttpStatusMatcher.hasStatus;
 import static java.util.Arrays.asList;
@@ -34,7 +34,7 @@ public class IndexHandlerTest {
 
     @Test
     public void printsTheRegisteredPaths() {
-        LiveHttpResponse response = getFirst(handler.handle(get("/admin").build(), HttpInterceptorContext.create()));
+        LiveHttpResponse response = Mono.from(handler.handle(get("/admin").build(), HttpInterceptorContext.create())).block();
         assertThat(response, hasStatus(OK));
         assertThat(response.contentType().get(), is("text/html; charset=utf-8"));
         assertThat(response, hasBody(

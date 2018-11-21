@@ -19,14 +19,15 @@ import io.netty.buffer.Unpooled;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
 
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpHeader.header;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.CREATED;
@@ -73,12 +74,9 @@ public class HttpResponseTest {
         ));
         assertThat(streaming.cookies(), contains(responseCookie("CookieName", "CookieValue").build()));
 
-        String body = streaming.aggregate(0x100000)
-                .asCompletableFuture()
-                .get()
-                .bodyAs(UTF_8);
-
-        assertThat(body, is("message content"));
+        StepVerifier.create(streaming.aggregate(0x100000).map(it -> it.bodyAs(UTF_8)))
+                .expectNext("message content")
+                .verifyComplete();
     }
 
     @Test
@@ -448,11 +446,10 @@ public class HttpResponseTest {
                 .body(new ByteStream(Flux.just(content)))
                 .build();
 
-        original.aggregate(100)
-                .asCompletableFuture()
-                .get();
-
-        assertThat(content.delegate().refCnt(), is(0));
+        StepVerifier.create(original.aggregate(100))
+                .expectNextCount(1)
+                .then(() -> assertThat(content.delegate().refCnt(), is(0)))
+                .verifyComplete();
     }
 
     @Test

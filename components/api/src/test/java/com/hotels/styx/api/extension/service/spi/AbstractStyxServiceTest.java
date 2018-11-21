@@ -15,9 +15,12 @@
  */
 package com.hotels.styx.api.extension.service.spi;
 
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -41,11 +44,8 @@ public class AbstractStyxServiceTest {
     public void exposesNameAndStatusViaAdminInterface() throws ExecutionException, InterruptedException {
         DerivedStyxService service = new DerivedStyxService("derived-service", new CompletableFuture<>());
 
-        HttpResponse response =
-                service.adminInterfaceHandlers().get("status").handle(get, MOCK_CONTEXT)
-                        .flatMap(r -> r.aggregate(1024))
-                .asCompletableFuture()
-                .get();
+        HttpResponse response = Mono.from(service.adminInterfaceHandlers().get("status").handle(get, MOCK_CONTEXT)
+                        .flatMap(r -> r.aggregate(1024))).block();
 
         assertThat(response.bodyAs(UTF_8), is("{ name: \"derived-service\" status: \"CREATED\" }"));
     }

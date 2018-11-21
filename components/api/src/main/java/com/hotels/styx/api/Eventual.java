@@ -19,7 +19,6 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import reactor.core.publisher.Mono;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
@@ -112,15 +111,6 @@ public final class Eventual<T> implements Publisher<T> {
     public Eventual<T> onError(Function<Throwable, ? extends Eventual<? extends T>> errorHandler) {
         return fromMono(Mono.from(publisher)
                 .onErrorResume(value -> Mono.from(errorHandler.apply(value))));
-    }
-
-    /**
-     * Converts this object to a {@link CompletableFuture}.
-     *
-     * @return a completable future
-     */
-    public CompletableFuture<T> asCompletableFuture() {
-        return Mono.from(publisher).toFuture();
     }
 
     /**

@@ -21,11 +21,12 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
-import static com.hotels.styx.api.LiveHttpRequest.post;
 import static com.hotels.styx.api.HttpMethod.GET;
 import static com.hotels.styx.api.HttpMethod.POST;
 import static com.hotels.styx.api.HttpResponseStatus.METHOD_NOT_ALLOWED;
+import static com.hotels.styx.api.LiveHttpRequest.post;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
@@ -51,7 +52,7 @@ public class HttpMethodFilteringHandlerTest {
         HttpMethodFilteringHandler post = new HttpMethodFilteringHandler(GET, handler);
 
         LiveHttpRequest request = post("/some-uri").build();
-        LiveHttpResponse response = post.handle(request, HttpInterceptorContext.create()).asCompletableFuture().get();
+        LiveHttpResponse response = Mono.from(post.handle(request, HttpInterceptorContext.create())).block();
 
         assertThat(response.status(), is(METHOD_NOT_ALLOWED));
     }

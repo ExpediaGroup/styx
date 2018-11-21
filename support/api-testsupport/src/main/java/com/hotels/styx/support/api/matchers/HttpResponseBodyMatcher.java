@@ -20,6 +20,7 @@ import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
+import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -47,12 +48,12 @@ public class HttpResponseBodyMatcher<T extends LiveHttpResponse> extends TypeSaf
 
     @Override
     public boolean matchesSafely(T actual) {
-        return matcher.matches(await(actual.aggregate(0x100000).asCompletableFuture()).bodyAs(UTF_8));
+        return matcher.matches(Mono.from(actual.aggregate(0x100000)).block().bodyAs(UTF_8));
     }
 
     @Override
     protected void describeMismatchSafely(T item, Description mismatchDescription) {
-        mismatchDescription.appendText("content was '" + await(item.aggregate(0x100000).asCompletableFuture()).bodyAs(UTF_8) + "'");
+        mismatchDescription.appendText("content was '" + Mono.from(item.aggregate(0x100000)).block().bodyAs(UTF_8) + "'");
     }
 
     @Override

@@ -16,16 +16,16 @@
 package com.hotels.styx.proxy.interceptors;
 
 import com.hotels.styx.api.HttpInterceptor.Chain;
-import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONNECTION;
 import static com.hotels.styx.api.LiveHttpRequest.delete;
 import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.LiveHttpRequest.post;
 import static com.hotels.styx.api.LiveHttpResponse.response;
-import static com.hotels.styx.common.StyxFutures.await;
 import static com.hotels.styx.proxy.interceptors.RequestRecordingChain.requestRecordingChain;
 import static com.hotels.styx.proxy.interceptors.ReturnResponseChain.returnsResponse;
 import static com.hotels.styx.support.matchers.IsOptional.isAbsent;
@@ -61,12 +61,11 @@ public class HopByHopHeadersRemovingInterceptorTest {
 
     @Test
     public void removesHopByHopHeadersFromResponse() throws Exception {
-        LiveHttpResponse response = await(interceptor.intercept(get("/foo").build(), returnsResponse(response()
+        LiveHttpResponse response = Mono.from(interceptor.intercept(get("/foo").build(), returnsResponse(response()
                 .header(TE, "foo")
                 .header(PROXY_AUTHENTICATE, "foo")
                 .header(PROXY_AUTHORIZATION, "bar")
-                .build())
-        ).asCompletableFuture());
+                .build()))).block();
 
         assertThat(response.header(TE), isAbsent());
         assertThat(response.header(PROXY_AUTHENTICATE), isAbsent());
@@ -118,13 +117,12 @@ public class HopByHopHeadersRemovingInterceptorTest {
 
     @Test
     public void removesConnectionHeadersFromResponse() throws Exception {
-        LiveHttpResponse response = await(interceptor.intercept(get("/foo").build(), returnsResponse(response()
+        LiveHttpResponse response = Mono.from(interceptor.intercept(get("/foo").build(), returnsResponse(response()
                 .header(CONNECTION, "Foo, Bar, Baz")
                 .header("Foo", "abc")
                 .header("Foo", "def")
                 .header("Bar", "one, two, three")
-                .build())
-        ).asCompletableFuture());
+                .build()))).block();
 
         assertThat(response.header(CONNECTION), isAbsent());
         assertThat(response.header("Foo"), isAbsent());
