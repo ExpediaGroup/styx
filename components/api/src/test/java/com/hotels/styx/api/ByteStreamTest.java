@@ -28,6 +28,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.testng.AssertJUnit.assertEquals;
 
 
 public class ByteStreamTest {
@@ -40,6 +41,15 @@ public class ByteStreamTest {
         buf1 = new Buffer("a", UTF_8);
         buf2 = new Buffer("b", UTF_8);
         buf3 = new Buffer("c", UTF_8);
+    }
+
+    @Test
+    public void createsFromString() {
+        ByteStream byteStream = ByteStream.from("Created from string", UTF_8);
+
+        StepVerifier.create(byteStream)
+                .assertNext(buf -> assertEquals("Created from string", new String(buf.content(), UTF_8)))
+                .verifyComplete();
     }
 
     @Test
@@ -193,6 +203,43 @@ public class ByteStreamTest {
                 .verify();
 
         assertThat(cancelled.get(), is(true));
+    }
+
+    @Test
+    public void replacesStream() {
+        ByteStream stream = new ByteStream(Flux.just(buf1, buf2))
+                .replaceWith(new ByteStream(Flux.just(buf3)));
+
+        StepVerifier.create(stream)
+                .expectNext(buf3)
+                .then(() -> {
+                    assertEquals(buf1.delegate().refCnt(), 0);
+                    assertEquals(buf2.delegate().refCnt(), 0);
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    public void concatenatesStreams() {
+        ByteStream stream = new ByteStream(Flux.just(buf1, buf2))
+                .concat(new ByteStream(Flux.just(buf3)));
+
+        StepVerifier.create(stream)
+                .expectNext(buf1)
+                .expectNext(buf2)
+                .expectNext(buf3)
+                .verifyComplete();
+    }
+
+    @Test
+    public void concatenatesEmptyStreams() {
+        ByteStream stream = new ByteStream(Flux.empty())
+                .concat(new ByteStream(Flux.just(buf3)))
+                .concat(new ByteStream(Flux.empty()));
+
+        StepVerifier.create(stream)
+                .expectNext(buf3)
+                .verifyComplete();
     }
 
     private String decodeUtf8String(Buffer buffer) {

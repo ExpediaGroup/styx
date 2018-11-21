@@ -20,7 +20,6 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
 import java.util.Optional;
 import java.util.Set;
@@ -468,6 +467,25 @@ public class LiveHttpResponseTest {
 
         assertThat(fullResponse.body().length, is(0));
         assertThat(buffer.delegate().refCnt(), is(0));
+    }
+
+    @Test
+    public void transformerReplacesBody() {
+        Buffer buf1 = new Buffer("chunk 1, ", UTF_8);
+        Buffer buf2 = new Buffer("chunk 2.", UTF_8);
+
+        LiveHttpResponse response1 = response(NO_CONTENT)
+                .body(new ByteStream(Flux.just(buf1, buf2)))
+                .build()
+                .newBuilder()
+                .body(body -> body.replaceWith(ByteStream.from("replacement", UTF_8)))
+                .build();
+
+        HttpResponse response2 = Mono.from(response1.aggregate(100)).block();
+
+        assertEquals(response2.bodyAs(UTF_8), "replacement");
+        assertEquals(buf1.delegate().refCnt(), 0);
+        assertEquals(buf2.delegate().refCnt(), 0);
     }
 
     private static LiveHttpResponse.Builder response() {

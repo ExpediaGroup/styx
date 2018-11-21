@@ -19,6 +19,7 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import reactor.core.publisher.Flux;
 
+import java.nio.charset.Charset;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -48,6 +49,17 @@ public class ByteStream implements Publisher<Buffer> {
      */
     public ByteStream(Publisher<Buffer> stream) {
         this.stream = requireNonNull(stream);
+    }
+
+    /**
+     * Creates a new {@code ByteStream} from String.
+     *
+     * @param content ByteStream source
+     * @param charset Character set encoding
+     * @return ByteStream
+     */
+    public static ByteStream from(String content, Charset charset) {
+        return new ByteStream(Flux.just(new Buffer(content, charset)));
     }
 
     /**
@@ -145,5 +157,32 @@ public class ByteStream implements Publisher<Buffer> {
     @Override
     public void subscribe(Subscriber<? super Buffer> subscriber) {
         stream.subscribe(subscriber);
+    }
+
+    /**
+     * Replaces this {@link ByteStream} with a new {@link ByteStream}.
+     *
+     * Consumes this stream by safely disposing each {@link Buffer} object
+     * and then emits {@link Buffer} objects from the provided
+     * {@code byteStream}.
+     *
+     * @param byteStream a replacement byte stream.
+     * @return a {@link ByteStream} object.
+     */
+    public ByteStream replaceWith(ByteStream byteStream) {
+        return this.drop().concat(byteStream);
+    }
+
+    /**
+     * Concatenates two {@link ByteStream}s.
+     *
+     * Emits all {@link Buffer} objects from this {@link ByteStream} after which
+     * continues emissions from the provided {@code byteStream}.
+     *
+     * @param byteStream an appended byte stream.
+     * @return a {@link ByteStream} object.
+     */
+    ByteStream concat(ByteStream byteStream) {
+        return new ByteStream(Flux.from(this.stream).concatWith(byteStream));
     }
 }
