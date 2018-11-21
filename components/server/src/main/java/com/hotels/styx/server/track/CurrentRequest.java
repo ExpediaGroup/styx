@@ -39,19 +39,19 @@ public class CurrentRequest {
         this.stateSupplier = stateSupplier;
     }
 
-    public Thread getCurrentThread() {
+    public Thread currentThread() {
         return currentThread;
     }
 
-    public String getRequest() {
+    public String request() {
         return request;
     }
 
-    public long getStartingTimeMillies() {
+    public long startingTimeMillies() {
         return startingTimeMillies;
     }
 
-    public String getState() {
+    public String state() {
         return stateSupplier.get();
     }
 

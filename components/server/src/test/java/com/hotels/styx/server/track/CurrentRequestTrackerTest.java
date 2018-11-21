@@ -39,17 +39,17 @@ public class CurrentRequestTrackerTest {
     @Test
     public void testTrackRequest() {
         tracker.trackRequest(req1);
-        assertThat(tracker.currentRequests().iterator().next().getRequest(), is(req1.toString()));
+        assertThat(tracker.currentRequests().iterator().next().request(), is(req1.toString()));
     }
 
     @Test
     public void testChangeWorkingThread() {
         Thread.currentThread().setName("thread-1");
         tracker.trackRequest(req1);
-        assertThat("thread-1", is(tracker.currentRequests().iterator().next().getCurrentThread().getName()));
+        assertThat("thread-1", is(tracker.currentRequests().iterator().next().currentThread().getName()));
         Thread.currentThread().setName("thread-2");
         tracker.trackRequest(req1);
-        assertThat("thread-2", is(tracker.currentRequests().iterator().next().getCurrentThread().getName()));
+        assertThat("thread-2", is(tracker.currentRequests().iterator().next().currentThread().getName()));
     }
 
     @Test
@@ -60,14 +60,14 @@ public class CurrentRequestTrackerTest {
         tracker.trackRequest(req1);
         tracker.trackRequest(req1);
         assertThat(tracker.currentRequests().size(), is(1));
-        assertThat(tracker.currentRequests().iterator().next().getRequest(), is(req1.toString()));
+        assertThat(tracker.currentRequests().iterator().next().request(), is(req1.toString()));
     }
 
     @Test
     public void testEndTrack() {
         tracker.trackRequest(req1);
         assertThat(tracker.currentRequests().size(), is(1));
-        assertThat(tracker.currentRequests().iterator().next().getRequest(), is(req1.toString()));
+        assertThat(tracker.currentRequests().iterator().next().request(), is(req1.toString()));
         tracker.endTrack(req1);
         assertThat(tracker.currentRequests().size(), is(0));
     }
@@ -86,6 +86,6 @@ public class CurrentRequestTrackerTest {
         tracker.trackRequest(req1);
         tracker.trackRequest(req2);
         tracker.endTrack(req1);
-        assertThat(tracker.currentRequests().iterator().next().getRequest(), is(req2.toString()));
+        assertThat(tracker.currentRequests().iterator().next().request(), is(req2.toString()));
     }
 }
