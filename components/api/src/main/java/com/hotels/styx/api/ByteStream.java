@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.api;
 
+import io.netty.buffer.Unpooled;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import reactor.core.publisher.Flux;
@@ -54,12 +55,22 @@ public class ByteStream implements Publisher<Buffer> {
     /**
      * Creates a new {@code ByteStream} from String.
      *
-     * @param content ByteStream source
+     * @param content content
      * @param charset Character set encoding
      * @return ByteStream
      */
     public static ByteStream from(String content, Charset charset) {
         return new ByteStream(Flux.just(new Buffer(content, charset)));
+    }
+
+    /**
+     * Creates a new {@code ByteStream} from byte array.
+     *
+     * @param content content
+     * @return ByteStream
+     */
+    public static ByteStream from(byte[] content) {
+        return new ByteStream(Flux.just(new Buffer(Unpooled.copiedBuffer(content))));
     }
 
     /**

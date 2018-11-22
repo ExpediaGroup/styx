@@ -53,6 +53,17 @@ public class ByteStreamTest {
     }
 
     @Test
+    public void createsFromByteArray() {
+        byte[] bytes = "Created from string".getBytes(UTF_8);
+
+        ByteStream byteStream = ByteStream.from(bytes);
+
+        StepVerifier.create(byteStream)
+                .assertNext(buf -> assertEquals("Created from string", new String(buf.content(), UTF_8)))
+                .verifyComplete();
+    }
+
+    @Test
     public void publishesContent() {
         ByteStream stream = new ByteStream(Flux.just(buf1, buf2, buf3));
 
