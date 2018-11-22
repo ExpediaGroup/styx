@@ -35,7 +35,7 @@ public class CurrentRequestsHandlerTest {
     private static final int MAX_CONTENT_SIZE = 10_000;
     LiveHttpRequest req1 = get("/requestId1").build();
 
-    CurrentRequestTracker tracker = new CurrentRequestTracker();
+    private CurrentRequestTracker tracker = new CurrentRequestTracker();
     private CurrentRequestsHandler handler;
 
     public CurrentRequestsHandlerTest() {
