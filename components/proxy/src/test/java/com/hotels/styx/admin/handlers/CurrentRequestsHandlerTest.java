@@ -38,10 +38,6 @@ public class CurrentRequestsHandlerTest {
     private CurrentRequestTracker tracker = new CurrentRequestTracker();
     private CurrentRequestsHandler handler;
 
-    public CurrentRequestsHandlerTest() {
-        MAX_CONTENT_SIZE = 10000;
-    }
-
     @BeforeMethod
     public void setUp() {
         tracker = new CurrentRequestTracker();
