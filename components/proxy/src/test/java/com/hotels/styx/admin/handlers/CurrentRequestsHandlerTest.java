@@ -32,7 +32,7 @@ import static org.testng.AssertJUnit.assertFalse;
 
 public class CurrentRequestsHandlerTest {
 
-    private final int MAX_CONTENT_SIZE;
+    private static final int MAX_CONTENT_SIZE = 10_000;
     LiveHttpRequest req1 = get("/requestId1").build();
 
     CurrentRequestTracker tracker = new CurrentRequestTracker();
