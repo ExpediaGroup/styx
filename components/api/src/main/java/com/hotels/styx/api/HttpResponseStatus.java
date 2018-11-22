@@ -109,9 +109,37 @@ public final class HttpResponseStatus {
         }
     }
 
+    /**
+     * Returns a {@link HttpResponseStatus} object corresponding to numeric status code.
+     *
+     * If {@code code} is not a standard HTTP response code, a new {@link HttpResponseStatus}
+     * is created with an "Unknown status" reason phrase.
+     *
+     * @param code
+     *
+     * @return a HttpResponseStatus instance.
+     */
     public static HttpResponseStatus statusWithCode(int code) {
+        return statusWithCode(code, "Unknown status");
+    }
+
+    /**
+     * Returns a custom {@link HttpResponseStatus} object with a user specified reason phrase.
+     *
+     * If a {@code code} is a standard HTTP response code, a {@link HttpResponseStatus} is
+     * returned with a standard reason phrase. In this case the user provided {@code ReasonPhrase}
+     * is ignored.
+     *
+     * If a {@code code} is unrecognised, a custom {@link HttpResponseStatus} is returned with
+     * the user provided {@code ReasonPhrase}.
+     *
+     * @param code
+     *
+     * @return a HttpResponseStatus instance.
+     */
+    public static HttpResponseStatus statusWithCode(int code, String reasonPhrase) {
         if (code < 0 || code >= STATUSES.length || STATUSES[code] == null) {
-            return new HttpResponseStatus(code, "Unknown status");
+            return new HttpResponseStatus(code, reasonPhrase);
         }
 
         return STATUSES[code];
