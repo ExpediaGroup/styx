@@ -15,27 +15,27 @@
  */
 package com.hotels.styx.admin.handlers;
 
-import static com.hotels.styx.api.LiveHttpRequest.get;
-import static java.nio.charset.StandardCharsets.UTF_8;
-
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.server.track.CurrentRequestTracker;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
-import com.hotels.styx.api.Buffer;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.server.track.CurrentRequestTracker;
-
-import reactor.core.publisher.Flux;
-
+import static com.hotels.styx.api.LiveHttpRequest.get;
+import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.testng.Assert.assertTrue;
+import static org.testng.AssertJUnit.assertFalse;
 
 public class CurrentRequestsHandlerTest {
 
-    LiveHttpRequest req1 = get("/requestId1").build();
+    private static final int MAX_CONTENT_SIZE = 10_000;
+    private LiveHttpRequest req1 = get("/requestId1").build();
 
-    CurrentRequestTracker tracker = new CurrentRequestTracker();
+    private CurrentRequestTracker tracker = new CurrentRequestTracker();
     private CurrentRequestsHandler handler;
 
     @BeforeMethod
@@ -48,8 +48,8 @@ public class CurrentRequestsHandlerTest {
     public void testStackTrace() {
         Thread.currentThread().setName("Test-Thread");
         tracker.trackRequest(req1);
-        LiveHttpResponse response = handler.doHandle(req1);
-        assertThat(Flux.from(response.body()).map(this::decodeUtf8String).blockFirst().contains("Test-Thread"), is(true));
+        HttpResponse response = Mono.from(handler.doHandle(req1).aggregate(MAX_CONTENT_SIZE)).block();
+        assertThat(response.bodyAs(UTF_8).contains("Test-Thread"), is(true));
     }
 
     @Test
@@ -57,27 +57,28 @@ public class CurrentRequestsHandlerTest {
         Thread.currentThread().setName("Test-Thread-1");
         tracker.trackRequest(req1);
         tracker.markRequestAsSent(req1);
-        LiveHttpResponse response = handler.doHandle(req1);
-        assertThat(Flux.from(response.body()).map(this::decodeUtf8String).blockFirst().contains("Request state: Waiting response from origin."), is(true));
+        HttpResponse response = Mono.from(handler.doHandle(req1).aggregate(MAX_CONTENT_SIZE)).block();
+        assertThat(response.bodyAs(UTF_8).contains("Request state: Waiting response from origin."), is(true));
     }
 
     @Test
     public void testWithStackTrace() {
         Thread.currentThread().setName("Test-Thread");
         tracker.trackRequest(req1);
-        LiveHttpResponse response = handler.doHandle(get("/req?withStackTrace=true").build());
-        assertThat(Flux.from(response.body()).map(this::decodeUtf8String).blockFirst().contains("id=" + Thread.currentThread().getId()), is(true));
+        HttpResponse response = Mono.from(handler.doHandle(get("/req?withStackTrace=true").build()).aggregate(MAX_CONTENT_SIZE)).block();
+
+        assertTrue(response.bodyAs(UTF_8).contains("Thread Info:"));
+        assertTrue(response.bodyAs(UTF_8).contains("id=" + Thread.currentThread().getId() + " state"));
     }
 
     @Test
     public void testWithoutStackTrace() {
-        Thread.currentThread().setName("Test-Thread");
         tracker.trackRequest(req1);
-        LiveHttpResponse response = handler.doHandle(req1);
-        assertThat(Flux.from(response.body()).map(this::decodeUtf8String).blockFirst().contains("id=" + Thread.currentThread().getId()), is(false));
-    }
+        HttpResponse response = Mono.from(handler.doHandle(req1).aggregate(100000)).block();
 
-    private String decodeUtf8String(Buffer buffer) {
-        return new String(buffer.content(), UTF_8);
+        String body = response.bodyAs(UTF_8);
+
+        assertFalse(format("This is received response body: ```%s```", body),
+                body.contains(format("id=%d state", Thread.currentThread().getId())));
     }
 }

@@ -67,21 +67,21 @@ public class CurrentRequestsHandler extends BaseHttpHandler {
 
         tracker.currentRequests().forEach(req -> {
             sb.append("[\n");
-            sb.append(req.getRequest().replaceAll(",", "\n"));
+            sb.append(req.request().replaceAll(",", "\n"));
             sb.append("\n\n");
             sb.append("running for: ");
-            sb.append(currentTimeMillis() - req.getStartingTimeMillies());
+            sb.append(currentTimeMillis() - req.startingTimeMillies());
             sb.append("ms\n");
             if (req.isRequestSent()) {
                 sb.append("\nRequest state: Waiting response from origin.\n");
             } else {
                 sb.append("\nRequest state: Plugins pipeline.\n");
-                sb.append("\n\n   ...   Thread Info: ...\n");
+                sb.append("\n\nThread Info:\n");
                 if (withStackTrace) {
-                    sb.append(getThreadInfo(req.getCurrentThread().getId()));
+                    sb.append(getThreadInfo(req.currentThread().getId()));
                 } else {
                     sb.append("Name: ");
-                    sb.append(req.getCurrentThread().getName());
+                    sb.append(req.currentThread().getName());
                     sb.append("\n");
                 }
             }
