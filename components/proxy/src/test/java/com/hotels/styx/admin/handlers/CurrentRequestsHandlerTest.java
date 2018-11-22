@@ -72,7 +72,7 @@ public class CurrentRequestsHandlerTest {
         HttpResponse response = Mono.from(handler.doHandle(get("/req?withStackTrace=true").build()).aggregate(MAX_CONTENT_SIZE)).block();
 
         assertTrue(response.bodyAs(UTF_8).contains("Thread Info:"));
-        assertTrue(response.bodyAs(UTF_8).contains("id=" + Thread.currentThread().getId()));
+        assertTrue(response.bodyAs(UTF_8).contains("id=" + Thread.currentThread().getId() + " state"));
     }
 
     @Test
