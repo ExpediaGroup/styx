@@ -28,7 +28,7 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 
 public class CoreMetricsTest {
-    private final Version version = new Version("1.2.3");
+    private final Version version = new Version("STYX.1.2.3");
 
     @Test
     public void registersVersionMetric() {
@@ -37,7 +37,7 @@ public class CoreMetricsTest {
 
         Gauge gauge = metrics.getGauges().get("styx.version.buildnumber");
 
-        assertThat(gauge.getValue(), is(3));
+        assertThat(gauge.getValue(), is("1.2.3"));
     }
 
     @Test
