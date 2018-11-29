@@ -19,6 +19,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.HostAndPort;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Url;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
@@ -39,7 +41,6 @@ import static com.hotels.styx.api.HttpHeaderNames.USER_AGENT;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.client.HttpConfig.newHttpConfigBuilder;
 import static java.util.Objects.requireNonNull;
-import static rx.RxReactiveStreams.toObservable;
 
 /**
  * A client that uses netty as transport.
@@ -88,38 +89,58 @@ public final class StyxHttpClient implements HttpClient {
     }
 
     /**
+     * Creates a streaming transaction that accepts a LiveHttpRequest.
+     *
+     * @return a StreamingTransaction object
+     */
+    public StreamingTransaction streaming() {
+        return new StreamingTransaction() {
+            @Override
+            public CompletableFuture<LiveHttpResponse> send(LiveHttpRequest request) {
+                return sendRequestInternal(connectionFactory, request, transactionParameters).toFuture();
+            }
+
+            @Override
+            public CompletableFuture<LiveHttpResponse> send(HttpRequest request) {
+                return sendRequestInternal(connectionFactory, request.stream(), transactionParameters).toFuture();
+            }
+        };
+    }
+
+    /**
      * Sends a request as {@link HttpRequest} object.
      *
      * @param request a {@link HttpRequest} object to be sent to remote origin.
      * @return a {@link CompletableFuture} of response
      */
     public CompletableFuture<HttpResponse> send(HttpRequest request) {
-        return sendRequestInternal(connectionFactory, request, this.transactionParameters);
+        return sendRequestInternal(connectionFactory, request.stream(), this.transactionParameters)
+                .flatMap(response -> Mono.from(response.aggregate(this.transactionParameters.maxResponseSize())))
+                .toFuture();
     }
 
     @VisibleForTesting
-    static CompletableFuture<HttpResponse> sendRequestInternal(NettyConnectionFactory connectionFactory, HttpRequest request, Builder params) {
-        HttpRequest networkRequest = addUserAgent(params.userAgent(), request);
+    static Mono<LiveHttpResponse> sendRequestInternal(NettyConnectionFactory connectionFactory, LiveHttpRequest request, Builder params) {
+        LiveHttpRequest networkRequest = addUserAgent(params.userAgent(), request);
         Origin origin = originFromRequest(networkRequest, params.https());
 
         SslContext sslContext = getSslContext(params.https(), params.tlsSettings());
 
-        Mono<HttpResponse> responseObservable = connectionFactory.createConnection(
+        Mono<LiveHttpResponse> responseObservable = connectionFactory.createConnection(
                 origin,
                 new ConnectionSettings(params.connectTimeoutMillis()),
                 sslContext
         ).flatMap(connection ->
                 Mono.from(RxReactiveStreams.toPublisher(
-                        connection.write(networkRequest.stream())
-                                .flatMap(response -> toObservable(response.aggregate(params.maxResponseSize())))
+                        connection.write(networkRequest)
                                 .doOnTerminate(connection::close)))
         );
 
-        return responseObservable.toFuture();
+        return responseObservable;
 
     }
 
-    private static HttpRequest addUserAgent(String userAgent, HttpRequest request) {
+    private static LiveHttpRequest addUserAgent(String userAgent, LiveHttpRequest request) {
         if (userAgent != null) {
             return request.newBuilder()
                     .header(USER_AGENT, userAgent)
@@ -141,7 +162,7 @@ public final class StyxHttpClient implements HttpClient {
 
     }
 
-    private static Origin originFromRequest(HttpRequest request, Boolean isHttps) {
+    private static Origin originFromRequest(LiveHttpRequest request, Boolean isHttps) {
         String hostAndPort = request.header(HOST)
                 .orElseGet(() -> {
                     checkArgument(request.url().isAbsolute(), "host header is not set for request=%s", request);
@@ -157,7 +178,6 @@ public final class StyxHttpClient implements HttpClient {
 
         return newOriginBuilder(host.getHostText(), host.getPort()).build();
     }
-
 
     /**
      * Builder for {@link StyxHttpClient}.

@@ -17,7 +17,10 @@ package com.hotels.styx.client;
 
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
+import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -58,7 +61,17 @@ class StyxHttpClientTransaction implements HttpClient.Transaction {
 
     @Override
     public HttpClient.StreamingTransaction streaming() {
-        throw new UnsupportedOperationException("Not yet implemented.");
+        return new HttpClient.StreamingTransaction() {
+            @Override
+            public CompletableFuture<LiveHttpResponse> send(LiveHttpRequest request) {
+                return StyxHttpClient.sendRequestInternal(connectionFactory, request, transactionParameters).toFuture();
+            }
+
+            @Override
+            public CompletableFuture<LiveHttpResponse> send(HttpRequest request) {
+                return StyxHttpClient.sendRequestInternal(connectionFactory, request.stream(), transactionParameters).toFuture();
+            }
+        };
     }
 
     /**
@@ -69,6 +82,8 @@ class StyxHttpClientTransaction implements HttpClient.Transaction {
      */
     @Override
     public CompletableFuture<HttpResponse> send(HttpRequest request) {
-        return StyxHttpClient.sendRequestInternal(connectionFactory, request, transactionParameters);
+        return StyxHttpClient.sendRequestInternal(connectionFactory, request.stream(), transactionParameters)
+                .flatMap(response -> Mono.from(response.aggregate(transactionParameters.maxResponseSize())))
+                .toFuture();
     }
 }
