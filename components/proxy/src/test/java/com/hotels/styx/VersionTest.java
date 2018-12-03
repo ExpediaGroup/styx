@@ -17,9 +17,10 @@ package com.hotels.styx;
 
 import org.testng.annotations.Test;
 
+import java.util.Optional;
+
 import static com.hotels.styx.Version.newVersion;
 import static com.hotels.styx.Version.readVersionFrom;
-import static com.hotels.styx.support.matchers.IsOptional.isPresent;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,11 +31,12 @@ public class VersionTest {
     public void readBuildInfoFromTheSpecifiedPath() {
         Version version = readVersionFrom("/version.json");
         assertThat(version.releaseTag(), containsString("STYX"));
-        assertThat(version.releaseVersion(), is("0.0-125"));
+        assertThat(version.buildNumber(), is(Optional.of(125)));
     }
 
     @Test
     public void willCreateAnEmptyBuildInfoIfFailsToRead() {
         assertThat(readVersionFrom("version.txt"), is(newVersion()));
     }
+
 }
