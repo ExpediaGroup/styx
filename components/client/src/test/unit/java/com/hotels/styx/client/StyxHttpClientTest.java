@@ -19,6 +19,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.exceptions.ResponseTimeoutException;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.service.TlsSettings;
@@ -101,6 +102,10 @@ public class StyxHttpClientTest {
                         thread.getName().startsWith(threadName));
     }
 
+    /*
+     * StyxHttpClient.Builder
+     * - Cannot retrospectively modify user agent string
+     */
     @Test
     public void cannotBeModifiedAfterCreated() throws ExecutionException, InterruptedException {
         StyxHttpClient.Builder builder = new StyxHttpClient.Builder().userAgent("v1");
@@ -116,15 +121,28 @@ public class StyxHttpClientTest {
         );
     }
 
+    /*
+     * StyxHttpClient.Builder
+     */
+    @Test(expectedExceptions = NullPointerException.class)
+    public void requiresValidTlsSettins() {
+        new StyxHttpClient.Builder()
+                .tlsSettings(null)
+                .build();
+    }
+
+
+    /*
+     * StyxHttpClient
+     * - Uses default user-agent string.
+     */
     @Test
     public void usesDefaultUserAgent() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
                 .userAgent("Simple-Client-Parent-Settings")
                 .build();
 
-        HttpResponse response = client
-                .send(httpRequest)
-                .get();
+        HttpResponse response = client.send(httpRequest).get();
 
         assertThat(response.status(), is(OK));
         server.verify(
@@ -133,6 +151,10 @@ public class StyxHttpClientTest {
         );
     }
 
+    /*
+     * StyxHttpClient
+     * - Doesn't set any user-agent string if none is specified.
+     */
     @Test
     public void doesNotSetAnyUserAgentIfNotSpecified() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
@@ -146,6 +168,10 @@ public class StyxHttpClientTest {
         );
     }
 
+    /*
+     * StyxHttpClient
+     * - User-Agent string from the request takes precedence.
+     */
     @Test
     public void replacesUserAgentIfAlreadyPresentInRequest() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
@@ -166,19 +192,26 @@ public class StyxHttpClientTest {
     }
 
 
+    /*
+     * StyxHttpClient
+     * - Applies default TLS settings
+     */
     @Test
     public void usesDefaultTlsSettings() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
                 .tlsSettings(new TlsSettings.Builder().build())
                 .build();
 
-        HttpResponse response = client
-                .send(secureRequest)
+        HttpResponse response = client.send(secureRequest)
                 .get();
 
         assertThat(response.status(), is(OK));
     }
 
+    /*
+     * StyxHttpClientTransaction
+     * - secure() method applies default TLS settings
+     */
     @Test
     public void overridesTlsSettingsWithSecure() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
@@ -192,6 +225,10 @@ public class StyxHttpClientTest {
         assertThat(response.status(), is(OK));
     }
 
+    /*
+     * StyxHttpClientTransaction
+     * - secure(true) applies default TLS settings
+     */
     @Test
     public void overridesTlsSettingsWithSecureBoolean() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
@@ -205,6 +242,10 @@ public class StyxHttpClientTest {
         assertThat(response.status(), is(OK));
     }
 
+    /*
+     * StyxHttpClientTransaction
+     * - secure(false) disables TLS protection
+     */
     @Test
     public void overridesTlsSettingsWithSecureBooleanFalse() throws ExecutionException, InterruptedException {
         StyxHttpClient client = new StyxHttpClient.Builder()
@@ -219,18 +260,19 @@ public class StyxHttpClientTest {
         assertThat(response.status(), is(OK));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void requiresValidTlsSettins() {
-        new StyxHttpClient.Builder()
-                .tlsSettings(null)
-                .build();
-    }
-
+    /*
+     * StyxHttpClient
+     * - Sends a request when HTTP "request-target" is in origin format.
+     * - Ref: https://tools.ietf.org/html/rfc7230#section-5.3.1
+     */
     @Test
     public void sendsMessagesInOriginUrlFormat() throws ExecutionException, InterruptedException {
         HttpResponse response = new StyxHttpClient.Builder()
                 .build()
-                .send(get("/index.html").header(HOST, hostString(server.port())).build())
+                .send(
+                        get("/index.html")
+                                .header(HOST, hostString(server.port()))
+                                .build())
                 .get();
 
         assertThat(response.status(), is(OK));
@@ -240,6 +282,56 @@ public class StyxHttpClientTest {
         );
     }
 
+    /*
+     * HttpClient.StreamingTransaction
+     * - Sends LiveHttpRequest messages
+     */
+    @Test
+    public void sendsStreamingRequests() throws ExecutionException, InterruptedException {
+        LiveHttpResponse response = new StyxHttpClient.Builder()
+                .build()
+                .streaming()
+                .send(httpRequest.stream())
+                .get();
+
+        assertThat(response.status(), is(OK));
+
+        Mono.from(response.aggregate(10000)).block();
+
+        server.verify(
+                getRequestedFor(urlEqualTo("/"))
+                        .withHeader("Host", equalTo(hostString(server.port())))
+        );
+    }
+
+    /*
+     * HttpClient.StreamingTransaction
+     * - Sends LiveHttpRequest messages created from StyxHttpClientTransactions
+     */
+    @Test
+    public void sendsSecureStreamingRequests() throws ExecutionException, InterruptedException {
+        LiveHttpResponse response = new StyxHttpClient.Builder()
+                .build()
+                .secure(true)
+                .streaming()
+                .send(secureRequest.stream())
+                .get();
+
+        assertThat(response.status(), is(OK));
+
+        Mono.from(response.aggregate(10000)).block();
+
+        server.verify(
+                getRequestedFor(urlEqualTo("/"))
+                        .withHeader("Host", equalTo(hostString(server.httpsPort())))
+        );
+    }
+
+
+    /*
+     * StyxHttpClient
+     * - Applies response timeout
+     */
     @Test(expectedExceptions = ResponseTimeoutException.class)
     public void defaultResponseTimeout() throws Throwable {
         StyxHttpClient client = new StyxHttpClient.Builder()
@@ -287,6 +379,10 @@ public class StyxHttpClientTest {
         return "localhost:" + port;
     }
 
+    /*
+     * StyxHttpClient
+     * - Rejects requests without URL authority or host header
+     */
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void requestWithNoHostOrUrlAuthorityCausesException() {
         HttpRequest request = get("/foo.txt").build();
@@ -296,6 +392,10 @@ public class StyxHttpClientTest {
         await(client.send(request));
     }
 
+    /*
+     * StyxHttpClient.sendRequestInternal
+     * - Uses default HTTP port 8080 when not specified in Host header
+     */
     @Test
     public void sendsToDefaultHttpPort() {
         NettyConnectionFactory factory = mockConnectionFactory();
@@ -303,13 +403,18 @@ public class StyxHttpClientTest {
 
         StyxHttpClient.sendRequestInternal(factory, get("/")
                         .header(HOST, "localhost")
-                        .build(),
+                        .build()
+                        .stream(),
                 new StyxHttpClient.Builder());
 
         verify(factory).createConnection(originCaptor.capture(), any(ConnectionSettings.class), any(SslContext.class));
         assertThat(originCaptor.getValue().port(), is(80));
     }
 
+    /*
+     * StyxHttpClient.sendRequestInternal
+     * - Uses default HTTPS port 443 when not specified in Host header
+     */
     @Test
     public void sendsToDefaultHttpsPort() {
         NettyConnectionFactory factory = mockConnectionFactory();
@@ -317,7 +422,8 @@ public class StyxHttpClientTest {
 
         StyxHttpClient.sendRequestInternal(factory, get("/")
                         .header(HOST, "localhost")
-                        .build(),
+                        .build()
+                        .stream(),
                 new StyxHttpClient.Builder().secure(true));
 
         verify(factory).createConnection(originCaptor.capture(), any(ConnectionSettings.class), any(SslContext.class));
