@@ -140,7 +140,6 @@ class FlowControllingHttpContentProducer {
                     return state;
                 })
 
-                .debugTransitions("FCSM")
                 .build();
 
         this.loggingPrefix = loggingPrefix;
@@ -340,7 +339,6 @@ class FlowControllingHttpContentProducer {
         // TODO: Mikko: Don't run `askForMore` The response is fully received already.
 
         if (readQueue.size() == 0) {
-            LOGGER.debug("{} -> {}", new Object[]{this.state(), COMPLETED});
             this.contentSubscriber.onCompleted();
             this.onCompleteAction.run();
             return COMPLETED;
