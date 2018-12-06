@@ -88,7 +88,7 @@ public class Version {
 
     private Optional<String> extractFinalInt(String versionString) {
         Matcher m = VERSION_FORMAT.matcher(versionString);
-        if (!m.matches()){
+        if (!m.matches()) {
             return Optional.empty();
         } else {
             return Optional.of(m.group(3));
@@ -102,8 +102,6 @@ public class Version {
             return Optional.empty();
         }
     }
-
-
 
     @Override
     public String toString() {
