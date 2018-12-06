@@ -61,6 +61,9 @@ class FlowControllingHttpContentProducer {
     private final AtomicLong emittedChunks = new AtomicLong(0);
     private final AtomicLong emittedBytes = new AtomicLong(0);
 
+    final AtomicLong discrepancyBytes = new AtomicLong(0);
+    final AtomicLong discrepancyEvents = new AtomicLong(0);
+
     private final Origin origin;
 
     private volatile Subscriber<? super ByteBuf> contentSubscriber;
@@ -89,14 +92,15 @@ class FlowControllingHttpContentProducer {
 
         this.stateMachine = new StateMachine.Builder<ProducerState>()
                 .initialState(BUFFERING)
-                .transition(BUFFERING, RxBackpressureRequestEvent.class, this::rxBackpressureRequestBeforeSubscription)
-                .transition(BUFFERING, ContentChunkEvent.class, this::contentChunkEventWhileBuffering)
+
+                .transition(BUFFERING, RxBackpressureRequestEvent.class, this::rxBackpressureRequestInBuffering)
+                .transition(BUFFERING, ContentChunkEvent.class, this::contentChunkInBuffering)
                 .transition(BUFFERING, ChannelInactiveEvent.class, this::releaseAndTerminate)
                 .transition(BUFFERING, ChannelExceptionEvent.class, this::releaseAndTerminate)
                 .transition(BUFFERING, ContentSubscribedEvent.class, this::contentSubscribedEventWhileBuffering)
                 .transition(BUFFERING, ContentEndEvent.class, this::contentEndEventWhileBuffering)
 
-                .transition(BUFFERING_COMPLETED, RxBackpressureRequestEvent.class, this::rxBackpressureRequestBeforeSubscription)
+                .transition(BUFFERING_COMPLETED, RxBackpressureRequestEvent.class, this::rxBackpressureRequestInBufferingCompleted)
                 .transition(BUFFERING_COMPLETED, ContentChunkEvent.class, this::spuriousContentChunkEvent)
                 .transition(BUFFERING_COMPLETED, ChannelInactiveEvent.class, s-> scheduleTearDown(BUFFERING_COMPLETED))
                 .transition(BUFFERING_COMPLETED, ChannelExceptionEvent.class, s -> BUFFERING_COMPLETED)
@@ -104,15 +108,15 @@ class FlowControllingHttpContentProducer {
                 .transition(BUFFERING_COMPLETED, ContentSubscribedEvent.class, this::contentSubscribedEventWhileBufferingCompleted)
                 .transition(BUFFERING_COMPLETED, ContentEndEvent.class, s -> BUFFERING_COMPLETED)
 
-                .transition(STREAMING, RxBackpressureRequestEvent.class, this::rxBackpressureRequestEventWhileStreaming)
-                .transition(STREAMING, ContentChunkEvent.class, this::contentChunkEventWhileStreaming)
+                .transition(STREAMING, RxBackpressureRequestEvent.class, this::rxBackpressureRequestEventInStreaming)
+                .transition(STREAMING, ContentChunkEvent.class, this::contentChunkInStreaming)
                 .transition(STREAMING, ChannelInactiveEvent.class, e -> emitErrorAndTerminate(e.cause()))
                 .transition(STREAMING, ChannelExceptionEvent.class, e -> emitErrorAndTerminate(e.cause()))
                 .transition(STREAMING, ContentSubscribedEvent.class, this::contentSubscribedEventWhileStreaming)
                 .transition(STREAMING, ContentEndEvent.class, this::contentEndEventWhileStreaming)
                 .transition(STREAMING, UnsubscribeEvent.class, this::emitErrorAndTerminateOnPrematureUnsubscription)
 
-                .transition(EMITTING_BUFFERED_CONTENT, RxBackpressureRequestEvent.class, this::rxBackpressureRequestEventWhileEmittingBufferedContent)
+                .transition(EMITTING_BUFFERED_CONTENT, RxBackpressureRequestEvent.class, this::rxBackpressureRequestInEmittingBufferedContent)
                 .transition(EMITTING_BUFFERED_CONTENT, ContentChunkEvent.class, this::spuriousContentChunkEvent)
                 .transition(EMITTING_BUFFERED_CONTENT, ChannelInactiveEvent.class, s -> scheduleTearDown(EMITTING_BUFFERED_CONTENT))
                 .transition(EMITTING_BUFFERED_CONTENT, ChannelExceptionEvent.class, s -> EMITTING_BUFFERED_CONTENT)
@@ -135,6 +139,8 @@ class FlowControllingHttpContentProducer {
                     LOGGER.warn(warningMessage("Inappropriate event=" + event.getClass().getSimpleName()));
                     return state;
                 })
+
+                .debugTransitions("FCSM")
                 .build();
 
         this.loggingPrefix = loggingPrefix;
@@ -143,19 +149,34 @@ class FlowControllingHttpContentProducer {
     /*
      * BUFFERING state event handlers
      */
-    private ProducerState rxBackpressureRequestBeforeSubscription(RxBackpressureRequestEvent event) {
+    private ProducerState rxBackpressureRequestInBuffering(RxBackpressureRequestEvent event) {
         // This can occur before the actual content subscribe event. This occurs if the subscriber
         // has called request() before actually having subscribed to the content observable. In this
         // case just initialise the request count with requested N value.
         requested.compareAndSet(Long.MAX_VALUE, 0);
         getAndAddRequest(requested, event.n());
+
+        // TODO: Mikko: Run `askForMore` if queue depth is below threshold.
+        askForMore.run();
+
         return this.state();
     }
 
-    private ProducerState contentChunkEventWhileBuffering(ContentChunkEvent event) {
+    private ProducerState contentChunkInBuffering(ContentChunkEvent event) {
+        long v = receivedChunks.get() - emittedChunks.get();
+        if (v > discrepancyEvents.get()) {
+            discrepancyEvents.set(v);
+        }
+
+        // TODO: Mikko: Run `askForMore` if readQueue is below threshold.
+        if (readQueue.size() < 1) {
+            askForMore.run();
+        }
+
         receivedBytes.addAndGet(event.chunk.readableBytes());
         receivedChunks.incrementAndGet();
         readQueue.add(event.chunk);
+
         return BUFFERING;
     }
 
@@ -178,6 +199,17 @@ class FlowControllingHttpContentProducer {
     /*
      * BUFFERING_COMPLETED event handlers
      */
+
+
+    private ProducerState rxBackpressureRequestInBufferingCompleted(RxBackpressureRequestEvent event) {
+        // This can occur before the actual content subscribe event. This occurs if the subscriber
+        // has called request() before actually having subscribed to the content observable. In this
+        // case just initialise the request count with requested N value.
+        requested.compareAndSet(Long.MAX_VALUE, 0);
+        getAndAddRequest(requested, event.n());
+
+        return this.state();
+    }
 
     private ProducerState spuriousContentChunkEvent(ContentChunkEvent event) {
         // Should not occur because content has already been fully consumed.
@@ -210,23 +242,37 @@ class FlowControllingHttpContentProducer {
     /*
      * STREAMING event handlers
      */
-    private ProducerState rxBackpressureRequestEventWhileStreaming(RxBackpressureRequestEvent event) {
+    private ProducerState rxBackpressureRequestEventInStreaming(RxBackpressureRequestEvent event) {
         requested.compareAndSet(Long.MAX_VALUE, 0);
         getAndAddRequest(requested, event.n());
 
-        if (requested.get() <= 1) {
+        emitChunks(contentSubscriber);
+
+        // TODO: Mikko: Run `askForMore` AFTER emitting chunks if queue depth is below threshold.
+        if (readQueue.size() == 0) {
             askForMore.run();
         }
-        emitChunks(contentSubscriber);
 
         return STREAMING;
     }
 
-    private ProducerState contentChunkEventWhileStreaming(ContentChunkEvent event) {
+    private ProducerState contentChunkInStreaming(ContentChunkEvent event) {
+        long v = receivedChunks.get() - emittedChunks.get();
+        if (v > discrepancyEvents.get()) {
+            discrepancyEvents.set(v);
+        }
+
         receivedBytes.addAndGet(event.chunk.readableBytes());
         receivedChunks.incrementAndGet();
         readQueue.add(event.chunk);
+
         emitChunks(contentSubscriber);
+
+        // TODO: Mikko: Run `askForMore` if queue depth is below threshold
+        if (readQueue.size() == 0) {
+            askForMore.run();
+        }
+
         return STREAMING;
     }
 
@@ -283,13 +329,16 @@ class FlowControllingHttpContentProducer {
     /*
      * EMITTING_BUFFERED_CONTENT event handlers
      */
-    private ProducerState rxBackpressureRequestEventWhileEmittingBufferedContent(RxBackpressureRequestEvent event) {
+    private ProducerState rxBackpressureRequestInEmittingBufferedContent(RxBackpressureRequestEvent event) {
         requested.compareAndSet(Long.MAX_VALUE, 0);
         getAndAddRequest(requested, event.n());
         if (requested.get() <= 1) {
             askForMore.run();
         }
         emitChunks(contentSubscriber);
+
+        // TODO: Mikko: Don't run `askForMore` The response is fully received already.
+
         if (readQueue.size() == 0) {
             LOGGER.debug("{} -> {}", new Object[]{this.state(), COMPLETED});
             this.contentSubscriber.onCompleted();
@@ -420,7 +469,6 @@ class FlowControllingHttpContentProducer {
             emittedBytes.addAndGet(value.readableBytes());
             emittedChunks.incrementAndGet();
             downstream.onNext(value);
-
         }
     }
 
@@ -430,8 +478,8 @@ class FlowControllingHttpContentProducer {
     }
 
     private String warningMessage(String msg) {
-        return format("message=\"%s\", prefix=%s, state=%s, receivedChunks=%d, receivedBytes=%d, emittedChunks=%d, emittedBytes=%d",
-                msg, loggingPrefix, state(), receivedChunks.get(), receivedBytes.get(), emittedChunks.get(), emittedBytes.get());
+        return format("message=\"%s\", prefix=%s, state=%s, receivedChunks=%d, receivedBytes=%d, emittedChunks=%d, emittedBytes=%d, maxDiscrepancyEvents=%d",
+                msg, loggingPrefix, state(), receivedChunks.get(), receivedBytes.get(), emittedChunks.get(), emittedBytes.get(), discrepancyEvents.get());
     }
 
     private static final class ContentChunkEvent {
