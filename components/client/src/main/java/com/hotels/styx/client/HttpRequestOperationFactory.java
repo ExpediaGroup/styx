@@ -74,7 +74,6 @@ public interface HttpRequestOperationFactory {
             return request -> new HttpRequestOperation(
                     request,
                     originStatsFactory,
-                    flowControlEnabled,
                     responseTimeoutMillis,
                     requestLoggingEnabled,
                     longFormat);

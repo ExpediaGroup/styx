@@ -54,6 +54,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static io.netty.handler.timeout.IdleStateEvent.ALL_IDLE_STATE_EVENT;
+import static java.lang.Long.MAX_VALUE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -167,19 +168,26 @@ public class NettyToStyxResponsePropagatorTest {
 
 
     @Test
-    public void pushesHttpContentOnChannelReadComplete() throws Exception {
+    public void pushesHttpContentOnChannelReadComplete() {
         EmbeddedChannel channel = new EmbeddedChannel(new NettyToStyxResponsePropagator(responseSubscriber, SOME_ORIGIN));
 
         channel.writeInbound(httpResponseHeaders);
         LiveHttpResponse response = onNextEvent(responseSubscriber, 0);
+        channel.runPendingTasks();
+
         TestSubscriber<ByteBuf> contentSubscriber = subscribeToContent(response);
+        channel.runPendingTasks();
 
         HttpContent contentOne = newHttpContent("one");
         channel.writeInbound(contentOne);
+        channel.runPendingTasks();
+
         HttpContent contentTwo = newHttpContent("two");
         channel.writeInbound(contentTwo);
+        channel.runPendingTasks();
 
         channel.pipeline().fireChannelReadComplete();
+        channel.runPendingTasks();
 
         assertNoErrors(contentSubscriber);
         assertThat(asString(onNextEvent(contentSubscriber, 0)), is(asString(contentOne.content())));
@@ -327,7 +335,7 @@ public class NettyToStyxResponsePropagatorTest {
 
 
     private TestSubscriber<ByteBuf> subscribeToContent(LiveHttpResponse response) {
-        TestSubscriber<ByteBuf> contentSubscriber = new TestSubscriber<>();
+        TestSubscriber<ByteBuf> contentSubscriber = new TestSubscriber<>(MAX_VALUE);
         toObservable(response.body())
                 .map(Buffers::toByteBuf)
                 .subscribe(contentSubscriber);

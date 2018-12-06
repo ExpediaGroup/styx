@@ -345,7 +345,6 @@ public final class StyxHttpClient implements HttpClient {
                     .httpRequestOperationFactory(request -> new HttpRequestOperation(
                             request,
                             null,
-                            false,
                             responseTimeout,
                             false,
                             false))
