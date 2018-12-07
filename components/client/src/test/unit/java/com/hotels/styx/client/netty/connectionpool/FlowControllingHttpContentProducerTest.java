@@ -990,7 +990,7 @@ public class FlowControllingHttpContentProducerTest {
         verify(askForMore, times(1)).run();
 
         producer.request(1);
-        verify(askForMore, times(2)).run();
+        verify(askForMore, times(1)).run();
     }
 
     @Test
@@ -1023,10 +1023,12 @@ public class FlowControllingHttpContentProducerTest {
         verify(askForMore).run();
 
         producer.onSubscribed(downstream);
+
         assertEquals(producer.state(), STREAMING);
+        verify(askForMore, times(2)).run();
 
         producer.request(5);
-        verify(askForMore, times(2)).run();
+        verify(askForMore, times(3)).run();
     }
 
     @Test
@@ -1040,17 +1042,17 @@ public class FlowControllingHttpContentProducerTest {
         assertEquals(producer.state(), STREAMING);
 
         producer.newChunk(contentChunk1);
-        verify(askForMore).run();
+        verify(askForMore, times(2)).run();
 
         producer.newChunk(contentChunk2);
-        verify(askForMore).run();
+        verify(askForMore, times(2)).run();
 
         producer.request(1);
-        verify(askForMore).run();
+        verify(askForMore, times(2)).run();
 
         // Read Queue depth drops down to zero:
         producer.request(1);
-        verify(askForMore, times(2)).run();
+        verify(askForMore, times(3)).run();
     }
 
     @Test
@@ -1060,14 +1062,17 @@ public class FlowControllingHttpContentProducerTest {
         setUpAndRequest(0);
         verify(askForMore).run();
 
+        // Queue depth is zero, so this will trigger another request.
         producer.onSubscribed(downstream);
+
         assertEquals(producer.state(), STREAMING);
+        verify(askForMore, times(2)).run();
 
         producer.newChunk(contentChunk1);
-        verify(askForMore).run();
+        verify(askForMore, times(2)).run();
 
         producer.newChunk(contentChunk2);
-        verify(askForMore).run();
+        verify(askForMore, times(2)).run();
     }
 
     @Test
@@ -1078,13 +1083,15 @@ public class FlowControllingHttpContentProducerTest {
         verify(askForMore).run();
 
         producer.onSubscribed(downstream);
+
         assertEquals(producer.state(), STREAMING);
+        verify(askForMore, times(2)).run();
 
         producer.newChunk(contentChunk1);
-        verify(askForMore, times(2)).run();
+        verify(askForMore, times(3)).run();
 
         producer.newChunk(contentChunk2);
-        verify(askForMore, times(2)).run();
+        verify(askForMore, times(3)).run();
     }
 
 

@@ -156,7 +156,7 @@ class FlowControllingHttpContentProducer {
         requested.compareAndSet(Long.MAX_VALUE, 0);
         getAndAddRequest(requested, event.n());
 
-        askForMore.run();
+        askForMore();
 
         return this.state();
     }
@@ -177,6 +177,7 @@ class FlowControllingHttpContentProducer {
     private ProducerState contentSubscribedInBuffering(ContentSubscribedEvent event) {
         this.contentSubscriber = event.subscriber;
         emitChunks(this.contentSubscriber);
+        askForMore();
         return STREAMING;
     }
 
@@ -240,7 +241,9 @@ class FlowControllingHttpContentProducer {
 
     private ProducerState contentChunkInStreaming(ContentChunkEvent event) {
         queue(event.chunk);
+
         emitChunks(contentSubscriber);
+
         askForMore();
 
         return STREAMING;

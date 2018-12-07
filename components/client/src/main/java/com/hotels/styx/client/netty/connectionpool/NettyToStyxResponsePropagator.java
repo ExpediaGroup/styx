@@ -129,6 +129,7 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
             }
 
             ctx.channel().config().setAutoRead(false);
+            ctx.channel().read();
 
             // Can be started with flow controlling disabled
             EventLoop eventLoop = ctx.channel().eventLoop();
