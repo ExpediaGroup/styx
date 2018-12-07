@@ -37,7 +37,7 @@ import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.ResponseCookie.decode;
 import static com.hotels.styx.api.ResponseCookie.encode;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static java.lang.Integer.parseInt;
+import static java.lang.Long.parseLong;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -571,7 +571,7 @@ public class HttpResponse implements HttpMessage {
 
         private static boolean isInteger(String contentLength) {
             try {
-                parseInt(contentLength);
+                parseLong(contentLength);
                 return true;
             } catch (NumberFormatException e) {
                 return false;

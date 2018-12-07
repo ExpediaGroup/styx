@@ -71,8 +71,8 @@ interface LiveHttpMessage {
      *
      * @return the content-length if present
      */
-    default Optional<Integer> contentLength() {
-        return header(CONTENT_LENGTH).map(Integer::valueOf);
+    default Optional<Long> contentLength() {
+        return header(CONTENT_LENGTH).map(Long::valueOf);
     }
 
     /**

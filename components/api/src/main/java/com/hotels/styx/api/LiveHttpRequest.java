@@ -48,7 +48,7 @@ import static com.hotels.styx.api.RequestCookie.decode;
 import static com.hotels.styx.api.RequestCookie.encode;
 import static io.netty.buffer.ByteBufUtil.getBytes;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static java.lang.Integer.parseInt;
+import static java.lang.Long.parseLong;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
@@ -1017,7 +1017,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
 
         private static boolean isInteger(String contentLength) {
             try {
-                parseInt(contentLength);
+                parseLong(contentLength);
                 return true;
             } catch (NumberFormatException e) {
                 return false;
