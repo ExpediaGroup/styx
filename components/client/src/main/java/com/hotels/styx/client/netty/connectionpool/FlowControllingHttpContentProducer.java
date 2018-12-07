@@ -86,11 +86,7 @@ class FlowControllingHttpContentProducer {
             String loggingPrefix,
             Origin origin) {
         this.askForMore = requireNonNull(askForMore);
-        this.onCompleteAction = () -> {
-            LOGGER.warn(warningMessage("COMPLETED: "));
-            onCompleteAction.run();
-        };
-
+        this.onCompleteAction = requireNonNull(onCompleteAction);
         this.onTerminateAction = requireNonNull(onTerminateAction);
         this.delayedTearDownAction = requireNonNull(delayedTearDownAction);
         this.origin = requireNonNull(origin);
