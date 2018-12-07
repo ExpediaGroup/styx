@@ -987,10 +987,10 @@ public class FlowControllingHttpContentProducerTest {
         verify(askForMore).run();
 
         producer.newChunk(contentChunk1);
-        verify(askForMore, times(2)).run();
+        verify(askForMore, times(1)).run();
 
         producer.request(1);
-        verify(askForMore, times(3)).run();
+        verify(askForMore, times(2)).run();
     }
 
     @Test
@@ -1000,10 +1000,10 @@ public class FlowControllingHttpContentProducerTest {
         verify(askForMore).run();
 
         producer.newChunk(contentChunk1);
-        verify(askForMore, times(2)).run();
+        verify(askForMore, times(1)).run();
 
         producer.newChunk(contentChunk2);
-        verify(askForMore, times(2)).run();
+        verify(askForMore, times(1)).run();
     }
 
     @Test
