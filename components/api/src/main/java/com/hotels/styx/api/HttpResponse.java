@@ -564,15 +564,15 @@ public class HttpResponse implements HttpMessage {
             checkArgument(contentLengths.size() <= 1, "Duplicate Content-Length found. %s", contentLengths);
 
             if (contentLengths.size() == 1) {
-                checkArgument(isInteger(contentLengths.get(0)), "Invalid Content-Length found. %s", contentLengths.get(0));
+                checkArgument(isPositiveInteger(contentLengths.get(0)), "Invalid Content-Length found. %s", contentLengths.get(0));
             }
             return this;
         }
 
-        private static boolean isInteger(String contentLength) {
+        private static boolean isPositiveInteger(String contentLength) {
             try {
-                parseLong(contentLength);
-                return true;
+                long value = parseLong(contentLength);
+                return value >= 0;
             } catch (NumberFormatException e) {
                 return false;
             }
