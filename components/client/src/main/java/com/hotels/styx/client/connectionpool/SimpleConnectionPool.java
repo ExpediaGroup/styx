@@ -101,6 +101,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     private void newConnection() {
         connectionAttempts.incrementAndGet();
         newConnection(3)
+                .doOnNext(it -> it.addConnectionListener(SimpleConnectionPool.this))
                 .subscribe(
                         this::queueNewConnection,
                         cause -> connectionFailures.incrementAndGet()
@@ -110,8 +111,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     private Mono<Connection> newConnection(int attempts) {
         if (attempts > 0) {
             return this.connectionFactory.createConnection(this.origin, this.connectionSettings)
-                    .onErrorResume(cause -> newConnection(attempts - 1))
-                    .doOnNext(it -> it.addConnectionListener(SimpleConnectionPool.this));
+                    .onErrorResume(cause -> newConnection(attempts - 1));
         } else {
             return Mono.error(new RuntimeException("Unable to create connection"));
         }
@@ -170,6 +170,7 @@ public class SimpleConnectionPool implements ConnectionPool, Connection.Listener
     @Override
     public void connectionClosed(Connection connection) {
         terminatedConnections.incrementAndGet();
+        activeConnections.remove(connection);
     }
 
     public ConnectionPool.Stats stats() {
