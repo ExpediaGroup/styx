@@ -526,7 +526,7 @@ public class HttpRequestTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Invalid Content-Length found. -3")
     public void ensuresContentLengthIsPositive() {
-        HttpRequest r1 = HttpRequest.post("/y")
+        HttpRequest.post("/y")
                 .header("Content-Length", -3)
                 .build();
     }

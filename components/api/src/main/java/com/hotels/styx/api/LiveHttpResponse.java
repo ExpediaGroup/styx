@@ -871,8 +871,8 @@ public class LiveHttpResponse implements LiveHttpMessage {
 
         private static boolean isInteger(String contentLength) {
             try {
-                parseLong(contentLength);
-                return true;
+                long value = parseLong(contentLength);
+                return value >= 0;
             } catch (NumberFormatException e) {
                 return false;
             }
