@@ -864,12 +864,12 @@ public class LiveHttpResponse implements LiveHttpMessage {
             checkArgument(contentLengths.size() <= 1, "Duplicate Content-Length found. %s", contentLengths);
 
             if (contentLengths.size() == 1) {
-                checkArgument(isInteger(contentLengths.get(0)), "Invalid Content-Length found. %s", contentLengths.get(0));
+                checkArgument(isNonNegativeInteger(contentLengths.get(0)), "Invalid Content-Length found. %s", contentLengths.get(0));
             }
             return this;
         }
 
-        private static boolean isInteger(String contentLength) {
+        private static boolean isNonNegativeInteger(String contentLength) {
             try {
                 long value = parseLong(contentLength);
                 return value >= 0;

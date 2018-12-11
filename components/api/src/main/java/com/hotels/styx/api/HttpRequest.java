@@ -716,7 +716,7 @@ public class HttpRequest implements HttpMessage {
 
         private void ensureContentLengthIsValid() {
             requireNotDuplicatedHeader(CONTENT_LENGTH).ifPresent(contentLength ->
-                    checkArgument(isPositiveInteger(contentLength), "Invalid Content-Length found. %s", contentLength)
+                    checkArgument(isNonNegativeInteger(contentLength), "Invalid Content-Length found. %s", contentLength)
             );
         }
 
@@ -728,7 +728,7 @@ public class HttpRequest implements HttpMessage {
             return headerValues.isEmpty() ? Optional.empty() : Optional.of(headerValues.get(0));
         }
 
-        private static boolean isPositiveInteger(String contentLength) {
+        private static boolean isNonNegativeInteger(String contentLength) {
             try {
                 long value = parseLong(contentLength);
                 return value >= 0;
