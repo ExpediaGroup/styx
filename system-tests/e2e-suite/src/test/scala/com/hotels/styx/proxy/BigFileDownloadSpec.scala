@@ -17,18 +17,21 @@
 package com.hotels.styx.proxy
 
 import java.io.{File, IOException, RandomAccessFile}
+import java.util.concurrent.TimeUnit.MILLISECONDS
 
 import com.google.common.base.Charsets.UTF_8
 import com.google.common.io.Files
 import com.google.common.io.Files._
 import com.hotels.styx.MockServer.responseSupplier
+import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponse.response
-import com.hotels.styx.api.HttpHeaderNames.HOST
 import com.hotels.styx.api.HttpResponseStatus._
+import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.support.configuration.{HttpBackend, Origins}
 import com.hotels.styx.{DefaultStyxConfiguration, MockServer, StyxProxySpec}
 import org.scalatest.FunSpec
+import reactor.core.publisher.Mono
 
 import scala.concurrent.duration._
 
@@ -36,6 +39,12 @@ class BigFileDownloadSpec extends FunSpec
   with StyxProxySpec
   with DefaultStyxConfiguration {
   val fileServer = new MockServer(0)
+
+  val myClient: StyxHttpClient = new StyxHttpClient.Builder()
+    .threadName("streaming-scalatest-e2e-client")
+    .connectTimeout(1000, MILLISECONDS)
+    .maxHeaderSize(2 * 8192)
+    .build()
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -62,18 +71,28 @@ class BigFileDownloadSpec extends FunSpec
 
   val ONE_HUNDRED_MB: Long = 100L * 1024L * 1024L
 
-  ignore("Big file requests") {
+  describe("Big file requests") {
     it("should proxy big file requests") {
       val req = get("/download")
         .addHeader(HOST, styxServer.proxyHost)
         .build()
 
+      var bodyLength = 0
+
       // Note: It is very important to consume the body. Otherwise
       // it won't get transmitted over the TCP connection:
-      val resp = decodedRequest(req, maxSize = 2 * ONE_HUNDRED_MB.toInt, timeout = 60.seconds)
+      val response = myClient.streaming().send(req).get()
 
-      assert(resp.status() == OK)
-      val actualContentSize = resp.body.length
+      Mono.from(response.newBuilder()
+          .body(body => body
+                      .map(buf => { bodyLength = bodyLength + buf.size() ; buf })
+                      .drop()
+                      .doOnEnd( x => println("body consumed!")))
+          .build()
+          .aggregate(100)).block()
+
+      assert(response.status() == OK)
+      val actualContentSize = bodyLength
 
       println("Actual content size was: " + actualContentSize)
       actualContentSize should be(ONE_HUNDRED_MB)

@@ -53,7 +53,9 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.testng.Assert.assertEquals;
 
 
 public class FlowControllingHttpContentProducerTest {
@@ -547,7 +549,7 @@ public class FlowControllingHttpContentProducerTest {
     }
 
     @Test
-    public void UnexpectedChannelClosureInBufferingCompletedState() throws Exception {
+    public void unexpectedChannelClosureInBufferingCompletedState() throws Exception {
         setUpAndRequest(NO_BACKPRESSURE);
 
         producer.newChunk(contentChunk1);
@@ -957,6 +959,142 @@ public class FlowControllingHttpContentProducerTest {
                 copiedBuffer("chunk 4", UTF_8)
         ));
     }
+
+
+    /*
+     * Flow Control
+     */
+
+    @Test
+    public void requestN0EventInBufferingState() {
+        setUpAndRequest(0);
+
+        verify(askForMore).run();
+    }
+
+    @Test
+    public void requestN5EventInBufferingState() {
+        setUpAndRequest(5);
+
+        verify(askForMore).run();
+    }
+
+    @Test
+    public void requestEventInBufferingState() {
+        // Enable channel if queue depth is zero
+        setUpAndRequest(0);
+
+        verify(askForMore).run();
+
+        producer.newChunk(contentChunk1);
+        verify(askForMore, times(1)).run();
+
+        producer.request(1);
+        verify(askForMore, times(1)).run();
+    }
+
+    @Test
+    public void contentEventInBufferingState() {
+        setUpAndRequest(5);
+
+        verify(askForMore).run();
+
+        producer.newChunk(contentChunk1);
+        verify(askForMore, times(1)).run();
+
+        producer.newChunk(contentChunk2);
+        verify(askForMore, times(1)).run();
+    }
+
+    @Test
+    public void requestInBufferingCompletedState() {
+        setUpAndRequest(5);
+
+        producer.lastHttpContent();
+        assertEquals(producer.state(), BUFFERING_COMPLETED);
+
+        producer.request(5);
+        verify(askForMore).run();
+    }
+
+    @Test
+    public void requestInStreamingState() {
+        setUpAndRequest(0);
+        verify(askForMore).run();
+
+        producer.onSubscribed(downstream);
+
+        assertEquals(producer.state(), STREAMING);
+        verify(askForMore, times(2)).run();
+
+        producer.request(5);
+        verify(askForMore, times(3)).run();
+    }
+
+    @Test
+    public void requestInStreamingState2() {
+        // Enables channel when queue depth is zero
+
+        setUpAndRequest(0);
+        verify(askForMore).run();
+
+        producer.onSubscribed(downstream);
+        assertEquals(producer.state(), STREAMING);
+
+        producer.newChunk(contentChunk1);
+        verify(askForMore, times(2)).run();
+
+        producer.newChunk(contentChunk2);
+        verify(askForMore, times(2)).run();
+
+        producer.request(1);
+        verify(askForMore, times(2)).run();
+
+        // Read Queue depth drops down to zero:
+        producer.request(1);
+        verify(askForMore, times(3)).run();
+    }
+
+    @Test
+    public void contentInStreamingState() {
+        // Keeps channel disabled when requested count is zero
+
+        setUpAndRequest(0);
+        verify(askForMore).run();
+
+        // Queue depth is zero, so this will trigger another request.
+        producer.onSubscribed(downstream);
+
+        assertEquals(producer.state(), STREAMING);
+        verify(askForMore, times(2)).run();
+
+        producer.newChunk(contentChunk1);
+        verify(askForMore, times(2)).run();
+
+        producer.newChunk(contentChunk2);
+        verify(askForMore, times(2)).run();
+    }
+
+    @Test
+    public void contentInStreamingState2() {
+        // Enables channel when queue depth remains at zero
+
+        setUpAndRequest(1);
+        verify(askForMore).run();
+
+        producer.onSubscribed(downstream);
+
+        assertEquals(producer.state(), STREAMING);
+        verify(askForMore, times(2)).run();
+
+        producer.newChunk(contentChunk1);
+        verify(askForMore, times(3)).run();
+
+        producer.newChunk(contentChunk2);
+        verify(askForMore, times(3)).run();
+    }
+
+
 
     public <T> void assertException(Throwable cause, Class<T> klass, String message) {
         assertThat(cause, is(instanceOf(klass)));

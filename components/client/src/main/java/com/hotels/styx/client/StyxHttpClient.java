@@ -53,7 +53,7 @@ public final class StyxHttpClient implements HttpClient {
     private final NettyConnectionFactory connectionFactory;
 
     private StyxHttpClient(NettyConnectionFactory connectionFactory, Builder parameters) {
-        transactionParameters = parameters;
+        this.transactionParameters = parameters;
         this.connectionFactory = connectionFactory;
     }
 
@@ -345,7 +345,6 @@ public final class StyxHttpClient implements HttpClient {
                     .httpRequestOperationFactory(request -> new HttpRequestOperation(
                             request,
                             null,
-                            false,
                             responseTimeout,
                             false,
                             false))

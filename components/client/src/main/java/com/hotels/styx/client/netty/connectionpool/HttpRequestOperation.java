@@ -65,7 +65,6 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
 
     private final LiveHttpRequest request;
     private final Optional<OriginStatsFactory> originStatsFactory;
-    private final boolean flowControlEnabled;
     private final int responseTimeoutMillis;
     private final AtomicInteger terminationCount = new AtomicInteger(0);
     private final AtomicInteger executeCount = new AtomicInteger(0);
@@ -81,23 +80,20 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
      */
     @VisibleForTesting
     public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory) {
-        this(request, originStatsFactory, false, DEFAULT_RESPONSE_TIMEOUT_MILLIS, false, false);
+        this(request, originStatsFactory, DEFAULT_RESPONSE_TIMEOUT_MILLIS, false, false);
     }
 
     /**
      * Constructs an instance.
-     *
-     * @param request               HTTP request
+     *  @param request               HTTP request
      * @param originStatsFactory    OriginStats factory
-     * @param flowControlEnabled    true if flow-control should be enabled
      * @param responseTimeoutMillis response timeout in milliseconds
      * @param requestLoggingEnabled
      */
-    public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory, boolean flowControlEnabled,
+    public HttpRequestOperation(LiveHttpRequest request, OriginStatsFactory originStatsFactory,
                                 int responseTimeoutMillis, boolean requestLoggingEnabled, boolean longFormat) {
         this.request = requireNonNull(request);
         this.originStatsFactory = Optional.ofNullable(originStatsFactory);
-        this.flowControlEnabled = flowControlEnabled;
         this.responseTimeoutMillis = responseTimeoutMillis;
         this.requestLoggingEnabled = requestLoggingEnabled;
         this.httpRequestMessageLogger = new HttpRequestMessageLogger("com.hotels.styx.http-messages.outbound", longFormat);
@@ -179,7 +175,7 @@ public class HttpRequestOperation implements Operation<NettyConnection, LiveHttp
                                 new RequestsToOriginMetricsCollector(originStatsFactory.originStats(origin))));
         channel.pipeline().addLast(
                 NettyToStyxResponsePropagator.NAME,
-                new NettyToStyxResponsePropagator(observer, origin, flowControlEnabled, responseTimeoutMillis, MILLISECONDS, request));
+                new NettyToStyxResponsePropagator(observer, origin, responseTimeoutMillis, MILLISECONDS, request));
     }
 
     private void removeProxyBridgeHandlers(NettyConnection connection) {

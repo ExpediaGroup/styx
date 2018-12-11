@@ -46,7 +46,7 @@ trait StyxClientSupplier extends BeforeAndAfterAll {
   private def doRequest(request: HttpRequest, secure: Boolean = false): Future[HttpResponse] = if (secure)
     client.secure().send(request).toScala
   else
-    client.sendRequest(request).toScala
+    client.send(request).toScala
 
   def decodedRequest(request: HttpRequest,
                      debug: Boolean = false,

@@ -60,7 +60,6 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
 
     private final AtomicBoolean responseCompleted = new AtomicBoolean(false);
     private final Subscriber<? super LiveHttpResponse> responseObserver;
-    private final boolean flowControlEnabled;
     private final LiveHttpRequest request;
 
     private final Origin origin;
@@ -68,25 +67,22 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
     private Optional<FlowControllingHttpContentProducer> contentProducer = Optional.empty();
 
     NettyToStyxResponsePropagator(Subscriber<? super LiveHttpResponse> responseObserver, Origin origin) {
-        this(responseObserver, origin, false, 5L, TimeUnit.SECONDS);
+        this(responseObserver, origin, 5L, TimeUnit.SECONDS);
     }
 
     NettyToStyxResponsePropagator(Subscriber<? super LiveHttpResponse> responseObserver,
                                   Origin origin,
-                                  boolean flowControlEnabled,
                                   long idleTimeout,
                                   TimeUnit timeUnit) {
-        this(responseObserver, origin, flowControlEnabled, idleTimeout, timeUnit, null);
+        this(responseObserver, origin, idleTimeout, timeUnit, null);
     }
 
     NettyToStyxResponsePropagator(Subscriber<? super LiveHttpResponse> responseObserver,
                                   Origin origin,
-                                  boolean flowControlEnabled,
                                   long idleTimeout,
                                   TimeUnit timeUnit,
                                   LiveHttpRequest request) {
         this.responseObserver = responseObserver;
-        this.flowControlEnabled = flowControlEnabled;
         this.origin = origin;
         this.idleTimeoutMillis = timeUnit.toMillis(idleTimeout);
         this.request = request;
@@ -131,6 +127,9 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
                 emitResponseError(new BadHttpResponseException(origin, nettyResponse.getDecoderResult().cause()));
                 return;
             }
+
+            ctx.channel().config().setAutoRead(false);
+            ctx.channel().read();
 
             // Can be started with flow controlling disabled
             EventLoop eventLoop = ctx.channel().eventLoop();
@@ -185,11 +184,8 @@ final class NettyToStyxResponsePropagator extends SimpleChannelInboundHandler {
         String requestPrefix = request != null ? format("Request(method=%s, url=%s, id=%s)", request.method(), request.url(), request.id()) : "Request NA";
         String loggingPrefix = format("%s -> %s", ctx.channel().remoteAddress(), ctx.channel().localAddress());
 
-        Runnable askForMore = this.flowControlEnabled ? () -> ctx.channel().read() : () -> {
-        };
-
         return new FlowControllingHttpContentProducer(
-                askForMore,
+                () -> ctx.channel().read(),
                 () -> {
                     ctx.channel().config().setAutoRead(true);
                     emitResponseCompleted();
