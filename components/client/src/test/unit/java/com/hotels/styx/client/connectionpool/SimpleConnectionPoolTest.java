@@ -560,7 +560,7 @@ public class SimpleConnectionPoolTest {
         pool.connectionClosed(connection1);
 
         assertEquals(pool.stats().busyConnectionCount(), 0);
-        assertEquals(pool.stats().availableConnectionCount(), 1);
+        assertEquals(pool.stats().availableConnectionCount(), 0);
         assertEquals(pool.stats().closedConnections(), 0);
         assertEquals(pool.stats().terminatedConnections(), 1);
 
@@ -729,5 +729,38 @@ public class SimpleConnectionPoolTest {
                 .verifyComplete();
 
         verify(connection1).addConnectionListener(Mockito.eq(pool));
+    }
+
+    @Test
+    public void registersAsConnectionListenerOnlyOnce() {
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
+                .thenReturn(Mono.error(new RuntimeException("Connection failure.")))
+                .thenReturn(Mono.just(connection1));
+
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
+
+        StepVerifier.create(pool.borrowConnection())
+                .consumeNextWith(pool::returnConnection)
+                .verifyComplete();
+
+        verify(connection1).addConnectionListener(Mockito.eq(pool));
+    }
+
+    @Test
+    public void removesTerminatedIdleConnections() {
+        when(connectionFactory.createConnection(any(Origin.class), any(ConnectionSettings.class)))
+                .thenReturn(Mono.just(connection1));
+
+        SimpleConnectionPool pool = new SimpleConnectionPool(origin, defaultConnectionPoolSettings(), connectionFactory);
+
+        StepVerifier.create(pool.borrowConnection())
+                .consumeNextWith(pool::returnConnection)
+                .verifyComplete();
+
+        assertEquals(pool.stats().availableConnectionCount(), 1);
+
+        pool.connectionClosed(connection1);
+
+        assertEquals(pool.stats().availableConnectionCount(), 0);
     }
 }
