@@ -74,7 +74,7 @@ class ServerConnectionsSpec extends FunSpec
           try {
             val response = future.get(1, SECONDS)
           } catch {
-            case e: Exception => print(e)
+            case e: Exception => println("If this says Bad HTTP Response, it's fine: " + e)
           }
         })
 

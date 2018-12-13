@@ -79,14 +79,14 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        totalConnections.inc();
+//        totalConnections.inc();
 
         super.channelActive(ctx);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        totalConnections.dec();
+//        totalConnections.dec();
 
         super.channelInactive(ctx);
     }

@@ -217,7 +217,10 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        eventProcessor.submit(new ChannelInactiveEvent());
+        if (eventProcessor != null) {
+            eventProcessor.submit(new ChannelInactiveEvent());
+        }
+
         super.channelInactive(ctx);
     }
 

@@ -30,6 +30,7 @@ import com.hotels.styx.server.netty.codec.NettyToStyxRequestDecoder;
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler;
 import com.hotels.styx.server.netty.connectors.ResponseEnhancer;
 import com.hotels.styx.server.netty.handlers.ChannelStatisticsHandler;
+import com.hotels.styx.server.netty.handlers.ConnectionCountHandler;
 import com.hotels.styx.server.netty.handlers.ExcessConnectionRejector;
 import com.hotels.styx.server.netty.handlers.RequestTimeoutHandler;
 import com.hotels.styx.server.track.CurrentRequestTracker;
@@ -149,6 +150,7 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
                     .addLast("connection-throttler", excessConnectionRejector)
                     .addLast("idle-handler", new IdleStateHandler(serverConfig.requestTimeoutMillis(), 0, serverConfig.keepAliveTimeoutMillis(), MILLISECONDS))
                     .addLast("channel-stats", channelStatsHandler)
+                    .addLast("channel-connection-stats", new ConnectionCountHandler(metrics))
 
                     // Http Server Codec
                     .addLast("http-server-codec", new HttpServerCodec(serverConfig.maxInitialLineLength(), serverConfig.maxHeaderSize(), serverConfig.maxChunkSize(), true))

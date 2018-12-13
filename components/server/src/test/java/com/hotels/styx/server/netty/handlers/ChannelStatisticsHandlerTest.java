@@ -55,6 +55,11 @@ public class ChannelStatisticsHandlerTest {
         assertThat(countOf(ChannelStatisticsHandler.SENT_BYTES), is((long) buf.readableBytes()));
     }
 
+    @Test
+    public void foo() {
+
+    }
+
     private long countOf(String sentBytes) {
         return this.metricRegistry.counter(metricName(sentBytes)).getCount();
     }
