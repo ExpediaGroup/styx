@@ -23,11 +23,14 @@ import java.util.concurrent.TimeUnit.SECONDS
 import com.hotels.styx.StyxProxySpec
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
 import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.client.BadHttpResponseException
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig, StyxConfig}
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
+
+import scala.concurrent.ExecutionException
 
 class ServerConnectionsSpec extends FunSpec
   with StyxProxySpec
@@ -59,36 +62,52 @@ class ServerConnectionsSpec extends FunSpec
   }
 
   describe("Ensuring connection metrics are accurate") {
-      it("After all responses are finished, total-connections metric should be zero") {
-        val request: HttpRequest = get("http://localhost:" + styxServer.proxyHttpAddress().getPort + "/").build()
+    it("After all responses are finished, total-connections metric should be zero") {
+      val request: HttpRequest = get("http://localhost:" + styxServer.proxyHttpAddress().getPort + "/").build()
 
-        val list = new util.ArrayList[CompletableFuture[HttpResponse]]()
+      val list = new util.ArrayList[CompletableFuture[HttpResponse]]()
 
-        for(_ <- 1 to 10) {
-          val future = client.send(request)
+      for (_ <- 1 to 10) {
+        val future = client.send(request)
 
-          list.add(future)
-        }
-
-        list.forEach(future => {
-          try {
-            val response = future.get(1, SECONDS)
-          } catch {
-            case e: Exception => println("If this says Bad HTTP Response, it's fine: " + e)
-          }
-        })
-
-        println(getTotalConnectionsMetric.bodyAs(UTF_8))
-
-        getTotalConnectionsMetric.bodyAs(UTF_8) should be("{\"connections.total-connections\":{\"count\":0}}")
+        list.add(future)
       }
+
+      list.forEach(future => {
+        try {
+          ignoreExpectedExceptions(() => future.get(1, SECONDS))
+        } catch {
+          case e : Exception => println("Unexpected in test "+e)
+        }
+      })
+
+      println(getTotalConnectionsMetric.bodyAs(UTF_8))
+
+      getTotalConnectionsMetric.bodyAs(UTF_8) should be("{\"connections.total-connections\":{\"count\":0}}")
+    }
+  }
+
+  private def ignoreExpectedExceptions(fun: () => Unit): Unit = {
+    try {
+      fun()
+    } catch {
+      case e: ExecutionException => swallowBadHttpResponseException(() => throw e.getCause)
+    }
+  }
+
+  private def swallowBadHttpResponseException(fun: () => Unit): Unit = {
+    try {
+      fun()
+    } catch {
+      case e: BadHttpResponseException => // Ignore it
+    }
   }
 
   private def getTotalConnectionsMetric = {
-    val metricsRequest: HttpRequest = get("http://localhost:" + styxServer.adminHttpAddress().getPort + "/admin/metrics/connections.total-connections").build()
+    val request: HttpRequest = get("http://localhost:" + styxServer.adminHttpAddress().getPort + "/admin/metrics/connections.total-connections").build()
 
-    val metresp = client.send(metricsRequest).get(1, SECONDS)
-    metresp
+    val response = client.send(request).get(1, SECONDS)
+    response
   }
 }
 
