@@ -17,7 +17,7 @@ package com.hotels.styx.server
 
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.{CompletableFuture, ExecutionException}
 import java.util.concurrent.TimeUnit.SECONDS
 
 import com.hotels.styx.StyxProxySpec
@@ -30,7 +30,9 @@ import com.hotels.styx.support.configuration.{HttpBackend, Origins, ProxyConfig,
 import org.scalatest.FunSpec
 import org.scalatest.concurrent.Eventually
 
+import scala.concurrent.duration._
 import scala.concurrent.ExecutionException
+import scala.util.{Failure, Success, Try}
 
 class ServerConnectionsSpec extends FunSpec
   with StyxProxySpec
@@ -74,14 +76,46 @@ class ServerConnectionsSpec extends FunSpec
 
       list.forEach(future => {
         try {
-          ignoreExpectedExceptions(() => future.get(1, SECONDS))
+          ignoreExpectedExceptions2(() => future.get(1, SECONDS))
         } catch {
           case e : Exception => println("Unexpected in test "+e)
         }
       })
 
-      getTotalConnectionsMetric.bodyAs(UTF_8) should be("{\"connections.total-connections\":{\"count\":0}}")
+      eventually(timeout(1 second)) {
+        getTotalConnectionsMetric.bodyAs(UTF_8) should be("{\"connections.total-connections\":{\"count\":0}}")
+      }
     }
+
+    it("foo") {
+      val another = Try(throw new ExecutionException(new IllegalStateException("my test exception"))) recoverWith {
+        case ex : ExecutionException => Failure(ex.getCause)
+        case e => Failure(e)
+      }
+
+      val again = another recoverWith {
+        case ex : IllegalArgumentException => Success()
+        case e => Failure(e)
+      }
+
+      println(again.get)
+    }
+  }
+
+  private def ignoreExpectedExceptions2(fun: () => Unit): Unit = {
+
+    val foo = Try(fun) recoverWith {
+      case ex : ExecutionException => Failure(ex.getCause)
+      case e => Failure(e)
+    } recoverWith {
+      case ex : BadHttpResponseException => Success("ignore this: "+ex)
+      case e => Failure(e)
+    }
+
+    println("foo = "+foo)
+
+    foo.get
+
   }
 
   private def ignoreExpectedExceptions(fun: () => Unit): Unit = {
