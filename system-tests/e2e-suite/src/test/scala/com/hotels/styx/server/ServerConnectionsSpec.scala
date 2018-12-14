@@ -63,48 +63,28 @@ class ServerConnectionsSpec extends FunSpec
   }
 
   describe("Ensuring connection metrics are accurate") {
-    it("After all responses are finished, total-connections metric should be zero") {
+    it("should record zero total-connections after finishing responses, including when connections are rejected due to exceeeding the configured maximum") {
       val request: HttpRequest = get("http://localhost:" + styxServer.proxyHttpAddress().getPort + "/").build()
 
-      val list = new util.ArrayList[CompletableFuture[HttpResponse]]()
+      val futures = new util.ArrayList[CompletableFuture[HttpResponse]]()
 
       for (_ <- 1 to 10) {
-        val future = client.send(request)
-
-        list.add(future)
+        futures.add(client.send(request))
       }
 
-      list.forEach(future => {
-        try {
-          ignoreExpectedExceptions2(() => future.get(1, SECONDS))
-        } catch {
-          case e : Exception => println("Unexpected in test "+e)
-        }
+      // We expect exceptions because we are trying to establish more connections than we have configured the server to allow
+      futures.forEach(future => {
+        ignoreExpectedExceptions(() => future.get(1, SECONDS))
       })
 
       eventually(timeout(1 second)) {
         getTotalConnectionsMetric.bodyAs(UTF_8) should be("{\"connections.total-connections\":{\"count\":0}}")
       }
     }
-
-    it("foo") {
-      val another = Try(throw new ExecutionException(new IllegalStateException("my test exception"))) recoverWith {
-        case ex : ExecutionException => Failure(ex.getCause)
-        case e => Failure(e)
-      }
-
-      val again = another recoverWith {
-        case ex : IllegalArgumentException => Success()
-        case e => Failure(e)
-      }
-
-      println(again.get)
-    }
   }
 
-  private def ignoreExpectedExceptions2(fun: () => Unit): Unit = {
-
-    val foo = Try(fun) recoverWith {
+  private def ignoreExpectedExceptions(fun: () => Unit): Unit = {
+    val outcome = Try(fun()) recoverWith {
       case ex : ExecutionException => Failure(ex.getCause)
       case e => Failure(e)
     } recoverWith {
@@ -112,26 +92,9 @@ class ServerConnectionsSpec extends FunSpec
       case e => Failure(e)
     }
 
-    println("foo = "+foo)
+    // when the connection is rejected we expect to end up with Success("ignore this: BadHttpResponseException ....")
 
-    foo.get
-
-  }
-
-  private def ignoreExpectedExceptions(fun: () => Unit): Unit = {
-    try {
-      fun()
-    } catch {
-      case e: ExecutionException => swallowBadHttpResponseException(() => throw e.getCause)
-    }
-  }
-
-  private def swallowBadHttpResponseException(fun: () => Unit): Unit = {
-    try {
-      fun()
-    } catch {
-      case e: BadHttpResponseException => // Ignore it
-    }
+    outcome.get
   }
 
   private def getTotalConnectionsMetric = {
