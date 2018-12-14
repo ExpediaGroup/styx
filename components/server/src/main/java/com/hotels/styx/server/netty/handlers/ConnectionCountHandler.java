@@ -38,10 +38,15 @@ public class ConnectionCountHandler extends ChannelDuplexHandler {
     private final Counter totalConnections;
     private final AtomicBoolean active;
 
+    /**
+     * Instantiates handler.
+     *
+     * @param metricRegistry the registry in which the total-connections metric will be registered
+     */
     public ConnectionCountHandler(MetricRegistry metricRegistry) {
-        MetricRegistry metricRegistry1 = metricRegistry.scope(PREFIX);
-
-        this.totalConnections = metricRegistry1.counter(TOTAL_CONNECTIONS);
+        this.totalConnections = metricRegistry
+                .scope(PREFIX)
+                .counter(TOTAL_CONNECTIONS);
 
         this.active = new AtomicBoolean(false);
     }
@@ -53,7 +58,7 @@ public class ConnectionCountHandler extends ChannelDuplexHandler {
         if (wasPreviouslyInactive) {
             totalConnections.inc();
         } else {
-            LOGGER.warn("channelActive on already active channel");
+            LOGGER.warn("channelActive event received on already active channel");
         }
 
         super.channelActive(ctx);
@@ -66,7 +71,7 @@ public class ConnectionCountHandler extends ChannelDuplexHandler {
         if (wasPreviouslyActive) {
             totalConnections.dec();
         } else {
-            LOGGER.warn("channelInactive on already inactive channel");
+            LOGGER.warn("channelInactive event received on already inactive channel");
         }
 
         super.channelInactive(ctx);

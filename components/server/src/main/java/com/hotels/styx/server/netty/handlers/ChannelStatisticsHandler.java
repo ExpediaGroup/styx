@@ -37,23 +37,20 @@ import static java.lang.String.format;
 public class ChannelStatisticsHandler extends ChannelDuplexHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelStatisticsHandler.class);
 
-    public static final String PREFIX = "connections";
+    static final String PREFIX = "connections";
 
-    public static final String RECEIVED_BYTES = "bytes-received";
-    public static final String SENT_BYTES = "bytes-sent";
-    public static final String TOTAL_CONNECTIONS = "total-connections";
+    static final String RECEIVED_BYTES = "bytes-received";
+    static final String SENT_BYTES = "bytes-sent";
 
     private final MetricRegistry metricRegistry;
     private final Counter receivedBytesCount;
     private final Counter sentBytesCount;
-    private final Counter totalConnections;
 
     public ChannelStatisticsHandler(MetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry.scope(PREFIX);
 
         this.receivedBytesCount = this.metricRegistry.counter(RECEIVED_BYTES);
         this.sentBytesCount = this.metricRegistry.counter(SENT_BYTES);
-        this.totalConnections = this.metricRegistry.counter(TOTAL_CONNECTIONS);
     }
 
     @Override
@@ -75,20 +72,6 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
 
         Histogram histogram = metricRegistry.histogram(name(counterPrefix(thread), "channels"));
         histogram.update(channelCount.getCount());
-    }
-
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-//        totalConnections.inc();
-
-        super.channelActive(ctx);
-    }
-
-    @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-//        totalConnections.dec();
-
-        super.channelInactive(ctx);
     }
 
     @Override

@@ -40,7 +40,6 @@ class ServerConnectionsSpec extends FunSpec
 
   override val styxConfig = StyxConfig(ProxyConfig(maxConnectionsCount = 5))
 
-
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     styxServer.setBackends(
@@ -81,8 +80,6 @@ class ServerConnectionsSpec extends FunSpec
         }
       })
 
-      println(getTotalConnectionsMetric.bodyAs(UTF_8))
-
       getTotalConnectionsMetric.bodyAs(UTF_8) should be("{\"connections.total-connections\":{\"count\":0}}")
     }
   }
@@ -106,21 +103,8 @@ class ServerConnectionsSpec extends FunSpec
   private def getTotalConnectionsMetric = {
     val request: HttpRequest = get("http://localhost:" + styxServer.adminHttpAddress().getPort + "/admin/metrics/connections.total-connections").build()
 
-    val response = client.send(request).get(1, SECONDS)
-    response
+    client.send(request).get(1, SECONDS)
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
