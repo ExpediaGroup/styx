@@ -1,0 +1,40 @@
+version: '3'
+services:
+
+  httpd-01:
+    image: httpd:2.4
+    ports:
+      - "8081:80"
+    volumes:
+      - ./apache-config:/usr/local/apache2/htdocs/
+
+  toxiproxy:
+    image: shopify/toxiproxy:latest
+    depends_on:
+      - httpd-01
+    ports:
+      - "8474:8474"
+    volumes:
+      - ./toxiproxy/:/config
+    entrypoint:
+      - /go/bin/toxiproxy
+      - "-host=0.0.0.0"
+      - "-config=/config/config.json"
+
+  styx:
+    image: styxcore:latest
+    depends_on:
+      - httpd-01
+      - toxiproxy
+    ports:
+      - "9000:9000"
+      - "8080:8080"
+      - "8443:8443"
+    volumes:
+      - ./styx-config:/styx/config
+    links:
+      - httpd-01
+      - toxiproxy
+    entrypoint:
+      - styx/bin/startup
+      - /styx/config/styxconf.yml

@@ -1,0 +1,12 @@
+# See origins/origins-default.yaml for explanation of config format
+---
+- id: "httpd"
+  path: "/"
+  connectionPool:
+    maxConnectionsPerHost: 45
+    maxPendingConnectionsPerHost: 15
+    connectTimeoutMillis: 1000
+    pendingConnectionTimeoutMillis: 8000
+  responseTimeoutMillis: 60000
+  origins:
+    - { id: "httpd-01", host: "toxiproxy:80" }
