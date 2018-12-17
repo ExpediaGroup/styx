@@ -1,3 +1,33 @@
+
+<a name="styx-1.0.0.beta3"></a>
+## [styx-1.0.0.beta3](https://github.com/HotelsDotCom/styx/compare/styx-styx-1.0.0.beta2...styx-1.0.0.beta3) (2018-12-17)
+
+### Pull Requests
+
+* Use Long to represent Content-Length size ([#357](https://github.com/HotelsDotCom/styx/issues/357))
+* Fix downlink flow control ([#356](https://github.com/HotelsDotCom/styx/issues/356))
+* Fix double counting of terminatedConnections metric ([#359](https://github.com/HotelsDotCom/styx/issues/359))
+* StyxHttpClient: add support for live requests ([#353](https://github.com/HotelsDotCom/styx/issues/353))
+* Version metric should be a string instead of an integer. ([#352](https://github.com/HotelsDotCom/styx/issues/352))
+* ByteStream replacement in live HTTP response. ([#349](https://github.com/HotelsDotCom/styx/issues/349))
+* Fix intermittently failing test. ([#350](https://github.com/HotelsDotCom/styx/issues/350))
+* An API for setting a custom HTTP response status and phrase. ([#348](https://github.com/HotelsDotCom/styx/issues/348))
+* Remove 'asCompletableFuture' method from Styx Eventual. ([#346](https://github.com/HotelsDotCom/styx/issues/346))
+* Remove deprecated "request-logging.enabled" option. ([#347](https://github.com/HotelsDotCom/styx/issues/347))
+* Remove git merge conflict markers from CHANGELOG ([#345](https://github.com/HotelsDotCom/styx/issues/345))
+* Deprecate Rx.Java from Connection.Factory. ([#344](https://github.com/HotelsDotCom/styx/issues/344))
+* Deprecate Rx.Java from ConnectionPool and its consumers ([#343](https://github.com/HotelsDotCom/styx/issues/343))
+* Additional metrics ([#342](https://github.com/HotelsDotCom/styx/issues/342))
+* Improve connection pool. ([#337](https://github.com/HotelsDotCom/styx/issues/337))
+* Refactor: Simplify StyxHostHttpClient ([#339](https://github.com/HotelsDotCom/styx/issues/339))
+* Add a feature flag to enable/disable request tracking feature. ([#341](https://github.com/HotelsDotCom/styx/issues/341))
+* Remove singleton dependency from request tracker unit tests. ([#340](https://github.com/HotelsDotCom/styx/issues/340))
+* Refactor StyxHostHttpClient ([#338](https://github.com/HotelsDotCom/styx/issues/338))
+* Removes `ongoingResponse` from HttpPipelineHandler log messages.([#336](https://github.com/HotelsDotCom/styx/issues/336))
+* Remove mutable state (connectionRef) from Transport class. ([#329](https://github.com/HotelsDotCom/styx/issues/329))
+* Update CHANGELOG.md and increment pom versions to 1.0-SNAPSHOT ([#332](https://github.com/HotelsDotCom/styx/issues/332))
+
+
 <a name="styx-styx-1.0.0.beta2"></a>
 ## [styx-styx-1.0.0.beta2](https://github.com/HotelsDotCom/styx/compare/styx-1.0.0.beta1...styx-styx-1.0.0.beta2) (2018-10-31)
 
