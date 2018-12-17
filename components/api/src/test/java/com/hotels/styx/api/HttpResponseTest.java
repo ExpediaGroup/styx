@@ -521,4 +521,11 @@ public class HttpResponseTest {
 
         assertThat(r1.cookie("x"), isAbsent());
     }
+
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Invalid Content-Length found. -3")
+    public void ensuresContentLengthIsPositive() {
+        response()
+                .header("Content-Length", -3)
+                .build();
+    }
 }

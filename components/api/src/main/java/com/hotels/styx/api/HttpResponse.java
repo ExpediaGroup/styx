@@ -37,7 +37,7 @@ import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.ResponseCookie.decode;
 import static com.hotels.styx.api.ResponseCookie.encode;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static java.lang.Integer.parseInt;
+import static java.lang.Long.parseLong;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -564,15 +564,15 @@ public class HttpResponse implements HttpMessage {
             checkArgument(contentLengths.size() <= 1, "Duplicate Content-Length found. %s", contentLengths);
 
             if (contentLengths.size() == 1) {
-                checkArgument(isInteger(contentLengths.get(0)), "Invalid Content-Length found. %s", contentLengths.get(0));
+                checkArgument(isNonNegativeInteger(contentLengths.get(0)), "Invalid Content-Length found. %s", contentLengths.get(0));
             }
             return this;
         }
 
-        private static boolean isInteger(String contentLength) {
+        private static boolean isNonNegativeInteger(String contentLength) {
             try {
-                parseInt(contentLength);
-                return true;
+                long value = parseLong(contentLength);
+                return value >= 0;
             } catch (NumberFormatException e) {
                 return false;
             }

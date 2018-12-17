@@ -488,6 +488,13 @@ public class LiveHttpResponseTest {
         assertEquals(buf2.delegate().refCnt(), 0);
     }
 
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Invalid Content-Length found. -3")
+    public void ensuresContentLengthIsPositive() {
+        response(OK)
+                .header("Content-Length", -3)
+                .build();
+    }
+
     private static LiveHttpResponse.Builder response() {
         return LiveHttpResponse.response();
     }

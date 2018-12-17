@@ -44,8 +44,8 @@ public class StaticBodyHttpHandlerTest {
         assertThat(fullResponse.bodyAs(UTF_8), is("foo"));
     }
 
-    private Integer length(String string) {
-        return string.getBytes().length;
+    private Long length(String string) {
+        return (long) string.getBytes().length;
     }
 
 }

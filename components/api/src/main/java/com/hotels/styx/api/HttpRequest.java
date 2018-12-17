@@ -45,7 +45,7 @@ import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.api.RequestCookie.decode;
 import static com.hotels.styx.api.RequestCookie.encode;
 import static io.netty.buffer.Unpooled.copiedBuffer;
-import static java.lang.Integer.parseInt;
+import static java.lang.Long.parseLong;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.UUID.randomUUID;
@@ -716,7 +716,7 @@ public class HttpRequest implements HttpMessage {
 
         private void ensureContentLengthIsValid() {
             requireNotDuplicatedHeader(CONTENT_LENGTH).ifPresent(contentLength ->
-                    checkArgument(isInteger(contentLength), "Invalid Content-Length found. %s", contentLength)
+                    checkArgument(isNonNegativeInteger(contentLength), "Invalid Content-Length found. %s", contentLength)
             );
         }
 
@@ -728,10 +728,10 @@ public class HttpRequest implements HttpMessage {
             return headerValues.isEmpty() ? Optional.empty() : Optional.of(headerValues.get(0));
         }
 
-        private static boolean isInteger(String contentLength) {
+        private static boolean isNonNegativeInteger(String contentLength) {
             try {
-                parseInt(contentLength);
-                return true;
+                long value = parseLong(contentLength);
+                return value >= 0;
             } catch (NumberFormatException e) {
                 return false;
             }

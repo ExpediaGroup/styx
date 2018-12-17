@@ -560,6 +560,13 @@ public class LiveHttpRequestTest {
         assertEquals(request.cookie("cookie"), Optional.empty());
     }
 
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Invalid Content-Length found. -3")
+    public void ensuresContentLengthIsPositive() {
+        LiveHttpRequest.post("/y")
+                .header("Content-Length", -3)
+                .build();
+    }
+
     private static ByteStream body(String... contents) {
 
         return new ByteStream(
