@@ -90,8 +90,9 @@ quality: clean
 quality-no-tests:
 	mvn -Dmaven.test.skip=true clean install -Pquality -Dmaven.test.skip=true
 
-STYX_BUILD_ARTIFACT = $(shell find  distribution/target -name "styx*.zip")
+STYX_BUILD_ARTIFACT = $(shell find  distribution/target -name "styx*.zip" -depth 1)
 STYX_HOME = $(CURRENT_DIR)/distribution/target/styx/styx
+DOCKER_CONTEXT = $(CURRENT_DIR)/distribution/target/styx/docker
 CONFIG_ROOT := $(STYX_HOME)/conf/env-$(STACK)
 
 ## Compile and create styx.zip then unzip into a directory defined by STYX_HOME
@@ -141,3 +142,23 @@ CHANGELOG_GITHUB_TOKEN ?= $(shell $CHANGELOG_GITHUB_TOKEN)
 changelog:
 	docker run --rm --interactive --tty --net "host" -v "$(CURRENT_DIR):/tmp/" -w "/tmp/" \
 	-it muccg/github-changelog-generator --between-tags $(TAG1),$(TAG2) -u HotelsDotCom -p 'styx' --token '$(CHANGELOG_GITHUB_TOKEN)'
+
+#
+# To run the styx docker image with custom configuration:
+#
+#     docker container run -d --name mystyx \
+#                          -p 8080:8080 -p 9000:9000 -p 8443:8443 \
+#                          -v $(pwd)/docker-config:/styx/config \
+#                          styxcore:latest /styx/config/styxconf.yml
+#
+# Assuming that styxconf.yml exists in "./docker-config/" directory.
+# Default configuration file: /styx/default-config/default.yml
+#
+distribution/target/styx-1.0-SNAPSHOT-linux-x86_64.zip:
+	mvn install -Prelease,linux -Dmaven.test.skip=true
+
+docker: distribution/target/styx-1.0-SNAPSHOT-linux-x86_64.zip
+	rm -rf ${DOCKER_CONTEXT}
+	mkdir -p ${DOCKER_CONTEXT}
+	cp ${STYX_BUILD_ARTIFACT} ${DOCKER_CONTEXT}
+	docker build -t styxcore:latest -f Dockerfile ${DOCKER_CONTEXT}/.
