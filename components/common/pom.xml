@@ -43,11 +43,15 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
+      <scope>test</scope>
     </dependency>
+
     <dependency>
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-testsupport</artifactId>
+      <scope>test</scope>
     </dependency>
+
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-yaml</artifactId>

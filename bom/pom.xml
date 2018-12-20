@@ -48,12 +48,6 @@
       </dependency>
       <dependency>
         <groupId>com.hotels.styx</groupId>
-        <artifactId>styx-testsupport</artifactId>
-        <version>${project.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>com.hotels.styx</groupId>
         <artifactId>styx-api-testsupport</artifactId>
         <version>${project.version}</version>
         <scope>test</scope>
