@@ -1,0 +1,4 @@
+Hello, world!
+
+This directory is mounted into Apache/httpd container. Any files added
+into this directory are visible to Apache and served as static files.

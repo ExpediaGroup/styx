@@ -1,0 +1,8 @@
+---
+include: /styx/default-config/default.yml
+
+services:
+  factories:
+    backendServiceRegistry:
+      config:
+        originsFile: "/styx/config/origins.yml"

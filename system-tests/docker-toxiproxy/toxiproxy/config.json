@@ -1,0 +1,7 @@
+[
+  {
+    "name": "httpd-01",
+    "listen": "0.0.0.0:80",
+    "upstream": "httpd-01:80"
+  }
+]
