@@ -71,7 +71,7 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
                           MetricRegistry metrics,
                           HttpErrorStatusListener errorStatusListener,
                           String unwiseCharacters,
-                          ResponseEnhancer responseEnhancer, 
+                          ResponseEnhancer responseEnhancer,
                           boolean requestTracking) {
         this.serverConfig = requireNonNull(serverConfig);
         this.metrics = requireNonNull(metrics);

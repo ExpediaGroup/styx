@@ -23,8 +23,12 @@ import org.slf4j.Logger;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.google.common.base.Objects.toStringHelper;
+import static java.lang.Integer.parseInt;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -32,6 +36,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class Version {
     private static final Logger LOG = getLogger(Version.class);
+    private static final Pattern VERSION_FORMAT = Pattern.compile("(\\d+)\\.(\\d+)[-.](\\d+).*");
+
 
     private final String releaseTag;
 
@@ -74,7 +80,28 @@ public class Version {
         return releaseTag.substring(firstDot + 1);
     }
 
+    public Optional<Integer> buildNumber() {
+        String releaseVersion = releaseVersion();
+        Optional<String> buildNumberAsString = extractFinalInt(releaseVersion);
+        return buildNumberAsString.flatMap(this::parseInteger);
+    }
 
+    private Optional<String> extractFinalInt(String versionString) {
+        Matcher m = VERSION_FORMAT.matcher(versionString);
+        if (!m.matches()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(m.group(3));
+        }
+    }
+
+    private Optional<Integer> parseInteger(String string) {
+        try {
+            return Optional.of(parseInt(string));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
+    }
 
     @Override
     public String toString() {

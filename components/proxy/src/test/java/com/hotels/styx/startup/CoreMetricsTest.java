@@ -37,7 +37,7 @@ public class CoreMetricsTest {
 
         Gauge gauge = metrics.getGauges().get("styx.version.buildnumber");
 
-        assertThat(gauge.getValue(), is("1.2.3"));
+        assertThat(gauge.getValue(), is(3));
     }
 
     @Test
