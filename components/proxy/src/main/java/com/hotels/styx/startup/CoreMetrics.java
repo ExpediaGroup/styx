@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 
 import java.lang.management.RuntimeMXBean;
 import java.time.Duration;
+import java.util.Optional;
 
 import static java.lang.String.format;
 import static java.lang.management.ManagementFactory.getPlatformMBeanServer;
@@ -46,13 +47,23 @@ public final class CoreMetrics {
     }
 
     public static void registerCoreMetrics(Version buildInfo, MetricRegistry metrics) {
-        registerVersionMetric(metrics, buildInfo.releaseVersion());
+        registerVersionMetric(buildInfo, metrics);
         registerJvmMetrics(metrics);
         metrics.register("os", new OperatingSystemMetricSet());
     }
 
-    private static void registerVersionMetric(MetricRegistry metricRegistry, String versionNumber) {
-        Gauge<String> versionGauge = () -> versionNumber;
+    private static void registerVersionMetric(Version buildInfo, MetricRegistry metrics) {
+        Optional<Integer> buildNumber = buildInfo.buildNumber();
+
+        if (buildNumber.isPresent()) {
+            registerVersionMetric(metrics, buildNumber.get());
+        } else {
+            LOG.warn("Could not acquire build number from release version: {}", buildInfo);
+        }
+    }
+
+    private static void registerVersionMetric(MetricRegistry metricRegistry, Integer buildNumber) {
+        Gauge<Integer> versionGauge = () -> buildNumber;
 
         metricRegistry.scope("styx").register("version.buildnumber", versionGauge);
     }
