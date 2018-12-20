@@ -1,4 +1,8 @@
 # See origins/origins-default.yaml for explanation of config format
+#
+# You can modify this configuration in runtime. Styx monitors this file
+# and applies any changes straight away.
+#
 ---
 - id: "httpd"
   path: "/"
