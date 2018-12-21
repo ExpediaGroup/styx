@@ -1,0 +1,9 @@
+{
+  "type": "latency",
+  "stream": "downstream",
+  "toxicity": 1.0,
+  "attributes": {
+      "latency": 5000,
+      "jitter": 2000
+  }
+}
