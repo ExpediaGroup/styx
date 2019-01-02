@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -41,16 +41,19 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
 
     static final String RECEIVED_BYTES = "bytes-received";
     static final String SENT_BYTES = "bytes-sent";
+    private static final String TOTAL_CONNECTIONS = "total-connections";
 
     private final MetricRegistry metricRegistry;
     private final Counter receivedBytesCount;
     private final Counter sentBytesCount;
+    private final Counter totalConnections;
 
     public ChannelStatisticsHandler(MetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry.scope(PREFIX);
 
         this.receivedBytesCount = this.metricRegistry.counter(RECEIVED_BYTES);
         this.sentBytesCount = this.metricRegistry.counter(SENT_BYTES);
+        this.totalConnections = this.metricRegistry.counter(TOTAL_CONNECTIONS);
     }
 
     @Override
@@ -72,6 +75,20 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
 
         Histogram histogram = metricRegistry.histogram(name(counterPrefix(thread), "channels"));
         histogram.update(channelCount.getCount());
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        totalConnections.inc();
+
+        super.channelActive(ctx);
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        totalConnections.dec();
+
+        super.channelInactive(ctx);
     }
 
     @Override
