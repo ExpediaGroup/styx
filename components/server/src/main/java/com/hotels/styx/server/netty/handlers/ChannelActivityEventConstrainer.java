@@ -39,5 +39,7 @@ public class ChannelActivityEventConstrainer extends ChannelInboundHandlerAdapte
         if (channelActivated) {
             super.channelInactive(ctx);
         }
+
+        channelActivated = false;
     }
 }
