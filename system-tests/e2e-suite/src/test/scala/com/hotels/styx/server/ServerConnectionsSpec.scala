@@ -45,7 +45,7 @@ class ServerConnectionsSpec extends FunSpec
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     styxServer.setBackends(
-      "/badrequest" -> HttpBackend("myapp", Origins(normalBackend))
+      "/" -> HttpBackend("myapp", Origins(normalBackend))
     )
   }
 
