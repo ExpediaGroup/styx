@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit.SECONDS
 import com.hotels.styx.StyxProxySpec
 import com.hotels.styx.api.{HttpRequest, HttpResponse}
 import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.exceptions.TransportLostException
 import com.hotels.styx.client.BadHttpResponseException
 import com.hotels.styx.support.TestClientSupport
 import com.hotels.styx.support.backends.FakeHttpServer
@@ -85,10 +86,11 @@ class ServerConnectionsSpec extends FunSpec
 
   private def ignoreExpectedExceptions(fun: () => Unit): Unit = {
     val outcome = Try(fun()) recoverWith {
-      case ex : ExecutionException => Failure(ex.getCause)
+      case ee : ExecutionException => Failure(ee.getCause)
       case e => Failure(e)
     } recoverWith {
-      case ex : BadHttpResponseException => Success("ignore this: "+ex)
+      case bhre : BadHttpResponseException => Success("ignore this: " + bhre)
+      case tle: TransportLostException => Success("ignore this: " + tle)
       case e => Failure(e)
     }
 
