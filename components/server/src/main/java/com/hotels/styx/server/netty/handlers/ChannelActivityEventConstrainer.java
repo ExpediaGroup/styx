@@ -17,32 +17,28 @@ package com.hotels.styx.server.netty.handlers;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static java.lang.Thread.currentThread;
 
 /**
+ * Stops channelInactive events from propagating if the channel never became active to begin with.
  *
+ * In some circumstances (e.g. when a channel is rejected due to having too many connections) we may receive a
+ * channelInactive event on a channel that was not active.
+ *
+ * This event is unneeded and will confuse later handlers that collect metrics about channel activity.
+ *
+ * Note that this handler is not sharable, because it tracks whether a single channel is active.
  */
-// NON-SHARED HANDLER
 public class ChannelActivityEventConstrainer extends ChannelInboundHandlerAdapter {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ChannelActivityEventConstrainer.class);
-
     private boolean channelActivated;
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        log("channelActive");
-
         channelActivated = true;
         super.channelActive(ctx);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        log("channelInactive");
-
         // In some circumstances (e.g. when a channel is rejected due to having too many connections) we may receive a
         // channelInactive event on a channel that was not active. We don't need this event (and it will confuse
         // metrics, etc. so we prevent it from propagating)
@@ -51,9 +47,5 @@ public class ChannelActivityEventConstrainer extends ChannelInboundHandlerAdapte
         }
 
         channelActivated = false;
-    }
-
-    private static void log(String event) {
-        LOGGER.info("{} on thread {}", event, currentThread().getName());
     }
 }
