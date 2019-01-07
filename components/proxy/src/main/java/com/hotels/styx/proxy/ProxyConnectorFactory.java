@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hotels.styx.server.netty.ServerConnectorFactory;
 import com.hotels.styx.server.netty.codec.NettyToStyxRequestDecoder;
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler;
 import com.hotels.styx.server.netty.connectors.ResponseEnhancer;
+import com.hotels.styx.server.netty.handlers.ChannelActivityEventConstrainer;
 import com.hotels.styx.server.netty.handlers.ChannelStatisticsHandler;
 import com.hotels.styx.server.netty.handlers.ExcessConnectionRejector;
 import com.hotels.styx.server.netty.handlers.RequestTimeoutHandler;
@@ -147,6 +148,7 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
 
             channel.pipeline()
                     .addLast("connection-throttler", excessConnectionRejector)
+                    .addLast("channel-activity-event-constrainer", new ChannelActivityEventConstrainer())
                     .addLast("idle-handler", new IdleStateHandler(serverConfig.requestTimeoutMillis(), 0, serverConfig.keepAliveTimeoutMillis(), MILLISECONDS))
                     .addLast("channel-stats", channelStatsHandler)
 

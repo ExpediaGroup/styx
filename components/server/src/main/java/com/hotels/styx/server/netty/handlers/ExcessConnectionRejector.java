@@ -43,7 +43,7 @@ public class ExcessConnectionRejector extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
         if (channelGroup.size() >= maxConnectionsCount) {
-            LOGGER.warn("Max allowed connection  to server exceeded: current={} configured={}", channelGroup.size(), maxConnectionsCount);
+            LOGGER.warn("Max allowed connection to server exceeded: current={} configured={}", channelGroup.size(), maxConnectionsCount);
             ctx.close();
             return;
         }
