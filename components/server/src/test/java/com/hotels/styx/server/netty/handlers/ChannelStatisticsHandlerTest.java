@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -45,21 +45,18 @@ public class ChannelStatisticsHandlerTest {
     public void countsReceivedBytes() throws Exception {
         ByteBuf buf = httpRequestAsBuf(POST, "/foo/bar", "Hello, world");
         this.handler.channelRead(mock(ChannelHandlerContext.class), buf);
-        assertThat(countOf(ChannelStatisticsHandler.RECEIVED_BYTES), is((long) buf.readableBytes()));
+        assertThat(countOf("connections.bytes-received"), is((long) buf.readableBytes()));
     }
 
     @Test
     public void countsSentBytes() throws Exception {
         ByteBuf buf = httpResponseAsBuf(OK, "Response from server");
         this.handler.write(mock(ChannelHandlerContext.class), buf, mock(ChannelPromise.class));
-        assertThat(countOf(ChannelStatisticsHandler.SENT_BYTES), is((long) buf.readableBytes()));
+        assertThat(countOf("connections.bytes-sent"), is((long) buf.readableBytes()));
     }
 
-    private long countOf(String sentBytes) {
-        return this.metricRegistry.counter(metricName(sentBytes)).getCount();
+    private long countOf(String counter) {
+        return this.metricRegistry.counter(counter).getCount();
     }
 
-    private static String metricName(String sentBytes) {
-        return ChannelStatisticsHandler.PREFIX + "." + sentBytes;
-    }
 }

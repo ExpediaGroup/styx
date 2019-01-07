@@ -25,23 +25,17 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static java.lang.String.format;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Collects statistics about channels.
  */
 @ChannelHandler.Sharable
 public class ChannelStatisticsHandler extends ChannelDuplexHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ChannelStatisticsHandler.class);
-
-    static final String PREFIX = "connections";
-
-    static final String RECEIVED_BYTES = "bytes-received";
-    static final String SENT_BYTES = "bytes-sent";
-    private static final String TOTAL_CONNECTIONS = "total-connections";
+    private static final Logger LOGGER = getLogger(ChannelStatisticsHandler.class);
 
     private final MetricRegistry metricRegistry;
     private final Counter receivedBytesCount;
@@ -49,11 +43,11 @@ public class ChannelStatisticsHandler extends ChannelDuplexHandler {
     private final Counter totalConnections;
 
     public ChannelStatisticsHandler(MetricRegistry metricRegistry) {
-        this.metricRegistry = metricRegistry.scope(PREFIX);
+        this.metricRegistry = metricRegistry.scope("connections");
 
-        this.receivedBytesCount = this.metricRegistry.counter(RECEIVED_BYTES);
-        this.sentBytesCount = this.metricRegistry.counter(SENT_BYTES);
-        this.totalConnections = this.metricRegistry.counter(TOTAL_CONNECTIONS);
+        this.receivedBytesCount = this.metricRegistry.counter("bytes-received");
+        this.sentBytesCount = this.metricRegistry.counter("bytes-sent");
+        this.totalConnections = this.metricRegistry.counter("total-connections");
     }
 
     @Override
