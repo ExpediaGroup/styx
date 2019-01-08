@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,8 +22,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.testng.annotations.Test;
 
+import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.regex.Pattern.quote;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -85,7 +87,7 @@ public class JsonReformatterTest {
 
         String after = JsonReformatter.reformat(before);
 
-        assertThat(after, is("{\n" +
+        assertThat(after, matchesRegex(quote("{\n" +
                 "  \"counters\":{\n" +
                 "    \"foo.bar.count\":4,\n" +
                 "    \"styx\":{\n" +
@@ -106,8 +108,10 @@ public class JsonReformatterTest {
                 "  \"timers\":{\n" +
                 "\n" +
                 "  },\n" +
-                "  \"version\":\"3.1.3\"\n" +
-                "}"));
+                "  \"version\":\"") +
+                "\\d+\\.\\d+\\.\\d+" +
+                quote("\"\n" +
+                "}")));
     }
 
     private static String removeWhiteSpace(String text) {

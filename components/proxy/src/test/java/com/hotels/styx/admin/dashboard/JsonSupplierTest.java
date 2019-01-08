@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,8 +21,10 @@ import com.codahale.metrics.json.MetricsModule;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.testng.annotations.Test;
 
+import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.regex.Pattern.quote;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -42,10 +44,12 @@ public class JsonSupplierTest {
 
         JsonSupplier supplier = JsonSupplier.create(() -> metricsRegistry, new MetricsModule(SECONDS, MILLISECONDS, false));
 
-        assertThat(supplier.get(), is("{\"version\":\"3.1.3\",\"gauges\":{\"gauge\":{\"value\":\"foo\"}},\"counters\":{\"counter\":{\"count\":7}},\"histograms\":{},\"meters\":{},\"timers\":{}}"));
+        assertThat(supplier.get(), matchesRegex(quote("{\"version\":\"") +
+                "\\d+\\.\\d+\\.\\d+" +
+                quote("\",\"gauges\":{\"gauge\":{\"value\":\"foo\"}},\"counters\":{\"counter\":{\"count\":7}},\"histograms\":{},\"meters\":{},\"timers\":{}}")));
     }
 
-    private Gauge<String> gauge(String value) {
+    private static Gauge<String> gauge(String value) {
         return () -> value;
     }
 
@@ -53,7 +57,7 @@ public class JsonSupplierTest {
         private final String string;
         private final int integer;
 
-        public Convertible(String string, int integer) {
+        Convertible(String string, int integer) {
             this.string = string;
             this.integer = integer;
         }
