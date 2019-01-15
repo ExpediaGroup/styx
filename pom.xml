@@ -97,7 +97,7 @@
     <jackson.version>2.9.8</jackson.version>
     <jackson.dataformat.version>2.5.1</jackson.dataformat.version>
     <jackson.module.scala.version>2.9.7</jackson.module.scala.version>
-    <metrics.version>4.0.0</metrics.version>
+    <metrics.version>4.0.5</metrics.version>
     <antlr.version>4.5.1-1</antlr.version>
     <netty.version>4.1.15.Final</netty.version>
     <netty-tcnative.version>2.0.6.Final</netty-tcnative.version>
