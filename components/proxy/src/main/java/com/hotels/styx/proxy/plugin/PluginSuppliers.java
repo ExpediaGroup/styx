@@ -46,14 +46,13 @@ public class PluginSuppliers {
     private final PluginFactoryLoader pluginFactoryLoader;
     private final Environment environment;
 
-    private final FailureHandlingStrategy<Pair<String, SpiExtension>, NamedPlugin> processor =
+    private final FailureHandlingStrategy<Pair<String, SpiExtension>, NamedPlugin> failureHandlingStrategy =
             new FailureHandlingStrategy.Builder<Pair<String, SpiExtension>, NamedPlugin>()
                     .doImmediatelyOnEachFailure((plugin, err) ->
                             LOG.error(perFailureErrorMessage(plugin), err))
                     .doOnFailuresAfterAllProcessing(failures -> {
                         throw new PluginStartupException(afterFailuresErrorMessage(failures));
-                    })
-                    .build();
+                    }).build();
 
     public PluginSuppliers(Environment environment) {
         this(environment, new FileSystemPluginFactoryLoader());
@@ -76,7 +75,7 @@ public class PluginSuppliers {
     }
 
     private Iterable<NamedPlugin> activePlugins(PluginsMetadata pluginsMetadata) {
-        return processor.process(pluginsMetadata.activePlugins(), this::loadPlugin);
+        return failureHandlingStrategy.process(pluginsMetadata.activePlugins(), this::loadPlugin);
     }
 
     private NamedPlugin loadPlugin(Pair<String, SpiExtension> pair) {

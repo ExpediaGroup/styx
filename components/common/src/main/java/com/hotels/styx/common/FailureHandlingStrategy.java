@@ -28,11 +28,11 @@ import java.util.function.Consumer;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Allows various types of failure handling to be applied to a task running over a list of inputs.
- *
+ * Allows various types of failure handling to be applied when applying a function over a list of inputs.
+ * <p>
  * It can be as strict or lenient as desired - from failing the whole run immediately as soon as a single iteration fails,
  * to just logging failures and returning successful results.
- *
+ * <p>
  * The behaviour is configured by injecting lambdas when an instance of this class is built using the {@link Builder}.
  *
  * @param <T> input type
@@ -50,19 +50,19 @@ public class FailureHandlingStrategy<T, R> {
     }
 
     /**
-     * Execute the task on a list of inputs, using the configured failure handling.
+     * Execute a function on each item in a list of inputs, using the configured failure handling.
      *
      * @param inputs a list of inputs
-     * @param task a task to execute
-     * @return a list of outputsl
+     * @param function a function to execute
+     * @return a list of outputs
      */
-    public List<R> process(List<T> inputs, Task<T, R> task) {
+    public List<R> process(List<T> inputs, FallibleFunction<T, R> function) {
         List<R> successes = new ArrayList<>();
         Map<T, Exception> failures = new LinkedHashMap<>();
 
         inputs.forEach(input -> {
             try {
-                successes.add(task.execute(input));
+                successes.add(function.execute(input));
             } catch (Exception t) {
                 onEachFailure.accept(input, t);
                 failures.put(input, t);
@@ -83,12 +83,13 @@ public class FailureHandlingStrategy<T, R> {
      * @param <R> output type
      */
     public static final class Builder<T, R> {
-        // Logs by default so that failures do not become invisible.
         private BiConsumer<T, Exception> onEachFailure = (input, err) -> LOGGER.error("Failed on input " + input, err);
-        private Consumer<Map<T, Exception>> failuresPostProcessing = failures -> LOGGER.error("Failures: " + failures);
+        private Consumer<Map<T, Exception>> failuresPostProcessing = failures -> {
+            throw new RuntimeException("Failure during execution: " + failures);
+        };
 
         /**
-         * An action to take immediately after a failure. This can be used to fail fast by rethrowing the error,
+         * An action to take immediately after a failure. For example, this can be used to fail fast by rethrowing the error,
          * or to log the failure as soon as it happens without waiting.
          *
          * @param onEachFailure an action to take
@@ -101,10 +102,10 @@ public class FailureHandlingStrategy<T, R> {
 
         /**
          * An action to take after processing all list items, if there were failures.
-         * This will only execute if the individual failures were did not rethrow their exceptions.
-         *
-         * This action may be used to throw an exception, otherwise the {@link #process(List, Task)} method
-         * will return whatever successful results it had (or an empty list if none).
+         * This will only execute if the individual failures did not rethrow their exceptions.
+         * <p>
+         * This action may be used to throw an exception, thereby causing an overall failure, or just to perform side-actions
+         * like logging.
          *
          * @param failuresPostProcessing an action to take
          * @return this builder
@@ -125,15 +126,15 @@ public class FailureHandlingStrategy<T, R> {
     }
 
     /**
-     * A task to execute. Similar to {@link java.util.function.Function}, except it is allowed to throw any type of
+     * A function to execute. Similar to {@link java.util.function.Function}, except it is allowed to throw any type of
      * {@link Exception}.
      *
      * @param <T> input type
      * @param <R> output type
      */
-    public interface Task<T, R> {
+    public interface FallibleFunction<T, R> {
         /**
-         * Execute task.
+         * Execute action.
          *
          * @param input input
          * @return output
