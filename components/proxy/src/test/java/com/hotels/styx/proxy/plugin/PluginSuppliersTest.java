@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@ package com.hotels.styx.proxy.plugin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.support.api.SimpleEnvironment;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
@@ -179,7 +179,8 @@ public class PluginSuppliersTest {
         pluginSuppliers.fromConfigurations();
     }
 
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "1 plugins could not be loaded")
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp =
+            "1 plugin could not be loaded: failedPlugins=\\[myPlugin\\]; failureCauses=\\[myPlugin: java.lang.RuntimeException: plugin factory error\\]")
     public void throwsExceptionIfFactoryFailsToLoadPlugin() {
         String yaml = "" +
                 "plugins:\n" +
@@ -195,7 +196,11 @@ public class PluginSuppliersTest {
         pluginSuppliers.fromConfigurations();
     }
 
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "3 plugins could not be loaded")
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp =
+            "3 plugins could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
+                    "myPlugin1: java.lang.RuntimeException: plugin factory error, " +
+                    "myPlugin2: java.lang.RuntimeException: plugin factory error, " +
+                    "myPlugin3: java.lang.RuntimeException: plugin factory error\\]")
     public void attemptsToLoadAllPluginsEvenIfSomeFail() {
         LoggingTestSupport log = new LoggingTestSupport(PluginSuppliers.class);
 
@@ -221,7 +226,7 @@ public class PluginSuppliersTest {
 
             pluginSuppliers.fromConfigurations();
         } catch (RuntimeException e) {
-            assertThat(log.log(), hasItem(loggingEvent(ERROR, "Could not load plugin myPlugin1.*", RuntimeException.class, "plugin factory error")));
+            assertThat(log.log(), hasItem(loggingEvent(ERROR, "Could not load plugin: pluginName=myPlugin1; factoryClass=.*", RuntimeException.class, "plugin factory error")));
             throw e;
         } finally {
             log.stop();

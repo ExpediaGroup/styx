@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,18 +19,20 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.common.FailureHandlingStrategy;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.spi.config.SpiExtension;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -44,11 +46,19 @@ public class PluginSuppliers {
     private final PluginFactoryLoader pluginFactoryLoader;
     private final Environment environment;
 
+    private final FailureHandlingStrategy<Pair<String, SpiExtension>, NamedPlugin> failureHandlingStrategy =
+            new FailureHandlingStrategy.Builder<Pair<String, SpiExtension>, NamedPlugin>()
+                    .doImmediatelyOnEachFailure((plugin, err) ->
+                            LOG.error(perFailureErrorMessage(plugin), err))
+                    .doOnFailuresAfterAllProcessing(failures -> {
+                        throw new PluginStartupException(afterFailuresErrorMessage(failures));
+                    }).build();
+
     public PluginSuppliers(Environment environment) {
         this(environment, new FileSystemPluginFactoryLoader());
     }
 
-    public PluginSuppliers(Environment environment, PluginFactoryLoader pluginFactoryLoader) {
+    PluginSuppliers(Environment environment, PluginFactoryLoader pluginFactoryLoader) {
         this.configuration = environment.configuration();
         this.pluginFactoryLoader = requireNonNull(pluginFactoryLoader);
         this.environment = requireNonNull(environment);
@@ -59,40 +69,47 @@ public class PluginSuppliers {
     }
 
     public Iterable<NamedPlugin> fromConfigurations() {
-        Iterable<NamedPlugin> plugins = readPluginsConfig()
+        return readPluginsConfig()
                 .map(this::activePlugins)
                 .orElse(emptyList());
-
-        return plugins;
     }
 
     private Iterable<NamedPlugin> activePlugins(PluginsMetadata pluginsMetadata) {
-        List<NamedPlugin> plugins = pluginsMetadata.activePlugins()
-                .stream()
-                .map(this::loadPlugin)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toList());
-
-        if (pluginsMetadata.activePlugins().size() > plugins.size()) {
-            throw new RuntimeException(format("%s plugins could not be loaded", pluginsMetadata.activePlugins().size() - plugins.size()));
-        }
-
-        return plugins;
+        return failureHandlingStrategy.process(pluginsMetadata.activePlugins(), this::loadPlugin);
     }
 
-    private Optional<NamedPlugin> loadPlugin(Pair<String, SpiExtension> pair) {
+    private NamedPlugin loadPlugin(Pair<String, SpiExtension> pair) {
         String pluginName = pair.key();
         SpiExtension spiExtension = pair.value();
 
-        try {
-            PluginFactory factory = pluginFactoryLoader.load(spiExtension);
-            Plugin plugin = factory.create(new PluginEnvironment(pluginName, environment, spiExtension, DEFAULT_PLUGINS_METRICS_SCOPE));
-            return Optional.of(namedPlugin(pluginName, plugin));
-        } catch (Throwable e) {
-            LOG.error(format("Could not load plugin %s: %s", pluginName, spiExtension.factory().factoryClass()), e);
-            return Optional.empty();
-        }
+        PluginFactory factory = pluginFactoryLoader.load(spiExtension);
+        Plugin plugin = factory.create(new PluginEnvironment(pluginName, environment, spiExtension, DEFAULT_PLUGINS_METRICS_SCOPE));
+        return namedPlugin(pluginName, plugin);
     }
 
+    private static String perFailureErrorMessage(Pair<String, SpiExtension> plugin) {
+        return format("Could not load plugin: pluginName=%s; factoryClass=%s", plugin.key(), plugin.value().factory().factoryClass());
+    }
+
+    private static String afterFailuresErrorMessage(Map<Pair<String, SpiExtension>, Exception> failures) {
+        List<String> failedPlugins = failures.keySet().stream()
+                .map(Pair::key)
+                .collect(toList());
+
+        List<String> causes = failures.entrySet().stream().map(entry -> {
+            String pluginName = entry.getKey().key();
+            Throwable throwable = entry.getValue();
+
+            // please note, transforming the exception to a String (as is done here indirectly) will not include the stack trace
+            return format("%s: %s", pluginName, throwable);
+
+        }).collect(toList());
+
+        return format("%s plugin%s could not be loaded: failedPlugins=%s; failureCauses=%s",
+                failures.size(),
+                failures.size() == 1 ? "" : "s", // only pluralise plurals
+                failedPlugins,
+                causes
+        );
+    }
 }
