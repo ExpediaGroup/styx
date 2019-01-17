@@ -19,12 +19,11 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.common.FailureHandlingTaskProcessor;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.spi.config.SpiExtension;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -47,11 +46,20 @@ public class PluginSuppliers {
     private final PluginFactoryLoader pluginFactoryLoader;
     private final Environment environment;
 
+    private final FailureHandlingTaskProcessor<Pair<String, SpiExtension>, NamedPlugin> processor =
+            new FailureHandlingTaskProcessor.Builder<Pair<String, SpiExtension>, NamedPlugin>()
+                    .doImmediatelyOnEachFailure((plugin, err) ->
+                            LOG.error(perFailureErrorMessage(plugin), err))
+                    .doOnFailuresAfterAllProcessing(failures -> {
+                        throw new PluginStartupException(afterFailuresErrorMessage(failures));
+                    })
+                    .build();
+
     public PluginSuppliers(Environment environment) {
         this(environment, new FileSystemPluginFactoryLoader());
     }
 
-    public PluginSuppliers(Environment environment, PluginFactoryLoader pluginFactoryLoader) {
+    PluginSuppliers(Environment environment, PluginFactoryLoader pluginFactoryLoader) {
         this.configuration = environment.configuration();
         this.pluginFactoryLoader = requireNonNull(pluginFactoryLoader);
         this.environment = requireNonNull(environment);
@@ -67,6 +75,10 @@ public class PluginSuppliers {
                 .orElse(emptyList());
     }
 
+    private Iterable<NamedPlugin> activePlugins(PluginsMetadata pluginsMetadata) {
+        return processor.process(pluginsMetadata.activePlugins(), this::loadPlugin);
+    }
+
     private NamedPlugin loadPlugin(Pair<String, SpiExtension> pair) {
         String pluginName = pair.key();
         SpiExtension spiExtension = pair.value();
@@ -76,53 +88,29 @@ public class PluginSuppliers {
         return namedPlugin(pluginName, plugin);
     }
 
-    private Iterable<NamedPlugin> activePlugins(PluginsMetadata pluginsMetadata) {
-        List<NamedPlugin> loaded = new ArrayList<>();
-        Map<Pair<String, SpiExtension>, Throwable> failures = new LinkedHashMap<>();
+    private static String perFailureErrorMessage(Pair<String, SpiExtension> plugin) {
+        return format("Could not load plugin: pluginName=%s; factoryClass=%s", plugin.key(), plugin.value().factory().factoryClass());
+    }
 
-        pluginsMetadata.activePlugins()
-                .forEach(pair -> {
-                    try {
-                        loaded.add(loadPlugin(pair));
-                    } catch (Throwable t) {
-                        String pluginName = pair.key();
-                        SpiExtension spiExtension = pair.value();
+    private static String afterFailuresErrorMessage(Map<Pair<String, SpiExtension>, Exception> failures) {
+        List<String> failedPlugins = failures.keySet().stream()
+                .map(Pair::key)
+                .collect(toList());
 
-                        LOG.error(format("Could not load plugin %s: %s", pluginName, spiExtension.factory().factoryClass()), t);
+        List<String> causes = failures.entrySet().stream().map(entry -> {
+            String pluginName = entry.getKey().key();
+            Throwable throwable = entry.getValue();
 
-                        failures.put(pair, t);
-                    }
-                });
+            // please note, transforming the exception to a String (as is done here indirectly) will not include the stack trace
+            return format("%s: %s", pluginName, throwable);
 
+        }).collect(toList());
 
-        if (!failures.isEmpty()) {
-            List<String> failedPlugins = failures.keySet().stream()
-                    .map(Pair::key)
-                    .collect(toList());
-
-            List<String> causes = failures.entrySet().stream()
-                    // please note, transforming the exception to a String (as is done here indirectly) will not include the stack trace
-                    .map(entry -> {
-                        String pluginName = entry.getKey().key();
-                        Throwable throwable = entry.getValue();
-
-                        return format("%s: %s", pluginName, throwable);
-                    })
-                    .collect(toList());
-
-            String word = failures.size() == 1 ? "plugin" : "plugins";
-
-            String message = format(
-                    "%s %s could not be loaded: %s. Causes:%s",
-                    failures.size(),
-                    word,
-                    failedPlugins,
-                    causes
-                    );
-
-            throw new PluginStartupException(message);
-        }
-
-        return loaded;
+        return format("%s plugin%s could not be loaded: failedPlugins=%s; failureCauses=%s",
+                failures.size(),
+                failures.size() == 1 ? "" : "s", // only pluralise plurals
+                failedPlugins,
+                causes
+        );
     }
 }
