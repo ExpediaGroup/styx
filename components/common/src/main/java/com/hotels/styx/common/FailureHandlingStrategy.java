@@ -38,13 +38,13 @@ import static java.util.Objects.requireNonNull;
  * @param <T> input type
  * @param <R> output type
  */
-public class FailureHandlingTaskProcessor<T, R> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FailureHandlingTaskProcessor.class);
+public class FailureHandlingStrategy<T, R> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FailureHandlingStrategy.class);
 
     private final BiConsumer<T, Exception> onEachFailure;
     private final Consumer<Map<T, Exception>> failuresPostProcessing;
 
-    private FailureHandlingTaskProcessor(Builder<T, R> builder) {
+    private FailureHandlingStrategy(Builder<T, R> builder) {
         this.onEachFailure = builder.onEachFailure;
         this.failuresPostProcessing = builder.failuresPostProcessing;
     }
@@ -77,7 +77,7 @@ public class FailureHandlingTaskProcessor<T, R> {
     }
 
     /**
-     * Builds {@link FailureHandlingTaskProcessor}.
+     * Builds {@link FailureHandlingStrategy}.
      *
      * @param <T> input type
      * @param <R> output type
@@ -115,12 +115,12 @@ public class FailureHandlingTaskProcessor<T, R> {
         }
 
         /**
-         * Build an instance of {@link FailureHandlingTaskProcessor} using the configuration provided.
+         * Build an instance of {@link FailureHandlingStrategy} using the configuration provided.
          *
          * @return a new instance
          */
-        public FailureHandlingTaskProcessor<T, R> build() {
-            return new FailureHandlingTaskProcessor<>(this);
+        public FailureHandlingStrategy<T, R> build() {
+            return new FailureHandlingStrategy<>(this);
         }
     }
 

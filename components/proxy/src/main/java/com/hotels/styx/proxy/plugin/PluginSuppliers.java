@@ -19,7 +19,7 @@ import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.common.FailureHandlingTaskProcessor;
+import com.hotels.styx.common.FailureHandlingStrategy;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.spi.config.SpiExtension;
 import org.slf4j.Logger;
@@ -46,8 +46,8 @@ public class PluginSuppliers {
     private final PluginFactoryLoader pluginFactoryLoader;
     private final Environment environment;
 
-    private final FailureHandlingTaskProcessor<Pair<String, SpiExtension>, NamedPlugin> processor =
-            new FailureHandlingTaskProcessor.Builder<Pair<String, SpiExtension>, NamedPlugin>()
+    private final FailureHandlingStrategy<Pair<String, SpiExtension>, NamedPlugin> processor =
+            new FailureHandlingStrategy.Builder<Pair<String, SpiExtension>, NamedPlugin>()
                     .doImmediatelyOnEachFailure((plugin, err) ->
                             LOG.error(perFailureErrorMessage(plugin), err))
                     .doOnFailuresAfterAllProcessing(failures -> {
