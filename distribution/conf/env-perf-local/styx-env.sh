@@ -29,9 +29,6 @@ JVM_OTHER_MEM="${JVM_OTHER_MEM:=-XX:CompressedClassSpaceSize=20m -XX:InitialCode
 JVM_GC_LOG="${JVM_GC_LOG:=-XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xloggc:${APP_HOME}/logs/gc.log.$(/bin/date +%Y-%m-%d-%H%M%S)}"
 JVM_HEAP_DUMP="${JVM_HEAP_DUMP:=-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/tmp}"
 
-# Set java flight recorder - Oracle JDK feature
-JVM_FLIGHT_RECORDER="${JVM_FLIGHT_RECORDER:=-XX:+UnlockCommercialFeatures -XX:+FlightRecorder}"
-
 # Set java VM type
 JVM_FLAVOUR="-server"
 
