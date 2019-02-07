@@ -13,10 +13,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * This tests the behaviours added in the example plugin.
  */
 
-public class PluginExampleTest {
+public class EarlyReturnExamplePluginTest {
     @Test
     public void returnsEarly() {
-        PluginExample plugin = new PluginExample();
+        EarlyReturnExamplePlugin plugin = new EarlyReturnExamplePlugin();
 
         LiveHttpRequest request = LiveHttpRequest.get("/")
                 .header("X-Respond", "foo")
