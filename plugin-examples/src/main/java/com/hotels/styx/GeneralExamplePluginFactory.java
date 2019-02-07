@@ -21,7 +21,7 @@ import com.hotels.styx.api.plugins.spi.PluginFactory;
 /**
  * The factory is used to construct your plugin. You can do this however you like.
  */
-public class ExamplePluginFactory implements PluginFactory {
+public class GeneralExamplePluginFactory implements PluginFactory {
     /**
      * The environment object will provide this plugin with the configuration you created in the YAML file.
      *
@@ -37,8 +37,8 @@ public class ExamplePluginFactory implements PluginFactory {
          * However, using a separate config object has the advantage that your PluginFactory is
          * free to select a Plugin implementation at runtime.
          */
-        ExamplePluginConfig config = environment.pluginConfig(ExamplePluginConfig.class);
+        GeneralExamplePluginConfig config = environment.pluginConfig(GeneralExamplePluginConfig.class);
 
-        return new ExamplePlugin(config);
+        return new GeneralExamplePlugin(config);
     }
 }
