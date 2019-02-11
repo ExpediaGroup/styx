@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.support.ResourcePaths
 import com.hotels.styx.StyxServer
 import com.hotels.styx.api.extension.service.spi.StyxService
+import com.hotels.styx.api.plugins.spi.PluginFactory
 import com.hotels.styx.startup.StyxServerComponents
 
 import scala.collection.JavaConverters._
@@ -63,6 +64,7 @@ object StyxBaseConfig {
 
 case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
                       plugins: List[NamedPlugin] = List(),
+                      pluginFactories: List[PluginFactory] = List(),
                       logbackXmlLocation: Path = StyxBaseConfig.defaultLogbackXml,
                       yamlText: String = "originRestrictionCookie: \"originRestrictionCookie\"\n",
                       adminPort: Int = 0,
@@ -97,6 +99,7 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
 
     val java: util.Map[String, StyxService] = services(backendsRegistry).asJava
 
+    // TODO add alternative pluginFactories parameter above, use it instead of this.plugins - if someone uses the old parameter, just create plugin factories that return whatever plugin they are constructed with
     val styxServerBuilder = newCoreConfig(styxConfig, backendsRegistry, this.plugins)
       .additionalServices(java)
       .loggingSetUp(this.logbackXmlLocation.toString)

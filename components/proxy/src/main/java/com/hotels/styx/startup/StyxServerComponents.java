@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,27 +26,40 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.plugins.spi.Plugin;
+import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.proxy.plugin.PluginSuppliers;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.StreamSupport;
 
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
-import static com.hotels.styx.startup.PluginsLoader.PLUGINS_FROM_CONFIG;
+import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
+import static com.hotels.styx.proxy.plugin.PluginSuppliers.DEFAULT_PLUGINS_METRICS_SCOPE;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.DO_NOT_MODIFY;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
+import static java.util.stream.Collectors.toList;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Configuration required to set-up the core Styx services, such as the proxy and admin servers.
  */
 public class StyxServerComponents {
+    private static final Logger LOGGER = getLogger(StyxServerComponents.class);
+
     private final Environment environment;
     private final Map<String, StyxService> services;
+    // TODO we will need to return PluginFactory + Plugin.Environment so that this can be handled independently of the app start-up
     private final List<NamedPlugin> plugins;
+//    private final PluginsLoader pluginsLoader;
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
@@ -54,7 +67,56 @@ public class StyxServerComponents {
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
 
-        this.plugins = builder.pluginsLoader.load(environment);
+//        this.pluginsLoader = requireNonNull(builder.pluginsLoader);
+
+//        this.plugins = builder.pluginsLoader.load(environment);
+
+        // TODO how to create pluginEnvironment? That's why we created this ugly "PluginsLoader" concept, because it encapsulates that.
+        // TODO the only part of the pluginEnvironment that should actually be handled by the "supplier" of the plugins is the plugin-config object, since that's the only one that
+        // TODO - varies by specific plugin, rather than whether it's a test/actually running
+
+        List<ConfiguredPluginFactory> cpfs = builder.configuredPluginFactories;
+
+        if (cpfs == null) {
+            Iterable<ConfiguredPluginFactory> iterable = new PluginSuppliers(environment).fromConfigurations();
+            cpfs = ImmutableList.copyOf(iterable);
+        }
+
+        // TODO remove when done
+        LOGGER.info("configuredPluginFactories={}", cpfs);
+
+        this.plugins = cpfs.stream().map(cpf -> {
+            LOGGER.info("Instantiating Plugin, pluginName={}...", cpf.name());
+
+            PluginFactory.Environment pluginEnvironment = new PluginFactory.Environment() {
+                @Override
+                public <T> T pluginConfig(Class<T> clazz) {
+                    return cpf.pluginConfig(clazz);
+                }
+
+                @Override
+                public Configuration configuration() {
+                    return environment.configuration();
+                }
+
+                @Override
+                public MetricRegistry metricRegistry() {
+                    return environment.metricRegistry().scope(DEFAULT_PLUGINS_METRICS_SCOPE);
+                }
+            };
+
+            Plugin plugin = cpf.pluginFactory().create(pluginEnvironment);
+
+            // TODO refactor so we don't have casting (code smell)
+            return plugin instanceof NamedPlugin ? (NamedPlugin) plugin : namedPlugin(cpf.name(), plugin);
+        }).collect(toList());
+
+
+        this.plugins.forEach(plugin -> {
+            LOGGER.info("Instantiated Plugin, pluginName={}", plugin.name());
+
+            environment.configStore().set("plugins." + plugin.name(), plugin);
+        });
 
         this.services = mergeServices(
                 builder.servicesLoader.load(environment),
@@ -73,6 +135,10 @@ public class StyxServerComponents {
     public List<NamedPlugin> plugins() {
         return plugins;
     }
+
+//    public PluginsLoader pluginsLoader() {
+//        return pluginsLoader;
+//    }
 
     private static Environment newEnvironment(StyxConfig styxConfig, MetricRegistry metricRegistry) {
         return new Environment.Builder()
@@ -108,7 +174,7 @@ public class StyxServerComponents {
     public static final class Builder {
         private StyxConfig styxConfig;
         private LoggingSetUp loggingSetUp = DO_NOT_MODIFY;
-        private PluginsLoader pluginsLoader = PLUGINS_FROM_CONFIG;
+        private List<ConfiguredPluginFactory> configuredPluginFactories;
         private ServicesLoader servicesLoader = SERVICES_FROM_CONFIG;
         private MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
 
@@ -141,13 +207,15 @@ public class StyxServerComponents {
 
         @VisibleForTesting
         public Builder plugins(Iterable<NamedPlugin> plugins) {
-            requireNonNull(plugins);
-            List<NamedPlugin> list = ImmutableList.copyOf(plugins);
-            return plugins(env -> list);
+            List<ConfiguredPluginFactory> cpfs = StreamSupport.stream(plugins.spliterator(), false)
+                    .map(plugin -> new ConfiguredPluginFactory(plugin.name(), any -> plugin, null))
+                    .collect(toList());
+
+            return pluginFactories(cpfs);
         }
 
-        public Builder plugins(PluginsLoader pluginsLoader) {
-            this.pluginsLoader = requireNonNull(pluginsLoader);
+        public Builder pluginFactories(List<ConfiguredPluginFactory> configuredPluginFactories) {
+            this.configuredPluginFactories = requireNonNull(configuredPluginFactories);
             return this;
         }
 
@@ -165,6 +233,39 @@ public class StyxServerComponents {
 
         public StyxServerComponents build() {
             return new StyxServerComponents(this);
+        }
+    }
+
+    /**
+     * TODO this can be moved if we desire.
+     */
+    public static class ConfiguredPluginFactory {
+        private final String name;
+        private final PluginFactory pluginFactory;
+        private final Function<Class<?>, Object> configProvider;
+
+        public ConfiguredPluginFactory(String name, PluginFactory pluginFactory, Object pluginConfig) {
+            this.name = requireNonNull(name);
+            this.pluginFactory = requireNonNull(pluginFactory);
+            this.configProvider = type -> type.cast(pluginConfig);
+        }
+
+        public ConfiguredPluginFactory(String name, PluginFactory pluginFactory, Function<Class<?>, Object> configProvider) {
+            this.name = requireNonNull(name);
+            this.pluginFactory = requireNonNull(pluginFactory);
+            this.configProvider = configProvider == null ? any -> null : configProvider;
+        }
+
+        public String name() {
+            return name;
+        }
+
+        public PluginFactory pluginFactory() {
+            return pluginFactory;
+        }
+
+        public <T> T pluginConfig(Class<T> clazz) {
+            return (T) configProvider.apply(clazz);
         }
     }
 

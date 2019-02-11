@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
-import com.hotels.styx.startup.PluginsLoader;
 import com.hotels.styx.startup.StyxServerComponents;
+import com.hotels.styx.startup.StyxServerComponents.ConfiguredPluginFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.testapi.ssl.SslTesting.acceptAllSslRequests;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -66,15 +65,15 @@ public final class StyxServer {
 
         MemoryBackedRegistry<com.hotels.styx.api.extension.service.BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
 
-        PluginsLoader loader = environment -> builder.pluginFactories.stream()
-                .map(pluginConfig -> namedPlugin(
-                        pluginConfig.name,
-                        pluginConfig.pluginFactory.create(toPluginEnvironment(environment, pluginConfig))))
-                .collect(toList());
+        List<ConfiguredPluginFactory> cpfs = builder.pluginFactories.stream()
+                .map(pfc -> {
+                    // TODO looks like these classes have identical contents, we can unify them
+                    return new ConfiguredPluginFactory(pfc.name, pfc.pluginFactory, pfc.pluginConfig);
+                }).collect(toList());
 
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .styxConfig(styxConfig(builder))
-                .plugins(loader)
+                .pluginFactories(cpfs)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))
                 .build();
 

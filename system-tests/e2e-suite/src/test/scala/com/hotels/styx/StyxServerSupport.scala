@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import com.hotels.styx.admin.AdminServerConfig
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration
 import com.hotels.styx.api.extension.service.spi.StyxService
-import com.hotels.styx.api.plugins.spi.Plugin
+import com.hotels.styx.api.plugins.spi.{Plugin, PluginFactory}
 import com.hotels.styx.api._
 import com.hotels.styx.config.Config
 import com.hotels.styx.metrics.StyxMetrics
@@ -81,7 +81,7 @@ object StyxServerSupport {
       .set("admin", adminServerConfigBuilder.build()))
   }
 
-  def newCoreConfig(styxConfig: StyxConfig, styxService: StyxService, plugins: List[NamedPlugin] = Nil) = {
+  def newCoreConfig(styxConfig: StyxConfig, styxService: StyxService, plugins: List[NamedPlugin] = Nil, pluginFactories : List[PluginFactory] = Nil) = {
     val plugins1 = plugins.asInstanceOf[Iterable[NamedPlugin]].asJava
 
     val builder = new StyxServerComponents.Builder()

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,17 +19,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import org.slf4j.Logger;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -37,17 +36,18 @@ import java.util.stream.Stream;
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
-import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.api.HttpMethod.GET;
+import static com.hotels.styx.api.HttpMethod.PUT;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.api.HttpMethod.GET;
-import static com.hotels.styx.api.HttpMethod.PUT;
+import static com.hotels.styx.api.LiveHttpResponse.response;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Comparator.naturalOrder;
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -60,18 +60,15 @@ public class PluginToggleHandler implements HttpHandler {
     private static final int MAX_CONTENT_SIZE = PluginEnabledState.maxContentBytes();
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
-    private final Map<String, NamedPlugin> plugins;
+    private final ConfigStore configStore;
 
     /**
      * Construct an instance given the plugins that you want to be able to enable and disable.
      *
-     * @param namedPlugins the plugins
+     * @param configStore config store
      */
-    public PluginToggleHandler(Iterable<NamedPlugin> namedPlugins) {
-        this.plugins = new HashMap<>();
-
-        namedPlugins.forEach(namedPlugin ->
-                this.plugins.put(namedPlugin.name(), namedPlugin));
+    public PluginToggleHandler(ConfigStore configStore) {
+        this.configStore = requireNonNull(configStore);
     }
 
     @Override
@@ -93,18 +90,18 @@ public class PluginToggleHandler implements HttpHandler {
     private Eventual<LiveHttpResponse> getCurrentState(LiveHttpRequest request, HttpInterceptor.Context context) {
         return Eventual.of(request)
                 .map(this::plugin)
-                .map(this::currentState)
+                .map(PluginToggleHandler::currentState)
                 .map(state -> responseWith(OK, state.toString()));
     }
 
-    private PluginEnabledState currentState(NamedPlugin plugin) {
+    private static PluginEnabledState currentState(NamedPlugin plugin) {
         return plugin.enabled() ? PluginEnabledState.ENABLED : PluginEnabledState.DISABLED;
     }
 
     private Eventual<LiveHttpResponse> putNewState(LiveHttpRequest request, HttpInterceptor.Context context) {
         return Eventual.of(request)
                 .flatMap(this::requestedUpdate)
-                .map(this::applyUpdate);
+                .map(PluginToggleHandler::applyUpdate);
     }
 
     private Eventual<RequestedUpdate> requestedUpdate(LiveHttpRequest request) {
@@ -116,7 +113,7 @@ public class PluginToggleHandler implements HttpHandler {
                 });
     }
 
-    private LiveHttpResponse applyUpdate(RequestedUpdate requestedUpdate) {
+    private static LiveHttpResponse applyUpdate(RequestedUpdate requestedUpdate) {
         boolean changed = requestedUpdate.apply();
 
         String message = responseMessage(requestedUpdate, changed);
@@ -124,7 +121,7 @@ public class PluginToggleHandler implements HttpHandler {
         return responseWith(OK, message);
     }
 
-    private String responseMessage(RequestedUpdate requestedUpdate, boolean changed) {
+    private static String responseMessage(RequestedUpdate requestedUpdate, boolean changed) {
         String message = changed ? wasChangedMessage(requestedUpdate) : wasNotChangedMessage(requestedUpdate);
 
         try {
@@ -134,11 +131,11 @@ public class PluginToggleHandler implements HttpHandler {
         }
     }
 
-    private String wasNotChangedMessage(RequestedUpdate requestedUpdate) {
+    private static String wasNotChangedMessage(RequestedUpdate requestedUpdate) {
         return format("State of '%s' was already '%s'", requestedUpdate.plugin().name(), requestedUpdate.newState());
     }
 
-    private String wasChangedMessage(RequestedUpdate requestedUpdate) {
+    private static String wasChangedMessage(RequestedUpdate requestedUpdate) {
         return format("State of '%s' changed to '%s'", requestedUpdate.plugin().name(), requestedUpdate.newState());
     }
 
@@ -149,7 +146,8 @@ public class PluginToggleHandler implements HttpHandler {
     }
 
     private NamedPlugin plugin(String pluginName) {
-        NamedPlugin plugin = plugins.get(pluginName);
+        NamedPlugin plugin = configStore.get("plugins." + pluginName, NamedPlugin.class)
+                .orElse(null);
 
         if (plugin == null) {
             throw new PluginNotFoundException("No such plugin");
@@ -157,7 +155,7 @@ public class PluginToggleHandler implements HttpHandler {
         return plugin;
     }
 
-    private Matcher urlMatcher(LiveHttpRequest request) {
+    private static Matcher urlMatcher(LiveHttpRequest request) {
         Matcher matcher = URL_PATTERN.matcher(request.path());
 
         if (!matcher.matches()) {

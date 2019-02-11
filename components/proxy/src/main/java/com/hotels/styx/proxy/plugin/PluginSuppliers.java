@@ -17,18 +17,17 @@ package com.hotels.styx.proxy.plugin;
 
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.common.FailureHandlingStrategy;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.spi.config.SpiExtension;
+import com.hotels.styx.startup.StyxServerComponents.ConfiguredPluginFactory;
 import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
@@ -39,15 +38,15 @@ import static org.slf4j.LoggerFactory.getLogger;
  * A helper class for creating plugin supplier objects.
  */
 public class PluginSuppliers {
-    private static final String DEFAULT_PLUGINS_METRICS_SCOPE = "styx.plugins";
+    public static final String DEFAULT_PLUGINS_METRICS_SCOPE = "styx.plugins";
     private static final Logger LOG = getLogger(PluginSuppliers.class);
 
     private final Configuration configuration;
     private final PluginFactoryLoader pluginFactoryLoader;
     private final Environment environment;
 
-    private final FailureHandlingStrategy<Pair<String, SpiExtension>, NamedPlugin> failureHandlingStrategy =
-            new FailureHandlingStrategy.Builder<Pair<String, SpiExtension>, NamedPlugin>()
+    private final FailureHandlingStrategy<Pair<String, SpiExtension>, ConfiguredPluginFactory> failureHandlingStrategy =
+            new FailureHandlingStrategy.Builder<Pair<String, SpiExtension>, ConfiguredPluginFactory>()
                     .doImmediatelyOnEachFailure((plugin, err) ->
                             LOG.error(perFailureErrorMessage(plugin), err))
                     .doOnFailuresAfterAllProcessing(failures -> {
@@ -68,23 +67,23 @@ public class PluginSuppliers {
         return configuration.get("plugins", PluginsMetadata.class);
     }
 
-    public Iterable<NamedPlugin> fromConfigurations() {
+    public Iterable<ConfiguredPluginFactory> fromConfigurations() {
         return readPluginsConfig()
                 .map(this::activePlugins)
                 .orElse(emptyList());
     }
 
-    private Iterable<NamedPlugin> activePlugins(PluginsMetadata pluginsMetadata) {
+    private Iterable<ConfiguredPluginFactory> activePlugins(PluginsMetadata pluginsMetadata) {
         return failureHandlingStrategy.process(pluginsMetadata.activePlugins(), this::loadPlugin);
     }
 
-    private NamedPlugin loadPlugin(Pair<String, SpiExtension> pair) {
+    private ConfiguredPluginFactory loadPlugin(Pair<String, SpiExtension> pair) {
         String pluginName = pair.key();
         SpiExtension spiExtension = pair.value();
 
         PluginFactory factory = pluginFactoryLoader.load(spiExtension);
-        Plugin plugin = factory.create(new PluginEnvironment(pluginName, environment, spiExtension, DEFAULT_PLUGINS_METRICS_SCOPE));
-        return namedPlugin(pluginName, plugin);
+
+        return new ConfiguredPluginFactory(pluginName, factory, spiExtension::config);
     }
 
     private static String perFailureErrorMessage(Pair<String, SpiExtension> plugin) {

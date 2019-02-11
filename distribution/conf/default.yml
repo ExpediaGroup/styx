@@ -87,3 +87,14 @@ url:
     unwiseCharactersToEncode:
 
 #originRestrictionCookie: yourCookieNameHere
+
+plugins:
+  active: demo
+  all:
+    demo:
+      factory:
+        class: "com.hotels.styx.startup.DemoPlugin$Factory"
+        classPath: "${STYX_HOME:}"
+      config:
+        foo: "bar"
+
