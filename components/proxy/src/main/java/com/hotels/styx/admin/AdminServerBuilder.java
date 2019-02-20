@@ -80,18 +80,12 @@ public class AdminServerBuilder {
     private final Environment environment;
     private final Configuration configuration;
 
-//    private Iterable<NamedPlugin> plugins;
     private Registry<BackendService> backendServicesRegistry;
 
     public AdminServerBuilder(Environment environment) {
         this.environment = environment;
         this.configuration = environment.configuration();
     }
-
-//    public AdminServerBuilder plugins(Iterable<NamedPlugin> plugins) {
-//        this.plugins = requireNonNull(plugins);
-//        return this;
-//    }
 
     public AdminServerBuilder backendServicesRegistry(Registry<BackendService> backendServicesRegistry) {
         this.backendServicesRegistry = requireNonNull(backendServicesRegistry);
@@ -177,12 +171,6 @@ public class AdminServerBuilder {
                 link("Dashboard", "/admin/dashboard/index.html"),
                 link("Plugins", "/admin/plugins"));
     }
-
-//    private List<Route> routesForPlugins() {
-//        return stream(plugins.spliterator(), true)
-//                .flatMap(namedPlugin -> routesForPlugin(namedPlugin).stream())
-//                .collect(toList());
-//    }
 
     private static List<Route> routesForPlugin(NamedPlugin namedPlugin) {
         List<PluginAdminEndpointRoute> routes = pluginAdminEndpointRoutes(namedPlugin);

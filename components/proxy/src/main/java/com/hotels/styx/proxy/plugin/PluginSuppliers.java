@@ -36,6 +36,8 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * A helper class for creating plugin supplier objects.
+ *
+ * TODO this class seems to be a bit of a relic, furthermore, since it's no longer loading the plugins itself, the failure handling strategy shouldn't be here
  */
 public class PluginSuppliers {
     public static final String DEFAULT_PLUGINS_METRICS_SCOPE = "styx.plugins";
@@ -43,7 +45,6 @@ public class PluginSuppliers {
 
     private final Configuration configuration;
     private final PluginFactoryLoader pluginFactoryLoader;
-    private final Environment environment;
 
     private final FailureHandlingStrategy<Pair<String, SpiExtension>, ConfiguredPluginFactory> failureHandlingStrategy =
             new FailureHandlingStrategy.Builder<Pair<String, SpiExtension>, ConfiguredPluginFactory>()
@@ -60,7 +61,6 @@ public class PluginSuppliers {
     PluginSuppliers(Environment environment, PluginFactoryLoader pluginFactoryLoader) {
         this.configuration = environment.configuration();
         this.pluginFactoryLoader = requireNonNull(pluginFactoryLoader);
-        this.environment = requireNonNull(environment);
     }
 
     private Optional<PluginsMetadata> readPluginsConfig() {

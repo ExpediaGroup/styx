@@ -22,6 +22,8 @@ import com.hotels.styx.server.HttpServer;
 
 /**
  * Used to set-up the administration server for Styx.
+ *
+ * TODO this class has just a single utility method - looks like it's only used in one place too. Just move the method?
  */
 public final class AdminServerSetUp {
     private AdminServerSetUp() {
@@ -30,7 +32,6 @@ public final class AdminServerSetUp {
     public static HttpServer createAdminServer(StyxServerComponents config) {
         return new AdminServerBuilder(config.environment())
                 .backendServicesRegistry((Registry<BackendService>) config.services().get("backendServiceRegistry"))
-//                .plugins(config.plugins())
                 .build();
     }
 }

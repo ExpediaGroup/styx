@@ -38,6 +38,9 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class DemoPlugin implements Plugin {
     private static final Logger LOGGER = getLogger(DemoPlugin.class);
 
+    /**
+     * TODO we should use some config so that this plugin can demonstrate config loading too.
+     */
     public DemoPlugin() {
         LOGGER.info("Demo plugin constructed");
     }

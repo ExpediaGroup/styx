@@ -25,6 +25,7 @@ import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{DefaultStyxConfiguration, StyxProxySpec}
 import org.scalatest.FunSpec
 
+// TODO use Spec this to test the liveness/readiness checks once refactoring is finished
 class StartupSpec extends FunSpec
   with StyxProxySpec
 //  with DefaultStyxConfiguration

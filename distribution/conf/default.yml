@@ -88,6 +88,7 @@ url:
 
 #originRestrictionCookie: yourCookieNameHere
 
+# TODO comment out before raising PR
 plugins:
   active: demo
   all:
@@ -96,5 +97,5 @@ plugins:
         class: "com.hotels.styx.startup.DemoPlugin$Factory"
         classPath: "${STYX_HOME:}"
       config:
-        foo: "bar"
+        foo: "bar" # TODO we should use some real config so we can demo that feature too
 

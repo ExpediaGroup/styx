@@ -57,23 +57,14 @@ public class StyxServerComponents {
 
     private final Environment environment;
     private final Map<String, StyxService> services;
-    // TODO we will need to return PluginFactory + Plugin.Environment so that this can be handled independently of the app start-up
     private final List<NamedPlugin> plugins;
-//    private final PluginsLoader pluginsLoader;
 
+    // TODO this method is now big and ugly. split it up.
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
 
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
-
-//        this.pluginsLoader = requireNonNull(builder.pluginsLoader);
-
-//        this.plugins = builder.pluginsLoader.load(environment);
-
-        // TODO how to create pluginEnvironment? That's why we created this ugly "PluginsLoader" concept, because it encapsulates that.
-        // TODO the only part of the pluginEnvironment that should actually be handled by the "supplier" of the plugins is the plugin-config object, since that's the only one that
-        // TODO - varies by specific plugin, rather than whether it's a test/actually running
 
         List<ConfiguredPluginFactory> cpfs = builder.configuredPluginFactories;
 
@@ -81,9 +72,6 @@ public class StyxServerComponents {
             Iterable<ConfiguredPluginFactory> iterable = new PluginSuppliers(environment).fromConfigurations();
             cpfs = ImmutableList.copyOf(iterable);
         }
-
-        // TODO remove when done
-        LOGGER.info("configuredPluginFactories={}", cpfs);
 
         this.plugins = cpfs.stream().map(cpf -> {
             LOGGER.info("Instantiating Plugin, pluginName={}...", cpf.name());
@@ -135,10 +123,6 @@ public class StyxServerComponents {
     public List<NamedPlugin> plugins() {
         return plugins;
     }
-
-//    public PluginsLoader pluginsLoader() {
-//        return pluginsLoader;
-//    }
 
     private static Environment newEnvironment(StyxConfig styxConfig, MetricRegistry metricRegistry) {
         return new Environment.Builder()
@@ -237,7 +221,7 @@ public class StyxServerComponents {
     }
 
     /**
-     * TODO this can be moved if we desire.
+     * TODO this can be moved if we desire. If not, replace this comment with proper documentation.
      */
     public static class ConfiguredPluginFactory {
         private final String name;

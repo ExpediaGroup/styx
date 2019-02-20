@@ -46,6 +46,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 
+// TODO see TODO in PluginSuppliers class before attempting to fix these tests
 public class PluginSuppliersTest {
     Path FIXTURES_CLASS_PATH = fixturesHome(PluginSuppliersTest.class, "/plugins");
 

@@ -43,7 +43,6 @@ import java.util.Set;
 
 import static com.hotels.styx.testapi.ssl.SslTesting.acceptAllSslRequests;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -65,15 +64,9 @@ public final class StyxServer {
 
         MemoryBackedRegistry<com.hotels.styx.api.extension.service.BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
 
-        List<ConfiguredPluginFactory> cpfs = builder.pluginFactories.stream()
-                .map(pfc -> {
-                    // TODO looks like these classes have identical contents, we can unify them
-                    return new ConfiguredPluginFactory(pfc.name, pfc.pluginFactory, pfc.pluginConfig);
-                }).collect(toList());
-
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .styxConfig(styxConfig(builder))
-                .pluginFactories(cpfs)
+                .pluginFactories(builder.pluginFactories)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))
                 .build();
 
@@ -176,7 +169,7 @@ public final class StyxServer {
      */
     public static final class Builder {
         private final Map<String, com.hotels.styx.api.extension.service.BackendService> routes = new HashMap<>();
-        private final List<PluginFactoryConfig> pluginFactories = new ArrayList<>();
+        private final List<ConfiguredPluginFactory> pluginFactories = new ArrayList<>();
         private int proxyHttpPort;
         private int adminHttpPort;
         private int proxyHttpsPort;
@@ -231,12 +224,12 @@ public final class StyxServer {
          * @return this builder
          */
         public Builder addPlugin(String name, Plugin plugin) {
-            pluginFactories.add(new PluginFactoryConfig(name, env -> plugin, null));
+            pluginFactories.add(new ConfiguredPluginFactory(name, env -> plugin, null));
             return this;
         }
 
         public Builder addPluginFactory(String name, PluginFactory pluginFactory, Object pluginConfig) {
-            pluginFactories.add(new PluginFactoryConfig(name, pluginFactory, pluginConfig));
+            pluginFactories.add(new ConfiguredPluginFactory(name, pluginFactory, pluginConfig));
             return this;
         }
 
