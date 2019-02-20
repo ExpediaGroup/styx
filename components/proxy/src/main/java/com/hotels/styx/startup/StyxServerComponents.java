@@ -41,7 +41,6 @@ import java.util.stream.StreamSupport;
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
-import static com.hotels.styx.proxy.plugin.PluginSuppliers.DEFAULT_PLUGINS_METRICS_SCOPE;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.DO_NOT_MODIFY;
 import static java.util.Objects.requireNonNull;
@@ -53,6 +52,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Configuration required to set-up the core Styx services, such as the proxy and admin servers.
  */
 public class StyxServerComponents {
+    private static final String DEFAULT_PLUGINS_METRICS_SCOPE = "styx.plugins";
+
     private static final Logger LOGGER = getLogger(StyxServerComponents.class);
 
     private final Environment environment;

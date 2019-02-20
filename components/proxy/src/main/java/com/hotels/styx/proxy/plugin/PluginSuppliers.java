@@ -37,10 +37,11 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * A helper class for creating plugin supplier objects.
  *
- * TODO this class seems to be a bit of a relic, furthermore, since it's no longer loading the plugins itself, the failure handling strategy shouldn't be here
+ * TODO This class seems to be a bit of a relic.
+ * TODO Since it's no longer loading the plugins itself, the failure handling strategy only covers the case in which
+ * TODO  the PluginFactory cannot be instantiated, but does not cover the use of the plugin factory
  */
 public class PluginSuppliers {
-    public static final String DEFAULT_PLUGINS_METRICS_SCOPE = "styx.plugins";
     private static final Logger LOG = getLogger(PluginSuppliers.class);
 
     private final Configuration configuration;
@@ -63,14 +64,14 @@ public class PluginSuppliers {
         this.pluginFactoryLoader = requireNonNull(pluginFactoryLoader);
     }
 
-    private Optional<PluginsMetadata> readPluginsConfig() {
-        return configuration.get("plugins", PluginsMetadata.class);
-    }
-
     public Iterable<ConfiguredPluginFactory> fromConfigurations() {
         return readPluginsConfig()
                 .map(this::activePlugins)
                 .orElse(emptyList());
+    }
+
+    private Optional<PluginsMetadata> readPluginsConfig() {
+        return configuration.get("plugins", PluginsMetadata.class);
     }
 
     private Iterable<ConfiguredPluginFactory> activePlugins(PluginsMetadata pluginsMetadata) {
