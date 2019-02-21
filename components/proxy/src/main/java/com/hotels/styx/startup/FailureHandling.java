@@ -18,7 +18,6 @@ package com.hotels.styx.startup;
 import com.hotels.styx.common.FailureHandlingStrategy;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.proxy.plugin.PluginStartupException;
-import com.hotels.styx.proxy.plugin.PluginSuppliers;
 import com.hotels.styx.spi.config.SpiExtension;
 import org.slf4j.Logger;
 
@@ -33,7 +32,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Strategies for handling failure during start-up.
  */
 public final class FailureHandling {
-    private static final Logger LOG = getLogger(PluginSuppliers.class);
+    private static final Logger LOG = getLogger(FailureHandling.class);
 
     public static final FailureHandlingStrategy<Pair<String, SpiExtension>, StyxServerComponents.ConfiguredPluginFactory> PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY =
             new FailureHandlingStrategy.Builder<Pair<String, SpiExtension>, StyxServerComponents.ConfiguredPluginFactory>()

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,16 +17,17 @@ package com.hotels.styx;
 
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.proxy.HttpErrorStatusCauseLogger;
-import com.hotels.styx.proxy.HttpErrorStatusMetrics;
+import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.configstore.ConfigStore;
+import com.hotels.styx.proxy.HttpErrorStatusCauseLogger;
+import com.hotels.styx.proxy.HttpErrorStatusMetrics;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.ServerEnvironment;
 
 import java.util.function.Supplier;
 
-import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATION;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Environment: metrics, health check, build info, event bus.
@@ -35,7 +36,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
     private final Version version;
     private final EventBus eventBus;
     private final ConfigStore configStore;
-    private final AggregatedConfiguration aggregatedConfiguration;
+    private final StyxConfig configuration;
     private final HttpErrorStatusListener httpErrorStatusListener;
     private final ServerEnvironment serverEnvironment;
 
@@ -43,7 +44,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
         this.eventBus = firstNonNull(builder.eventBus, () -> new EventBus("Styx"));
         this.configStore = new ConfigStore();
 
-        this.aggregatedConfiguration = firstNonNull(builder.aggregatedConfiguration, () -> new AggregatedConfiguration(new StyxConfig()));
+        this.configuration = requireNonNull(builder.configuration);
         this.version = firstNonNull(builder.version, Version::newVersion);
         this.serverEnvironment = new ServerEnvironment(firstNonNull(builder.metricRegistry, CodaHaleMetricRegistry::new));
 
@@ -72,8 +73,8 @@ public final class Environment implements com.hotels.styx.api.Environment {
     }
 
     @Override
-    public AggregatedConfiguration configuration() {
-        return this.aggregatedConfiguration;
+    public Configuration configuration() {
+        return this.configuration;
     }
 
     @Override
@@ -82,7 +83,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
     }
 
     public StyxConfig styxConfig() {
-        return aggregatedConfiguration.styxConfig();
+        return configuration;
     }
 
     public ServerEnvironment serverEnvironment() {
@@ -94,24 +95,13 @@ public final class Environment implements com.hotels.styx.api.Environment {
      * Builder for {@link com.hotels.styx.Environment}.
      */
     public static class Builder {
-        private AggregatedConfiguration aggregatedConfiguration;
         private MetricRegistry metricRegistry;
         private Version version;
         private EventBus eventBus;
-
-        /**
-         * Sets aggregated configuration.
-         *
-         * @deprecated see {@link AggregatedConfiguration}
-         */
-        @Deprecated
-        public Builder aggregatedConfiguration(AggregatedConfiguration aggregatedConfiguration) {
-            this.aggregatedConfiguration = aggregatedConfiguration;
-            return this;
-        }
+        private StyxConfig configuration = StyxConfig.defaultConfig();
 
         public Builder configuration(StyxConfig configuration) {
-            this.aggregatedConfiguration = new AggregatedConfiguration(configuration, EMPTY_CONFIGURATION);
+            this.configuration = requireNonNull(configuration);
             return this;
         }
 

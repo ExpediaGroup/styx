@@ -17,7 +17,6 @@ package com.hotels.styx.admin;
 
 import com.codahale.metrics.json.MetricsModule;
 import com.google.common.collect.ImmutableSortedSet;
-import com.hotels.styx.AggregatedConfiguration;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.dashboard.DashboardData;
@@ -109,7 +108,7 @@ public class AdminServerBuilder {
         MetricsHandler metricsHandler = new MetricsHandler(environment.metricRegistry(), metricsCacheExpiration);
         httpRouter.add("/admin/metrics", metricsHandler);
         httpRouter.add("/admin/metrics/", metricsHandler);
-        httpRouter.add("/admin/configuration", new StyxConfigurationHandler(staticConfiguration()));
+        httpRouter.add("/admin/configuration", new StyxConfigurationHandler(configuration));
         httpRouter.add("/admin/configuration/origins", new OriginsHandler(backendServicesRegistry));
         httpRouter.add("/admin/jvm", new JVMMetricsHandler(environment.metricRegistry(), metricsCacheExpiration));
         httpRouter.add("/admin/origins/status", new OriginsInventoryHandler(environment.eventBus()));
@@ -147,12 +146,6 @@ public class AdminServerBuilder {
         return new JsonHandler<>(new DashboardDataSupplier(backendServicesRegistry, environment, styxConfig),
                 Optional.of(Duration.ofSeconds(10)),
                 new MetricsModule(SECONDS, MILLISECONDS, false));
-    }
-
-    private Configuration staticConfiguration() {
-        return configuration instanceof AggregatedConfiguration
-                ? ((AggregatedConfiguration) configuration).styxConfig()
-                : configuration;
     }
 
     private static Iterable<IndexHandler.Link> indexLinkPaths() {

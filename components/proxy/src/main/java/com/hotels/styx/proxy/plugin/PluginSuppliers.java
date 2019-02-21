@@ -40,6 +40,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  * TODO This class seems to be a bit of a relic.
  * TODO Since it's no longer loading the plugins itself, the failure handling strategy only covers the case in which
  * TODO  the PluginFactory cannot be instantiated, but does not cover the use of the plugin factory
+ *
+ * TODO this is no longer used outside of its test
  */
 public class PluginSuppliers {
     private static final Logger LOG = getLogger(PluginSuppliers.class);

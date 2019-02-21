@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.proxy.plugin;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.common.FailureHandlingStrategy;
 import com.hotels.styx.common.Pair;
@@ -37,6 +38,7 @@ public class PluginFactoriesLoader {
         this(failureHandlingStrategy, new FileSystemPluginFactoryLoader());
     }
 
+    @VisibleForTesting
     PluginFactoriesLoader(FailureHandlingStrategy<Pair<String, SpiExtension>, ConfiguredPluginFactory> failureHandlingStrategy, PluginFactoryLoader pluginFactoryLoader) {
         this.failureHandlingStrategy = requireNonNull(failureHandlingStrategy);
         this.pluginFactoryLoader = requireNonNull(pluginFactoryLoader);

@@ -268,7 +268,7 @@ public class StyxServerComponents {
     public interface LoggingSetUp {
         LoggingSetUp DO_NOT_MODIFY = environment -> {
         };
-        LoggingSetUp FROM_CONFIG = environment -> setUpLogging(environment.configuration().logConfigLocation());
+        LoggingSetUp FROM_CONFIG = environment -> setUpLogging(environment.styxConfig().logConfigLocation());
 
         void setUp(Environment environment);
 

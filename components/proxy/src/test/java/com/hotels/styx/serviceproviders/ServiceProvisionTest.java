@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 package com.hotels.styx.serviceproviders;
 
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.AggregatedConfiguration;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.extension.RemoteHost;
-import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
-import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicyFactory;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.configuration.ServiceFactory;
+import com.hotels.styx.api.extension.RemoteHost;
+import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
+import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicyFactory;
 import com.hotels.styx.api.extension.service.spi.AbstractStyxService;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.support.api.SimpleEnvironment;
@@ -119,7 +118,6 @@ public class ServiceProvisionTest {
             "        classPath: " + FIXTURES_CLASS_PATH.toString() + "\n" +
             "      config:\n" +
             "          stringValue: valueNumber2\n";
-
 
 
     private final String yamlForMixedServiceFactories = "" +
@@ -324,8 +322,8 @@ public class ServiceProvisionTest {
     }
 
 
-    private Environment environmentWithConfig(String yaml) {
-        Configuration conf = new AggregatedConfiguration(StyxConfig.fromYaml(yaml));
+    private static Environment environmentWithConfig(String yaml) {
+        Configuration conf = StyxConfig.fromYaml(yaml);
 
         return new SimpleEnvironment.Builder()
                 .configuration(conf)

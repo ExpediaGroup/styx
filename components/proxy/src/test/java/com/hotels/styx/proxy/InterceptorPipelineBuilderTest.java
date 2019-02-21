@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package com.hotels.styx.proxy;
 
 import com.google.common.collect.ImmutableList;
-import com.hotels.styx.AggregatedConfiguration;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
@@ -49,7 +48,7 @@ public class InterceptorPipelineBuilderTest {
     @BeforeMethod
     public void setUp() {
         environment = new Environment.Builder()
-                .aggregatedConfiguration(new AggregatedConfiguration(StyxConfig.defaultConfig()))
+                .configuration(StyxConfig.defaultConfig())
                 .build();
         plugins = ImmutableList.of(
                 namedPlugin("plug1",

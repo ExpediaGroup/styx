@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,17 +16,12 @@
 package com.hotels.styx.proxy.backends.file;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hotels.styx.AggregatedConfiguration;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Environment;
-import com.hotels.styx.api.Id;
-import com.hotels.styx.api.Resource;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.ConfigurationException;
-import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
-import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.proxy.backends.file.FileChangeMonitor.FileMonitorSettings;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -36,17 +31,13 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.io.Files.createTempDir;
-import static com.hotels.styx.common.io.ResourceFactory.newResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.delete;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -130,23 +121,6 @@ public class FileBackedBackendServicesRegistryFactoryTest {
         when(configuration.get(eq("originsFile"), eq(String.class))).thenReturn(path);
         when(configuration.get(eq("monitor"), eq(FileMonitorSettings.class))).thenReturn(monitorSettings);
         return configuration;
-    }
-
-    private List<String> ids(Iterable<BackendService> backendServices) {
-        return stream(backendServices.spliterator(), false)
-                .map(BackendService::id)
-                .map(Id::toString)
-                .collect(toList());
-    }
-
-    private Environment environment(String configPath) {
-        Resource config = newResource(configPath);
-
-        AggregatedConfiguration configuration = new AggregatedConfiguration(new StyxConfig(new YamlConfig(config)));
-
-        return new com.hotels.styx.Environment.Builder()
-                .aggregatedConfiguration(configuration)
-                .build();
     }
 
     void write(Path path, String text) throws Exception {
