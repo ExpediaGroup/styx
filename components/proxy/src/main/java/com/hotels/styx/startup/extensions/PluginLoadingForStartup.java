@@ -31,8 +31,8 @@ import java.util.List;
 
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.startup.FailureHandling.PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY;
+import static com.hotels.styx.startup.FailureHandling.PLUGIN_STARTUP_FAILURE_HANDLING_STRATEGY;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -50,7 +50,7 @@ public final class PluginLoadingForStartup {
     }
 
     /**
-     * Load plugins
+     * Load plugins.
      *
      * @param environment environment
      * @param factories   if set, overrides config, otherwise plugins will be loaded from config
@@ -74,33 +74,8 @@ public final class PluginLoadingForStartup {
                 .orElse(emptyList());
     }
 
-    private static List<NamedPlugin> loadPluginsFromFactories(Environment environment, List<ConfiguredPluginFactory> cpfs) {
-        List<NamedPlugin> plugins = cpfs.stream().map(factory -> {
-            LOGGER.info("Instantiating Plugin, pluginName={}...", factory.name());
-
-            PluginFactory.Environment pluginEnvironment = new PluginFactory.Environment() {
-                @Override
-                public <T> T pluginConfig(Class<T> clazz) {
-                    return factory.pluginConfig(clazz);
-                }
-
-                @Override
-                public Configuration configuration() {
-                    return environment.configuration();
-                }
-
-                @Override
-                public MetricRegistry metricRegistry() {
-                    return environment.metricRegistry().scope(DEFAULT_PLUGINS_METRICS_SCOPE + "." + factory.name());
-                }
-            };
-
-            Plugin plugin = factory.pluginFactory().create(pluginEnvironment);
-
-            // TODO refactor so we don't have casting (code smell) - I think this comes from tests supplying NamedPlugin, when we only need Plugin now.
-            return plugin instanceof NamedPlugin ? (NamedPlugin) plugin : namedPlugin(factory.name(), plugin);
-        }).collect(toList());
-
+    private static List<NamedPlugin> loadPluginsFromFactories(Environment environment, List<ConfiguredPluginFactory> factories) {
+        List<NamedPlugin> plugins = PLUGIN_STARTUP_FAILURE_HANDLING_STRATEGY.process(factories, factory -> loadPlugin(environment, factory));
 
         plugins.forEach(plugin -> {
             LOGGER.info("Instantiated Plugin, pluginName={}", plugin.name());
@@ -108,6 +83,32 @@ public final class PluginLoadingForStartup {
             environment.configStore().set("plugins." + plugin.name(), plugin);
         });
         return plugins;
+    }
+
+    private static NamedPlugin loadPlugin(Environment environment, ConfiguredPluginFactory factory) {
+        LOGGER.info("Instantiating Plugin, pluginName={}...", factory.name());
+
+        PluginFactory.Environment pluginEnvironment = new PluginFactory.Environment() {
+            @Override
+            public <T> T pluginConfig(Class<T> clazz) {
+                return factory.pluginConfig(clazz);
+            }
+
+            @Override
+            public Configuration configuration() {
+                return environment.configuration();
+            }
+
+            @Override
+            public MetricRegistry metricRegistry() {
+                return environment.metricRegistry().scope(DEFAULT_PLUGINS_METRICS_SCOPE + "." + factory.name());
+            }
+        };
+
+        Plugin plugin = factory.pluginFactory().create(pluginEnvironment);
+
+        // TODO refactor so we don't have casting (code smell) - I think this comes from tests supplying NamedPlugin, when we only need Plugin now.
+        return plugin instanceof NamedPlugin ? (NamedPlugin) plugin : namedPlugin(factory.name(), plugin);
     }
 
 

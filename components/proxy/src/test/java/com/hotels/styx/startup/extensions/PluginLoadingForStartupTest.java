@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.startup.extensions;
 
-import com.codahale.metrics.Counter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
@@ -35,14 +34,11 @@ import org.testng.annotations.Test;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
-import static java.lang.System.lineSeparator;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -50,6 +46,8 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
+// TODO the "failure" tests are passing because they are using the wrong class name
+// TODO we need to distinguish between "cannot instantiate plugin factory" and "failure while executing plugin factory"
 public class PluginLoadingForStartupTest {
     private static final Path FIXTURES_CLASS_PATH = fixturesHome(PluginLoadingForStartupTest.class, "/");
 
@@ -174,7 +172,7 @@ public class PluginLoadingForStartupTest {
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp =
-            "1 plugin could not be loaded: failedPlugins=\\[myPlugin\\]; failureCauses=\\[myPlugin: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory for configuration=.*\\]")
+            "1 plugin could not be loaded: failedPlugins=\\[myPlugin\\]; failureCauses=\\[myPlugin: java.lang.RuntimeException: plugin factory error\\]")
     public void throwsExceptionIfFactoryFailsToLoadPlugin() {
         String yaml = "" +
                 "plugins:\n" +
@@ -182,7 +180,7 @@ public class PluginLoadingForStartupTest {
                 "  all:\n" +
                 "    myPlugin:\n" +
                 "      factory:\n" +
-                "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$FailingPluginFactory\n" +
+                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$FailingPluginFactory\n" +
                 "        classPath: " + FIXTURES_CLASS_PATH + "\n";
 
         PluginLoadingForStartup.loadPlugins(environment(yaml), null);
@@ -193,7 +191,7 @@ public class PluginLoadingForStartupTest {
                     "myPlugin1: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*, " +
                     "myPlugin2: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*, " +
                     "myPlugin3: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*\\]")
-    public void attemptsToLoadAllPluginsEvenIfSomeFail() {
+    public void attemptsToLoadAllPluginsEvenIfSomePluginFactoriesCannotBeLoaded() {
         LoggingTestSupport log = new LoggingTestSupport(FailureHandling.class);
 
         try {
@@ -203,20 +201,55 @@ public class PluginLoadingForStartupTest {
                     "  all:\n" +
                     "    myPlugin1:\n" +
                     "      factory:\n" +
-                    "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$FailingPluginFactory\n" +
+                    "        class: BadClassName\n" +
                     "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                     "    myPlugin2:\n" +
                     "      factory:\n" +
-                    "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$FailingPluginFactory\n" +
+                    "        class: BadClassName\n" +
                     "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                     "    myPlugin3:\n" +
                     "      factory:\n" +
-                    "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$FailingPluginFactory\n" +
+                    "        class: BadClassName\n" +
                     "        classPath: " + FIXTURES_CLASS_PATH + "\n";
 
             PluginLoadingForStartup.loadPlugins(environment(yaml), null);
         } catch (RuntimeException e) {
             assertThat(log.log(), hasItem(loggingEvent(ERROR, "Could not load plugin: pluginName=myPlugin1; factoryClass=.*", ConfigurationException.class, "Could not load a plugin factory for.*")));
+            throw e;
+        } finally {
+            log.stop();
+        }
+    }
+
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp =
+            "3 plugins could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
+                    "myPlugin1: java.lang.RuntimeException: plugin factory error, " +
+                    "myPlugin2: java.lang.RuntimeException: plugin factory error, " +
+                    "myPlugin3: java.lang.RuntimeException: plugin factory error\\]")
+    public void attemptsToLoadAllPluginsEvenIfSomePluginFactoriesFailDuringExecution() {
+        LoggingTestSupport log = new LoggingTestSupport(FailureHandling.class);
+
+        try {
+            String yaml = "" +
+                    "plugins:\n" +
+                    "  active: myPlugin1,myPlugin2,myPlugin3\n" +
+                    "  all:\n" +
+                    "    myPlugin1:\n" +
+                    "      factory:\n" +
+                    "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$FailingPluginFactory\n" +
+                    "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
+                    "    myPlugin2:\n" +
+                    "      factory:\n" +
+                    "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$FailingPluginFactory\n" +
+                    "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
+                    "    myPlugin3:\n" +
+                    "      factory:\n" +
+                    "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$FailingPluginFactory\n" +
+                    "        classPath: " + FIXTURES_CLASS_PATH + "\n";
+
+            PluginLoadingForStartup.loadPlugins(environment(yaml), null);
+        } catch (RuntimeException e) {
+            assertThat(log.log(), hasItem(loggingEvent(ERROR, "Could not load plugin: pluginName=myPlugin1; factoryClass=.*", RuntimeException.class, "plugin factory error")));
             throw e;
         } finally {
             log.stop();
@@ -245,16 +278,8 @@ public class PluginLoadingForStartupTest {
 
         PluginLoadingForStartup.loadPlugins(environment(yaml), null);
 
-        System.out.println(pretty(styxMetricsRegistry.getCounters()));
-
         assertThat(styxMetricsRegistry.counter("styx.plugins.myPlugin.initialised").getCount(), is(1L));
         assertThat(styxMetricsRegistry.counter("styx.plugins.myAnotherPlugin.initialised").getCount(), is(1L));
-    }
-
-    private static String pretty(Map<String, Counter> map) {
-        return map.entrySet().stream()
-                .map(entry -> entry.getKey() + "=" + entry.getValue().getCount())
-                .collect(Collectors.joining(lineSeparator()));
     }
 
     private com.hotels.styx.Environment environment(String yaml) {
