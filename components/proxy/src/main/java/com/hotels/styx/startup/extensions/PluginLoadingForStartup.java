@@ -75,13 +75,13 @@ public final class PluginLoadingForStartup {
     }
 
     private static List<NamedPlugin> loadPluginsFromFactories(Environment environment, List<ConfiguredPluginFactory> cpfs) {
-        List<NamedPlugin> plugins = cpfs.stream().map(cpf -> {
-            LOGGER.info("Instantiating Plugin, pluginName={}...", cpf.name());
+        List<NamedPlugin> plugins = cpfs.stream().map(factory -> {
+            LOGGER.info("Instantiating Plugin, pluginName={}...", factory.name());
 
             PluginFactory.Environment pluginEnvironment = new PluginFactory.Environment() {
                 @Override
                 public <T> T pluginConfig(Class<T> clazz) {
-                    return cpf.pluginConfig(clazz);
+                    return factory.pluginConfig(clazz);
                 }
 
                 @Override
@@ -91,14 +91,14 @@ public final class PluginLoadingForStartup {
 
                 @Override
                 public MetricRegistry metricRegistry() {
-                    return environment.metricRegistry().scope(DEFAULT_PLUGINS_METRICS_SCOPE);
+                    return environment.metricRegistry().scope(DEFAULT_PLUGINS_METRICS_SCOPE + "." + factory.name());
                 }
             };
 
-            Plugin plugin = cpf.pluginFactory().create(pluginEnvironment);
+            Plugin plugin = factory.pluginFactory().create(pluginEnvironment);
 
             // TODO refactor so we don't have casting (code smell) - I think this comes from tests supplying NamedPlugin, when we only need Plugin now.
-            return plugin instanceof NamedPlugin ? (NamedPlugin) plugin : namedPlugin(cpf.name(), plugin);
+            return plugin instanceof NamedPlugin ? (NamedPlugin) plugin : namedPlugin(factory.name(), plugin);
         }).collect(toList());
 
 
