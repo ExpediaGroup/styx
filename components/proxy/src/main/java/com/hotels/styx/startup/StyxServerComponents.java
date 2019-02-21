@@ -81,7 +81,7 @@ public class StyxServerComponents {
     private static Environment newEnvironment(StyxConfig styxConfig, MetricRegistry metricRegistry) {
         return new Environment.Builder()
                 .configuration(styxConfig)
-                .metricsRegistry(metricRegistry)
+                .metricRegistry(metricRegistry)
                 .buildInfo(readBuildInfo())
                 .eventBus(new AsyncEventBus("styx", newSingleThreadExecutor()))
                 .build();

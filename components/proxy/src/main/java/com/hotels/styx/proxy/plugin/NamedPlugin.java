@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public final class NamedPlugin implements Plugin {
         return new NamedPlugin(name, plugin);
     }
 
-    Plugin originalPlugin() {
+    public Plugin originalPlugin() {
         return plugin;
     }
 

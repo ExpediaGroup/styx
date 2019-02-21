@@ -105,7 +105,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
             return this;
         }
 
-        public Builder metricsRegistry(MetricRegistry metricRegistry) {
+        public Builder metricRegistry(MetricRegistry metricRegistry) {
             this.metricRegistry = metricRegistry;
             return this;
         }
