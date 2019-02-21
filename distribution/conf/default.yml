@@ -94,7 +94,7 @@ plugins:
   all:
     demo:
       factory:
-        class: "com.hotels.styx.startup.DemoPlugin$Factory"
+        class: "com.hotels.styx.startup.extensions.DemoPlugin$Factory"
         classPath: "${STYX_HOME:}"
       config:
         foo: "bar" # TODO we should use some real config so we can demo that feature too

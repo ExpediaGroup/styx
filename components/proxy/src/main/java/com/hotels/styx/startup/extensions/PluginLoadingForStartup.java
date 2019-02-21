@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.startup;
+package com.hotels.styx.startup.extensions;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
@@ -97,7 +97,7 @@ public final class PluginLoadingForStartup {
 
             Plugin plugin = cpf.pluginFactory().create(pluginEnvironment);
 
-            // TODO refactor so we don't have casting (code smell)
+            // TODO refactor so we don't have casting (code smell) - I think this comes from tests supplying NamedPlugin, when we only need Plugin now.
             return plugin instanceof NamedPlugin ? (NamedPlugin) plugin : namedPlugin(cpf.name(), plugin);
         }).collect(toList());
 
