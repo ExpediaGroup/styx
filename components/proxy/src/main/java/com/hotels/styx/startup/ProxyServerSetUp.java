@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ public final class ProxyServerSetUp {
 
     public HttpServer createProxyServer(StyxServerComponents config) {
         HttpHandler pipeline = pipelineFactory.create(config);
+
+        // TODO we may want to get the plugins from ConfigStore instead, maybe then we can move loading out of "StyxServerComponents" entirely.
 
         HttpServer proxyServer = new ProxyServerBuilder(config.environment())
                 .httpHandler(pipeline)

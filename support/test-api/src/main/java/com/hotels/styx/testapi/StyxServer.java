@@ -19,9 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.AdminServerConfig;
-import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -42,7 +40,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hotels.styx.testapi.ssl.SslTesting.acceptAllSslRequests;
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -143,25 +140,6 @@ public final class StyxServer {
      */
     public MetricRegistry metrics() {
         return metricRegistry;
-    }
-
-    private static PluginFactory.Environment toPluginEnvironment(Environment environment, PluginFactoryConfig config) {
-        return new PluginFactory.Environment() {
-            @Override
-            public Configuration configuration() {
-                return environment.configuration();
-            }
-
-            @Override
-            public MetricRegistry metricRegistry() {
-                return environment.metricRegistry();
-            }
-
-            @Override
-            public <T> T pluginConfig(Class<T> clazz) {
-                return (T) config.pluginConfig;
-            }
-        };
     }
 
     /**
@@ -278,18 +256,6 @@ public final class StyxServer {
          */
         public StyxServer start() {
             return new StyxServer(this).start();
-        }
-    }
-
-    private static class PluginFactoryConfig {
-        private final String name;
-        private final PluginFactory pluginFactory;
-        private final Object pluginConfig;
-
-        PluginFactoryConfig(String name, PluginFactory pluginFactory, Object pluginConfig) {
-            this.name = requireNonNull(name);
-            this.pluginFactory = requireNonNull(pluginFactory);
-            this.pluginConfig = pluginConfig;
         }
     }
 }

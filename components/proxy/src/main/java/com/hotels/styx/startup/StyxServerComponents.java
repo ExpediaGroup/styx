@@ -16,7 +16,6 @@
 package com.hotels.styx.startup;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.eventbus.AsyncEventBus;
 import com.hotels.styx.Environment;
@@ -26,12 +25,8 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.proxy.plugin.PluginFactoriesLoader;
-import com.hotels.styx.proxy.plugin.PluginsMetadata;
-import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.List;
@@ -41,24 +36,17 @@ import java.util.stream.StreamSupport;
 
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
-import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
-import static com.hotels.styx.startup.FailureHandling.PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY;
+import static com.hotels.styx.startup.PluginLoadingForStartup.loadPlugins;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.DO_NOT_MODIFY;
-import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.stream.Collectors.toList;
-import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Configuration required to set-up the core Styx services, such as the proxy and admin servers.
  */
 public class StyxServerComponents {
-    private static final String DEFAULT_PLUGINS_METRICS_SCOPE = "styx.plugins";
-
-    private static final Logger LOGGER = getLogger(StyxServerComponents.class);
-
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
@@ -70,50 +58,7 @@ public class StyxServerComponents {
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
 
-        List<ConfiguredPluginFactory> cpfs = builder.configuredPluginFactories;
-
-        if (cpfs == null) {
-            PluginFactoriesLoader loader = new PluginFactoriesLoader(PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY);
-
-            Iterable<ConfiguredPluginFactory> activePlugins = environment.configuration().get("plugins", PluginsMetadata.class)
-                    .map(loader::load)
-                    .orElse(emptyList());
-
-            cpfs = ImmutableList.copyOf(activePlugins);
-        }
-
-        this.plugins = cpfs.stream().map(cpf -> {
-            LOGGER.info("Instantiating Plugin, pluginName={}...", cpf.name());
-
-            PluginFactory.Environment pluginEnvironment = new PluginFactory.Environment() {
-                @Override
-                public <T> T pluginConfig(Class<T> clazz) {
-                    return cpf.pluginConfig(clazz);
-                }
-
-                @Override
-                public Configuration configuration() {
-                    return environment.configuration();
-                }
-
-                @Override
-                public MetricRegistry metricRegistry() {
-                    return environment.metricRegistry().scope(DEFAULT_PLUGINS_METRICS_SCOPE);
-                }
-            };
-
-            Plugin plugin = cpf.pluginFactory().create(pluginEnvironment);
-
-            // TODO refactor so we don't have casting (code smell)
-            return plugin instanceof NamedPlugin ? (NamedPlugin) plugin : namedPlugin(cpf.name(), plugin);
-        }).collect(toList());
-
-
-        this.plugins.forEach(plugin -> {
-            LOGGER.info("Instantiated Plugin, pluginName={}", plugin.name());
-
-            environment.configStore().set("plugins." + plugin.name(), plugin);
-        });
+        this.plugins = loadPlugins(environment, builder.configuredPluginFactories);
 
         this.services = mergeServices(
                 builder.servicesLoader.load(environment),
@@ -168,6 +113,7 @@ public class StyxServerComponents {
         private StyxConfig styxConfig;
         private LoggingSetUp loggingSetUp = DO_NOT_MODIFY;
         private List<ConfiguredPluginFactory> configuredPluginFactories;
+        // TODO we may end up refactoring this later too. Either way, delete this comment when done.
         private ServicesLoader servicesLoader = SERVICES_FROM_CONFIG;
         private MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
 
