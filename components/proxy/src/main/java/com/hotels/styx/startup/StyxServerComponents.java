@@ -29,7 +29,8 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.proxy.plugin.PluginSuppliers;
+import com.hotels.styx.proxy.plugin.PluginFactoriesLoader;
+import com.hotels.styx.proxy.plugin.PluginsMetadata;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -41,8 +42,10 @@ import java.util.stream.StreamSupport;
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
+import static com.hotels.styx.startup.FailureHandling.PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.DO_NOT_MODIFY;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.stream.Collectors.toList;
@@ -70,8 +73,13 @@ public class StyxServerComponents {
         List<ConfiguredPluginFactory> cpfs = builder.configuredPluginFactories;
 
         if (cpfs == null) {
-            Iterable<ConfiguredPluginFactory> iterable = new PluginSuppliers(environment).fromConfigurations();
-            cpfs = ImmutableList.copyOf(iterable);
+            PluginFactoriesLoader loader = new PluginFactoriesLoader(PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY);
+
+            Iterable<ConfiguredPluginFactory> activePlugins = environment.configuration().get("plugins", PluginsMetadata.class)
+                    .map(loader::load)
+                    .orElse(emptyList());
+
+            cpfs = ImmutableList.copyOf(activePlugins);
         }
 
         this.plugins = cpfs.stream().map(cpf -> {
