@@ -36,9 +36,9 @@ import java.util.stream.StreamSupport;
 
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
-import static com.hotels.styx.startup.extensions.PluginLoadingForStartup.loadPlugins;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.DO_NOT_MODIFY;
+import static com.hotels.styx.startup.extensions.PluginLoadingForStartup.loadPlugins;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.stream.Collectors.toList;
@@ -51,7 +51,6 @@ public class StyxServerComponents {
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
 
-    // TODO this method is now big and ugly. split it up.
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
 

@@ -27,7 +27,6 @@ import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.startup.FailureHandling;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -46,8 +45,6 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
-// TODO the "failure" tests are passing because they are using the wrong class name
-// TODO we need to distinguish between "cannot instantiate plugin factory" and "failure while executing plugin factory"
 public class PluginLoadingForStartupTest {
     private static final Path FIXTURES_CLASS_PATH = fixturesHome(PluginLoadingForStartupTest.class, "/");
 

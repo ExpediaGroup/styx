@@ -97,5 +97,6 @@ plugins:
         class: "com.hotels.styx.startup.extensions.DemoPlugin$Factory"
         classPath: "${STYX_HOME:}"
       config:
-        foo: "bar" # TODO we should use some real config so we can demo that feature too
+        adminText: "this is the admin page"
+        responseHeaderValue: "this is the response header value"
 

@@ -15,6 +15,8 @@
  */
 package com.hotels.styx.startup.extensions;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
@@ -30,6 +32,7 @@ import java.util.Map;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -38,10 +41,15 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class DemoPlugin implements Plugin {
     private static final Logger LOGGER = getLogger(DemoPlugin.class);
 
+    private final DemoConfig config;
+
     /**
-     * TODO we should use some config so that this plugin can demonstrate config loading too.
+     * Construct demo plugin.
+     *
+     * @param config configuration
      */
-    public DemoPlugin() {
+    private DemoPlugin(DemoConfig config) {
+        this.config = requireNonNull(config);
         LOGGER.info("Demo plugin constructed");
     }
 
@@ -52,7 +60,7 @@ public class DemoPlugin implements Plugin {
         return chain.proceed(request).map(response -> {
             LOGGER.info("Demo plugin has propagating response from the chain");
             return response.newBuilder()
-                    .header("Demo-Plugin", true)
+                    .header("Demo-Plugin", config.responseHeaderValue)
                     .build();
         });
     }
@@ -61,17 +69,16 @@ public class DemoPlugin implements Plugin {
     public Map<String, HttpHandler> adminInterfaceHandlers() {
         return ImmutableMap.of(
                 "example", adminHandler()
-
         );
     }
 
-    private static HttpHandler adminHandler() {
+    private HttpHandler adminHandler() {
         return (request, context) -> {
             LOGGER.info("Demo plugin serving admin page");
 
             return Eventual.of(
                     HttpResponse.response().header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
-                            .body("This is an admin page provided by a demo plugin used to test Styx's plugin functionality.", UTF_8)
+                            .body("This is an admin page provided by a demo plugin used to test Styx's plugin functionality. Text from config=" + config.adminText, UTF_8)
                             .build()
                             .stream());
         };
@@ -83,7 +90,20 @@ public class DemoPlugin implements Plugin {
     public static class Factory implements PluginFactory {
         @Override
         public Plugin create(Environment environment) {
-            return new DemoPlugin();
+            return new DemoPlugin(environment.pluginConfig(DemoConfig.class));
+        }
+    }
+
+    public static class DemoConfig {
+        private final String adminText;
+        private final String responseHeaderValue;
+
+        @JsonCreator
+        public DemoConfig(
+                @JsonProperty("adminText") String adminText,
+                @JsonProperty("responseHeaderValue") String responseHeaderValue) {
+            this.adminText = adminText;
+            this.responseHeaderValue = responseHeaderValue;
         }
     }
 }
