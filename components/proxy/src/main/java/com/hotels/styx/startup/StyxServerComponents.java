@@ -56,6 +56,7 @@ public class StyxServerComponents {
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
 
+        // In further refactoring, we will probably want this loading to happen outside of this constructor call, so that it doesn't delay the admin server from starting up
         this.plugins = loadPlugins(environment, builder.configuredPluginFactories);
 
         this.services = mergeServices(

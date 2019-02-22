@@ -94,6 +94,9 @@ public class DemoPlugin implements Plugin {
         }
     }
 
+    /**
+     * Configuration for demo plugin.
+     */
     public static class DemoConfig {
         private final String adminText;
         private final String responseHeaderValue;

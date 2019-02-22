@@ -42,8 +42,6 @@ public final class ProxyServerSetUp {
     public HttpServer createProxyServer(StyxServerComponents config) {
         HttpHandler pipeline = pipelineFactory.create(config);
 
-        // TODO we may want to get the plugins from ConfigStore instead, maybe then we can move loading out of "StyxServerComponents" entirely.
-
         HttpServer proxyServer = new ProxyServerBuilder(config.environment())
                 .httpHandler(pipeline)
                 .onStartup(() -> initialisePlugins(config.plugins()))

@@ -36,9 +36,6 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Utility to start-up plugins with Styx.
- * <p>
- * TODO note that although we return a value from the public method, this may be redundant, since we are also sending the plugins to the config store.
- * TODO if we get them from the config store, e.g. in ProxyServerSetUp, we may not need to reference at them in StyxServerComponents.
  */
 public final class PluginLoadingForStartup {
     private static final String DEFAULT_PLUGINS_METRICS_SCOPE = "styx.plugins";
@@ -74,14 +71,7 @@ public final class PluginLoadingForStartup {
     }
 
     private static List<NamedPlugin> loadPluginsFromFactories(Environment environment, List<ConfiguredPluginFactory> factories) {
-        List<NamedPlugin> plugins = PLUGIN_STARTUP_FAILURE_HANDLING_STRATEGY.process(factories, factory -> loadPlugin(environment, factory));
-
-        plugins.forEach(plugin -> {
-            LOGGER.info("Instantiated Plugin, pluginName={}", plugin.name());
-
-            environment.configStore().set("plugins." + plugin.name(), plugin);
-        });
-        return plugins;
+        return PLUGIN_STARTUP_FAILURE_HANDLING_STRATEGY.process(factories, factory -> loadPlugin(environment, factory));
     }
 
     private static NamedPlugin loadPlugin(Environment environment, ConfiguredPluginFactory factory) {
@@ -105,6 +95,8 @@ public final class PluginLoadingForStartup {
         };
 
         Plugin plugin = factory.pluginFactory().create(pluginEnvironment);
+
+        LOGGER.info("Instantiated Plugin, pluginName={}", factory.name());
 
         return namedPlugin(factory.name(), plugin);
     }

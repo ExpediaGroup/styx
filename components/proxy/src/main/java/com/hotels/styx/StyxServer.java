@@ -150,6 +150,8 @@ public final class StyxServer extends AbstractService {
 
         ProxyServerSetUp proxyServerSetUp = new ProxyServerSetUp(new StyxPipelineFactory());
 
+        config.plugins().forEach(plugin -> config.environment().configStore().set("plugins." + plugin.name(), plugin));
+
         this.proxyServer = proxyServerSetUp.createProxyServer(config);
         this.adminServer = createAdminServer(config);
 
