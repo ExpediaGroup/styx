@@ -25,6 +25,7 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 
@@ -144,12 +145,27 @@ public class StyxServerComponents {
         }
 
         @VisibleForTesting
+        // TODO replace uses with plugins(Map<String, Plugin>) then remove.
         public Builder plugins(Iterable<NamedPlugin> plugins) {
             List<ConfiguredPluginFactory> cpfs = StreamSupport.stream(plugins.spliterator(), false)
                     .map(plugin -> new ConfiguredPluginFactory(plugin.name(), any -> plugin, null))
                     .collect(toList());
 
             return pluginFactories(cpfs);
+        }
+
+        @VisibleForTesting
+        public Builder plugins(Map<String, Plugin> plugins) {
+            List<ConfiguredPluginFactory> factories = plugins.entrySet().stream()
+                    .map(entry -> {
+                        String name = entry.getKey();
+                        Plugin plugin = entry.getValue();
+
+                        return new ConfiguredPluginFactory(name, any -> plugin, null);
+                    })
+                    .collect(toList());
+
+            return pluginFactories(factories);
         }
 
         public Builder pluginFactories(List<ConfiguredPluginFactory> configuredPluginFactories) {

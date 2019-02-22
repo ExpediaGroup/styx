@@ -108,6 +108,6 @@ public final class PluginLoadingForStartup {
         Plugin plugin = factory.pluginFactory().create(pluginEnvironment);
 
         // TODO refactor so we don't have casting (code smell) - I think this comes from tests supplying NamedPlugin, when we only need Plugin now.
-        return plugin instanceof NamedPlugin ? (NamedPlugin) plugin : namedPlugin(factory.name(), plugin);
+        return namedPlugin(factory.name(), plugin);
     }
 }

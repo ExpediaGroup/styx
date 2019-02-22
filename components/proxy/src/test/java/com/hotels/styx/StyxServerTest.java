@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,15 +18,15 @@ package com.hotels.styx;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Service;
 import com.hotels.styx.admin.AdminServerConfig;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
-import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
+import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.proxy.ProxyServerConfig;
@@ -42,6 +42,7 @@ import org.testng.annotations.Test;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static ch.qos.logback.classic.Level.ERROR;
@@ -81,10 +82,10 @@ public class StyxServerTest {
         Plugin pluginMock1 = mock(Plugin.class);
         Plugin pluginMock2 = mock(Plugin.class);
 
-        NamedPlugin plugin1 = namedPlugin("mockplugin1", pluginMock1);
-        NamedPlugin plugin2 = namedPlugin("mockplugin2", pluginMock2);
-
-        StyxServer styxServer = styxServerWithPlugins(plugin1, plugin2);
+        StyxServer styxServer = styxServerWithPlugins(ImmutableMap.of(
+                "mockplugin1", pluginMock1,
+                "mockplugin2", pluginMock2
+        ));
         try {
             styxServer.startAsync().awaitRunning();
             verify(pluginMock1).styxStarting();
@@ -114,10 +115,9 @@ public class StyxServerTest {
     public void stopsTheServerWhenPluginFailsToStart() {
         StyxServer styxServer = null;
         try {
-            NamedPlugin plugin1 = failingPlugin("foo");
-            NamedPlugin plugin2 = namedPlugin("mockplugin3", mock(Plugin.class));
-
-            styxServer = styxServerWithPlugins(plugin1, plugin2);
+            styxServer = styxServerWithPlugins(ImmutableMap.of(
+                    "foo", new NonStarterPlugin("foo"),
+                    "mockplugin3", mock(Plugin.class)));
 
             Service service = styxServer.startAsync();
             eventually(() -> assertThat(service.state(), is(FAILED)));
@@ -138,12 +138,11 @@ public class StyxServerTest {
             Plugin pluginMock2 = mock(Plugin.class);
             Plugin pluginMock4 = mock(Plugin.class);
 
-            styxServer = styxServerWithPlugins(
-                    failingPlugin("plug1"),
-                    namedPlugin("plug2", pluginMock2),
-                    failingPlugin("plug3"),
-                    namedPlugin("plug4", pluginMock4)
-            );
+            styxServer = styxServerWithPlugins(ImmutableMap.of(
+                    "plug1", new NonStarterPlugin("plug1"),
+                    "plug2", pluginMock2,
+                    "plug3", new NonStarterPlugin("plug3"),
+                    "plug4", pluginMock4));
 
             Service service = styxServer.startAsync();
             eventually(() -> assertThat(service.state(), is(FAILED)));
@@ -203,6 +202,16 @@ public class StyxServerTest {
                 .configuration(styxConfig(EMPTY_CONFIGURATION))
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
                 .plugins(pluginsList)
+                .build();
+
+        return new StyxServer(config);
+    }
+
+    private static StyxServer styxServerWithPlugins(Map<String, Plugin> plugins) {
+        StyxServerComponents config = new StyxServerComponents.Builder()
+                .configuration(styxConfig(EMPTY_CONFIGURATION))
+                .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
+                .plugins(plugins)
                 .build();
 
         return new StyxServer(config);

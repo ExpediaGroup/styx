@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ class AggregatingPluginSpec extends FunSpec
   with StyxProxySpec
   with Eventually {
   val mockServer = new MockServer("origin-1", 0)
-  override val styxConfig = StyxConfig(plugins = List("aggregator" -> new AggregationTesterPlugin(2750)))
+  override val styxConfig = StyxConfig(plugins = Map("aggregator" -> new AggregationTesterPlugin(2750)))
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ class PluginErrorHandlingSpec extends FunSpec
 
   // TODO: See https://github.com/HotelsDotCom/styx/issues/202
 
-  override val styxConfig = StyxConfig(plugins = List(
+  override val styxConfig = StyxConfig(plugins = Map(
     "failBeforeInterceptor" -> new FailBeforeHandleInterceptor(),
     "failAfterInterceptor" -> new FailAfterHandleInterceptor()
   ))

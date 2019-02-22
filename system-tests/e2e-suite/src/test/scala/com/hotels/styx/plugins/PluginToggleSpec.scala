@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import org.scalatest.FunSpec
 class PluginToggleSpec extends FunSpec with StyxProxySpec with StyxClientSupplier {
   val normalBackend = FakeHttpServer.HttpStartupConfig().start()
 
-  override val styxConfig = StyxConfig(plugins = List("pluginUnderTest" -> new PluginUnderTest))
+  override val styxConfig = StyxConfig(plugins = Map("pluginUnderTest" -> new PluginUnderTest))
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
