@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.startup.extensions;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 
 import java.util.function.Function;
@@ -30,16 +31,17 @@ public class ConfiguredPluginFactory {
     private final PluginFactory pluginFactory;
     private final Function<Class<?>, Object> configProvider;
 
-    public ConfiguredPluginFactory(String name, PluginFactory pluginFactory, Object pluginConfig) {
-        this.name = requireNonNull(name);
-        this.pluginFactory = requireNonNull(pluginFactory);
-        this.configProvider = type -> type.cast(pluginConfig);
-    }
-
     public ConfiguredPluginFactory(String name, PluginFactory pluginFactory, Function<Class<?>, Object> configProvider) {
         this.name = requireNonNull(name);
         this.pluginFactory = requireNonNull(pluginFactory);
         this.configProvider = configProvider == null ? any -> null : configProvider;
+    }
+
+    @VisibleForTesting
+    public ConfiguredPluginFactory(String name, PluginFactory pluginFactory, Object pluginConfig) {
+        this.name = requireNonNull(name);
+        this.pluginFactory = requireNonNull(pluginFactory);
+        this.configProvider = type -> type.cast(pluginConfig);
     }
 
     public String name() {

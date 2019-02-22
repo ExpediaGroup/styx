@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.proxy.plugin;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpRequest;

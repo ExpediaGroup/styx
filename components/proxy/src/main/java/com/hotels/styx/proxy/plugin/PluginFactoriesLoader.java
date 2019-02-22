@@ -31,24 +31,34 @@ import static java.util.Objects.requireNonNull;
  */
 public class PluginFactoriesLoader {
     private final PluginFactoryLoader pluginFactoryLoader;
-
     private final FailureHandlingStrategy<Pair<String, SpiExtension>, ConfiguredPluginFactory> failureHandlingStrategy;
 
+    /**
+     * Creates an instance, using the specified strategy to handle any failures that occur when attempting to load plugins.
+     *
+     * @param failureHandlingStrategy failure-handling strategy
+     */
     public PluginFactoriesLoader(FailureHandlingStrategy<Pair<String, SpiExtension>, ConfiguredPluginFactory> failureHandlingStrategy) {
         this(failureHandlingStrategy, new FileSystemPluginFactoryLoader());
     }
 
     @VisibleForTesting
-    PluginFactoriesLoader(FailureHandlingStrategy<Pair<String, SpiExtension>, ConfiguredPluginFactory> failureHandlingStrategy, PluginFactoryLoader pluginFactoryLoader) {
+    private PluginFactoriesLoader(FailureHandlingStrategy<Pair<String, SpiExtension>, ConfiguredPluginFactory> failureHandlingStrategy, PluginFactoryLoader pluginFactoryLoader) {
         this.failureHandlingStrategy = requireNonNull(failureHandlingStrategy);
         this.pluginFactoryLoader = requireNonNull(pluginFactoryLoader);
     }
 
-    public Iterable<ConfiguredPluginFactory> load(PluginsMetadata pluginsMetadata) {
+    /**
+     * Load plugin factories from plugins metadata.
+     *
+     * @param pluginsMetadata plugins metadata
+     * @return plugin factories
+     */
+    public List<ConfiguredPluginFactory> load(PluginsMetadata pluginsMetadata) {
         return loadPluginFactories(pluginsMetadata.activePlugins());
     }
 
-    private Iterable<ConfiguredPluginFactory> loadPluginFactories(List<Pair<String, SpiExtension>> inputs) {
+    private List<ConfiguredPluginFactory> loadPluginFactories(List<Pair<String, SpiExtension>> inputs) {
         return failureHandlingStrategy.process(inputs, this::loadPluginFactory);
     }
 

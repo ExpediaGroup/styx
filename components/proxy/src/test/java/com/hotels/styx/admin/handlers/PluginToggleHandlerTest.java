@@ -138,7 +138,7 @@ public class PluginToggleHandlerTest {
         HttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
 
         assertThat(response.status(), is(NOT_FOUND));
-        assertThat(body(response), is("No such plugin"));
+        assertThat(body(response), is("No such plugin: pluginName=nonexistent"));
         assertThat(initiallyEnabled.enabled(), is(true));
         assertThat(initiallyDisabled.enabled(), is(false));
     }

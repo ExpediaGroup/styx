@@ -144,16 +144,16 @@ public class StyxServerComponents {
 
         @VisibleForTesting
         public Builder plugins(Map<String, Plugin> plugins) {
-            List<ConfiguredPluginFactory> factories = plugins.entrySet().stream()
-                    .map(entry -> {
-                        String name = entry.getKey();
-                        Plugin plugin = entry.getValue();
+            return pluginFactories(stubFactories(plugins));
+        }
 
-                        return new ConfiguredPluginFactory(name, any -> plugin, null);
-                    })
-                    .collect(toList());
+        private static List<ConfiguredPluginFactory> stubFactories(Map<String, Plugin> plugins) {
+            return plugins.entrySet().stream().map(entry -> {
+                String name = entry.getKey();
+                Plugin plugin = entry.getValue();
 
-            return pluginFactories(factories);
+                return new ConfiguredPluginFactory(name, any -> plugin, null);
+            }).collect(toList());
         }
 
         public Builder pluginFactories(List<ConfiguredPluginFactory> configuredPluginFactories) {

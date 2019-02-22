@@ -22,8 +22,10 @@ import com.hotels.styx.proxy.plugin.PluginStartupException;
 import com.hotels.styx.spi.config.SpiExtension;
 import org.slf4j.Logger;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
@@ -32,61 +34,46 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Strategies for handling failure during start-up.
  */
-public final class FailureHandling {
-    private static final Logger LOG = getLogger(FailureHandling.class);
+final class FailureHandling {
+    private static final Logger LOGGER = getLogger(FailureHandling.class);
 
-    public static final FailureHandlingStrategy<Pair<String, SpiExtension>, ConfiguredPluginFactory> PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY =
+    static final FailureHandlingStrategy<Pair<String, SpiExtension>, ConfiguredPluginFactory> PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY =
             new FailureHandlingStrategy.Builder<Pair<String, SpiExtension>, ConfiguredPluginFactory>()
-                    .doImmediatelyOnEachFailure((plugin, err) ->
-                            LOG.error(perFailureErrorMessage(plugin), err))
+
+                    .doImmediatelyOnEachFailure((plugin, err) -> logIndividualFailure(new FailedPlugin(plugin), err))
+
                     .doOnFailuresAfterAllProcessing(failures -> {
-                        throw new PluginStartupException(afterFailuresErrorMessage(failures));
+                        throw new PluginStartupException(afterFailuresErrorMessage(transformKeys(failures, FailedPlugin::new)));
+
                     }).build();
 
-    public static final FailureHandlingStrategy<ConfiguredPluginFactory, NamedPlugin> PLUGIN_STARTUP_FAILURE_HANDLING_STRATEGY =
+    static final FailureHandlingStrategy<ConfiguredPluginFactory, NamedPlugin> PLUGIN_STARTUP_FAILURE_HANDLING_STRATEGY =
             new FailureHandlingStrategy.Builder<ConfiguredPluginFactory, NamedPlugin>()
-                    .doImmediatelyOnEachFailure((plugin, err) ->
-                            LOG.error(perFailureErrorMessage(plugin), err))
+
+                    .doImmediatelyOnEachFailure((plugin, err) -> logIndividualFailure(new FailedPlugin(plugin), err))
+
                     .doOnFailuresAfterAllProcessing(failures -> {
-                        throw new PluginStartupException(afterFailuresErrorMessage2(failures));
+                        throw new PluginStartupException(afterFailuresErrorMessage(transformKeys(failures, FailedPlugin::new)));
+
                     }).build();
 
     private FailureHandling() {
     }
 
-    private static String perFailureErrorMessage(Pair<String, SpiExtension> plugin) {
-        return format("Could not load plugin: pluginName=%s; factoryClass=%s", plugin.key(), plugin.value().factory().factoryClass());
+    private static void logIndividualFailure(FailedPlugin plugin, Exception err) {
+        LOGGER.error(format("Could not load plugin: pluginName=%s; factoryClass=%s", plugin.name(), plugin.factoryClass()), err);
     }
 
-    private static String perFailureErrorMessage(ConfiguredPluginFactory plugin) {
-        return format("Could not load plugin: pluginName=%s; factoryClass=%s", plugin.name(), plugin.pluginFactory().getClass());
+    private static <R, K, V> Map<R, V> transformKeys(Map<K, V> map, Function<K, R> transformer) {
+        // Preserve order
+        Map<R, V> result = new LinkedHashMap<>();
+        map.forEach((key, value) -> result.put(transformer.apply(key), value));
+        return result;
     }
 
-    private static String afterFailuresErrorMessage(Map<Pair<String, SpiExtension>, Exception> failures) {
+    private static String afterFailuresErrorMessage(Map<FailedPlugin, Exception> failures) {
         List<String> failedPlugins = failures.keySet().stream()
-                .map(Pair::key)
-                .collect(toList());
-
-        List<String> causes = failures.entrySet().stream().map(entry -> {
-            String pluginName = entry.getKey().key();
-            Throwable throwable = entry.getValue();
-
-            // please note, transforming the exception to a String (as is done here indirectly) will not include the stack trace
-            return format("%s: %s", pluginName, throwable);
-
-        }).collect(toList());
-
-        return format("%s plugin%s could not be loaded: failedPlugins=%s; failureCauses=%s",
-                failures.size(),
-                failures.size() == 1 ? "" : "s", // only pluralise plurals
-                failedPlugins,
-                causes
-        );
-    }
-
-    private static String afterFailuresErrorMessage2(Map<ConfiguredPluginFactory, Exception> failures) {
-        List<String> failedPlugins = failures.keySet().stream()
-                .map(ConfiguredPluginFactory::name)
+                .map(FailedPlugin::name)
                 .collect(toList());
 
         List<String> causes = failures.entrySet().stream().map(entry -> {
@@ -104,5 +91,28 @@ public final class FailureHandling {
                 failedPlugins,
                 causes
         );
+    }
+
+    private static class FailedPlugin {
+        private final String name;
+        private final String factoryClass;
+
+        private FailedPlugin(Pair<String, SpiExtension> plugin) {
+            this.name = plugin.key();
+            this.factoryClass = plugin.value().factory().factoryClass();
+        }
+
+        private FailedPlugin(ConfiguredPluginFactory plugin) {
+            this.name = plugin.name();
+            this.factoryClass = plugin.pluginFactory().getClass().getName();
+        }
+
+        private String name() {
+            return name;
+        }
+
+        private String factoryClass() {
+            return factoryClass;
+        }
     }
 }

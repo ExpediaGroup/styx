@@ -146,13 +146,8 @@ public class PluginToggleHandler implements HttpHandler {
     }
 
     private NamedPlugin plugin(String pluginName) {
-        NamedPlugin plugin = configStore.get("plugins." + pluginName, NamedPlugin.class)
-                .orElse(null);
-
-        if (plugin == null) {
-            throw new PluginNotFoundException("No such plugin");
-        }
-        return plugin;
+        return configStore.get("plugins." + pluginName, NamedPlugin.class)
+                .orElseThrow(() -> new PluginNotFoundException("No such plugin: pluginName=" + pluginName));
     }
 
     private static Matcher urlMatcher(LiveHttpRequest request) {

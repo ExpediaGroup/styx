@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.startup.extensions;
 
-import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
@@ -54,15 +53,15 @@ public final class PluginLoadingForStartup {
      */
     public static List<NamedPlugin> loadPlugins(Environment environment, List<ConfiguredPluginFactory> factories) {
         if (factories == null) {
-            Iterable<ConfiguredPluginFactory> activePlugins = loadFactoriesFromConfig(environment);
+            List<ConfiguredPluginFactory> activePlugins = loadFactoriesFromConfig(environment);
 
-            return loadPluginsFromFactories(environment, ImmutableList.copyOf(activePlugins));
+            return loadPluginsFromFactories(environment, activePlugins);
         }
 
         return loadPluginsFromFactories(environment, factories);
     }
 
-    private static Iterable<ConfiguredPluginFactory> loadFactoriesFromConfig(Environment environment) {
+    private static List<ConfiguredPluginFactory> loadFactoriesFromConfig(Environment environment) {
         PluginFactoriesLoader loader = new PluginFactoriesLoader(PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY);
 
         return environment.configuration().get("plugins", PluginsMetadata.class)

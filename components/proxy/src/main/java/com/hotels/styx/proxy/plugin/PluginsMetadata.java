@@ -32,7 +32,6 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Plugins metadata.
- * TODO this was package-private. Maybe we want to put it back that way.
  */
 public class PluginsMetadata implements Iterable<SpiExtension> {
     private static final Splitter SPLITTER = Splitter.on(",")
