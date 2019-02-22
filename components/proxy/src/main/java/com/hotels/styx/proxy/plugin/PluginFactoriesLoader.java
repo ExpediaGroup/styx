@@ -20,7 +20,7 @@ import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.common.FailureHandlingStrategy;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.spi.config.SpiExtension;
-import com.hotels.styx.startup.StyxServerComponents.ConfiguredPluginFactory;
+import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 
 import java.util.List;
 

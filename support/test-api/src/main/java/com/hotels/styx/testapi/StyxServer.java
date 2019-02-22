@@ -30,7 +30,7 @@ import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
 import com.hotels.styx.startup.StyxServerComponents;
-import com.hotels.styx.startup.StyxServerComponents.ConfiguredPluginFactory;
+import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;

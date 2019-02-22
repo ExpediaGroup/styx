@@ -24,7 +24,6 @@ import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.proxy.plugin.PluginFactoriesLoader;
 import com.hotels.styx.proxy.plugin.PluginsMetadata;
-import com.hotels.styx.startup.StyxServerComponents.ConfiguredPluginFactory;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -107,7 +106,6 @@ public final class PluginLoadingForStartup {
 
         Plugin plugin = factory.pluginFactory().create(pluginEnvironment);
 
-        // TODO refactor so we don't have casting (code smell) - I think this comes from tests supplying NamedPlugin, when we only need Plugin now.
         return namedPlugin(factory.name(), plugin);
     }
 }

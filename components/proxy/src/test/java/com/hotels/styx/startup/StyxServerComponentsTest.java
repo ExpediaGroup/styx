@@ -24,8 +24,8 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.startup.StyxServerComponents.ConfiguredPluginFactory;
 import com.hotels.styx.startup.StyxServerComponents.LoggingSetUp;
+import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 import org.testng.annotations.Test;
 
 import java.util.List;

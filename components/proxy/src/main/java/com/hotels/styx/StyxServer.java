@@ -20,6 +20,9 @@ import com.google.common.io.CharStreams;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
+import com.hotels.styx.admin.AdminServerBuilder;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
@@ -42,7 +45,6 @@ import static com.hotels.styx.ServerConfigSchema.validateServerConfiguration;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
-import static com.hotels.styx.startup.AdminServerSetUp.createAdminServer;
 import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.FROM_CONFIG;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
@@ -244,6 +246,12 @@ public final class StyxServer extends AbstractService {
                         });
             }
         };
+    }
+
+    private static HttpServer createAdminServer(StyxServerComponents config) {
+        return new AdminServerBuilder(config.environment())
+                .backendServicesRegistry((Registry<BackendService>) config.services().get("backendServiceRegistry"))
+                .build();
     }
 
     private static class ServerStartListener extends ServiceManager.Listener {

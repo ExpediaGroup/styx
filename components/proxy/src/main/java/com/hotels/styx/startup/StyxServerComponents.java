@@ -26,14 +26,12 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.StreamSupport;
 
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
@@ -113,7 +111,6 @@ public class StyxServerComponents {
         private StyxConfig styxConfig;
         private LoggingSetUp loggingSetUp = DO_NOT_MODIFY;
         private List<ConfiguredPluginFactory> configuredPluginFactories;
-        // TODO we may end up refactoring this later too. Either way, delete this comment when done.
         private ServicesLoader servicesLoader = SERVICES_FROM_CONFIG;
         private MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
 
@@ -142,16 +139,6 @@ public class StyxServerComponents {
         public Builder loggingSetUp(String logConfigLocation) {
             this.loggingSetUp = LoggingSetUp.from(logConfigLocation);
             return this;
-        }
-
-        @VisibleForTesting
-        // TODO replace uses with plugins(Map<String, Plugin>) then remove.
-        public Builder plugins(Iterable<NamedPlugin> plugins) {
-            List<ConfiguredPluginFactory> cpfs = StreamSupport.stream(plugins.spliterator(), false)
-                    .map(plugin -> new ConfiguredPluginFactory(plugin.name(), any -> plugin, null))
-                    .collect(toList());
-
-            return pluginFactories(cpfs);
         }
 
         @VisibleForTesting
@@ -187,39 +174,6 @@ public class StyxServerComponents {
 
         public StyxServerComponents build() {
             return new StyxServerComponents(this);
-        }
-    }
-
-    /**
-     * TODO this can be moved if we desire. If not, replace this comment with proper documentation.
-     */
-    public static class ConfiguredPluginFactory {
-        private final String name;
-        private final PluginFactory pluginFactory;
-        private final Function<Class<?>, Object> configProvider;
-
-        public ConfiguredPluginFactory(String name, PluginFactory pluginFactory, Object pluginConfig) {
-            this.name = requireNonNull(name);
-            this.pluginFactory = requireNonNull(pluginFactory);
-            this.configProvider = type -> type.cast(pluginConfig);
-        }
-
-        public ConfiguredPluginFactory(String name, PluginFactory pluginFactory, Function<Class<?>, Object> configProvider) {
-            this.name = requireNonNull(name);
-            this.pluginFactory = requireNonNull(pluginFactory);
-            this.configProvider = configProvider == null ? any -> null : configProvider;
-        }
-
-        public String name() {
-            return name;
-        }
-
-        public PluginFactory pluginFactory() {
-            return pluginFactory;
-        }
-
-        public <T> T pluginConfig(Class<T> clazz) {
-            return (T) configProvider.apply(clazz);
         }
     }
 

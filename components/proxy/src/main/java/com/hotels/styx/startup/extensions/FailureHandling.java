@@ -20,7 +20,6 @@ import com.hotels.styx.common.Pair;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.proxy.plugin.PluginStartupException;
 import com.hotels.styx.spi.config.SpiExtension;
-import com.hotels.styx.startup.StyxServerComponents.ConfiguredPluginFactory;
 import org.slf4j.Logger;
 
 import java.util.List;

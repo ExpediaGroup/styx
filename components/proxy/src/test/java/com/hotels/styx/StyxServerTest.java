@@ -41,12 +41,10 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.lang.reflect.Field;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static ch.qos.logback.classic.Level.ERROR;
-import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.util.concurrent.Service.State.FAILED;
 import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATION;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
@@ -193,23 +191,9 @@ public class StyxServerTest {
         };
     }
 
-    private static StyxServer styxServerWithPlugins(NamedPlugin... plugins) {
-        return styxServerWithPlugins(newArrayList(plugins));
-    }
-
-    private static StyxServer styxServerWithPlugins(List<NamedPlugin> pluginsList) {
-        StyxServerComponents config = new StyxServerComponents.Builder()
-                .configuration(styxConfig(EMPTY_CONFIGURATION))
-                .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
-                .plugins(pluginsList)
-                .build();
-
-        return new StyxServer(config);
-    }
-
     private static StyxServer styxServerWithPlugins(Map<String, Plugin> plugins) {
         StyxServerComponents config = new StyxServerComponents.Builder()
-                .configuration(styxConfig(EMPTY_CONFIGURATION))
+                .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(new MemoryBackedRegistry<>())))
                 .plugins(plugins)
                 .build();
@@ -219,14 +203,14 @@ public class StyxServerTest {
 
     private static StyxServer styxServerWithBackendServiceRegistry(StyxService backendServiceRegistry) {
         StyxServerComponents config = new StyxServerComponents.Builder()
-                .configuration(styxConfig(EMPTY_CONFIGURATION))
+                .configuration(styxConfig())
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", backendServiceRegistry))
                 .build();
 
         return new StyxServer(config);
     }
 
-    private static StyxConfig styxConfig(Configuration baseConfiguration) {
+    private static StyxConfig styxConfig() {
         ProxyServerConfig proxyConfig = new ProxyServerConfig.Builder()
                 .setHttpConnector(new HttpConnectorConfig(0))
                 .build();
@@ -235,7 +219,7 @@ public class StyxServerTest {
                 .setHttpConnector(new HttpConnectorConfig(0))
                 .build();
 
-        Configuration config = new MapBackedConfiguration(baseConfiguration)
+        Configuration config = new MapBackedConfiguration(EMPTY_CONFIGURATION)
                 .set("admin", adminConfig)
                 .set("proxy", proxyConfig);
 
