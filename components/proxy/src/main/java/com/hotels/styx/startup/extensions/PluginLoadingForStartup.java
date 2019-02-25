@@ -20,9 +20,11 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.common.Pair;
+import com.hotels.styx.proxy.plugin.FileSystemPluginFactoryLoader;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.proxy.plugin.PluginFactoriesLoader;
 import com.hotels.styx.proxy.plugin.PluginsMetadata;
+import com.hotels.styx.spi.config.SpiExtension;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -62,20 +64,33 @@ public final class PluginLoadingForStartup {
     }
 
     private static List<ConfiguredPluginFactory> loadFactoriesFromConfig(Environment environment) {
-        PluginFactoriesLoader loader = new PluginFactoriesLoader(PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY);
-
         return environment.configuration().get("plugins", PluginsMetadata.class)
-                .map(loader::load)
+                .map(PluginsMetadata::activePlugins)
+                .map(inputs -> PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY.process(inputs, PluginLoadingForStartup::loadPluginFactory))
                 .orElse(emptyList());
     }
 
+    private static ConfiguredPluginFactory loadPluginFactory(Pair<String, SpiExtension> pair) {
+        String pluginName = pair.key();
+        SpiExtension spiExtension = pair.value();
+
+        PluginFactory factory = new FileSystemPluginFactoryLoader().load(spiExtension);
+
+        return new ConfiguredPluginFactory(pluginName, factory, spiExtension::config);
+    }
+
     private static List<NamedPlugin> loadPluginsFromFactories(Environment environment, List<ConfiguredPluginFactory> factories) {
-        return PLUGIN_STARTUP_FAILURE_HANDLING_STRATEGY.process(factories, factory -> loadPlugin(environment, factory));
+        return PLUGIN_STARTUP_FAILURE_HANDLING_STRATEGY.process(factories, factory -> {
+
+            LOGGER.info("Instantiating Plugin, pluginName={}...", factory.name());
+            NamedPlugin plugin = loadPlugin(environment, factory);
+
+            LOGGER.info("Instantiated Plugin, pluginName={}", factory.name());
+            return plugin;
+        });
     }
 
     private static NamedPlugin loadPlugin(Environment environment, ConfiguredPluginFactory factory) {
-        LOGGER.info("Instantiating Plugin, pluginName={}...", factory.name());
-
         PluginFactory.Environment pluginEnvironment = new PluginFactory.Environment() {
             @Override
             public <T> T pluginConfig(Class<T> clazz) {
@@ -94,8 +109,6 @@ public final class PluginLoadingForStartup {
         };
 
         Plugin plugin = factory.pluginFactory().create(pluginEnvironment);
-
-        LOGGER.info("Instantiated Plugin, pluginName={}", factory.name());
 
         return namedPlugin(factory.name(), plugin);
     }
