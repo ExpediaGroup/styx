@@ -93,7 +93,7 @@ public class AdminServerBuilder {
 
     public HttpServer build() {
         LOG.info("event bus that will be used is {}", environment.eventBus());
-        StyxConfig styxConfig = environment.styxConfig();
+        StyxConfig styxConfig = environment.configuration();
 
         Optional<Duration> metricsCacheExpiration = styxConfig.adminServerConfig().metricsCacheExpiration();
         AdminServerConfig adminServerConfig = styxConfig.adminServerConfig();

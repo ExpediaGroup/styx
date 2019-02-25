@@ -61,6 +61,7 @@ public final class PluginLoadingForStartup {
         return loadPluginsFromFactories(environment, factories);
     }
 
+
     private static List<ConfiguredPluginFactory> loadFactoriesFromConfig(Environment environment) {
         PluginFactoriesLoader loader = new PluginFactoriesLoader(PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY);
 

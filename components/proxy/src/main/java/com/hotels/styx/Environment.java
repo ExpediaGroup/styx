@@ -73,7 +73,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
     }
 
     @Override
-    public Configuration configuration() {
+    public StyxConfig configuration() {
         return this.configuration;
     }
 
@@ -83,7 +83,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
     }
 
     public StyxConfig styxConfig() {
-        return configuration;
+        return configuration();
     }
 
     public ServerEnvironment serverEnvironment() {

@@ -141,19 +141,19 @@ public final class StyxServer extends AbstractService {
         this(config, null);
     }
 
-    public StyxServer(StyxServerComponents config, Stopwatch stopwatch) {
+    public StyxServer(StyxServerComponents components, Stopwatch stopwatch) {
         this.stopwatch = stopwatch;
 
-        registerCoreMetrics(config.environment().buildInfo(), config.environment().metricRegistry());
+        registerCoreMetrics(components.environment().buildInfo(), components.environment().metricRegistry());
 
-        Map<String, StyxService> servicesFromConfig = config.services();
+        Map<String, StyxService> servicesFromConfig = components.services();
 
         ProxyServerSetUp proxyServerSetUp = new ProxyServerSetUp(new StyxPipelineFactory());
 
-        config.plugins().forEach(plugin -> config.environment().configStore().set("plugins." + plugin.name(), plugin));
+        components.plugins().forEach(plugin -> components.environment().configStore().set("plugins." + plugin.name(), plugin));
 
-        this.proxyServer = proxyServerSetUp.createProxyServer(config);
-        this.adminServer = createAdminServer(config);
+        this.proxyServer = proxyServerSetUp.createProxyServer(components);
+        this.adminServer = createAdminServer(components);
 
         this.serviceManager = new ServiceManager(new ArrayList<Service>() {
             {

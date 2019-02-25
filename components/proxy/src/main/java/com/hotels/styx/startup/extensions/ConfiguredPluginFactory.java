@@ -37,11 +37,13 @@ public class ConfiguredPluginFactory {
         this.configProvider = configProvider == null ? any -> null : configProvider;
     }
 
+    public ConfiguredPluginFactory(String name, PluginFactory pluginFactory) {
+        this(name, pluginFactory, null);
+    }
+
     @VisibleForTesting
     public ConfiguredPluginFactory(String name, PluginFactory pluginFactory, Object pluginConfig) {
-        this.name = requireNonNull(name);
-        this.pluginFactory = requireNonNull(pluginFactory);
-        this.configProvider = type -> type.cast(pluginConfig);
+        this(name, pluginFactory, type -> type.cast(pluginConfig));
     }
 
     public String name() {

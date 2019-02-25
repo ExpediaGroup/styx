@@ -47,6 +47,7 @@ public final class NamedPlugin implements Plugin {
         return new NamedPlugin(name, plugin);
     }
 
+    @VisibleForTesting
     public Plugin originalPlugin() {
         return plugin;
     }

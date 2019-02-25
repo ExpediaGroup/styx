@@ -56,7 +56,7 @@ public class StyxServerComponents {
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
 
-        // In further refactoring, we will probably want this loading to happen outside of this constructor call, so that it doesn't delay the admin server from starting up
+        // TODO In further refactoring, we will probably want this loading to happen outside of this constructor call, so that it doesn't delay the admin server from starting up
         this.plugins = loadPlugins(environment, builder.configuredPluginFactories);
 
         this.services = mergeServices(
@@ -152,7 +152,7 @@ public class StyxServerComponents {
                 String name = entry.getKey();
                 Plugin plugin = entry.getValue();
 
-                return new ConfiguredPluginFactory(name, any -> plugin, null);
+                return new ConfiguredPluginFactory(name, any -> plugin);
             }).collect(toList());
         }
 
@@ -184,7 +184,7 @@ public class StyxServerComponents {
     public interface LoggingSetUp {
         LoggingSetUp DO_NOT_MODIFY = environment -> {
         };
-        LoggingSetUp FROM_CONFIG = environment -> setUpLogging(environment.styxConfig().logConfigLocation());
+        LoggingSetUp FROM_CONFIG = environment -> setUpLogging(environment.configuration().logConfigLocation());
 
         void setUp(Environment environment);
 
