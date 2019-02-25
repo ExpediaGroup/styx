@@ -82,7 +82,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
     }
 
     /**
-     * Use {@link #configuration()}.
+     * @deprecated Use {@link #configuration()}
      *
      * @return configuration
      */

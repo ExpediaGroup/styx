@@ -169,7 +169,7 @@ public class PluginLoadingForStartupTest {
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp =
-            "1 plugin could not be loaded: failedPlugins=\\[myPlugin\\]; failureCauses=\\[myPlugin: java.lang.RuntimeException: plugin factory error\\]")
+            "1 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin\\]; failureCauses=\\[myPlugin: java.lang.RuntimeException: plugin factory error\\]")
     public void throwsExceptionIfFactoryFailsToLoadPlugin() {
         String yaml = "" +
                 "plugins:\n" +
@@ -184,7 +184,7 @@ public class PluginLoadingForStartupTest {
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp =
-            "3 plugins could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
+            "3 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
                     "myPlugin1: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*, " +
                     "myPlugin2: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*, " +
                     "myPlugin3: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*\\]")
@@ -219,7 +219,7 @@ public class PluginLoadingForStartupTest {
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp =
-            "3 plugins could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
+            "3 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
                     "myPlugin1: java.lang.RuntimeException: plugin factory error, " +
                     "myPlugin2: java.lang.RuntimeException: plugin factory error, " +
                     "myPlugin3: java.lang.RuntimeException: plugin factory error\\]")

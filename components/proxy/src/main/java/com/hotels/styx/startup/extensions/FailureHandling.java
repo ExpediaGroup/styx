@@ -22,11 +22,12 @@ import com.hotels.styx.proxy.plugin.PluginStartupException;
 import com.hotels.styx.spi.config.SpiExtension;
 import org.slf4j.Logger;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static com.hotels.styx.common.MapStream.stream;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -40,79 +41,48 @@ final class FailureHandling {
     static final FailureHandlingStrategy<Pair<String, SpiExtension>, ConfiguredPluginFactory> PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY =
             new FailureHandlingStrategy.Builder<Pair<String, SpiExtension>, ConfiguredPluginFactory>()
 
-                    .doImmediatelyOnEachFailure((plugin, err) -> logIndividualFailure(new FailedPlugin(plugin), err))
+                    .doImmediatelyOnEachFailure((plugin, err) ->
+                            LOGGER.error(format("Could not load plugin: pluginName=%s; factoryClass=%s", plugin.key(), plugin.value().factory().factoryClass()), err))
 
                     .doOnFailuresAfterAllProcessing(failures -> {
-                        throw new PluginStartupException(afterFailuresErrorMessage(transformKeys(failures, FailedPlugin::new)));
+                        throw new PluginStartupException(afterFailuresErrorMessage(failures, Pair::key));
 
                     }).build();
 
     static final FailureHandlingStrategy<ConfiguredPluginFactory, NamedPlugin> PLUGIN_STARTUP_FAILURE_HANDLING_STRATEGY =
             new FailureHandlingStrategy.Builder<ConfiguredPluginFactory, NamedPlugin>()
 
-                    .doImmediatelyOnEachFailure((plugin, err) -> logIndividualFailure(new FailedPlugin(plugin), err))
+                    .doImmediatelyOnEachFailure((plugin, err) ->
+                            LOGGER.error(format("Could not load plugin: pluginName=%s; factoryClass=%s", plugin.name(), plugin.pluginFactory().getClass().getName()), err))
 
                     .doOnFailuresAfterAllProcessing(failures -> {
-                        throw new PluginStartupException(afterFailuresErrorMessage(transformKeys(failures, FailedPlugin::new)));
+                        throw new PluginStartupException(afterFailuresErrorMessage(failures, ConfiguredPluginFactory::name));
 
                     }).build();
 
     private FailureHandling() {
     }
 
-    private static void logIndividualFailure(FailedPlugin plugin, Exception err) {
-        LOGGER.error(format("Could not load plugin: pluginName=%s; factoryClass=%s", plugin.name(), plugin.factoryClass()), err);
-    }
+    private static <K> String afterFailuresErrorMessage(Map<K, Exception> failures, Function<K, String> getPluginName) {
+        List<String> failedPlugins = mapKeys(failures, getPluginName);
 
-    private static <R, K, V> Map<R, V> transformKeys(Map<K, V> map, Function<K, R> transformer) {
-        // Preserve order
-        Map<R, V> result = new LinkedHashMap<>();
-        map.forEach((key, value) -> result.put(transformer.apply(key), value));
-        return result;
-    }
-
-    private static String afterFailuresErrorMessage(Map<FailedPlugin, Exception> failures) {
-        List<String> failedPlugins = failures.keySet().stream()
-                .map(FailedPlugin::name)
-                .collect(toList());
-
-        List<String> causes = failures.entrySet().stream().map(entry -> {
-            String pluginName = entry.getKey().name();
-            Throwable throwable = entry.getValue();
-
+        List<String> causes = mapEntries(failures, (key, err) -> {
             // please note, transforming the exception to a String (as is done here indirectly) will not include the stack trace
-            return format("%s: %s", pluginName, throwable);
+            return format("%s: %s", getPluginName.apply(key), err);
+        });
 
-        }).collect(toList());
-
-        return format("%s plugin%s could not be loaded: failedPlugins=%s; failureCauses=%s",
-                failures.size(),
-                failures.size() == 1 ? "" : "s", // only pluralise plurals
-                failedPlugins,
-                causes
-        );
+        return format("%s plugin(s) could not be loaded: failedPlugins=%s; failureCauses=%s", failures.size(), failedPlugins, causes);
     }
 
-    private static class FailedPlugin {
-        private final String name;
-        private final String factoryClass;
+    private static <R, K, V> List<R> mapKeys(Map<K, V> map, Function<K, R> function) {
+        return stream(map)
+                .mapToObject((k, v) -> function.apply(k))
+                .collect(toList());
+    }
 
-        private FailedPlugin(Pair<String, SpiExtension> plugin) {
-            this.name = plugin.key();
-            this.factoryClass = plugin.value().factory().factoryClass();
-        }
-
-        private FailedPlugin(ConfiguredPluginFactory plugin) {
-            this.name = plugin.name();
-            this.factoryClass = plugin.pluginFactory().getClass().getName();
-        }
-
-        private String name() {
-            return name;
-        }
-
-        private String factoryClass() {
-            return factoryClass;
-        }
+    private static <R, K, V> List<R> mapEntries(Map<K, V> map, BiFunction<K, V, R> function) {
+        return stream(map)
+                .mapToObject(function)
+                .collect(toList());
     }
 }
