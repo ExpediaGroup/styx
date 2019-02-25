@@ -700,7 +700,7 @@ public class LiveHttpRequest implements LiveHttpMessage {
             this.url = request.url();
             this.version = httpVersion(request.version().toString());
             this.headers = request.headers().newBuilder();
-            this.body = body;
+            this.body = contentStream;
         }
 
         Builder(LiveHttpRequest request) {
