@@ -34,7 +34,6 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Returns a simple HTML page with a list of plugins, split into enabled and disabled.
@@ -48,10 +47,7 @@ public class PluginListHandler implements HttpHandler {
 
     @Override
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
-        List<NamedPlugin> plugins = configStore.startingWith("plugins", NamedPlugin.class)
-                .stream()
-                .map(ConfigStore.ConfigEntry::value)
-                .collect(toList());
+        List<NamedPlugin> plugins = configStore.valuesStartingWith("plugins", NamedPlugin.class);
 
         Stream<NamedPlugin> enabled = plugins.stream().filter(NamedPlugin::enabled);
         Stream<NamedPlugin> disabled = plugins.stream().filter(plugin -> !plugin.enabled());

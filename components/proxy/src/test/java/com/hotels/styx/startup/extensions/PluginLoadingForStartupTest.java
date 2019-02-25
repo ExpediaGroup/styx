@@ -69,7 +69,7 @@ public class PluginLoadingForStartupTest {
                 "        testConfiguration: test-foo-bar\n";
 
 
-        List<NamedPlugin> plugins = PluginLoadingForStartup.loadPlugins(environment(yaml), null);
+        List<NamedPlugin> plugins = PluginLoadingForStartup.loadPlugins(environment(yaml));
 
         NamedPlugin plugin = plugins.get(0);
 
@@ -103,7 +103,7 @@ public class PluginLoadingForStartupTest {
                 "      config:\n" +
                 "        testConfiguration: instance3\n";
 
-        List<NamedPlugin> plugins = PluginLoadingForStartup.loadPlugins(environment(yaml), null);
+        List<NamedPlugin> plugins = PluginLoadingForStartup.loadPlugins(environment(yaml));
 
         List<String> pluginNames = plugins.stream()
                 .map(NamedPlugin::name)
@@ -125,7 +125,7 @@ public class PluginLoadingForStartupTest {
                 "      config:\n" +
                 "        testConfiguration: test-foo-bar\n";
 
-        PluginLoadingForStartup.loadPlugins(environment(yaml), null);
+        PluginLoadingForStartup.loadPlugins(environment(yaml));
     }
 
     @Test(expectedExceptions = RuntimeException.class)
@@ -141,7 +141,7 @@ public class PluginLoadingForStartupTest {
                 "    config:\n" +
                 "      testConfiguration: test-foo-bar\n";
 
-        PluginLoadingForStartup.loadPlugins(environment(yaml), null);
+        PluginLoadingForStartup.loadPlugins(environment(yaml));
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "(?s).*No active plugin specified.*")
@@ -156,7 +156,7 @@ public class PluginLoadingForStartupTest {
                 "      config:\n" +
                 "        testConfiguration: test-foo-bar\n";
 
-        PluginLoadingForStartup.loadPlugins(environment(yaml), null);
+        PluginLoadingForStartup.loadPlugins(environment(yaml));
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "(?s).*No list of all plugins specified.*")
@@ -165,7 +165,7 @@ public class PluginLoadingForStartupTest {
                 "plugins:\n" +
                 "  active: myPlugin\n";
 
-        PluginLoadingForStartup.loadPlugins(environment(yaml), null);
+        PluginLoadingForStartup.loadPlugins(environment(yaml));
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp =
@@ -180,7 +180,7 @@ public class PluginLoadingForStartupTest {
                 "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$FailingPluginFactory\n" +
                 "        classPath: " + FIXTURES_CLASS_PATH + "\n";
 
-        PluginLoadingForStartup.loadPlugins(environment(yaml), null);
+        PluginLoadingForStartup.loadPlugins(environment(yaml));
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp =
@@ -209,7 +209,7 @@ public class PluginLoadingForStartupTest {
                     "        class: BadClassName\n" +
                     "        classPath: " + FIXTURES_CLASS_PATH + "\n";
 
-            PluginLoadingForStartup.loadPlugins(environment(yaml), null);
+            PluginLoadingForStartup.loadPlugins(environment(yaml));
         } catch (RuntimeException e) {
             assertThat(log.log(), hasItem(loggingEvent(ERROR, "Could not load plugin: pluginName=myPlugin1; factoryClass=.*", ConfigurationException.class, "Could not load a plugin factory for.*")));
             throw e;
@@ -244,7 +244,7 @@ public class PluginLoadingForStartupTest {
                     "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$FailingPluginFactory\n" +
                     "        classPath: " + FIXTURES_CLASS_PATH + "\n";
 
-            PluginLoadingForStartup.loadPlugins(environment(yaml), null);
+            PluginLoadingForStartup.loadPlugins(environment(yaml));
         } catch (RuntimeException e) {
             assertThat(log.log(), hasItem(loggingEvent(ERROR, "Could not load plugin: pluginName=myPlugin1; factoryClass=.*", RuntimeException.class, "plugin factory error")));
             throw e;
@@ -273,7 +273,7 @@ public class PluginLoadingForStartupTest {
                 "        testConfiguration: test-foo-bar\n";
 
 
-        PluginLoadingForStartup.loadPlugins(environment(yaml), null);
+        PluginLoadingForStartup.loadPlugins(environment(yaml));
 
         assertThat(styxMetricsRegistry.counter("styx.plugins.myPlugin.initialised").getCount(), is(1L));
         assertThat(styxMetricsRegistry.counter("styx.plugins.myAnotherPlugin.initialised").getCount(), is(1L));

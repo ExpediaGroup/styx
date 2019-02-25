@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -136,6 +136,21 @@ public class ConfigStore {
         return values.entrySet().stream()
                 .filter(entry -> entry.getKey().equals(rootKey) || entry.getKey().startsWith(prefix))
                 .map(entry -> new ConfigEntry<>(entry, type))
+                .collect(toList());
+    }
+
+    /**
+     * Gets the values associated with all entries under a given root key.
+     * For example, if the {@code rootKey} is "foo" then you would receive entries named "foo", "foo.bar", "foo.bar.baz", etc.
+     *
+     * @param rootKey root key
+     * @param type    type to cast values to
+     * @param <T>     type
+     * @return list of values
+     */
+    public <T> List<T> valuesStartingWith(String rootKey, Class<T> type) {
+        return startingWith(rootKey, type).stream()
+                .map(ConfigEntry::value)
                 .collect(toList());
     }
 

@@ -52,15 +52,14 @@ public final class PluginLoadingForStartup {
      * @return plugins
      */
     public static List<NamedPlugin> loadPlugins(Environment environment, List<ConfiguredPluginFactory> factories) {
-        if (factories == null) {
-            List<ConfiguredPluginFactory> activePlugins = loadFactoriesFromConfig(environment);
-
-            return loadPluginsFromFactories(environment, activePlugins);
-        }
-
         return loadPluginsFromFactories(environment, factories);
     }
 
+    public static List<NamedPlugin> loadPlugins(Environment environment) {
+        List<ConfiguredPluginFactory> activePlugins = loadFactoriesFromConfig(environment);
+
+        return loadPluginsFromFactories(environment, activePlugins);
+    }
 
     private static List<ConfiguredPluginFactory> loadFactoriesFromConfig(Environment environment) {
         PluginFactoriesLoader loader = new PluginFactoriesLoader(PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY);
