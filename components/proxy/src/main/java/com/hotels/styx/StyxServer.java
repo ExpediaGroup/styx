@@ -159,8 +159,7 @@ public final class StyxServer extends AbstractService {
             {
                 add(proxyServer);
                 add(adminServer);
-                servicesFromConfig.entrySet().stream()
-                        .map(Map.Entry::getValue)
+                servicesFromConfig.values().stream()
                         .map(StyxServer::toGuavaService)
                         .forEach(this::add);
             }
