@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ class ErrorMetricsSpec extends FunSpec
   var backendsRegistry: MemoryBackedRegistry[BackendService] = _
   var styxServer: StyxServer = _
 
-  override val styxConfig = configuration.StyxConfig(ProxyConfig(), plugins = List(
+  override val styxConfig = configuration.StyxConfig(ProxyConfig(), plugins = Map(
     "failAtOnCompletedPlugin" -> new OnCompleteErrorPlugin(),
     "generateErrorStatusPlugin" -> new Return500Interceptor(),
     "mapToErrorStatusPlugin" -> new MapTo500Interceptor(),

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hotels.styx.spi.config.SpiExtension;
 import com.hotels.styx.spi.config.SpiExtensionFactory;
 import org.testng.annotations.Test;
 
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
@@ -53,9 +52,9 @@ public class FileSystemPluginFactoryLoaderTest {
                     "class=incorrect.plugin.class.name.TestPluginModule, " +
                             "classPath=.*[\\\\/]components[\\\\/]proxy[\\\\/]target[\\\\/]test-classes[\\\\/]plugins[\\\\/]oneplugin[\\\\/]testPluginA-1.0-SNAPSHOT.jar" +
                     "\\}\\}")
-    public void providesMeaningfulErrorMessageWhenConfiguredFactoryClassCannotBeLoaded() throws URISyntaxException {
+    public void providesMeaningfulErrorMessageWhenConfiguredFactoryClassCannotBeLoaded() {
         String jarFile = "/plugins/oneplugin/testPluginA-1.0-SNAPSHOT.jar";
-        Path pluginsPath = fixturesHome(PluginSuppliersTest.class, jarFile);
+        Path pluginsPath = fixturesHome(FileSystemPluginFactoryLoader.class, jarFile);
 
         SpiExtensionFactory factory = new SpiExtensionFactory("incorrect.plugin.class.name.TestPluginModule", pluginsPath.toString());
         SpiExtension spiExtension = new SpiExtension(factory, config, null);

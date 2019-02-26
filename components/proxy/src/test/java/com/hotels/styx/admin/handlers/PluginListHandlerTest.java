@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 package com.hotels.styx.admin.handlers;
 
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
+import static com.hotels.styx.api.LiveHttpRequest.get;
 import static com.hotels.styx.api.plugins.spi.Plugin.PASS_THROUGH;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
@@ -43,7 +44,11 @@ public class PluginListHandlerTest {
 
         Iterable<NamedPlugin> plugins = asList(one, two, three, four);
 
-        PluginListHandler handler = new PluginListHandler(plugins);
+        ConfigStore configStore = new ConfigStore();
+
+        plugins.forEach(plugin -> configStore.set("plugins." + plugin.name(), plugin));
+
+        PluginListHandler handler = new PluginListHandler(configStore);
 
         HttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,12 +25,11 @@ import com.hotels.styx.admin.AdminServerConfig
 import com.hotels.styx.api.HttpInterceptor.Chain
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration
 import com.hotels.styx.api.extension.service.spi.StyxService
-import com.hotels.styx.api.plugins.spi.Plugin
+import com.hotels.styx.api.plugins.spi.{Plugin, PluginFactory}
 import com.hotels.styx.api._
 import com.hotels.styx.config.Config
 import com.hotels.styx.metrics.StyxMetrics
 import com.hotels.styx.proxy.ProxyServerConfig
-import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.server.netty.NettyServerConfig.Connectors
 import com.hotels.styx.server.{HttpConnectorConfig, HttpsConnectorConfig}
 import com.hotels.styx.startup.StyxServerComponents
@@ -81,8 +80,8 @@ object StyxServerSupport {
       .set("admin", adminServerConfigBuilder.build()))
   }
 
-  def newCoreConfig(styxConfig: StyxConfig, styxService: StyxService, plugins: List[NamedPlugin] = Nil) = {
-    val plugins1 = plugins.asInstanceOf[Iterable[NamedPlugin]].asJava
+  def newCoreConfig(styxConfig: StyxConfig, styxService: StyxService, plugins: Map[String, Plugin] = Map.empty, pluginFactories : List[PluginFactory] = Nil) = {
+    val plugins1 = plugins.asJava
 
     val builder = new StyxServerComponents.Builder()
       .styxConfig(styxConfig)
@@ -95,8 +94,8 @@ object StyxServerSupport {
     }
   }
 
-  def newCoreConfig(styxConfig: StyxConfig, plugins: List[NamedPlugin]) = {
-    val plugins1 = plugins.asInstanceOf[Iterable[NamedPlugin]].asJava
+  def newCoreConfig(styxConfig: StyxConfig, plugins: Map[String, Plugin]) = {
+    val plugins1 = plugins.asJava
 
     val builder = new StyxServerComponents.Builder()
       .styxConfig(styxConfig)

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package com.hotels.styx.startup;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.eventbus.AsyncEventBus;
 import com.hotels.styx.Environment;
@@ -26,7 +25,9 @@ import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,11 +35,12 @@ import java.util.Map;
 
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
-import static com.hotels.styx.startup.PluginsLoader.PLUGINS_FROM_CONFIG;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.DO_NOT_MODIFY;
+import static com.hotels.styx.startup.extensions.PluginLoadingForStartup.loadPlugins;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Configuration required to set-up the core Styx services, such as the proxy and admin servers.
@@ -54,7 +56,10 @@ public class StyxServerComponents {
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
 
-        this.plugins = builder.pluginsLoader.load(environment);
+        // TODO In further refactoring, we will probably want this loading to happen outside of this constructor call, so that it doesn't delay the admin server from starting up
+        this.plugins = builder.configuredPluginFactories == null
+                ? loadPlugins(environment)
+                : loadPlugins(environment, builder.configuredPluginFactories);
 
         this.services = mergeServices(
                 builder.servicesLoader.load(environment),
@@ -77,7 +82,7 @@ public class StyxServerComponents {
     private static Environment newEnvironment(StyxConfig styxConfig, MetricRegistry metricRegistry) {
         return new Environment.Builder()
                 .configuration(styxConfig)
-                .metricsRegistry(metricRegistry)
+                .metricRegistry(metricRegistry)
                 .buildInfo(readBuildInfo())
                 .eventBus(new AsyncEventBus("styx", newSingleThreadExecutor()))
                 .build();
@@ -108,7 +113,7 @@ public class StyxServerComponents {
     public static final class Builder {
         private StyxConfig styxConfig;
         private LoggingSetUp loggingSetUp = DO_NOT_MODIFY;
-        private PluginsLoader pluginsLoader = PLUGINS_FROM_CONFIG;
+        private List<ConfiguredPluginFactory> configuredPluginFactories;
         private ServicesLoader servicesLoader = SERVICES_FROM_CONFIG;
         private MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
 
@@ -140,14 +145,21 @@ public class StyxServerComponents {
         }
 
         @VisibleForTesting
-        public Builder plugins(Iterable<NamedPlugin> plugins) {
-            requireNonNull(plugins);
-            List<NamedPlugin> list = ImmutableList.copyOf(plugins);
-            return plugins(env -> list);
+        public Builder plugins(Map<String, Plugin> plugins) {
+            return pluginFactories(stubFactories(plugins));
         }
 
-        public Builder plugins(PluginsLoader pluginsLoader) {
-            this.pluginsLoader = requireNonNull(pluginsLoader);
+        private static List<ConfiguredPluginFactory> stubFactories(Map<String, Plugin> plugins) {
+            return plugins.entrySet().stream().map(entry -> {
+                String name = entry.getKey();
+                Plugin plugin = entry.getValue();
+
+                return new ConfiguredPluginFactory(name, any -> plugin);
+            }).collect(toList());
+        }
+
+        public Builder pluginFactories(List<ConfiguredPluginFactory> configuredPluginFactories) {
+            this.configuredPluginFactories = requireNonNull(configuredPluginFactories);
             return this;
         }
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.proxy.ProxyServerConfig;
-import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.HttpsConnectorConfig;
@@ -30,12 +29,11 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.IntStream.range;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -106,7 +104,7 @@ public class ProxyServerSetUpTest {
 
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig(config))
-                .plugins(numberedList(plugin1, plugin2))
+                .plugins(nameByIndex(plugin1, plugin2))
                 .build();
 
         PipelineFactory pipelineFactory = mockPipelineFactory(components);
@@ -126,7 +124,7 @@ public class ProxyServerSetUpTest {
 
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig(config))
-                .plugins(numberedList(plugin1, plugin2))
+                .plugins(nameByIndex(plugin1, plugin2))
                 .build();
 
         PipelineFactory pipelineFactory = mockPipelineFactory(components);
@@ -150,7 +148,7 @@ public class ProxyServerSetUpTest {
 
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig(config))
-                .plugins(numberedList(mock(Plugin.class), plugin2, mock(Plugin.class), plugin4))
+                .plugins(nameByIndex(mock(Plugin.class), plugin2, mock(Plugin.class), plugin4))
                 .build();
 
         PipelineFactory pipelineFactory = mockPipelineFactory(components);
@@ -174,7 +172,7 @@ public class ProxyServerSetUpTest {
 
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig(config))
-                .plugins(numberedList(plugin1, plugin2, plugin3, plugin4))
+                .plugins(nameByIndex(plugin1, plugin2, plugin3, plugin4))
                 .build();
 
         PipelineFactory pipelineFactory = mockPipelineFactory(components);
@@ -199,7 +197,7 @@ public class ProxyServerSetUpTest {
 
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig(config))
-                .plugins(numberedList(mock(Plugin.class), plugin2, mock(Plugin.class), plugin4))
+                .plugins(nameByIndex(mock(Plugin.class), plugin2, mock(Plugin.class), plugin4))
                 .build();
 
         PipelineFactory pipelineFactory = mockPipelineFactory(components);
@@ -233,14 +231,13 @@ public class ProxyServerSetUpTest {
         fail("Expected " + exceptionType.getName() + " to be thrown");
     }
 
-    private static List<NamedPlugin> numberedList(Plugin... plugins) {
+    private static Map<String, Plugin> nameByIndex(Plugin... plugins) {
         return range(0, plugins.length)
-                .mapToObj(index -> {
-                    String name = "plugin" + (index + 1);
-
-                    return namedPlugin(name, plugins[index]);
-                })
-                .collect(toList());
+                .boxed()
+                .collect(toMap(
+                        index -> "plugin" + (index + 1),
+                        index -> plugins[index]
+                ));
     }
 
     private interface Task {

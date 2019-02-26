@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,7 +30,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.common.Pair.pair;
 import static java.util.Objects.requireNonNull;
 
-class PluginsMetadata implements Iterable<SpiExtension> {
+/**
+ * Plugins metadata.
+ */
+public class PluginsMetadata implements Iterable<SpiExtension> {
     private static final Splitter SPLITTER = Splitter.on(",")
             .omitEmptyStrings()
             .trimResults();

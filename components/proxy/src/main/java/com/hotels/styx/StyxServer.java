@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,6 +20,9 @@ import com.google.common.io.CharStreams;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.ServiceManager;
+import com.hotels.styx.admin.AdminServerBuilder;
+import com.hotels.styx.api.extension.service.BackendService;
+import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
@@ -42,7 +45,6 @@ import static com.hotels.styx.ServerConfigSchema.validateServerConfiguration;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
-import static com.hotels.styx.startup.AdminServerSetUp.createAdminServer;
 import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.FROM_CONFIG;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
@@ -139,24 +141,25 @@ public final class StyxServer extends AbstractService {
         this(config, null);
     }
 
-    public StyxServer(StyxServerComponents config, Stopwatch stopwatch) {
+    public StyxServer(StyxServerComponents components, Stopwatch stopwatch) {
         this.stopwatch = stopwatch;
 
-        registerCoreMetrics(config.environment().buildInfo(), config.environment().metricRegistry());
+        registerCoreMetrics(components.environment().buildInfo(), components.environment().metricRegistry());
 
-        Map<String, StyxService> servicesFromConfig = config.services();
+        Map<String, StyxService> servicesFromConfig = components.services();
 
         ProxyServerSetUp proxyServerSetUp = new ProxyServerSetUp(new StyxPipelineFactory());
 
-        this.proxyServer = proxyServerSetUp.createProxyServer(config);
-        this.adminServer = createAdminServer(config);
+        components.plugins().forEach(plugin -> components.environment().configStore().set("plugins." + plugin.name(), plugin));
+
+        this.proxyServer = proxyServerSetUp.createProxyServer(components);
+        this.adminServer = createAdminServer(components);
 
         this.serviceManager = new ServiceManager(new ArrayList<Service>() {
             {
                 add(proxyServer);
                 add(adminServer);
-                servicesFromConfig.entrySet().stream()
-                        .map(Map.Entry::getValue)
+                servicesFromConfig.values().stream()
                         .map(StyxServer::toGuavaService)
                         .forEach(this::add);
             }
@@ -244,6 +247,12 @@ public final class StyxServer extends AbstractService {
                         });
             }
         };
+    }
+
+    private static HttpServer createAdminServer(StyxServerComponents config) {
+        return new AdminServerBuilder(config.environment())
+                .backendServicesRegistry((Registry<BackendService>) config.services().get("backendServiceRegistry"))
+                .build();
     }
 
     private static class ServerStartListener extends ServiceManager.Listener {

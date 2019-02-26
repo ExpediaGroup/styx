@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ class AsyncPluginResponseSpec extends FunSpec
   with Matchers {
   val mockServer = FakeHttpServer.HttpStartupConfig().start()
 
-  override val styxConfig = StyxConfig(plugins = List("asyncDelayPlugin" -> new AsyncContentDelayPlugin()))
+  override val styxConfig = StyxConfig(plugins = Map("asyncDelayPlugin" -> new AsyncContentDelayPlugin()))
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

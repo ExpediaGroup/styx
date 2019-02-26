@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,17 +21,17 @@ import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.extension.service.spi.StyxService;
+import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.startup.StyxServerComponents.LoggingSetUp;
+import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.Map;
 
 import static com.hotels.styx.api.HttpResponse.response;
-import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
@@ -59,11 +59,12 @@ public class StyxServerComponentsTest {
 
     @Test
     public void loadsPlugins() {
+        ConfiguredPluginFactory f1 = new ConfiguredPluginFactory("plugin1", any -> stubPlugin("MyResponse1"));
+        ConfiguredPluginFactory f2 = new ConfiguredPluginFactory("plugin2", any -> stubPlugin("MyResponse2"));
+
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig())
-                .plugins(env -> ImmutableList.of(
-                        namedPlugin("plugin1", stubPlugin("MyResponse1")),
-                        namedPlugin("plugin2", stubPlugin("MyResponse2"))))
+                .pluginFactories(ImmutableList.of(f1, f2))
                 .build();
 
         List<NamedPlugin> plugins = components.plugins();
@@ -112,8 +113,8 @@ public class StyxServerComponentsTest {
 
         Environment environment = components.environment();
 
-        assertThat(environment.styxConfig().get("foo", String.class), isValue("abc"));
-        assertThat(environment.styxConfig().get("bar", String.class), isValue("def"));
+        assertThat(environment.configuration().get("foo", String.class), isValue("abc"));
+        assertThat(environment.configuration().get("bar", String.class), isValue("def"));
 
         assertThat(environment.eventBus(), is(notNullValue()));
         assertThat(environment.metricRegistry(), is(notNullValue()));

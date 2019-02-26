@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,18 +18,17 @@ package com.hotels.styx.support.configuration
 import java.nio.file.Path
 import java.util
 
+import com.hotels.styx.StyxServer
 import com.hotels.styx.StyxServerSupport._
+import com.hotels.styx.api.extension.service.spi.StyxService
+import com.hotels.styx.api.plugins.spi.Plugin
 import com.hotels.styx.config.Config
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration
 import com.hotels.styx.proxy.ProxyServerConfig
-import com.hotels.styx.proxy.plugin.NamedPlugin
-import com.hotels.styx.support.ResourcePaths
-import com.hotels.styx.StyxServer
-import com.hotels.styx.api.extension.service.spi.StyxService
 import com.hotels.styx.startup.StyxServerComponents
+import com.hotels.styx.support.ResourcePaths
 
 import scala.collection.JavaConverters._
-import scala.collection.Map
 
 case class Connectors(httpConnectorConfig: HttpConnectorConfig,
                       httpsConnectorConfig: HttpsConnectorConfig) {
@@ -44,7 +43,7 @@ case class Connectors(httpConnectorConfig: HttpConnectorConfig,
 sealed trait StyxBaseConfig {
   def logbackXmlLocation: Path
   def additionalServices: Map[String, StyxService]
-  def plugins: List[NamedPlugin]
+  def plugins: Map[String, Plugin]
 
   def startServer(backendsRegistry: StyxService): StyxServer
 
@@ -62,7 +61,7 @@ object StyxBaseConfig {
 }
 
 case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
-                      plugins: List[NamedPlugin] = List(),
+                      plugins: Map[String, Plugin] = Map.empty,
                       logbackXmlLocation: Path = StyxBaseConfig.defaultLogbackXml,
                       yamlText: String = "originRestrictionCookie: \"originRestrictionCookie\"\n",
                       adminPort: Int = 0,
@@ -148,7 +147,7 @@ case class StyxConfig(proxyConfig: ProxyConfig = ProxyConfig(),
 case class StyxYamlConfig(yamlConfig: String,
                           logbackXmlLocation: Path = StyxBaseConfig.defaultLogbackXml,
                           additionalServices: Map[String, StyxService] = Map.empty,
-                          plugins: List[NamedPlugin] = List()
+                          plugins: Map[String, Plugin] = Map.empty
                          ) extends StyxBaseConfig {
 
   override def startServer(backendsRegistry: StyxService): StyxServer = {

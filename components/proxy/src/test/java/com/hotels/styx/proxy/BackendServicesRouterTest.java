@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
@@ -271,7 +270,7 @@ public class BackendServicesRouterTest {
         CodaHaleMetricRegistry metrics = new CodaHaleMetricRegistry();
 
         Environment environment = new Environment.Builder()
-                .metricsRegistry(metrics)
+                .metricRegistry(metrics)
                 .build();
         BackendServicesRouter router = new BackendServicesRouter(
                 new StyxBackendServiceClientFactory(environment), environment);

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,9 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.AdminServerConfig;
-import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.plugins.spi.Plugin;
@@ -31,8 +29,8 @@ import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.proxy.ProxyServerConfig;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpsConnectorConfig;
-import com.hotels.styx.startup.PluginsLoader;
 import com.hotels.styx.startup.StyxServerComponents;
+import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,10 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.testapi.ssl.SslTesting.acceptAllSslRequests;
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -66,15 +61,9 @@ public final class StyxServer {
 
         MemoryBackedRegistry<com.hotels.styx.api.extension.service.BackendService> backendServicesRegistry = new MemoryBackedRegistry<>();
 
-        PluginsLoader loader = environment -> builder.pluginFactories.stream()
-                .map(pluginConfig -> namedPlugin(
-                        pluginConfig.name,
-                        pluginConfig.pluginFactory.create(toPluginEnvironment(environment, pluginConfig))))
-                .collect(toList());
-
         StyxServerComponents config = new StyxServerComponents.Builder()
                 .styxConfig(styxConfig(builder))
-                .plugins(loader)
+                .pluginFactories(builder.pluginFactories)
                 .additionalServices(ImmutableMap.of("backendServiceRegistry", new RegistryServiceAdapter(backendServicesRegistry)))
                 .build();
 
@@ -153,31 +142,12 @@ public final class StyxServer {
         return metricRegistry;
     }
 
-    private static PluginFactory.Environment toPluginEnvironment(Environment environment, PluginFactoryConfig config) {
-        return new PluginFactory.Environment() {
-            @Override
-            public Configuration configuration() {
-                return environment.configuration();
-            }
-
-            @Override
-            public MetricRegistry metricRegistry() {
-                return environment.metricRegistry();
-            }
-
-            @Override
-            public <T> T pluginConfig(Class<T> clazz) {
-                return (T) config.pluginConfig;
-            }
-        };
-    }
-
     /**
      * A builder for constructing instances of {@link StyxServer}.
      */
     public static final class Builder {
         private final Map<String, com.hotels.styx.api.extension.service.BackendService> routes = new HashMap<>();
-        private final List<PluginFactoryConfig> pluginFactories = new ArrayList<>();
+        private final List<ConfiguredPluginFactory> pluginFactories = new ArrayList<>();
         private int proxyHttpPort;
         private int adminHttpPort;
         private int proxyHttpsPort;
@@ -232,12 +202,12 @@ public final class StyxServer {
          * @return this builder
          */
         public Builder addPlugin(String name, Plugin plugin) {
-            pluginFactories.add(new PluginFactoryConfig(name, env -> plugin, null));
+            pluginFactories.add(new ConfiguredPluginFactory(name, env -> plugin));
             return this;
         }
 
         public Builder addPluginFactory(String name, PluginFactory pluginFactory, Object pluginConfig) {
-            pluginFactories.add(new PluginFactoryConfig(name, pluginFactory, pluginConfig));
+            pluginFactories.add(new ConfiguredPluginFactory(name, pluginFactory, pluginConfig));
             return this;
         }
 
@@ -286,18 +256,6 @@ public final class StyxServer {
          */
         public StyxServer start() {
             return new StyxServer(this).start();
-        }
-    }
-
-    private static class PluginFactoryConfig {
-        private final String name;
-        private final PluginFactory pluginFactory;
-        private final Object pluginConfig;
-
-        PluginFactoryConfig(String name, PluginFactory pluginFactory, Object pluginConfig) {
-            this.name = requireNonNull(name);
-            this.pluginFactory = requireNonNull(pluginFactory);
-            this.pluginConfig = pluginConfig;
         }
     }
 }

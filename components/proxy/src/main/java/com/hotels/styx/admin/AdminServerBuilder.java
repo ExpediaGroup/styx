@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.hotels.styx.admin;
 
 import com.codahale.metrics.json.MetricsModule;
 import com.google.common.collect.ImmutableSortedSet;
-import com.hotels.styx.AggregatedConfiguration;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.dashboard.DashboardData;
@@ -41,10 +40,10 @@ import com.hotels.styx.admin.tasks.OriginsCommandHandler;
 import com.hotels.styx.admin.tasks.OriginsReloadCommandHandler;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.common.http.handler.HttpMethodFilteringHandler;
-import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
+import com.hotels.styx.common.http.handler.HttpMethodFilteringHandler;
+import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.StandardHttpRouter;
@@ -52,7 +51,6 @@ import com.hotels.styx.server.handlers.ClassPathResourceHandler;
 import com.hotels.styx.server.netty.NettyServerBuilderSpec;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import com.hotels.styx.server.track.CurrentRequestTracker;
-
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -70,7 +68,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.StreamSupport.stream;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -82,17 +79,11 @@ public class AdminServerBuilder {
     private final Environment environment;
     private final Configuration configuration;
 
-    private Iterable<NamedPlugin> plugins;
     private Registry<BackendService> backendServicesRegistry;
 
     public AdminServerBuilder(Environment environment) {
         this.environment = environment;
         this.configuration = environment.configuration();
-    }
-
-    public AdminServerBuilder plugins(Iterable<NamedPlugin> plugins) {
-        this.plugins = requireNonNull(plugins);
-        return this;
     }
 
     public AdminServerBuilder backendServicesRegistry(Registry<BackendService> backendServicesRegistry) {
@@ -102,7 +93,7 @@ public class AdminServerBuilder {
 
     public HttpServer build() {
         LOG.info("event bus that will be used is {}", environment.eventBus());
-        StyxConfig styxConfig = environment.styxConfig();
+        StyxConfig styxConfig = environment.configuration();
 
         Optional<Duration> metricsCacheExpiration = styxConfig.adminServerConfig().metricsCacheExpiration();
         AdminServerConfig adminServerConfig = styxConfig.adminServerConfig();
@@ -117,7 +108,7 @@ public class AdminServerBuilder {
         MetricsHandler metricsHandler = new MetricsHandler(environment.metricRegistry(), metricsCacheExpiration);
         httpRouter.add("/admin/metrics", metricsHandler);
         httpRouter.add("/admin/metrics/", metricsHandler);
-        httpRouter.add("/admin/configuration", new StyxConfigurationHandler(staticConfiguration()));
+        httpRouter.add("/admin/configuration", new StyxConfigurationHandler(configuration));
         httpRouter.add("/admin/configuration/origins", new OriginsHandler(backendServicesRegistry));
         httpRouter.add("/admin/jvm", new JVMMetricsHandler(environment.metricRegistry(), metricsCacheExpiration));
         httpRouter.add("/admin/origins/status", new OriginsInventoryHandler(environment.eventBus()));
@@ -131,12 +122,19 @@ public class AdminServerBuilder {
         // Tasks
         httpRouter.add("/admin/tasks/origins/reload", new HttpMethodFilteringHandler(POST, new OriginsReloadCommandHandler(backendServicesRegistry)));
         httpRouter.add("/admin/tasks/origins", new HttpMethodFilteringHandler(POST, new OriginsCommandHandler(environment.eventBus())));
-        httpRouter.add("/admin/tasks/plugin/", new PluginToggleHandler(plugins));
+        httpRouter.add("/admin/tasks/plugin/", new PluginToggleHandler(environment.configStore()));
 
         // Plugins Handler
-        routesForPlugins().forEach(route -> httpRouter.add(route.path(), route.handler()));
 
-        httpRouter.add("/admin/plugins", new PluginListHandler(plugins));
+        environment.configStore().watchAll("plugins", NamedPlugin.class)
+                .forEach(entry -> {
+                    NamedPlugin namedPlugin = entry.value();
+
+                    routesForPlugin(namedPlugin).forEach(route ->
+                            httpRouter.add(route.path(), route.handler()));
+                });
+
+        httpRouter.add("/admin/plugins", new PluginListHandler(environment.configStore()));
 
         return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
                 .toNettyServerBuilder(adminServerConfig)
@@ -148,12 +146,6 @@ public class AdminServerBuilder {
         return new JsonHandler<>(new DashboardDataSupplier(backendServicesRegistry, environment, styxConfig),
                 Optional.of(Duration.ofSeconds(10)),
                 new MetricsModule(SECONDS, MILLISECONDS, false));
-    }
-
-    private Configuration staticConfiguration() {
-        return configuration instanceof AggregatedConfiguration
-                ? ((AggregatedConfiguration) configuration).styxConfig()
-                : configuration;
     }
 
     private static Iterable<IndexHandler.Link> indexLinkPaths() {
@@ -171,12 +163,6 @@ public class AdminServerBuilder {
                 link("Origins Status", "/admin/origins/status?pretty"),
                 link("Dashboard", "/admin/dashboard/index.html"),
                 link("Plugins", "/admin/plugins"));
-    }
-
-    private List<Route> routesForPlugins() {
-        return stream(plugins.spliterator(), true)
-                .flatMap(namedPlugin -> routesForPlugin(namedPlugin).stream())
-                .collect(toList());
     }
 
     private static List<Route> routesForPlugin(NamedPlugin namedPlugin) {

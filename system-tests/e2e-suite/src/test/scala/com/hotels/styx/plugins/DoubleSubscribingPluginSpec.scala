@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ class DoubleSubscribingPluginSpec extends FunSpec
   override val styxConfig = StyxConfig(
     proxyConfig = ProxyConfig(requestTimeoutMillis = 2 * 1000),
     logbackXmlLocation = ResourcePaths.fixturesHome(this.getClass, "/conf/logback/logback-debug-stdout.xml"),
-    plugins = List("aggregator" -> new ContentCutoffPlugin())
+    plugins = Map("aggregator" -> new ContentCutoffPlugin())
   )
 
   override protected def beforeAll(): Unit = {

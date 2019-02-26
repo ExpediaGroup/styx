@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,38 +15,40 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Eventual;
+import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 
 import java.util.List;
 import java.util.stream.Stream;
 
 import static com.google.common.net.MediaType.HTML_UTF_8;
-import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
+import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.StreamSupport.stream;
 
 /**
  * Returns a simple HTML page with a list of plugins, split into enabled and disabled.
  */
 public class PluginListHandler implements HttpHandler {
-    private final List<NamedPlugin> plugins;
+    private final ConfigStore configStore;
 
-    public PluginListHandler(Iterable<NamedPlugin> plugins) {
-        this.plugins = stream(plugins.spliterator(), false).collect(toList());
+    public PluginListHandler(ConfigStore configStore) {
+        this.configStore = requireNonNull(configStore);
     }
 
     @Override
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+        List<NamedPlugin> plugins = configStore.valuesStartingWith("plugins", NamedPlugin.class);
+
         Stream<NamedPlugin> enabled = plugins.stream().filter(NamedPlugin::enabled);
         Stream<NamedPlugin> disabled = plugins.stream().filter(plugin -> !plugin.enabled());
 
@@ -60,14 +62,14 @@ public class PluginListHandler implements HttpHandler {
                 .stream());
     }
 
-    private String section(String toggleState, Stream<NamedPlugin> plugins) {
+    private static String section(String toggleState, Stream<NamedPlugin> plugins) {
         return format("<h3>%s</h3>", toggleState)
                 + plugins.map(NamedPlugin::name)
-                .map(this::pluginLink)
+                .map(PluginListHandler::pluginLink)
                 .collect(joining());
     }
 
-    private String pluginLink(String name) {
+    private static String pluginLink(String name) {
         return format("<a href='/admin/plugins/%s'>%s</a><br />", name, name);
     }
 }

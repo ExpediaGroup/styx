@@ -13,19 +13,20 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.proxy.plugin;
+package com.hotels.styx.startup.extensions;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hotels.styx.api.Environment;
+import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
-import com.hotels.styx.support.api.SimpleEnvironment;
+import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -35,24 +36,22 @@ import java.util.List;
 import java.util.Objects;
 
 import static ch.qos.logback.classic.Level.ERROR;
-import static com.google.common.collect.Iterables.getFirst;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
-public class PluginSuppliersTest {
-    Path FIXTURES_CLASS_PATH = fixturesHome(PluginSuppliersTest.class, "/plugins");
+public class PluginLoadingForStartupTest {
+    private static final Path FIXTURES_CLASS_PATH = fixturesHome(PluginLoadingForStartupTest.class, "/");
 
     private MetricRegistry styxMetricsRegistry;
 
     @BeforeMethod
-    public void setUp() throws Exception {
+    public void setUp() {
         styxMetricsRegistry = new CodaHaleMetricRegistry();
     }
 
@@ -64,15 +63,15 @@ public class PluginSuppliersTest {
                 "  all:\n" +
                 "    myPlugin:\n" +
                 "      factory:\n" +
-                "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
                 "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: test-foo-bar\n";
 
 
-        PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
+        List<NamedPlugin> plugins = PluginLoadingForStartup.loadPlugins(environment(yaml));
 
-        NamedPlugin plugin = firstPlugin(pluginSuppliers);
+        NamedPlugin plugin = plugins.get(0);
 
         assertThat(plugin.originalPlugin(), is(instanceOf(MyPlugin.class)));
         assertThat(plugin.name(), is("myPlugin"));
@@ -87,28 +86,26 @@ public class PluginSuppliersTest {
                 "  all:\n" +
                 "    myPlugin0:\n" +
                 "      factory:\n" +
-                "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
                 "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: instance1\n" +
                 "    myPlugin1:\n" +
                 "      factory:\n" +
-                "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
                 "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: instance2\n" +
                 "    myPlugin2:\n" +
                 "      factory:\n" +
-                "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
                 "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: instance3\n";
 
-        PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
+        List<NamedPlugin> plugins = PluginLoadingForStartup.loadPlugins(environment(yaml));
 
-        Iterable<NamedPlugin> plugins = pluginSuppliers.fromConfigurations();
-
-        List<String> pluginNames = stream(plugins.spliterator(), false)
+        List<String> pluginNames = plugins.stream()
                 .map(NamedPlugin::name)
                 .collect(toList());
 
@@ -123,14 +120,12 @@ public class PluginSuppliersTest {
                 "  all:\n" +
                 "    otherPlugin:\n" +
                 "      factory:\n" +
-                "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
                 "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: test-foo-bar\n";
 
-        PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
-
-        pluginSuppliers.fromConfigurations();
+        PluginLoadingForStartup.loadPlugins(environment(yaml));
     }
 
     @Test(expectedExceptions = RuntimeException.class)
@@ -141,14 +136,12 @@ public class PluginSuppliersTest {
                 "  all:\n" +
                 "  - name: myPlugin\n" +
                 "    factory:\n" +
-                "      class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactoryDoesNotExist\n" +
+                "      class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactoryDoesNotExist\n" +
                 "      classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "    config:\n" +
                 "      testConfiguration: test-foo-bar\n";
 
-        PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
-
-        pluginSuppliers.fromConfigurations();
+        PluginLoadingForStartup.loadPlugins(environment(yaml));
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "(?s).*No active plugin specified.*")
@@ -158,14 +151,12 @@ public class PluginSuppliersTest {
                 "  all:\n" +
                 "    myPlugin:\n" +
                 "      factory:\n" +
-                "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
                 "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: test-foo-bar\n";
 
-        PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
-
-        pluginSuppliers.fromConfigurations();
+        PluginLoadingForStartup.loadPlugins(environment(yaml));
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "(?s).*No list of all plugins specified.*")
@@ -174,13 +165,11 @@ public class PluginSuppliersTest {
                 "plugins:\n" +
                 "  active: myPlugin\n";
 
-        PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
-
-        pluginSuppliers.fromConfigurations();
+        PluginLoadingForStartup.loadPlugins(environment(yaml));
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp =
-            "1 plugin could not be loaded: failedPlugins=\\[myPlugin\\]; failureCauses=\\[myPlugin: java.lang.RuntimeException: plugin factory error\\]")
+            "1 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin\\]; failureCauses=\\[myPlugin: java.lang.RuntimeException: plugin factory error\\]")
     public void throwsExceptionIfFactoryFailsToLoadPlugin() {
         String yaml = "" +
                 "plugins:\n" +
@@ -188,21 +177,19 @@ public class PluginSuppliersTest {
                 "  all:\n" +
                 "    myPlugin:\n" +
                 "      factory:\n" +
-                "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$FailingPluginFactory\n" +
+                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$FailingPluginFactory\n" +
                 "        classPath: " + FIXTURES_CLASS_PATH + "\n";
 
-        PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
-
-        pluginSuppliers.fromConfigurations();
+        PluginLoadingForStartup.loadPlugins(environment(yaml));
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp =
-            "3 plugins could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
-                    "myPlugin1: java.lang.RuntimeException: plugin factory error, " +
-                    "myPlugin2: java.lang.RuntimeException: plugin factory error, " +
-                    "myPlugin3: java.lang.RuntimeException: plugin factory error\\]")
-    public void attemptsToLoadAllPluginsEvenIfSomeFail() {
-        LoggingTestSupport log = new LoggingTestSupport(PluginSuppliers.class);
+            "3 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
+                    "myPlugin1: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*, " +
+                    "myPlugin2: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*, " +
+                    "myPlugin3: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*\\]")
+    public void attemptsToLoadAllPluginsEvenIfSomePluginFactoriesCannotBeLoaded() {
+        LoggingTestSupport log = new LoggingTestSupport(FailureHandling.class);
 
         try {
             String yaml = "" +
@@ -211,20 +198,53 @@ public class PluginSuppliersTest {
                     "  all:\n" +
                     "    myPlugin1:\n" +
                     "      factory:\n" +
-                    "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$FailingPluginFactory\n" +
+                    "        class: BadClassName\n" +
                     "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                     "    myPlugin2:\n" +
                     "      factory:\n" +
-                    "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$FailingPluginFactory\n" +
+                    "        class: BadClassName\n" +
                     "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                     "    myPlugin3:\n" +
                     "      factory:\n" +
-                    "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$FailingPluginFactory\n" +
+                    "        class: BadClassName\n" +
                     "        classPath: " + FIXTURES_CLASS_PATH + "\n";
 
-            PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
+            PluginLoadingForStartup.loadPlugins(environment(yaml));
+        } catch (RuntimeException e) {
+            assertThat(log.log(), hasItem(loggingEvent(ERROR, "Could not load plugin: pluginName=myPlugin1; factoryClass=.*", ConfigurationException.class, "Could not load a plugin factory for.*")));
+            throw e;
+        } finally {
+            log.stop();
+        }
+    }
 
-            pluginSuppliers.fromConfigurations();
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp =
+            "3 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
+                    "myPlugin1: java.lang.RuntimeException: plugin factory error, " +
+                    "myPlugin2: java.lang.RuntimeException: plugin factory error, " +
+                    "myPlugin3: java.lang.RuntimeException: plugin factory error\\]")
+    public void attemptsToLoadAllPluginsEvenIfSomePluginFactoriesFailDuringExecution() {
+        LoggingTestSupport log = new LoggingTestSupport(FailureHandling.class);
+
+        try {
+            String yaml = "" +
+                    "plugins:\n" +
+                    "  active: myPlugin1,myPlugin2,myPlugin3\n" +
+                    "  all:\n" +
+                    "    myPlugin1:\n" +
+                    "      factory:\n" +
+                    "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$FailingPluginFactory\n" +
+                    "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
+                    "    myPlugin2:\n" +
+                    "      factory:\n" +
+                    "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$FailingPluginFactory\n" +
+                    "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
+                    "    myPlugin3:\n" +
+                    "      factory:\n" +
+                    "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$FailingPluginFactory\n" +
+                    "        classPath: " + FIXTURES_CLASS_PATH + "\n";
+
+            PluginLoadingForStartup.loadPlugins(environment(yaml));
         } catch (RuntimeException e) {
             assertThat(log.log(), hasItem(loggingEvent(ERROR, "Could not load plugin: pluginName=myPlugin1; factoryClass=.*", RuntimeException.class, "plugin factory error")));
             throw e;
@@ -234,41 +254,36 @@ public class PluginSuppliersTest {
     }
 
     @Test
-    public void appliesDefaultMetricsScopeForPlugins() throws Exception {
+    public void appliesDefaultMetricsScopeForPlugins() {
         String yaml = "" +
                 "plugins:\n" +
                 "  active: myPlugin, myAnotherPlugin\n" +
                 "  all:\n" +
                 "    myPlugin:\n" +
                 "      factory:\n" +
-                "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
                 "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: test-foo-bar\n" +
                 "    myAnotherPlugin:\n" +
                 "      factory:\n" +
-                "        class: com.hotels.styx.proxy.plugin.PluginSuppliersTest$MyPluginFactory\n" +
+                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
                 "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
                 "      config:\n" +
                 "        testConfiguration: test-foo-bar\n";
 
 
-        PluginSuppliers pluginSuppliers = new PluginSuppliers(environment(yaml), new FileSystemPluginFactoryLoader());
-        firstPlugin(pluginSuppliers);
+        PluginLoadingForStartup.loadPlugins(environment(yaml));
 
         assertThat(styxMetricsRegistry.counter("styx.plugins.myPlugin.initialised").getCount(), is(1L));
         assertThat(styxMetricsRegistry.counter("styx.plugins.myAnotherPlugin.initialised").getCount(), is(1L));
     }
 
-    private Environment environment(String yaml) {
-        return new SimpleEnvironment.Builder()
-                .configuration(new MyConfiguration(yaml))
+    private com.hotels.styx.Environment environment(String yaml) {
+        return new com.hotels.styx.Environment.Builder()
+                .configuration(new StyxConfig(new MyConfiguration(yaml)))
                 .metricRegistry(styxMetricsRegistry)
                 .build();
-    }
-
-    private static NamedPlugin firstPlugin(PluginSuppliers pluginSuppliers) {
-        return getFirst(pluginSuppliers.fromConfigurations(), null);
     }
 
     public static class MyConfiguration extends YamlConfig {
