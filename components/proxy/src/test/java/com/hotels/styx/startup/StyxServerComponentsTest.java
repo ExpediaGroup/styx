@@ -59,8 +59,8 @@ public class StyxServerComponentsTest {
 
     @Test
     public void loadsPlugins() {
-        ConfiguredPluginFactory f1 = new ConfiguredPluginFactory("plugin1", any -> stubPlugin("MyResponse1"), null);
-        ConfiguredPluginFactory f2 = new ConfiguredPluginFactory("plugin2", any -> stubPlugin("MyResponse2"), null);
+        ConfiguredPluginFactory f1 = new ConfiguredPluginFactory("plugin1", any -> stubPlugin("MyResponse1"));
+        ConfiguredPluginFactory f2 = new ConfiguredPluginFactory("plugin2", any -> stubPlugin("MyResponse2"));
 
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig())
@@ -113,8 +113,8 @@ public class StyxServerComponentsTest {
 
         Environment environment = components.environment();
 
-        assertThat(environment.styxConfig().get("foo", String.class), isValue("abc"));
-        assertThat(environment.styxConfig().get("bar", String.class), isValue("def"));
+        assertThat(environment.configuration().get("foo", String.class), isValue("abc"));
+        assertThat(environment.configuration().get("bar", String.class), isValue("def"));
 
         assertThat(environment.eventBus(), is(notNullValue()));
         assertThat(environment.metricRegistry(), is(notNullValue()));

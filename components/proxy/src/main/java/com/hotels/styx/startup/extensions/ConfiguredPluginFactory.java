@@ -34,11 +34,11 @@ public class ConfiguredPluginFactory {
     public ConfiguredPluginFactory(String name, PluginFactory pluginFactory, Function<Class<?>, Object> configProvider) {
         this.name = requireNonNull(name);
         this.pluginFactory = requireNonNull(pluginFactory);
-        this.configProvider = configProvider == null ? any -> null : configProvider;
+        this.configProvider = requireNonNull(configProvider);
     }
 
     public ConfiguredPluginFactory(String name, PluginFactory pluginFactory) {
-        this(name, pluginFactory, null);
+        this(name, pluginFactory, any -> null);
     }
 
     @VisibleForTesting

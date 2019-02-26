@@ -202,7 +202,7 @@ public final class StyxServer {
          * @return this builder
          */
         public Builder addPlugin(String name, Plugin plugin) {
-            pluginFactories.add(new ConfiguredPluginFactory(name, env -> plugin, null));
+            pluginFactories.add(new ConfiguredPluginFactory(name, env -> plugin));
             return this;
         }
 
