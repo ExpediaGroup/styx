@@ -58,22 +58,6 @@ public class StyxServerComponentsTest {
     }
 
     @Test
-    public void loadsPlugins() {
-        ConfiguredPluginFactory f1 = new ConfiguredPluginFactory("plugin1", any -> stubPlugin("MyResponse1"));
-        ConfiguredPluginFactory f2 = new ConfiguredPluginFactory("plugin2", any -> stubPlugin("MyResponse2"));
-
-        StyxServerComponents components = new StyxServerComponents.Builder()
-                .styxConfig(new StyxConfig())
-                .pluginFactories(ImmutableList.of(f1, f2))
-                .build();
-
-        List<NamedPlugin> plugins = components.plugins();
-        List<String> names = plugins.stream().map(NamedPlugin::name).collect(toList());
-
-        assertThat(names, contains("plugin1", "plugin2"));
-    }
-
-    @Test
     public void loadsServices() {
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig())

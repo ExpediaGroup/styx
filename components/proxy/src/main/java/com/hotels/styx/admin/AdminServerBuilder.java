@@ -33,6 +33,7 @@ import com.hotels.styx.admin.handlers.PingHandler;
 import com.hotels.styx.admin.handlers.PluginListHandler;
 import com.hotels.styx.admin.handlers.PluginToggleHandler;
 import com.hotels.styx.admin.handlers.StartupConfigHandler;
+import com.hotels.styx.admin.handlers.StartupStatusHandler;
 import com.hotels.styx.admin.handlers.StyxConfigurationHandler;
 import com.hotels.styx.admin.handlers.ThreadsHandler;
 import com.hotels.styx.admin.handlers.VersionTextHandler;
@@ -114,6 +115,8 @@ public class AdminServerBuilder {
         httpRouter.add("/admin/origins/status", new OriginsInventoryHandler(environment.eventBus()));
         httpRouter.add("/admin/configuration/logging", new LoggingConfigurationHandler(styxConfig.startupConfig().logConfigLocation()));
         httpRouter.add("/admin/configuration/startup", new StartupConfigHandler(styxConfig.startupConfig()));
+
+        httpRouter.add("/admin/startup", new StartupStatusHandler(environment.configStore()));
 
         // Dashboard
         httpRouter.add("/admin/dashboard/data.json", dashboardDataHandler(styxConfig));

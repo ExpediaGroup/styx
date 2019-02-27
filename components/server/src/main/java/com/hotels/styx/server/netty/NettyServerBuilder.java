@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 package com.hotels.styx.server.netty;
 
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.ServerEventLoopFactory;
 import com.hotels.styx.server.netty.eventloop.PlatformAwareServerEventLoopFactory;
@@ -26,15 +26,12 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 
-import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Lists.newCopyOnWriteArrayList;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.server.netty.eventloop.ServerEventLoopFactories.memoize;
-import static java.util.Arrays.asList;
 
 /**
  * A builder of {@link NettyServer} instances.
@@ -48,7 +45,6 @@ public final class NettyServerBuilder {
     private String name = "styx";
     private Optional<ServerConnector> httpConnector = Optional.empty();
     private Optional<ServerConnector> httpsConnector = Optional.empty();
-    private final List<Runnable> startupActions = newCopyOnWriteArrayList();
     private HttpHandler httpHandler = (request, context) -> Eventual.of(LiveHttpResponse.response(NOT_FOUND).build());
 
     public static NettyServerBuilder newBuilder() {
@@ -116,15 +112,6 @@ public final class NettyServerBuilder {
 
     Optional<ServerConnector> httpsConnector() {
         return httpsConnector;
-    }
-
-    public NettyServerBuilder doOnStartUp(Runnable... startupActions) {
-        this.startupActions.addAll(asList(startupActions));
-        return this;
-    }
-
-    Iterable<Runnable> startupActions() {
-        return startupActions;
     }
 
     public HttpServer build() {

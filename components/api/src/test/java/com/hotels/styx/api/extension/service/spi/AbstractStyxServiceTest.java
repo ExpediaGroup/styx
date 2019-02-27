@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,15 +15,14 @@
  */
 package com.hotels.styx.api.extension.service.spi;
 
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hotels.styx.api.extension.service.spi.MockContext.MOCK_CONTEXT;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.FAILED;
@@ -33,19 +32,21 @@ import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STOPPE
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STOPPING;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.testng.Assert.fail;
 
 public class AbstractStyxServiceTest {
-
     private final LiveHttpRequest get = LiveHttpRequest.get("/").build();
 
     @Test
-    public void exposesNameAndStatusViaAdminInterface() throws ExecutionException, InterruptedException {
+    public void exposesNameAndStatusViaAdminInterface() {
         DerivedStyxService service = new DerivedStyxService("derived-service", new CompletableFuture<>());
 
         HttpResponse response = Mono.from(service.adminInterfaceHandlers().get("status").handle(get, MOCK_CONTEXT)
-                        .flatMap(r -> r.aggregate(1024))).block();
+                .flatMap(r -> r.aggregate(1024))).block();
 
         assertThat(response.bodyAs(UTF_8), is("{ name: \"derived-service\" status: \"CREATED\" }"));
     }
@@ -182,6 +183,36 @@ public class AbstractStyxServiceTest {
         service.stop();
     }
 
+    @Test(expectedExceptions = ServiceFailureException.class)
+    public void propagatesExceptions() throws Throwable {
+        CompletableFuture<?> future = new CompletableFuture<>();
+        DerivedStyxService derivedStyxService = new DerivedStyxService("foo", future);
+        future.completeExceptionally(new RuntimeException("This is just a test"));
+
+        try {
+            derivedStyxService.start().get(1, SECONDS);
+        } catch (ExecutionException e) {
+            throw e.getCause();
+        }
+    }
+
+    @Test
+    public void canAttachDoOnErrorBehaviour() throws Throwable {
+        CompletableFuture<?> future = new CompletableFuture<>();
+        DerivedStyxService derivedStyxService = new DerivedStyxService("foo", future);
+        future.completeExceptionally(new RuntimeException("This is just a test"));
+
+        AtomicReference<Throwable> caught = new AtomicReference<>();
+
+        try {
+            derivedStyxService
+                    .doOnError(caught::set)
+                    .start().get(1, SECONDS);
+            fail("Expected exception");
+        } catch (ExecutionException e) {
+            assertThat(caught.get(), is(instanceOf(RuntimeException.class)));
+        }
+    }
 
     static class DerivedStyxService extends AbstractStyxService {
         private final CompletableFuture<Void> startFuture;

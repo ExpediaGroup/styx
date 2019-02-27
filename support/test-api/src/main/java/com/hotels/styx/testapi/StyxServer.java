@@ -17,6 +17,7 @@ package com.hotels.styx.testapi;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Service;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.MetricRegistry;
@@ -77,6 +78,11 @@ public final class StyxServer {
 
     private StyxServer start() {
         server.startAsync().awaitRunning();
+        return this;
+    }
+
+    private StyxServer startAsync() {
+        server.startAsync();
         return this;
     }
 
@@ -256,6 +262,15 @@ public final class StyxServer {
          */
         public StyxServer start() {
             return new StyxServer(this).start();
+        }
+
+        /**
+         * Creates and starts the test server, but does not wait for startup to complete.
+         *
+         * @return new test server
+         */
+        public StyxServer startAsync() {
+            return new StyxServer(this).startAsync();
         }
     }
 }

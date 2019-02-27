@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -65,7 +65,6 @@ final class NettyServer extends AbstractService implements HttpServer {
     private final Optional<ServerConnector> httpConnector;
     private final Optional<ServerConnector> httpsConnector;
 
-    private final Iterable<Runnable> startupActions;
     private final HttpHandler httpHandler;
     private final ServerSocketBinder httpServerSocketBinder;
     private final ServerSocketBinder httpsServerSocketBinder;
@@ -83,8 +82,6 @@ final class NettyServer extends AbstractService implements HttpServer {
 
         this.httpServerSocketBinder = httpConnector.map(ServerSocketBinder::new).orElse(null);
         this.httpsServerSocketBinder = httpsConnector.map(ServerSocketBinder::new).orElse(null);
-
-        this.startupActions = nettyServerBuilder.startupActions();
     }
 
     @Override
@@ -108,15 +105,6 @@ final class NettyServer extends AbstractService implements HttpServer {
     @Override
     protected void doStart() {
         LOGGER.info("starting services");
-
-        for (Runnable action : startupActions) {
-            try {
-                action.run();
-            } catch (Exception e) {
-                notifyFailed(e);
-                return;
-            }
-        }
 
         ServiceManager serviceManager = new ServiceManager(
                 Stream.of(httpServerSocketBinder, httpsServerSocketBinder)
@@ -194,7 +182,7 @@ final class NettyServer extends AbstractService implements HttpServer {
                     .childOption(ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                     .childHandler(new ChannelInitializer() {
                         @Override
-                        protected void initChannel(Channel ch) throws Exception {
+                        protected void initChannel(Channel ch) {
                             serverConnector.configure(ch, httpHandler);
                         }
                     });
@@ -208,7 +196,7 @@ final class NettyServer extends AbstractService implements HttpServer {
                             Channel channel = future.channel();
                             channelGroup.add(channel);
                             address = (InetSocketAddress) channel.localAddress();
-                            LOGGER.info("server connector {} bound successfully on port {} socket port {}", new Object[] {serverConnector.getClass(), port, address});
+                            LOGGER.info("server connector {} bound successfully on port {}", new Object[] {serverConnector.getClass(), address});
                             connectorStopper = new Stopper(bossGroup, workerGroup);
                             notifyStarted();
                         } else {
@@ -249,7 +237,7 @@ final class NettyServer extends AbstractService implements HttpServer {
             }
 
             @Override
-            public Void call() throws Exception {
+            public Void call() {
                 channelGroup.close().awaitUninterruptibly();
                 shutdownEventExecutorGroup(bossGroup);
                 shutdownEventExecutorGroup(workerGroup);

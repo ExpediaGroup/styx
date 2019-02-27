@@ -23,16 +23,29 @@ import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.proxy.plugin.FileSystemPluginFactoryLoader;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.proxy.plugin.PluginStartupException;
 import com.hotels.styx.proxy.plugin.PluginsMetadata;
 import com.hotels.styx.spi.config.SpiExtension;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
+import static com.hotels.styx.common.MapStream.stream;
+import static com.hotels.styx.common.SequenceProcessor.processSequence;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
-import static com.hotels.styx.startup.extensions.FailureHandling.PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY;
-import static com.hotels.styx.startup.extensions.FailureHandling.PLUGIN_STARTUP_FAILURE_HANDLING_STRATEGY;
+import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginPipelineStatus.AT_LEAST_ONE_PLUGIN_FAILED;
+import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.CONSTRUCTED;
+import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.CONSTRUCTING;
+import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.FAILED_WHILE_CONSTRUCTING;
+import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.FAILED_WHILE_LOADING_CLASSES;
+import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.LOADED_CLASSES;
+import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.LOADING_CLASSES;
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -64,10 +77,30 @@ public final class PluginLoadingForStartup {
     }
 
     private static List<ConfiguredPluginFactory> loadFactoriesFromConfig(Environment environment) {
-        return environment.configuration().get("plugins", PluginsMetadata.class)
+        List<Pair<String, SpiExtension>> configList = environment.configuration().get("plugins", PluginsMetadata.class)
                 .map(PluginsMetadata::activePlugins)
-                .map(inputs -> PLUGIN_FACTORY_LOADING_FAILURE_HANDLING_STRATEGY.process(inputs, PluginLoadingForStartup::loadPluginFactory))
                 .orElse(emptyList());
+
+        PluginStatusNotifications notifications = new PluginStatusNotifications(environment.configStore());
+
+        return processSequence(configList)
+                .map(config -> {
+                    notifications.notifyPluginStatus(config.key(), LOADING_CLASSES);
+                    return loadPluginFactory(config);
+                })
+
+                .onEachSuccess((config, factory) -> notifications.notifyPluginStatus(config.key(), LOADED_CLASSES))
+
+                .onEachFailure((config, err) -> {
+                    notifications.notifyPluginStatus(config.key(), FAILED_WHILE_LOADING_CLASSES);
+                    environment.configStore().set("startup.plugins." + config.key(), "failed-while-loading");
+                    LOGGER.error(format("Could not load plugin: pluginName=%s; factoryClass=%s", config.key(), config.value().factory().factoryClass()), err);
+                })
+
+                .failuresPostProcessing(failures -> {
+                    notifications.notifyPluginPipelineStatus(AT_LEAST_ONE_PLUGIN_FAILED);
+                    throw new PluginStartupException(afterFailuresErrorMessage(failures, Pair::key));
+                }).collect();
     }
 
     private static ConfiguredPluginFactory loadPluginFactory(Pair<String, SpiExtension> pair) {
@@ -80,14 +113,25 @@ public final class PluginLoadingForStartup {
     }
 
     private static List<NamedPlugin> loadPluginsFromFactories(Environment environment, List<ConfiguredPluginFactory> factories) {
-        return PLUGIN_STARTUP_FAILURE_HANDLING_STRATEGY.process(factories, factory -> {
+        PluginStatusNotifications notifications = new PluginStatusNotifications(environment.configStore());
 
-            LOGGER.info("Instantiating Plugin, pluginName={}...", factory.name());
-            NamedPlugin plugin = loadPlugin(environment, factory);
+        return processSequence(factories)
+                .map(factory -> {
+                    notifications.notifyPluginStatus(factory.name(), CONSTRUCTING);
+                    return loadPlugin(environment, factory);
+                })
 
-            LOGGER.info("Instantiated Plugin, pluginName={}", factory.name());
-            return plugin;
-        });
+                .onEachSuccess((factory, plugin) -> notifications.notifyPluginStatus(factory.name(), CONSTRUCTED))
+
+                .onEachFailure((factory, err) -> {
+                    notifications.notifyPluginStatus(factory.name(), FAILED_WHILE_CONSTRUCTING);
+                    LOGGER.error(format("Could not load plugin: pluginName=%s; factoryClass=%s", factory.name(), factory.pluginFactory().getClass().getName()), err);
+                })
+
+                .failuresPostProcessing(failures -> {
+                    notifications.notifyPluginPipelineStatus(AT_LEAST_ONE_PLUGIN_FAILED);
+                    throw new PluginStartupException(afterFailuresErrorMessage(failures, ConfiguredPluginFactory::name));
+                }).collect();
     }
 
     private static NamedPlugin loadPlugin(Environment environment, ConfiguredPluginFactory factory) {
@@ -111,5 +155,28 @@ public final class PluginLoadingForStartup {
         Plugin plugin = factory.pluginFactory().create(pluginEnvironment);
 
         return namedPlugin(factory.name(), plugin);
+    }
+
+    private static <K> String afterFailuresErrorMessage(Map<K, Exception> failures, Function<K, String> getPluginName) {
+        List<String> failedPlugins = mapKeys(failures, getPluginName);
+
+        List<String> causes = mapEntries(failures, (key, err) -> {
+            // please note, transforming the exception to a String (as is done here indirectly) will not include the stack trace
+            return format("%s: %s", getPluginName.apply(key), err);
+        });
+
+        return format("%s plugin(s) could not be loaded: failedPlugins=%s; failureCauses=%s", failures.size(), failedPlugins, causes);
+    }
+
+    private static <R, K, V> List<R> mapKeys(Map<K, V> map, Function<K, R> function) {
+        return stream(map)
+                .mapToObject((k, v) -> function.apply(k))
+                .collect(toList());
+    }
+
+    private static <R, K, V> List<R> mapEntries(Map<K, V> map, BiFunction<K, V, R> function) {
+        return stream(map)
+                .mapToObject(function)
+                .collect(toList());
     }
 }

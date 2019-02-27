@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -57,18 +57,12 @@ public final class GraphiteReporterService extends AbstractStyxService {
 
     @Override
     protected CompletableFuture<Void> startService() {
-        return CompletableFuture.runAsync(() -> {
-            this.reporter.start(reportingIntervalMillis, MILLISECONDS);
-            LOGGER.info("Graphite service started, service name=\"{}\"", serviceName());
-        });
+        return CompletableFuture.runAsync(() -> this.reporter.start(reportingIntervalMillis, MILLISECONDS));
     }
 
     @Override
     protected CompletableFuture<Void> stopService() {
-        return CompletableFuture.runAsync(() -> {
-            this.reporter.stop();
-            LOGGER.info("Graphite service stopped, service name=\"{}\"", serviceName());
-        });
+        return CompletableFuture.runAsync(this.reporter::stop);
     }
 
     @VisibleForTesting

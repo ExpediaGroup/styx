@@ -13,16 +13,23 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.startup;
+package com.hotels.styx.common.lambdas;
 
-import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.proxy.plugin.NamedPlugin;
-
-import java.util.List;
+import static java.util.Objects.requireNonNull;
 
 /**
- * Factory that makes an HTTP pipeline.
+ * A wrapper for exceptions when transforming lambdas with exceptions into java SL lambdas.
+ * Note that unlike a typical exception, this only wraps Exceptions, not other Throwables.
  */
-public interface PipelineFactory {
-    HttpHandler create(StyxServerComponents config, List<NamedPlugin> plugins);
+public class UncheckedWrapperException extends RuntimeException {
+    private final Exception wrapped;
+
+    UncheckedWrapperException(Exception wrap) {
+        super(wrap);
+        this.wrapped = requireNonNull(wrap);
+    }
+
+    public Exception wrapped() {
+        return wrapped;
+    }
 }

@@ -25,10 +25,13 @@ import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.config.schema.SchemaValidationException;
+import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.server.HttpServer;
+import com.hotels.styx.startup.PluginStartupService;
 import com.hotels.styx.startup.ProxyServerSetUp;
+import com.hotels.styx.startup.ServerService;
 import com.hotels.styx.startup.StyxPipelineFactory;
 import com.hotels.styx.startup.StyxServerComponents;
 import io.netty.util.ResourceLeakDetector;
@@ -40,18 +43,26 @@ import java.io.Reader;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hotels.styx.ServerConfigSchema.validateServerConfiguration;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
 import static com.hotels.styx.startup.CoreMetrics.registerCoreMetrics;
+import static com.hotels.styx.startup.ProxyStatusNotifications.notifyProxyFailed;
+import static com.hotels.styx.startup.ProxyStatusNotifications.notifyProxyStarted;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.FROM_CONFIG;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
+import static java.lang.Long.MAX_VALUE;
 import static java.lang.Runtime.getRuntime;
 import static java.lang.String.format;
 import static java.lang.System.getProperty;
+import static java.lang.Thread.currentThread;
+import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -77,7 +88,7 @@ public final class StyxServer extends AbstractService {
             StyxServer styxServer = createStyxServer(args);
             getRuntime().addShutdownHook(new Thread(() -> styxServer.stopAsync().awaitTerminated()));
 
-            styxServer.startAsync().awaitRunning();
+            styxServer.startAsync().awaitRunning(styxServer.startupTimeoutSeconds, SECONDS);
         } catch (SchemaValidationException cause) {
             System.exit(2);
         } catch (Throwable cause) {
@@ -131,34 +142,47 @@ public final class StyxServer extends AbstractService {
         return "n".equals(validate) || "no".equals(validate);
     }
 
-    private final HttpServer proxyServer;
-    private final HttpServer adminServer;
+    private final ConfigStore configStore;
+    private final long startupTimeoutSeconds;
 
     private final ServiceManager serviceManager;
     private final Stopwatch stopwatch;
+
+    private final ServerReference proxyServer = new ServerReference("Proxy server");
+    private final ServerReference adminServer = new ServerReference("Admin server");
 
     public StyxServer(StyxServerComponents config) {
         this(config, null);
     }
 
     public StyxServer(StyxServerComponents components, Stopwatch stopwatch) {
+        this.startupTimeoutSeconds = components.environment().configuration()
+                .get("startup.timeoutSeconds", Integer.class)
+                .map(timeout -> (long) timeout)
+                .orElse(MAX_VALUE);
+
         this.stopwatch = stopwatch;
 
         registerCoreMetrics(components.environment().buildInfo(), components.environment().metricRegistry());
 
         Map<String, StyxService> servicesFromConfig = components.services();
 
-        ProxyServerSetUp proxyServerSetUp = new ProxyServerSetUp(new StyxPipelineFactory());
+        PluginStartupService pluginStartupService = new PluginStartupService(components);
 
-        components.plugins().forEach(plugin -> components.environment().configStore().set("plugins." + plugin.name(), plugin));
+        this.configStore = components.environment().configStore();
 
-        this.proxyServer = proxyServerSetUp.createProxyServer(components);
-        this.adminServer = createAdminServer(components);
+        StyxService adminServerService = new ServerService("adminServer", () ->
+                this.adminServer.store(createAdminServer(components)));
+
+        StyxService proxyServerService = new ServerService("proxyServer", () ->
+                this.proxyServer.store(createProxyServer(components)))
+                .doOnError(err -> notifyProxyFailed(configStore));
 
         this.serviceManager = new ServiceManager(new ArrayList<Service>() {
             {
-                add(proxyServer);
-                add(adminServer);
+                add(toGuavaService(pluginStartupService));
+                add(toGuavaService(proxyServerService));
+                add(toGuavaService(adminServerService));
                 servicesFromConfig.values().stream()
                         .map(StyxServer::toGuavaService)
                         .forEach(this::add);
@@ -167,19 +191,19 @@ public final class StyxServer extends AbstractService {
     }
 
     public InetSocketAddress proxyHttpAddress() {
-        return proxyServer.httpAddress();
+        return proxyServer.get().httpAddress();
     }
 
     public InetSocketAddress proxyHttpsAddress() {
-        return proxyServer.httpsAddress();
+        return proxyServer.get().httpsAddress();
     }
 
     public InetSocketAddress adminHttpAddress() {
-        return adminServer.httpAddress();
+        return adminServer.get().httpAddress();
     }
 
     public InetSocketAddress adminHttpsAddress() {
-        return adminServer.httpsAddress();
+        return adminServer.get().httpsAddress();
     }
 
     private static StartupConfig parseStartupConfig(String[] args) {
@@ -197,15 +221,19 @@ public final class StyxServer extends AbstractService {
 
     @Override
     protected void doStart() {
-        printBanner();
-        this.serviceManager.addListener(new ServerStartListener(this));
-        this.serviceManager.startAsync().awaitHealthy();
+        newSingleThreadExecutor().submit(() -> {
+            printBanner();
+            this.serviceManager.addListener(new ServerStartListener(this));
+            this.serviceManager.startAsync().awaitHealthy();
 
-        if (stopwatch == null) {
-            LOG.info("Started Styx server");
-        } else {
-            LOG.info("Started Styx server in {} ms", stopwatch.elapsed(MILLISECONDS));
-        }
+            notifyProxyStarted(this.configStore, proxyServer.get());
+
+            if (stopwatch == null) {
+                LOG.info("Started Styx server");
+            } else {
+                LOG.info("Started Styx server in {} ms", stopwatch.elapsed(MILLISECONDS));
+            }
+        });
     }
 
     private void printBanner() {
@@ -232,6 +260,10 @@ public final class StyxServer extends AbstractService {
                 styxService.start()
                         .thenAccept(x -> notifyStarted())
                         .exceptionally(e -> {
+                            if (e instanceof InterruptedException) {
+                                currentThread().interrupt();
+                            }
+
                             notifyFailed(e);
                             return null;
                         });
@@ -242,6 +274,10 @@ public final class StyxServer extends AbstractService {
                 styxService.stop()
                         .thenAccept(x -> notifyStopped())
                         .exceptionally(e -> {
+                            if (e instanceof InterruptedException) {
+                                currentThread().interrupt();
+                            }
+
                             notifyFailed(e);
                             return null;
                         });
@@ -249,10 +285,42 @@ public final class StyxServer extends AbstractService {
         };
     }
 
+    private static HttpServer createProxyServer(StyxServerComponents components) throws InterruptedException {
+        return new ProxyServerSetUp(new StyxPipelineFactory())
+                .createProxyServer(components);
+    }
+
     private static HttpServer createAdminServer(StyxServerComponents config) {
         return new AdminServerBuilder(config.environment())
                 .backendServicesRegistry((Registry<BackendService>) config.services().get("backendServiceRegistry"))
                 .build();
+    }
+
+    // Add during implementation of liveness/readiness checks. This saves us from having to re-architect all the tests that rely on
+    // synchronous methods like proxyHttpAddress.
+    private static class ServerReference {
+        private final AtomicReference<HttpServer> reference;
+        private final String name;
+
+        ServerReference(String name) {
+            this.reference = new AtomicReference<>();
+            this.name = requireNonNull(name);
+        }
+
+        HttpServer store(HttpServer server) {
+            this.reference.set(server);
+            return server;
+        }
+
+        HttpServer get() {
+            HttpServer server = reference.get();
+
+            if (server == null) {
+                throw new IllegalStateException(name + " has not finished starting up");
+            }
+
+            return server;
+        }
     }
 
     private static class ServerStartListener extends ServiceManager.Listener {

@@ -16,6 +16,7 @@
 package com.hotels.styx.startup.extensions;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -27,6 +28,7 @@ import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -36,7 +38,9 @@ import java.util.List;
 import java.util.Objects;
 
 import static ch.qos.logback.classic.Level.ERROR;
+import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.CONSTRUCTED;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
+import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -69,13 +73,16 @@ public class PluginLoadingForStartupTest {
                 "        testConfiguration: test-foo-bar\n";
 
 
-        List<NamedPlugin> plugins = PluginLoadingForStartup.loadPlugins(environment(yaml));
+        Environment environment = environment(yaml);
+        List<NamedPlugin> plugins = PluginLoadingForStartup.loadPlugins(environment);
 
         NamedPlugin plugin = plugins.get(0);
 
         assertThat(plugin.originalPlugin(), is(instanceOf(MyPlugin.class)));
         assertThat(plugin.name(), is("myPlugin"));
         assertThat(((MyPlugin) plugin.originalPlugin()).myPluginConfig, is(new MyPluginConfig("test-foo-bar")));
+
+        assertThat(environment.configStore().get("startup.plugins.myPlugin", PluginStatus.class), isValue(CONSTRUCTED));
     }
 
     @Test
@@ -184,12 +191,12 @@ public class PluginLoadingForStartupTest {
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp =
-            "3 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
-                    "myPlugin1: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*, " +
-                    "myPlugin2: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*, " +
-                    "myPlugin3: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*\\]")
+            "3 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin[123], myPlugin[123], myPlugin[123]\\]; failureCauses=\\[" +
+                    "myPlugin[123]: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*, " +
+                    "myPlugin[123]: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*, " +
+                    "myPlugin[123]: com.hotels.styx.api.configuration.ConfigurationException: Could not load a plugin factory.*\\]")
     public void attemptsToLoadAllPluginsEvenIfSomePluginFactoriesCannotBeLoaded() {
-        LoggingTestSupport log = new LoggingTestSupport(FailureHandling.class);
+        LoggingTestSupport log = new LoggingTestSupport(PluginLoadingForStartup.class);
 
         try {
             String yaml = "" +
@@ -219,12 +226,12 @@ public class PluginLoadingForStartupTest {
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp =
-            "3 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin1, myPlugin2, myPlugin3\\]; failureCauses=\\[" +
-                    "myPlugin1: java.lang.RuntimeException: plugin factory error, " +
-                    "myPlugin2: java.lang.RuntimeException: plugin factory error, " +
-                    "myPlugin3: java.lang.RuntimeException: plugin factory error\\]")
+            "3 plugin\\(s\\) could not be loaded: failedPlugins=\\[myPlugin[123], myPlugin[123], myPlugin[123]\\]; failureCauses=\\[" +
+                    "myPlugin[123]: java.lang.RuntimeException: plugin factory error, " +
+                    "myPlugin[123]: java.lang.RuntimeException: plugin factory error, " +
+                    "myPlugin[123]: java.lang.RuntimeException: plugin factory error\\]")
     public void attemptsToLoadAllPluginsEvenIfSomePluginFactoriesFailDuringExecution() {
-        LoggingTestSupport log = new LoggingTestSupport(FailureHandling.class);
+        LoggingTestSupport log = new LoggingTestSupport(PluginLoadingForStartup.class);
 
         try {
             String yaml = "" +

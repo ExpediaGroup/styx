@@ -16,7 +16,6 @@
 package com.hotels.styx;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.util.concurrent.Service;
 import com.hotels.styx.admin.AdminServerConfig;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -30,9 +29,8 @@ import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.infrastructure.MemoryBackedRegistry;
 import com.hotels.styx.infrastructure.RegistryServiceAdapter;
 import com.hotels.styx.proxy.ProxyServerConfig;
-import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpConnectorConfig;
-import com.hotels.styx.startup.ProxyServerSetUp;
+import com.hotels.styx.startup.PluginStartupService;
 import com.hotels.styx.startup.StyxServerComponents;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
 import io.netty.util.ResourceLeakDetector;
@@ -43,21 +41,22 @@ import org.testng.annotations.Test;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static com.google.common.util.concurrent.Service.State.FAILED;
 import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATION;
-import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static io.netty.util.ResourceLeakDetector.Level.DISABLED;
-import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.emptyList;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.testng.Assert.fail;
 
 public class StyxServerTest {
     private LoggingTestSupport log;
@@ -66,7 +65,7 @@ public class StyxServerTest {
     @BeforeMethod
     public void setUp() {
         log = new LoggingTestSupport(StyxServer.class);
-        pssLog = new LoggingTestSupport(ProxyServerSetUp.class);
+        pssLog = new LoggingTestSupport(PluginStartupService.class);
     }
 
     @AfterMethod
@@ -76,7 +75,7 @@ public class StyxServerTest {
     }
 
     @Test
-    public void invokesPluginLifecycleMethods() {
+    public void invokesPluginLifecycleMethods() throws TimeoutException {
         Plugin pluginMock1 = mock(Plugin.class);
         Plugin pluginMock2 = mock(Plugin.class);
 
@@ -85,11 +84,11 @@ public class StyxServerTest {
                 "mockplugin2", pluginMock2
         ));
         try {
-            styxServer.startAsync().awaitRunning();
+            styxServer.startAsync().awaitRunning(10, SECONDS);
             verify(pluginMock1).styxStarting();
             verify(pluginMock2).styxStarting();
 
-            styxServer.stopAsync().awaitTerminated();
+            styxServer.stopAsync().awaitTerminated(10, SECONDS);
             verify(pluginMock1).styxStopping();
             verify(pluginMock2).styxStopping();
         } finally {
@@ -110,15 +109,14 @@ public class StyxServerTest {
     }
 
     @Test
-    public void stopsTheServerWhenPluginFailsToStart() {
+    public void stopsTheServerWhenPluginFailsToStart() throws TimeoutException {
         StyxServer styxServer = null;
         try {
             styxServer = styxServerWithPlugins(ImmutableMap.of(
                     "foo", new NonStarterPlugin("foo"),
                     "mockplugin3", mock(Plugin.class)));
 
-            Service service = styxServer.startAsync();
-            eventually(() -> assertThat(service.state(), is(FAILED)));
+            tryToStartExpectingFailure(styxServer);
 
             assertThat(pssLog.log(), hasItem(
                     loggingEvent(ERROR, "Error starting plugin 'foo'", RuntimeException.class, "Plugin start test error: foo")));
@@ -130,7 +128,7 @@ public class StyxServerTest {
     }
 
     @Test
-    public void allPluginsAreStartedEvenIfSomeFail() {
+    public void allPluginsAreStartedEvenIfSomeFail() throws TimeoutException {
         StyxServer styxServer = null;
         try {
             Plugin pluginMock2 = mock(Plugin.class);
@@ -142,8 +140,7 @@ public class StyxServerTest {
                     "plug3", new NonStarterPlugin("plug3"),
                     "plug4", pluginMock4));
 
-            Service service = styxServer.startAsync();
-            eventually(() -> assertThat(service.state(), is(FAILED)));
+            tryToStartExpectingFailure(styxServer);
 
             assertThat(pssLog.log(), hasItem(loggingEvent(ERROR, "Error starting plugin 'plug1'", RuntimeException.class, "Plugin start test error: plug1")));
             assertThat(pssLog.log(), hasItem(loggingEvent(ERROR, "Error starting plugin 'plug3'", RuntimeException.class, "Plugin start test error: plug3")));
@@ -162,18 +159,26 @@ public class StyxServerTest {
     }
 
     @Test
-    public void serverDoesNotStartIfServiceFails() {
+    public void serverDoesNotStartIfServiceFails() throws TimeoutException {
         StyxServer styxServer = null;
         try {
             StyxService testService = registryThatFailsToStart();
             styxServer = styxServerWithBackendServiceRegistry(testService);
 
-            Service serverService = styxServer.startAsync();
-            eventually(() -> assertThat(serverService.state(), is(FAILED)));
+            tryToStartExpectingFailure(styxServer);
 
             assertThat(styxServer.state(), is(FAILED));
         } finally {
             stopIfRunning(styxServer);
+        }
+    }
+
+    private static void tryToStartExpectingFailure(StyxServer server) throws TimeoutException {
+        try {
+            server.startAsync().awaitRunning(3, SECONDS);
+            fail("Expected failure but succeeded");
+        } catch (IllegalStateException e) {
+            // Desired behaviour, so no action taken
         }
     }
 
@@ -232,10 +237,6 @@ public class StyxServerTest {
         }
     }
 
-    private static NamedPlugin failingPlugin(String id) {
-        return namedPlugin(id, new NonStarterPlugin(id));
-    }
-
     static class NonStarterPlugin implements Plugin {
         private final String id;
 
@@ -252,19 +253,6 @@ public class StyxServerTest {
         public void styxStarting() {
             throw new RuntimeException("Plugin start test error: " + id);
         }
-    }
-
-    private static void eventually(Runnable block) {
-        long startTime = currentTimeMillis();
-        while (currentTimeMillis() - startTime < 3000) {
-            try {
-                block.run();
-                return;
-            } catch (Exception e) {
-                // pass
-            }
-        }
-        throw new AssertionError("Eventually block did not complete in 3 seconds.");
     }
 
     private static Runtime captureSystemExit(Runnable block) {

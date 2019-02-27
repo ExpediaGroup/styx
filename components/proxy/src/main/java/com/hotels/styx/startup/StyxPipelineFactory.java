@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import com.hotels.styx.routing.handlers.ProxyToBackend;
 import com.hotels.styx.routing.handlers.StaticResponseHandler;
 import com.hotels.styx.routing.interceptors.RewriteInterceptor;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -60,7 +61,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
     }
 
     @Override
-    public HttpHandler create(StyxServerComponents config) {
+    public HttpHandler create(StyxServerComponents config, List<NamedPlugin> plugins) {
         BuiltinInterceptorsFactory builtinInterceptorsFactory = new BuiltinInterceptorsFactory(
                 ImmutableMap.of("Rewrite", new RewriteInterceptor.ConfigFactory()));
 
@@ -69,15 +70,15 @@ public final class StyxPipelineFactory implements PipelineFactory {
         Map<String, HttpHandlerFactory> objectFactories = createBuiltinRoutingObjectFactories(
                 config.environment(),
                 config.services(),
-                config.plugins(),
+                plugins,
                 builtinInterceptorsFactory,
                 requestTracking);
 
         RouteHandlerFactory routeHandlerFactory = new RouteHandlerFactory(objectFactories, new ConcurrentHashMap<>());
 
         return styxHttpPipeline(
-                config.environment().styxConfig(),
-                configuredPipeline(config.environment(), config.services(), config.plugins(), routeHandlerFactory),
+                config.environment().configuration(),
+                configuredPipeline(config.environment(), config.services(), plugins, routeHandlerFactory),
                 requestTracking);
     }
 

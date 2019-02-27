@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ package com.hotels.styx.api.extension.service.spi;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
+import org.slf4j.Logger;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_TYPE;
 import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
@@ -36,16 +36,18 @@ import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STOPPI
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * A helper class for implementing StyxService interface.
- *
+ * <p>
  * AbstractStyxService provides service state management facilities
  * for implementing a StyxSerive interface.
  */
 public abstract class AbstractStyxService implements StyxService {
     private final String name;
     private final AtomicReference<StyxServiceStatus> status = new AtomicReference<>(CREATED);
+    private final Logger logger = getLogger(getClass());
 
     public AbstractStyxService(String name) {
         this.name = name;
@@ -68,9 +70,17 @@ public abstract class AbstractStyxService implements StyxService {
         boolean changed = status.compareAndSet(CREATED, STARTING);
 
         if (changed) {
+            logger.info("Starting serviceName={}...", serviceName());
             return startService()
-                    .exceptionally(failWithMessage("Service failed to start."))
-                    .thenAccept(na -> status.compareAndSet(STARTING, RUNNING));
+                    .exceptionally(cause -> {
+                        status.set(StyxServiceStatus.FAILED);
+                        logger.error("Failed to start serviceName=" + serviceName(), cause);
+                        throw new ServiceFailureException("Service failed to start.", cause);
+                    })
+                    .thenAccept(na -> {
+                        logger.info("Started serviceName={}", serviceName());
+                        status.compareAndSet(STARTING, RUNNING);
+                    });
         } else {
             throw new IllegalStateException(format("Start called in %s state", status.get()));
         }
@@ -82,18 +92,15 @@ public abstract class AbstractStyxService implements StyxService {
 
         if (changed) {
             return stopService()
-                    .exceptionally(failWithMessage("Service failed to stop."))
+                    .exceptionally(cause -> {
+                        status.set(StyxServiceStatus.FAILED);
+                        logger.error("Failed to stop serviceName=" + serviceName(), cause);
+                        throw new ServiceFailureException("Service failed to stop.", cause);
+                    })
                     .thenAccept(na -> status.compareAndSet(STOPPING, STOPPED));
         } else {
             throw new IllegalStateException(format("Stop called in %s state", status.get()));
         }
-    }
-
-    private Function<Throwable, Void> failWithMessage(String message) {
-        return cause -> {
-            status.set(StyxServiceStatus.FAILED);
-            throw new ServiceFailureException(message, cause);
-        };
     }
 
     @Override
@@ -108,5 +115,10 @@ public abstract class AbstractStyxService implements StyxService {
 
     public String serviceName() {
         return name;
+    }
+
+    @Override
+    public String toString() {
+        return "service:" + serviceName();
     }
 }

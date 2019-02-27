@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public class GraphiteReporterServiceTest {
     public void logsWhenServiceStarts() {
         try {
             StyxFutures.await(service.start());
-            assertThat(log.lastMessage(), is(loggingEvent(INFO, "Graphite service started, service name=\"Graphite\\-Reporter\\-test\"")));
+            assertThat(log.lastMessage(), is(loggingEvent(INFO, "Started serviceName=Graphite\\-Reporter\\-test")));
         } finally {
             StyxFutures.await(service.stop());
         }

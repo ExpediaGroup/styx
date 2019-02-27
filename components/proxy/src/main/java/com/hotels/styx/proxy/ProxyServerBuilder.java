@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,8 +34,6 @@ public final class ProxyServerBuilder {
     private final CharSequence styxInfoHeaderName;
 
     private HttpHandler httpHandler;
-    private Runnable onStartupAction = () -> {
-    };
 
     public ProxyServerBuilder(Environment environment) {
         this.environment = requireNonNull(environment);
@@ -53,7 +51,6 @@ public final class ProxyServerBuilder {
                 .toNettyServerBuilder(proxyConfig)
                 .httpHandler(httpHandler)
                 // register health check
-                .doOnStartUp(onStartupAction)
                 .build();
     }
 
@@ -63,11 +60,6 @@ public final class ProxyServerBuilder {
 
     public ProxyServerBuilder httpHandler(HttpHandler httpHandler) {
         this.httpHandler = httpHandler;
-        return this;
-    }
-
-    public ProxyServerBuilder onStartup(Runnable startupAction) {
-        this.onStartupAction = startupAction;
         return this;
     }
 }

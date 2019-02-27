@@ -97,6 +97,23 @@ class PluginAdminInterfaceSpec extends FunSpec with StyxProxySpec with StyxClien
 
       response.bodyAs(UTF_8) should include("This plugin (plugw) does not expose any admin interfaces")
     }
+
+    it("Exposes startup status") {
+      val response = get(styxServer.adminURL("/admin/startup"))
+
+      response.bodyAs(UTF_8) should include regex """\{
+                                                    |  "connectors" : \{
+                                                    |    "http" : "complete",
+                                                    |    "https" : "disabled"
+                                                    |  \},
+                                                    |  "plugins" : \{
+                                                    |    "plug[w-z]" : "complete",
+                                                    |    "plug[w-z]" : "complete",
+                                                    |    "plug[w-z]" : "complete",
+                                                    |    "plug[w-z]" : "complete"
+                                                    |  \}
+                                                    |\}""".stripMargin
+    }
   }
 
   private def get(url: String) = {

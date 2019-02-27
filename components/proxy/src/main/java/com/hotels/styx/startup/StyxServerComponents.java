@@ -26,18 +26,17 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
-import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.DO_NOT_MODIFY;
-import static com.hotels.styx.startup.extensions.PluginLoadingForStartup.loadPlugins;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.stream.Collectors.toList;
@@ -48,7 +47,7 @@ import static java.util.stream.Collectors.toList;
 public class StyxServerComponents {
     private final Environment environment;
     private final Map<String, StyxService> services;
-    private final List<NamedPlugin> plugins;
+    private final List<ConfiguredPluginFactory> pluginFactories;
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
@@ -56,10 +55,7 @@ public class StyxServerComponents {
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
 
-        // TODO In further refactoring, we will probably want this loading to happen outside of this constructor call, so that it doesn't delay the admin server from starting up
-        this.plugins = builder.configuredPluginFactories == null
-                ? loadPlugins(environment)
-                : loadPlugins(environment, builder.configuredPluginFactories);
+        this.pluginFactories = builder.configuredPluginFactories;
 
         this.services = mergeServices(
                 builder.servicesLoader.load(environment),
@@ -75,8 +71,8 @@ public class StyxServerComponents {
         return services;
     }
 
-    public List<NamedPlugin> plugins() {
-        return plugins;
+    public Optional<List<ConfiguredPluginFactory>> pluginFactories() {
+        return Optional.ofNullable(pluginFactories);
     }
 
     private static Environment newEnvironment(StyxConfig styxConfig, MetricRegistry metricRegistry) {

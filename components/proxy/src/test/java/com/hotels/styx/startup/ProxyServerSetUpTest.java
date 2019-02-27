@@ -21,6 +21,7 @@ import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.proxy.ProxyServerConfig;
+import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.HttpsConnectorConfig;
@@ -29,7 +30,9 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -82,10 +85,11 @@ public class ProxyServerSetUpTest {
     }
 
     @Test
-    public void createsServer() throws TimeoutException {
+    public void createsServer() throws TimeoutException, InterruptedException {
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig(config))
                 .build();
+        signalPluginsLoaded(components);
 
         PipelineFactory pipelineFactory = mockPipelineFactory(components);
 
@@ -98,7 +102,7 @@ public class ProxyServerSetUpTest {
     }
 
     @Test
-    public void notifiesPluginsOnStart() throws TimeoutException {
+    public void notifiesPluginsOnStart() throws TimeoutException, InterruptedException {
         Plugin plugin1 = mock(Plugin.class);
         Plugin plugin2 = mock(Plugin.class);
 
@@ -106,6 +110,7 @@ public class ProxyServerSetUpTest {
                 .styxConfig(new StyxConfig(config))
                 .plugins(nameByIndex(plugin1, plugin2))
                 .build();
+        signalPluginsLoaded(components);
 
         PipelineFactory pipelineFactory = mockPipelineFactory(components);
 
@@ -118,7 +123,7 @@ public class ProxyServerSetUpTest {
     }
 
     @Test
-    public void notifiesPluginsOnStop() throws TimeoutException {
+    public void notifiesPluginsOnStop() throws TimeoutException, InterruptedException {
         Plugin plugin1 = mock(Plugin.class);
         Plugin plugin2 = mock(Plugin.class);
 
@@ -126,6 +131,7 @@ public class ProxyServerSetUpTest {
                 .styxConfig(new StyxConfig(config))
                 .plugins(nameByIndex(plugin1, plugin2))
                 .build();
+        signalPluginsLoaded(components);
 
         PipelineFactory pipelineFactory = mockPipelineFactory(components);
 
@@ -139,56 +145,7 @@ public class ProxyServerSetUpTest {
     }
 
     @Test
-    public void logsPluginStartupFailures() {
-        Plugin plugin2 = mock(Plugin.class);
-        Plugin plugin4 = mock(Plugin.class);
-
-        doThrow(new IllegalStateException("Dummy")).when(plugin2).styxStarting();
-        doThrow(new IllegalArgumentException("Dummy")).when(plugin4).styxStarting();
-
-        StyxServerComponents components = new StyxServerComponents.Builder()
-                .styxConfig(new StyxConfig(config))
-                .plugins(nameByIndex(mock(Plugin.class), plugin2, mock(Plugin.class), plugin4))
-                .build();
-
-        PipelineFactory pipelineFactory = mockPipelineFactory(components);
-
-        server = new ProxyServerSetUp(pipelineFactory).createProxyServer(components);
-
-        expect(() -> server.startAsync().awaitRunning(3, SECONDS), IllegalStateException.class);
-
-        assertThat(log.toString(), containsString("Error starting plugin 'plugin2'"));
-        assertThat(log.toString(), containsString("Error starting plugin 'plugin4'"));
-    }
-
-    @Test
-    public void attemptsToStartAllPluginsBeforeFailing() {
-        Plugin plugin1 = mock(Plugin.class);
-        Plugin plugin2 = mock(Plugin.class);
-        Plugin plugin3 = mock(Plugin.class);
-        Plugin plugin4 = mock(Plugin.class);
-
-        doThrow(new IllegalStateException("Dummy")).when(plugin2).styxStarting();
-
-        StyxServerComponents components = new StyxServerComponents.Builder()
-                .styxConfig(new StyxConfig(config))
-                .plugins(nameByIndex(plugin1, plugin2, plugin3, plugin4))
-                .build();
-
-        PipelineFactory pipelineFactory = mockPipelineFactory(components);
-
-        server = new ProxyServerSetUp(pipelineFactory).createProxyServer(components);
-
-        expect(() -> server.startAsync().awaitRunning(3, SECONDS), IllegalStateException.class);
-
-        verify(plugin1).styxStarting();
-        verify(plugin2).styxStarting();
-        verify(plugin3).styxStarting();
-        verify(plugin4).styxStarting();
-    }
-
-    @Test
-    public void logsPluginShutdownFailures() throws TimeoutException {
+    public void logsPluginShutdownFailures() throws TimeoutException, InterruptedException {
         Plugin plugin2 = mock(Plugin.class);
         Plugin plugin4 = mock(Plugin.class);
 
@@ -199,6 +156,7 @@ public class ProxyServerSetUpTest {
                 .styxConfig(new StyxConfig(config))
                 .plugins(nameByIndex(mock(Plugin.class), plugin2, mock(Plugin.class), plugin4))
                 .build();
+        signalPluginsLoaded(components);
 
         PipelineFactory pipelineFactory = mockPipelineFactory(components);
 
@@ -212,10 +170,19 @@ public class ProxyServerSetUpTest {
         assertThat(log.toString(), containsString("Error stopping plugin 'plugin4'"));
     }
 
+    private static void signalPluginsLoaded(StyxServerComponents components) {
+        try {
+            new PluginStartupService(components).start().get(20, SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static PipelineFactory mockPipelineFactory(StyxServerComponents components) {
         PipelineFactory pipelineFactory = mock(PipelineFactory.class);
         HttpHandler pipeline = mock(HttpHandler.class);
-        when(pipelineFactory.create(components)).thenReturn(pipeline);
+        List<NamedPlugin> plugins = components.environment().configStore().valuesStartingWith("plugins", NamedPlugin.class);
+        when(pipelineFactory.create(components, plugins)).thenReturn(pipeline);
         return pipelineFactory;
     }
 

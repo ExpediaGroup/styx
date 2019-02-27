@@ -15,14 +15,22 @@
  */
 package com.hotels.styx.startup;
 
-import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.proxy.plugin.NamedPlugin;
-
-import java.util.List;
-
 /**
- * Factory that makes an HTTP pipeline.
+ * An exception that occurs during start-up.
  */
-public interface PipelineFactory {
-    HttpHandler create(StyxServerComponents config, List<NamedPlugin> plugins);
+public class StartupException extends RuntimeException {
+    public StartupException() {
+    }
+
+    public StartupException(String message) {
+        super(message);
+    }
+
+    public StartupException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public StartupException(Throwable cause) {
+        super(cause);
+    }
 }
