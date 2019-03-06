@@ -49,7 +49,7 @@ services:
     backendServiceRegistry:
       class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry$Factory"
       config:
-        originsFile: "/home/styx/default-config/origins.yml"
+        originsFile: "/styx/default-config/origins.yml"
         monitor:
           enabled: true
     jmx:
@@ -67,9 +67,6 @@ loadBalancing:
   strategy:
     factory: {class: "com.hotels.styx.client.loadbalancing.strategies.BusyConnectionsStrategy$Factory"}
 
-# Allow and Encode the list of unwise chars.
 url:
   encoding:
     unwiseCharactersToEncode:
-
-#originRestrictionCookie: yourCookieNameHere

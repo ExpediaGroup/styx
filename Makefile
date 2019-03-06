@@ -14,6 +14,7 @@ set-version:
 ## Removes all files built by build process
 clean:
 	mvn clean -P$(ALL_PROFILES)
+	mvn -f distribution/pom.xml clean
 
 ## Run unit tests and checkstyle
 unit-test:
@@ -157,8 +158,9 @@ changelog:
 distribution/target/styx-1.0-SNAPSHOT-linux-x86_64.zip:
 	mvn install -Prelease,linux -Dmaven.test.skip=true
 
-docker: distribution/target/styx-1.0-SNAPSHOT-linux-x86_64.zip
+docker-image: distribution/target/styx-1.0-SNAPSHOT-linux-x86_64.zip
 	rm -rf ${DOCKER_CONTEXT}
 	mkdir -p ${DOCKER_CONTEXT}
 	cp ${STYX_BUILD_ARTIFACT} ${DOCKER_CONTEXT}
-	docker build -t styxcore:latest -f Dockerfile ${DOCKER_CONTEXT}/.
+	cp docker/* ${DOCKER_CONTEXT}
+	docker build -t styxcore:latest -f docker/Dockerfile ${DOCKER_CONTEXT}/.
