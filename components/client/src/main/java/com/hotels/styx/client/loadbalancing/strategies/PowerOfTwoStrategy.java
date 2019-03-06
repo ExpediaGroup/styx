@@ -32,11 +32,8 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
- * A load balancing strategy that sorts origins according to three functions:
- * <p>
- * Whether they have below or above average 5xx errors.
- * The number of busy connections.
- * Whether they having existing connections available.
+ * A load balancing strategy that selects two hosts randomly and then chooses the host (of those two) with the least ongoing connections.
+ *
  */
 public class PowerOfTwoStrategy implements LoadBalancer {
     private final ActiveOrigins activeOrigins;
