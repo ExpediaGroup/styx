@@ -10,9 +10,9 @@ ENV STYX_LOG_OUTPUT=/styx/logs/
 WORKDIR ${APP_HOME}
 
 ADD https://github.com/HotelsDotCom/styx/releases/download/${BASENAME}/${BASENAME}-linux-x86_64.zip ${APP_HOME}/styx.zip
-COPY default-docker.yml /styx/default-config/default.yml
-COPY styx-env.sh /styx/default-config/styx-env.sh
-COPY origins.yml /styx/default-config/origins.yml
+ADD default-docker.yml /styx/default-config/default.yml
+ADD styx-env.sh /styx/default-config/styx-env.sh
+ADD origins.yml /styx/default-config/origins.yml
 
 RUN unzip styx.zip \
     && mv ${BASENAME} styx \

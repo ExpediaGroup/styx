@@ -18,15 +18,6 @@ JVM_OTHER_OPTS="${JVM_OTHER_OPTS:=-XX:+DisableExplicitGC -Djava.awt.headless=tru
 # See: https://github.com/netty/netty/issues/7092
 JAVA_OPTS="$JAVA_OPTS -Dio.netty.threadLocalMap.stringBuilder.maxSize=71680"
 
-# Set Netty leak detection level
-# JAVA_OPTS="$JAVA_OPTS -Dio.netty.leakDetectionLevel=advanced"
-
-# Enable remote debugging
-# JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8000"
-
-# Enable extended Java DTrace probes
-# JAVA_OPTS="$JAVA_OPTS -XX:+ExtendedDTraceProbes"
-
 export JAVA_OPTS
 
 for var in ${!APP_*}; do
