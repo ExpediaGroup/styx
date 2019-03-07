@@ -32,7 +32,7 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
- * A load balancing strategy that selects two hosts randomly and then chooses the host (of those two) with the least ongoing connections.
+ * A load balancing strategy that selects two hosts randomly and chooses the one with fewer ongoing connections.
  *
  */
 public class PowerOfTwoStrategy implements LoadBalancer {
