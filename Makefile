@@ -161,6 +161,6 @@ distribution/target/styx-1.0-SNAPSHOT-linux-x86_64.zip:
 docker-image: distribution/target/styx-1.0-SNAPSHOT-linux-x86_64.zip
 	rm -rf ${DOCKER_CONTEXT}
 	mkdir -p ${DOCKER_CONTEXT}
-	cp ${STYX_BUILD_ARTIFACT} ${DOCKER_CONTEXT}
+	cp ${STYX_BUILD_ARTIFACT} ${DOCKER_CONTEXT}/styx.zip
 	cp docker/* ${DOCKER_CONTEXT}
-	docker build -t styxcore:latest -f docker/Dockerfile ${DOCKER_CONTEXT}/.
+	docker build -t styxcore:latest --build-arg STYX_IMAGE=styx.zip -f docker/Dockerfile ${DOCKER_CONTEXT}/.

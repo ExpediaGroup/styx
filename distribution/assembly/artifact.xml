@@ -10,7 +10,7 @@
     <format>tar.gz</format>
   </formats>
 
-  <baseDirectory>styx-${project.version}</baseDirectory>
+  <baseDirectory>styx</baseDirectory>
 
   <!-- Include NOTICE and version txt -->
   <files>

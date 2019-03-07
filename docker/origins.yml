@@ -2,6 +2,9 @@
 ---
 - id: "app"
   path: "/"
+  healthCheck:
+    uri: "/"
+    intervalMillis: 5000
   connectionPool:
     maxConnectionsPerHost: 45
     maxPendingConnectionsPerHost: 15
