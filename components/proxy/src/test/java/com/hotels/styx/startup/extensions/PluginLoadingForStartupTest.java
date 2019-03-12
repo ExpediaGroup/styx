@@ -280,14 +280,10 @@ public class PluginLoadingForStartupTest {
     }
 
     private com.hotels.styx.Environment environment(String yaml) {
-        Environment environment = new Environment.Builder()
+        return new com.hotels.styx.Environment.Builder()
                 .configuration(new StyxConfig(new MyConfiguration(yaml)))
                 .metricRegistry(styxMetricsRegistry)
                 .build();
-
-        this.configStore = environment.configStore();
-
-        return environment;
     }
 
     public static class MyConfiguration extends YamlConfig {
