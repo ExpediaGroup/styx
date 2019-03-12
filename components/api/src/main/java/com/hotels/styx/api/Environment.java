@@ -16,7 +16,7 @@
 package com.hotels.styx.api;
 
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.extension.EventSystem;
+import com.hotels.styx.api.extension.ConfigStore;
 
 /**
  * Styx application Environment.
@@ -37,9 +37,9 @@ public interface Environment {
     MetricRegistry metricRegistry();
 
     /**
-     * TODO javadoc.
+     * Returns the application's {@link ConfigStore}.
      *
-     * @return todo
+     * @return config store
      */
-    EventSystem eventSystem();
+    ConfigStore configStore();
 }

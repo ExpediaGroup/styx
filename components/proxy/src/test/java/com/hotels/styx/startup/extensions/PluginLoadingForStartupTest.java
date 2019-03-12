@@ -306,7 +306,6 @@ public class PluginLoadingForStartupTest {
         public Plugin create(Environment environment) {
             MyPluginConfig myPluginConfig = environment.pluginConfig(MyPluginConfig.class);
             MetricRegistry metrics = environment.metricRegistry();
-            environment.eventSystem().set("starting", true);
 
             return new MyPlugin(myPluginConfig, metrics);
         }

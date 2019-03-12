@@ -18,9 +18,8 @@ package com.hotels.styx.support.api;
 import com.hotels.styx.api.Environment;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.extension.EventSystem;
+import com.hotels.styx.api.extension.ConfigStore;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.configstore.ConfigStore;
 
 import static com.hotels.styx.api.configuration.Configuration.EMPTY_CONFIGURATION;
 import static java.util.Objects.requireNonNull;
@@ -33,12 +32,12 @@ public final class SimpleEnvironment implements Environment {
 
     private final Configuration config;
     private final MetricRegistry metricRegistry;
-    private final EventSystem eventSystem;
+    private final ConfigStore configStore;
 
     private SimpleEnvironment(Builder builder) {
         this.config = requireNonNull(builder.config);
         this.metricRegistry = requireNonNull(builder.metricRegistry);
-        this.eventSystem = requireNonNull(builder.eventSystem);
+        this.configStore = requireNonNull(builder.configStore);
     }
 
     @Override
@@ -52,8 +51,8 @@ public final class SimpleEnvironment implements Environment {
     }
 
     @Override
-    public EventSystem eventSystem() {
-        return eventSystem;
+    public ConfigStore configStore() {
+        return configStore;
     }
 
     /**
@@ -62,7 +61,7 @@ public final class SimpleEnvironment implements Environment {
     public static final class Builder {
         private Configuration config = EMPTY_CONFIGURATION;
         private MetricRegistry metricRegistry = DEFAULT_METRIC_REGISTRY;
-        private EventSystem eventSystem = new ConfigStore();
+        private ConfigStore configStore = new com.hotels.styx.configstore.ConfigStore();
 
         /**
          * Set configuration.
@@ -87,13 +86,13 @@ public final class SimpleEnvironment implements Environment {
         }
 
         /**
-         * TODO description.
+         * Set config store.
          *
-         * @param eventSystem todo
-         * @return todo
+         * @param configStore config store
+         * @return this builder
          */
-        public Builder eventSystem(EventSystem eventSystem) {
-            this.eventSystem = requireNonNull(eventSystem);
+        public Builder configStore(ConfigStore configStore) {
+            this.configStore = requireNonNull(configStore);
             return this;
         }
 

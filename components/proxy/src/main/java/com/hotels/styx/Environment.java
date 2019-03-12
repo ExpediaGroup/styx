@@ -17,7 +17,6 @@ package com.hotels.styx;
 
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.extension.EventSystem;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.proxy.HttpErrorStatusCauseLogger;
@@ -60,6 +59,7 @@ public final class Environment implements com.hotels.styx.api.Environment {
         return eventBus;
     }
 
+    @Override
     public ConfigStore configStore() {
         return configStore;
     }
@@ -80,11 +80,6 @@ public final class Environment implements com.hotels.styx.api.Environment {
     @Override
     public MetricRegistry metricRegistry() {
         return serverEnvironment.metricRegistry();
-    }
-
-    @Override
-    public EventSystem eventSystem() {
-        return configStore();
     }
 
     /**

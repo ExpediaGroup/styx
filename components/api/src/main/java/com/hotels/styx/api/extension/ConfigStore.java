@@ -18,24 +18,24 @@ package com.hotels.styx.api.extension;
 import java.util.Optional;
 
 /**
- * TODO write description.
+ * Stores data about the current state of the system.
  */
-public interface EventSystem {
+public interface ConfigStore {
     /**
-     * TODO javadoc.
+     * Get the current value of a config entry, if present.
      *
-     * @param key  todo
-     * @param type todo
-     * @param <T>  todo
-     * @return todo
+     * @param key  key
+     * @param type type to cast to, if present
+     * @param <T>  type
+     * @return value if present, otherwise empty
      */
     <T> Optional<T> get(String key, Class<T> type);
 
     /**
-     * TODO javadoc.
+     * Sets the value of a config entry. This will also publish the new value to watchers.
      *
-     * @param key   todo
-     * @param value todo
+     * @param key   key
+     * @param value new value
      */
     void set(String key, Object value);
 }

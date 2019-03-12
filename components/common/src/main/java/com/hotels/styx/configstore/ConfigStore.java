@@ -16,7 +16,6 @@
 package com.hotels.styx.configstore;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hotels.styx.api.extension.EventSystem;
 import rx.Observable;
 import rx.Observer;
 import rx.subjects.PublishSubject;
@@ -43,7 +42,7 @@ import static rx.schedulers.Schedulers.computation;
  * Stores data about the current state of the system.
  * Added to allow Styx to operate in a more dynamic, adaptive way.
  */
-public class ConfigStore implements EventSystem {
+public class ConfigStore implements com.hotels.styx.api.extension.ConfigStore {
     private static final String DELIMITER = ".";
 
     private final Observer<ConfigEntry<Object>> updates;
@@ -66,24 +65,12 @@ public class ConfigStore implements EventSystem {
         this.propagation = propagation;
     }
 
-    /**
-     * Get the current value of a config entry, if present.
-     *
-     * @param key  key
-     * @param type type to cast to, if present
-     * @param <T>  type
-     * @return value if present, otherwise empty
-     */
+    @Override
     public <T> Optional<T> get(String key, Class<T> type) {
         return Optional.ofNullable(values.get(key)).map(type::cast);
     }
 
-    /**
-     * Sets the value of a config entry. This will also publish the new value to watchers.
-     *
-     * @param key   key
-     * @param value new value
-     */
+    @Override
     public void set(String key, Object value) {
         this.updates.onNext(new ConfigEntry<>(key, value));
     }
