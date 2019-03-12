@@ -38,30 +38,4 @@ public interface EventSystem {
      * @param value todo
      */
     void set(String key, Object value);
-
-    /**
-     * TODO javadoc.
-     *
-     * @param prefix todo
-     * @return todo
-     */
-    default EventSystem scope(String prefix) {
-        EventSystem self = this;
-
-        return new EventSystem() {
-            @Override
-            public <T> Optional<T> get(String key, Class<T> type) {
-                return self.get(resolve(key, prefix), type);
-            }
-
-            @Override
-            public void set(String key, Object value) {
-                self.set(resolve(key, prefix), value);
-            }
-
-            private String resolve(String key, String prefix) {
-                return prefix + "." + key;
-            }
-        };
-    }
 }
