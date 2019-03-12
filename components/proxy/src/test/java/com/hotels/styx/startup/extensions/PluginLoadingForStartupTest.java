@@ -39,7 +39,6 @@ import java.util.Objects;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
-import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -281,32 +280,6 @@ public class PluginLoadingForStartupTest {
 
         assertThat(styxMetricsRegistry.counter("styx.plugins.myPlugin.initialised").getCount(), is(1L));
         assertThat(styxMetricsRegistry.counter("styx.plugins.myAnotherPlugin.initialised").getCount(), is(1L));
-    }
-
-    @Test
-    public void appliesDefaultEventScopeForPlugins() {
-        String yaml = "" +
-                "plugins:\n" +
-                "  active: myPlugin, myAnotherPlugin\n" +
-                "  all:\n" +
-                "    myPlugin:\n" +
-                "      factory:\n" +
-                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
-                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
-                "      config:\n" +
-                "        testConfiguration: test-foo-bar\n" +
-                "    myAnotherPlugin:\n" +
-                "      factory:\n" +
-                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
-                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
-                "      config:\n" +
-                "        testConfiguration: test-foo-bar\n";
-
-
-        PluginLoadingForStartup.loadPlugins(environment(yaml));
-
-        assertThat(configStore.get("plugins.myPlugin.starting", Boolean.class), isValue(true));
-        assertThat(configStore.get("plugins.myAnotherPlugin.starting", Boolean.class), isValue(true));
     }
 
     private com.hotels.styx.Environment environment(String yaml) {

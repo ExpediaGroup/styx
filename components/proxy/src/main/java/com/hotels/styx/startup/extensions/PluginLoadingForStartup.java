@@ -110,7 +110,7 @@ public final class PluginLoadingForStartup {
 
             @Override
             public EventSystem eventSystem() {
-                return environment.eventSystem().scope("plugins." + factory.name());
+                return environment.eventSystem();
             }
         };
 

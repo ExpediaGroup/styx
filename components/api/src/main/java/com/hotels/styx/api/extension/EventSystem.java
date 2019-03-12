@@ -39,6 +39,12 @@ public interface EventSystem {
      */
     void set(String key, Object value);
 
+    /**
+     * TODO javadoc.
+     *
+     * @param prefix todo
+     * @return todo
+     */
     default EventSystem scope(String prefix) {
         EventSystem self = this;
 
