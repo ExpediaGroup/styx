@@ -16,6 +16,7 @@
 package com.hotels.styx.configstore;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hotels.styx.api.extension.EventSystem;
 import rx.Observable;
 import rx.Observer;
 import rx.subjects.PublishSubject;
@@ -42,7 +43,7 @@ import static rx.schedulers.Schedulers.computation;
  * Stores data about the current state of the system.
  * Added to allow Styx to operate in a more dynamic, adaptive way.
  */
-public class ConfigStore {
+public class ConfigStore implements EventSystem {
     private static final String DELIMITER = ".";
 
     private final Observer<ConfigEntry<Object>> updates;

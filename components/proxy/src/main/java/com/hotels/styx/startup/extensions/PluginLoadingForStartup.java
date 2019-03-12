@@ -18,6 +18,7 @@ package com.hotels.styx.startup.extensions;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.extension.EventSystem;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
 import com.hotels.styx.common.Pair;
@@ -105,6 +106,11 @@ public final class PluginLoadingForStartup {
             @Override
             public MetricRegistry metricRegistry() {
                 return environment.metricRegistry().scope(DEFAULT_PLUGINS_METRICS_SCOPE + "." + factory.name());
+            }
+
+            @Override
+            public EventSystem eventSystem() {
+                return environment.eventSystem().scope("plugins." + factory.name());
             }
         };
 

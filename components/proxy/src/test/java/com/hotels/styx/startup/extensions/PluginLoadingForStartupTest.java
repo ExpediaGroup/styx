@@ -16,6 +16,7 @@
 package com.hotels.styx.startup.extensions;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -25,6 +26,7 @@ import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
+import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
@@ -37,6 +39,7 @@ import java.util.Objects;
 
 import static ch.qos.logback.classic.Level.ERROR;
 import static com.hotels.styx.support.ResourcePaths.fixturesHome;
+import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static com.hotels.styx.support.matchers.LoggingEventMatcher.loggingEvent;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -49,6 +52,7 @@ public class PluginLoadingForStartupTest {
     private static final Path FIXTURES_CLASS_PATH = fixturesHome(PluginLoadingForStartupTest.class, "/");
 
     private MetricRegistry styxMetricsRegistry;
+    private ConfigStore configStore;
 
     @BeforeMethod
     public void setUp() {
@@ -279,11 +283,41 @@ public class PluginLoadingForStartupTest {
         assertThat(styxMetricsRegistry.counter("styx.plugins.myAnotherPlugin.initialised").getCount(), is(1L));
     }
 
+    @Test
+    public void appliesDefaultEventScopeForPlugins() {
+        String yaml = "" +
+                "plugins:\n" +
+                "  active: myPlugin, myAnotherPlugin\n" +
+                "  all:\n" +
+                "    myPlugin:\n" +
+                "      factory:\n" +
+                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
+                "      config:\n" +
+                "        testConfiguration: test-foo-bar\n" +
+                "    myAnotherPlugin:\n" +
+                "      factory:\n" +
+                "        class: com.hotels.styx.startup.extensions.PluginLoadingForStartupTest$MyPluginFactory\n" +
+                "        classPath: " + FIXTURES_CLASS_PATH + "\n" +
+                "      config:\n" +
+                "        testConfiguration: test-foo-bar\n";
+
+
+        PluginLoadingForStartup.loadPlugins(environment(yaml));
+
+        assertThat(configStore.get("plugins.myPlugin.starting", Boolean.class), isValue(true));
+        assertThat(configStore.get("plugins.myAnotherPlugin.starting", Boolean.class), isValue(true));
+    }
+
     private com.hotels.styx.Environment environment(String yaml) {
-        return new com.hotels.styx.Environment.Builder()
+        Environment environment = new Environment.Builder()
                 .configuration(new StyxConfig(new MyConfiguration(yaml)))
                 .metricRegistry(styxMetricsRegistry)
                 .build();
+
+        this.configStore = environment.configStore();
+
+        return environment;
     }
 
     public static class MyConfiguration extends YamlConfig {
@@ -299,6 +333,7 @@ public class PluginLoadingForStartupTest {
         public Plugin create(Environment environment) {
             MyPluginConfig myPluginConfig = environment.pluginConfig(MyPluginConfig.class);
             MetricRegistry metrics = environment.metricRegistry();
+            environment.eventSystem().set("starting", true);
 
             return new MyPlugin(myPluginConfig, metrics);
         }
