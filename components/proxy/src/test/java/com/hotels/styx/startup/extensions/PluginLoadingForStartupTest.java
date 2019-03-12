@@ -16,7 +16,6 @@
 package com.hotels.styx.startup.extensions;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
@@ -26,7 +25,6 @@ import com.hotels.styx.api.configuration.ConfigurationException;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.api.plugins.spi.PluginFactory;
-import com.hotels.styx.configstore.ConfigStore;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.support.matchers.LoggingTestSupport;
@@ -51,7 +49,6 @@ public class PluginLoadingForStartupTest {
     private static final Path FIXTURES_CLASS_PATH = fixturesHome(PluginLoadingForStartupTest.class, "/");
 
     private MetricRegistry styxMetricsRegistry;
-    private ConfigStore configStore;
 
     @BeforeMethod
     public void setUp() {

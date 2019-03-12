@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2018 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.hotels.styx.api.extension.ActiveOrigins;
  * @param <E> factory product type
  */
 public interface ServiceFactory<E> {
-    // TODO add environment scope
     /**
      * Create an instance of the product.
      *
