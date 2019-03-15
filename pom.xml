@@ -131,7 +131,7 @@
     <!-- apache plugin versions and configurations, please sort alphabetically -->
     <maven-antrun-plugin.version>1.7</maven-antrun-plugin.version>
     <maven-assembly-plugin.version>2.4</maven-assembly-plugin.version>
-    <maven-checkstyle-plugin.version>2.16</maven-checkstyle-plugin.version>
+    <maven-checkstyle-plugin.version>3.0.0</maven-checkstyle-plugin.version>
     <maven-compiler-plugin.version>3.0</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>2.8</maven-dependency-plugin.version>
     <maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
@@ -1109,7 +1109,7 @@
               <dependency>
                 <groupId>com.puppycrawl.tools</groupId>
                 <artifactId>checkstyle</artifactId>
-                <version>6.9</version>
+                <version>8.18</version>
               </dependency>
             </dependencies>
             <configuration>

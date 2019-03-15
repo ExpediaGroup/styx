@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -323,7 +323,7 @@ public class Schema {
                     .filter(field -> field.name().equals(name))
                     .map(Field::name)
                     .findFirst()
-                    .ifPresent((x) -> {
+                    .ifPresent(x -> {
                         throw new InvalidSchemaException(format("Duplicate field name '%s' in schema '%s'", name, this.name));
                     });
         }

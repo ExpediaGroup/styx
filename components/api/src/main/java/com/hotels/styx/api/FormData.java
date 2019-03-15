@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public final class FormData {
                 .stream()
                 .filter(data -> data instanceof Attribute)
                 .map(data -> (Attribute) data)
-                .collect(toMap(Attribute::getName, (Function<Attribute, String>) (attribute) -> {
+                .collect(toMap(Attribute::getName, (Function<Attribute, String>) attribute -> {
                     try {
                         return attribute.getValue();
                     } catch (IOException e) {

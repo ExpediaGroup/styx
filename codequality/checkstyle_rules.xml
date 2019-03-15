@@ -3,16 +3,15 @@
     "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
 <module name="Checker">
   <property name="severity" value="warning"/>
-  <module name="SuppressionCommentFilter">
-    <property name="offCommentFormat" value="CHECKSTYLE\:OFF"/>
-    <property name="onCommentFormat" value="CHECKSTYLE\:ON"/>
-  </module>
   <module name="SuppressionFilter">
     <property name="file" value="${checkstyle.suppressions.file}"/>
   </module>
   <module name="TreeWalker">
     <property name="tabWidth" value="4"/>
-    <module name="FileContentsHolder"/>
+    <module name="SuppressionCommentFilter">
+      <property name="offCommentFormat" value="CHECKSTYLE\:OFF"/>
+      <property name="onCommentFormat" value="CHECKSTYLE\:ON"/>
+    </module>
     <module name="JavadocMethod">
       <property name="scope" value="protected"/>
       <property name="allowUndeclaredRTE" value="true"/>
