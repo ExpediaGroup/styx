@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -70,11 +70,11 @@ public final class Requests {
     }
 
     private static Consumer<Optional<Throwable>> ifError(Consumer<Throwable> action) {
-        return (maybeCause) -> maybeCause.ifPresent(action);
+        return maybeCause -> maybeCause.ifPresent(action);
     }
 
     private static Consumer<Optional<Throwable>> ifSuccessful(Runnable action) {
-        return (maybeCause) -> {
+        return maybeCause -> {
             if (!maybeCause.isPresent()) {
                 action.run();
             }

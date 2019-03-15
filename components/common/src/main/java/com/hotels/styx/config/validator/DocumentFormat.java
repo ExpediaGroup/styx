@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -193,7 +193,7 @@ public class DocumentFormat {
     private static void assertNoUnknownFields(String prefix, Schema schema, List<String> fieldsPresent) {
         Set<String> knownFields = ImmutableSet.copyOf(schema.fieldNames());
 
-        fieldsPresent.forEach((name) -> {
+        fieldsPresent.forEach(name -> {
             if (!knownFields.contains(name)) {
                 throw new SchemaValidationException(format("Unexpected field: '%s'", prefix + name));
             }
