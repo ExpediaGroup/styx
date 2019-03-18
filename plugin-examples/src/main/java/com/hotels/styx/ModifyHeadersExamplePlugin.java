@@ -32,15 +32,15 @@ import static java.util.Objects.requireNonNull;
  * You can change it in whatever way you like (provided it still implements the Plugin interface),
  * and should rename it to something relevant to your project.
  */
-public class GeneralExamplePlugin implements Plugin {
-    private final GeneralExamplePluginConfig config;
+public class ModifyHeadersExamplePlugin implements Plugin {
+    private final ModifyHeadersExamplePluginConfig config;
 
     /**
      * The plugin will be constructed by your plugin factory, so the constructor can take whatever form you like.
      *
      * @param config
      */
-    public GeneralExamplePlugin(GeneralExamplePluginConfig config) {
+    public ModifyHeadersExamplePlugin(ModifyHeadersExamplePluginConfig config) {
         this.config = requireNonNull(config);
     }
 

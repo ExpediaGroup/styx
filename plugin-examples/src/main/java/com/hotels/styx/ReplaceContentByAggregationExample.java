@@ -26,39 +26,34 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * You can replace content after aggregating it in memory.
+ * For example, if the message content contains a JSON object and you need to modify the object somehow.
+ * You can aggregate the live HTTP message into a full HTTP message. Transform the content into a full message context
+ * and convert the results back to live HTTP message
+ *
+ *This can be used when you need the entire content in order to operate on it.
+ *Please note that this uses more heap space as the full response is transiently stored in the heap.
+ */
 
 public class ReplaceContentByAggregationExample implements Plugin {
+    ModifyHeadersExamplePluginConfig config;
 
-
-    /**
-     * You can replace content by aggregation
-     * For example the message content contains a JSON object and you need to modify the object somehow.
-     * You can aggregate the live HTTP message into a full HTTP message. Transform the content into a full message context
-     * and convert the results back to live HTTP message
-     */
+    private Modifier modifier; // modifier is an interface representing a class that performs some modification
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
 
-        LiveHttpRequest newRequest = request.newBuilder()
-                .header("myRequestHeader", config.requestHeaderValue())
-                .build();
-
-        return chain.proceed(request)
+        chain.proceed(request)
                 .flatMap(response -> it.aggregate(10000))
                 .map(response -> {
                     String body = response.bodyAs(UTF_8);
                     return response.newBuilder()
-                            .body(modify(body), UTF_8)
+                            .body(modifier.modify(body), UTF_8)
                             .build();
                 })
                 .map(HttpResponse::stream);
     }
 }
 
-/**
- * This can be used when you need to do something with full content and when you need to replace content after looking
- * into it
- * You need to do something with full content. This uses more heap as the full response it transiently stored in heap
- */
 
