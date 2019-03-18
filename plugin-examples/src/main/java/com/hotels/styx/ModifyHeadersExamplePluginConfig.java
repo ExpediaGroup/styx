@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * You should rename it to something relevant to your project.
  */
-public class GeneralExamplePluginConfig {
+public class ModifyHeadersExamplePluginConfig {
     private final String requestHeaderValue;
     private final String responseHeaderValue;
 
@@ -33,7 +33,7 @@ public class GeneralExamplePluginConfig {
      * @param requestHeaderValue value from config
      * @param responseHeaderValue value from config
      */
-    public GeneralExamplePluginConfig(
+    public ModifyHeadersExamplePluginConfig(
             @JsonProperty("requestHeaderValue") String requestHeaderValue,
             @JsonProperty("responseHeaderValue") String responseHeaderValue) {
         this.requestHeaderValue = requestHeaderValue;

@@ -26,10 +26,10 @@ import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * This shows an example of an interceptor that responds to a received request
- * It takes a request and if the HTTP request contains an x-respond in the header then it returns an eventual made of
- * the response code, body etc.
- * The eventual object is returned but the values only come into existance whe  the response return is received.
+ * This shows an example of a plugin that responds immediately to a received request, instead of proxying it downstream.
+ * It takes a request and if the HTTP request contains a header named `X-Respond`, then it returns an eventual wrapping
+ * the HTTP response
+ * The eventual object is returned immediately, even if the response has not yet arrived.
  */
 
 public class EarlyReturnExamplePlugin implements Plugin {

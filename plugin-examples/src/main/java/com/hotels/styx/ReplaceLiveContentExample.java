@@ -26,16 +26,18 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * You can replace without aggregating it first, if the replacement does not depend on the original contents.
+ * For example, if you need to replace a message body based on information in the message headers , regardless of
+ * the original message body. (E.g you need to add a HTTP message body based on a HTTP error code)
+ *
+ * You can transform a live HTTP message body using the `replaceWith` Bytestream operator such as shown in the example below.
+ *
+ * This can be used to replace a message body without having to look into it, which will also save heap space as the
+ *  live upstream response body is never stored in the heap in full.
+ */
 
 public class ReplaceLiveContentExample implements Plugin {
-
-    /**
-     * You can replace live content
-     * If you need to replace a message body based on information in the message headers and don't care what is in
-     * the message body. (E.g you need to add a HTTP message body based on a HTTP error code)
-     * <p>
-     * You can transform a live HTTP message body using a replaceWith Bytestream operator such as in the example.
-     */
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
@@ -50,9 +52,4 @@ public class ReplaceLiveContentExample implements Plugin {
                         .build());
     }
 }
-
-/**
-This can be used to replace a message body without having to look into it, this will also save heap as the
- live upstream response body is never stored in heap in full
-*/
 

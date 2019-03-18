@@ -30,9 +30,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * This is a unit test for your plugin. Please change it to test the behaviour you expect your plugin to exhibit.
  */
-public class GeneralExamplePluginTest {
-    private final GeneralExamplePluginConfig config = new GeneralExamplePluginConfig("foo", "bar");
-    private final GeneralExamplePlugin plugin = new GeneralExamplePlugin(config);
+public class ModifyHeadersExamplePluginTest {
+    private final ModifyHeadersExamplePluginConfig config = new ModifyHeadersExamplePluginConfig("foo", "bar");
+    private final ModifyHeadersExamplePlugin plugin = new ModifyHeadersExamplePlugin(config);
 
     /**
      * This tests the behaviours added in the example plugin.
