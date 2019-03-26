@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hotels.styx.common.SequenceProcessor.processSequence;
 import static com.hotels.styx.startup.extensions.PluginLoadingForStartup.loadPlugins;
 import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginPipelineStatus.ALL_PLUGINS_COMPLETE;
 import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginPipelineStatus.AT_LEAST_ONE_PLUGIN_FAILED;
@@ -40,7 +39,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Service to start up plugins and add them to the config store.
  */
 public class PluginStartupService extends AbstractStyxService {
-    public static final String PLUGIN_STATUS_KEY_FORMAT = "startup.plugins.%s";
     private static final String PLUGIN_KEY_FORMAT = "plugins.%s";
 
     private static final Logger LOGGER = getLogger(PluginStartupService.class);
@@ -70,31 +68,30 @@ public class PluginStartupService extends AbstractStyxService {
             PluginStatusNotifications notifications = new PluginStatusNotifications(environment.configStore());
             notifications.notifyPluginPipelineStatus(INCOMPLETE);
 
-            processSequence(plugins)
-                    .map(plugin -> {
-                        notifications.notifyPluginStatus(plugin.name(), STARTING);
-                        plugin.styxStarting();
-                        return null;
-                    })
+            int failureCount = 0;
+            for (NamedPlugin plugin : plugins) {
+                try {
+                    notifications.notifyPluginStatus(plugin.name(), STARTING);
+                    plugin.styxStarting();
 
-                    .onEachSuccess((plugin, ignore) -> {
-                        registerPlugin(plugin);
-                        notifications.notifyPluginStatus(plugin.name(), COMPLETE);
-                    })
+                    registerPlugin(plugin);
+                    notifications.notifyPluginStatus(plugin.name(), COMPLETE);
+                } catch (Exception e) {
+                    notifications.notifyPluginStatus(plugin.name(), FAILED_WHILE_STARTING);
+                    LOGGER.error("Error starting plugin '{}'", plugin.name(), e);
+                    failureCount++;
+                }
+            }
 
-                    .onEachFailure((plugin, err) -> {
-                        notifications.notifyPluginStatus(plugin.name(), FAILED_WHILE_STARTING);
-                        LOGGER.error("Error starting plugin '{}'", plugin.name(), err);
-                    })
-
-                    .failuresPostProcessing(failures -> {
-                        notifications.notifyPluginPipelineStatus(AT_LEAST_ONE_PLUGIN_FAILED);
-                        throw new StartupException(format("%s plugins failed to start", failures.size()));
-                    }).collect();
+            if (failureCount > 0) {
+                notifications.notifyPluginPipelineStatus(AT_LEAST_ONE_PLUGIN_FAILED);
+                throw new StartupException(format("%s plugins failed to start", failureCount));
+            }
 
             notifications.notifyPluginPipelineStatus(ALL_PLUGINS_COMPLETE);
         });
     }
+
 
     private void registerPlugin(NamedPlugin plugin) {
         environment.configStore().set(format(PLUGIN_KEY_FORMAT, plugin.name()), plugin);

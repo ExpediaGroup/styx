@@ -28,13 +28,14 @@ import com.hotels.styx.proxy.plugin.PluginsMetadata;
 import com.hotels.styx.spi.config.SpiExtension;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static com.hotels.styx.common.MapStream.stream;
-import static com.hotels.styx.common.SequenceProcessor.processSequence;
 import static com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin;
 import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginPipelineStatus.AT_LEAST_ONE_PLUGIN_FAILED;
 import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.CONSTRUCTED;
@@ -83,24 +84,28 @@ public final class PluginLoadingForStartup {
 
         PluginStatusNotifications notifications = new PluginStatusNotifications(environment.configStore());
 
-        return processSequence(configList)
-                .map(config -> {
-                    notifications.notifyPluginStatus(config.key(), LOADING_CLASSES);
-                    return loadPluginFactory(config);
-                })
+        List<ConfiguredPluginFactory> factories = new ArrayList<>();
+        Map<Pair<String, SpiExtension>, Exception> failures = new HashMap<>();
 
-                .onEachSuccess((config, factory) -> notifications.notifyPluginStatus(config.key(), LOADED_CLASSES))
+        for (Pair<String, SpiExtension> config : configList) {
+            try {
+                notifications.notifyPluginStatus(config.key(), LOADING_CLASSES);
+                factories.add(loadPluginFactory(config));
+                notifications.notifyPluginStatus(config.key(), LOADED_CLASSES);
+            } catch (Exception e) {
+                notifications.notifyPluginStatus(config.key(), FAILED_WHILE_LOADING_CLASSES);
+                environment.configStore().set("startup.plugins." + config.key(), "failed-while-loading");
+                LOGGER.error(format("Could not load plugin: pluginName=%s; factoryClass=%s", config.key(), config.value().factory().factoryClass()), e);
+                failures.put(config, e);
+            }
+        }
 
-                .onEachFailure((config, err) -> {
-                    notifications.notifyPluginStatus(config.key(), FAILED_WHILE_LOADING_CLASSES);
-                    environment.configStore().set("startup.plugins." + config.key(), "failed-while-loading");
-                    LOGGER.error(format("Could not load plugin: pluginName=%s; factoryClass=%s", config.key(), config.value().factory().factoryClass()), err);
-                })
+        if (!failures.isEmpty()) {
+            notifications.notifyPluginPipelineStatus(AT_LEAST_ONE_PLUGIN_FAILED);
+            throw new PluginStartupException(afterFailuresErrorMessage(failures, Pair::key));
+        }
 
-                .failuresPostProcessing(failures -> {
-                    notifications.notifyPluginPipelineStatus(AT_LEAST_ONE_PLUGIN_FAILED);
-                    throw new PluginStartupException(afterFailuresErrorMessage(failures, Pair::key));
-                }).collect();
+        return factories;
     }
 
     private static ConfiguredPluginFactory loadPluginFactory(Pair<String, SpiExtension> pair) {
@@ -115,23 +120,27 @@ public final class PluginLoadingForStartup {
     private static List<NamedPlugin> loadPluginsFromFactories(Environment environment, List<ConfiguredPluginFactory> factories) {
         PluginStatusNotifications notifications = new PluginStatusNotifications(environment.configStore());
 
-        return processSequence(factories)
-                .map(factory -> {
-                    notifications.notifyPluginStatus(factory.name(), CONSTRUCTING);
-                    return loadPlugin(environment, factory);
-                })
+        List<NamedPlugin> plugins = new ArrayList<>();
+        Map<ConfiguredPluginFactory, Exception> failures = new HashMap<>();
 
-                .onEachSuccess((factory, plugin) -> notifications.notifyPluginStatus(factory.name(), CONSTRUCTED))
+        for (ConfiguredPluginFactory factory : factories) {
+            try {
+                notifications.notifyPluginStatus(factory.name(), CONSTRUCTING);
+                plugins.add(loadPlugin(environment, factory));
+                notifications.notifyPluginStatus(factory.name(), CONSTRUCTED);
+            } catch (Exception e) {
+                notifications.notifyPluginStatus(factory.name(), FAILED_WHILE_CONSTRUCTING);
+                LOGGER.error(format("Could not load plugin: pluginName=%s; factoryClass=%s", factory.name(), factory.pluginFactory().getClass().getName()), e);
+                failures.put(factory, e);
+            }
+        }
 
-                .onEachFailure((factory, err) -> {
-                    notifications.notifyPluginStatus(factory.name(), FAILED_WHILE_CONSTRUCTING);
-                    LOGGER.error(format("Could not load plugin: pluginName=%s; factoryClass=%s", factory.name(), factory.pluginFactory().getClass().getName()), err);
-                })
+        if (!failures.isEmpty()) {
+            notifications.notifyPluginPipelineStatus(AT_LEAST_ONE_PLUGIN_FAILED);
+            throw new PluginStartupException(afterFailuresErrorMessage(failures, ConfiguredPluginFactory::name));
+        }
 
-                .failuresPostProcessing(failures -> {
-                    notifications.notifyPluginPipelineStatus(AT_LEAST_ONE_PLUGIN_FAILED);
-                    throw new PluginStartupException(afterFailuresErrorMessage(failures, ConfiguredPluginFactory::name));
-                }).collect();
+        return plugins;
     }
 
     private static NamedPlugin loadPlugin(Environment environment, ConfiguredPluginFactory factory) {
