@@ -31,8 +31,8 @@ import static com.hotels.styx.startup.extensions.PluginStatusNotifications.Plugi
 import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginPipelineStatus.AT_LEAST_ONE_PLUGIN_FAILED;
 import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginPipelineStatus.INCOMPLETE;
 import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.COMPLETE;
-import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.FAILED_WHILE_LIFECYCLE_STARTING;
-import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.LIFECYCLE_STARTING;
+import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.FAILED_WHILE_STARTING;
+import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.STARTING;
 import static java.lang.String.format;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -72,7 +72,7 @@ public class PluginStartupService extends AbstractStyxService {
 
             processSequence(plugins)
                     .map(plugin -> {
-                        notifications.notifyPluginStatus(plugin.name(), LIFECYCLE_STARTING);
+                        notifications.notifyPluginStatus(plugin.name(), STARTING);
                         plugin.styxStarting();
                         return null;
                     })
@@ -83,7 +83,7 @@ public class PluginStartupService extends AbstractStyxService {
                     })
 
                     .onEachFailure((plugin, err) -> {
-                        notifications.notifyPluginStatus(plugin.name(), FAILED_WHILE_LIFECYCLE_STARTING);
+                        notifications.notifyPluginStatus(plugin.name(), FAILED_WHILE_STARTING);
                         LOGGER.error("Error starting plugin '{}'", plugin.name(), err);
                     })
 

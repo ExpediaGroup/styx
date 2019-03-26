@@ -36,7 +36,7 @@ import java.util.concurrent.TimeoutException;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginPipelineStatus.ALL_PLUGINS_COMPLETE;
 import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.COMPLETE;
-import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.FAILED_WHILE_LIFECYCLE_STARTING;
+import static com.hotels.styx.startup.extensions.PluginStatusNotifications.PluginStatus.FAILED_WHILE_STARTING;
 import static com.hotels.styx.support.matchers.IsOptional.isValue;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toMap;
@@ -117,9 +117,9 @@ public class PluginStartupServiceTest {
         ConfigStore configStore = components.environment().configStore();
 
         assertThat(configStore.get("startup.plugins.plugin1", PluginStatus.class), isValue(COMPLETE));
-        assertThat(configStore.get("startup.plugins.plugin2", PluginStatus.class), isValue(FAILED_WHILE_LIFECYCLE_STARTING));
+        assertThat(configStore.get("startup.plugins.plugin2", PluginStatus.class), isValue(FAILED_WHILE_STARTING));
         assertThat(configStore.get("startup.plugins.plugin3", PluginStatus.class), isValue(COMPLETE));
-        assertThat(configStore.get("startup.plugins.plugin4", PluginStatus.class), isValue(FAILED_WHILE_LIFECYCLE_STARTING));
+        assertThat(configStore.get("startup.plugins.plugin4", PluginStatus.class), isValue(FAILED_WHILE_STARTING));
     }
 
     @Test
@@ -149,7 +149,7 @@ public class PluginStartupServiceTest {
         ConfigStore configStore = components.environment().configStore();
 
         assertThat(configStore.get("startup.plugins.plugin1", PluginStatus.class), isValue(COMPLETE));
-        assertThat(configStore.get("startup.plugins.plugin2", PluginStatus.class), isValue(FAILED_WHILE_LIFECYCLE_STARTING));
+        assertThat(configStore.get("startup.plugins.plugin2", PluginStatus.class), isValue(FAILED_WHILE_STARTING));
         assertThat(configStore.get("startup.plugins.plugin3", PluginStatus.class), isValue(COMPLETE));
         assertThat(configStore.get("startup.plugins.plugin4", PluginStatus.class), isValue(COMPLETE));
     }

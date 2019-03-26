@@ -73,11 +73,11 @@ public class PluginStatusNotifications {
         LOADED_CLASSES("incomplete:loaded-classes"),
         CONSTRUCTING("incomplete:constructing"),
         CONSTRUCTED("incomplete:constructed"),
-        LIFECYCLE_STARTING("incomplete:lifecycle-starting"),
+        STARTING("incomplete:starting"),
         COMPLETE("complete"),
         FAILED_WHILE_LOADING_CLASSES("failed:loading-classes"),
         FAILED_WHILE_CONSTRUCTING("failed:constructing"),
-        FAILED_WHILE_LIFECYCLE_STARTING("failed:lifecycle-starting");
+        FAILED_WHILE_STARTING("failed:starting");
 
         private final String description;
 

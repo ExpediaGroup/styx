@@ -22,7 +22,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hotels.styx.api.extension.service.spi.MockContext.MOCK_CONTEXT;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.FAILED;
@@ -34,9 +33,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.testng.Assert.fail;
 
 public class AbstractStyxServiceTest {
     private final LiveHttpRequest get = LiveHttpRequest.get("/").build();
@@ -196,24 +193,6 @@ public class AbstractStyxServiceTest {
         }
     }
 
-    @Test
-    public void canAttachDoOnErrorBehaviour() throws Throwable {
-        CompletableFuture<?> future = new CompletableFuture<>();
-        DerivedStyxService derivedStyxService = new DerivedStyxService("foo", future);
-        future.completeExceptionally(new RuntimeException("This is just a test"));
-
-        AtomicReference<Throwable> caught = new AtomicReference<>();
-
-        try {
-            derivedStyxService
-                    .doOnError(caught::set)
-                    .start().get(1, SECONDS);
-            fail("Expected exception");
-        } catch (ExecutionException e) {
-            assertThat(caught.get(), is(instanceOf(RuntimeException.class)));
-        }
-    }
-
     static class DerivedStyxService extends AbstractStyxService {
         private final CompletableFuture<Void> startFuture;
         private final CompletableFuture<Void> stopFuture;
@@ -238,5 +217,4 @@ public class AbstractStyxServiceTest {
             return stopFuture;
         }
     }
-
 }

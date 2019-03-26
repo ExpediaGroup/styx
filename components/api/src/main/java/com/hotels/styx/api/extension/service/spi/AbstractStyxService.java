@@ -29,6 +29,7 @@ import static com.hotels.styx.api.HttpHeaderValues.APPLICATION_JSON;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.CREATED;
+import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.FAILED;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.RUNNING;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STARTING;
 import static com.hotels.styx.api.extension.service.spi.StyxServiceStatus.STOPPED;
@@ -73,7 +74,7 @@ public abstract class AbstractStyxService implements StyxService {
             logger.info("Starting serviceName={}...", serviceName());
             return startService()
                     .exceptionally(cause -> {
-                        status.set(StyxServiceStatus.FAILED);
+                        status.set(FAILED);
                         logger.error("Failed to start serviceName=" + serviceName(), cause);
                         throw new ServiceFailureException("Service failed to start.", cause);
                     })
@@ -93,7 +94,7 @@ public abstract class AbstractStyxService implements StyxService {
         if (changed) {
             return stopService()
                     .exceptionally(cause -> {
-                        status.set(StyxServiceStatus.FAILED);
+                        status.set(FAILED);
                         logger.error("Failed to stop serviceName=" + serviceName(), cause);
                         throw new ServiceFailureException("Service failed to stop.", cause);
                     })

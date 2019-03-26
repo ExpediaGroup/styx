@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hotels.styx.ServerConfigSchema.validateServerConfiguration;
+import static com.hotels.styx.api.Services.doOnStartFailure;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
 import static com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.shutdownLogging;
@@ -174,9 +175,9 @@ public final class StyxServer extends AbstractService {
         StyxService adminServerService = new ServerService("adminServer", () ->
                 this.adminServer.store(createAdminServer(components)));
 
-        StyxService proxyServerService = new ServerService("proxyServer", () ->
-                this.proxyServer.store(createProxyServer(components)))
-                .doOnError(err -> notifyProxyFailed(configStore));
+        StyxService proxyServerService = doOnStartFailure(new ServerService("proxyServer", () ->
+                        this.proxyServer.store(createProxyServer(components))),
+                err -> notifyProxyFailed(configStore));
 
         this.serviceManager = new ServiceManager(new ArrayList<Service>() {
             {
