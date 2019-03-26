@@ -58,7 +58,6 @@ public class ServerService extends AbstractStyxService {
 
                 @Override
                 public void failed(Service.State from, Throwable failure) {
-                    failure.printStackTrace();
                     future.completeExceptionally(failure);
                 }
             }, executor);
