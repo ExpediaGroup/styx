@@ -20,7 +20,6 @@ import com.hotels.styx.api.StyxLifecycleListener;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 import static java.util.Collections.emptyMap;
 
@@ -74,51 +73,5 @@ public interface StyxService extends StyxLifecycleListener {
      */
     default Map<String, HttpHandler> adminInterfaceHandlers() {
         return emptyMap();
-    }
-
-    /**
-     * Derives a new service interface with added side-effects for errors.
-     * This could be used for logging, metrics, etc.
-     *
-     * @param consumer error consumer
-     * @return a new service interface
-     */
-    default StyxService doOnError(Consumer<Throwable> consumer) {
-        StyxService parent = this;
-
-        return new StyxService() {
-            @Override
-            public CompletableFuture<Void> start() {
-                return parent.start().exceptionally(throwable -> {
-                    consumer.accept(throwable);
-
-                    if (throwable instanceof RuntimeException) {
-                        throw (RuntimeException) throwable;
-                    }
-
-                    if (throwable instanceof Error) {
-                        throw (Error) throwable;
-                    }
-
-                    throw new RuntimeException(throwable);
-                });
-            }
-
-            @Override
-            public CompletableFuture<Void> stop() {
-                return parent.stop();
-            }
-
-            @Override
-            public Map<String, HttpHandler> adminInterfaceHandlers() {
-                return parent.adminInterfaceHandlers();
-            }
-
-            @Override
-            public String toString() {
-                return parent.toString();
-            }
-
-        };
     }
 }
