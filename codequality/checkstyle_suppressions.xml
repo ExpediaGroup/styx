@@ -37,7 +37,7 @@
 
   <suppress checks="ParameterNumber" files=".*StartupConfig.java|.*ProxyServiceSupplier.java"/>
 
-  <suppress checks="RegexpSingleline" id="InvalidLoggingMethod_Error" files="LOGBackConfigurer.java"/>
+  <suppress checks="RegexpSingleline" files="LOGBackConfigurer.java"/>
 
   <suppress checks="VisibilityModifier" files=".*.java"/>
 
