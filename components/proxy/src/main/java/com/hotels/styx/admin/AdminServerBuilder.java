@@ -98,11 +98,11 @@ public class AdminServerBuilder {
 
         return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
                 .toNettyServerBuilder(adminServerConfig)
-                .handlerFactory(() -> createHttpRouter(styxConfig))
+                .handlerFactory(() -> adminEndpoints(styxConfig))
                 .build();
     }
 
-    private StandardHttpRouter createHttpRouter(StyxConfig styxConfig) {
+    private StandardHttpRouter adminEndpoints(StyxConfig styxConfig) {
         Optional<Duration> metricsCacheExpiration = styxConfig.adminServerConfig().metricsCacheExpiration();
 
         StandardHttpRouter httpRouter = new StandardHttpRouter();
