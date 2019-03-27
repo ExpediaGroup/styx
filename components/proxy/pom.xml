@@ -140,6 +140,26 @@
       <version>0.24.1</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-stdlib-jdk8</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-test</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.kotlintest</groupId>
+      <artifactId>kotlintest-runner-junit5</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testng</groupId>
+      <artifactId>testng</artifactId>
+    </dependency>
+
   </dependencies>
 
   <build>
@@ -183,20 +203,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
-        <configuration>
-          <skipTests>${surefire.skip.tests}</skipTests>
-          <argLine>
-            -Xmx300m
-            -XX:+HeapDumpOnOutOfMemoryError
-            -XX:HeapDumpPath=${project.build.directory}/surefire-reports
-            -Dsun.net.spi.nameservice.provider.1=dns,local-dns
-            -Dsun.net.spi.nameservice.provider.2=default
-            -Dsun.net.inetaddr.ttl=0
-            -Dsun.net.inetaddr.negative.ttl=0
-          </argLine>
-          <forkCount>1</forkCount>
-          <reuseForks>true</reuseForks>
-        </configuration>
       </plugin>
 
       <plugin>
