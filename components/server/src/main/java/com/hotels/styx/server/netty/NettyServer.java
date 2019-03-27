@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -125,12 +125,13 @@ final class NettyServer extends AbstractService implements HttpServer {
         );
 
         serviceManager.addListener(new ServerListener(this));
-        serviceManager.startAsync().awaitHealthy();
 
         this.stopper = () -> {
-            serviceManager.stopAsync().awaitStopped();
+            serviceManager.stopAsync();
             return null;
         };
+
+        serviceManager.startAsync();
     }
 
     @Override
