@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ class MockServer(id: String, val port: Int) extends AbstractIdleService with Htt
   val server = NettyServerBuilder.newBuilder()
       .name("MockServer")
       .setHttpConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(port)))
-      .httpHandler(router)
+      .handlerFactory(() => router)
     .build()
 
   def takeRequest(): LiveHttpRequest = {

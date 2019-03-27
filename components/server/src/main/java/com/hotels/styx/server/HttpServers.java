@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,13 +28,12 @@ public class HttpServers {
      *
      * @param port
      * @return {@link com.hotels.styx.server.HttpServer} object
-     * @see com.hotels.styx.server.netty.NettyServer
      */
     public static HttpServer createHttpServer(int port, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
                 .name("NettyServer")
                 .setHttpConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(port)))
-                .httpHandler(new StandardHttpRouter().add("/", handler))
+                .handlerFactory(() -> new StandardHttpRouter().add("/", handler))
                 .build();
     }
 
@@ -46,13 +45,12 @@ public class HttpServers {
      * @param handler - Request handler.
      *
      * @return {@link com.hotels.styx.server.HttpServer} object
-     * @see com.hotels.styx.server.netty.NettyServer
      */
     public static HttpServer createHttpServer(String name, HttpConnectorConfig httpConnectorConfig, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
                 .name(name)
                 .setHttpConnector(new WebServerConnectorFactory().create(httpConnectorConfig))
-                .httpHandler(handler)
+                .handlerFactory(() -> handler)
                 .build();
     }
 
@@ -64,13 +62,12 @@ public class HttpServers {
      * @param handler - Request handler.
      *
      * @return {@link com.hotels.styx.server.HttpServer} object
-     * @see com.hotels.styx.server.netty.NettyServer
      */
     public static HttpServer createHttpsServer(String name, HttpsConnectorConfig httpsConnectorConfig, HttpHandler handler) {
         return NettyServerBuilder.newBuilder()
                 .name(name)
                 .setHttpsConnector(new WebServerConnectorFactory().create(httpsConnectorConfig))
-                .httpHandler(handler)
+                .handlerFactory(() -> handler)
                 .build();
     }
 

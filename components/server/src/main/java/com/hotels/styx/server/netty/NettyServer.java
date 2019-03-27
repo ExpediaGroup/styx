@@ -38,6 +38,7 @@ import java.net.InetSocketAddress;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -66,17 +67,18 @@ final class NettyServer extends AbstractService implements HttpServer {
     private final Optional<ServerConnector> httpsConnector;
 
     private final Iterable<Runnable> startupActions;
-    private final HttpHandler httpHandler;
+    private final Supplier<HttpHandler> handlerFactory;
     private final ServerSocketBinder httpServerSocketBinder;
     private final ServerSocketBinder httpsServerSocketBinder;
 
-    private Callable<?> stopper;
+    private volatile Callable<?> stopper;
+    private volatile HttpHandler httpHandler;
 
     NettyServer(NettyServerBuilder nettyServerBuilder) {
         this.host = nettyServerBuilder.host();
         this.channelGroup = requireNonNull(nettyServerBuilder.channelGroup());
         this.serverEventLoopFactory = requireNonNull(nettyServerBuilder.serverEventLoopFactory(), "serverEventLoopFactory cannot be null");
-        this.httpHandler = requireNonNull(nettyServerBuilder.httpHandler());
+        this.handlerFactory = requireNonNull(nettyServerBuilder.handlerFactory());
 
         this.httpConnector = nettyServerBuilder.httpConnector();
         this.httpsConnector = nettyServerBuilder.httpsConnector();
@@ -117,6 +119,8 @@ final class NettyServer extends AbstractService implements HttpServer {
                 return;
             }
         }
+
+        httpHandler = NettyServer.this.handlerFactory.get();
 
         ServiceManager serviceManager = new ServiceManager(
                 Stream.of(httpServerSocketBinder, httpsServerSocketBinder)
@@ -250,7 +254,7 @@ final class NettyServer extends AbstractService implements HttpServer {
             }
 
             @Override
-            public Void call() throws Exception {
+            public Void call() {
                 channelGroup.close().awaitUninterruptibly();
                 shutdownEventExecutorGroup(bossGroup);
                 shutdownEventExecutorGroup(workerGroup);

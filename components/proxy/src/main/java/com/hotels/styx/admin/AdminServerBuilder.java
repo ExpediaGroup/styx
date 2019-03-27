@@ -138,7 +138,8 @@ public class AdminServerBuilder {
 
         return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
                 .toNettyServerBuilder(adminServerConfig)
-                .httpHandler(httpRouter)
+                // TODO extract rather than create httpRouter upfront
+                .handlerFactory(() -> httpRouter)
                 .build();
     }
 
