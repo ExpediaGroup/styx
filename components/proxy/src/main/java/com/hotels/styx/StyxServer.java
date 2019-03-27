@@ -199,13 +199,7 @@ public final class StyxServer extends AbstractService {
     protected void doStart() {
         printBanner();
         this.serviceManager.addListener(new ServerStartListener(this));
-        this.serviceManager.startAsync().awaitHealthy();
-
-        if (stopwatch == null) {
-            LOG.info("Started Styx server");
-        } else {
-            LOG.info("Started Styx server in {} ms", stopwatch.elapsed(MILLISECONDS));
-        }
+        this.serviceManager.startAsync();
     }
 
     private void printBanner() {
@@ -255,7 +249,7 @@ public final class StyxServer extends AbstractService {
                 .build();
     }
 
-    private static class ServerStartListener extends ServiceManager.Listener {
+    private class ServerStartListener extends ServiceManager.Listener {
         private final StyxServer styxServer;
 
         ServerStartListener(StyxServer styxServer) {
@@ -265,6 +259,12 @@ public final class StyxServer extends AbstractService {
         @Override
         public void healthy() {
             styxServer.notifyStarted();
+
+            if (stopwatch == null) {
+                LOG.info("Started Styx server");
+            } else {
+                LOG.info("Started Styx server in {} ms", stopwatch.elapsed(MILLISECONDS));
+            }
         }
 
         @Override

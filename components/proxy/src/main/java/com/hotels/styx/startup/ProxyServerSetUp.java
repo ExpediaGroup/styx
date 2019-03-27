@@ -43,6 +43,7 @@ public final class ProxyServerSetUp {
         HttpHandler pipeline = pipelineFactory.create(config);
 
         HttpServer proxyServer = new ProxyServerBuilder(config.environment())
+                // TODO create pipeline at startup instead of here
                 .httpHandler(pipeline)
                 .onStartup(() -> initialisePlugins(config.plugins()))
                 .build();
