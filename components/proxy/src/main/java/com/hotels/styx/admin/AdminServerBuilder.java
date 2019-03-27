@@ -165,7 +165,8 @@ public class AdminServerBuilder {
                 link("JVM", "/admin/jvm?pretty"),
                 link("Origins Status", "/admin/origins/status?pretty"),
                 link("Dashboard", "/admin/dashboard/index.html"),
-                link("Plugins", "/admin/plugins"));
+                link("Plugins", "/admin/plugins"),
+                link("Startup Status", "/admin/startup"));
     }
 
     private static List<Route> routesForPlugin(NamedPlugin namedPlugin) {

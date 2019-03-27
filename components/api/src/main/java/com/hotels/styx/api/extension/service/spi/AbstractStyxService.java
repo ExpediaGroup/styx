@@ -120,6 +120,6 @@ public abstract class AbstractStyxService implements StyxService {
 
     @Override
     public String toString() {
-        return "service:" + serviceName();
+        return getClass().getName() + "{name=" + serviceName() + ",status=" + status.get() + "}";
     }
 }

@@ -99,7 +99,6 @@ CONFIG_ROOT := $(STYX_HOME)/conf/env-$(STACK)
 ## Compile and create styx.zip then unzip into a directory defined by STYX_HOME
 release-styx: release-no-tests
 	unzip -oq ${STYX_BUILD_ARTIFACT} -d $(dir ${STYX_HOME})
-	mv `find $(CURRENT_DIR)/distribution/target/styx -type d -name "styx-*"` ${STYX_HOME}
 
 ## Stops running netty-based origins (i.e. the origins started by start-origins)
 stop-origins:
