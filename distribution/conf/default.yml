@@ -88,6 +88,8 @@ url:
 
 #originRestrictionCookie: yourCookieNameHere
 
+### Uncomment the config below to test out Styx's plugin feature:
+#
 #plugins:
 #  active: demo
 #  all:
