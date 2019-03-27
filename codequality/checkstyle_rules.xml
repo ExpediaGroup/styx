@@ -68,7 +68,6 @@
     </module>
     <module name="MethodLength">
       <property name="max" value="40"/>
-      <property name="id" value="MethodLength_Warning"/>
     </module>
     <module name="MethodLength">
       <property name="max" value="50"/>
@@ -76,21 +75,17 @@
     <module name="MethodLength">
       <property name="severity" value="error"/>
       <property name="max" value="70"/>
-      <property name="id" value="MethodLength_Error"/>
     </module>
     <module name="ParameterNumber">
       <property name="max" value="4"/>
-      <property name="id" value="ParameterNumber_Warning"/>
     </module>
     <module name="ParameterNumber">
       <property name="severity" value="error"/>
       <property name="max" value="7"/>
-      <property name="id" value="ParameterNumber_Error"/>
     </module>
     <module name="ParameterNumber">
       <property name="severity" value="error"/>
       <property name="max" value="7"/>
-      <property name="id" value="ParameterNumber_Severe_Error"/>
     </module>
     <module name="EmptyForIteratorPad">
       <property name="severity" value="error"/>
@@ -179,7 +174,6 @@
     <module name="CyclomaticComplexity">
       <property name="severity" value="error"/>
       <property name="max" value="15"/>
-      <property name="id" value="CyclomaticComplexity_Error"/>
     </module>
     <module name="BooleanExpressionComplexity">
       <property name="max" value="5"/>
@@ -188,7 +182,6 @@
     <module name="ClassFanOutComplexity">
       <property name="severity" value="error"/>
       <property name="max" value="75"/>
-      <property name="id" value="ClassFanOutComplexity_Error"/>
     </module>
     <module name="NPathComplexity">
       <property name="max" value="100"/>
@@ -196,7 +189,6 @@
     <module name="NPathComplexity">
       <property name="severity" value="error"/>
       <property name="max" value="200"/>
-      <property name="id" value="NPathComplexity_Error"/>
     </module>
     <module name="FallThrough"/>
     <module name="DeclarationOrder">
@@ -228,10 +220,6 @@
     <module name="UnnecessaryParentheses">
       <property name="severity" value="error"/>
     </module>
-    <!--<module name="Indentation">-->
-    <!--<property name="severity" value="error" />-->
-    <!--<property name="caseIndent" value="4" />-->
-    <!--</module>-->
     <module name="ExplicitInitialization">
       <property name="severity" value="error"/>
     </module>
@@ -292,7 +280,6 @@
     <module name="AnonInnerLength">
       <property name="severity" value="error"/>
       <property name="max" value="100"/>
-      <property name="id" value="AnonInnerLength_Error"/>
     </module>
     <module name="AnnotationUseStyle">
       <property name="severity" value="error"/>
@@ -304,7 +291,6 @@
     <module name="ClassDataAbstractionCoupling"/>
     <module name="ClassDataAbstractionCoupling">
       <property name="max" value="15"/>
-      <property name="id" value="ClassDataAbstractionCoupling_Error"/>
     </module>
     <module name="InnerTypeLast">
       <property name="severity" value="error"/>
@@ -321,17 +307,14 @@
     <module name="MethodCount">
       <property name="severity" value="error"/>
       <property name="maxTotal" value="50"/>
-      <property name="id" value="MethodCountTotal_Error"/>
     </module>
     <module name="MethodCount">
       <property name="severity" value="error"/>
       <property name="maxProtected" value="20"/>
-      <property name="id" value="MethodCountProtected_Error"/>
     </module>
     <module name="MethodCount">
       <property name="severity" value="error"/>
       <property name="maxPackage" value="20"/>
-      <property name="id" value="MethodCountPrivate_Error"/>
     </module>
     <module name="OneStatementPerLine">
       <property name="severity" value="error"/>
@@ -354,39 +337,33 @@
     <property name="severity" value="error"/>
     <property name="format" value="\s+$"/>
     <property name="message" value="Line has trailing spaces"/>
-    <property name="id" value="TrailingSpaces_Error"/>
   </module>
   <module name="RegexpSingleline">
     <property name="severity" value="error"/>
     <property name="format"
               value="\.exit\(|\.halt\(|\.traceMethodCalls\(|\.traceInstructions\(|\.runFinalization\(|\.gc\("/>
     <property name="message" value="Suspicious invocation of dangerous JVM level operation"/>
-    <property name="id" value="DangerousJVMOperation_Error"/>
   </module>
   <module name="RegexpSingleline">
     <property name="severity" value="error"/>
     <property name="format" value="long serialVersionUID"/>
     <property name="message" value="Do not declare a serialVersionUID"/>
-    <property name="id" value="SerialVersionUIDDeclared_Error"/>
   </module>
   <module name="RegexpSingleline">
     <property name="severity" value="error"/>
     <property name="format"
               value="\.printStackTrace\(\)|System\.out|System\.err|org\.apache\.commons\.logging\.Log|java\.util\.logging"/>
     <property name="message" value="use SLF4J for logging"/>
-    <property name="id" value="InvalidLoggingMethod_Error"/>
   </module>
   <module name="RegexpSingleline">
     <property name="severity" value="error"/>
     <property name="format"
               value="org.springframework.web.util.JavaScriptUtils|org.springframework.web.util.HtmlUtils|org.apache.commons.lang.StringEscapeUtils|org.\apache.\commons.\codec|org\.owasp\.esapi"/>
     <property name="message" value="use EncodingSupport for encoding"/>
-    <property name="id" value="BannedEncodingLibraryReference_Error"/>
   </module>
   <module name="RegexpSingleline">
     <property name="severity" value="error"/>
     <property name="format" value="null !=|null =="/>
     <property name="message" value="Check for null in reverse order"/>
-    <property name="id" value="ReverseOrderNullCheck_Error"/>
   </module>
 </module>
