@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.hotels.styx.server.UniqueIdSupplier;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.HttpContent;
@@ -39,7 +38,6 @@ import rx.Observable;
 import rx.Producer;
 import rx.Subscriber;
 
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayDeque;
@@ -50,7 +48,6 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.Iterables.size;
 import static com.hotels.styx.api.HttpHeaderNames.EXPECT;
 import static com.hotels.styx.api.HttpHeaderNames.HOST;
-import static com.hotels.styx.api.Url.Builder.url;
 import static com.hotels.styx.server.UniqueIdSuppliers.UUID_VERSION_ONE_SUPPLIER;
 import static com.hotels.styx.server.netty.codec.UnwiseCharsEncoder.IGNORE;
 import static java.util.Objects.requireNonNull;
@@ -165,8 +162,7 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
     @VisibleForTesting
     LiveHttpRequest.Builder makeAStyxRequestFrom(HttpRequest request, Observable<ByteBuf> content) {
-        Url url = url(unwiseCharEncoder.encode(request.uri()))
-                .build();
+        Url url = UrlDecoder.decodeUrl(unwiseCharEncoder, request);
         LiveHttpRequest.Builder requestBuilder = new LiveHttpRequest.Builder()
                 .method(toStyxMethod(request.method()))
                 .url(url)
@@ -186,14 +182,6 @@ public final class NettyToStyxRequestDecoder extends MessageToMessageDecoder<Htt
 
     private com.hotels.styx.api.HttpMethod toStyxMethod(HttpMethod method) {
         return com.hotels.styx.api.HttpMethod.httpMethod(method.name());
-    }
-
-    private static InetSocketAddress remoteAddress(ChannelHandlerContext ctx) {
-        if (ctx.channel() instanceof EmbeddedChannel) {
-            return new InetSocketAddress(0);
-        }
-
-        return (InetSocketAddress) ctx.channel().remoteAddress();
     }
 
     private static class FlowControllingHttpContentProducer implements Producer {

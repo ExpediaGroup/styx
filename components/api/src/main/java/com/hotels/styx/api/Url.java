@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public final class Url implements Comparable<Url> {
      * @return scheme
      */
     public String scheme() {
-        return this.scheme;
+        return this.scheme != null ? this.scheme : "";
     }
 
     /**
@@ -121,7 +121,7 @@ public final class Url implements Comparable<Url> {
      * @return true if the URL is absolute.
      */
     public boolean isAbsolute() {
-        return path.startsWith("/");
+        return Objects.nonNull(scheme) && !scheme.isEmpty();
     }
 
     /**
@@ -131,7 +131,7 @@ public final class Url implements Comparable<Url> {
      * @see {@link #isAbsolute()}
      */
     public boolean isRelative() {
-        return !isAbsolute();
+        return scheme == null || scheme.isEmpty();
     }
 
     /**
@@ -455,7 +455,7 @@ public final class Url implements Comparable<Url> {
                     .fragment(uri.getFragment());
         }
 
-        Builder rawQuery(String rawQuery) {
+        public Builder rawQuery(String rawQuery) {
             this.queryBuilder = rawQuery == null ? null : new UrlQuery.Builder(rawQuery);
             return this;
         }
