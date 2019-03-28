@@ -160,6 +160,13 @@
       <artifactId>testng</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>io.mockk</groupId>
+      <artifactId>mockk</artifactId>
+      <version>1.9.3</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
   <build>
