@@ -92,6 +92,7 @@ quality-no-tests:
 	mvn -Dmaven.test.skip=true clean install -Pquality -Dmaven.test.skip=true
 
 STYX_BUILD_ARTIFACT = $(shell find  distribution/target -name "styx*.zip" -depth 1)
+STYX_LINUX_ARTIFACT = $(shell find  distribution/target -name "styx*linux-x86_64.zip" -depth 1)
 STYX_HOME = $(CURRENT_DIR)/distribution/target/styx/styx
 DOCKER_CONTEXT = $(CURRENT_DIR)/distribution/target/styx/docker
 CONFIG_ROOT := $(STYX_HOME)/conf/env-$(STACK)
@@ -157,9 +158,9 @@ changelog:
 distribution/target/styx-1.0-SNAPSHOT-linux-x86_64.zip:
 	mvn install -Prelease,linux -Dmaven.test.skip=true
 
-docker-image: distribution/target/styx-1.0-SNAPSHOT-linux-x86_64.zip
+docker-image: ${STYX_LINUX_ARTIFACT}
 	rm -rf ${DOCKER_CONTEXT}
 	mkdir -p ${DOCKER_CONTEXT}
-	cp ${STYX_BUILD_ARTIFACT} ${DOCKER_CONTEXT}/styx.zip
+	cp ${STYX_LINUX_ARTIFACT} ${DOCKER_CONTEXT}/styx.zip
 	cp docker/* ${DOCKER_CONTEXT}
 	docker build -t styxcore:latest --build-arg STYX_IMAGE=styx.zip -f docker/Dockerfile ${DOCKER_CONTEXT}/.
