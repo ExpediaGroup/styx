@@ -100,7 +100,7 @@ class RoutingConfigParserTest : StringSpec({
                 routes: omitted
         """.trimIndent())
 
-        val e = shouldThrow<IllegalArgumentException> {
+        val e = shouldThrow<java.lang.IllegalArgumentException> {
             RoutingConfigParser.toRoutingConfigNode(jsonNode)
         }
         e.message shouldBe("Routing config definition must have a 'type' attribute in def='foo'")
