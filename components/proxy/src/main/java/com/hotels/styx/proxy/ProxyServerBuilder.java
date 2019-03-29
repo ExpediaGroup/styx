@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.netty.NettyServerBuilderSpec;
 
+import java.util.function.Supplier;
+
 import static com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder.ENCODE_UNWISECHARS;
 import static java.util.Objects.requireNonNull;
 
@@ -33,7 +35,7 @@ public final class ProxyServerBuilder {
     private final ResponseInfoFormat responseInfoFormat;
     private final CharSequence styxInfoHeaderName;
 
-    private HttpHandler httpHandler;
+    private Supplier<HttpHandler> handlerFactory;
     private Runnable onStartupAction = () -> {
     };
 
@@ -51,7 +53,7 @@ public final class ProxyServerBuilder {
         return new NettyServerBuilderSpec("Proxy", environment.serverEnvironment(),
                 new ProxyConnectorFactory(proxyConfig, environment.metricRegistry(), environment.errorListener(), unwiseCharacters, this::addInfoHeader, requestTracking))
                 .toNettyServerBuilder(proxyConfig)
-                .httpHandler(httpHandler)
+                .handlerFactory(handlerFactory)
                 // register health check
                 .doOnStartUp(onStartupAction)
                 .build();
@@ -61,8 +63,8 @@ public final class ProxyServerBuilder {
         return responseBuilder.header(styxInfoHeaderName, responseInfoFormat.format(request));
     }
 
-    public ProxyServerBuilder httpHandler(HttpHandler httpHandler) {
-        this.httpHandler = httpHandler;
+    public ProxyServerBuilder handlerFactory(Supplier<HttpHandler> handlerFactory) {
+        this.handlerFactory = handlerFactory;
         return this;
     }
 

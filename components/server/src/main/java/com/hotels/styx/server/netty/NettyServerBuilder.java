@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.netty.util.concurrent.ImmediateEventExecutor;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -49,7 +50,7 @@ public final class NettyServerBuilder {
     private Optional<ServerConnector> httpConnector = Optional.empty();
     private Optional<ServerConnector> httpsConnector = Optional.empty();
     private final List<Runnable> startupActions = newCopyOnWriteArrayList();
-    private HttpHandler httpHandler = (request, context) -> Eventual.of(LiveHttpResponse.response(NOT_FOUND).build());
+    private Supplier<HttpHandler> handlerFactory = () -> (request, context) -> Eventual.of(LiveHttpResponse.response(NOT_FOUND).build());
 
     public static NettyServerBuilder newBuilder() {
         return new NettyServerBuilder();
@@ -91,13 +92,13 @@ public final class NettyServerBuilder {
         return this.channelGroup;
     }
 
-    public NettyServerBuilder httpHandler(HttpHandler httpHandler) {
-        this.httpHandler = httpHandler;
+    public NettyServerBuilder handlerFactory(Supplier<HttpHandler> handlerFactory) {
+        this.handlerFactory = handlerFactory;
         return this;
     }
 
-    HttpHandler httpHandler() {
-        return this.httpHandler;
+    Supplier<HttpHandler> handlerFactory() {
+        return this.handlerFactory;
     }
 
     public NettyServerBuilder setHttpConnector(ServerConnector connector) {

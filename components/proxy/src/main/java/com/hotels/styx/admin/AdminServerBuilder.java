@@ -94,9 +94,16 @@ public class AdminServerBuilder {
     public HttpServer build() {
         LOG.info("event bus that will be used is {}", environment.eventBus());
         StyxConfig styxConfig = environment.configuration();
-
-        Optional<Duration> metricsCacheExpiration = styxConfig.adminServerConfig().metricsCacheExpiration();
         AdminServerConfig adminServerConfig = styxConfig.adminServerConfig();
+
+        return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
+                .toNettyServerBuilder(adminServerConfig)
+                .handlerFactory(() -> adminEndpoints(styxConfig))
+                .build();
+    }
+
+    private StandardHttpRouter adminEndpoints(StyxConfig styxConfig) {
+        Optional<Duration> metricsCacheExpiration = styxConfig.adminServerConfig().metricsCacheExpiration();
 
         StandardHttpRouter httpRouter = new StandardHttpRouter();
         httpRouter.add("/", new IndexHandler(indexLinkPaths()));
@@ -135,11 +142,7 @@ public class AdminServerBuilder {
                 });
 
         httpRouter.add("/admin/plugins", new PluginListHandler(environment.configStore()));
-
-        return new NettyServerBuilderSpec("Admin", environment.serverEnvironment(), new WebServerConnectorFactory())
-                .toNettyServerBuilder(adminServerConfig)
-                .httpHandler(httpRouter)
-                .build();
+        return httpRouter;
     }
 
     private JsonHandler<DashboardData> dashboardDataHandler(StyxConfig styxConfig) {
