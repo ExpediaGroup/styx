@@ -181,6 +181,7 @@
 
     <netty-transport-native-epoll.classifier />
     <rxjava-reactive-streams.version>1.1.1</rxjava-reactive-streams.version>
+    <mockk.version>1.9.3</mockk.version>
   </properties>
 
   <dependencyManagement>
@@ -540,6 +541,13 @@
         <groupId>io.kotlintest</groupId>
         <artifactId>kotlintest-runner-junit5</artifactId>
         <version>3.3.0</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>io.mockk</groupId>
+        <artifactId>mockk</artifactId>
+        <version>${mockk.version}</version>
         <scope>test</scope>
       </dependency>
 
