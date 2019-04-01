@@ -176,6 +176,20 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <skipTests>${surefire.skip.tests}</skipTests>
+          <argLine>
+            -Xmx300m
+            -XX:+HeapDumpOnOutOfMemoryError
+            -XX:HeapDumpPath=${project.build.directory}/surefire-reports
+            -Dsun.net.spi.nameservice.provider.1=dns,local-dns
+            -Dsun.net.spi.nameservice.provider.2=default
+            -Dsun.net.inetaddr.ttl=0
+            -Dsun.net.inetaddr.negative.ttl=0
+          </argLine>
+          <forkCount>1</forkCount>
+          <reuseForks>true</reuseForks>
+        </configuration>
       </plugin>
     </plugins>
   </build>

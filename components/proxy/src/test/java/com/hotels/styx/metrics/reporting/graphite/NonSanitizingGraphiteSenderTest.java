@@ -46,10 +46,14 @@ public class NonSanitizingGraphiteSenderTest {
     @AfterClass
     public void tearDown() {
         server.stop();
-        LocalNameServiceDescriptor.get().unset();
+        try {
+            LocalNameServiceDescriptor.get().unset();
+        } catch (RuntimeException e) {
+            // passs
+        }
     }
 
-    @Test(enabled = false)
+    @Test
     public void resolvesHostnamesAtEachAttempt() throws Exception {
         NonSanitizingGraphiteSender sender = new NonSanitizingGraphiteSender("localhost", port);
 
