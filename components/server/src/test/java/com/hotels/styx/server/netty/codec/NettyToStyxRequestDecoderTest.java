@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2019 Expedia Inc.
+  Copyright (C) 2013-2018 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -47,7 +47,6 @@ import rx.observers.TestSubscriber;
 
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.base.Charsets.UTF_8;
@@ -70,7 +69,9 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.netty.handler.codec.http.LastHttpContent.EMPTY_LAST_CONTENT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.testng.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static rx.RxReactiveStreams.toObservable;
 
 public class NettyToStyxRequestDecoderTest {
@@ -220,24 +221,18 @@ public class NettyToStyxRequestDecoderTest {
     }
 
     @Test
-    public void callsTheEscaperForUnwiseChars() throws Exception {
-        AtomicBoolean encoderCalled = new AtomicBoolean();
-        UnwiseCharsEncoder encoder = x -> {
-            encoderCalled.set(true);
-            return x;
-        };
-
+    public void callsTheEscaperForUnwiseChars() {
+        UnwiseCharsEncoder encoder = mock(UnwiseCharsEncoder.class);
         NettyToStyxRequestDecoder decoder = new NettyToStyxRequestDecoder.Builder()
                 .uniqueIdSupplier(uniqueIdSupplier)
                 .unwiseCharEncoder(encoder)
                 .build();
 
         HttpRequest request = newHttpRequest("/foo");
+        when(encoder.encode("/foo")).thenReturn("/foo");
         request.headers().add(HOST, "example.com");
-
         handle(request, decoder);
-
-        assertTrue(encoderCalled.get());
+        verify(encoder).encode("/foo");
     }
 
     @Test(expectedExceptions = BadRequestException.class)

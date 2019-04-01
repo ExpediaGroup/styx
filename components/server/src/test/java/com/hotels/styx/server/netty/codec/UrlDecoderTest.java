@@ -45,8 +45,9 @@ public class UrlDecoderTest {
         assertThat(url.scheme(), is(""));
     }
 
+    // From GitHub issue #391.
     @Test
-    public void decodesOriginFormIssue391() {
+    public void exposesPathComponentsWithDoubleSlashSeparators() {
         DefaultFullHttpRequest request = new DefaultFullHttpRequest(HTTP_1_1, GET, "//www.abc.com//abc123Z");
         request.headers().add(HOST, "example.com");
 
@@ -62,27 +63,11 @@ public class UrlDecoderTest {
         assertThat(url.scheme(), is(""));
     }
 
-    @Test
-    public void decodesOriginFormWithLowercaseHostHeader() {
-        DefaultFullHttpRequest request = new DefaultFullHttpRequest(HTTP_1_1, GET, "/foo");
-        request.headers().add("host", "example.com");
-
-        Url url = UrlDecoder.decodeUrl(x -> x, request);
-
-        assertThat(url.authority(), is(Optional.empty()));
-        assertThat(url.path(), is("/foo"));
-        assertThat(url.encodedUri(), is("/foo"));
-        assertThat(url.isAbsolute(), is(false));
-        assertThat(url.isRelative(), is(true));
-        assertThat(url.host(), is(Optional.empty()));
-        assertThat(url.query(), is(Optional.empty()));
-        assertThat(url.scheme(), is(""));
-    }
-
+    // Demonstrates that Host header handling is case insensitive.
     @Test
     public void decodesOriginFormWithUppercaseHostHeader() {
         DefaultFullHttpRequest request = new DefaultFullHttpRequest(HTTP_1_1, GET, "/foo");
-        request.headers().add("host", "example.com");
+        request.headers().add("HOST", "example.com");
 
         Url url = UrlDecoder.decodeUrl(x -> x, request);
 
