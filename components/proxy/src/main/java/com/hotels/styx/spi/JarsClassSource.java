@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,22 +20,39 @@ import com.hotels.styx.api.Resource;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.hotels.styx.spi.ClassSource.fromClassLoader;
 import static java.lang.ClassLoader.getSystemClassLoader;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * A class source that looks into resources for JAR files.
  */
 class JarsClassSource implements ClassSource {
+    private static final Map<String, ClassLoader> cache = new HashMap<>();
     private final ClassSource classSource;
 
     JarsClassSource(Collection<Resource> jars) {
-        URL[] urls = jars.stream().map(Resource::url).toArray(URL[]::new);
+        String hash = jars.stream()
+                .map(Resource::url)
+                .map(URL::toString)
+                .sorted()
+                .collect(Collectors.joining(","));
 
-        ClassLoader classLoader = new URLClassLoader(urls, getSystemClassLoader());
+        if (cache.get(hash) != null) {
+            getLogger(getClass()).info("Using cached class loader for - " + hash);
+        }
 
-        this.classSource = fromClassLoader(classLoader);
+        cache.computeIfAbsent(hash, key -> {
+            getLogger(getClass()).info("Creating a new class loader for - " + hash);
+            URL[] urls = jars.stream().map(Resource::url).toArray(URL[]::new);
+            return new URLClassLoader(urls, getSystemClassLoader());
+        });
+
+        this.classSource = fromClassLoader(cache.get(hash));
     }
 
     @Override
