@@ -27,10 +27,10 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
-import com.hotels.styx.routing.config.RouteHandlerConfig;
-import com.hotels.styx.routing.config.RouteHandlerDefinition;
+import com.hotels.styx.routing.config.RoutingObjectConfig;
+import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RouteHandlerFactory;
-import com.hotels.styx.routing.config.RouteHandlerReference;
+import com.hotels.styx.routing.config.RoutingObjectReference;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.server.track.RequestTracker;
 
@@ -76,33 +76,33 @@ public class HttpInterceptorPipeline implements HttpHandler {
             this.requestTracking = requestTracking;
         }
 
-        private static List<RouteHandlerConfig> styxHttpPipeline(JsonNode pipeline) {
+        private static List<RoutingObjectConfig> styxHttpPipeline(JsonNode pipeline) {
             return stream(pipeline.spliterator(), false)
                     .map(Factory::toRoutingConfigNode)
                     .collect(Collectors.toList());
         }
 
-        private static RouteHandlerConfig toRoutingConfigNode(JsonNode jsonNode) {
+        private static RoutingObjectConfig toRoutingConfigNode(JsonNode jsonNode) {
             if (jsonNode.getNodeType() == JsonNodeType.STRING) {
-                return new RouteHandlerReference(jsonNode.asText());
+                return new RoutingObjectReference(jsonNode.asText());
             } else if (jsonNode.getNodeType() == JsonNodeType.OBJECT) {
                 String name = ofNullable(jsonNode.get("name"))
                         .map(JsonNode::asText)
                         .orElse("");
                 String type = requireNonNull(jsonNode.get("type").asText());
                 JsonNode conf = jsonNode.get("config");
-                return new RouteHandlerDefinition(name, type, conf);
+                return new RoutingObjectDefinition(name, type, conf);
             }
             throw new IllegalArgumentException("Invalid configuration. Expected a reference (string) or a configuration block.");
         }
 
         @Override
-        public HttpHandler build(List<String> parents, RouteHandlerFactory builtinsFactory, RouteHandlerDefinition configBlock) {
+        public HttpHandler build(List<String> parents, RouteHandlerFactory builtinsFactory, RoutingObjectDefinition configBlock) {
             JsonNode pipeline = configBlock.config().get("pipeline");
             List<HttpInterceptor> interceptors = getHttpInterceptors(append(parents, "pipeline"), pipeline);
 
-            RouteHandlerDefinition handlerConfig = new JsonNodeConfig(configBlock.config())
-                    .get("handler", RouteHandlerDefinition.class)
+            RoutingObjectDefinition handlerConfig = new JsonNodeConfig(configBlock.config())
+                    .get("handler", RoutingObjectDefinition.class)
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "handler"));
 
             return new HttpInterceptorPipeline(
@@ -115,25 +115,25 @@ public class HttpInterceptorPipeline implements HttpHandler {
             if (pipeline == null || pipeline.isNull()) {
                 return ImmutableList.of();
             }
-            List<RouteHandlerConfig> interceptorConfigs = styxHttpPipeline(pipeline);
+            List<RoutingObjectConfig> interceptorConfigs = styxHttpPipeline(pipeline);
             ensureValidPluginReferences(parents, interceptorConfigs);
             return interceptorConfigs.stream()
                     .map(node -> {
-                        if (node instanceof RouteHandlerReference) {
-                            String name = ((RouteHandlerReference) node).name();
+                        if (node instanceof RoutingObjectReference) {
+                            String name = ((RoutingObjectReference) node).name();
                             return this.interceptors.get(name);
                         } else {
-                            RouteHandlerDefinition block = (RouteHandlerDefinition) node;
+                            RoutingObjectDefinition block = (RoutingObjectDefinition) node;
                             return interceptorFactory.build(block);
                         }
                     })
                     .collect(Collectors.toList());
         }
 
-        private void ensureValidPluginReferences(List<String> parents, List<RouteHandlerConfig> interceptors) {
+        private void ensureValidPluginReferences(List<String> parents, List<RoutingObjectConfig> interceptors) {
             interceptors.forEach(node -> {
-                if (node instanceof RouteHandlerReference) {
-                    String name = ((RouteHandlerReference) node).name();
+                if (node instanceof RoutingObjectReference) {
+                    String name = ((RoutingObjectReference) node).name();
                     if (!this.interceptors.containsKey(name)) {
                         throw new IllegalArgumentException(String.format("No such plugin or interceptor exists, attribute='%s', name='%s'",
                                 join(".", parents), name));

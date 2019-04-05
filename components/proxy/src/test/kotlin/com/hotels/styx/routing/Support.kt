@@ -16,6 +16,6 @@
 package com.hotels.styx.routing
 
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
-import com.hotels.styx.routing.config.RouteHandlerDefinition
+import com.hotels.styx.routing.config.RoutingObjectDefinition
 
-fun configBlock(text: String) = YamlConfig(text).get("config", RouteHandlerDefinition::class.java).get()
+fun configBlock(text: String) = YamlConfig(text).get("config", RoutingObjectDefinition::class.java).get()

@@ -23,13 +23,13 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 /**
  * An yaml configuration block used in routing configuration to configure an HTTP handler.
  */
-@JsonDeserialize(builder = RouteHandlerDefinition.Builder.class)
-public class RouteHandlerDefinition implements RouteHandlerConfig {
+@JsonDeserialize(builder = RoutingObjectDefinition.Builder.class)
+public class RoutingObjectDefinition implements RoutingObjectConfig {
     private final String name;
     private final String type;
     private final JsonNode config;
 
-    public RouteHandlerDefinition(String name, String type, JsonNode config) {
+    public RoutingObjectDefinition(String name, String type, JsonNode config) {
         this.name = name;
         this.type = type;
         this.config = config;
@@ -74,8 +74,8 @@ public class RouteHandlerDefinition implements RouteHandlerConfig {
             return this;
         }
 
-        public RouteHandlerDefinition build() {
-            return new RouteHandlerDefinition(name, type, config);
+        public RoutingObjectDefinition build() {
+            return new RoutingObjectDefinition(name, type, config);
         }
     }
 }

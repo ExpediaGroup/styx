@@ -21,5 +21,5 @@ import com.hotels.styx.api.HttpInterceptor;
  * Builder for built-in interceptors.
  */
 public interface HttpInterceptorFactory {
-    HttpInterceptor build(RouteHandlerDefinition configBlock);
+    HttpInterceptor build(RoutingObjectDefinition configBlock);
 }

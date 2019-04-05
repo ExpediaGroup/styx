@@ -20,14 +20,14 @@ import com.hotels.styx.api.HttpHandler;
 import java.util.List;
 
 /**
- * A factory for constructing HTTP handler objects from a RouteHandlerDefinition yaml config block.
+ * A factory for constructing HTTP handler objects from a RoutingObjectDefinition yaml config block.
  */
 public interface HttpHandlerFactory {
     /**
      * Constructs a terminal action handler according to routing configuration block.
      * <p>
      * Constructs a terminal action handler for the HTTP request. The handler is constructed
-     * according to the definition codified in the RouteHandlerDefinition instance.
+     * according to the definition codified in the RoutingObjectDefinition instance.
      * The RouteHandlerFactory is a factory object for constructing any dependant routing
      * objects. The objectVariables is a map of already instantiated routing objects
      * that can be referred from the handler being built.
@@ -38,5 +38,5 @@ public interface HttpHandlerFactory {
      * @param configBlock
      * @return
      */
-    HttpHandler build(List<String> parents, RouteHandlerFactory builder, RouteHandlerDefinition configBlock);
+    HttpHandler build(List<String> parents, RouteHandlerFactory builder, RoutingObjectDefinition configBlock);
 }

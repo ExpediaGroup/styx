@@ -37,7 +37,7 @@ import com.hotels.styx.routing.HttpPipelineFactory;
 import com.hotels.styx.routing.StaticPipelineFactory;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
-import com.hotels.styx.routing.config.RouteHandlerDefinition;
+import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RouteHandlerFactory;
 import com.hotels.styx.routing.handlers.BackendServiceProxy;
 import com.hotels.styx.routing.handlers.ConditionRouter;
@@ -114,9 +114,9 @@ public final class StyxPipelineFactory implements PipelineFactory {
 
         boolean requestTracking = environment.configuration().get("requestTracking", Boolean.class).orElse(false);
 
-        if (environment.configuration().get("httpPipeline", RouteHandlerDefinition.class).isPresent()) {
+        if (environment.configuration().get("httpPipeline", RoutingObjectDefinition.class).isPresent()) {
             pipelineBuilder = () -> {
-                RouteHandlerDefinition pipelineConfig = environment.configuration().get("httpPipeline", RouteHandlerDefinition.class).get();
+                RoutingObjectDefinition pipelineConfig = environment.configuration().get("httpPipeline", RoutingObjectDefinition.class).get();
                 return routeHandlerFactory.build(ImmutableList.of("httpPipeline"), pipelineConfig);
             };
         } else {

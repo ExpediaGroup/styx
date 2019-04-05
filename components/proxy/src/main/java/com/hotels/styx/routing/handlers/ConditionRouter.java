@@ -25,8 +25,8 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
-import com.hotels.styx.routing.config.RouteHandlerConfig;
-import com.hotels.styx.routing.config.RouteHandlerDefinition;
+import com.hotels.styx.routing.config.RoutingObjectConfig;
+import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RouteHandlerFactory;
 import com.hotels.styx.server.HttpRouter;
 import com.hotels.styx.server.routing.AntlrMatcher;
@@ -89,7 +89,7 @@ public class ConditionRouter implements HttpRouter {
     public static class Factory implements HttpHandlerFactory {
         private static class ConditionRouterConfig {
             private final List<ConditionRouterRouteConfig> routes;
-            private final RouteHandlerConfig fallback;
+            private final RoutingObjectConfig fallback;
 
             private ConditionRouterConfig(@JsonProperty("routes") List<ConditionRouterRouteConfig> routes,
                                           @JsonProperty("fallback") JsonNode fallback) {
@@ -101,7 +101,7 @@ public class ConditionRouter implements HttpRouter {
 
         private static class ConditionRouterRouteConfig {
             private final String condition;
-            private final RouteHandlerConfig destination;
+            private final RoutingObjectConfig destination;
 
             public ConditionRouterRouteConfig(@JsonProperty("condition") String condition,
                                               @JsonProperty("destination") JsonNode destination) {
@@ -112,7 +112,7 @@ public class ConditionRouter implements HttpRouter {
 
         public HttpHandler build(List<String> parents,
                                   RouteHandlerFactory routeHandlerFactory,
-                                  RouteHandlerDefinition configBlock
+                                  RoutingObjectDefinition configBlock
         ) {
             ConditionRouterConfig config = new JsonNodeConfig(configBlock.config()).as(ConditionRouterConfig.class);
             if (config.routes == null) {
@@ -135,7 +135,7 @@ public class ConditionRouter implements HttpRouter {
             }
         }
 
-        private static Route buildRoute(List<String> parents, RouteHandlerFactory routeHandlerFactory, int index, String condition, RouteHandlerConfig destination) {
+        private static Route buildRoute(List<String> parents, RouteHandlerFactory routeHandlerFactory, int index, String condition, RoutingObjectConfig destination) {
             try {
                 String attribute = format("destination[%d]", index);
                 HttpHandler handler = routeHandlerFactory.build(append(parents, attribute), destination);

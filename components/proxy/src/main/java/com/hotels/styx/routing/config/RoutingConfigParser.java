@@ -27,14 +27,14 @@ import static java.util.Optional.ofNullable;
  */
 public class RoutingConfigParser {
 
-    public static RouteHandlerConfig toRoutingConfigNode(JsonNode jsonNode) {
+    public static RoutingObjectConfig toRoutingConfigNode(JsonNode jsonNode) {
         if (jsonNode.getNodeType() == JsonNodeType.STRING) {
-            return new RouteHandlerReference(jsonNode.asText());
+            return new RoutingObjectReference(jsonNode.asText());
         } else if (jsonNode.getNodeType() == JsonNodeType.OBJECT) {
             String name = getOrElse(jsonNode, "name", "");
             String type = getMandatory(jsonNode, "type", format("Routing config definition must have a 'type' attribute in def='%s'", name));
             JsonNode conf = jsonNode.get("config");
-            return new RouteHandlerDefinition(name, type, conf);
+            return new RoutingObjectDefinition(name, type, conf);
         }
         throw new IllegalArgumentException("invalid configuration");
     }

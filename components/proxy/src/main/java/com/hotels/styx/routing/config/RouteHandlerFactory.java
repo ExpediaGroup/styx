@@ -36,17 +36,17 @@ public class RouteHandlerFactory {
         this.handlers = requireNonNull(handlers);
     }
 
-    public HttpHandler build(List<String> parents, RouteHandlerConfig configNode) {
-        if (configNode instanceof RouteHandlerDefinition) {
-            RouteHandlerDefinition configBlock = (RouteHandlerDefinition) configNode;
+    public HttpHandler build(List<String> parents, RoutingObjectConfig configNode) {
+        if (configNode instanceof RoutingObjectDefinition) {
+            RoutingObjectDefinition configBlock = (RoutingObjectDefinition) configNode;
             String type = configBlock.type();
 
             HttpHandlerFactory factory = factories.get(type);
             Preconditions.checkArgument(factory != null, format("Unknown handler type '%s'", type));
 
             return factory.build(parents, this, configBlock);
-        } else if (configNode instanceof RouteHandlerReference) {
-            RouteHandlerReference reference = (RouteHandlerReference) configNode;
+        } else if (configNode instanceof RoutingObjectReference) {
+            RoutingObjectReference reference = (RoutingObjectReference) configNode;
 
             HttpHandler handler = handlers.get(reference.name());
             if (handler == null) {

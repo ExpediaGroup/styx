@@ -24,7 +24,7 @@ import com.hotels.styx.api.extension.service.RewriteRule;
 import com.hotels.styx.client.RewriteRuleset;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.config.HttpInterceptorFactory;
-import com.hotels.styx.routing.config.RouteHandlerDefinition;
+import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.api.LiveHttpRequest;
 
 /**
@@ -47,7 +47,7 @@ public class RewriteInterceptor implements HttpInterceptor {
      */
     public static class Factory implements HttpInterceptorFactory {
         @Override
-        public HttpInterceptor build(RouteHandlerDefinition configBlock) {
+        public HttpInterceptor build(RoutingObjectDefinition configBlock) {
             ImmutableList.Builder<RewriteRule> rules = ImmutableList.builder();
             configBlock.config().iterator().forEachRemaining(
                     node -> {

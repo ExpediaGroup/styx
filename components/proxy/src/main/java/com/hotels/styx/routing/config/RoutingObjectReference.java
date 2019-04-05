@@ -20,10 +20,10 @@ import java.util.Objects;
 /**
  * A routing config object that is a named reference to an object specified elsewhere.
  */
-public class RouteHandlerReference implements RouteHandlerConfig {
+public class RoutingObjectReference implements RoutingObjectConfig {
     private final String name;
 
-    public RouteHandlerReference(String name) {
+    public RoutingObjectReference(String name) {
         this.name = name;
     }
 
@@ -39,7 +39,7 @@ public class RouteHandlerReference implements RouteHandlerConfig {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        RouteHandlerReference that = (RouteHandlerReference) o;
+        RoutingObjectReference that = (RoutingObjectReference) o;
         return Objects.equals(name, that.name);
     }
 
@@ -50,7 +50,7 @@ public class RouteHandlerReference implements RouteHandlerConfig {
 
     @Override
     public String toString() {
-        return "RouteHandlerReference{"
+        return "RoutingObjectReference{"
                 + "name='" + name + '\''
                 + '}';
     }
