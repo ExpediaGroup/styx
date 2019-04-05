@@ -58,7 +58,7 @@ class BackendServiceProxyTest : StringSpec({
 
         val services = mapOf("backendServicesRegistry" to backendRegistry)
 
-        val handler = BackendServiceProxy.ConfigFactory(environment, clientFactory(), services).build(listOf(), null, config)
+        val handler = BackendServiceProxy.Factory(environment, clientFactory(), services).build(listOf(), null, config)
         backendRegistry.reload()
 
         val hwaResponse = Mono.from(handler.handle(hwaRequest, HttpInterceptorContext.create())).block()
@@ -82,7 +82,7 @@ class BackendServiceProxyTest : StringSpec({
               """.trimIndent())
 
         val e = shouldThrow<IllegalArgumentException> {
-            BackendServiceProxy.ConfigFactory(environment, clientFactory(), mapOf()).build(listOf("config", "config"), null, config)
+            BackendServiceProxy.Factory(environment, clientFactory(), mapOf()).build(listOf("config", "config"), null, config)
         }
         e.message shouldBe("Routing object definition of type 'BackendServiceProxy', attribute='config.config', is missing a mandatory 'backendProvider' attribute.")
     }
@@ -98,7 +98,7 @@ class BackendServiceProxyTest : StringSpec({
               """.trimIndent())
 
         val e = shouldThrow<IllegalArgumentException> {
-            BackendServiceProxy.ConfigFactory(environment, clientFactory(), mapOf()).build(listOf("config", "config"), null, config)
+            BackendServiceProxy.Factory(environment, clientFactory(), mapOf()).build(listOf("config", "config"), null, config)
         }
         e.message shouldBe("No such backend service provider exists, attribute='config.config.backendProvider', name='bar'")
     }

@@ -36,7 +36,7 @@ class ConditionRouterConfigTest : StringSpec({
 
     val request = LiveHttpRequest.get("/foo").build()
     val routeHandlerFactory = RouteHandlerFactory(
-            mapOf("StaticResponseHandler" to StaticResponseHandler.ConfigFactory()),
+            mapOf("StaticResponseHandler" to StaticResponseHandler.Factory()),
             mapOf())
 
     val config = configBlock("""
@@ -73,14 +73,14 @@ class ConditionRouterConfigTest : StringSpec({
 
 
     "Builds an instance with fallback handler" {
-        val router = ConditionRouter.ConfigFactory().build(listOf(), routeHandlerFactory, config)
+        val router = ConditionRouter.Factory().build(listOf(), routeHandlerFactory, config)
         val response = Mono.from(router.handle(request, HttpInterceptorContext(true))).block()
 
         response.status() shouldBe (OK)
     }
 
     "Builds condition router instance routes" {
-        val router = ConditionRouter.ConfigFactory().build(listOf(), routeHandlerFactory, config)
+        val router = ConditionRouter.Factory().build(listOf(), routeHandlerFactory, config)
         val response = Mono.from(router.handle(request, HttpInterceptorContext())).block()
 
         response.status().code() shouldBe (301)
@@ -93,7 +93,7 @@ class ConditionRouterConfigTest : StringSpec({
                 mapOf("secureHandler" to HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "secure").build()) },
                         "fallbackHandler" to HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "fallback").build()) }))
 
-        val router = ConditionRouter.ConfigFactory().build(listOf(), routeHandlerFactory, configWithReferences)
+        val router = ConditionRouter.Factory().build(listOf(), routeHandlerFactory, configWithReferences)
 
         val resp = Mono.from(router.handle(request, HttpInterceptorContext())).block()
 
@@ -106,7 +106,7 @@ class ConditionRouterConfigTest : StringSpec({
                 mapOf("secureHandler" to HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "secure").build()) },
                         "fallbackHandler" to HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "fallback").build()) }))
 
-        val router = ConditionRouter.ConfigFactory().build(
+        val router = ConditionRouter.Factory().build(
                 listOf(),
                 routeHandlerFactory,
                 configWithReferences
@@ -132,7 +132,7 @@ class ConditionRouterConfigTest : StringSpec({
         """.trimIndent())
 
         val e = shouldThrow<IllegalArgumentException> {
-            ConditionRouter.ConfigFactory().build(listOf("config", "config"), routeHandlerFactory, config)
+            ConditionRouter.Factory().build(listOf("config", "config"), routeHandlerFactory, config)
         }
         e.message shouldBe ("Routing object definition of type 'ConditionRouter', attribute='config.config', is missing a mandatory 'routes' attribute.")
     }
@@ -153,7 +153,7 @@ class ConditionRouterConfigTest : StringSpec({
                           content: "secure"
         """.trimIndent())
 
-        val router = ConditionRouter.ConfigFactory().build(listOf(), routeHandlerFactory, config)
+        val router = ConditionRouter.Factory().build(listOf(), routeHandlerFactory, config)
 
         val resp = Mono.from(router.handle(request, HttpInterceptorContext())).block()
 
@@ -177,7 +177,7 @@ class ConditionRouterConfigTest : StringSpec({
         """.trimIndent())
 
         val e = shouldThrow<IllegalArgumentException> {
-            ConditionRouter.ConfigFactory().build(listOf("config", "config"), routeHandlerFactory, config)
+            ConditionRouter.Factory().build(listOf("config", "config"), routeHandlerFactory, config)
         }
         e.message shouldBe ("Routing object definition of type 'ConditionRouter', attribute='config.config.routes.condition[0]', failed to compile routing expression condition=')() == \"https\"'")
     }
@@ -199,7 +199,7 @@ class ConditionRouterConfigTest : StringSpec({
             """.trimIndent())
 
         val e = shouldThrow<IllegalArgumentException> {
-            ConditionRouter.ConfigFactory().build(listOf("config", "config"), routeHandlerFactory, config)
+            ConditionRouter.Factory().build(listOf("config", "config"), routeHandlerFactory, config)
         }
         e.message shouldBe("Routing object definition of type 'ConditionRouter', attribute='config.config.routes.condition[0]', failed to compile routing expression condition='nonexistant() == \"https\"'")
     }
@@ -238,7 +238,7 @@ class ConditionRouterConfigTest : StringSpec({
             builtinsFactory.build(any(), any())
         } returns HttpHandler {_, _ -> Eventual.of(response(OK).build())}
 
-        val router = ConditionRouter.ConfigFactory().build(listOf("config", "config"), builtinsFactory, config)
+        val router = ConditionRouter.Factory().build(listOf("config", "config"), builtinsFactory, config)
 
         verify {
             builtinsFactory.build(listOf("config", "config", "routes", "destination[0]"), any())

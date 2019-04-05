@@ -49,7 +49,7 @@ class ProxyToBackendTest : StringSpec({
           """.trimIndent())
 
     "builds ProxyToBackend handler" {
-        val handler = ProxyToBackend.ConfigFactory(environment, clientFactory()).build(listOf(), null, config)
+        val handler = ProxyToBackend.Factory(environment, clientFactory()).build(listOf(), null, config)
 
         val response = Mono.from(handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create())).block()
         response?.status() shouldBe (OK)
@@ -65,7 +65,7 @@ class ProxyToBackendTest : StringSpec({
                 """.trimIndent())
 
         val e = shouldThrow<IllegalArgumentException> {
-            ProxyToBackend.ConfigFactory(environment, clientFactory())
+            ProxyToBackend.Factory(environment, clientFactory())
             .build(listOf("config", "config"), null, config)
         }
 
@@ -87,7 +87,7 @@ class ProxyToBackendTest : StringSpec({
                 """.trimIndent())
 
         val e = shouldThrow<IllegalArgumentException> {
-            ProxyToBackend.ConfigFactory(environment, clientFactory())
+            ProxyToBackend.Factory(environment, clientFactory())
             .build(listOf("config", "config"), null, config)
         }
 

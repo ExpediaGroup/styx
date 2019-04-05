@@ -53,7 +53,7 @@ class HttpInterceptorPipelineTest : StringSpec({
       """.trimIndent())
 
         val e = shouldThrow<java.lang.IllegalArgumentException> {
-            HttpInterceptorPipeline.ConfigFactory(
+            HttpInterceptorPipeline.Factory(
                     listOf(
                             // Does not accept a scala function literal in place of Java Function1:
                             namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
@@ -77,7 +77,7 @@ class HttpInterceptorPipelineTest : StringSpec({
             """.trimIndent())
 
         val e = shouldThrow<IllegalArgumentException> {
-            HttpInterceptorPipeline.ConfigFactory(
+            HttpInterceptorPipeline.Factory(
                     listOf(
                             namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
                             namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) })
@@ -105,7 +105,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                     backendProvider: backendProvider
       """.trimIndent())
 
-        val handler = HttpInterceptorPipeline.ConfigFactory(
+        val handler = HttpInterceptorPipeline.Factory(
                 listOf(
                         namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
                         namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "B").build() }) })
@@ -130,7 +130,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                     backendProvider: backendProvider
       """.trimIndent())
 
-        val handler = HttpInterceptorPipeline.ConfigFactory(listOf(), BuiltinInterceptorsFactory(mapOf()), false).build(listOf("config"), routingObjectFactory(), config)
+        val handler = HttpInterceptorPipeline.Factory(listOf(), BuiltinInterceptorsFactory(mapOf()), false).build(listOf("config"), routingObjectFactory(), config)
 
         val response = Mono.from(handler.handle(hwaRequest, null)).block()
         response?.status() shouldBe (OK)
@@ -158,12 +158,12 @@ class HttpInterceptorPipelineTest : StringSpec({
                     backendProvider: backendProvider
       """.trimIndent())
 
-        val handler = HttpInterceptorPipeline.ConfigFactory(
+        val handler = HttpInterceptorPipeline.Factory(
                 listOf(
                         namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
                         namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "B").build() }) })
                 ),
-                BuiltinInterceptorsFactory(mapOf("Rewrite" to RewriteInterceptor.ConfigFactory())),
+                BuiltinInterceptorsFactory(mapOf("Rewrite" to RewriteInterceptor.Factory())),
                 false
         ).build(listOf("config"), routingObjectFactory(), config)
 
@@ -190,7 +190,7 @@ class HttpInterceptorPipelineTest : StringSpec({
             builtinsFactory.build(any(), any())
         } returns HttpHandler { _, _ -> Eventual.of(response(OK).build()) }
 
-        HttpInterceptorPipeline.ConfigFactory(listOf(), null, false)
+        HttpInterceptorPipeline.Factory(listOf(), null, false)
                 .build(listOf("config", "config"), builtinsFactory, config)
 
         verify {

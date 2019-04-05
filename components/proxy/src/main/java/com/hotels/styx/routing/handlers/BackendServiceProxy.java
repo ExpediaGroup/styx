@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ public class BackendServiceProxy implements HttpHandler {
     /**
      * Builds a BackendServiceProxy from yaml routing configuration.
      */
-    public static class ConfigFactory implements HttpHandlerFactory {
+    public static class Factory implements HttpHandlerFactory {
         private final BackendServiceClientFactory serviceClientFactory;
         private final Map<String, Registry<BackendService>> backendRegistries;
         private final Environment environment;
@@ -72,13 +72,13 @@ public class BackendServiceProxy implements HttpHandler {
         }
 
         @VisibleForTesting
-        ConfigFactory(Environment environment, BackendServiceClientFactory serviceClientFactory, Map<String, Registry<BackendService>> backendRegistries) {
+        Factory(Environment environment, BackendServiceClientFactory serviceClientFactory, Map<String, Registry<BackendService>> backendRegistries) {
             this.serviceClientFactory = serviceClientFactory;
             this.backendRegistries = backendRegistries;
             this.environment = environment;
         }
 
-        public ConfigFactory(Environment environment, Map<String, Registry<BackendService>> backendRegistries) {
+        public Factory(Environment environment, Map<String, Registry<BackendService>> backendRegistries) {
             this.backendRegistries = backendRegistries;
             this.serviceClientFactory = serviceClientFactory(environment);
             this.environment = environment;

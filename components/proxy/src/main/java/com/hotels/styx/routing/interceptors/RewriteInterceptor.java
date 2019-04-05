@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public class RewriteInterceptor implements HttpInterceptor {
     /**
      * A factory for built-in interceptors.
      */
-    public static class ConfigFactory implements HttpInterceptorFactory {
+    public static class Factory implements HttpInterceptorFactory {
         @Override
         public HttpInterceptor build(RouteHandlerDefinition configBlock) {
             ImmutableList.Builder<RewriteRule> rules = ImmutableList.builder();

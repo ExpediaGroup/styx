@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -63,11 +63,11 @@ public class ProxyToBackend implements HttpHandler {
     /**
      * ProxyToBackend factory that instantiates an object from the Yaml configuration.
      */
-    public static class ConfigFactory implements HttpHandlerFactory {
+    public static class Factory implements HttpHandlerFactory {
         private Environment environment;
         private final BackendServiceClientFactory clientFactory;
 
-        public ConfigFactory(Environment environment, BackendServiceClientFactory clientFactory) {
+        public Factory(Environment environment, BackendServiceClientFactory clientFactory) {
             this.environment = environment;
             this.clientFactory = clientFactory;
         }

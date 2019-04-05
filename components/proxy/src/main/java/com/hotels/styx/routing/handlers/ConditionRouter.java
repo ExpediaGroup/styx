@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -86,7 +86,7 @@ public class ConditionRouter implements HttpRouter {
     /**
      * Builds a condition router from the yaml routing configuration.
      */
-    public static class ConfigFactory implements HttpHandlerFactory {
+    public static class Factory implements HttpHandlerFactory {
         private static class ConditionRouterConfig {
             private final List<ConditionRouterRouteConfig> routes;
             private final RouteHandlerConfig fallback;

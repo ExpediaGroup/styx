@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
     @Override
     public HttpHandler create(StyxServerComponents config) {
         BuiltinInterceptorsFactory builtinInterceptorsFactory = new BuiltinInterceptorsFactory(
-                ImmutableMap.of("Rewrite", new RewriteInterceptor.ConfigFactory()));
+                ImmutableMap.of("Rewrite", new RewriteInterceptor.Factory()));
 
         boolean requestTracking = config.environment().configuration().get("requestTracking", Boolean.class).orElse(false);
 
@@ -134,11 +134,11 @@ public final class StyxPipelineFactory implements PipelineFactory {
             BuiltinInterceptorsFactory builtinInterceptorsFactory,
             boolean requestTracking) {
         return ImmutableMap.of(
-                "StaticResponseHandler", new StaticResponseHandler.ConfigFactory(),
-                "ConditionRouter", new ConditionRouter.ConfigFactory(),
-                "BackendServiceProxy", new BackendServiceProxy.ConfigFactory(environment, backendRegistries(servicesFromConfig)),
-                "InterceptorPipeline", new HttpInterceptorPipeline.ConfigFactory(plugins, builtinInterceptorsFactory, requestTracking),
-                "ProxyToBackend", new ProxyToBackend.ConfigFactory(environment, new StyxBackendServiceClientFactory(environment))
+                "StaticResponseHandler", new StaticResponseHandler.Factory(),
+                "ConditionRouter", new ConditionRouter.Factory(),
+                "BackendServiceProxy", new BackendServiceProxy.Factory(environment, backendRegistries(servicesFromConfig)),
+                "InterceptorPipeline", new HttpInterceptorPipeline.Factory(plugins, builtinInterceptorsFactory, requestTracking),
+                "ProxyToBackend", new ProxyToBackend.Factory(environment, new StyxBackendServiceClientFactory(environment))
         );
     }
 

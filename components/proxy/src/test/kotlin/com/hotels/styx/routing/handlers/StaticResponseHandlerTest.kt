@@ -36,7 +36,7 @@ class StaticResponseHandlerTest: StringSpec({
           """.trimIndent())
 
     "builds static response handler" {
-        val handler = StaticResponseHandler.ConfigFactory().build(listOf(), null, config)
+        val handler = StaticResponseHandler.Factory().build(listOf(), null, config)
         val response = Mono.from(handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create())).block()
 
         response?.status() shouldBe (CREATED)

@@ -67,7 +67,7 @@ public class StaticResponseHandler implements HttpHandler {
     /**
      * Builds a static response handler from Yaml configuration.
      */
-    public static class ConfigFactory implements HttpHandlerFactory {
+    public static class Factory implements HttpHandlerFactory {
         public HttpHandler build(List<String> parents, RouteHandlerFactory builders, RouteHandlerDefinition configBlock) {
             requireNonNull(configBlock.config());
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -65,12 +65,12 @@ public class HttpInterceptorPipeline implements HttpHandler {
     /**
      * An yaml config based builder for HttpInterceptorPipeline.
      */
-    public static class ConfigFactory implements HttpHandlerFactory {
+    public static class Factory implements HttpHandlerFactory {
         private final Map<String, NamedPlugin> interceptors;
         private final BuiltinInterceptorsFactory interceptorFactory;
         private final boolean requestTracking;
 
-        public ConfigFactory(Iterable<NamedPlugin> interceptors, BuiltinInterceptorsFactory interceptorFactory, boolean requestTracking) {
+        public Factory(Iterable<NamedPlugin> interceptors, BuiltinInterceptorsFactory interceptorFactory, boolean requestTracking) {
             this.interceptors = toMap(interceptors);
             this.interceptorFactory = interceptorFactory;
             this.requestTracking = requestTracking;
@@ -78,7 +78,7 @@ public class HttpInterceptorPipeline implements HttpHandler {
 
         private static List<RouteHandlerConfig> styxHttpPipeline(JsonNode pipeline) {
             return stream(pipeline.spliterator(), false)
-                    .map(ConfigFactory::toRoutingConfigNode)
+                    .map(Factory::toRoutingConfigNode)
                     .collect(Collectors.toList());
         }
 
