@@ -26,7 +26,7 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
-import com.hotels.styx.routing.config.RouteHandlerFactory;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -68,7 +68,7 @@ public class StaticResponseHandler implements HttpHandler {
      * Builds a static response handler from Yaml configuration.
      */
     public static class Factory implements HttpHandlerFactory {
-        public HttpHandler build(List<String> parents, RouteHandlerFactory builders, RoutingObjectDefinition configBlock) {
+        public HttpHandler build(List<String> parents, RoutingObjectFactory builders, RoutingObjectDefinition configBlock) {
             requireNonNull(configBlock.config());
 
             StaticResponseConfig config = new JsonNodeConfig(configBlock.config())

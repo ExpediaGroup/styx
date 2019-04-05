@@ -38,7 +38,7 @@ import com.hotels.styx.routing.StaticPipelineFactory;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
-import com.hotels.styx.routing.config.RouteHandlerFactory;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.handlers.BackendServiceProxy;
 import com.hotels.styx.routing.handlers.ConditionRouter;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
@@ -73,11 +73,11 @@ public final class StyxPipelineFactory implements PipelineFactory {
                 builtinInterceptorsFactory,
                 requestTracking);
 
-        RouteHandlerFactory routeHandlerFactory = new RouteHandlerFactory(objectFactories, new ConcurrentHashMap<>());
+        RoutingObjectFactory routingObjectFactory = new RoutingObjectFactory(objectFactories, new ConcurrentHashMap<>());
 
         return styxHttpPipeline(
                 config.environment().styxConfig(),
-                configuredPipeline(config.environment(), config.services(), config.plugins(), routeHandlerFactory),
+                configuredPipeline(config.environment(), config.services(), config.plugins(), routingObjectFactory),
                 requestTracking);
     }
 
@@ -108,7 +108,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
             Environment environment,
             Map<String, StyxService> servicesFromConfig,
             Iterable<NamedPlugin> plugins,
-            RouteHandlerFactory routeHandlerFactory
+            RoutingObjectFactory routingObjectFactory
     ) {
         HttpPipelineFactory pipelineBuilder;
 
@@ -117,7 +117,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
         if (environment.configuration().get("httpPipeline", RoutingObjectDefinition.class).isPresent()) {
             pipelineBuilder = () -> {
                 RoutingObjectDefinition pipelineConfig = environment.configuration().get("httpPipeline", RoutingObjectDefinition.class).get();
-                return routeHandlerFactory.build(ImmutableList.of("httpPipeline"), pipelineConfig);
+                return routingObjectFactory.build(ImmutableList.of("httpPipeline"), pipelineConfig);
             };
         } else {
             Registry<BackendService> backendServicesRegistry = (Registry<BackendService>) servicesFromConfig.get("backendServiceRegistry");

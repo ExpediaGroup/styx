@@ -26,7 +26,7 @@ import io.mockk.verify
 import java.lang.IllegalArgumentException
 
 
-class RouteHandlerFactoryTest : StringSpec({
+class RoutingObjectFactoryTest : StringSpec({
 
     val mockHandler = mockk<HttpHandler>()
     val aHandlerInstance = mockk<HttpHandler>()
@@ -38,7 +38,7 @@ class RouteHandlerFactoryTest : StringSpec({
         val routeDef = RoutingObjectDefinition("handler-def", "DelegateHandler", mockk<JsonNode>())
         val handlerFactory = httpHandlerFactory(mockHandler)
 
-        val routeFactory = RouteHandlerFactory(mapOf("DelegateHandler" to handlerFactory), handlers)
+        val routeFactory = RoutingObjectFactory(mapOf("DelegateHandler" to handlerFactory), handlers)
 
         val delegateHandler = routeFactory.build(listOf("parents"), routeDef)
 
@@ -51,7 +51,7 @@ class RouteHandlerFactoryTest : StringSpec({
 
     "Doesn't accept unregistered types" {
         val config = RoutingObjectDefinition("foo", "ConfigType", mockk())
-        val routeFactory = RouteHandlerFactory(mapOf(), handlers)
+        val routeFactory = RoutingObjectFactory(mapOf(), handlers)
 
         val e = shouldThrow<IllegalArgumentException> {
             routeFactory.build(listOf(), config)
@@ -61,13 +61,13 @@ class RouteHandlerFactoryTest : StringSpec({
     }
 
     "Returns handler from a configuration reference" {
-        val routeFactory = RouteHandlerFactory(mapOf(), handlers)
+        val routeFactory = RoutingObjectFactory(mapOf(), handlers)
         val handler = routeFactory.build(listOf(), RoutingObjectReference("aHandler"))
         handler.shouldBe(aHandlerInstance)
     }
 
     "Throws exception when it refers a non-existent object" {
-        val routeFactory = RouteHandlerFactory(mapOf(), handlers)
+        val routeFactory = RoutingObjectFactory(mapOf(), handlers)
 
         val e = shouldThrow<IllegalArgumentException> {
             routeFactory.build(listOf(), RoutingObjectReference("non-existent"))

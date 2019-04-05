@@ -24,7 +24,7 @@ import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory
 import com.hotels.styx.routing.config.HttpHandlerFactory
-import com.hotels.styx.routing.config.RouteHandlerFactory
+import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.configBlock
 import com.hotels.styx.routing.interceptors.RewriteInterceptor
 import io.kotlintest.shouldBe
@@ -185,7 +185,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                     backendProvider: backendProvider
       """.trimIndent())
 
-        val builtinsFactory = mockk<RouteHandlerFactory>()
+        val builtinsFactory = mockk<RoutingObjectFactory>()
         every {
             builtinsFactory.build(any(), any())
         } returns HttpHandler { _, _ -> Eventual.of(response(OK).build()) }
@@ -212,4 +212,4 @@ fun mockHandlerFactory(): HttpHandlerFactory {
     return handlerFactory
 }
 
-fun routingObjectFactory() = RouteHandlerFactory(mapOf("BackendServiceProxy" to mockHandlerFactory()), mapOf())
+fun routingObjectFactory() = RoutingObjectFactory(mapOf("BackendServiceProxy" to mockHandlerFactory()), mapOf())

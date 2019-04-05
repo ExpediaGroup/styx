@@ -29,7 +29,7 @@ import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectConfig;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
-import com.hotels.styx.routing.config.RouteHandlerFactory;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.RoutingObjectReference;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.server.track.RequestTracker;
@@ -97,7 +97,7 @@ public class HttpInterceptorPipeline implements HttpHandler {
         }
 
         @Override
-        public HttpHandler build(List<String> parents, RouteHandlerFactory builtinsFactory, RoutingObjectDefinition configBlock) {
+        public HttpHandler build(List<String> parents, RoutingObjectFactory builtinsFactory, RoutingObjectDefinition configBlock) {
             JsonNode pipeline = configBlock.config().get("pipeline");
             List<HttpInterceptor> interceptors = getHttpInterceptors(append(parents, "pipeline"), pipeline);
 

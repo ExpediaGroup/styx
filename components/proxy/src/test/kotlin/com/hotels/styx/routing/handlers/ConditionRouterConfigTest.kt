@@ -21,7 +21,7 @@ import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse.response
-import com.hotels.styx.routing.config.RouteHandlerFactory
+import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.configBlock
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
@@ -35,7 +35,7 @@ import reactor.core.publisher.Mono
 class ConditionRouterConfigTest : StringSpec({
 
     val request = LiveHttpRequest.get("/foo").build()
-    val routeHandlerFactory = RouteHandlerFactory(
+    val routeHandlerFactory = RoutingObjectFactory(
             mapOf("StaticResponseHandler" to StaticResponseHandler.Factory()),
             mapOf())
 
@@ -88,7 +88,7 @@ class ConditionRouterConfigTest : StringSpec({
 
 
     "Fallback handler can be specified as a handler reference" {
-        val routeHandlerFactory = RouteHandlerFactory(
+        val routeHandlerFactory = RoutingObjectFactory(
                 mapOf(),
                 mapOf("secureHandler" to HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "secure").build()) },
                         "fallbackHandler" to HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "fallback").build()) }))
@@ -101,7 +101,7 @@ class ConditionRouterConfigTest : StringSpec({
     }
 
     "Route destination can be specified as a handler reference" {
-        val routeHandlerFactory = RouteHandlerFactory(
+        val routeHandlerFactory = RoutingObjectFactory(
                 mapOf(),
                 mapOf("secureHandler" to HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "secure").build()) },
                         "fallbackHandler" to HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "fallback").build()) }))
@@ -233,7 +233,7 @@ class ConditionRouterConfigTest : StringSpec({
                       content: "secure"
             """.trimIndent())
 
-        val builtinsFactory = mockk<RouteHandlerFactory>()
+        val builtinsFactory = mockk<RoutingObjectFactory>()
         every {
             builtinsFactory.build(any(), any())
         } returns HttpHandler {_, _ -> Eventual.of(response(OK).build())}

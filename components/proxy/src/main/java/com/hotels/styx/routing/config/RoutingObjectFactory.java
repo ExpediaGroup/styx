@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,11 +27,11 @@ import static java.util.Objects.requireNonNull;
 /**
  * Builds a routing object based on its actual type.
  */
-public class RouteHandlerFactory {
+public class RoutingObjectFactory {
     private final Map<String, HttpHandlerFactory> factories;
     private Map<String, HttpHandler> handlers;
 
-    public RouteHandlerFactory(Map<String, HttpHandlerFactory> factories, Map<String, HttpHandler> handlers) {
+    public RoutingObjectFactory(Map<String, HttpHandlerFactory> factories, Map<String, HttpHandler> handlers) {
         this.factories = requireNonNull(factories);
         this.handlers = requireNonNull(handlers);
     }
