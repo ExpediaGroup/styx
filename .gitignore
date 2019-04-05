@@ -35,3 +35,5 @@ wrk2/
 
 # Jekyll Docs
 docs/_site
+
+**/.kotlintest/
