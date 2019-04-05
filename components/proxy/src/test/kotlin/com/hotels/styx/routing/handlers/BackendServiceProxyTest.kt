@@ -35,7 +35,7 @@ import reactor.core.publisher.Mono
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 
-class BackendServiceProxyTest: StringSpec({
+class BackendServiceProxyTest : StringSpec({
 
     val hwaRequest = LiveHttpRequest.get("/x").build()
     val laRequest = LiveHttpRequest.get("/lp/x").build()

@@ -22,7 +22,7 @@ import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfigurationFormat.YAML
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.DescribeSpec
-import java.util.*
+import java.util.Optional
 
 class ServerConfigSchemaTest : DescribeSpec({
     describe("Styx Server Configuration") {
