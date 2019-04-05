@@ -46,11 +46,7 @@ public class NonSanitizingGraphiteSenderTest {
     @AfterClass
     public void tearDown() {
         server.stop();
-        try {
-            LocalNameServiceDescriptor.get().unset();
-        } catch (RuntimeException e) {
-            // passs
-        }
+        LocalNameServiceDescriptor.get().unset();
     }
 
     @Test
