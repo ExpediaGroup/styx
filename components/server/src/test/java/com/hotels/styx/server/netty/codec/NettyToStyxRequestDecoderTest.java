@@ -221,7 +221,7 @@ public class NettyToStyxRequestDecoderTest {
     }
 
     @Test
-    public void callsTheEscaperForUnwiseChars() throws Exception {
+    public void callsTheEscaperForUnwiseChars() {
         UnwiseCharsEncoder encoder = mock(UnwiseCharsEncoder.class);
         NettyToStyxRequestDecoder decoder = new NettyToStyxRequestDecoder.Builder()
                 .uniqueIdSupplier(uniqueIdSupplier)

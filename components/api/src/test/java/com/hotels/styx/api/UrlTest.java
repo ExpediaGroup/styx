@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -192,13 +192,13 @@ public class UrlTest {
     public void identifiesCorrectlyIfUrlIsFullyQualified() throws Exception {
         Url fqUrl = url("http://example.com").build();
         assertThat(fqUrl.isFullyQualified(), is(true));
-        assertThat(fqUrl.isAbsolute(), is(false));
-        assertThat(fqUrl.isRelative(), is(true));
+        assertThat(fqUrl.isAbsolute(), is(true));
+        assertThat(fqUrl.isRelative(), is(false));
 
         Url nonFqUrl = url("/somepath").build();
         assertThat(nonFqUrl.isFullyQualified(), is(false));
-        assertThat(nonFqUrl.isAbsolute(), is(true));
-        assertThat(nonFqUrl.isRelative(), is(false));
+        assertThat(nonFqUrl.isAbsolute(), is(false));
+        assertThat(nonFqUrl.isRelative(), is(true));
     }
 
     @Test
