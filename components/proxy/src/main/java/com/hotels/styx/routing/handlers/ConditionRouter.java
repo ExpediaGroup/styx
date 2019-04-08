@@ -22,6 +22,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.configuration.RouteDatabase;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
@@ -110,7 +111,9 @@ public class ConditionRouter implements HttpRouter {
             }
         }
 
+        @Override
         public HttpHandler build(List<String> parents,
+                                  RouteDatabase routeDatabase,
                                   RoutingObjectFactory routingObjectFactory,
                                   RoutingObjectDefinition configBlock
         ) {
@@ -121,24 +124,43 @@ public class ConditionRouter implements HttpRouter {
 
             AtomicInteger index = new AtomicInteger(0);
             List<Route> routes = config.routes.stream()
-                    .map(routeConfig -> buildRoute(append(parents, "routes"), routingObjectFactory, index.getAndIncrement(), routeConfig.condition, routeConfig.destination))
+                    .map(routeConfig -> buildRoute(
+                            append(parents, "routes"),
+                            routeDatabase,
+                            routingObjectFactory,
+                            index.getAndIncrement(),
+                            routeConfig.condition,
+                            routeConfig.destination))
                     .collect(Collectors.toList());
 
-            return new RouteHandlerAdapter(new ConditionRouter(routes, buildFallbackHandler(parents, routingObjectFactory, config)));
+            return new RouteHandlerAdapter(
+                    new ConditionRouter(
+                            routes,
+                            buildFallbackHandler(parents, routeDatabase, routingObjectFactory, config)));
         }
 
-        private static HttpHandler buildFallbackHandler(List<String> parents, RoutingObjectFactory routingObjectFactory, ConditionRouterConfig config) {
+        private static HttpHandler buildFallbackHandler(
+                List<String> parents,
+                RouteDatabase routeDatabase,
+                RoutingObjectFactory routingObjectFactory,
+                ConditionRouterConfig config) {
             if (config.fallback == null) {
                 return (request, context) -> Eventual.of(LiveHttpResponse.response(BAD_GATEWAY).build());
             } else {
-                return routingObjectFactory.build(append(parents, "fallback"), config.fallback);
+                return routingObjectFactory.build(append(parents, "fallback"), routeDatabase, config.fallback);
             }
         }
 
-        private static Route buildRoute(List<String> parents, RoutingObjectFactory routingObjectFactory, int index, String condition, RoutingObjectConfig destination) {
+        private static Route buildRoute(
+                List<String> parents,
+                RouteDatabase routeDatabase,
+                RoutingObjectFactory routingObjectFactory,
+                int index,
+                String condition,
+                RoutingObjectConfig destination) {
             try {
                 String attribute = format("destination[%d]", index);
-                HttpHandler handler = routingObjectFactory.build(append(parents, attribute), destination);
+                HttpHandler handler = routingObjectFactory.build(append(parents, attribute), routeDatabase, destination);
                 return new Route(condition, handler);
             } catch (DslSyntaxError | DslFunctionResolutionError e) {
                 String attribute = format("condition[%d]", index);

@@ -21,6 +21,7 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.LiveHttpResponse.response
+import com.hotels.styx.api.configuration.RouteDatabase
 import com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory
 import com.hotels.styx.routing.config.HttpHandlerFactory
@@ -37,6 +38,7 @@ import reactor.core.publisher.Mono
 
 class HttpInterceptorPipelineTest : StringSpec({
     val hwaRequest = LiveHttpRequest.get("/x").build()
+    val routeDatabase = mockk<RouteDatabase>()
 
     "it errors when there is a reference to non-existing pipeline" {
         val config = configBlock("""
@@ -61,7 +63,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                     ),
                     BuiltinInterceptorsFactory(mapOf()),
                     false
-            ).build(listOf("config"), null, config)
+            ).build(listOf("config"), routeDatabase, null, config)
         }
 
         e.message shouldBe ("No such plugin or interceptor exists, attribute='config.pipeline', name='non-existing'")
@@ -84,7 +86,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                     ),
                     BuiltinInterceptorsFactory(mapOf()),
                     false
-            ).build(listOf("config"), null, config)
+            ).build(listOf("config"), routeDatabase, null, config)
         }
 
         e.message shouldBe ("Routing object definition of type 'InterceptorPipeline', attribute='config', is missing a mandatory 'handler' attribute.")
@@ -112,7 +114,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                 ),
                 BuiltinInterceptorsFactory(mapOf()),
                 false
-        ).build(listOf("config"), routingObjectFactory(), config)
+        ).build(listOf("config"), routeDatabase, routingObjectFactory(), config)
 
         val response = Mono.from(handler.handle(hwaRequest, null)).block()
         response?.headers("X-Test-Header") shouldBe (listOf("B", "A"))
@@ -130,7 +132,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                     backendProvider: backendProvider
       """.trimIndent())
 
-        val handler = HttpInterceptorPipeline.Factory(listOf(), BuiltinInterceptorsFactory(mapOf()), false).build(listOf("config"), routingObjectFactory(), config)
+        val handler = HttpInterceptorPipeline.Factory(listOf(), BuiltinInterceptorsFactory(mapOf()), false).build(listOf("config"), routeDatabase, routingObjectFactory(), config)
 
         val response = Mono.from(handler.handle(hwaRequest, null)).block()
         response?.status() shouldBe (OK)
@@ -165,7 +167,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                 ),
                 BuiltinInterceptorsFactory(mapOf("Rewrite" to RewriteInterceptor.Factory())),
                 false
-        ).build(listOf("config"), routingObjectFactory(), config)
+        ).build(listOf("config"), routeDatabase, routingObjectFactory(), config)
 
         val response = Mono.from(handler.handle(hwaRequest, null)).block()
         response?.headers("X-Test-Header") shouldBe (listOf("B", "A"))
@@ -187,14 +189,14 @@ class HttpInterceptorPipelineTest : StringSpec({
 
         val builtinsFactory = mockk<RoutingObjectFactory>()
         every {
-            builtinsFactory.build(any(), any())
+            builtinsFactory.build(any(), any(), any())
         } returns HttpHandler { _, _ -> Eventual.of(response(OK).build()) }
 
         HttpInterceptorPipeline.Factory(listOf(), null, false)
-                .build(listOf("config", "config"), builtinsFactory, config)
+                .build(listOf("config", "config"), routeDatabase, builtinsFactory, config)
 
         verify {
-            builtinsFactory.build(listOf("config", "config", "handler"), any())
+            builtinsFactory.build(listOf("config", "config", "handler"), any(), any())
         }
     }
 
@@ -206,10 +208,10 @@ fun mockHandlerFactory(): HttpHandlerFactory {
     val handlerFactory = mockk<HttpHandlerFactory>()
 
     every {
-        handlerFactory.build(any(), any(), any())
+        handlerFactory.build(any(), any(), any(), any())
     } returns HttpHandler{ _, _ -> Eventual.of(LiveHttpResponse.response(OK).build()) }
 
     return handlerFactory
 }
 
-fun routingObjectFactory() = RoutingObjectFactory(mapOf("BackendServiceProxy" to mockHandlerFactory()), mapOf())
+fun routingObjectFactory() = RoutingObjectFactory(mapOf("BackendServiceProxy" to mockHandlerFactory()))

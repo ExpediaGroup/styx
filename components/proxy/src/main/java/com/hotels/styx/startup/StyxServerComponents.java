@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.startup;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.eventbus.AsyncEventBus;
@@ -23,16 +24,25 @@ import com.hotels.styx.StyxConfig;
 import com.hotels.styx.Version;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
+import com.hotels.styx.api.configuration.RouteDatabase;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
+import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
+import com.hotels.styx.routing.config.HttpHandlerFactory;
+import com.hotels.styx.routing.config.RoutingObjectDefinition;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
+import com.hotels.styx.routing.db.StyxRouteDatabase;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hotels.styx.BuiltInInterceptors.INTERCEPTOR_FACTORIES;
+import static com.hotels.styx.BuiltInRoutingObjects.createBuiltinRoutingObjectFactories;
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
@@ -49,6 +59,8 @@ public class StyxServerComponents {
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
+    private final StyxRouteDatabase routeDatabase;
+    private final RoutingObjectFactory routingObjectFactory;
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
@@ -61,10 +73,53 @@ public class StyxServerComponents {
                 ? loadPlugins(environment)
                 : loadPlugins(environment, builder.configuredPluginFactories);
 
+        this.routingObjectFactory = newRouteHandlerFactory(
+                this.environment,
+                this.plugins,
+                false);
+
+        this.routeDatabase = new StyxRouteDatabase(routingObjectFactory);
+
         this.services = mergeServices(
-                builder.servicesLoader.load(environment),
+                builder.servicesLoader.load(environment, routeDatabase),
                 builder.additionalServices
         );
+
+        this.plugins.forEach(plugin -> this.environment.configStore().set("plugins." + plugin.name(), plugin));
+
+
+        this.environment.configuration().get("httpHandlers", JsonNode.class)
+                .map(this::readHttpHandlers)
+                .orElse(ImmutableMap.of())
+                .forEach((name, record) -> {
+                    routeDatabase.insert(name, new RoutingObjectDefinition(name, record.type(), record.tags(), record.config()));
+                });
+    }
+
+    private RoutingObjectFactory newRouteHandlerFactory(Environment environment, List<NamedPlugin> plugins, boolean requestTracking) {
+        BuiltinInterceptorsFactory builtinInterceptorsFactories = new BuiltinInterceptorsFactory(INTERCEPTOR_FACTORIES);
+
+        Map<String, HttpHandlerFactory> objectFactories = createBuiltinRoutingObjectFactories(
+                environment,
+                plugins,
+                builtinInterceptorsFactories,
+                requestTracking);
+
+        return new RoutingObjectFactory(objectFactories);
+    }
+
+    private Map<String, RoutingObjectDefinition> readHttpHandlers(JsonNode root) {
+        Map<String, RoutingObjectDefinition> handlers = new HashMap<>();
+
+        root.fields().forEachRemaining(
+                entry -> {
+                    String name = entry.getKey();
+                    RoutingObjectDefinition handlerDef = new JsonNodeConfig(entry.getValue()).as(RoutingObjectDefinition.class);
+                    handlers.put(name, handlerDef);
+                }
+        );
+
+        return handlers;
     }
 
     public Environment environment() {
@@ -77,6 +132,14 @@ public class StyxServerComponents {
 
     public List<NamedPlugin> plugins() {
         return plugins;
+    }
+
+    public RouteDatabase routeDatabase() {
+        return this.routeDatabase;
+    }
+
+    public RoutingObjectFactory routingObjectFactory() {
+        return this.routingObjectFactory;
     }
 
     private static Environment newEnvironment(StyxConfig styxConfig, MetricRegistry metricRegistry) {

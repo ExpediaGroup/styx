@@ -23,6 +23,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.configuration.RouteDatabase;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
@@ -97,7 +98,7 @@ public class HttpInterceptorPipeline implements HttpHandler {
         }
 
         @Override
-        public HttpHandler build(List<String> parents, RoutingObjectFactory builtinsFactory, RoutingObjectDefinition configBlock) {
+        public HttpHandler build(List<String> parents, RouteDatabase routeDatabase, RoutingObjectFactory builtinsFactory, RoutingObjectDefinition configBlock) {
             JsonNode pipeline = configBlock.config().get("pipeline");
             List<HttpInterceptor> interceptors = getHttpInterceptors(append(parents, "pipeline"), pipeline);
 
@@ -107,7 +108,7 @@ public class HttpInterceptorPipeline implements HttpHandler {
 
             return new HttpInterceptorPipeline(
                     interceptors,
-                    builtinsFactory.build(append(parents, "handler"), handlerConfig),
+                    builtinsFactory.build(append(parents, "handler"), routeDatabase, handlerConfig),
                     requestTracking);
         }
 

@@ -16,61 +16,70 @@
 package com.hotels.styx.routing.config
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.hotels.styx.api.Eventual.of
 import com.hotels.styx.api.HttpHandler
+import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.api.LiveHttpRequest
+import com.hotels.styx.api.LiveHttpResponse
+import com.hotels.styx.api.configuration.RouteDatabase
+import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import java.lang.IllegalArgumentException
-
+import reactor.core.publisher.Mono
+import java.util.Optional
 
 class RoutingObjectFactoryTest : StringSpec({
 
-    val mockHandler = mockk<HttpHandler>()
-    val aHandlerInstance = mockk<HttpHandler>()
+    val mockHandler = mockk<HttpHandler> {
+        every { handle(any(), any()) } returns of(LiveHttpResponse.response(OK).build())
+    }
 
-    val handlers = mapOf("aHandler" to aHandlerInstance)
-
+    val routeDatabase = mockk<RouteDatabase> {
+        every { handler("aHandler") } returns Optional.of(mockHandler)
+    }
 
     "Builds a new handler as per RoutingObjectDefinition" {
         val routeDef = RoutingObjectDefinition("handler-def", "DelegateHandler", mockk<JsonNode>())
         val handlerFactory = httpHandlerFactory(mockHandler)
 
-        val routeFactory = RoutingObjectFactory(mapOf("DelegateHandler" to handlerFactory), handlers)
+        val routeFactory = RoutingObjectFactory(mapOf("DelegateHandler" to handlerFactory))
 
-        val delegateHandler = routeFactory.build(listOf("parents"), routeDef)
+        val delegateHandler = routeFactory.build(listOf("parents"), routeDatabase, routeDef)
 
         (delegateHandler != null).shouldBe(true)
 
         verify {
-            handlerFactory.build(listOf("parents"), routeFactory, routeDef)
+            handlerFactory.build(listOf("parents"), routeDatabase, routeFactory, routeDef)
         }
     }
 
     "Doesn't accept unregistered types" {
         val config = RoutingObjectDefinition("foo", "ConfigType", mockk())
-        val routeFactory = RoutingObjectFactory(mapOf(), handlers)
+        val routeFactory = RoutingObjectFactory(mapOf())
 
         val e = shouldThrow<IllegalArgumentException> {
-            routeFactory.build(listOf(), config)
+            routeFactory.build(listOf(), routeDatabase, config)
         }
 
         e.message.shouldBe("Unknown handler type 'ConfigType'")
     }
 
     "Returns handler from a configuration reference" {
-        val routeFactory = RoutingObjectFactory(mapOf(), handlers)
-        val handler = routeFactory.build(listOf(), RoutingObjectReference("aHandler"))
-        handler.shouldBe(aHandlerInstance)
+        val routeFactory = RoutingObjectFactory(mapOf())
+        val handler = routeFactory.build(listOf(), routeDatabase, RoutingObjectReference("aHandler"))
+        val response = Mono.from(handler.handle(LiveHttpRequest.get("/").build(), HttpInterceptorContext.create())).block()
+        response?.status()?.code() shouldBe (200)
     }
 
-    "Throws exception when it refers a non-existent object" {
-        val routeFactory = RoutingObjectFactory(mapOf(), handlers)
+    "!Throws exception when it refers a non-existent object" {
+        val routeFactory = RoutingObjectFactory(mapOf())
 
         val e = shouldThrow<IllegalArgumentException> {
-            routeFactory.build(listOf(), RoutingObjectReference("non-existent"))
+            routeFactory.build(listOf(), routeDatabase, RoutingObjectReference("non-existent"))
         }
 
         e.message.shouldBe("Non-existent handler instance: 'non-existent'")
@@ -83,7 +92,7 @@ fun httpHandlerFactory(handler: HttpHandler): HttpHandlerFactory {
     val factory: HttpHandlerFactory = mockk()
 
     every {
-        factory.build(any(), any(), any())
+        factory.build(any(), any(), any(), any())
     } returns handler
 
     return factory

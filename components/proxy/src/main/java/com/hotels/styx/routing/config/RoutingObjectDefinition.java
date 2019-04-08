@@ -18,7 +18,12 @@ package com.hotels.styx.routing.config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.common.collect.ImmutableList;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
+
+import java.util.List;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * An yaml configuration block used in routing configuration to configure an HTTP handler.
@@ -27,12 +32,18 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 public class RoutingObjectDefinition implements RoutingObjectConfig {
     private final String name;
     private final String type;
+    private final List<String> tags;
     private final JsonNode config;
 
-    public RoutingObjectDefinition(String name, String type, JsonNode config) {
+    public RoutingObjectDefinition(String name, String type, List<String> tags, JsonNode config) {
         this.name = name;
-        this.type = type;
-        this.config = config;
+        this.type = requireNonNull(type);
+        this.tags = ImmutableList.copyOf(tags);
+        this.config = requireNonNull(config);
+    }
+
+    public RoutingObjectDefinition(String name, String type, JsonNode config) {
+        this(name, type, ImmutableList.of(), config);
     }
 
     public String name() {
@@ -41,6 +52,10 @@ public class RoutingObjectDefinition implements RoutingObjectConfig {
 
     public String type() {
         return type;
+    }
+
+    public List<String> tags() {
+        return tags;
     }
 
     public JsonNode config() {
@@ -52,9 +67,11 @@ public class RoutingObjectDefinition implements RoutingObjectConfig {
     }
 
     static class Builder {
+        private List<String> tags = ImmutableList.of();
+        private String name = "";
+
         private JsonNode config;
         private String type;
-        private String name;
 
         @JsonProperty("name")
         public Builder name(String name) {
@@ -68,6 +85,12 @@ public class RoutingObjectDefinition implements RoutingObjectConfig {
             return this;
         }
 
+        @JsonProperty("tags")
+        public Builder tags(List<String> tags) {
+            this.tags = tags;
+            return this;
+        }
+
         @JsonProperty("config")
         public Builder config(JsonNode config) {
             this.config = config;
@@ -75,7 +98,7 @@ public class RoutingObjectDefinition implements RoutingObjectConfig {
         }
 
         public RoutingObjectDefinition build() {
-            return new RoutingObjectDefinition(name, type, config);
+            return new RoutingObjectDefinition(name, type, tags, config);
         }
     }
 }

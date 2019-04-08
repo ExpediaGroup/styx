@@ -16,6 +16,7 @@
 package com.hotels.styx.routing.config;
 
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.configuration.RouteDatabase;
 
 import java.util.List;
 
@@ -34,9 +35,11 @@ public interface HttpHandlerFactory {
      * <p>
      *
      * @param parents
+     * @param routeDb
      * @param builder
      * @param configBlock
      * @return
      */
-    HttpHandler build(List<String> parents, RoutingObjectFactory builder, RoutingObjectDefinition configBlock);
+    HttpHandler build(List<String> parents, RouteDatabase routeDb, RoutingObjectFactory builder, RoutingObjectDefinition configBlock);
+
 }
