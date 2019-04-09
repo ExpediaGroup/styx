@@ -17,30 +17,33 @@ package com.hotels.styx.routing
 
 import com.hotels.styx.StyxConfig
 import com.hotels.styx.StyxServer
+import com.hotels.styx.api.HttpHeaderNames.HOST
+import com.hotels.styx.api.HttpRequest.get
+import com.hotels.styx.api.HttpResponseStatus.OK
+import com.hotels.styx.client.StyxHttpClient
 import com.hotels.styx.startup.StyxServerComponents
 import com.hotels.styx.support.ResourcePaths.fixturesHome
 import io.kotlintest.Spec
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
+import reactor.core.publisher.Mono
+import java.nio.charset.StandardCharsets.UTF_8
+import java.util.concurrent.TimeUnit.MILLISECONDS
 
 class ConditionRoutingSpec : StringSpec() {
-    init {
-        "Styx server should start" {
-            println("Styx server address: ${styxServer.proxyHttpAddress()}")
-            println("Styx admin address: ${styxServer.adminHttpAddress()}")
-            println("I'm failing on purpose!")
-            println("hello")
-            1.shouldBe(1)
-        }
-    }
 
     val originsOk = fixturesHome(ConditionRoutingSpec::class.java, "/conf/origins/origins-correct.yml")
-
     val yamlText = """
         proxy:
           connectors:
             http:
               port: 0
+
+            https:
+              port: 0
+              sslProvider: JDK
+              sessionTimeoutMillis: 300000
+              sessionCacheSize: 20000
 
         services:
           factories:
@@ -54,11 +57,9 @@ class ConditionRoutingSpec : StringSpec() {
               port: 0
 
         httpPipeline:
-          name: "Main Pipeline"
           type: InterceptorPipeline
           config:
             handler:
-              name: protocol-router
               type: ConditionRouter
               config:
                 routes:
@@ -68,14 +69,47 @@ class ConditionRoutingSpec : StringSpec() {
                       type: StaticResponseHandler
                       config:
                         status: 200
-                        body: "This is HTTPS"
+                        content: "Hello, from secure server!"
                 fallback:
-                  name: proxy-to-http
                   type: StaticResponseHandler
                   config:
                     status: 200
-                    body: "This is HTTP only"
+                    content: "Hello, from http server!"
       """.trimIndent()
+
+    init {
+        "Routes HTTP protocol" {
+            val request = get("/11")
+                    .header(HOST, "${styxServer.proxyHttpAddress().hostName}:${styxServer.proxyHttpAddress().port}")
+                    .build();
+
+            val response = Mono.fromCompletionStage(client.send(request))
+                    .block();
+
+            response?.status() shouldBe (OK)
+            response?.bodyAs(UTF_8) shouldBe ("Hello, from http server!")
+        }
+
+        "Routes HTTPS protocol" {
+            val request = get("/2")
+                    .header(HOST, "${styxServer.proxyHttpsAddress().hostName}:${styxServer.proxyHttpsAddress().port}")
+                    .build();
+
+            val response = Mono.fromCompletionStage(
+                    client.secure()
+                            .send(request))
+                    .block();
+
+            response?.status() shouldBe (OK)
+            response?.bodyAs(UTF_8) shouldBe ("Hello, from secure server!")
+        }
+    }
+
+    val client: StyxHttpClient = StyxHttpClient.Builder()
+            .threadName("functional-test-client")
+            .connectTimeout(1000, MILLISECONDS)
+            .maxHeaderSize(2 * 8192)
+            .build()
 
     val styxServer = StyxServer(StyxServerComponents.Builder()
             .styxConfig(StyxConfig.fromYaml(yamlText))
