@@ -8,6 +8,17 @@
   <modelVersion>4.0.0</modelVersion>
 
   <description>Styx - System Tests</description>
+  <dependencies>
+    <dependency>
+      <groupId>com.hotels.styx</groupId>
+      <artifactId>styx-proxy</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.hotels.styx</groupId>
+      <artifactId>styx-testsupport</artifactId>
+    </dependency>
+  </dependencies>
 
   <packaging>pom</packaging>
 
@@ -20,6 +31,7 @@
     <module>e2e-testsupport</module>
     <module>e2e-suite</module>
     <module>example-backend-provider</module>
+    <module>ft-suite</module>
   </modules>
 
   <properties>

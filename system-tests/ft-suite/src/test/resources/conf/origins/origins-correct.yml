@@ -1,0 +1,16 @@
+# See origins-default.yaml for explanation of config format
+---
+- id: "app"
+  path: "/"
+  connectionPool:
+    maxConnectionsPerHost: 45
+    maxPendingConnectionsPerHost: 15
+    connectTimeoutMillis: 1000
+    pendingConnectionTimeoutMillis: 8000
+  healthCheck:
+    uri: "/version.txt"
+    intervalMillis: 5000
+  responseTimeoutMillis: 60000
+  origins:
+  - { id: "app1", host: "localhost:9090" }
+  - { id: "app2", host: "localhost:9091" }
