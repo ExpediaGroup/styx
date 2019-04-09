@@ -90,12 +90,8 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven-surefire-plugin.version}</version>
-
-        <configuration>
-          <skipTests>${surefire.skip.tests}</skipTests>
-        </configuration>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${maven-failsafe-plugin.version}</version>
 
         <dependencies>
           <dependency>
@@ -104,6 +100,21 @@
             <version>${junit.platform.surefire.provider.version}</version>
           </dependency>
         </dependencies>
+
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+
+        <configuration>
+          <includes>
+            <include>*Spec</include>
+          </includes>
+        </configuration>
       </plugin>
 
     </plugins>

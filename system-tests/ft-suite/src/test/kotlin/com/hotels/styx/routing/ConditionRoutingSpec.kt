@@ -23,7 +23,7 @@ import io.kotlintest.Spec
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 
-class ConditionRoutingTest : StringSpec() {
+class ConditionRoutingSpec : StringSpec() {
     init {
         "Styx server should start" {
             println("Styx server address: ${styxServer.proxyHttpAddress()}")
@@ -34,7 +34,7 @@ class ConditionRoutingTest : StringSpec() {
         }
     }
 
-    val originsOk = fixturesHome(ConditionRoutingTest::class.java, "/conf/origins/origins-correct.yml")
+    val originsOk = fixturesHome(ConditionRoutingSpec::class.java, "/conf/origins/origins-correct.yml")
 
     val yamlText = """
         proxy:
