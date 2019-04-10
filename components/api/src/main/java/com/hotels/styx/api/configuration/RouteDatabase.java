@@ -25,9 +25,17 @@ import java.util.Set;
  */
 public interface RouteDatabase {
 
-    void remove(String key);
+    Set<Record> getAll(String... tags);
+
+    Optional<Record> get(String name);
 
     void insert(String routingObjectDefAsJson);
+
+    void remove(String key);
+
+    void retag(String key, String oldTag, String newTag);
+
+    /*
 
     Optional<HttpHandler> handler(String key);
 
@@ -37,26 +45,9 @@ public interface RouteDatabase {
 
     Optional<Record> lookup(String key);
 
-    void replaceTag(String key, String oldTag, String newTag);
-
-    void addListener(Listener listener);
-
-    void removeListener(Listener listener);
-
     Set<Record> lookupAll();
 
-    void delete(String appId);
-
-    /**
-     * Route database listener.
-     */
-    interface Listener {
-        /**
-         * Called when route database contents are updated.
-         * @param db
-         */
-        void updated(RouteDatabase db);
-    }
+    */
 
     /**
      * Route database record.
@@ -67,7 +58,9 @@ public interface RouteDatabase {
         String type();
 
         Set<String> tags();
+
         HttpHandler handler();
+
         String configuration();
     }
 }
