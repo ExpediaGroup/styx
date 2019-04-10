@@ -200,7 +200,8 @@
         </configuration>
         <executions>
           <execution>
-            <id>test</id>
+            <id>integration-test</id>
+            <phase>integration-test</phase>
             <goals>
               <goal>test</goal>
             </goals>
