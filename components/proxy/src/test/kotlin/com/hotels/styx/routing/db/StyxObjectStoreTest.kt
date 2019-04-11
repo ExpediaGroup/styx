@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.routing.db
 
-import com.hotels.styx.api.HttpHandler
-import com.hotels.styx.routing.config.RoutingObjectDefinition
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import io.kotlintest.shouldBe
@@ -26,12 +24,6 @@ import java.util.Optional
 class StyxObjectStoreTest : FeatureSpec() {
 
     init {
-        feature("Insert") {
-            scenario("Stores HTTP handler objects") {
-                val db = StyxObjectStore<RoutingObjectRecord>()
-            }
-        }
-
         feature("Get") {
             scenario("Retrieves a stored object") {
                 val db = StyxObjectStore<String>()
@@ -68,12 +60,8 @@ class StyxObjectStoreTest : FeatureSpec() {
             scenario("Notifies object modifications") {
                 val db = StyxObjectStore<String>()
                 db.insert("one", setOf("a", "b"), "one")
-
-
             }
         }
     }
 
 }
-
-data class RoutingObjectRecord(val definition: RoutingObjectDefinition, val handler: HttpHandler)

@@ -99,7 +99,11 @@ public class HttpInterceptorPipeline implements HttpHandler {
         }
 
         @Override
-        public HttpHandler build(List<String> parents, StyxObjectStore<RouteObjectRecord> routeDatabase, RoutingObjectFactory builtinsFactory, RoutingObjectDefinition configBlock) {
+        public HttpHandler build(
+                List<String> parents,
+                StyxObjectStore<RouteObjectRecord> routeDatabase,
+                RoutingObjectFactory builtinsFactory,
+                RoutingObjectDefinition configBlock) {
             JsonNode pipeline = configBlock.config().get("pipeline");
             List<HttpInterceptor> interceptors = getHttpInterceptors(append(parents, "pipeline"), pipeline);
 

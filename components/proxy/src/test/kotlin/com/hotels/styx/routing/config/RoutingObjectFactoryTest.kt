@@ -39,12 +39,9 @@ class RoutingObjectFactoryTest : StringSpec({
         every { handle(any(), any()) } returns Eventual.of(LiveHttpResponse.response(OK).build())
     }
 
-    val blah = RouteObjectRecord("name", setOf(), mockk<RoutingObjectDefinition>(), mockHandler)
-
     val routeDatabase = mockk<StyxObjectStore<RouteObjectRecord>>()
-    every { routeDatabase.get("aHandler") } returns Optional.of(blah)
-
-
+    every { routeDatabase.get("aHandler") } returns Optional.of(RouteObjectRecord("name", setOf(), mockk(), mockHandler))
+    
     "Builds a new handler as per RoutingObjectDefinition" {
         val routeDef = RoutingObjectDefinition("handler-def", "DelegateHandler", mockk<JsonNode>())
         val handlerFactory = httpHandlerFactory(mockHandler)

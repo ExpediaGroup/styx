@@ -16,9 +16,6 @@
 package com.hotels.styx;
 
 import com.google.common.collect.ImmutableMap;
-import com.hotels.styx.api.extension.service.BackendService;
-import com.hotels.styx.api.extension.service.spi.Registry;
-import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
@@ -27,10 +24,6 @@ import com.hotels.styx.routing.handlers.ConditionRouter;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.routing.handlers.ProxyToBackend;
 import com.hotels.styx.routing.handlers.StaticResponseHandler;
-
-import java.util.Map;
-
-import static java.util.stream.Collectors.toMap;
 
 /**
  * Built in HTTP handlers.
@@ -47,14 +40,5 @@ public class BuiltInRoutingObjects {
                 .put("InterceptorPipeline", new HttpInterceptorPipeline.Factory(plugins, builtinInterceptorsFactory, requestTracking))
                 .put("ProxyToBackend", new ProxyToBackend.Factory(environment, new StyxBackendServiceClientFactory(environment)))
                 .build();
-
     }
-
-    private static Map<String, Registry<BackendService>> backendRegistries(Map<String, StyxService> servicesFromConfig) {
-        return servicesFromConfig.entrySet()
-                .stream()
-                .filter(entry -> entry.getValue() instanceof Registry)
-                .collect(toMap(Map.Entry::getKey, entry -> (Registry<BackendService>) entry.getValue()));
-    }
-
 }
