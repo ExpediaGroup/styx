@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -131,20 +131,6 @@ public final class SchemaDsl {
         Schema.Builder builder = new Schema.Builder();
         Stream.of(schemaDirectives).forEach(builder::add);
         return new Schema.ObjectField(builder.build());
-    }
-
-    /**
-     * An object field value type.
-     *
-     * The object layout is declared elsewhere and it is determined via a named reference.
-     * This feature is used by a DocumentFormat class which validates fasterxml JsonNode
-     * objects against its document schema specification.
-     *
-     * @param schemaName  Schema name
-     * @return An object field value type
-     */
-    public static Schema.FieldValue object(String schemaName) {
-        return new Schema.ObjectFieldLazy(schemaName);
     }
 
     /**

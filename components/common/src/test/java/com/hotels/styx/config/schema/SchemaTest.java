@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,18 +17,11 @@ package com.hotels.styx.config.schema;
 
 import org.testng.annotations.Test;
 
-import static com.hotels.styx.config.schema.SchemaDsl.bool;
 import static com.hotels.styx.config.schema.SchemaDsl.field;
 import static com.hotels.styx.config.schema.SchemaDsl.integer;
-import static com.hotels.styx.config.schema.SchemaDsl.list;
-import static com.hotels.styx.config.schema.SchemaDsl.object;
-import static com.hotels.styx.config.schema.SchemaDsl.opaque;
+import static com.hotels.styx.config.schema.SchemaDsl.schema;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.schema.SchemaDsl.union;
-import static com.hotels.styx.config.schema.SchemaDsl.schema;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.is;
 
 public class SchemaTest {
 
@@ -51,13 +44,4 @@ public class SchemaTest {
         );
     }
 
-    @Test
-    public void fieldTypes() {
-        assertThat(string().type(), is(Schema.FieldType.STRING));
-        assertThat(integer().type(), is(Schema.FieldType.INTEGER));
-        assertThat(bool().type(), is(Schema.FieldType.BOOLEAN));
-        assertThat(object("Foo").type(), is(Schema.FieldType.OBJECT));
-        assertThat(object(opaque()).type(), is(Schema.FieldType.OBJECT));
-        assertThat(list(integer()).type(), is(Schema.FieldType.LIST));
-    }
 }

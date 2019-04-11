@@ -15,6 +15,7 @@
  */
 package com.hotels.styx;
 
+import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.config.validator.DocumentFormat;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
@@ -30,126 +31,129 @@ import static com.hotels.styx.config.schema.SchemaDsl.map;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
 import static com.hotels.styx.config.schema.SchemaDsl.opaque;
 import static com.hotels.styx.config.schema.SchemaDsl.optional;
-import static com.hotels.styx.config.schema.SchemaDsl.schema;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
+import static com.hotels.styx.config.schema.SchemaDsl.union;
 import static com.hotels.styx.config.validator.DocumentFormat.newDocument;
 
 final class ServerConfigSchema {
-    private static final String HTTP_CONNECTOR = "HttpConnectorConfig";
-    private static final String HTTPS_CONNECTOR = "HttpsConnectorConfig";
-    private static final String SERVER_CONNECTORS = "ServerConnectors";
-    private static final String PROXY_CONNECTOR_CONFIG = "ProxyConnectorConfig";
-    private static final String ADMIN_CONNECTOR_CONFIG = "AdminConnectorConfig";
-    private static final String LOG_FORMAT = "LogFormatConfig";
-    private static final String REQUEST_LOGGING_CONFIG = "RequestLoggingConfig";
-    private static final String STYX_HEADERS_CONFIG = "StyxHeadersConfig";
 
-    private static final String URL_ENCODING_CONFIG = "UrlEncodingConfig";
-    private static final DocumentFormat STYX_SERVER_CONFIGURATION_SCHEMA = newDocument()
-            .subSchema(HTTP_CONNECTOR, schema(
-                    field("port", integer())
-            ))
-            .subSchema(HTTPS_CONNECTOR, schema(
-                    field("port", integer()),
-                    optional("sslProvider", string()),
-                    optional("certificateFile", string()),
-                    optional("certificateKeyFile", string()),
-                    optional("sessionTimeoutMillis", integer()),
-                    optional("sessionCacheSize", integer()),
-                    optional("cipherSuites", list(string())),
-                    optional("protocols", list(string()))
-            ))
-            .subSchema(SERVER_CONNECTORS, schema(
-                    optional("http", object(HTTP_CONNECTOR)),
-                    optional("https", object(HTTPS_CONNECTOR)),
-                    atLeastOne("http", "https")
-            ))
-            .subSchema(PROXY_CONNECTOR_CONFIG, schema(
-                    field("connectors", object(SERVER_CONNECTORS)),
-                    optional("bossThreadsCount", integer()),
-                    optional("clientWorkerThreadsCount", integer()),
-                    optional("workerThreadsCount", integer()),
-                    optional("tcpNoDelay", bool()),
-                    optional("nioReuseAddress", bool()),
-                    optional("nioKeepAlive", bool()),
-                    optional("maxInitialLength", integer()),
-                    optional("maxHeaderSize", integer()),
-                    optional("maxChunkSize", integer()),
-                    optional("maxContentLength", integer()),
-                    optional("requestTimeoutMillis", integer()),
-                    optional("keepAliveTimeoutMillis", integer()),
-                    optional("maxConnectionsCount", integer())
-            ))
-            .subSchema(ADMIN_CONNECTOR_CONFIG, schema(
-                    field("connectors", object(SERVER_CONNECTORS)),
-                    optional("bossThreadsCount", integer()),
-                    optional("workerThreadsCount", integer()),
-                    optional("tcpNoDelay", bool()),
-                    optional("nioReuseAddress", bool()),
-                    optional("nioKeepAlive", bool()),
-                    optional("maxInitialLength", integer()),
-                    optional("maxHeaderSize", integer()),
-                    optional("maxChunkSize", integer()),
-                    optional("maxContentLength", integer()),
-                    optional("metricsCache", object(
-                            field("enabled", bool()),
-                            field("expirationMillis", integer())
+    private static final Schema.FieldValue ROUTING_CONFIGURATION = object(
+                    optional("name", string()),
+                    field("type", string()),
+                    optional("tags", list(string())),
+                    optional("config", union("type")));
+
+    private static final DocumentFormat STYX_SERVER_CONFIGURATION_SCHEMA;
+
+    static {
+        Schema.FieldValue httpConnectorSchema = object(
+                field("port", integer())
+        );
+
+        Schema.FieldValue httpsConnectorSchema = object(
+                field("port", integer()),
+                optional("sslProvider", string()),
+                optional("certificateFile", string()),
+                optional("certificateKeyFile", string()),
+                optional("sessionTimeoutMillis", integer()),
+                optional("sessionCacheSize", integer()),
+                optional("cipherSuites", list(string())),
+                optional("protocols", list(string()))
+        );
+
+        Schema.FieldValue serverConnectorsSchema = object(
+                optional("http", httpConnectorSchema),
+                optional("https", httpsConnectorSchema),
+                atLeastOne("http", "https")
+        );
+        Schema.FieldValue urlEncodingConfigSchema = object(
+                field("encoding", object(
+                        field("unwiseCharactersToEncode", string())
+                ))
+        );
+        Schema.FieldValue logFormatSchema = object(
+                optional("enabled", bool()),
+                optional("longFormat", bool()),
+                atLeastOne("enabled", "longFormat")
+        );
+        Schema.FieldValue proxyConnectorConfigSchema = object(
+                field("connectors", serverConnectorsSchema),
+                optional("bossThreadsCount", integer()),
+                optional("clientWorkerThreadsCount", integer()),
+                optional("workerThreadsCount", integer()),
+                optional("tcpNoDelay", bool()),
+                optional("nioReuseAddress", bool()),
+                optional("nioKeepAlive", bool()),
+                optional("maxInitialLength", integer()),
+                optional("maxHeaderSize", integer()),
+                optional("maxChunkSize", integer()),
+                optional("maxContentLength", integer()),
+                optional("requestTimeoutMillis", integer()),
+                optional("keepAliveTimeoutMillis", integer()),
+                optional("maxConnectionsCount", integer())
+        );
+        Schema.FieldValue adminConnectorConfigSchema = object(
+                field("connectors", serverConnectorsSchema),
+                optional("bossThreadsCount", integer()),
+                optional("workerThreadsCount", integer()),
+                optional("tcpNoDelay", bool()),
+                optional("nioReuseAddress", bool()),
+                optional("nioKeepAlive", bool()),
+                optional("maxInitialLength", integer()),
+                optional("maxHeaderSize", integer()),
+                optional("maxChunkSize", integer()),
+                optional("maxContentLength", integer()),
+                optional("metricsCache", object(
+                        field("enabled", bool()),
+                        field("expirationMillis", integer())
+                ))
+        );
+        Schema.FieldValue requestLoggingConfigSchema = object(
+                optional("inbound", logFormatSchema),
+                optional("outbound", logFormatSchema),
+                atLeastOne("inbound", "outbound")
+        );
+        Schema.FieldValue styxHeadersConfigSchema = object(
+                optional("styxInfo", object(
+                        field("name", string()),
+                        optional("format", string())
+                )),
+                optional("originId", object(
+                        field("name", string())
+                )),
+                optional("requestId", object(
+                        field("name", string())
+                )),
+                atLeastOne("styxInfo", "originId", "requestId")
+        );
+        STYX_SERVER_CONFIGURATION_SCHEMA = newDocument()
+                    .rootSchema(object(
+                            field("proxy", proxyConnectorConfigSchema),
+                            field("admin", adminConnectorConfigSchema),
+                            field("services", object(
+                                    field("factories", map(object(opaque())))
+                            )),
+                            optional("url", urlEncodingConfigSchema),
+                            optional("request-logging", requestLoggingConfigSchema),
+                            optional("styxHeaders", styxHeadersConfigSchema),
+                            optional("include", string()),
+                            optional("retrypolicy", object(opaque())),
+                            optional("loadBalancing", object(opaque())),
+                            optional("plugins", object(
+                                    optional("active", string()),
+                                    optional("all", map(object(opaque())))
+                            )),
+                            optional("jvmRouteName", string()),
+                            optional("originRestrictionCookie", string()),
+                            optional("responseInfoHeaderFormat", string()),
+                            optional("httpPipeline", object(opaque())),
+                            optional("logFormat", string()),
+                            optional("userDefined", object(opaque())),
+                            optional("requestTracking", bool())
                     ))
-            ))
-            .subSchema(URL_ENCODING_CONFIG, schema(
-                    field("encoding", object(
-                            field("unwiseCharactersToEncode", string())
-                    ))
-            ))
-            .subSchema(LOG_FORMAT, schema(
-                    optional("enabled", bool()),
-                    optional("longFormat", bool()),
-                    atLeastOne("enabled", "longFormat")
-            ))
-            .subSchema(REQUEST_LOGGING_CONFIG, schema(
-                    optional("inbound", object(LOG_FORMAT)),
-                    optional("outbound", object(LOG_FORMAT)),
-                    atLeastOne("inbound", "outbound")
-            ))
-            .subSchema(STYX_HEADERS_CONFIG, schema(
-                    optional("styxInfo", object(
-                            field("name", string()),
-                            optional("format", string())
-                    )),
-                    optional("originId", object(
-                            field("name", string())
-                    )),
-                    optional("requestId", object(
-                            field("name", string())
-                    )),
-                    atLeastOne("styxInfo", "originId", "requestId")
-            ))
-            .rootSchema(schema(
-                    field("proxy", object(PROXY_CONNECTOR_CONFIG)),
-                    field("admin", object(ADMIN_CONNECTOR_CONFIG)),
-                    field("services", object(
-                            field("factories", map(object(opaque())))
-                    )),
-                    optional("url", object(URL_ENCODING_CONFIG)),
-                    optional("request-logging", object(REQUEST_LOGGING_CONFIG)),
-                    optional("styxHeaders", object(STYX_HEADERS_CONFIG)),
-                    optional("include", string()),
-                    optional("retrypolicy", object(opaque())),
-                    optional("loadBalancing", object(opaque())),
-                    optional("plugins", object(
-                            optional("active", string()),
-                            optional("all", map(object(opaque())))
-                    )),
-                    optional("jvmRouteName", string()),
-                    optional("originRestrictionCookie", string()),
-                    optional("responseInfoHeaderFormat", string()),
-                    optional("httpPipeline", object(opaque())),
-                    optional("logFormat", string()),
-                    optional("userDefined", object(opaque())),
-                    optional("requestTracking", bool()),
-                    optional("routingObjects", object(opaque()))
-            ))
-            .build();
+                    .build();
+    }
+
 
     private ServerConfigSchema() {
     }

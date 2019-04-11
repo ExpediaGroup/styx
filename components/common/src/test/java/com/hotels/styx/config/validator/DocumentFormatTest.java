@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,8 +19,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.hotels.styx.config.schema.InvalidSchemaException;
+import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import org.testng.annotations.Test;
+
+import java.io.IOException;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
@@ -33,7 +36,6 @@ import static com.hotels.styx.config.schema.SchemaDsl.map;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
 import static com.hotels.styx.config.schema.SchemaDsl.opaque;
 import static com.hotels.styx.config.schema.SchemaDsl.optional;
-import static com.hotels.styx.config.schema.SchemaDsl.schema;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.schema.SchemaDsl.union;
 import static com.hotels.styx.config.validator.DocumentFormat.newDocument;
@@ -49,7 +51,7 @@ public class DocumentFormatTest {
     public void validatesElementaryTypes() throws Exception {
         boolean result = newDocument()
                 .rootSchema(
-                        schema(
+                        object(
                                 field("root", object(
                                         field("myInt", integer()),
                                         field("myBool", bool()),
@@ -76,7 +78,7 @@ public class DocumentFormatTest {
 
         boolean result = newDocument()
                 .rootSchema(
-                        schema(
+                        object(
                                 field("root", object(
                                         field("name", string()),
                                         field("surname", string()),
@@ -96,7 +98,7 @@ public class DocumentFormatTest {
                 + "  age: 5\n");
 
         boolean result = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("root", object(
                                 field("name", string()),
                                 optional("favouriteFood", string()),
@@ -109,7 +111,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'root.favouriteFood' should be STRING, but it is INTEGER")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'root.favouriteFood' should be STRING, but it is NUMBER")
     public void verifiesOptionalFields() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "root: \n"
@@ -118,7 +120,7 @@ public class DocumentFormatTest {
                 + "  age: 5\n");
 
         boolean result = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("root", object(
                                 field("name", string()),
                                 optional("favouriteFood", string()),
@@ -141,7 +143,7 @@ public class DocumentFormatTest {
                 + "  xyxz: 'not supposed to be here'\n");
 
         boolean result = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("root", object(
                                 field("name", string()),
                                 field("surname", string()),
@@ -161,7 +163,7 @@ public class DocumentFormatTest {
                 + "  myInt: 'y' \n");
 
         boolean result = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("root", object(
                                 field("myInt", integer())
                         ))
@@ -178,7 +180,7 @@ public class DocumentFormatTest {
                 + "  myInt: '5' \n");
 
         boolean result = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("root", object(
                                 field("myInt", integer())
                         ))
@@ -189,14 +191,14 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'root.myString' should be STRING, but it is INTEGER")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'root.myString' should be STRING, but it is NUMBER")
     public void checksStringFieldTypes() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "root: \n"
                 + "  myString: 5.0 \n");
 
         boolean result = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("root", object(
                                 field("myString", string())
                         ))
@@ -207,14 +209,14 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'root.myBool' should be BOOLEAN, but it is INTEGER")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'root.myBool' should be BOOLEAN, but it is NUMBER")
     public void checksBoolFieldTypes() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "root: \n"
                 + "  myBool: 5.0 \n");
 
         boolean result = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("root", object(
                                 field("myBool", bool())
                         ))
@@ -237,7 +239,7 @@ public class DocumentFormatTest {
         );
 
         boolean result = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("root", object(
                                 field("myBool_01", bool()),
                                 field("myBool_02", bool()),
@@ -253,7 +255,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected list element type. Field 'parent.myList\\[1\\]' should be STRING, but it is INTEGER")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.myList.\\[1\\]' should be STRING, but it is NUMBER")
     public void checksListsOfElementaryTypes() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "parent: \n"
@@ -263,7 +265,7 @@ public class DocumentFormatTest {
         );
 
         boolean result = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", object(
                                 field("myList", list(string()))
                         ))
@@ -274,7 +276,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected list element type. Field 'parent.myList\\[0\\]' should be INTEGER, but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.myList.\\[0\\]' should be INTEGER, but it is STRING")
     public void checksListsOfElementaryTypes_wrongIntegerType() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "parent: \n"
@@ -284,7 +286,7 @@ public class DocumentFormatTest {
         );
 
         boolean result = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", object(
                                 field("myList", list(integer()))
                         ))
@@ -295,7 +297,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.myList\\[1\\].x' should be INTEGER, but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.myList.\\[1\\].x' should be INTEGER, but it is STRING")
     public void checksListsOfSubObjects() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "parent: \n"
@@ -306,15 +308,14 @@ public class DocumentFormatTest {
                 + "     y: 2 \n"
         );
 
+        Schema.FieldValue subObject = object(
+                field("x", integer()),
+                field("y", integer())
+        );
         boolean result = newDocument()
-                .subSchema("SubObjectSchema",
-                        schema(
-                                field("x", integer()),
-                                field("y", integer())
-                        ))
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", object(
-                                field("myList", list(object("SubObjectSchema")))
+                                field("myList", list(subObject))
                         ))
                 ))
                 .build()
@@ -323,7 +324,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected list element type. Field 'parent.myList\\[1\\]' should be OBJECT \\('SubObjectSchema'\\), but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.myList.\\[1\\]' should be OBJECT \\('x, y'\\), but it is STRING")
     public void checksListsOfSubObjects_shouldBeSubobjectButIsString() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "parent: \n"
@@ -333,19 +334,20 @@ public class DocumentFormatTest {
                 + "   - 'zz' \n"
         );
 
+        Schema.FieldValue subObject = object(
+                field("x", integer()),
+                field("y", integer())
+        );
+
         boolean result = newDocument()
-                .subSchema("SubObjectSchema",
-                        schema(
-                                field("x", integer()),
-                                field("y", integer())
-                        ))
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", object(
-                                field("myList", list(object("SubObjectSchema")))
+                                field("myList", list(subObject))
                         ))
                 ))
                 .build()
                 .validateObject(rootObject);
+
         assertThat(result, is(true));
     }
 
@@ -357,7 +359,7 @@ public class DocumentFormatTest {
         );
 
         newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("myList", list(integer()))
                 ))
                 .build()
@@ -374,7 +376,7 @@ public class DocumentFormatTest {
         );
 
         newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("myList", list(integer()))
                 ))
                 .build()
@@ -382,7 +384,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList' should be LIST \\(OBJECT\\), but it is OBJECT")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList' should be LIST \\(OBJECT \\(a, b\\)\\), but it is OBJECT")
     public void expectingListOfObjectButIsString() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "myList: \n"
@@ -391,7 +393,7 @@ public class DocumentFormatTest {
         );
 
         newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("myList", list(object(field("a", integer()), field("b", integer()))))
                 ))
                 .build()
@@ -399,14 +401,14 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.myChild' should be OBJECT \\('age'\\), but it is INTEGER")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.myChild' should be OBJECT \\('age'\\), but it is NUMBER")
     public void checksSubObjectFieldTypes() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "parent: \n"
                 + "  myChild: 5.0 \n");
 
         boolean result = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", object(
                                 field("myChild", object(
                                         field("age", integer())
@@ -430,7 +432,7 @@ public class DocumentFormatTest {
                 .get("person");
 
         boolean result = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("id", string()),
                         field("details", object(
                                 field("name", string()),
@@ -443,86 +445,127 @@ public class DocumentFormatTest {
         assertThat(result, is(true));
     }
 
+
     @Test
-    public void reusesObjectSchemas() throws Exception {
-        JsonNode rootObject = YAML_MAPPER.readTree(""
-                + "httpPipeline: \n"
-                + "  pipeline: 'interceptorsList'\n"
-                + "  handler: 'handlerName'\n"
-                + "plugins:\n"
-                + "  all: 'x, y z'\n");
+    public void routingObjectDefinition() throws Exception {
+
+        Schema.FieldValue proxyTo = object(
+                field("id", string()),
+                field("destination", string())
+        );
+
+        Schema.FieldValue redirection = object(
+                field("status", integer()),
+                field("location", string())
+        );
 
         DocumentFormat validator = newDocument()
-                .subSchema("HttpPipeline", schema(
-                        field("pipeline", string()),
-                        field("handler", string())
-                ))
-                .subSchema("PluginsList", schema(
-                        field("all", string())
-                ))
-                .rootSchema(schema(
-                        field("httpPipeline", object("HttpPipeline")),
-                        field("plugins", object("PluginsList"))
+                .subSchema("ProxyTo", proxyTo)
+                .subSchema("Redirection", redirection)
+                .rootSchema(object(
+                        field("httpPipeline", new Schema.RoutingObjectSpec())
                 ))
                 .build();
 
-        assertThat(validator.validateObject(rootObject), is(true));
+        boolean outcome1 = validator.validateObject(
+                YAML_MAPPER.readTree(""
+                        + "httpPipeline: \n"
+                        + "  type: 'ProxyTo'\n"
+                        + "  config:\n"
+                        + "    id: 'local-01'\n"
+                        + "    destination: 'localhost:8080'\n"
+                ));
+        assertThat(outcome1, is(true));
+
+        boolean outcome2 = validator.validateObject(
+                YAML_MAPPER.readTree(""
+                        + "httpPipeline: \n"
+                        + "  type: 'Redirection'\n"
+                        + "  config:\n"
+                        + "    status: 301\n"
+                        + "    location: /new/location\n"
+                ));
+        assertThat(outcome2, is(true));
+
     }
 
     @Test(expectedExceptions = InvalidSchemaException.class,
-            expectedExceptionsMessageRegExp = "No schema configured for lazy object reference 'notExists'")
-    public void documentBuilderEnsuresNamedSchemaReferences() throws Exception {
+    expectedExceptionsMessageRegExp = "Discriminator attribute 'type' must be a string \\(but it is not\\)")
+    public void discriminatedUnionSelectorMustBeString() {
         newDocument()
-                .subSchema("PluginsList", schema(field("all", string())))
-                .rootSchema(schema(
-                        field("httpPipeline", object("notExists")),
-                        field("plugins", object("PluginsList"))
+                .rootSchema(object(
+                        field("httpPipeline", object(
+                                field("type", integer()),
+                                field("config", union("type"))
+                        ))
                 ))
                 .build();
     }
 
-    @Test(expectedExceptions = InvalidSchemaException.class,
-            expectedExceptionsMessageRegExp = "No schema configured for lazy object reference 'notExists'")
-    public void documentBuilderEnsuresNamedSchemaReferencesAreValidFromSubobjects() throws Exception {
-        newDocument()
-                .subSchema("PluginsList", schema(field("all", string())))
-                .rootSchema(schema(
-                        field("parent", object(
-                                field("httpPipeline", object("notExists"))
-                        )),
-                        field("plugins", object("PluginsList"))
+    @Test(expectedExceptions = SchemaValidationException.class,
+            expectedExceptionsMessageRegExp = "Union discriminator 'httpPipeline.config.type': Unexpected field type. Field 'httpPipeline.config.type' should be STRING, but it is NUMBER")
+    public void errorsWhenUnionDiscriminatorIsNotStringValue() throws IOException {
+        DocumentFormat validator = newDocument()
+                .rootSchema(object(
+                        field("httpPipeline", object(
+                                field("config", union("type")),
+                                field("type", string())
+                        ))
                 ))
                 .build();
+
+        boolean outcome1 = validator.validateObject(
+                YAML_MAPPER.readTree(""
+                        + "httpPipeline: \n"
+                        + "  config:\n"
+                        + "    id: 'local-01'\n"
+                        + "    destination: 'localhost:8080'\n"
+                        + "  type: 123\n"
+                ));
+        assertThat(outcome1, is(true));
     }
 
-    @Test(expectedExceptions = InvalidSchemaException.class,
-            expectedExceptionsMessageRegExp = "No schema configured for lazy object reference 'non-existing-HandlerConfig'")
-    public void documentBuilderEnsuresNamedSchemaReferencesAreValidFromSubSchemas() throws Exception {
-        newDocument()
-                .subSchema("HttpPipeline", schema(
-                        field("handlers", object("non-existing-HandlerConfig"))
-                ))
-                .subSchema("PluginsList", schema(field("all", string())
-                ))
-                .rootSchema(schema(
-                        field("plugins", object("PluginsList")),
-                        field("httpPipeline", object("HttpPipeline"))
+    @Test(expectedExceptions = SchemaValidationException.class,
+            expectedExceptionsMessageRegExp = "Unknown schema 'Foo' in union 'httpPipeline.config'. Union type is UNION \\(type\\)")
+    public void errorsWhenUnionSchemaNotFound() throws IOException {
+        DocumentFormat validator = newDocument()
+                .rootSchema(object(
+                        field("httpPipeline", object(
+                                field("type", string()),
+                                field("config", union("type"))
+                        ))
                 ))
                 .build();
+
+        boolean outcome1 = validator.validateObject(
+                YAML_MAPPER.readTree(""
+                        + "httpPipeline: \n"
+                        + "  type: Foo\n"
+                        + "  config:\n"
+                        + "    id: 'local-01'\n"
+                        + "    destination: 'localhost:8080'\n"
+                ));
+        assertThat(outcome1, is(true));
     }
+
 
     @Test
     public void validatesDiscriminatedUnions() throws Exception {
+
+        Schema.FieldValue proxyTo = object(
+                field("id", string()),
+                field("destination", string())
+        );
+
+        Schema.FieldValue redirection = object(
+                field("status", integer()),
+                field("location", string())
+        );
+
         DocumentFormat validator = newDocument()
-                .subSchema("ProxyTo", schema(
-                        field("id", string()),
-                        field("destination", string())
-                ))
-                .subSchema("Redirection", schema(
-                        field("status", integer()),
-                        field("location", string())
-                ))
-                .rootSchema(schema(
+                .subSchema("ProxyTo", proxyTo)
+                .subSchema("Redirection", redirection)
+                .rootSchema(object(
                         field("httpPipeline", object(
                                 field("type", string()),
                                 field("config", union("type"))
@@ -562,7 +605,7 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", object(
                                 field("opaque", object(opaque()))
                         ))
@@ -586,7 +629,7 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", map(
                                 object(
                                         field("x", integer()),
@@ -600,7 +643,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected map element type. Field 'parent.key1' should be OBJECT \\('x, y'\\), but it is INTEGER")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.\\[key2\\]' should be OBJECT \\('x, y'\\), but it is NUMBER")
     public void validatesMapOfObjects() throws Exception {
         JsonNode node2 = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -609,7 +652,7 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", map(
                                 object(
                                         field("x", integer()),
@@ -631,7 +674,7 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", map(integer()))
                 ))
                 .build();
@@ -641,7 +684,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected map element type. Field 'parent.key1' should be INTEGER, but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.\\[key1\\]' should be INTEGER, but it is STRING")
     public void validatesMapOfIntegers() throws Exception {
         JsonNode node2 = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -650,7 +693,7 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", map(integer()))
                 ))
                 .build();
@@ -668,7 +711,7 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", map(string()))
                 ))
                 .build();
@@ -678,7 +721,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected map element type. Field 'parent.key1' should be STRING, but it is INTEGER")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.\\[key1\\]' should be STRING, but it is NUMBER")
     public void validatesMapOfStrings() throws Exception {
         JsonNode node2 = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -687,7 +730,7 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", map(string()))
                 ))
                 .build();
@@ -705,7 +748,7 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", map(bool()))
                 ))
                 .build();
@@ -715,7 +758,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected map element type. Field 'parent.ok' should be BOOLEAN, but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.\\[ok\\]' should be BOOLEAN, but it is STRING")
     public void validatesMapOfBooleans() throws Exception {
         JsonNode node2 = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -724,7 +767,7 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", map(bool()))
                 ))
                 .build();
@@ -746,7 +789,7 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", map(list(integer())))
                 ))
                 .build();
@@ -756,7 +799,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key1' should be LIST \\(INTEGER\\), but it is OBJECT")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.\\[key1\\]' should be LIST \\(INTEGER\\), but it is OBJECT")
     public void validatesMapOfListOfInts() throws Exception {
         JsonNode node2 = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -769,7 +812,7 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", map(list(integer())))
                 ))
                 .build();
@@ -790,7 +833,7 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", map(
                                 list(
                                         object(
@@ -807,7 +850,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected list element type. Field 'parent\\[0\\]' should be OBJECT \\('x, y'\\), but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.\\[key1\\].\\[0\\]' should be OBJECT \\('x, y'\\), but it is STRING")
     public void validatesMapOfListOfObjects() throws Exception {
         JsonNode node2 = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -818,7 +861,7 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("parent", map(
                                 list(
                                         object(
@@ -869,7 +912,7 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .rootSchema(schema(
+                .rootSchema(object(
                         field("connectors", object(
                                 optional("x", integer()),
                                 optional("http", integer()),

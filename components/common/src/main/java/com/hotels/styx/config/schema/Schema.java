@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.config.schema;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -22,8 +23,19 @@ import com.google.common.collect.ImmutableSet;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
+import static com.hotels.styx.config.schema.SchemaDsl.field;
+import static com.hotels.styx.config.schema.SchemaDsl.list;
+import static com.hotels.styx.config.schema.SchemaDsl.object;
+import static com.hotels.styx.config.schema.SchemaDsl.optional;
+import static com.hotels.styx.config.schema.SchemaDsl.string;
+import static com.hotels.styx.config.schema.SchemaDsl.union;
+import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -137,61 +149,138 @@ public class Schema {
         }
     }
 
+
     /**
      * Represents a type of a schema field.
      */
-    public static class FieldValue {
-        public FieldType type() {
-            if (this instanceof IntegerField) {
-                return FieldType.INTEGER;
+    public interface FieldValue {
+        Optional<String> isCorrectType(List<String> parents, JsonNode parent, JsonNode element, Function<String, FieldValue> schemas);
+
+        String describe();
+    }
+
+    public static class RoutingObjectSpec implements FieldValue {
+
+        @Override
+        public Optional<String> isCorrectType(List<String> parents, JsonNode parent, JsonNode element, Function<String, FieldValue> schemas) {
+            StringField ref = new StringField();
+
+            FieldValue routingObjectDefinition = object(
+                    field("type", string()),
+                    optional("name", string()),
+                    optional("tags", list(string())),
+                    field("config", union("type"))
+            );
+
+            Optional<String> correctType = ref.isCorrectType(parents, parent, element, schemas);
+
+            if (!correctType.isPresent()) {
+                // It passed as a reference:
+                return Optional.empty();
             }
 
-            if (this instanceof StringField) {
-                return FieldType.STRING;
+            Optional<String> correctType1 = routingObjectDefinition.isCorrectType(parents, parent, element, schemas);
+            if (!correctType1.isPresent()) {
+                // It passed as a routing object spec:
+                return Optional.empty();
             }
 
-            if (this instanceof BoolField) {
-                return FieldType.BOOLEAN;
-            }
+            // Failed
+            return message(parents, element);
+        }
 
-            if (this instanceof ObjectField || this instanceof ObjectFieldLazy || this instanceof DiscriminatedUnionObject) {
-                return FieldType.OBJECT;
-            }
+        private Optional<String> message(List<String> parents, JsonNode tree) {
+            String fullName = Joiner.on(".").join(parents);
+            return Optional.of(format("Unexpected field type. Field '%s' should be %s, but it is %s", fullName, describe(), tree.getNodeType()));
+        }
 
-            if (this instanceof ListField) {
-                return FieldType.LIST;
-            }
-
-            if (this instanceof MapField) {
-                return FieldType.MAP;
-            }
-
-            throw new IllegalStateException("Unknown field type: " + this.getClass() + " " + this);
+        @Override
+        public String describe() {
+            return "ROUTING-OBJECT-SPEC";
         }
     }
 
     /**
      * Integer schema field type.
      */
-    public static class IntegerField extends FieldValue {
+    public static class IntegerField implements FieldValue {
+        @Override
+        public Optional<String> isCorrectType(List<String> parents, JsonNode parent, JsonNode element, Function<String, FieldValue> schemas) {
+            return (element.isInt() || canParseAsInteger(element)) ? Optional.empty() : message(parents, element);
+        }
+
+        @Override
+        public String describe() {
+            return "INTEGER";
+        }
+
+        private Optional<String> message(List<String> parents, JsonNode tree) {
+            String fullName = Joiner.on(".").join(parents);
+
+            return Optional.of(format("Unexpected field type. Field '%s' should be INTEGER, but it is %s", fullName, tree.getNodeType()));
+        }
+
+        private static boolean canParseAsInteger(JsonNode value) {
+            try {
+                parseInt(value.textValue());
+                return true;
+            } catch (NumberFormatException cause) {
+                return false;
+            }
+        }
     }
 
     /**
      * String schema field type.
      */
-    public static class StringField extends FieldValue {
+    public static class StringField implements FieldValue {
+        @Override
+        public Optional<String> isCorrectType(List<String> parents, JsonNode parent, JsonNode element, Function<String, FieldValue> schemas) {
+            return element.isTextual() ? Optional.empty() : message(parents, element);
+        }
+
+        @Override
+        public String describe() {
+            return "STRING";
+        }
+
+        private Optional<String> message(List<String> parents, JsonNode tree) {
+            String fullName = Joiner.on(".").join(parents);
+
+            return Optional.of(format("Unexpected field type. Field '%s' should be STRING, but it is %s", fullName, tree.getNodeType()));
+        }
     }
 
     /**
      * Boolean schema field type.
      */
-    public static class BoolField extends FieldValue {
+    public static class BoolField implements FieldValue {
+        private static final Pattern YAML_BOOLEAN_VALUES = Pattern.compile("(?i)true|false");
+
+        @Override
+        public Optional<String> isCorrectType(List<String> parents, JsonNode parent, JsonNode element, Function<String, FieldValue> schemas) {
+            return (element.isBoolean() || canParseAsBoolean(element)) ? Optional.empty() : message(parents, element);
+        }
+
+        @Override
+        public String describe() {
+            return "BOOLEAN";
+        }
+
+        private Optional<String> message(List<String> parents, JsonNode tree) {
+            String fullName = Joiner.on(".").join(parents);
+            return Optional.of(format("Unexpected field type. Field '%s' should be BOOLEAN, but it is %s", fullName, tree.getNodeType()));
+        }
+
+        private static boolean canParseAsBoolean(JsonNode value) {
+            return YAML_BOOLEAN_VALUES.matcher(value.asText()).matches();
+        }
     }
 
     /**
      * List schema field type.
      */
-    public static class ListField extends FieldValue {
+    public static class ListField implements FieldValue {
         private final FieldValue elementType;
 
         ListField(FieldValue elementType) {
@@ -202,12 +291,38 @@ public class Schema {
             return elementType;
         }
 
+        @Override
+        public Optional<String> isCorrectType(List<String> parents, JsonNode parent, JsonNode element, Function<String, FieldValue> schemas) {
+            return (element.isArray()) ? validateList(parents, parent, element, schemas) : message(parents, element);
+        }
+
+        @Override
+        public String describe() {
+            return format("LIST (%s)", elementType.describe());
+        }
+
+        private Optional<String> message(List<String> parents, JsonNode tree) {
+            String fullName = Joiner.on(".").join(parents);
+            return Optional.of(format("Unexpected field type. Field '%s' should be LIST (%s), but it is %s", fullName, elementType.describe(), tree.getNodeType()));
+        }
+
+        private Optional<String> validateList(List<String> parents, JsonNode parent, JsonNode list, Function<String, FieldValue> lookup) {
+            for (int i = 0; i < list.size(); i++) {
+                JsonNode entry = list.get(i);
+
+                Optional<String> correctType = elementType.isCorrectType(push(parents, format("[%d]", i)), list, entry, lookup);
+                if (correctType.isPresent()) {
+                    return correctType;
+                }
+            }
+            return Optional.empty();
+        }
     }
 
     /**
      * Map schema field type.
      */
-    public static class MapField extends FieldValue {
+    public static class MapField implements FieldValue {
         private final FieldValue elementType;
 
         MapField(FieldValue elementType) {
@@ -217,12 +332,37 @@ public class Schema {
         public FieldValue elementType() {
             return elementType;
         }
+
+        @Override
+        public Optional<String> isCorrectType(List<String> parents, JsonNode parent, JsonNode mapNode, Function<String, FieldValue> schemas) {
+            AtomicReference<Optional<String>> success = new AtomicReference<>(Optional.empty());
+
+            mapNode.fieldNames().forEachRemaining(key -> {
+                JsonNode entry = mapNode.get(key);
+                Optional<String> correctType = elementType.isCorrectType(push(parents, format("[%s]", key)), mapNode, entry, schemas);
+
+                if (correctType.isPresent()) {
+                    success.set(correctType);
+                }
+            });
+            return success.get();
+        }
+
+        @Override
+        public String describe() {
+            return format("MAP (%s)", elementType.describe());
+        }
+
+    }
+
+    private static boolean isMandatory(Schema schema, Schema.Field field) {
+        return !schema.optionalFields().contains(field.name());
     }
 
     /**
      * Object field type with inlined sub-schema.
      */
-    public static class ObjectField extends FieldValue {
+    public static class ObjectField implements FieldValue {
         private final Schema schema;
 
         ObjectField(Schema schema) {
@@ -232,21 +372,68 @@ public class Schema {
         public Schema schema() {
             return schema;
         }
+
+        @Override
+        public Optional<String> isCorrectType(List<String> parents, JsonNode parent, JsonNode element, Function<String, FieldValue> schemas) {
+            return element.isObject() ? validateObject(parents, parent, element, schemas) : message(parents, element);
+        }
+
+        @Override
+        public String describe() {
+            return format("OBJECT (%s)", schema.name());
+        }
+
+        private Optional<String> message(List<String> parents, JsonNode tree) {
+            String fullName = Joiner.on(".").join(parents);
+            return Optional.of(format("Unexpected field type. Field '%s' should be OBJECT ('%s'), but it is %s", fullName, this.schema.name(), tree.getNodeType()));
+        }
+
+        private Optional<String> validateObject(List<String> parents, JsonNode parent, JsonNode tree, Function<String, FieldValue> lookup) {
+
+            if (schema.ignore()) {
+                return Optional.empty();
+            }
+
+            for (Schema.Field field : schema.fields()) {
+                if (isMandatory(schema, field) && tree.get(field.name()) == null) {
+                    throw new SchemaValidationException(format("Missing a mandatory field '%s.%s'", Joiner.on(".").join(parents), field.name()));
+                }
+
+                if (tree.get(field.name()) != null) {
+                    String name = field.name();
+                    Optional<String> correctType = field.value().isCorrectType(push(parents, name), tree, tree.get(name), lookup);
+                    if (correctType.isPresent()) {
+                        throw new SchemaValidationException(correctType.get());
+                    }
+                }
+            }
+
+            schema.constraints().forEach(constraint -> {
+                if (!constraint.evaluate(schema, tree)) {
+                    throw new SchemaValidationException("Schema constraint failed. " + constraint.describe());
+                }
+            });
+
+            assertNoUnknownFields(Joiner.on(".").join(parents), schema, ImmutableList.copyOf(tree.fieldNames()));
+
+            return Optional.empty();
+        }
     }
 
-    /**
-     * Object field type with a named reference to its schema object.
-     */
-    public static class ObjectFieldLazy extends FieldValue {
-        private final String schemaName;
+    private static void assertNoUnknownFields(String prefix, Schema schema, List<String> fieldsPresent) {
+        Set<String> knownFields = ImmutableSet.copyOf(schema.fieldNames());
 
-        ObjectFieldLazy(String schemaName) {
-            this.schemaName = requireNonNull(schemaName);
-        }
+        fieldsPresent.forEach((name) -> {
+            if (!knownFields.contains(name)) {
+                throw new SchemaValidationException(format("Unexpected field: '%s.%s'", prefix, name));
+            }
+        });
+    }
 
-        public String schemaName() {
-            return schemaName;
-        }
+    static List<String> push(List<String> currentList, String element) {
+        ArrayList<String> newList = new ArrayList<>(currentList);
+        newList.add(element);
+        return newList;
     }
 
     /**
@@ -259,7 +446,7 @@ public class Schema {
      * The value of the discriminator attribute field is used as a named schema
      * reference when the subobject layout is determined.
      */
-    public static class DiscriminatedUnionObject extends FieldValue {
+    public static class DiscriminatedUnionObject implements FieldValue {
 
         private final String discriminatorField;
 
@@ -269,6 +456,31 @@ public class Schema {
 
         public String discriminatorFieldName() {
             return discriminatorField;
+        }
+
+        @Override
+        public Optional<String> isCorrectType(List<String> parents, JsonNode parent, JsonNode element, Function<String, FieldValue> schemas) {
+            JsonNode type = parent.get(discriminatorField);
+
+            Optional<String> discriminatorType = string().isCorrectType(push(parents, discriminatorField), parent, type, schemas);
+            if (discriminatorType.isPresent()) {
+                String fullName = Joiner.on(".").join(push(parents, discriminatorField));
+                return Optional.of(format("Union discriminator '%s': %s", fullName, discriminatorType.get()));
+            }
+
+            String typeValue = type.textValue();
+            FieldValue schema = schemas.apply(typeValue);
+            if (schema == null) {
+                String fullName = Joiner.on(".").join(parents);
+                return Optional.of(format("Unknown schema '%s' in union '%s'. Union type is %s", typeValue, fullName, describe()));
+            }
+
+            return schema.isCorrectType(parents, parent, element, schemas);
+        }
+
+        @Override
+        public String describe() {
+            return format("UNION (%s)", discriminatorField);
         }
     }
 

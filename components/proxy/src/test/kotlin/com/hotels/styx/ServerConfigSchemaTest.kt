@@ -59,7 +59,7 @@ class ServerConfigSchemaTest : DescribeSpec({
                       backendServiceRegistry:
                         class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
                         config: {originsFile: "${'$'}{originsFile:classpath:conf/origins.yml}"}
-            """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field 'proxy'"))
+            """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field '.proxy'"))
         }
 
         it("Detects a missing mandatory `admin' configuration.") {
@@ -74,7 +74,7 @@ class ServerConfigSchemaTest : DescribeSpec({
                       backendServiceRegistry:
                         class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
                         config: {originsFile: "${'$'}{originsFile:classpath:conf/origins.yml}"}
-            """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field 'admin'"))
+            """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field '.admin'"))
         }
 
         it("Detects a missing mandatory 'services` configuration.") {
@@ -88,7 +88,7 @@ class ServerConfigSchemaTest : DescribeSpec({
                     connectors:
                       http:
                         port: 9000
-        """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field 'services'"))
+        """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field '.services'"))
         }
 
         it("Accepts 'jvmRouteName' field as a STRING") {
@@ -100,7 +100,7 @@ class ServerConfigSchemaTest : DescribeSpec({
             validateServerConfiguration(yamlConfig(minimalConfig + """
                 jvmRouteName: 101
                 """.trimIndent()
-            )) shouldBe (Optional.of("Unexpected field type. Field 'jvmRouteName' should be STRING, but it is INTEGER"))
+            )) shouldBe (Optional.of("Unexpected field type. Field 'jvmRouteName' should be STRING, but it is NUMBER"))
         }
 
         it("Accepts 'request-logging' field as an OBJECT") {
