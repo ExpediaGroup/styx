@@ -21,9 +21,10 @@ import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse.response
-import com.hotels.styx.api.configuration.RouteDatabase
+import com.hotels.styx.routing.RouteObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.configBlock
+import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
@@ -32,17 +33,17 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import reactor.core.publisher.Mono
-import java.util.*
+import java.util.Optional
 
 class ConditionRouterConfigTest : StringSpec({
 
     val request = LiveHttpRequest.get("/foo").build()
     val routeHandlerFactory = RoutingObjectFactory(mapOf("StaticResponseHandler" to StaticResponseHandler.Factory()))
 
-    val routeDatabase = mockk<RouteDatabase> {
-        every { handler("secureHandler") } returns Optional.of(HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "secure").build()) })
-        every { handler("fallbackHandler") } returns Optional.of(HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "fallback").build()) })
-    }
+    val routeDatabase = mockk<StyxObjectStore<RouteObjectRecord>>()
+    every { routeDatabase.get("secureHandler") } returns Optional.of(RouteObjectRecord("secureHandler", setOf(), mockk(), HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "secure").build()) }))
+    every { routeDatabase.get("fallbackHandler") } returns Optional.of(RouteObjectRecord("fallbackHandler", setOf(), mockk(), HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "fallback").build()) }))
+
 
     val config = configBlock("""
           config:
@@ -195,7 +196,7 @@ class ConditionRouterConfigTest : StringSpec({
                               content: "secure"
                 """.trimIndent()))
         }
-        e.message shouldBe("Routing object definition of type 'ConditionRouter', attribute='config.config.routes.condition[0]', failed to compile routing expression condition='nonexistant() == \"https\"'")
+        e.message shouldBe ("Routing object definition of type 'ConditionRouter', attribute='config.config.routes.condition[0]', failed to compile routing expression condition='nonexistant() == \"https\"'")
     }
 
     "Passes parentage attribute path to the builtins factory" {
@@ -203,7 +204,7 @@ class ConditionRouterConfigTest : StringSpec({
         val builtinsFactory = mockk<RoutingObjectFactory>()
         every {
             builtinsFactory.build(any(), any(), any())
-        } returns HttpHandler {_, _ -> Eventual.of(response(OK).build())}
+        } returns HttpHandler { _, _ -> Eventual.of(response(OK).build()) }
 
         val router = ConditionRouter.Factory().build(listOf("config", "config"), routeDatabase, builtinsFactory, configBlock("""
             config:

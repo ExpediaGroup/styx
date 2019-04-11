@@ -20,7 +20,6 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.Id.id
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
-import com.hotels.styx.api.configuration.RouteDatabase
 import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.configBlock
@@ -33,7 +32,6 @@ import reactor.core.publisher.Mono
 
 class ProxyToBackendTest : StringSpec({
     val environment = Environment.Builder().build()
-    val routeDatabase = mockk<RouteDatabase>()
 
     val config = configBlock("""
           config:
@@ -52,7 +50,7 @@ class ProxyToBackendTest : StringSpec({
           """.trimIndent())
 
     "builds ProxyToBackend handler" {
-        val handler = ProxyToBackend.Factory(environment, clientFactory()).build(listOf(), routeDatabase, null, config)
+        val handler = ProxyToBackend.Factory(environment, clientFactory()).build(listOf(), mockk(), null, config)
 
         val response = Mono.from(handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create())).block()
         response?.status() shouldBe (OK)
@@ -69,7 +67,7 @@ class ProxyToBackendTest : StringSpec({
 
         val e = shouldThrow<IllegalArgumentException> {
             ProxyToBackend.Factory(environment, clientFactory())
-            .build(listOf("config", "config"), routeDatabase, null, config)
+            .build(listOf("config", "config"), mockk(), null, config)
         }
 
         e.message shouldBe ("Routing object definition of type 'ProxyToBackend', attribute='config.config', is missing a mandatory 'backend' attribute.")
@@ -91,7 +89,7 @@ class ProxyToBackendTest : StringSpec({
 
         val e = shouldThrow<IllegalArgumentException> {
             ProxyToBackend.Factory(environment, clientFactory())
-            .build(listOf("config", "config"), routeDatabase, null, config)
+            .build(listOf("config", "config"), mockk(), null, config)
         }
 
         e.message shouldBe ("Routing object definition of type 'ProxyToBackend', attribute='config.config.backend', is missing a mandatory 'origins' attribute.")

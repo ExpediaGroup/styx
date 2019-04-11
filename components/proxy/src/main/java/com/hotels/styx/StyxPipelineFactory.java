@@ -19,15 +19,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.configuration.RouteDatabase;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.HttpPipelineFactory;
+import com.hotels.styx.routing.RouteObjectRecord;
 import com.hotels.styx.routing.StaticPipelineFactory;
 import com.hotels.styx.routing.config.RoutingObjectConfig;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
+import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.startup.PipelineFactory;
 import com.hotels.styx.startup.StyxServerComponents;
@@ -44,14 +45,14 @@ import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfig
  */
 public final class StyxPipelineFactory implements PipelineFactory {
 
-    private final RouteDatabase routeDb;
+    private final StyxObjectStore<RouteObjectRecord> routeDb;
     private final RoutingObjectFactory routingObjectFactory;
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
 
     public StyxPipelineFactory(
-            RouteDatabase routeDb,
+            StyxObjectStore<RouteObjectRecord> routeDb,
             RoutingObjectFactory routingObjectFactory,
             Environment environment,
             Map<String, StyxService> services,

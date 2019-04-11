@@ -17,18 +17,19 @@ package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.configuration.RouteDatabase;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
+import com.hotels.styx.routing.RouteObjectRecord;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectConfig;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
+import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.server.HttpRouter;
 import com.hotels.styx.server.routing.AntlrMatcher;
 import com.hotels.styx.server.routing.antlr.DslFunctionResolutionError;
@@ -113,9 +114,9 @@ public class ConditionRouter implements HttpRouter {
 
         @Override
         public HttpHandler build(List<String> parents,
-                                  RouteDatabase routeDatabase,
-                                  RoutingObjectFactory routingObjectFactory,
-                                  RoutingObjectDefinition configBlock
+                                 StyxObjectStore<RouteObjectRecord> routeDatabase,
+                                 RoutingObjectFactory routingObjectFactory,
+                                 RoutingObjectDefinition configBlock
         ) {
             ConditionRouterConfig config = new JsonNodeConfig(configBlock.config()).as(ConditionRouterConfig.class);
             if (config.routes == null) {
@@ -141,7 +142,7 @@ public class ConditionRouter implements HttpRouter {
 
         private static HttpHandler buildFallbackHandler(
                 List<String> parents,
-                RouteDatabase routeDatabase,
+                StyxObjectStore<RouteObjectRecord> routeDatabase,
                 RoutingObjectFactory routingObjectFactory,
                 ConditionRouterConfig config) {
             if (config.fallback == null) {
@@ -153,7 +154,7 @@ public class ConditionRouter implements HttpRouter {
 
         private static Route buildRoute(
                 List<String> parents,
-                RouteDatabase routeDatabase,
+                StyxObjectStore<RouteObjectRecord> routeDatabase,
                 RoutingObjectFactory routingObjectFactory,
                 int index,
                 String condition,

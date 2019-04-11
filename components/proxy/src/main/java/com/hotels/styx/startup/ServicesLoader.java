@@ -16,8 +16,9 @@
 package com.hotels.styx.startup;
 
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.configuration.RouteDatabase;
 import com.hotels.styx.api.extension.service.spi.StyxService;
+import com.hotels.styx.routing.RouteObjectRecord;
+import com.hotels.styx.routing.db.StyxObjectStore;
 
 import java.util.Map;
 
@@ -29,5 +30,5 @@ import static com.hotels.styx.serviceproviders.ServiceProvision.loadServices;
 public interface ServicesLoader {
     ServicesLoader SERVICES_FROM_CONFIG = (environment, routeDatabase) -> loadServices(environment.configuration(), environment, "services", StyxService.class);
 
-    Map<String, StyxService> load(Environment environment, RouteDatabase routeDatabase);
+    Map<String, StyxService> load(Environment environment, StyxObjectStore<RouteObjectRecord> routeDatabase);
 }

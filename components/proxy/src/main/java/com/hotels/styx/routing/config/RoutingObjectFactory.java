@@ -18,7 +18,8 @@ package com.hotels.styx.routing.config;
 import com.google.common.base.Preconditions;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.configuration.RouteDatabase;
+import com.hotels.styx.routing.RouteObjectRecord;
+import com.hotels.styx.routing.db.StyxObjectStore;
 
 import java.util.List;
 import java.util.Map;
@@ -39,7 +40,7 @@ public class RoutingObjectFactory {
         this.builtInObjectTypes = requireNonNull(builtInObjectTypes);
     }
 
-    public HttpHandler build(List<String> parents, RouteDatabase routeDb, RoutingObjectConfig configNode) {
+    public HttpHandler build(List<String> parents, StyxObjectStore<RouteObjectRecord> routeDb, RoutingObjectConfig configNode) {
         if (configNode instanceof RoutingObjectDefinition) {
             RoutingObjectDefinition configBlock = (RoutingObjectDefinition) configNode;
             String type = configBlock.type();
@@ -51,8 +52,8 @@ public class RoutingObjectFactory {
         } else if (configNode instanceof RoutingObjectReference) {
             RoutingObjectReference reference = (RoutingObjectReference) configNode;
 
-            return (request, context) -> routeDb.handler(reference.name())
-                    .map(handler -> handler.handle(request, context))
+            return (request, context) -> routeDb.get(reference.name())
+                    .map(handler -> handler.getHandler().handle(request, context))
                     .orElse(Eventual.of(
                             response(NOT_FOUND)
                                     .body("Not found: " + String.join(".", parents) + "." + reference.name(), UTF_8)

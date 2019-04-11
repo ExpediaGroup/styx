@@ -23,15 +23,16 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.configuration.RouteDatabase;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.routing.RouteObjectRecord;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectConfig;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.RoutingObjectReference;
+import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 import com.hotels.styx.server.track.RequestTracker;
 
@@ -98,7 +99,7 @@ public class HttpInterceptorPipeline implements HttpHandler {
         }
 
         @Override
-        public HttpHandler build(List<String> parents, RouteDatabase routeDatabase, RoutingObjectFactory builtinsFactory, RoutingObjectDefinition configBlock) {
+        public HttpHandler build(List<String> parents, StyxObjectStore<RouteObjectRecord> routeDatabase, RoutingObjectFactory builtinsFactory, RoutingObjectDefinition configBlock) {
             JsonNode pipeline = configBlock.config().get("pipeline");
             List<HttpInterceptor> interceptors = getHttpInterceptors(append(parents, "pipeline"), pipeline);
 

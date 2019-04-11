@@ -17,29 +17,33 @@ package com.hotels.styx.startup;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.AsyncEventBus;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.Version;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
-import com.hotels.styx.api.configuration.RouteDatabase;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.routing.RouteObjectRecord;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
-import com.hotels.styx.routing.db.StyxRouteDatabase;
+import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.hotels.styx.BuiltInInterceptors.INTERCEPTOR_FACTORIES;
 import static com.hotels.styx.BuiltInRoutingObjects.createBuiltinRoutingObjectFactories;
@@ -59,11 +63,12 @@ public class StyxServerComponents {
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
-    private final StyxRouteDatabase routeDatabase;
+    private final StyxObjectStore<RouteObjectRecord> routeObjectStore = new StyxObjectStore<>();
     private final RoutingObjectFactory routingObjectFactory;
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
+
 
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
@@ -78,25 +83,25 @@ public class StyxServerComponents {
                 this.plugins,
                 false);
 
-        this.routeDatabase = new StyxRouteDatabase(routingObjectFactory);
 
         this.services = mergeServices(
-                builder.servicesLoader.load(environment, routeDatabase),
+                builder.servicesLoader.load(environment, routeObjectStore),
                 builder.additionalServices
         );
 
         this.plugins.forEach(plugin -> this.environment.configStore().set("plugins." + plugin.name(), plugin));
 
-
         this.environment.configuration().get("httpHandlers", JsonNode.class)
                 .map(this::readHttpHandlers)
                 .orElse(ImmutableMap.of())
                 .forEach((name, record) -> {
-                    routeDatabase.insert(name, new RoutingObjectDefinition(name, record.type(), record.tags(), record.config()));
+                    HttpHandler handler = routingObjectFactory.build(ImmutableList.of(name), routeObjectStore, record);
+                    Set<String> tags = ImmutableSet.copyOf(record.tags());
+                    routeObjectStore.insert(name, tags, new RouteObjectRecord(name, tags, record, handler));
                 });
     }
 
-    private RoutingObjectFactory newRouteHandlerFactory(Environment environment, List<NamedPlugin> plugins, boolean requestTracking) {
+    private static RoutingObjectFactory newRouteHandlerFactory(Environment environment, List<NamedPlugin> plugins, boolean requestTracking) {
         BuiltinInterceptorsFactory builtinInterceptorsFactories = new BuiltinInterceptorsFactory(INTERCEPTOR_FACTORIES);
 
         Map<String, HttpHandlerFactory> objectFactories = createBuiltinRoutingObjectFactories(
@@ -134,8 +139,8 @@ public class StyxServerComponents {
         return plugins;
     }
 
-    public RouteDatabase routeDatabase() {
-        return this.routeDatabase;
+    public StyxObjectStore<RouteObjectRecord> routeDatabase() {
+        return this.routeObjectStore;
     }
 
     public RoutingObjectFactory routingObjectFactory() {

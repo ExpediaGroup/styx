@@ -1,0 +1,62 @@
+/*
+  Copyright (C) 2013-2019 Expedia Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+package com.hotels.styx.routing.db;
+
+import com.hotels.styx.api.configuration.ObjectStore
+import java.util.Optional
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * Styx Route Database.
+ */
+class StyxObjectStore<T> : ObjectStore<T> {
+    val objects = ConcurrentHashMap<String, Record<T>>();
+
+    override fun get(name: String?): Optional<T> {
+        return Optional.ofNullable(objects.get(name))
+                .map { it.payload }
+    }
+
+    override fun insert(key: String, tags: Set<String>, payload: T) {
+        // TODO:
+        // Null checks for key, record
+        // What if key already exists?
+        // What if tags changed?
+        objects.put(key, Record(key, tags, payload))
+    }
+
+    override fun insert(key: String, record: T) {
+        insert(key, setOf(), record)
+    }
+
+    override fun remove(key: String?) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun retag(key: String?, oldTag: String?, newTag: String?) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun getAll(tags: Set<String>): Set<T> {
+        return objects
+                .map { it.value }
+                .filter { it.tags.intersect(tags).equals(tags) }
+                .map { it.payload }
+                .toSet()
+    }
+
+    data class Record<T>(val key: String, val tags:Set<String>, val payload: T)
+}

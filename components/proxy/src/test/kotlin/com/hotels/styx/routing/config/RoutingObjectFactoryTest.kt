@@ -16,12 +16,13 @@
 package com.hotels.styx.routing.config
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.hotels.styx.api.Eventual.of
+import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
-import com.hotels.styx.api.configuration.RouteDatabase
+import com.hotels.styx.routing.RouteObjectRecord
+import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
@@ -35,12 +36,14 @@ import java.util.Optional
 class RoutingObjectFactoryTest : StringSpec({
 
     val mockHandler = mockk<HttpHandler> {
-        every { handle(any(), any()) } returns of(LiveHttpResponse.response(OK).build())
+        every { handle(any(), any()) } returns Eventual.of(LiveHttpResponse.response(OK).build())
     }
 
-    val routeDatabase = mockk<RouteDatabase> {
-        every { handler("aHandler") } returns Optional.of(mockHandler)
-    }
+    val blah = RouteObjectRecord("name", setOf(), mockk<RoutingObjectDefinition>(), mockHandler)
+
+    val routeDatabase = mockk<StyxObjectStore<RouteObjectRecord>>()
+    every { routeDatabase.get("aHandler") } returns Optional.of(blah)
+
 
     "Builds a new handler as per RoutingObjectDefinition" {
         val routeDef = RoutingObjectDefinition("handler-def", "DelegateHandler", mockk<JsonNode>())

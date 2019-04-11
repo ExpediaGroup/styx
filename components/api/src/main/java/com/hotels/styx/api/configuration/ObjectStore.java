@@ -15,52 +15,24 @@
  */
 package com.hotels.styx.api.configuration;
 
-import com.hotels.styx.api.HttpHandler;
-
 import java.util.Optional;
 import java.util.Set;
 
 /**
  * Styx Route Database query interface.
  */
-public interface RouteDatabase {
+public interface ObjectStore<T> {
 
-    Set<Record> getAll(String... tags);
+    Set<T> getAll(Set<String> tags);
 
-    Optional<Record> get(String name);
+    Optional<T> get(String name);
 
-    void insert(String routingObjectDefAsJson);
+    void insert(String key, T payload);
+
+    void insert(String key, Set<String> tags, T payload);
 
     void remove(String key);
 
     void retag(String key, String oldTag, String newTag);
 
-    /*
-
-    Optional<HttpHandler> handler(String key);
-
-    Set<HttpHandler> handlers(String... tags);
-
-    Set<Record> tagLookup(String... tags);
-
-    Optional<Record> lookup(String key);
-
-    Set<Record> lookupAll();
-
-    */
-
-    /**
-     * Route database record.
-     */
-    interface Record {
-        String name();
-
-        String type();
-
-        Set<String> tags();
-
-        HttpHandler handler();
-
-        String configuration();
-    }
 }

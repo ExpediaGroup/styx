@@ -21,12 +21,13 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.LiveHttpResponse.response
-import com.hotels.styx.api.configuration.RouteDatabase
 import com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin
+import com.hotels.styx.routing.RouteObjectRecord
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory
 import com.hotels.styx.routing.config.HttpHandlerFactory
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.configBlock
+import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.interceptors.RewriteInterceptor
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
@@ -38,7 +39,7 @@ import reactor.core.publisher.Mono
 
 class HttpInterceptorPipelineTest : StringSpec({
     val hwaRequest = LiveHttpRequest.get("/x").build()
-    val routeDatabase = mockk<RouteDatabase>()
+    val routeDatabase = mockk<StyxObjectStore<RouteObjectRecord>>()
 
     "it errors when there is a reference to non-existing pipeline" {
         val config = configBlock("""
