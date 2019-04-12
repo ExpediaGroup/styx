@@ -111,18 +111,6 @@ public class Schema {
     }
 
     /**
-     * Field type.
-     */
-    public enum FieldType {
-        STRING,
-        INTEGER,
-        BOOLEAN,
-        OBJECT,
-        LIST,
-        MAP;
-    }
-
-    /**
      * Represents a named schema field type.
      */
     public static class Field implements SchemaDirective {
@@ -159,6 +147,11 @@ public class Schema {
         String describe();
     }
 
+    /**
+     * Represents Styx routing object specification, which is either
+     * a named reference to an already declared object, or a new
+     * object declaration.
+     */
     public static class RoutingObjectSpec implements FieldValue {
 
         @Override
@@ -355,10 +348,6 @@ public class Schema {
 
     }
 
-    private static boolean isMandatory(Schema schema, Schema.Field field) {
-        return !schema.optionalFields().contains(field.name());
-    }
-
     /**
      * Object field type with inlined sub-schema.
      */
@@ -418,12 +407,16 @@ public class Schema {
 
             return Optional.empty();
         }
+
+        private static boolean isMandatory(Schema schema, Schema.Field field) {
+            return !schema.optionalFields().contains(field.name());
+        }
     }
 
     private static void assertNoUnknownFields(String prefix, Schema schema, List<String> fieldsPresent) {
         Set<String> knownFields = ImmutableSet.copyOf(schema.fieldNames());
 
-        fieldsPresent.forEach((name) -> {
+        fieldsPresent.forEach(name -> {
             if (!knownFields.contains(name)) {
                 throw new SchemaValidationException(format("Unexpected field: '%s.%s'", prefix, name));
             }

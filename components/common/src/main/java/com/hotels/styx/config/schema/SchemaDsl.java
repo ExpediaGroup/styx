@@ -134,6 +134,20 @@ public final class SchemaDsl {
     }
 
     /**
+     * A Styx routing object.
+     *
+     * This can be a named reference to another routing object, or an inline
+     * declaration.
+     *
+     * @return A validator for Styx routing object.
+     */
+    public static Schema.FieldValue routingObject() {
+        return new Schema.RoutingObjectSpec();
+    }
+
+
+
+    /**
      * A choice of alternative object layouts determined by a named discriminator field.
      *
      * The `discriminator` parameter is a name of the field that determines the

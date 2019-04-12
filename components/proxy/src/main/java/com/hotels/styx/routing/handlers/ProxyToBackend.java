@@ -32,6 +32,7 @@ import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
 import com.hotels.styx.client.connectionpool.SimpleConnectionPoolFactory;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
+import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
@@ -41,6 +42,9 @@ import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import java.util.List;
 
 import static com.hotels.styx.client.HttpRequestOperationFactory.Builder.httpRequestOperationFactoryBuilder;
+import static com.hotels.styx.config.schema.SchemaDsl.field;
+import static com.hotels.styx.config.schema.SchemaDsl.object;
+import static com.hotels.styx.config.schema.SchemaDsl.opaque;
 import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
@@ -49,6 +53,9 @@ import static java.lang.String.join;
  * Routing object that proxies a request to a configured backend.
  */
 public class ProxyToBackend implements HttpHandler {
+    public static final Schema.FieldValue SCHEMA = object(
+            field("backend", object(opaque()))
+    );
     private final BackendServiceClient client;
 
     private ProxyToBackend(BackendServiceClient client) {
