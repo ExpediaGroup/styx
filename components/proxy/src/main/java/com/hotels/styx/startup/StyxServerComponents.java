@@ -43,7 +43,6 @@ import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.hotels.styx.BuiltInInterceptors.INTERCEPTOR_FACTORIES;
 import static com.hotels.styx.BuiltInRoutingObjects.createBuiltinRoutingObjectFactories;
@@ -73,7 +72,8 @@ public class StyxServerComponents {
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
 
-        // TODO In further refactoring, we will probably want this loading to happen outside of this constructor call, so that it doesn't delay the admin server from starting up
+        // TODO In further refactoring, we will probably want this loading to happen outside of this constructor call,
+        //  so that it doesn't delay the admin server from starting up
         this.plugins = builder.configuredPluginFactories == null
                 ? loadPlugins(environment)
                 : loadPlugins(environment, builder.configuredPluginFactories);
@@ -91,8 +91,8 @@ public class StyxServerComponents {
 
         this.plugins.forEach(plugin -> this.environment.configStore().set("plugins." + plugin.name(), plugin));
 
-        this.environment.configuration().get("httpHandlers", JsonNode.class)
-                .map(this::readHttpHandlers)
+        this.environment.configuration().get("routingObjects", JsonNode.class)
+                .map(StyxServerComponents::readHttpHandlers)
                 .orElse(ImmutableMap.of())
                 .forEach((name, record) -> {
                     HttpHandler handler = routingObjectFactory.build(ImmutableList.of(name), routeObjectStore, record);
@@ -112,7 +112,7 @@ public class StyxServerComponents {
         return new RoutingObjectFactory(objectFactories);
     }
 
-    private Map<String, RoutingObjectDefinition> readHttpHandlers(JsonNode root) {
+    private static Map<String, RoutingObjectDefinition> readHttpHandlers(JsonNode root) {
         Map<String, RoutingObjectDefinition> handlers = new HashMap<>();
 
         root.fields().forEachRemaining(
