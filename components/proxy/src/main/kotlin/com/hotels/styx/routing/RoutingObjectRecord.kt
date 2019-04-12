@@ -18,7 +18,7 @@ package com.hotels.styx.routing
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.routing.config.RoutingObjectDefinition
 
-data class RouteObjectRecord(
+data class RoutingObjectRecord(
         val name: String,
         val tags: Set<String>,
         val routingObjectDefinition: RoutingObjectDefinition,

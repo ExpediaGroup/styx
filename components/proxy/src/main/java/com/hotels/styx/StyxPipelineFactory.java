@@ -24,9 +24,9 @@ import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.HttpPipelineFactory;
-import com.hotels.styx.routing.RouteObjectRecord;
+import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.StaticPipelineFactory;
-import com.hotels.styx.routing.config.RoutingObjectConfig;
+import com.hotels.styx.routing.config.RoutingObjectConfiguration;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
@@ -45,14 +45,14 @@ import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfig
  */
 public final class StyxPipelineFactory implements PipelineFactory {
 
-    private final StyxObjectStore<RouteObjectRecord> routeDb;
+    private final StyxObjectStore<RoutingObjectRecord> routeDb;
     private final RoutingObjectFactory routingObjectFactory;
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
 
     public StyxPipelineFactory(
-            StyxObjectStore<RouteObjectRecord> routeDb,
+            StyxObjectStore<RoutingObjectRecord> routeDb,
             RoutingObjectFactory routingObjectFactory,
             Environment environment,
             Map<String, StyxService> services,
@@ -85,7 +85,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
 
         pipelineBuilder = rootHandlerNode
                 .map(jsonNode -> {
-                    RoutingObjectConfig node = toRoutingConfigNode(jsonNode);
+                    RoutingObjectConfiguration node = toRoutingConfigNode(jsonNode);
                     return (HttpPipelineFactory) () -> routingObjectFactory.build(ImmutableList.of("httpPipeline"), routeDb, node);
                 })
                 .orElseGet(() -> {

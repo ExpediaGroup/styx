@@ -37,7 +37,7 @@ public class BuiltinInterceptorsFactory {
         this.builders = requireNonNull(builders);
     }
 
-    public HttpInterceptor build(RoutingObjectConfig configBlock) {
+    public HttpInterceptor build(RoutingObjectConfiguration configBlock) {
         if (configBlock instanceof RoutingObjectDefinition) {
             RoutingObjectDefinition block = (RoutingObjectDefinition) configBlock;
             String type = block.type();

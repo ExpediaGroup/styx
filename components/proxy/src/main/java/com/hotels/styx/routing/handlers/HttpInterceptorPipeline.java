@@ -25,10 +25,10 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.routing.RouteObjectRecord;
+import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
-import com.hotels.styx.routing.config.RoutingObjectConfig;
+import com.hotels.styx.routing.config.RoutingObjectConfiguration;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.config.RoutingObjectReference;
@@ -78,13 +78,13 @@ public class HttpInterceptorPipeline implements HttpHandler {
             this.requestTracking = requestTracking;
         }
 
-        private static List<RoutingObjectConfig> styxHttpPipeline(JsonNode pipeline) {
+        private static List<RoutingObjectConfiguration> styxHttpPipeline(JsonNode pipeline) {
             return stream(pipeline.spliterator(), false)
                     .map(Factory::toRoutingConfigNode)
                     .collect(Collectors.toList());
         }
 
-        private static RoutingObjectConfig toRoutingConfigNode(JsonNode jsonNode) {
+        private static RoutingObjectConfiguration toRoutingConfigNode(JsonNode jsonNode) {
             if (jsonNode.getNodeType() == JsonNodeType.STRING) {
                 return new RoutingObjectReference(jsonNode.asText());
             } else if (jsonNode.getNodeType() == JsonNodeType.OBJECT) {
@@ -101,7 +101,7 @@ public class HttpInterceptorPipeline implements HttpHandler {
         @Override
         public HttpHandler build(
                 List<String> parents,
-                StyxObjectStore<RouteObjectRecord> routeDatabase,
+                StyxObjectStore<RoutingObjectRecord> routeDatabase,
                 RoutingObjectFactory builtinsFactory,
                 RoutingObjectDefinition configBlock) {
             JsonNode pipeline = configBlock.config().get("pipeline");
@@ -121,7 +121,7 @@ public class HttpInterceptorPipeline implements HttpHandler {
             if (pipeline == null || pipeline.isNull()) {
                 return ImmutableList.of();
             }
-            List<RoutingObjectConfig> interceptorConfigs = styxHttpPipeline(pipeline);
+            List<RoutingObjectConfiguration> interceptorConfigs = styxHttpPipeline(pipeline);
             ensureValidPluginReferences(parents, interceptorConfigs);
             return interceptorConfigs.stream()
                     .map(node -> {
@@ -136,7 +136,7 @@ public class HttpInterceptorPipeline implements HttpHandler {
                     .collect(Collectors.toList());
         }
 
-        private void ensureValidPluginReferences(List<String> parents, List<RoutingObjectConfig> interceptors) {
+        private void ensureValidPluginReferences(List<String> parents, List<RoutingObjectConfiguration> interceptors) {
             interceptors.forEach(node -> {
                 if (node instanceof RoutingObjectReference) {
                     String name = ((RoutingObjectReference) node).name();

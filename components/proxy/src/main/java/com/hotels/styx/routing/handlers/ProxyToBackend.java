@@ -34,7 +34,7 @@ import com.hotels.styx.client.connectionpool.SimpleConnectionPoolFactory;
 import com.hotels.styx.client.netty.connectionpool.NettyConnectionFactory;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
-import com.hotels.styx.routing.RouteObjectRecord;
+import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
@@ -75,7 +75,7 @@ public class ProxyToBackend implements HttpHandler {
         }
 
         @Override
-        public HttpHandler build(List<String> parents, StyxObjectStore<RouteObjectRecord> routeDatabase, RoutingObjectFactory builder, RoutingObjectDefinition configBlock) {
+        public HttpHandler build(List<String> parents, StyxObjectStore<RoutingObjectRecord> routeDatabase, RoutingObjectFactory builder, RoutingObjectDefinition configBlock) {
             JsonNodeConfig jsConfig = new JsonNodeConfig(configBlock.config());
 
             BackendService backendService = jsConfig

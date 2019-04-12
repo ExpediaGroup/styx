@@ -21,7 +21,7 @@ import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
-import com.hotels.styx.routing.RouteObjectRecord
+import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
@@ -39,8 +39,8 @@ class RoutingObjectFactoryTest : StringSpec({
         every { handle(any(), any()) } returns Eventual.of(LiveHttpResponse.response(OK).build())
     }
 
-    val routeDatabase = mockk<StyxObjectStore<RouteObjectRecord>>()
-    every { routeDatabase.get("aHandler") } returns Optional.of(RouteObjectRecord("name", setOf(), mockk(), mockHandler))
+    val routeDatabase = mockk<StyxObjectStore<RoutingObjectRecord>>()
+    every { routeDatabase.get("aHandler") } returns Optional.of(RoutingObjectRecord("name", setOf(), mockk(), mockHandler))
     
     "Builds a new handler as per RoutingObjectDefinition" {
         val routeDef = RoutingObjectDefinition("handler-def", "DelegateHandler", mockk<JsonNode>())

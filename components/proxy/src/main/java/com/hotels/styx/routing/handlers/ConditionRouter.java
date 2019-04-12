@@ -24,9 +24,9 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
-import com.hotels.styx.routing.RouteObjectRecord;
+import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
-import com.hotels.styx.routing.config.RoutingObjectConfig;
+import com.hotels.styx.routing.config.RoutingObjectConfiguration;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
@@ -91,7 +91,7 @@ public class ConditionRouter implements HttpRouter {
     public static class Factory implements HttpHandlerFactory {
         private static class ConditionRouterConfig {
             private final List<ConditionRouterRouteConfig> routes;
-            private final RoutingObjectConfig fallback;
+            private final RoutingObjectConfiguration fallback;
 
             private ConditionRouterConfig(@JsonProperty("routes") List<ConditionRouterRouteConfig> routes,
                                           @JsonProperty("fallback") JsonNode fallback) {
@@ -103,7 +103,7 @@ public class ConditionRouter implements HttpRouter {
 
         private static class ConditionRouterRouteConfig {
             private final String condition;
-            private final RoutingObjectConfig destination;
+            private final RoutingObjectConfiguration destination;
 
             public ConditionRouterRouteConfig(@JsonProperty("condition") String condition,
                                               @JsonProperty("destination") JsonNode destination) {
@@ -114,7 +114,7 @@ public class ConditionRouter implements HttpRouter {
 
         @Override
         public HttpHandler build(List<String> parents,
-                                 StyxObjectStore<RouteObjectRecord> routeDatabase,
+                                 StyxObjectStore<RoutingObjectRecord> routeDatabase,
                                  RoutingObjectFactory routingObjectFactory,
                                  RoutingObjectDefinition configBlock
         ) {
@@ -142,7 +142,7 @@ public class ConditionRouter implements HttpRouter {
 
         private static HttpHandler buildFallbackHandler(
                 List<String> parents,
-                StyxObjectStore<RouteObjectRecord> routeDatabase,
+                StyxObjectStore<RoutingObjectRecord> routeDatabase,
                 RoutingObjectFactory routingObjectFactory,
                 ConditionRouterConfig config) {
             if (config.fallback == null) {
@@ -154,11 +154,11 @@ public class ConditionRouter implements HttpRouter {
 
         private static Route buildRoute(
                 List<String> parents,
-                StyxObjectStore<RouteObjectRecord> routeDatabase,
+                StyxObjectStore<RoutingObjectRecord> routeDatabase,
                 RoutingObjectFactory routingObjectFactory,
                 int index,
                 String condition,
-                RoutingObjectConfig destination) {
+                RoutingObjectConfiguration destination) {
             try {
                 String attribute = format("destination[%d]", index);
                 HttpHandler handler = routingObjectFactory.build(append(parents, attribute), routeDatabase, destination);

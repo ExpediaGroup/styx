@@ -27,7 +27,7 @@ import static java.util.Optional.ofNullable;
  */
 public class RoutingConfigParser {
 
-    public static RoutingObjectConfig toRoutingConfigNode(JsonNode jsonNode) {
+    public static RoutingObjectConfiguration toRoutingConfigNode(JsonNode jsonNode) {
         if (jsonNode.getNodeType() == JsonNodeType.STRING) {
             return new RoutingObjectReference(jsonNode.asText());
         } else if (jsonNode.getNodeType() == JsonNodeType.OBJECT) {

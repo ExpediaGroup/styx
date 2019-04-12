@@ -19,5 +19,5 @@ package com.hotels.styx.routing.config;
  * A common interface for different types of Yaml routing configuration items.
  * Can be a reference type or a complex RoutingObjectDefinition.
  */
-public interface RoutingObjectConfig {
+public interface RoutingObjectConfiguration {
 }

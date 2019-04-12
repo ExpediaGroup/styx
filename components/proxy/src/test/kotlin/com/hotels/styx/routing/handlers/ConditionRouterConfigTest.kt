@@ -21,7 +21,7 @@ import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse.response
-import com.hotels.styx.routing.RouteObjectRecord
+import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.configBlock
 import com.hotels.styx.routing.db.StyxObjectStore
@@ -40,9 +40,9 @@ class ConditionRouterConfigTest : StringSpec({
     val request = LiveHttpRequest.get("/foo").build()
     val routeHandlerFactory = RoutingObjectFactory(mapOf("StaticResponseHandler" to StaticResponseHandler.Factory()))
 
-    val routeDatabase = mockk<StyxObjectStore<RouteObjectRecord>>()
-    every { routeDatabase.get("secureHandler") } returns Optional.of(RouteObjectRecord("secureHandler", setOf(), mockk(), HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "secure").build()) }))
-    every { routeDatabase.get("fallbackHandler") } returns Optional.of(RouteObjectRecord("fallbackHandler", setOf(), mockk(), HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "fallback").build()) }))
+    val routeDatabase = mockk<StyxObjectStore<RoutingObjectRecord>>()
+    every { routeDatabase.get("secureHandler") } returns Optional.of(RoutingObjectRecord("secureHandler", setOf(), mockk(), HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "secure").build()) }))
+    every { routeDatabase.get("fallbackHandler") } returns Optional.of(RoutingObjectRecord("fallbackHandler", setOf(), mockk(), HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "fallback").build()) }))
 
 
     val config = configBlock("""

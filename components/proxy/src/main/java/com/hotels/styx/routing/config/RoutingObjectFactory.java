@@ -18,7 +18,7 @@ package com.hotels.styx.routing.config;
 import com.google.common.base.Preconditions;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.routing.RouteObjectRecord;
+import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.db.StyxObjectStore;
 
 import java.util.List;
@@ -40,7 +40,7 @@ public class RoutingObjectFactory {
         this.builtInObjectTypes = requireNonNull(builtInObjectTypes);
     }
 
-    public HttpHandler build(List<String> parents, StyxObjectStore<RouteObjectRecord> routeDb, RoutingObjectConfig configNode) {
+    public HttpHandler build(List<String> parents, StyxObjectStore<RoutingObjectRecord> routeDb, RoutingObjectConfiguration configNode) {
         if (configNode instanceof RoutingObjectDefinition) {
             RoutingObjectDefinition configBlock = (RoutingObjectDefinition) configNode;
             String type = configBlock.type();

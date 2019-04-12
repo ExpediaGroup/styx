@@ -29,7 +29,7 @@ import static java.util.Objects.requireNonNull;
  * An yaml configuration block used in routing configuration to configure an HTTP handler.
  */
 @JsonDeserialize(builder = RoutingObjectDefinition.Builder.class)
-public class RoutingObjectDefinition implements RoutingObjectConfig {
+public class RoutingObjectDefinition implements RoutingObjectConfiguration {
     private final String name;
     private final String type;
     private final List<String> tags;

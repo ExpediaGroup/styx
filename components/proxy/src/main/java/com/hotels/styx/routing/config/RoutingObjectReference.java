@@ -20,7 +20,7 @@ import java.util.Objects;
 /**
  * A routing config object that is a named reference to an object specified elsewhere.
  */
-public class RoutingObjectReference implements RoutingObjectConfig {
+public class RoutingObjectReference implements RoutingObjectConfiguration {
     private final String name;
 
     public RoutingObjectReference(String name) {

@@ -32,7 +32,7 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
-import com.hotels.styx.routing.RouteObjectRecord;
+import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
@@ -62,7 +62,7 @@ public class StyxServerComponents {
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
-    private final StyxObjectStore<RouteObjectRecord> routeObjectStore = new StyxObjectStore<>();
+    private final StyxObjectStore<RoutingObjectRecord> routeObjectStore = new StyxObjectStore<>();
     private final RoutingObjectFactory routingObjectFactory;
 
     private StyxServerComponents(Builder builder) {
@@ -96,7 +96,7 @@ public class StyxServerComponents {
                 .orElse(ImmutableMap.of())
                 .forEach((name, record) -> {
                     HttpHandler handler = routingObjectFactory.build(ImmutableList.of(name), routeObjectStore, record);
-                    routeObjectStore.insert(name, new RouteObjectRecord(name, ImmutableSet.of(), record, handler));
+                    routeObjectStore.insert(name, new RoutingObjectRecord(name, ImmutableSet.of(), record, handler));
                 });
     }
 
@@ -138,7 +138,7 @@ public class StyxServerComponents {
         return plugins;
     }
 
-    public StyxObjectStore<RouteObjectRecord> routeDatabase() {
+    public StyxObjectStore<RoutingObjectRecord> routeDatabase() {
         return this.routeObjectStore;
     }
 
