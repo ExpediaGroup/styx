@@ -86,7 +86,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
         pipelineBuilder = rootHandlerNode
                 .map(jsonNode -> {
                     RoutingObjectConfiguration node = toRoutingConfigNode(jsonNode);
-                    return (HttpPipelineFactory) () -> routingObjectFactory.build(ImmutableList.of("httpPipeline"), routeDb, node);
+                    return (HttpPipelineFactory) () -> routingObjectFactory.build(ImmutableList.of("httpPipeline"), node);
                 })
                 .orElseGet(() -> {
                     Registry<BackendService> backendServicesRegistry = (Registry<BackendService>) services.get("backendServiceRegistry");

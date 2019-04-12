@@ -34,7 +34,6 @@ import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
-import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
@@ -44,8 +43,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hotels.styx.BuiltInInterceptors.INTERCEPTOR_FACTORIES;
-import static com.hotels.styx.BuiltInRoutingObjects.createBuiltinRoutingObjectFactories;
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
@@ -78,11 +75,12 @@ public class StyxServerComponents {
                 ? loadPlugins(environment)
                 : loadPlugins(environment, builder.configuredPluginFactories);
 
-        this.routingObjectFactory = newRouteHandlerFactory(
+        this.routingObjectFactory = new RoutingObjectFactory(
                 this.environment,
+                this.routeObjectStore,
                 this.plugins,
+                new BuiltinInterceptorsFactory(),
                 false);
-
 
         this.services = mergeServices(
                 builder.servicesLoader.load(environment, routeObjectStore),
@@ -95,21 +93,9 @@ public class StyxServerComponents {
                 .map(StyxServerComponents::readHttpHandlers)
                 .orElse(ImmutableMap.of())
                 .forEach((name, record) -> {
-                    HttpHandler handler = routingObjectFactory.build(ImmutableList.of(name), routeObjectStore, record);
+                    HttpHandler handler = routingObjectFactory.build(ImmutableList.of(name), record);
                     routeObjectStore.insert(name, new RoutingObjectRecord(name, ImmutableSet.of(), record, handler));
                 });
-    }
-
-    private static RoutingObjectFactory newRouteHandlerFactory(Environment environment, List<NamedPlugin> plugins, boolean requestTracking) {
-        BuiltinInterceptorsFactory builtinInterceptorsFactories = new BuiltinInterceptorsFactory(INTERCEPTOR_FACTORIES);
-
-        Map<String, HttpHandlerFactory> objectFactories = createBuiltinRoutingObjectFactories(
-                environment,
-                plugins,
-                builtinInterceptorsFactories,
-                requestTracking);
-
-        return new RoutingObjectFactory(objectFactories);
     }
 
     private static Map<String, RoutingObjectDefinition> readHttpHandlers(JsonNode root) {

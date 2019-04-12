@@ -22,12 +22,12 @@ import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.proxy.BackendServiceClientFactory
+import com.hotels.styx.routing.RoutingContext
 import com.hotels.styx.routing.configBlock
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
-import io.mockk.mockk
 import reactor.core.publisher.Mono
 
 class ProxyToBackendTest : StringSpec({
@@ -49,8 +49,10 @@ class ProxyToBackendTest : StringSpec({
 
           """.trimIndent())
 
+    val context = RoutingContext(environment = environment, routingObjectFactory = routingObjectFactory()).get()
+
     "builds ProxyToBackend handler" {
-        val handler = ProxyToBackend.Factory(environment, clientFactory()).build(listOf(), mockk(), null, config)
+        val handler = ProxyToBackend.Factory.build(listOf(), context, config, clientFactory());
 
         val response = Mono.from(handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create())).block()
         response?.status() shouldBe (OK)
@@ -66,8 +68,7 @@ class ProxyToBackendTest : StringSpec({
                 """.trimIndent())
 
         val e = shouldThrow<IllegalArgumentException> {
-            ProxyToBackend.Factory(environment, clientFactory())
-            .build(listOf("config", "config"), mockk(), null, config)
+            ProxyToBackend.Factory.build(listOf("config", "config"), context, config, clientFactory())
         }
 
         e.message shouldBe ("Routing object definition of type 'ProxyToBackend', attribute='config.config', is missing a mandatory 'backend' attribute.")
@@ -88,14 +89,11 @@ class ProxyToBackendTest : StringSpec({
                 """.trimIndent())
 
         val e = shouldThrow<IllegalArgumentException> {
-            ProxyToBackend.Factory(environment, clientFactory())
-            .build(listOf("config", "config"), mockk(), null, config)
+            ProxyToBackend.Factory.build(listOf("config", "config"), context, config, clientFactory())
         }
 
         e.message shouldBe ("Routing object definition of type 'ProxyToBackend', attribute='config.config.backend', is missing a mandatory 'origins' attribute.")
     }
-
-
 })
 
 
@@ -112,11 +110,4 @@ private fun clientFactory() = BackendServiceClientFactory { backendService, orig
                     .build())
 
     }
-}
-
-private fun client() = BackendServiceClient {
-    request -> Mono.just(
-        LiveHttpResponse.response(OK)
-                .addHeader("X-Backend-Service", "y")
-                .build())
 }

@@ -21,6 +21,7 @@ import com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse.response
+import com.hotels.styx.routing.RoutingContext
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.configBlock
@@ -38,12 +39,17 @@ import java.util.Optional
 class ConditionRouterConfigTest : StringSpec({
 
     val request = LiveHttpRequest.get("/foo").build()
-    val routeHandlerFactory = RoutingObjectFactory(mapOf("StaticResponseHandler" to StaticResponseHandler.Factory()))
 
-    val routeDatabase = mockk<StyxObjectStore<RoutingObjectRecord>>()
-    every { routeDatabase.get("secureHandler") } returns Optional.of(RoutingObjectRecord("secureHandler", setOf(), mockk(), HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "secure").build()) }))
-    every { routeDatabase.get("fallbackHandler") } returns Optional.of(RoutingObjectRecord("fallbackHandler", setOf(), mockk(), HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "fallback").build()) }))
+    val routeObjectStore = mockk<StyxObjectStore<RoutingObjectRecord>>()
+    every { routeObjectStore.get("secureHandler") } returns Optional.of(RoutingObjectRecord("secureHandler", setOf(), mockk(), HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "secure").build()) }))
+    every { routeObjectStore.get("fallbackHandler") } returns Optional.of(RoutingObjectRecord("fallbackHandler", setOf(), mockk(), HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "fallback").build()) }))
 
+    val routeHandlerFactory = RoutingObjectFactory(mapOf("StaticResponseHandler" to StaticResponseHandler.Factory()), mockk(), routeObjectStore, mockk(), mockk(), false)
+
+    val context = RoutingContext(
+            routeDb = routeObjectStore,
+            routingObjectFactory = routeHandlerFactory)
+            .get()
 
     val config = configBlock("""
           config:
@@ -67,14 +73,14 @@ class ConditionRouterConfigTest : StringSpec({
           """.trimIndent())
 
     "Builds an instance with fallback handler" {
-        val router = ConditionRouter.Factory().build(listOf(), routeDatabase, routeHandlerFactory, config)
+        val router = ConditionRouter.Factory().build(listOf(), context, config)
         val response = Mono.from(router.handle(request, HttpInterceptorContext(true))).block()
 
         response.status() shouldBe (OK)
     }
 
     "Builds condition router instance routes" {
-        val router = ConditionRouter.Factory().build(listOf(), routeDatabase, routeHandlerFactory, config)
+        val router = ConditionRouter.Factory().build(listOf(), context, config)
         val response = Mono.from(router.handle(request, HttpInterceptorContext())).block()
 
         response.status().code() shouldBe (301)
@@ -82,7 +88,7 @@ class ConditionRouterConfigTest : StringSpec({
 
 
     "Fallback handler can be specified as a handler reference" {
-        val router = ConditionRouter.Factory().build(listOf(), routeDatabase, routeHandlerFactory, configBlock("""
+        val router = ConditionRouter.Factory().build(listOf(), context, configBlock("""
           config:
               name: main-router
               type: ConditionRouter
@@ -99,7 +105,7 @@ class ConditionRouterConfigTest : StringSpec({
     }
 
     "Route destination can be specified as a handler reference" {
-        val router = ConditionRouter.Factory().build(listOf(), routeDatabase, routeHandlerFactory, configBlock("""
+        val router = ConditionRouter.Factory().build(listOf(), context, configBlock("""
           config:
               name: main-router
               type: ConditionRouter
@@ -119,7 +125,7 @@ class ConditionRouterConfigTest : StringSpec({
     "Throws exception when routes attribute is missing" {
 
         val e = shouldThrow<IllegalArgumentException> {
-            ConditionRouter.Factory().build(listOf("config", "config"), routeDatabase, routeHandlerFactory, configBlock("""
+            ConditionRouter.Factory().build(listOf("config", "config"), context, configBlock("""
             config:
                 name: main-router
                 type: ConditionRouter
@@ -137,7 +143,7 @@ class ConditionRouterConfigTest : StringSpec({
 
     "Responds with 502 Bad Gateway when fallback attribute is not specified." {
 
-        val router = ConditionRouter.Factory().build(listOf(), routeDatabase, routeHandlerFactory, configBlock("""
+        val router = ConditionRouter.Factory().build(listOf(), context, configBlock("""
             config:
                 name: main-router
                 type: ConditionRouter
@@ -160,7 +166,7 @@ class ConditionRouterConfigTest : StringSpec({
     "Indicates the condition when fails to compile an DSL expression due to Syntax Error" {
 
         val e = shouldThrow<IllegalArgumentException> {
-            ConditionRouter.Factory().build(listOf("config", "config"), routeDatabase, routeHandlerFactory, configBlock("""
+            ConditionRouter.Factory().build(listOf("config", "config"), context, configBlock("""
                     config:
                         name: main-router
                         type: ConditionRouter
@@ -181,7 +187,7 @@ class ConditionRouterConfigTest : StringSpec({
     "Indicates the condition when fails to compile an DSL expression due to unrecognised DSL function name" {
 
         val e = shouldThrow<IllegalArgumentException> {
-            ConditionRouter.Factory().build(listOf("config", "config"), routeDatabase, routeHandlerFactory, configBlock("""
+            ConditionRouter.Factory().build(listOf("config", "config"), context, configBlock("""
                 config:
                     name: main-router
                     type: ConditionRouter
@@ -200,13 +206,13 @@ class ConditionRouterConfigTest : StringSpec({
     }
 
     "Passes parentage attribute path to the builtins factory" {
+        val builtinsFactory = mockk<RoutingObjectFactory> {
+            every {build(any(), any())} returns HttpHandler { _, _ -> Eventual.of(response(OK).build()) }
+        }
 
-        val builtinsFactory = mockk<RoutingObjectFactory>()
-        every {
-            builtinsFactory.build(any(), any(), any())
-        } returns HttpHandler { _, _ -> Eventual.of(response(OK).build()) }
+        val context = RoutingContext(routeDb = routeObjectStore, routingObjectFactory = builtinsFactory).get()
 
-        val router = ConditionRouter.Factory().build(listOf("config", "config"), routeDatabase, builtinsFactory, configBlock("""
+        ConditionRouter.Factory().build(listOf("config", "config"), context, configBlock("""
             config:
                 name: main-router
                 type: ConditionRouter
@@ -235,9 +241,9 @@ class ConditionRouterConfigTest : StringSpec({
             """.trimIndent()))
 
         verify {
-            builtinsFactory.build(listOf("config", "config", "routes", "destination[0]"), any(), any())
-            builtinsFactory.build(listOf("config", "config", "routes", "destination[1]"), any(), any())
-            builtinsFactory.build(listOf("config", "config", "fallback"), any(), any())
+            builtinsFactory.build(listOf("config", "config", "routes", "destination[0]"), any())
+            builtinsFactory.build(listOf("config", "config", "routes", "destination[1]"), any())
+            builtinsFactory.build(listOf("config", "config", "fallback"), any())
         }
     }
 

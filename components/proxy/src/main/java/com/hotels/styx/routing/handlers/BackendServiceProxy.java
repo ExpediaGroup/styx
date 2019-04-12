@@ -17,11 +17,11 @@ package com.hotels.styx.routing.handlers;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.Environment;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
@@ -29,11 +29,8 @@ import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.BackendServicesRouter;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
-import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
-import com.hotels.styx.routing.config.RoutingObjectFactory;
-import com.hotels.styx.routing.db.StyxObjectStore;
 
 import java.util.List;
 import java.util.Map;
@@ -87,7 +84,7 @@ public class BackendServiceProxy implements HttpHandler {
         }
 
         @Override
-        public HttpHandler build(List<String> parents, StyxObjectStore<RoutingObjectRecord> routeDatabase, RoutingObjectFactory x, RoutingObjectDefinition configBlock) {
+        public HttpHandler build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
             JsonNodeConfig config = new JsonNodeConfig(configBlock.config());
             String provider = config.get("backendProvider")
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "backendProvider"));

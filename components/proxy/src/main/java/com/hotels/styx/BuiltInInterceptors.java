@@ -16,7 +16,6 @@
 package com.hotels.styx;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.proxy.interceptors.ConfigurationContextResolverInterceptor;
 import com.hotels.styx.proxy.interceptors.HopByHopHeadersRemovingInterceptor;
@@ -25,8 +24,6 @@ import com.hotels.styx.proxy.interceptors.RequestEnrichingInterceptor;
 import com.hotels.styx.proxy.interceptors.TcpTunnelRequestRejector;
 import com.hotels.styx.proxy.interceptors.UnexpectedRequestContentLengthRemover;
 import com.hotels.styx.proxy.interceptors.ViaHeaderAppendingInterceptor;
-import com.hotels.styx.routing.config.HttpInterceptorFactory;
-import com.hotels.styx.routing.interceptors.RewriteInterceptor;
 
 import java.util.List;
 
@@ -38,9 +35,6 @@ import static com.hotels.styx.api.configuration.ConfigurationContextResolver.EMP
 public final class BuiltInInterceptors {
     private BuiltInInterceptors() {
     }
-
-    public static final ImmutableMap<String, HttpInterceptorFactory> INTERCEPTOR_FACTORIES =
-            ImmutableMap.of("Rewrite", new RewriteInterceptor.Factory());
 
     static List<HttpInterceptor> internalStyxInterceptors(StyxConfig config) {
         ImmutableList.Builder<HttpInterceptor> builder = ImmutableList.builder();

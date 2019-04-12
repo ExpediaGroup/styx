@@ -113,11 +113,7 @@ public class ConditionRouter implements HttpRouter {
         }
 
         @Override
-        public HttpHandler build(List<String> parents,
-                                 StyxObjectStore<RoutingObjectRecord> routeDatabase,
-                                 RoutingObjectFactory routingObjectFactory,
-                                 RoutingObjectDefinition configBlock
-        ) {
+        public HttpHandler build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
             ConditionRouterConfig config = new JsonNodeConfig(configBlock.config()).as(ConditionRouterConfig.class);
             if (config.routes == null) {
                 throw missingAttributeError(configBlock, join(".", parents), "routes");
@@ -127,8 +123,8 @@ public class ConditionRouter implements HttpRouter {
             List<Route> routes = config.routes.stream()
                     .map(routeConfig -> buildRoute(
                             append(parents, "routes"),
-                            routeDatabase,
-                            routingObjectFactory,
+                            context.routeDb(),
+                            context.factory(),
                             index.getAndIncrement(),
                             routeConfig.condition,
                             routeConfig.destination))
@@ -137,18 +133,17 @@ public class ConditionRouter implements HttpRouter {
             return new RouteHandlerAdapter(
                     new ConditionRouter(
                             routes,
-                            buildFallbackHandler(parents, routeDatabase, routingObjectFactory, config)));
+                            buildFallbackHandler(parents, context, config)));
         }
 
         private static HttpHandler buildFallbackHandler(
                 List<String> parents,
-                StyxObjectStore<RoutingObjectRecord> routeDatabase,
-                RoutingObjectFactory routingObjectFactory,
+                Context context,
                 ConditionRouterConfig config) {
             if (config.fallback == null) {
-                return (request, context) -> Eventual.of(LiveHttpResponse.response(BAD_GATEWAY).build());
+                return (request, na) -> Eventual.of(LiveHttpResponse.response(BAD_GATEWAY).build());
             } else {
-                return routingObjectFactory.build(append(parents, "fallback"), routeDatabase, config.fallback);
+                return context.factory().build(append(parents, "fallback"), config.fallback);
             }
         }
 
@@ -161,7 +156,7 @@ public class ConditionRouter implements HttpRouter {
                 RoutingObjectConfiguration destination) {
             try {
                 String attribute = format("destination[%d]", index);
-                HttpHandler handler = routingObjectFactory.build(append(parents, attribute), routeDatabase, destination);
+                HttpHandler handler = routingObjectFactory.build(append(parents, attribute), destination);
                 return new Route(condition, handler);
             } catch (DslSyntaxError | DslFunctionResolutionError e) {
                 String attribute = format("condition[%d]", index);

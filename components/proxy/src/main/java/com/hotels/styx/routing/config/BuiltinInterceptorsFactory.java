@@ -16,12 +16,13 @@
 package com.hotels.styx.routing.config;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.routing.interceptors.RewriteInterceptor;
 
 import java.util.Map;
 
 import static java.lang.String.format;
-import static java.util.Objects.requireNonNull;
 
 /**
  * For Styx core to instantiate built in HTTP interceptors.
@@ -31,10 +32,17 @@ import static java.util.Objects.requireNonNull;
  *
  */
 public class BuiltinInterceptorsFactory {
-    private final Map<String, HttpInterceptorFactory> builders;
+    public static final ImmutableMap<String, HttpInterceptorFactory> INTERCEPTOR_FACTORIES =
+            ImmutableMap.of("Rewrite", new RewriteInterceptor.Factory());
 
-    public BuiltinInterceptorsFactory(Map<String, HttpInterceptorFactory> builders) {
-        this.builders = requireNonNull(builders);
+    private final Map<String, HttpInterceptorFactory> interceptorFactories;
+
+    public BuiltinInterceptorsFactory() {
+        this(INTERCEPTOR_FACTORIES);
+    }
+
+    public BuiltinInterceptorsFactory(Map<String, HttpInterceptorFactory> interceptorFactories) {
+        this.interceptorFactories = interceptorFactories;
     }
 
     public HttpInterceptor build(RoutingObjectConfiguration configBlock) {
@@ -42,7 +50,7 @@ public class BuiltinInterceptorsFactory {
             RoutingObjectDefinition block = (RoutingObjectDefinition) configBlock;
             String type = block.type();
 
-            HttpInterceptorFactory constructor = builders.get(type);
+            HttpInterceptorFactory constructor = interceptorFactories.get(type);
             Preconditions.checkArgument(constructor != null, format("Unknown handler type '%s'", type));
 
             return constructor.build(block);

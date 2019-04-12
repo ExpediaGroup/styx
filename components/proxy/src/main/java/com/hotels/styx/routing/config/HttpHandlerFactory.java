@@ -15,11 +15,15 @@
  */
 package com.hotels.styx.routing.config;
 
+import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.db.StyxObjectStore;
 
 import java.util.List;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A factory for constructing HTTP handler objects from a RoutingObjectDefinition yaml config block.
@@ -36,11 +40,57 @@ public interface HttpHandlerFactory {
      * <p>
      *
      * @param parents
-     * @param routeDb
-     * @param builder
+     * @param context
      * @param configBlock
      * @return
      */
-    HttpHandler build(List<String> parents, StyxObjectStore<RoutingObjectRecord> routeDb, RoutingObjectFactory builder, RoutingObjectDefinition configBlock);
+    HttpHandler build(List<String> parents, HttpHandlerFactory.Context context, RoutingObjectDefinition configBlock);
 
+    class Context {
+        private final Environment environment;
+        private final StyxObjectStore<RoutingObjectRecord> routeDb;
+        private final RoutingObjectFactory routingObjectFactory;
+        private final Iterable<NamedPlugin> plugins;
+        private final BuiltinInterceptorsFactory interceptorsFactory;
+        private final boolean requestTracking;
+
+        public Context(
+                Environment environment,
+                StyxObjectStore<RoutingObjectRecord> routeDb,
+                RoutingObjectFactory routingObjectFactory,
+                Iterable<NamedPlugin> plugins,
+                BuiltinInterceptorsFactory interceptorsFactory,
+                boolean requestTracking) {
+            this.environment = requireNonNull(environment);
+            this.routeDb = requireNonNull(routeDb);
+            this.routingObjectFactory = requireNonNull(routingObjectFactory);
+            this.plugins = requireNonNull(plugins);
+            this.interceptorsFactory = requireNonNull(interceptorsFactory);
+            this.requestTracking = requestTracking;
+        }
+
+        public Environment environment() {
+            return environment;
+        }
+
+        public StyxObjectStore<RoutingObjectRecord> routeDb() {
+            return routeDb;
+        }
+
+        public RoutingObjectFactory factory() {
+            return routingObjectFactory;
+        }
+
+        public Iterable<NamedPlugin> plugins() {
+            return plugins;
+        }
+
+        public BuiltinInterceptorsFactory builtinInterceptorsFactory() {
+            return interceptorsFactory;
+        }
+
+        public boolean requestTracking() {
+            return requestTracking;
+        }
+    }
 }
