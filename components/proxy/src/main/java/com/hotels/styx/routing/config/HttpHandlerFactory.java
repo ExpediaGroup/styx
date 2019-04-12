@@ -46,6 +46,12 @@ public interface HttpHandlerFactory {
      */
     HttpHandler build(List<String> parents, HttpHandlerFactory.Context context, RoutingObjectDefinition configBlock);
 
+    /**
+     * Contextual information for factory class.
+     *
+     * Provides contextual information for the factory class to allow HttpHandlers
+     * to integrate into Styx runtime environment.
+     */
     class Context {
         private final Environment environment;
         private final StyxObjectStore<RoutingObjectRecord> routeDb;

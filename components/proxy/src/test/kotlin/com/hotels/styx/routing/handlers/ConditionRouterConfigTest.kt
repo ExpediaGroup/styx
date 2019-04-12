@@ -35,6 +35,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import reactor.core.publisher.Mono
 import java.util.Optional
+import java.lang.IllegalArgumentException
 
 class ConditionRouterConfigTest : StringSpec({
 

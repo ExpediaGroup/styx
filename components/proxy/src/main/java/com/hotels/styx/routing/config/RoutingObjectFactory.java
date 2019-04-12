@@ -71,7 +71,12 @@ public class RoutingObjectFactory {
         this.requestTracking = requestTracking;
     }
 
-    public RoutingObjectFactory(Environment environment, StyxObjectStore<RoutingObjectRecord> routeObjectStore, List<NamedPlugin> plugins, BuiltinInterceptorsFactory interceptorFactory, boolean requestTracking) {
+    public RoutingObjectFactory(
+            Environment environment,
+            StyxObjectStore<RoutingObjectRecord> routeObjectStore,
+            List<NamedPlugin> plugins,
+            BuiltinInterceptorsFactory interceptorFactory,
+            boolean requestTracking) {
         this(BUILTIN_HANDLERS, environment, routeObjectStore, plugins, interceptorFactory, requestTracking);
     }
 
