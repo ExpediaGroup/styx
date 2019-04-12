@@ -30,32 +30,12 @@ class StyxObjectStore<T> : ObjectStore<T> {
                 .map { it.payload }
     }
 
-    override fun insert(key: String, tags: Set<String>, payload: T) {
-        // TODO:
-        // Null checks for key, record
-        // What if key already exists?
-        // What if tags changed?
+    private fun insert(key: String, tags: Set<String>, payload: T) {
         objects.put(key, Record(key, tags, payload))
     }
 
     override fun insert(key: String, record: T) {
         insert(key, setOf(), record)
-    }
-
-    override fun remove(key: String?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun retag(key: String?, oldTag: String?, newTag: String?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getAll(tags: Set<String>): Set<T> {
-        return objects
-                .map { it.value }
-                .filter { it.tags.intersect(tags).equals(tags) }
-                .map { it.payload }
-                .toSet()
     }
 
     data class Record<T>(val key: String, val tags:Set<String>, val payload: T)

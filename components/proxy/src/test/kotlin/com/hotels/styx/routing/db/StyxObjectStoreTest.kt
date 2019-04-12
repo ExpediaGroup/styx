@@ -15,8 +15,6 @@
  */
 package com.hotels.styx.routing.db
 
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
 import java.util.Optional
@@ -36,30 +34,6 @@ class StyxObjectStoreTest : FeatureSpec() {
                 val db = StyxObjectStore<String>()
 
                 db.get("notfound") shouldBe Optional.empty()
-            }
-        }
-
-        feature("Get tags") {
-            val db = StyxObjectStore<String>()
-            db.insert("one", setOf("a", "b"), "One")
-            db.insert("two", setOf("a", "c"), "Two")
-            db.insert("three", setOf("b", "c"), "Three")
-
-            scenario("Retrieves all matching objects") {
-                assertThat(db.getAll(setOf("a")), equalTo(setOf("One", "Two")))
-                assertThat(db.getAll(setOf("b")), equalTo(setOf("One", "Three")))
-                assertThat(db.getAll(setOf("NA")), equalTo(setOf()))
-            }
-
-            scenario("Retrieves all objects matching multiple tags") {
-                assertThat(db.getAll(setOf("a", "c")), equalTo(setOf("Two")))
-            }
-        }
-
-        feature("Watching for changes") {
-            scenario("Notifies object modifications") {
-                val db = StyxObjectStore<String>()
-                db.insert("one", setOf("a", "b"), "one")
             }
         }
     }

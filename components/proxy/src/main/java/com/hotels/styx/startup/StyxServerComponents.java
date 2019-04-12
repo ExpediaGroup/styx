@@ -96,8 +96,7 @@ public class StyxServerComponents {
                 .orElse(ImmutableMap.of())
                 .forEach((name, record) -> {
                     HttpHandler handler = routingObjectFactory.build(ImmutableList.of(name), routeObjectStore, record);
-                    Set<String> tags = ImmutableSet.copyOf(record.tags());
-                    routeObjectStore.insert(name, tags, new RouteObjectRecord(name, tags, record, handler));
+                    routeObjectStore.insert(name, new RouteObjectRecord(name, ImmutableSet.of(), record, handler));
                 });
     }
 
