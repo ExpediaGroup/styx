@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2018 Expedia Inc.
+# Copyright (C) 2013-2019 Expedia Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -67,6 +67,8 @@ class JavaFlightRecording(object):
 
     @classmethod
     def start(cls, pid, settings):
+        if settings == None:
+            return JavaFlightRecording("NA", "NA")
         output = run_command("jcmd %d JFR.start settings=%s" % (pid, settings))
         id = JavaFlightRecording.get_recording_id(output)
         return JavaFlightRecording(pid, id)
@@ -75,7 +77,12 @@ class JavaFlightRecording(object):
         self.recording_id = recording_id
         self.pid = pid
 
+    def enabled(self):
+        return self.recording_id != "NA"
+
     def stop(self, filename):
+        if self.enabled() == False:
+            return
         run_command("jcmd %d JFR.stop filename=%s recording=%d" % (self.pid, filename, self.recording_id))
 
 
@@ -244,12 +251,18 @@ if __name__ == "__main__":
     parser.add_option('-o', '--output',   dest='output',   type='string', default='load-test', help="Output directory prefix.")
     parser.add_option('-R', '--rate',     dest='rate',     type='int',    default=5000, help="Request rate for wrk2.")
     parser.add_option('-w', '--wrkargs',  dest='wrkargs',  type='string', default=None, help="Command line options for wrk.")
+    parser.add_option(      '--jfr',      dest='jfr',      action="store_true",         help="Enable Java Flight Recorder.")
     (options, args) = parser.parse_args()
 
     styx_pid = styx_pid()
 
     output_dir = os.path.join(os.getcwd(), options.output)
-    jfr_settings = os.path.join(os.getcwd(), JFC_FILE)
+
+    if (options.jfr):
+        jfr_settings = os.path.join(os.getcwd(), JFC_FILE)
+    else:
+        jfr_settings = None
+
     try:
         url = args[0]
     except IndexError:

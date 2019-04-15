@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2017 Expedia Inc.
+# Copyright (C) 2013-2019 Expedia Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ import os
 
 JFC_FILE = "scripts/load-test-tool/configuration/load_test.jfc"
 
-WRK_CMD = "../../wrk2/wrk"
+WRK_CMD = "wrk2"
 
 LUA_SCRIPTS_DIR = "scripts/load-test-tool/configuration"
 LUA_CONFIG_SCRIPT = "scripts/load-test-tool/configuration/wrk_config.lua"
