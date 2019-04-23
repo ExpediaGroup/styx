@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.routing.config
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpResponseStatus.OK
@@ -43,7 +42,7 @@ class RoutingObjectFactoryTest : StringSpec({
     every { routeObjectStore.get("aHandler") } returns Optional.of(RoutingObjectRecord("name", setOf(), mockk(), mockHandler))
     
     "Builds a new handler as per RoutingObjectDefinition" {
-        val routeDef = RoutingObjectDefinition("handler-def", "DelegateHandler", mockk<JsonNode>())
+        val routeDef = RoutingObjectDefinition("handler-def", "DelegateHandler", mockk())
         val handlerFactory = httpHandlerFactory(mockHandler)
 
         val routeFactory = RoutingObjectFactory(mapOf("DelegateHandler" to handlerFactory), mockk(), routeObjectStore, mockk(), mockk(), false)

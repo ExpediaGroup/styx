@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Styx Route Database.
  */
 class StyxObjectStore<T> : ObjectStore<T> {
-    val objects = ConcurrentHashMap<String, Record<T>>();
+    private val objects = ConcurrentHashMap<String, Record<T>>();
 
     override fun get(name: String?): Optional<T> {
         return Optional.ofNullable(objects.get(name))

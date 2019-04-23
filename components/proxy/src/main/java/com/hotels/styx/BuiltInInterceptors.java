@@ -30,9 +30,9 @@ import java.util.List;
 import static com.hotels.styx.api.configuration.ConfigurationContextResolver.EMPTY_CONFIGURATION_CONTEXT_RESOLVER;
 
 /**
- * Built in interceptors.
+ * Provides a list of interceptors that are required by the Styx HTTP pipeline for core functionality.
  */
-public final class BuiltInInterceptors {
+final class BuiltInInterceptors {
     private BuiltInInterceptors() {
     }
 

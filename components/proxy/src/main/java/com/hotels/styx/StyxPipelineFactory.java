@@ -18,7 +18,6 @@ package com.hotels.styx;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
@@ -39,6 +38,7 @@ import java.util.Optional;
 
 import static com.hotels.styx.BuiltInInterceptors.internalStyxInterceptors;
 import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Produces the pipeline for the Styx proxy server.
@@ -57,33 +57,29 @@ public final class StyxPipelineFactory implements PipelineFactory {
             Environment environment,
             Map<String, StyxService> services,
             List<NamedPlugin> plugins) {
-        this.routeDb = routeDb;
-        this.routingObjectFactory = routingObjectFactory;
-        this.environment = environment;
-        this.services = services;
-        this.plugins = plugins;
+        this.routeDb = requireNonNull(routeDb);
+        this.routingObjectFactory = requireNonNull(routingObjectFactory);
+        this.environment = requireNonNull(environment);
+        this.services = requireNonNull(services);
+        this.plugins = requireNonNull(plugins);
     }
 
     @Override
     public HttpHandler create(StyxServerComponents config) {
         boolean requestTracking = environment.configuration().get("requestTracking", Boolean.class).orElse(false);
 
-        List<HttpInterceptor> internalInterceptors = internalStyxInterceptors(environment.styxConfig());
-
         return new HttpInterceptorPipeline(
-                internalInterceptors,
+                internalStyxInterceptors(environment.styxConfig()),
                 configuredPipeline(routingObjectFactory),
                 requestTracking);
     }
 
     private HttpHandler configuredPipeline(RoutingObjectFactory routingObjectFactory) {
-        HttpPipelineFactory pipelineBuilder;
-
         boolean requestTracking = environment.configuration().get("requestTracking", Boolean.class).orElse(false);
 
         Optional<JsonNode> rootHandlerNode = environment.configuration().get("httpPipeline", JsonNode.class);
 
-        pipelineBuilder = rootHandlerNode
+        HttpPipelineFactory pipelineBuilder = rootHandlerNode
                 .map(jsonNode -> {
                     RoutingObjectConfiguration node = toRoutingConfigNode(jsonNode);
                     return (HttpPipelineFactory) () -> routingObjectFactory.build(ImmutableList.of("httpPipeline"), node);

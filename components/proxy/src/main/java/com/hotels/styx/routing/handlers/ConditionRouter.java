@@ -24,12 +24,10 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
-import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectConfiguration;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
-import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.server.HttpRouter;
 import com.hotels.styx.server.routing.AntlrMatcher;
 import com.hotels.styx.server.routing.antlr.DslFunctionResolutionError;
@@ -123,7 +121,6 @@ public class ConditionRouter implements HttpRouter {
             List<Route> routes = config.routes.stream()
                     .map(routeConfig -> buildRoute(
                             append(parents, "routes"),
-                            context.routeDb(),
                             context.factory(),
                             index.getAndIncrement(),
                             routeConfig.condition,
@@ -149,7 +146,6 @@ public class ConditionRouter implements HttpRouter {
 
         private static Route buildRoute(
                 List<String> parents,
-                StyxObjectStore<RoutingObjectRecord> routeDatabase,
                 RoutingObjectFactory routingObjectFactory,
                 int index,
                 String condition,

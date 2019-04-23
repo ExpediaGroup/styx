@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.routing.config;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpInterceptor;
@@ -23,6 +24,7 @@ import com.hotels.styx.routing.interceptors.RewriteInterceptor;
 import java.util.Map;
 
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 /**
  * For Styx core to instantiate built in HTTP interceptors.
@@ -41,8 +43,9 @@ public class BuiltinInterceptorsFactory {
         this(INTERCEPTOR_FACTORIES);
     }
 
+    @VisibleForTesting
     public BuiltinInterceptorsFactory(Map<String, HttpInterceptorFactory> interceptorFactories) {
-        this.interceptorFactories = interceptorFactories;
+        this.interceptorFactories = requireNonNull(interceptorFactories);
     }
 
     public HttpInterceptor build(RoutingObjectConfiguration configBlock) {

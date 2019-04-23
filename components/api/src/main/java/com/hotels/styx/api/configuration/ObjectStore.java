@@ -19,8 +19,7 @@ import java.util.Optional;
 
 /**
  *
- * A glorified map with extra features, like tagging objects
- * and watching for changes.
+ * A repository for storing named objects.
  *
  * @param <T> Stored object type
  */

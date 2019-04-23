@@ -16,7 +16,6 @@
 package com.hotels.styx.routing.config;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.Eventual;
@@ -32,6 +31,7 @@ import com.hotels.styx.routing.handlers.StaticResponseHandler;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static java.lang.String.format;
@@ -86,7 +86,7 @@ public class RoutingObjectFactory {
             String type = configBlock.type();
 
             HttpHandlerFactory factory = builtInObjectTypes.get(type);
-            Preconditions.checkArgument(factory != null, format("Unknown handler type '%s'", type));
+            checkArgument(factory != null, format("Unknown handler type '%s'", type));
 
             HttpHandlerFactory.Context context = new HttpHandlerFactory.Context(
                     environment,

@@ -66,6 +66,22 @@ public class HttpInterceptorPipeline implements HttpHandler {
      */
     public static class Factory implements HttpHandlerFactory {
 
+        @Override
+        public HttpHandler build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+            JsonNode pipeline = configBlock.config().get("pipeline");
+            List<HttpInterceptor> interceptors = getHttpInterceptors(append(parents, "pipeline"), toMap(context.plugins()), context.builtinInterceptorsFactory(), pipeline);
+
+            RoutingObjectDefinition handlerConfig = new JsonNodeConfig(configBlock.config())
+                    .get("handler", RoutingObjectDefinition.class)
+                    .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "handler"));
+
+            return new HttpInterceptorPipeline(
+                    interceptors,
+                    context.factory().build(append(parents, "handler"), handlerConfig),
+                    context.requestTracking());
+        }
+
+        // Note: `pipeline` has to represent a JSON array:
         private static List<RoutingObjectConfiguration> styxHttpPipeline(JsonNode pipeline) {
             return stream(pipeline.spliterator(), false)
                     .map(Factory::toRoutingConfigNode)
@@ -84,21 +100,6 @@ public class HttpInterceptorPipeline implements HttpHandler {
                 return new RoutingObjectDefinition(name, type, conf);
             }
             throw new IllegalArgumentException("Invalid configuration. Expected a reference (string) or a configuration block.");
-        }
-
-        @Override
-        public HttpHandler build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
-            JsonNode pipeline = configBlock.config().get("pipeline");
-            List<HttpInterceptor> interceptors = getHttpInterceptors(append(parents, "pipeline"), toMap(context.plugins()), context.builtinInterceptorsFactory(), pipeline);
-
-            RoutingObjectDefinition handlerConfig = new JsonNodeConfig(configBlock.config())
-                    .get("handler", RoutingObjectDefinition.class)
-                    .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "handler"));
-
-            return new HttpInterceptorPipeline(
-                    interceptors,
-                    context.factory().build(append(parents, "handler"), handlerConfig),
-                    context.requestTracking());
         }
 
         private List<HttpInterceptor> getHttpInterceptors(
@@ -124,7 +125,7 @@ public class HttpInterceptorPipeline implements HttpHandler {
                     .collect(Collectors.toList());
         }
 
-        private void ensureValidPluginReferences(List<String> parents, Map<String, NamedPlugin> plugins, List<RoutingObjectConfiguration> interceptors) {
+        private static void ensureValidPluginReferences(List<String> parents, Map<String, NamedPlugin> plugins, List<RoutingObjectConfiguration> interceptors) {
             interceptors.forEach(node -> {
                 if (node instanceof RoutingObjectReference) {
                     String name = ((RoutingObjectReference) node).name();

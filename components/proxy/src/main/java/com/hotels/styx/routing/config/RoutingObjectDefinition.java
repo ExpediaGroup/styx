@@ -36,7 +36,7 @@ public class RoutingObjectDefinition implements RoutingObjectConfiguration {
     private final JsonNode config;
 
     public RoutingObjectDefinition(String name, String type, List<String> tags, JsonNode config) {
-        this.name = name;
+        this.name = requireNonNull(name);
         this.type = requireNonNull(type);
         this.tags = ImmutableList.copyOf(tags);
         this.config = requireNonNull(config);
