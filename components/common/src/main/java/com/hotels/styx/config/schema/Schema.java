@@ -327,7 +327,16 @@ public class Schema {
         }
 
         @Override
-        public Optional<String> isCorrectType(List<String> parents, JsonNode parent, JsonNode mapNode, Function<String, FieldValue> schemas) {
+        public Optional<String> isCorrectType(List<String> parents, JsonNode parent, JsonNode element, Function<String, FieldValue> schemas) {
+            return element.isObject() ? validateMap(parents, parent, element, schemas) : message(parents, element);
+        }
+
+        @Override
+        public String describe() {
+            return format("MAP (%s)", elementType.describe());
+        }
+
+        private Optional<String> validateMap(List<String> parents, JsonNode parent, JsonNode mapNode, Function<String, FieldValue> schemas) {
             AtomicReference<Optional<String>> success = new AtomicReference<>(Optional.empty());
 
             mapNode.fieldNames().forEachRemaining(key -> {
@@ -341,9 +350,9 @@ public class Schema {
             return success.get();
         }
 
-        @Override
-        public String describe() {
-            return format("MAP (%s)", elementType.describe());
+        private Optional<String> message(List<String> parents, JsonNode tree) {
+            String fullName = Joiner.on(".").join(parents);
+            return Optional.of(format("Unexpected field type. Field '%s' should be MAP ('%s'), but it is %s", fullName, this.elementType().describe(), tree.getNodeType()));
         }
 
     }

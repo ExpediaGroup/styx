@@ -616,6 +616,40 @@ public class DocumentFormatTest {
         assertThat(outcome, is(true));
     }
 
+    @Test(expectedExceptions = SchemaValidationException.class,
+        expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent' should be MAP \\('STRING'\\), but it is STRING")
+    public void rejectsInvalidMaps() throws Exception {
+        JsonNode node2 = YAML_MAPPER.readTree(
+                "parent: x\n"
+        );
+
+        DocumentFormat validator = newDocument()
+                .rootSchema(object(
+                        field("parent", map(string()))
+                ))
+                .build();
+
+        boolean outcome = validator.validateObject(node2);
+        assertThat(outcome, is(false));
+    }
+
+    @Test(expectedExceptions = SchemaValidationException.class,
+    expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent' should be OBJECT \\('parent'\\), but it is STRING")
+    public void rejectsInvalidObjects() throws Exception {
+        JsonNode node2 = YAML_MAPPER.readTree(
+                "parent: x\n"
+        );
+
+        DocumentFormat validator = newDocument()
+                .rootSchema(object(
+                        field("parent", object(field("parent", string())))
+                ))
+                .build();
+
+        boolean outcome = validator.validateObject(node2);
+        assertThat(outcome, is(false));
+    }
+
     @Test
     public void acceptsMapOfObjects() throws Exception {
         JsonNode node2 = YAML_MAPPER.readTree(
