@@ -159,11 +159,11 @@ public final class SchemaDsl {
      *
      * <pre>
      * DocumentFormat validator = newDocument()
-     *     .subSchema("ProxyTo", schema(
+     *     .typeExtension("ProxyTo", schema(
      *         field("id", string()),
      *         field("destination", string())
      *     ))
-     *     .subSchema("Redirection", schema(
+     *     .typeExtension("Redirection", schema(
      *         field("status", integer()),
      *         field("location", string())
      *     ))

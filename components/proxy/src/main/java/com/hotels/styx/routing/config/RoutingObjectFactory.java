@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.db.StyxObjectStore;
@@ -42,15 +43,36 @@ import static java.util.Objects.requireNonNull;
  * Builds a routing object based on its actual type.
  */
 public class RoutingObjectFactory {
-    private static final Map<String, HttpHandlerFactory> BUILTIN_HANDLERS = ImmutableMap.<String, HttpHandlerFactory>builder()
-            .put("StaticResponseHandler", new StaticResponseHandler.Factory())
-            .put("ConditionRouter", new ConditionRouter.Factory())
-            .put("InterceptorPipeline", new HttpInterceptorPipeline.Factory())
-            .put("ProxyToBackend", new ProxyToBackend.Factory())
-            .build();
+    public static final ImmutableMap<String, Schema.FieldValue> BUILTIN_HANDLER_SCHEMAS;
+
+    private static final ImmutableMap<String, HttpHandlerFactory> BUILTIN_HANDLER_FACTORIES;
+
+    private static final String STATIC_RESPONSE = "StaticResponseHandler";
+
+    private static final String CONDITION_ROUTER = "ConditionRouter";
+
+    private static final String INTERCEPTOR_PIPELINE = "InterceptorPipeline";
+
+    private static final String PROXY_TO_BACKEND = "ProxyToBackend";
+
+    static {
+        BUILTIN_HANDLER_FACTORIES = ImmutableMap.<String, HttpHandlerFactory>builder()
+                    .put(STATIC_RESPONSE, new StaticResponseHandler.Factory())
+                    .put(CONDITION_ROUTER, new ConditionRouter.Factory())
+                    .put(INTERCEPTOR_PIPELINE, new HttpInterceptorPipeline.Factory())
+                    .put(PROXY_TO_BACKEND, new ProxyToBackend.Factory())
+                    .build();
+
+        BUILTIN_HANDLER_SCHEMAS = ImmutableMap.<String, Schema.FieldValue>builder()
+                    .put(STATIC_RESPONSE, StaticResponseHandler.SCHEMA)
+                    .put(CONDITION_ROUTER, ConditionRouter.SCHEMA)
+                    .put(INTERCEPTOR_PIPELINE, HttpInterceptorPipeline.SCHEMA)
+                    .put(PROXY_TO_BACKEND, ProxyToBackend.SCHEMA)
+                    .build();
+    }
 
     private final Environment environment;
-    private StyxObjectStore<RoutingObjectRecord> routeObjectStore;
+    private final StyxObjectStore<RoutingObjectRecord> routeObjectStore;
     private final Iterable<NamedPlugin> plugins;
     private final BuiltinInterceptorsFactory interceptorFactory;
     private final Map<String, HttpHandlerFactory> builtInObjectTypes;
@@ -77,7 +99,7 @@ public class RoutingObjectFactory {
             List<NamedPlugin> plugins,
             BuiltinInterceptorsFactory interceptorFactory,
             boolean requestTracking) {
-        this(BUILTIN_HANDLERS, environment, routeObjectStore, plugins, interceptorFactory, requestTracking);
+        this(BUILTIN_HANDLER_FACTORIES, environment, routeObjectStore, plugins, interceptorFactory, requestTracking);
     }
 
     public HttpHandler build(List<String> parents, RoutingObjectConfiguration configNode) {

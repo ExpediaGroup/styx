@@ -32,11 +32,11 @@ import static java.util.Objects.requireNonNull;
  * Provides an end-user interface for the schema based object validation.
  * <p>
  * An DocumentFormat instance is created with a call to `newDocument`. This returns an
- * a builder object that is used to customise the validator. Specifically to:
+ * a builder object for customising the validator. Specifically to:
  * <p>
- * - add named sub-additionalSchemas that can be referred to from other schema objects.
+ * - Add custom extension types that can be referred from unions.
  * <p>
- * - to specify a `root schema` that declares the layout of the top level configuration object.
+ * - Specify a "root" type that declares the top level configuration object layout.
  */
 public class DocumentFormat {
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentFormat.class);
@@ -64,8 +64,8 @@ public class DocumentFormat {
         private final Map<String, Schema.FieldValue> schemas = new HashMap<>();
         private Schema.FieldValue root;
 
-        public Builder subSchema(String name, Schema.FieldValue schema) {
-            this.schemas.put(requireNonNull(name), requireNonNull(schema));
+        public Builder typeExtension(String typeName, Schema.FieldValue schema) {
+            this.schemas.put(requireNonNull(typeName), requireNonNull(schema));
             return this;
         }
 

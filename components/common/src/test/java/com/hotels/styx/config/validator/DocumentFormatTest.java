@@ -460,8 +460,8 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .subSchema("ProxyTo", proxyTo)
-                .subSchema("Redirection", redirection)
+                .typeExtension("ProxyTo", proxyTo)
+                .typeExtension("Redirection", redirection)
                 .rootSchema(object(
                         field("httpPipeline", new Schema.RoutingObjectSpec())
                 ))
@@ -563,8 +563,8 @@ public class DocumentFormatTest {
         );
 
         DocumentFormat validator = newDocument()
-                .subSchema("ProxyTo", proxyTo)
-                .subSchema("Redirection", redirection)
+                .typeExtension("ProxyTo", proxyTo)
+                .typeExtension("Redirection", redirection)
                 .rootSchema(object(
                         field("httpPipeline", object(
                                 field("type", string()),
@@ -643,7 +643,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.\\[key2\\]' should be OBJECT \\('x, y'\\), but it is NUMBER")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key2' should be OBJECT \\('x, y'\\), but it is NUMBER")
     public void validatesMapOfObjects() throws Exception {
         JsonNode node2 = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -684,7 +684,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.\\[key1\\]' should be INTEGER, but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key1' should be INTEGER, but it is STRING")
     public void validatesMapOfIntegers() throws Exception {
         JsonNode node2 = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -721,7 +721,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.\\[key1\\]' should be STRING, but it is NUMBER")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key1' should be STRING, but it is NUMBER")
     public void validatesMapOfStrings() throws Exception {
         JsonNode node2 = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -758,7 +758,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.\\[ok\\]' should be BOOLEAN, but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.ok' should be BOOLEAN, but it is STRING")
     public void validatesMapOfBooleans() throws Exception {
         JsonNode node2 = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -799,7 +799,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.\\[key1\\]' should be LIST \\(INTEGER\\), but it is OBJECT")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key1' should be LIST \\(INTEGER\\), but it is OBJECT")
     public void validatesMapOfListOfInts() throws Exception {
         JsonNode node2 = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -850,7 +850,7 @@ public class DocumentFormatTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.\\[key1\\].\\[0\\]' should be OBJECT \\('x, y'\\), but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key1.\\[0\\]' should be OBJECT \\('x, y'\\), but it is STRING")
     public void validatesMapOfListOfObjects() throws Exception {
         JsonNode node2 = YAML_MAPPER.readTree(
                 "parent: \n"

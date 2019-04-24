@@ -332,7 +332,7 @@ public class Schema {
 
             mapNode.fieldNames().forEachRemaining(key -> {
                 JsonNode entry = mapNode.get(key);
-                Optional<String> correctType = elementType.isCorrectType(push(parents, format("[%s]", key)), mapNode, entry, schemas);
+                Optional<String> correctType = elementType.isCorrectType(push(parents, format("%s", key)), mapNode, entry, schemas);
 
                 if (correctType.isPresent()) {
                     success.set(correctType);
