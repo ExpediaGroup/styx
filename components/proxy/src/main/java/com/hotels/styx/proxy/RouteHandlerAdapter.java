@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public class RouteHandlerAdapter implements HttpHandler {
     @Override
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         return router.route(request, context)
-                .map(pipeline -> pipeline.handle(request, context))
+                .map(handler -> handler.handle(request, context))
                 .orElseGet(() -> Eventual.error(new NoServiceConfiguredException(request.path())));
     }
 }

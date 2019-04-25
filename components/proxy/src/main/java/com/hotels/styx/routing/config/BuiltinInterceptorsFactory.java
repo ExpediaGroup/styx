@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,8 +15,11 @@
  */
 package com.hotels.styx.routing.config;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.routing.interceptors.RewriteInterceptor;
 
 import java.util.Map;
 
@@ -31,18 +34,26 @@ import static java.util.Objects.requireNonNull;
  *
  */
 public class BuiltinInterceptorsFactory {
-    private final Map<String, HttpInterceptorFactory> builders;
+    public static final ImmutableMap<String, HttpInterceptorFactory> INTERCEPTOR_FACTORIES =
+            ImmutableMap.of("Rewrite", new RewriteInterceptor.Factory());
 
-    public BuiltinInterceptorsFactory(Map<String, HttpInterceptorFactory> builders) {
-        this.builders = requireNonNull(builders);
+    private final Map<String, HttpInterceptorFactory> interceptorFactories;
+
+    public BuiltinInterceptorsFactory() {
+        this(INTERCEPTOR_FACTORIES);
     }
 
-    public HttpInterceptor build(RouteHandlerConfig configBlock) {
-        if (configBlock instanceof RouteHandlerDefinition) {
-            RouteHandlerDefinition block = (RouteHandlerDefinition) configBlock;
+    @VisibleForTesting
+    public BuiltinInterceptorsFactory(Map<String, HttpInterceptorFactory> interceptorFactories) {
+        this.interceptorFactories = requireNonNull(interceptorFactories);
+    }
+
+    public HttpInterceptor build(RoutingObjectConfiguration configBlock) {
+        if (configBlock instanceof RoutingObjectDefinition) {
+            RoutingObjectDefinition block = (RoutingObjectDefinition) configBlock;
             String type = block.type();
 
-            HttpInterceptorFactory constructor = builders.get(type);
+            HttpInterceptorFactory constructor = interceptorFactories.get(type);
             Preconditions.checkArgument(constructor != null, format("Unknown handler type '%s'", type));
 
             return constructor.build(block);

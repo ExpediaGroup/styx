@@ -40,7 +40,7 @@ class RewriteInterceptorTest : StringSpec({
                       replacement: /app/$1
         """.trimIndent())
 
-        val interceptor = RewriteInterceptor.ConfigFactory().build(config)
+        val interceptor = RewriteInterceptor.Factory().build(config)
         val capturingChain = CapturingChain()
 
         val response = Mono.from(interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain)).block()
@@ -56,7 +56,7 @@ class RewriteInterceptorTest : StringSpec({
                 config:
         """.trimIndent())
 
-        val interceptor = RewriteInterceptor.ConfigFactory().build(config)
+        val interceptor = RewriteInterceptor.Factory().build(config)
         val capturingChain = CapturingChain()
 
         val response = Mono.from(interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain)).block()

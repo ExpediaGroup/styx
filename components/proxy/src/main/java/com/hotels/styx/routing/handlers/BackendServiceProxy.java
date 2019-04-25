@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@ package com.hotels.styx.routing.handlers;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.Environment;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
@@ -30,8 +30,7 @@ import com.hotels.styx.proxy.BackendServicesRouter;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
-import com.hotels.styx.routing.config.RouteHandlerDefinition;
-import com.hotels.styx.routing.config.RouteHandlerFactory;
+import com.hotels.styx.routing.config.RoutingObjectDefinition;
 
 import java.util.List;
 import java.util.Map;
@@ -62,7 +61,7 @@ public class BackendServiceProxy implements HttpHandler {
     /**
      * Builds a BackendServiceProxy from yaml routing configuration.
      */
-    public static class ConfigFactory implements HttpHandlerFactory {
+    public static class Factory implements HttpHandlerFactory {
         private final BackendServiceClientFactory serviceClientFactory;
         private final Map<String, Registry<BackendService>> backendRegistries;
         private final Environment environment;
@@ -72,20 +71,20 @@ public class BackendServiceProxy implements HttpHandler {
         }
 
         @VisibleForTesting
-        ConfigFactory(Environment environment, BackendServiceClientFactory serviceClientFactory, Map<String, Registry<BackendService>> backendRegistries) {
+        Factory(Environment environment, BackendServiceClientFactory serviceClientFactory, Map<String, Registry<BackendService>> backendRegistries) {
             this.serviceClientFactory = serviceClientFactory;
             this.backendRegistries = backendRegistries;
             this.environment = environment;
         }
 
-        public ConfigFactory(Environment environment, Map<String, Registry<BackendService>> backendRegistries) {
+        public Factory(Environment environment, Map<String, Registry<BackendService>> backendRegistries) {
             this.backendRegistries = backendRegistries;
             this.serviceClientFactory = serviceClientFactory(environment);
             this.environment = environment;
         }
 
         @Override
-        public HttpHandler build(List<String> parents, RouteHandlerFactory x, RouteHandlerDefinition configBlock) {
+        public HttpHandler build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
             JsonNodeConfig config = new JsonNodeConfig(configBlock.config());
             String provider = config.get("backendProvider")
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "backendProvider"));

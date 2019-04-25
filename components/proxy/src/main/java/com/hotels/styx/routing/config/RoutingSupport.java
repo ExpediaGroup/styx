@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public final class RoutingSupport {
         return builder.build();
     }
 
-    public static RuntimeException missingAttributeError(RouteHandlerDefinition routingDef, String parent, String expected) {
+    public static RuntimeException missingAttributeError(RoutingObjectDefinition routingDef, String parent, String expected) {
         return new IllegalArgumentException(
                 format("Routing object definition of type '%s', attribute='%s', is missing a mandatory '%s' attribute.",
                         routingDef.type(), parent, expected));

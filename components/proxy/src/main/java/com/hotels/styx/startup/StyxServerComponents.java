@@ -15,18 +15,28 @@
  */
 package com.hotels.styx.startup;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.AsyncEventBus;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.Version;
+import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
+import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.routing.RoutingObjectRecord;
+import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
+import com.hotels.styx.routing.config.RoutingObjectDefinition;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
+import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 
 import java.util.HashMap;
@@ -49,22 +59,57 @@ public class StyxServerComponents {
     private final Environment environment;
     private final Map<String, StyxService> services;
     private final List<NamedPlugin> plugins;
+    private final StyxObjectStore<RoutingObjectRecord> routeObjectStore = new StyxObjectStore<>();
+    private final RoutingObjectFactory routingObjectFactory;
 
     private StyxServerComponents(Builder builder) {
         StyxConfig styxConfig = requireNonNull(builder.styxConfig);
 
+
         this.environment = newEnvironment(styxConfig, builder.metricRegistry);
         builder.loggingSetUp.setUp(environment);
 
-        // TODO In further refactoring, we will probably want this loading to happen outside of this constructor call, so that it doesn't delay the admin server from starting up
+        // TODO In further refactoring, we will probably want this loading to happen outside of this constructor call,
+        //  so that it doesn't delay the admin server from starting up
         this.plugins = builder.configuredPluginFactories == null
                 ? loadPlugins(environment)
                 : loadPlugins(environment, builder.configuredPluginFactories);
 
+        this.routingObjectFactory = new RoutingObjectFactory(
+                this.environment,
+                this.routeObjectStore,
+                this.plugins,
+                new BuiltinInterceptorsFactory(),
+                false);
+
         this.services = mergeServices(
-                builder.servicesLoader.load(environment),
+                builder.servicesLoader.load(environment, routeObjectStore),
                 builder.additionalServices
         );
+
+        this.plugins.forEach(plugin -> this.environment.configStore().set("plugins." + plugin.name(), plugin));
+
+        this.environment.configuration().get("routingObjects", JsonNode.class)
+                .map(StyxServerComponents::readHttpHandlers)
+                .orElse(ImmutableMap.of())
+                .forEach((name, record) -> {
+                    HttpHandler handler = routingObjectFactory.build(ImmutableList.of(name), record);
+                    routeObjectStore.insert(name, new RoutingObjectRecord(name, ImmutableSet.of(), record, handler));
+                });
+    }
+
+    private static Map<String, RoutingObjectDefinition> readHttpHandlers(JsonNode root) {
+        Map<String, RoutingObjectDefinition> handlers = new HashMap<>();
+
+        root.fields().forEachRemaining(
+                entry -> {
+                    String name = entry.getKey();
+                    RoutingObjectDefinition handlerDef = new JsonNodeConfig(entry.getValue()).as(RoutingObjectDefinition.class);
+                    handlers.put(name, handlerDef);
+                }
+        );
+
+        return handlers;
     }
 
     public Environment environment() {
@@ -77,6 +122,14 @@ public class StyxServerComponents {
 
     public List<NamedPlugin> plugins() {
         return plugins;
+    }
+
+    public StyxObjectStore<RoutingObjectRecord> routeDatabase() {
+        return this.routeObjectStore;
+    }
+
+    public RoutingObjectFactory routingObjectFactory() {
+        return this.routingObjectFactory;
     }
 
     private static Environment newEnvironment(StyxConfig styxConfig, MetricRegistry metricRegistry) {

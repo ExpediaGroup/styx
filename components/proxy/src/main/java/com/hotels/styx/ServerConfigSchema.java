@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -146,7 +146,8 @@ final class ServerConfigSchema {
                     optional("httpPipeline", object(opaque())),
                     optional("logFormat", string()),
                     optional("userDefined", object(opaque())),
-                    optional("requestTracking", bool())
+                    optional("requestTracking", bool()),
+                    optional("routingObjects", object(opaque()))
             ))
             .build();
 

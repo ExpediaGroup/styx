@@ -26,6 +26,7 @@ import com.hotels.styx.api.extension.service.spi.Registry
 import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded
 import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.proxy.BackendServiceClientFactory
+import com.hotels.styx.routing.RoutingContext
 import com.hotels.styx.routing.configBlock
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
@@ -42,6 +43,8 @@ class BackendServiceProxyTest : StringSpec({
     val baRequest = LiveHttpRequest.get("/ba/x").build()
 
     val environment = Environment.Builder().build()
+    val context = RoutingContext(environment = environment).get()
+
 
     "builds a backend service proxy from the configuration " {
         val config = configBlock("""
@@ -58,7 +61,7 @@ class BackendServiceProxyTest : StringSpec({
 
         val services = mapOf("backendServicesRegistry" to backendRegistry)
 
-        val handler = BackendServiceProxy.ConfigFactory(environment, clientFactory(), services).build(listOf(), null, config)
+        val handler = BackendServiceProxy.Factory(environment, clientFactory(), services).build(listOf(), context, config)
         backendRegistry.reload()
 
         val hwaResponse = Mono.from(handler.handle(hwaRequest, HttpInterceptorContext.create())).block()
@@ -71,8 +74,6 @@ class BackendServiceProxyTest : StringSpec({
         baResponse.header("X-Backend-Service").get() shouldBe("ba")
     }
 
-
-
     "errors when backendProvider attribute is not specified" {
         val config = configBlock("""
                 config:
@@ -82,7 +83,7 @@ class BackendServiceProxyTest : StringSpec({
               """.trimIndent())
 
         val e = shouldThrow<IllegalArgumentException> {
-            BackendServiceProxy.ConfigFactory(environment, clientFactory(), mapOf()).build(listOf("config", "config"), null, config)
+            BackendServiceProxy.Factory(environment, clientFactory(), mapOf()).build(listOf("config", "config"), context,  config)
         }
         e.message shouldBe("Routing object definition of type 'BackendServiceProxy', attribute='config.config', is missing a mandatory 'backendProvider' attribute.")
     }
@@ -98,7 +99,7 @@ class BackendServiceProxyTest : StringSpec({
               """.trimIndent())
 
         val e = shouldThrow<IllegalArgumentException> {
-            BackendServiceProxy.ConfigFactory(environment, clientFactory(), mapOf()).build(listOf("config", "config"), null, config)
+            BackendServiceProxy.Factory(environment, clientFactory(), mapOf()).build(listOf("config", "config"), context, config)
         }
         e.message shouldBe("No such backend service provider exists, attribute='config.config.backendProvider', name='bar'")
     }

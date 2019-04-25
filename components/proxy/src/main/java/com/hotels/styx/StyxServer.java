@@ -29,7 +29,6 @@ import com.hotels.styx.infrastructure.configuration.ConfigurationParser;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.startup.ProxyServerSetUp;
-import com.hotels.styx.startup.StyxPipelineFactory;
 import com.hotels.styx.startup.StyxServerComponents;
 import io.netty.util.ResourceLeakDetector;
 import org.slf4j.Logger;
@@ -39,7 +38,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Map;
 
 import static com.hotels.styx.ServerConfigSchema.validateServerConfiguration;
 import static com.hotels.styx.infrastructure.configuration.ConfigurationSource.configSource;
@@ -146,11 +144,13 @@ public final class StyxServer extends AbstractService {
 
         registerCoreMetrics(components.environment().buildInfo(), components.environment().metricRegistry());
 
-        Map<String, StyxService> servicesFromConfig = components.services();
-
-        ProxyServerSetUp proxyServerSetUp = new ProxyServerSetUp(new StyxPipelineFactory());
-
-        components.plugins().forEach(plugin -> components.environment().configStore().set("plugins." + plugin.name(), plugin));
+        ProxyServerSetUp proxyServerSetUp = new ProxyServerSetUp(
+                new StyxPipelineFactory(
+                        components.routeDatabase(),
+                        components.routingObjectFactory(),
+                        components.environment(),
+                        components.services(),
+                        components.plugins()));
 
         this.proxyServer = proxyServerSetUp.createProxyServer(components);
         this.adminServer = createAdminServer(components);
@@ -159,7 +159,7 @@ public final class StyxServer extends AbstractService {
             {
                 add(proxyServer);
                 add(adminServer);
-                servicesFromConfig.values().stream()
+                components.services().values().stream()
                         .map(StyxServer::toGuavaService)
                         .forEach(this::add);
             }

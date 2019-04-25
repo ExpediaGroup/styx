@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,28 +15,88 @@
  */
 package com.hotels.styx.routing.config;
 
+import com.hotels.styx.Environment;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.routing.RoutingObjectRecord;
+import com.hotels.styx.routing.db.StyxObjectStore;
 
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 /**
- * A factory for constructing HTTP handler objects from a RouteHandlerDefinition yaml config block.
+ * A factory for constructing HTTP handler objects from a RoutingObjectDefinition yaml config block.
  */
 public interface HttpHandlerFactory {
     /**
      * Constructs a terminal action handler according to routing configuration block.
      * <p>
      * Constructs a terminal action handler for the HTTP request. The handler is constructed
-     * according to the definition codified in the RouteHandlerDefinition instance.
-     * The RouteHandlerFactory is a factory object for constructing any dependant routing
+     * according to the definition codified in the RoutingObjectDefinition instance.
+     * The RoutingObjectFactory is a factory object for constructing any dependant routing
      * objects. The objectVariables is a map of already instantiated routing objects
      * that can be referred from the handler being built.
      * <p>
      *
      * @param parents
-     * @param builder
+     * @param context
      * @param configBlock
      * @return
      */
-    HttpHandler build(List<String> parents, RouteHandlerFactory builder, RouteHandlerDefinition configBlock);
+    HttpHandler build(List<String> parents, HttpHandlerFactory.Context context, RoutingObjectDefinition configBlock);
+
+    /**
+     * Contextual information for factory class.
+     *
+     * Provides contextual information for the factory class to allow HttpHandlers
+     * to integrate into Styx runtime environment.
+     */
+    class Context {
+        private final Environment environment;
+        private final StyxObjectStore<RoutingObjectRecord> routeDb;
+        private final RoutingObjectFactory routingObjectFactory;
+        private final Iterable<NamedPlugin> plugins;
+        private final BuiltinInterceptorsFactory interceptorsFactory;
+        private final boolean requestTracking;
+
+        public Context(
+                Environment environment,
+                StyxObjectStore<RoutingObjectRecord> routeDb,
+                RoutingObjectFactory routingObjectFactory,
+                Iterable<NamedPlugin> plugins,
+                BuiltinInterceptorsFactory interceptorsFactory,
+                boolean requestTracking) {
+            this.environment = requireNonNull(environment);
+            this.routeDb = requireNonNull(routeDb);
+            this.routingObjectFactory = requireNonNull(routingObjectFactory);
+            this.plugins = requireNonNull(plugins);
+            this.interceptorsFactory = requireNonNull(interceptorsFactory);
+            this.requestTracking = requestTracking;
+        }
+
+        public Environment environment() {
+            return environment;
+        }
+
+        public StyxObjectStore<RoutingObjectRecord> routeDb() {
+            return routeDb;
+        }
+
+        public RoutingObjectFactory factory() {
+            return routingObjectFactory;
+        }
+
+        public Iterable<NamedPlugin> plugins() {
+            return plugins;
+        }
+
+        public BuiltinInterceptorsFactory builtinInterceptorsFactory() {
+            return interceptorsFactory;
+        }
+
+        public boolean requestTracking() {
+            return requestTracking;
+        }
+    }
 }

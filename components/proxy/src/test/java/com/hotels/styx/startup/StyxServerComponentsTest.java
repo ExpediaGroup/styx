@@ -77,7 +77,7 @@ public class StyxServerComponentsTest {
     public void loadsServices() {
         StyxServerComponents components = new StyxServerComponents.Builder()
                 .styxConfig(new StyxConfig())
-                .services(env -> ImmutableMap.of(
+                .services((env, routeDb) -> ImmutableMap.of(
                         "service1", mock(StyxService.class),
                         "service2", mock(StyxService.class)))
                 .build();

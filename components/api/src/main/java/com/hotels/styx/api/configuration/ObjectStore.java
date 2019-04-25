@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,24 +13,34 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.proxy;
+package com.hotels.styx.api.configuration;
 
-import com.hotels.styx.api.HttpInterceptor;
-
-import java.util.List;
-
-import static java.util.Collections.EMPTY_LIST;
+import java.util.Optional;
 
 /**
- * Factory for creating the list of interceptors.
+ *
+ * A repository for storing named objects.
+ *
+ * @param <T> Stored object type
  */
-public interface InterceptorsFactory {
-    InterceptorsFactory NO_INTERCEPTORS = () -> EMPTY_LIST;
+public interface ObjectStore<T> {
 
     /**
-     * Creates the interceptors.
+     * Gets an object with given key.
      *
-     * @return list of interceptors.
+     * @param key
+     * @return
      */
-    List<HttpInterceptor> create();
+    Optional<T> get(String key);
+
+    /**
+     * Inserts an object against key.
+     *
+     * If a key already exists, the object registered is replaced.
+     *
+     * @param key
+     * @param payload
+     */
+    void insert(String key, T payload);
+
 }

@@ -15,7 +15,24 @@
  */
 package com.hotels.styx.routing
 
+import com.hotels.styx.Environment
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
-import com.hotels.styx.routing.config.RouteHandlerDefinition
+import com.hotels.styx.proxy.plugin.NamedPlugin
+import com.hotels.styx.routing.config.BuiltinInterceptorsFactory
+import com.hotels.styx.routing.config.HttpHandlerFactory
+import com.hotels.styx.routing.config.RoutingObjectDefinition
+import com.hotels.styx.routing.config.RoutingObjectFactory
+import com.hotels.styx.routing.db.StyxObjectStore
+import io.mockk.mockk
 
-fun configBlock(text: String) = YamlConfig(text).get("config", RouteHandlerDefinition::class.java).get()
+fun configBlock(text: String) = YamlConfig(text).get("config", RoutingObjectDefinition::class.java).get()
+
+data class RoutingContext(
+        val environment: Environment = mockk(),
+        val routeDb: StyxObjectStore<RoutingObjectRecord> = mockk(),
+        val routingObjectFactory: RoutingObjectFactory = mockk(),
+        val plugins: Iterable<NamedPlugin> = mockk(),
+        val interceptorsFactory: BuiltinInterceptorsFactory = mockk(),
+        val requestTracking: Boolean = false) {
+    fun get() = HttpHandlerFactory.Context(environment, routeDb, routingObjectFactory, plugins, interceptorsFactory, requestTracking)
+}

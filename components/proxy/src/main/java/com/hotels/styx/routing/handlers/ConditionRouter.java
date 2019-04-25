@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,17 +17,17 @@ package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpResponse;
-import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
-import com.hotels.styx.routing.config.RouteHandlerConfig;
-import com.hotels.styx.routing.config.RouteHandlerDefinition;
-import com.hotels.styx.routing.config.RouteHandlerFactory;
+import com.hotels.styx.routing.config.RoutingObjectConfiguration;
+import com.hotels.styx.routing.config.RoutingObjectDefinition;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.server.HttpRouter;
 import com.hotels.styx.server.routing.AntlrMatcher;
 import com.hotels.styx.server.routing.antlr.DslFunctionResolutionError;
@@ -86,10 +86,10 @@ public class ConditionRouter implements HttpRouter {
     /**
      * Builds a condition router from the yaml routing configuration.
      */
-    public static class ConfigFactory implements HttpHandlerFactory {
+    public static class Factory implements HttpHandlerFactory {
         private static class ConditionRouterConfig {
             private final List<ConditionRouterRouteConfig> routes;
-            private final RouteHandlerConfig fallback;
+            private final RoutingObjectConfiguration fallback;
 
             private ConditionRouterConfig(@JsonProperty("routes") List<ConditionRouterRouteConfig> routes,
                                           @JsonProperty("fallback") JsonNode fallback) {
@@ -101,7 +101,7 @@ public class ConditionRouter implements HttpRouter {
 
         private static class ConditionRouterRouteConfig {
             private final String condition;
-            private final RouteHandlerConfig destination;
+            private final RoutingObjectConfiguration destination;
 
             public ConditionRouterRouteConfig(@JsonProperty("condition") String condition,
                                               @JsonProperty("destination") JsonNode destination) {
@@ -110,10 +110,8 @@ public class ConditionRouter implements HttpRouter {
             }
         }
 
-        public HttpHandler build(List<String> parents,
-                                  RouteHandlerFactory routeHandlerFactory,
-                                  RouteHandlerDefinition configBlock
-        ) {
+        @Override
+        public HttpHandler build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
             ConditionRouterConfig config = new JsonNodeConfig(configBlock.config()).as(ConditionRouterConfig.class);
             if (config.routes == null) {
                 throw missingAttributeError(configBlock, join(".", parents), "routes");
@@ -121,24 +119,40 @@ public class ConditionRouter implements HttpRouter {
 
             AtomicInteger index = new AtomicInteger(0);
             List<Route> routes = config.routes.stream()
-                    .map(routeConfig -> buildRoute(append(parents, "routes"), routeHandlerFactory, index.getAndIncrement(), routeConfig.condition, routeConfig.destination))
+                    .map(routeConfig -> buildRoute(
+                            append(parents, "routes"),
+                            context.factory(),
+                            index.getAndIncrement(),
+                            routeConfig.condition,
+                            routeConfig.destination))
                     .collect(Collectors.toList());
 
-            return new RouteHandlerAdapter(new ConditionRouter(routes, buildFallbackHandler(parents, routeHandlerFactory, config)));
+            return new RouteHandlerAdapter(
+                    new ConditionRouter(
+                            routes,
+                            buildFallbackHandler(parents, context, config)));
         }
 
-        private static HttpHandler buildFallbackHandler(List<String> parents, RouteHandlerFactory routeHandlerFactory, ConditionRouterConfig config) {
+        private static HttpHandler buildFallbackHandler(
+                List<String> parents,
+                Context context,
+                ConditionRouterConfig config) {
             if (config.fallback == null) {
-                return (request, context) -> Eventual.of(LiveHttpResponse.response(BAD_GATEWAY).build());
+                return (request, na) -> Eventual.of(LiveHttpResponse.response(BAD_GATEWAY).build());
             } else {
-                return routeHandlerFactory.build(append(parents, "fallback"), config.fallback);
+                return context.factory().build(append(parents, "fallback"), config.fallback);
             }
         }
 
-        private static Route buildRoute(List<String> parents, RouteHandlerFactory routeHandlerFactory, int index, String condition, RouteHandlerConfig destination) {
+        private static Route buildRoute(
+                List<String> parents,
+                RoutingObjectFactory routingObjectFactory,
+                int index,
+                String condition,
+                RoutingObjectConfiguration destination) {
             try {
                 String attribute = format("destination[%d]", index);
-                HttpHandler handler = routeHandlerFactory.build(append(parents, attribute), destination);
+                HttpHandler handler = routingObjectFactory.build(append(parents, attribute), destination);
                 return new Route(condition, handler);
             } catch (DslSyntaxError | DslFunctionResolutionError e) {
                 String attribute = format("condition[%d]", index);

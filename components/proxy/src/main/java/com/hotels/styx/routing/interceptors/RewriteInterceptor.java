@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.hotels.styx.api.extension.service.RewriteRule;
 import com.hotels.styx.client.RewriteRuleset;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.config.HttpInterceptorFactory;
-import com.hotels.styx.routing.config.RouteHandlerDefinition;
+import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.api.LiveHttpRequest;
 
 /**
@@ -45,9 +45,9 @@ public class RewriteInterceptor implements HttpInterceptor {
     /**
      * A factory for built-in interceptors.
      */
-    public static class ConfigFactory implements HttpInterceptorFactory {
+    public static class Factory implements HttpInterceptorFactory {
         @Override
-        public HttpInterceptor build(RouteHandlerDefinition configBlock) {
+        public HttpInterceptor build(RoutingObjectDefinition configBlock) {
             ImmutableList.Builder<RewriteRule> rules = ImmutableList.builder();
             configBlock.config().iterator().forEachRemaining(
                     node -> {

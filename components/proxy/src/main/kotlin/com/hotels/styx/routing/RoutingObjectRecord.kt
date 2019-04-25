@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,11 +13,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.routing.config;
+package com.hotels.styx.routing
 
-/**
- * A common interface for different types of Yaml routing configuration items.
- * Can be a reference type or a complex RouteHandlerDefinition.
- */
-public interface RouteHandlerConfig {
-}
+import com.hotels.styx.api.HttpHandler
+import com.hotels.styx.routing.config.RoutingObjectDefinition
+
+data class RoutingObjectRecord(
+        val name: String,
+        val tags: Set<String>,
+        val routingObjectDefinition: RoutingObjectDefinition,
+        val handler: HttpHandler)

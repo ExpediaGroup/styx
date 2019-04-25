@@ -15,11 +15,9 @@
  */
 package com.hotels.styx.routing.config;
 
-import com.hotels.styx.api.HttpInterceptor;
-
 /**
- * Builder for built-in interceptors.
+ * A common interface for different types of Yaml routing configuration items.
+ * Can be a reference type or a complex RoutingObjectDefinition.
  */
-public interface HttpInterceptorFactory {
-    HttpInterceptor build(RoutingObjectDefinition configBlock);
+public interface RoutingObjectConfiguration {
 }
