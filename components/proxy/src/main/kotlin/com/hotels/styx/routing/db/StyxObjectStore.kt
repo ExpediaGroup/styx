@@ -15,28 +15,79 @@
  */
 package com.hotels.styx.routing.db;
 
-import com.hotels.styx.api.configuration.ObjectStore
+import com.hotels.styx.api.configuration.ObjectStoreSnapshot
+import org.pcollections.HashTreePMap
+import org.pcollections.PMap
+import org.reactivestreams.Publisher
+import reactor.core.publisher.Flux
 import java.util.Optional
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Consumer
 
 /**
  * Styx Route Database.
  */
-class StyxObjectStore<T> : ObjectStore<T> {
-    private val objects = ConcurrentHashMap<String, Record<T>>();
+
+private interface MyListener<T> : Consumer<ObjectStoreSnapshot<T>>
+
+class StyxObjectStore<T> : ObjectStoreSnapshot<T> {
+    private val objects: AtomicReference<PMap<String, Record<T>>> = AtomicReference(HashTreePMap.empty())
+
+    private val listeners = CopyOnWriteArrayList<MyListener<T>>()
 
     override fun get(name: String?): Optional<T> {
-        return Optional.ofNullable(objects.get(name))
+        return Optional.ofNullable(objects.get().get(name))
                 .map { it.payload }
     }
 
-    private fun insert(key: String, tags: Set<String>, payload: T) {
-        objects.put(key, Record(key, tags, payload))
-    }
-
-    override fun insert(key: String, record: T) {
+    fun insert(key: String, record: T) {
         insert(key, setOf(), record)
     }
 
-    data class Record<T>(val key: String, val tags:Set<String>, val payload: T)
+    /**
+     * Returns a Publisher that emits an event for any modification (insert/remove).
+     *
+     * TODO: Should return a database snapshot?
+     *       Should return a change indication (insert "foo", remove "bar")?
+     *
+     * Watch activates on subscription only.
+     * Watch removed on unsubscription.
+     */
+    fun watch(): Publisher<ObjectStoreSnapshot<T>> {
+        return Flux.push { sink ->
+            val listener = object : MyListener<T> {
+                override fun accept(objectStoreSnapshot: ObjectStoreSnapshot<T>) {
+                    sink.next(objectStoreSnapshot)
+                }
+            }
+
+            listeners.add(listener)
+
+            sink.onCancel {
+                listeners.remove(listener)
+            }
+
+            sink.onDispose {
+                listeners.remove(listener)
+            }
+        }
+    }
+
+    fun watchers() = listeners.size
+
+    private fun insert(key: String, tags: Set<String>, payload: T) {
+        val objectsV2 = objects.get().plus(key, Record(key, tags, payload))
+        objects.set(objectsV2)
+
+        listeners.forEach { listener -> listener.accept({
+            key -> Optional
+                .ofNullable(objectsV2.get(key))
+                .map { it.payload } }
+        )}
+
+    }
+
+
+    data class Record<T>(val key: String, val tags: Set<String>, val payload: T)
 }

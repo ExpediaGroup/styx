@@ -23,7 +23,7 @@ import java.util.Optional;
  *
  * @param <T> Stored object type
  */
-public interface ObjectStore<T> {
+public interface ObjectStoreSnapshot<T> {
 
     /**
      * Gets an object with given key.
@@ -32,15 +32,4 @@ public interface ObjectStore<T> {
      * @return
      */
     Optional<T> get(String key);
-
-    /**
-     * Inserts an object against key.
-     *
-     * If a key already exists, the object registered is replaced.
-     *
-     * @param key
-     * @param payload
-     */
-    void insert(String key, T payload);
-
 }
