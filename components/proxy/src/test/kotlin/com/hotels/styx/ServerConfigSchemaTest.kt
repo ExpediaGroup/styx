@@ -314,7 +314,7 @@ class ServerConfigSchemaTest : DescribeSpec({
             validateServerConfiguration(yamlConfig(minimalConfig + """
                 httpHandlers: x
             """.trimIndent())) shouldBe Optional.of(
-                    "Unexpected field type. Field 'httpHandlers' should be MAP ('OBJECT (name, type, tags, config)'), but it is STRING")
+                    "Unexpected field type. Field 'httpHandlers' should be MAP (OBJECT (name, type, tags, config)), but it is STRING")
         }
 
         it("Validates nested HTTP handlers") {

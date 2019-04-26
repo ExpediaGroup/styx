@@ -116,6 +116,11 @@ public class Schema {
         return newList;
     }
 
+    private static String message(List<String> parents, String self, JsonNode value) {
+        String fullName = Joiner.on(".").join(parents);
+        return format("Unexpected field type. Field '%s' should be %s, but it is %s", fullName, self, value.getNodeType());
+    }
+
 
     /**
      * Represents a schema field type.
@@ -200,12 +205,7 @@ public class Schema {
             }
 
             // Failed
-            return message(parents, value);
-        }
-
-        private Optional<String> message(List<String> parents, JsonNode tree) {
-            String fullName = Joiner.on(".").join(parents);
-            return Optional.of(format("Unexpected field type. Field '%s' should be %s, but it is %s", fullName, describe(), tree.getNodeType()));
+            return Optional.of(message(parents, describe(), value));
         }
 
         @Override
@@ -220,18 +220,12 @@ public class Schema {
     public static class IntegerField implements FieldType {
         @Override
         public Optional<String> validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
-            return (value.isInt() || canParseAsInteger(value)) ? Optional.empty() : message(parents, value);
+            return (value.isInt() || canParseAsInteger(value)) ? Optional.empty() : Optional.of(message(parents, describe(), value));
         }
 
         @Override
         public String describe() {
             return "INTEGER";
-        }
-
-        private Optional<String> message(List<String> parents, JsonNode tree) {
-            String fullName = Joiner.on(".").join(parents);
-
-            return Optional.of(format("Unexpected field type. Field '%s' should be INTEGER, but it is %s", fullName, tree.getNodeType()));
         }
 
         private static boolean canParseAsInteger(JsonNode value) {
@@ -250,7 +244,7 @@ public class Schema {
     public static class StringField implements FieldType {
         @Override
         public Optional<String> validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
-            return value.isTextual() ? Optional.empty() : message(parents, value);
+            return value.isTextual() ? Optional.empty() : Optional.of(message(parents, describe(), value));
         }
 
         @Override
@@ -258,11 +252,6 @@ public class Schema {
             return "STRING";
         }
 
-        private Optional<String> message(List<String> parents, JsonNode tree) {
-            String fullName = Joiner.on(".").join(parents);
-
-            return Optional.of(format("Unexpected field type. Field '%s' should be STRING, but it is %s", fullName, tree.getNodeType()));
-        }
     }
 
     /**
@@ -273,17 +262,12 @@ public class Schema {
 
         @Override
         public Optional<String> validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
-            return (value.isBoolean() || canParseAsBoolean(value)) ? Optional.empty() : message(parents, value);
+            return (value.isBoolean() || canParseAsBoolean(value)) ? Optional.empty() : Optional.of(message(parents, describe(), value));
         }
 
         @Override
         public String describe() {
             return "BOOLEAN";
-        }
-
-        private Optional<String> message(List<String> parents, JsonNode tree) {
-            String fullName = Joiner.on(".").join(parents);
-            return Optional.of(format("Unexpected field type. Field '%s' should be BOOLEAN, but it is %s", fullName, tree.getNodeType()));
         }
 
         private static boolean canParseAsBoolean(JsonNode value) {
@@ -307,17 +291,12 @@ public class Schema {
 
         @Override
         public Optional<String> validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
-            return (value.isArray()) ? validateList(parents, parent, value, typeExtensions) : message(parents, value);
+            return (value.isArray()) ? validateList(parents, parent, value, typeExtensions) : Optional.of(message(parents, describe(), value));
         }
 
         @Override
         public String describe() {
             return format("LIST (%s)", elementType.describe());
-        }
-
-        private Optional<String> message(List<String> parents, JsonNode tree) {
-            String fullName = Joiner.on(".").join(parents);
-            return Optional.of(format("Unexpected field type. Field '%s' should be LIST (%s), but it is %s", fullName, elementType.describe(), tree.getNodeType()));
         }
 
         private Optional<String> validateList(List<String> parents, JsonNode parent, JsonNode list, Function<String, FieldType> lookup) {
@@ -349,7 +328,7 @@ public class Schema {
 
         @Override
         public Optional<String> validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
-            return value.isObject() ? validateMap(parents, parent, value, typeExtensions) : message(parents, value);
+            return value.isObject() ? validateMap(parents, parent, value, typeExtensions) : Optional.of(message(parents, describe(), value));
         }
 
         @Override
@@ -369,11 +348,6 @@ public class Schema {
                 }
             });
             return validationError.get();
-        }
-
-        private Optional<String> message(List<String> parents, JsonNode tree) {
-            String fullName = Joiner.on(".").join(parents);
-            return Optional.of(format("Unexpected field type. Field '%s' should be MAP ('%s'), but it is %s", fullName, this.elementType().describe(), tree.getNodeType()));
         }
 
     }
@@ -404,17 +378,12 @@ public class Schema {
 
         @Override
         public Optional<String> validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
-            return value.isObject() ? validateObject(parents, parent, value, typeExtensions) : message(parents, value);
+            return value.isObject() ? validateObject(parents, parent, value, typeExtensions) : Optional.of(message(parents, describe(), value));
         }
 
         @Override
         public String describe() {
             return format("OBJECT (%s)", schema.name());
-        }
-
-        private Optional<String> message(List<String> parents, JsonNode tree) {
-            String fullName = Joiner.on(".").join(parents);
-            return Optional.of(format("Unexpected field type. Field '%s' should be OBJECT ('%s'), but it is %s", fullName, this.schema.name(), tree.getNodeType()));
         }
 
         private Optional<String> validateObject(List<String> parents, JsonNode parent, JsonNode tree, Function<String, FieldType> lookup) {
