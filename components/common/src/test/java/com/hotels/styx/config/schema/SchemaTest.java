@@ -43,7 +43,6 @@ import static com.hotels.styx.config.schema.SchemaDsl.union;
 import static java.util.Collections.emptyList;
 
 public class SchemaTest {
-
     private final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
             .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(AUTO_CLOSE_SOURCE, true);
@@ -233,7 +232,7 @@ public class SchemaTest {
 
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myChild' should be OBJECT \\(age\\), but it is NUMBER")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myChild' should be OBJECT\\(age\\), but it is NUMBER")
     public void object_checksSubObjectFieldTypes() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "  myChild: 5.0 \n");
@@ -277,7 +276,7 @@ public class SchemaTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent' should be OBJECT \\(parent\\), but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent' should be OBJECT\\(parent\\), but it is STRING")
     public void object_rejectsInvalidObjects() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: x\n"
@@ -379,7 +378,7 @@ public class SchemaTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList\\[1\\]' should be OBJECT \\(x, y\\), but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList\\[1\\]' should be OBJECT\\(x, y\\), but it is STRING")
     public void list_checksListsOfSubObjects_shouldBeSubobjectButIsString() throws Exception {
         JsonNode rootObject = YAML_MAPPER.readTree(""
                 + "  myList: \n"
@@ -397,7 +396,7 @@ public class SchemaTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList' should be LIST \\(INTEGER\\), but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList' should be LIST\\(INTEGER\\), but it is STRING")
     public void list_expectingListButIsString() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "myList: 'or not'\n"
@@ -408,7 +407,7 @@ public class SchemaTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList' should be LIST \\(INTEGER\\), but it is OBJECT")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList' should be LIST\\(INTEGER\\), but it is OBJECT")
     public void list_expectingListButIsObject() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "myList: \n"
@@ -420,7 +419,7 @@ public class SchemaTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList' should be LIST \\(OBJECT \\(a, b\\)\\), but it is OBJECT")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'myList' should be LIST\\(OBJECT\\(a, b\\)\\), but it is OBJECT")
     public void list_expectingListOfObjectButIsString() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "myList: \n"
@@ -483,7 +482,7 @@ public class SchemaTest {
 
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unknown union discriminator type 'Foo' for union 'httpPipeline.config'. Union type is UNION \\(type\\)")
+            expectedExceptionsMessageRegExp = "Unknown union discriminator type 'Foo' for union 'httpPipeline.config'. Union type is UNION\\(type\\)")
     public void union_errorsWhenUnionSchemaNotFound() throws IOException {
         JsonNode root = YAML_MAPPER.readTree(""
                 + "httpPipeline: \n"
@@ -538,7 +537,7 @@ public class SchemaTest {
 
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent' should be MAP \\(STRING\\), but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent' should be MAP\\(STRING\\), but it is STRING")
     public void map_rejectsInvalidMaps() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: x\n"
@@ -567,7 +566,7 @@ public class SchemaTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key.' should be OBJECT \\(x, y\\), but it is NUMBER")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key.' should be OBJECT\\(x, y\\), but it is NUMBER")
     public void map_validatesMapOfObjects() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -666,7 +665,7 @@ public class SchemaTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key1' should be LIST \\(INTEGER\\), but it is OBJECT")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key1' should be LIST\\(INTEGER\\), but it is OBJECT")
     public void map_validatesMapOfListOfInts() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -702,7 +701,7 @@ public class SchemaTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key1\\[0\\]' should be OBJECT \\(x, y\\), but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key1\\[0\\]' should be OBJECT\\(x, y\\), but it is STRING")
     public void map_validatesMapOfListOfObjects() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: \n"

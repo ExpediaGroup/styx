@@ -324,7 +324,7 @@ public class Schema {
 
         @Override
         public String describe() {
-            return format("LIST (%s)", elementType.describe());
+            return format("LIST(%s)", elementType.describe());
         }
 
     }
@@ -350,7 +350,7 @@ public class Schema {
 
         @Override
         public String describe() {
-            return format("MAP (%s)", elementType.describe());
+            return format("MAP(%s)", elementType.describe());
         }
 
         private void validateMap(List<String> parents, JsonNode parent, JsonNode mapNode, Function<String, FieldType> schemas) {
@@ -395,7 +395,7 @@ public class Schema {
 
         @Override
         public String describe() {
-            return format("OBJECT (%s)", schema.name());
+            return format("OBJECT(%s)", schema.name());
         }
 
         private void validateObject(List<String> parents, JsonNode parent, JsonNode tree, Function<String, FieldType> lookup) {
@@ -474,7 +474,7 @@ public class Schema {
 
         @Override
         public String describe() {
-            return format("UNION (%s)", discriminatorField);
+            return format("UNION(%s)", discriminatorField);
         }
     }
 
