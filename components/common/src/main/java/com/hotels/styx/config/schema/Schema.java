@@ -312,10 +312,6 @@ public class Schema {
             this.elementType = requireNonNull(elementType);
         }
 
-        public FieldType elementType() {
-            return elementType;
-        }
-
         @Override
         public void validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
             if (!value.isArray()) {
@@ -323,13 +319,6 @@ public class Schema {
             }
 
             for (int i = 0; i < value.size(); i++) {
-                String arrayAttribute;
-                if (parents.size() > 0) {
-                    arrayAttribute = parents.get(parents.size() - 1);
-                } else {
-                    arrayAttribute = "";
-                }
-
                 elementType.validate(push(pop(parents), format("%s[%d]", top(parents), i)), value, value.get(i), typeExtensions);
             }
         }
@@ -391,7 +380,30 @@ public class Schema {
                 throw new SchemaValidationException(message(parents, describe(), value));
             }
 
-            validateObject(parents, parent, value, typeExtensions);
+            if (schema.ignore()) {
+                return;
+            }
+
+            for (Field field : schema.fields()) {
+                if (isMandatory(schema, field) && value.get(field.name()) == null) {
+                    throw new SchemaValidationException(format(
+                            "Missing a mandatory field '%s'",
+                            sanitise(Joiner.on(".").join(push(parents, field.name())))));
+                }
+
+                if (value.get(field.name()) != null) {
+                    String name1 = field.name();
+                    field.value().validate(push(parents, name1), value, value.get(name1), typeExtensions);
+                }
+            }
+
+            schema.constraints().forEach(constraint -> {
+                if (!constraint.evaluate(schema, value)) {
+                    throw new SchemaValidationException("Schema constraint failed. " + constraint.describe());
+                }
+            });
+
+            assertNoUnknownFields(Joiner.on(".").join(parents), schema, ImmutableList.copyOf(value.fieldNames()));
         }
 
         @Override
@@ -403,33 +415,6 @@ public class Schema {
             return !schema.optionalFields().contains(field.name());
         }
 
-        private void validateObject(List<String> parents, JsonNode parent, JsonNode tree, Function<String, FieldType> lookup) {
-
-            if (schema.ignore()) {
-                return;
-            }
-
-            for (Field field : schema.fields()) {
-                if (isMandatory(schema, field) && tree.get(field.name()) == null) {
-                    throw new SchemaValidationException(format(
-                            "Missing a mandatory field '%s'",
-                            sanitise(Joiner.on(".").join(push(parents, field.name())))));
-                }
-
-                if (tree.get(field.name()) != null) {
-                    String name = field.name();
-                    field.value().validate(push(parents, name), tree, tree.get(name), lookup);
-                }
-            }
-
-            schema.constraints().forEach(constraint -> {
-                if (!constraint.evaluate(schema, tree)) {
-                    throw new SchemaValidationException("Schema constraint failed. " + constraint.describe());
-                }
-            });
-
-            assertNoUnknownFields(Joiner.on(".").join(parents), schema, ImmutableList.copyOf(tree.fieldNames()));
-        }
     }
 
     /**
@@ -450,7 +435,7 @@ public class Schema {
             this.discriminatorField = requireNonNull(discriminatorField);
         }
 
-        public String discriminatorFieldName() {
+        String discriminatorFieldName() {
             return discriminatorField;
         }
 
