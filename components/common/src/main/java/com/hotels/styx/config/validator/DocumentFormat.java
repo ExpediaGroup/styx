@@ -49,8 +49,8 @@ public class DocumentFormat {
         this.additionalSchemas = ImmutableMap.copyOf(builder.schemas);
     }
 
-    public boolean validateObject(JsonNode tree) {
-        return !root.validate(new ArrayList<>(), tree, tree, this.additionalSchemas::get).isPresent();
+    public void validateObject(JsonNode tree) {
+        root.validate(new ArrayList<>(), tree, tree, this.additionalSchemas::get);
     }
 
     public static Builder newDocument() {
