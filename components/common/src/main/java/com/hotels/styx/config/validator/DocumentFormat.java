@@ -41,8 +41,8 @@ import static java.util.Objects.requireNonNull;
 public class DocumentFormat {
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentFormat.class);
 
-    private final Schema.FieldValue root;
-    private final ImmutableMap<String, Schema.FieldValue> additionalSchemas;
+    private final Schema.FieldType root;
+    private final ImmutableMap<String, Schema.FieldType> additionalSchemas;
 
     private DocumentFormat(Builder builder) {
         this.root = requireNonNull(builder.root);
@@ -50,7 +50,7 @@ public class DocumentFormat {
     }
 
     public boolean validateObject(JsonNode tree) {
-        return !root.isCorrectType(new ArrayList<>(), tree, tree, this.additionalSchemas::get).isPresent();
+        return !root.validate(new ArrayList<>(), tree, tree, this.additionalSchemas::get).isPresent();
     }
 
     public static Builder newDocument() {
@@ -61,16 +61,17 @@ public class DocumentFormat {
      * An object validator builder.
      */
     public static class Builder {
-        private final Map<String, Schema.FieldValue> schemas = new HashMap<>();
-        private Schema.FieldValue root;
+        private final Map<String, Schema.FieldType> schemas = new HashMap<>();
+        private Schema.FieldType root;
 
-        public Builder typeExtension(String typeName, Schema.FieldValue schema) {
-            this.schemas.put(requireNonNull(typeName), requireNonNull(schema));
-            return this;
+        private static void assertRootSchemaExists(Schema.FieldType schema) {
+            if (schema == null) {
+                throw new InvalidSchemaException("Root schema is not specified.");
+            }
         }
 
-        public Builder rootSchema(Schema.FieldValue root) {
-            this.root = root;
+        public Builder typeExtension(String typeName, Schema.FieldType schema) {
+            this.schemas.put(requireNonNull(typeName), requireNonNull(schema));
             return this;
         }
 
@@ -79,10 +80,9 @@ public class DocumentFormat {
             return new DocumentFormat(this);
         }
 
-        private static void assertRootSchemaExists(Schema.FieldValue schema) {
-            if (schema == null) {
-                throw new InvalidSchemaException("Root schema is not specified.");
-            }
+        public Builder rootSchema(Schema.FieldType root) {
+            this.root = root;
+            return this;
         }
 
     }

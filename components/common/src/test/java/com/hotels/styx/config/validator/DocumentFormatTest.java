@@ -308,7 +308,7 @@ public class DocumentFormatTest {
                 + "     y: 2 \n"
         );
 
-        Schema.FieldValue subObject = object(
+        Schema.FieldType subObject = object(
                 field("x", integer()),
                 field("y", integer())
         );
@@ -334,7 +334,7 @@ public class DocumentFormatTest {
                 + "   - 'zz' \n"
         );
 
-        Schema.FieldValue subObject = object(
+        Schema.FieldType subObject = object(
                 field("x", integer()),
                 field("y", integer())
         );
@@ -449,12 +449,12 @@ public class DocumentFormatTest {
     @Test
     public void routingObjectDefinition() throws Exception {
 
-        Schema.FieldValue proxyTo = object(
+        Schema.FieldType proxyTo = object(
                 field("id", string()),
                 field("destination", string())
         );
 
-        Schema.FieldValue redirection = object(
+        Schema.FieldType redirection = object(
                 field("status", integer()),
                 field("location", string())
         );
@@ -514,7 +514,7 @@ public class DocumentFormatTest {
                 ))
                 .build();
 
-        boolean outcome1 = validator.validateObject(
+        boolean outcome = validator.validateObject(
                 YAML_MAPPER.readTree(""
                         + "httpPipeline: \n"
                         + "  config:\n"
@@ -522,7 +522,7 @@ public class DocumentFormatTest {
                         + "    destination: 'localhost:8080'\n"
                         + "  type: 123\n"
                 ));
-        assertThat(outcome1, is(true));
+        assertThat(outcome, is(true));
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -537,7 +537,7 @@ public class DocumentFormatTest {
                 ))
                 .build();
 
-        boolean outcome1 = validator.validateObject(
+        boolean outcome = validator.validateObject(
                 YAML_MAPPER.readTree(""
                         + "httpPipeline: \n"
                         + "  type: Foo\n"
@@ -545,19 +545,19 @@ public class DocumentFormatTest {
                         + "    id: 'local-01'\n"
                         + "    destination: 'localhost:8080'\n"
                 ));
-        assertThat(outcome1, is(true));
+        assertThat(outcome, is(true));
     }
 
 
     @Test
     public void validatesDiscriminatedUnions() throws Exception {
 
-        Schema.FieldValue proxyTo = object(
+        Schema.FieldType proxyTo = object(
                 field("id", string()),
                 field("destination", string())
         );
 
-        Schema.FieldValue redirection = object(
+        Schema.FieldType redirection = object(
                 field("status", integer()),
                 field("location", string())
         );

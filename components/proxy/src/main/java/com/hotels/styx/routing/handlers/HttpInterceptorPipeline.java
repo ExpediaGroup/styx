@@ -55,7 +55,7 @@ import static java.util.stream.StreamSupport.stream;
  * A HTTP handler that contains HTTP interceptor pipeline.
  */
 public class HttpInterceptorPipeline implements HttpHandler {
-    public static final Schema.FieldValue SCHEMA = object(
+    public static final Schema.FieldType SCHEMA = object(
             field("pipeline", list(string())),
             field("handler", routingObject())
     );

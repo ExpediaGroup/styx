@@ -45,7 +45,7 @@ import static java.util.Objects.requireNonNull;
  * A HTTP handler for returning a static response.
  */
 public class StaticResponseHandler implements HttpHandler {
-    public static final Schema.FieldValue SCHEMA = object(
+    public static final Schema.FieldType SCHEMA = object(
             field("status", integer()),
             optional("content", string()));
 

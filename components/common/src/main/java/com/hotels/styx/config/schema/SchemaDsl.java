@@ -45,7 +45,7 @@ public final class SchemaDsl {
      * @param value  The vield value type.
      * @return       The Field class instance
      */
-    public static Schema.Field field(String name, Schema.FieldValue value) {
+    public static Schema.Field field(String name, Schema.FieldType value) {
         return new Schema.Field(name, false, value);
     }
 
@@ -55,34 +55,34 @@ public final class SchemaDsl {
      * @param value  The vield value type.
      * @return       The Field class instance
      */
-    public static Schema.Field optional(String name, Schema.FieldValue value) {
+    public static Schema.Field optional(String name, Schema.FieldType value) {
         return new Schema.Field(name, true, value);
     }
 
     /**
      * An integer field value type.
      *
-     * @return A FieldValue instance.
+     * @return A FieldType instance.
      */
-    public static Schema.FieldValue integer() {
+    public static Schema.FieldType integer() {
         return new Schema.IntegerField();
     }
 
     /**
      * A string field value type.
      *
-     * @return A FieldValue instance.
+     * @return A FieldType instance.
      */
-    public static Schema.FieldValue string() {
+    public static Schema.FieldType string() {
         return new Schema.StringField();
     }
 
     /**
      * A boolean field value type.
      *
-     * @return A FieldValue instance.
+     * @return A FieldType instance.
      */
-    public static Schema.FieldValue bool() {
+    public static Schema.FieldType bool() {
         return new Schema.BoolField();
     }
 
@@ -125,9 +125,9 @@ public final class SchemaDsl {
      * </pre>
      *
      *
-     * @return A FieldValue instance.
+     * @return A FieldType instance.
      */
-    public static Schema.FieldValue object(SchemaDirective... schemaDirectives) {
+    public static Schema.FieldType object(SchemaDirective... schemaDirectives) {
         Schema.Builder builder = new Schema.Builder();
         Stream.of(schemaDirectives).forEach(builder::add);
         return new Schema.ObjectField(builder.build());
@@ -141,7 +141,7 @@ public final class SchemaDsl {
      *
      * @return A validator for Styx routing object.
      */
-    public static Schema.FieldValue routingObject() {
+    public static Schema.FieldType routingObject() {
         return new Schema.RoutingObjectSpec();
     }
 
@@ -182,7 +182,7 @@ public final class SchemaDsl {
      * @param discriminator - the discriminator field name
      * @return an union field value
      */
-    public static Schema.FieldValue union(String discriminator) {
+    public static Schema.FieldType union(String discriminator) {
         return new Schema.DiscriminatedUnionObject(discriminator);
     }
 
@@ -200,7 +200,7 @@ public final class SchemaDsl {
      * @param elementType A type of list entries.
      * @return a list field value type
      */
-    public static Schema.FieldValue list(Schema.FieldValue elementType) {
+    public static Schema.FieldType list(Schema.FieldType elementType) {
         return new Schema.ListField(elementType);
     }
 
@@ -210,7 +210,7 @@ public final class SchemaDsl {
      * A map declares a JSON object type whose field names are treated as
      * arbitrary (string) keys associated with some elementary or object type.
      */
-    public static Schema.FieldValue map(Schema.FieldValue elementType) {
+    public static Schema.FieldType map(Schema.FieldType elementType) {
         return new Schema.MapField(elementType);
     }
 

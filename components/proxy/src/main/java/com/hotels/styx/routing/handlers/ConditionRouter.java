@@ -56,7 +56,7 @@ import static java.lang.String.join;
  * Condition predicate based HTTP router.
  */
 public class ConditionRouter implements HttpRouter {
-    public static final Schema.FieldValue SCHEMA = object(
+    public static final Schema.FieldType SCHEMA = object(
             field("routes", list(object(
                     field("condition", string()),
                     field("destination", routingObject()))

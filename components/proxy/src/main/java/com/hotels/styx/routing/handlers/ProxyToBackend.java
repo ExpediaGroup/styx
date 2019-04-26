@@ -53,7 +53,7 @@ import static java.lang.String.join;
  * Routing object that proxies a request to a configured backend.
  */
 public class ProxyToBackend implements HttpHandler {
-    public static final Schema.FieldValue SCHEMA = object(
+    public static final Schema.FieldType SCHEMA = object(
             field("backend", object(opaque()))
     );
     private final BackendServiceClient client;

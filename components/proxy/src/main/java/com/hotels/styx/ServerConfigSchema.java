@@ -19,9 +19,7 @@ import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.config.schema.SchemaValidationException;
 import com.hotels.styx.config.validator.DocumentFormat;
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfiguration;
-import com.hotels.styx.routing.config.RoutingObjectFactory;
 
-import java.util.Map;
 import java.util.Optional;
 
 import static com.hotels.styx.config.schema.SchemaDsl.atLeastOne;
@@ -36,6 +34,7 @@ import static com.hotels.styx.config.schema.SchemaDsl.optional;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.config.schema.SchemaDsl.union;
 import static com.hotels.styx.config.validator.DocumentFormat.newDocument;
+import static com.hotels.styx.routing.config.RoutingObjectFactory.BUILTIN_HANDLER_SCHEMAS;
 
 final class ServerConfigSchema {
 
@@ -43,7 +42,7 @@ final class ServerConfigSchema {
 
     static {
 
-        Schema.FieldValue serverConnectorsSchema = object(
+        Schema.FieldType serverConnectorsSchema = object(
                 optional("http", object(
                         field("port", integer())
                 )),
@@ -60,7 +59,7 @@ final class ServerConfigSchema {
                 atLeastOne("http", "https")
         );
 
-        Schema.FieldValue logFormatSchema = object(
+        Schema.FieldType logFormatSchema = object(
                 optional("enabled", bool()),
                 optional("longFormat", bool()),
                 atLeastOne("enabled", "longFormat")
@@ -154,10 +153,7 @@ final class ServerConfigSchema {
 
     static Optional<String> validateServerConfiguration(YamlConfiguration yamlConfiguration) {
         try {
-            for (Map.Entry<String, Schema.FieldValue> schema: RoutingObjectFactory.BUILTIN_HANDLER_SCHEMAS.entrySet()) {
-                STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER.typeExtension(schema.getKey(), schema.getValue());
-            }
-
+            BUILTIN_HANDLER_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
             STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER.build().validateObject(yamlConfiguration.root());
             return Optional.empty();
         } catch (SchemaValidationException e) {
