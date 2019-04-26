@@ -59,7 +59,7 @@ class ServerConfigSchemaTest : DescribeSpec({
                       backendServiceRegistry:
                         class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
                         config: {originsFile: "${'$'}{originsFile:classpath:conf/origins.yml}"}
-            """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field '.proxy'"))
+            """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field 'proxy'"))
         }
 
         it("Detects a missing mandatory `admin' configuration.") {
@@ -74,7 +74,7 @@ class ServerConfigSchemaTest : DescribeSpec({
                       backendServiceRegistry:
                         class: "com.hotels.styx.proxy.backends.file.FileBackedBackendServicesRegistry${'$'}Factory"
                         config: {originsFile: "${'$'}{originsFile:classpath:conf/origins.yml}"}
-            """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field '.admin'"))
+            """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field 'admin'"))
         }
 
         it("Detects a missing mandatory 'services` configuration.") {
@@ -88,7 +88,7 @@ class ServerConfigSchemaTest : DescribeSpec({
                     connectors:
                       http:
                         port: 9000
-        """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field '.services'"))
+        """.trimIndent())) shouldBe (Optional.of("Missing a mandatory field 'services'"))
         }
 
         it("Accepts 'jvmRouteName' field as a STRING") {
@@ -167,7 +167,7 @@ class ServerConfigSchemaTest : DescribeSpec({
         it("Detects unknown configuration options") {
             validateServerConfiguration(yamlConfig(minimalConfig + """
                 abc: 1
-            """.trimIndent())) shouldBe (Optional.of("Unexpected field: '.abc'"))
+            """.trimIndent())) shouldBe (Optional.of("Unexpected field: 'abc'"))
         }
     }
 
@@ -354,7 +354,7 @@ class ServerConfigSchemaTest : DescribeSpec({
                                 config:
                                   status: 200
                                   contentS: "Fallback"
-                """.trimIndent())) shouldBe Optional.of("Unexpected field: 'httpHandlers.condition.config.fallback.config.handler.config.contentS'")
+                """.trimIndent())) shouldBe Optional.of("Unexpected field: 'httpHandlers[condition].config.fallback.config.handler.config.contentS'")
         }
     }
 })

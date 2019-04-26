@@ -80,8 +80,10 @@ public class Schema {
         this.name = builder.name.length() > 0 ? builder.name : Joiner.on(", ").join(this.fieldNames);
     }
 
-    public Schema.Builder newBuilder() {
-        return new Schema.Builder(this);
+    private static String sanitise(String string) {
+        return string
+                .replaceFirst("^\\.", "")
+                .replaceAll("\\.\\[", "[");
     }
 
     public Set<String> optionalFields() {
@@ -133,8 +135,18 @@ public class Schema {
     }
 
     private static String message(List<String> parents, String self, JsonNode value) {
-        String fullName = Joiner.on(".").join(parents);
+        String fullName = sanitise(Joiner.on(".").join(parents));
         return format("Unexpected field type. Field '%s' should be %s, but it is %s", fullName, self, value.getNodeType());
+    }
+
+    private static void assertNoUnknownFields(String prefix, Schema schema, List<String> fieldsPresent) {
+        Set<String> knownFields = ImmutableSet.copyOf(schema.fieldNames());
+
+        fieldsPresent.forEach(name -> {
+            if (!knownFields.contains(name)) {
+                throw new SchemaValidationException(format("Unexpected field: '%s'", sanitise(prefix + "." + name)));
+            }
+        });
     }
 
 
@@ -329,6 +341,10 @@ public class Schema {
 
     }
 
+    public Builder newBuilder() {
+        return new Builder(this);
+    }
+
     /**
      * Map schema field type.
      */
@@ -345,7 +361,7 @@ public class Schema {
                 throw new SchemaValidationException(message(parents, describe(), value));
             }
 
-            validateMap(parents, parent, value, typeExtensions);
+            value.fieldNames().forEachRemaining(key -> elementType.validate(push(parents, format("[%s]", key)), value, value.get(key), typeExtensions));
         }
 
         @Override
@@ -353,21 +369,6 @@ public class Schema {
             return format("MAP(%s)", elementType.describe());
         }
 
-        private void validateMap(List<String> parents, JsonNode parent, JsonNode mapNode, Function<String, FieldType> schemas) {
-            mapNode.fieldNames().forEachRemaining(key -> {
-                elementType.validate(push(parents, format("%s", key)), mapNode, mapNode.get(key), schemas);
-            });
-        }
-    }
-
-    private static void assertNoUnknownFields(String prefix, Schema schema, List<String> fieldsPresent) {
-        Set<String> knownFields = ImmutableSet.copyOf(schema.fieldNames());
-
-        fieldsPresent.forEach(name -> {
-            if (!knownFields.contains(name)) {
-                throw new SchemaValidationException(format("Unexpected field: '%s.%s'", prefix, name));
-            }
-        });
     }
 
     /**
@@ -398,15 +399,21 @@ public class Schema {
             return format("OBJECT(%s)", schema.name());
         }
 
+        private static boolean isMandatory(Schema schema, Field field) {
+            return !schema.optionalFields().contains(field.name());
+        }
+
         private void validateObject(List<String> parents, JsonNode parent, JsonNode tree, Function<String, FieldType> lookup) {
 
             if (schema.ignore()) {
                 return;
             }
 
-            for (Schema.Field field : schema.fields()) {
+            for (Field field : schema.fields()) {
                 if (isMandatory(schema, field) && tree.get(field.name()) == null) {
-                    throw new SchemaValidationException(format("Missing a mandatory field '%s.%s'", Joiner.on(".").join(parents), field.name()));
+                    throw new SchemaValidationException(format(
+                            "Missing a mandatory field '%s'",
+                            sanitise(Joiner.on(".").join(push(parents, field.name())))));
                 }
 
                 if (tree.get(field.name()) != null) {
@@ -422,10 +429,6 @@ public class Schema {
             });
 
             assertNoUnknownFields(Joiner.on(".").join(parents), schema, ImmutableList.copyOf(tree.fieldNames()));
-        }
-
-        private static boolean isMandatory(Schema schema, Schema.Field field) {
-            return !schema.optionalFields().contains(field.name());
         }
     }
 

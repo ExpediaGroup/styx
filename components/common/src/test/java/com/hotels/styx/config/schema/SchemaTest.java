@@ -296,7 +296,6 @@ public class SchemaTest {
      *  2) Another required field is present.
      *  3) Both required fields are present
      *  4) Neither of the required fields are present.
-     *
      */
     @Test(expectedExceptions = SchemaValidationException.class,
             expectedExceptionsMessageRegExp = "Schema constraint failed. At least one of \\('http', 'https'\\) must be present.")
@@ -566,7 +565,7 @@ public class SchemaTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key.' should be OBJECT\\(x, y\\), but it is NUMBER")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent\\[key.\\]' should be OBJECT\\(x, y\\), but it is NUMBER")
     public void map_validatesMapOfObjects() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -592,7 +591,7 @@ public class SchemaTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key1' should be INTEGER, but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent\\[key1\\]' should be INTEGER, but it is STRING")
     public void map_validatesMapOfIntegers() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -615,7 +614,7 @@ public class SchemaTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key1' should be STRING, but it is NUMBER")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent\\[key1\\]' should be STRING, but it is NUMBER")
     public void map_validatesMapOfStrings() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -638,7 +637,7 @@ public class SchemaTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.ok' should be BOOLEAN, but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent\\[ok\\]' should be BOOLEAN, but it is STRING")
     public void map_validatesMapOfBooleans() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -665,7 +664,7 @@ public class SchemaTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key1' should be LIST\\(INTEGER\\), but it is OBJECT")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent\\[key1\\]' should be LIST\\(INTEGER\\), but it is OBJECT")
     public void map_validatesMapOfListOfInts() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: \n"
@@ -701,11 +700,11 @@ public class SchemaTest {
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
-            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent.key1\\[0\\]' should be OBJECT\\(x, y\\), but it is STRING")
+            expectedExceptionsMessageRegExp = "Unexpected field type. Field 'parent\\[mapKey\\]\\[0\\]' should be OBJECT\\(x, y\\), but it is STRING")
     public void map_validatesMapOfListOfObjects() throws Exception {
         JsonNode root = YAML_MAPPER.readTree(
                 "parent: \n"
-                        + "  key1: \n"
+                        + "  mapKey: \n"
                         + "    - ImString \n"
                         + "    - x: 3\n"
                         + "      y: 4\n"
