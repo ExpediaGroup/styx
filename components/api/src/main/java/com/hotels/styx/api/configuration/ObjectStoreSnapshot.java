@@ -26,10 +26,10 @@ import java.util.Optional;
 public interface ObjectStoreSnapshot<T> {
 
     /**
-     * Gets an object with given key.
+     * A repository of named objects.
      *
-     * @param key
-     * @return
+     * @param key Object's name.
+     * @return An object if known.
      */
     Optional<T> get(String key);
 }

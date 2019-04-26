@@ -50,7 +50,7 @@ public class RoutingObjectFactory {
             .build();
 
     private final Environment environment;
-    private StyxObjectStore<RoutingObjectRecord> routeObjectStore;
+    private final StyxObjectStore<RoutingObjectRecord> routeObjectStore;
     private final Iterable<NamedPlugin> plugins;
     private final BuiltinInterceptorsFactory interceptorFactory;
     private final Map<String, HttpHandlerFactory> builtInObjectTypes;

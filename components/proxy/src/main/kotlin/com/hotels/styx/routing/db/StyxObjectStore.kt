@@ -22,72 +22,81 @@ import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import java.util.Optional
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 
 /**
  * Styx Route Database.
  */
-
-private interface MyListener<T> : Consumer<ObjectStoreSnapshot<T>>
-
 class StyxObjectStore<T> : ObjectStoreSnapshot<T> {
     private val objects: AtomicReference<PMap<String, Record<T>>> = AtomicReference(HashTreePMap.empty())
+    private val watchers = CopyOnWriteArrayList<ChangeWatcher<T>>()
+    private val executor = Executors.newSingleThreadExecutor()
 
-    private val listeners = CopyOnWriteArrayList<MyListener<T>>()
-
-    override fun get(name: String?): Optional<T> {
-        return Optional.ofNullable(objects.get().get(name))
+    override fun get(name: String): Optional<T> {
+        return Optional.ofNullable(objects().get(name))
                 .map { it.payload }
     }
 
     fun insert(key: String, record: T) {
-        insert(key, setOf(), record)
+        queue {
+            insert(key, setOf(), record)
+        }
     }
 
     /**
-     * Returns a Publisher that emits an event for any modification (insert/remove).
-     *
-     * TODO: Should return a database snapshot?
-     *       Should return a change indication (insert "foo", remove "bar")?
+     * Returns a Publisher that emits an event at any modification.
      *
      * Watch activates on subscription only.
      * Watch removed on unsubscription.
      */
     fun watch(): Publisher<ObjectStoreSnapshot<T>> {
         return Flux.push { sink ->
-            val listener = object : MyListener<T> {
+            val watcher = object : ChangeWatcher<T> {
                 override fun accept(objectStoreSnapshot: ObjectStoreSnapshot<T>) {
                     sink.next(objectStoreSnapshot)
                 }
             }
 
-            listeners.add(listener)
-
-            sink.onCancel {
-                listeners.remove(listener)
+            sink.onDispose {
+                watchers.remove(watcher)
             }
 
-            sink.onDispose {
-                listeners.remove(listener)
+            watchers.add(watcher)
+
+            queue {
+                sink.next(ObjectStoreSnapshot { key ->
+                    Optional
+                            .ofNullable(objects().get(key))
+                            .map { it.payload }
+                })
             }
         }
     }
 
-    fun watchers() = listeners.size
+    fun watchers() = watchers.size
 
     private fun insert(key: String, tags: Set<String>, payload: T) {
-        val objectsV2 = objects.get().plus(key, Record(key, tags, payload))
+        val objectsV2 = objects().plus(key, Record(key, tags, payload))
         objects.set(objectsV2)
 
-        listeners.forEach { listener -> listener.accept({
-            key -> Optional
-                .ofNullable(objectsV2.get(key))
-                .map { it.payload } }
-        )}
-
+        watchers.forEach { listener ->
+            listener.accept({ key ->
+                Optional
+                        .ofNullable(objectsV2.get(key))
+                        .map { it.payload }
+            })
+        }
     }
 
+    private fun objects() = objects.get()
 
-    data class Record<T>(val key: String, val tags: Set<String>, val payload: T)
+    private fun queue(task: () -> Unit) {
+        executor.submit(task)
+    }
+
 }
+
+private interface ChangeWatcher<T> : Consumer<ObjectStoreSnapshot<T>>
+private data class Record<T>(val key: String, val tags: Set<String>, val payload: T)
