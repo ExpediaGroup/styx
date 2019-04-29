@@ -39,9 +39,15 @@ class StyxObjectStore<T> : ObjectStoreSnapshot<T> {
                 .map { it.payload }
     }
 
-    fun insert(key: String, record: T) {
+    fun insert(key: String, payload: T) {
+        insert(key, setOf(), payload)
+    }
+
+    fun remove(key: T) {
         queue {
-            insert(key, setOf(), record)
+            val nextVersion = objects().minus(key)
+            objects.set(nextVersion)
+            notifyWatchers(nextVersion)
         }
     }
 
@@ -75,20 +81,7 @@ class StyxObjectStore<T> : ObjectStoreSnapshot<T> {
         }
     }
 
-    fun watchers() = watchers.size
-
-    private fun insert(key: String, tags: Set<String>, payload: T) {
-        val objectsV2 = objects().plus(key, Record(key, tags, payload))
-        objects.set(objectsV2)
-
-        watchers.forEach { listener ->
-            listener.accept({ key ->
-                Optional
-                        .ofNullable(objectsV2.get(key))
-                        .map { it.payload }
-            })
-        }
-    }
+    internal fun watchers() = watchers.size
 
     private fun objects() = objects.get()
 
@@ -96,6 +89,25 @@ class StyxObjectStore<T> : ObjectStoreSnapshot<T> {
         executor.submit(task)
     }
 
+    private fun insert(key: String, tags: Set<String>, payload: T) {
+        queue {
+            val nextVersion = objects().plus(key, Record(key, tags, payload))
+            objects.set(nextVersion)
+            notifyWatchers(nextVersion)
+        }
+    }
+
+    private fun notifyWatchers(objectsV2: PMap<String, Record<T>>) {
+        watchers.forEach { listener ->
+            listener.accept(snapshot(objectsV2))
+        }
+    }
+
+    private fun snapshot(snapshot: PMap<String, Record<T>>) = object : ObjectStoreSnapshot<T> {
+        override fun get(key: String?): Optional<T> = Optional
+                .ofNullable(snapshot.get(key))
+                .map { it.payload }
+    }
 }
 
 private interface ChangeWatcher<T> : Consumer<ObjectStoreSnapshot<T>>

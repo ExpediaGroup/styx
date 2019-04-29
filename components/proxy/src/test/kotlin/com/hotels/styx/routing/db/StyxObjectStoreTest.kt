@@ -91,6 +91,49 @@ class StyxObjectStoreTest : FeatureSpec() {
             }
         }
 
+        feature("Remove") {
+            scenario("Removes previously stored objects") {
+                val db = StyxObjectStore<String>()
+
+                db.insert("x", "x")
+                db.insert("y", "y")
+
+                eventually(1.seconds, java.lang.AssertionError::class.java) {
+                    db.get("x") shouldBe Optional.of("x")
+                    db.get("y") shouldBe Optional.of("y")
+                }
+
+                db.remove("x")
+                db.remove("y")
+
+                eventually(1.seconds, java.lang.AssertionError::class.java) {
+                    db.get("x") shouldBe Optional.empty()
+                    db.get("y") shouldBe Optional.empty()
+                }
+            }
+
+            scenario("notifies watchers") {
+                val db = StyxObjectStore<String>()
+                val watchEvents = arrayListOf<ObjectStoreSnapshot<String>>()
+
+                db.insert("x", "x")
+                db.insert("y", "y")
+
+                val watcher= Flux.from(db.watch()).subscribe { watchEvents.add(it) }
+                eventually(1.seconds, java.lang.AssertionError::class.java) {
+                    watchEvents.last().get("x") shouldBe Optional.of("x")
+                }
+
+                db.remove("x")
+                db.remove("y")
+
+                eventually(1.seconds, java.lang.AssertionError::class.java) {
+                    watchEvents.last().get("x") shouldBe Optional.empty()
+                    watchEvents.last().get("y") shouldBe Optional.empty()
+                }
+            }
+        }
+
         feature("Watch") {
             scenario("Supports multiple watchers") {
                 val db = StyxObjectStore<String>()
