@@ -17,6 +17,8 @@ package com.hotels.styx.routing.db
 
 import com.hotels.styx.api.configuration.ObjectStoreSnapshot
 import io.kotlintest.eventually
+import io.kotlintest.matchers.boolean.shouldBeTrue
+import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
@@ -76,7 +78,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 val db = StyxObjectStore<String>()
                 val executor = Executors.newFixedThreadPool(4)
 
-                for (i in 1 .. 1000) {
+                for (i in 1..1000) {
                     executor.execute { db.insert("redirect-$i", "Record-$i") }
                 }
 
@@ -119,8 +121,9 @@ class StyxObjectStoreTest : FeatureSpec() {
                 db.insert("x", "x")
                 db.insert("y", "y")
 
-                val watcher= Flux.from(db.watch()).subscribe { watchEvents.add(it) }
+                Flux.from(db.watch()).subscribe { watchEvents.add(it) }
                 eventually(1.seconds, java.lang.AssertionError::class.java) {
+                    watchEvents.size shouldBeGreaterThanOrEqual 1
                     watchEvents.last().get("x") shouldBe Optional.of("x")
                 }
 
@@ -145,7 +148,10 @@ class StyxObjectStoreTest : FeatureSpec() {
 
                 // Wait for the initial watch event ...
                 eventually(1.seconds, java.lang.AssertionError::class.java) {
+                    watchEvents1.size shouldBe 1
                     watchEvents1[0].get("x") shouldBe Optional.empty()
+
+                    watchEvents2.size shouldBe 1
                     watchEvents2[0].get("x") shouldBe Optional.empty()
                 }
 
@@ -157,6 +163,9 @@ class StyxObjectStoreTest : FeatureSpec() {
                 // The ordering between initial watch event in relation to db.inserts are
                 // non-deterministic.
                 eventually(1.seconds, AssertionError::class.java) {
+                    watchEvents1.size shouldBe 3
+                    watchEvents2.size shouldBe 3
+
                     watchEvents1[1].get("x") shouldBe Optional.of("x")
                     watchEvents2[1].get("x") shouldBe Optional.of("x")
 
@@ -183,7 +192,8 @@ class StyxObjectStoreTest : FeatureSpec() {
 
                 val watcher = Flux.from(db.watch()).subscribe { watchEvents.add(it) }
 
-                eventually (1.seconds, AssertionError::class.java) {
+                eventually(1.seconds, AssertionError::class.java) {
+                    watchEvents.isNotEmpty().shouldBeTrue()
                     watchEvents[0].get("x") shouldBe Optional.empty()
                     watchEvents[0].get("y") shouldBe Optional.empty()
                 }
@@ -191,7 +201,8 @@ class StyxObjectStoreTest : FeatureSpec() {
                 db.insert("x", "x")
                 db.insert("y", "y")
 
-                eventually (1.seconds, AssertionError::class.java) {
+                eventually(1.seconds, AssertionError::class.java) {
+                    watchEvents.size shouldBe 3
                     watchEvents[1].get("x") shouldBe Optional.of("x")
                     watchEvents[1].get("y") shouldBe Optional.empty()
 
@@ -213,7 +224,8 @@ class StyxObjectStoreTest : FeatureSpec() {
                     watchEvents.add(it)
                 }
 
-                eventually (1.seconds, AssertionError::class.java) {
+                eventually(1.seconds, AssertionError::class.java) {
+                    watchEvents.isNotEmpty().shouldBeTrue()
                     watchEvents[0].get("x") shouldBe Optional.of("x")
                 }
             }
