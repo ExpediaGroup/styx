@@ -15,10 +15,11 @@
  */
 package com.hotels.styx.routing.db
 
-import com.hotels.styx.api.configuration.ObjectStoreSnapshot
+import com.hotels.styx.api.configuration.ObjectStore
 import io.kotlintest.eventually
 import io.kotlintest.matchers.boolean.shouldBeTrue
 import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
+import io.kotlintest.milliseconds
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
@@ -26,7 +27,7 @@ import reactor.core.publisher.Flux
 import reactor.test.StepVerifier
 import java.util.Optional
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.SECONDS
 
 // We can remove AssertionError::class.java argument from the
 // calls to `eventually`, after this bug fix is released:
@@ -56,7 +57,7 @@ class StyxObjectStoreTest : FeatureSpec() {
             scenario("Notifies watchers for any change") {
                 val db = StyxObjectStore<String>()
 
-                StepVerifier.create<ObjectStoreSnapshot<String>>(db.watch())
+                StepVerifier.create<ObjectStore<String>>(db.watch())
                         .expectNextCount(1)
                         .then { db.insert("x", "x") }
                         .assertNext {
@@ -83,13 +84,32 @@ class StyxObjectStoreTest : FeatureSpec() {
                 }
 
                 executor.shutdown()
-                executor.awaitTermination(2, TimeUnit.SECONDS)
+                executor.awaitTermination(2, SECONDS)
 
                 eventually(1.seconds, AssertionError::class.java) {
                     for (i in 1..1000) {
                         db.get("redirect-$i") shouldBe (Optional.of("Record-$i"))
                     }
                 }
+            }
+
+            scenario("Replaces already existing object") {
+                val db = StyxObjectStore<String>()
+
+                StepVerifier.create<ObjectStore<String>>(db.watch())
+                        .expectNextCount(1)
+                        .then { db.insert("x", "x") }
+                        .assertNext {
+                            it.get("x") shouldBe Optional.of("x")
+                        }
+                        .then { db.insert("x", "x2") }
+                        .assertNext {
+                            it.get("x") shouldBe Optional.of("x2")
+                        }
+                        .thenCancel()
+                        .verify(1.seconds)
+
+                db.get("x") shouldBe Optional.of("x2")
             }
         }
 
@@ -114,9 +134,29 @@ class StyxObjectStoreTest : FeatureSpec() {
                 }
             }
 
-            scenario("notifies watchers") {
+            scenario("Non-existent object doesn't trigger watchers") {
                 val db = StyxObjectStore<String>()
-                val watchEvents = arrayListOf<ObjectStoreSnapshot<String>>()
+
+                StepVerifier.create<ObjectStore<String>>(db.watch())
+                        .expectNextCount(1)
+                        .then { db.remove("x") }
+                        .expectNoEvent(250.milliseconds)
+                        .thenCancel()
+                        .verify()
+
+                db.insert("y", "Y")
+
+                StepVerifier.create<ObjectStore<String>>(db.watch())
+                        .expectNextCount(1)
+                        .then { db.remove("x") }
+                        .expectNoEvent(250.milliseconds)
+                        .thenCancel()
+                        .verify()
+            }
+
+            scenario("Notifies watchers") {
+                val db = StyxObjectStore<String>()
+                val watchEvents = arrayListOf<ObjectStore<String>>()
 
                 db.insert("x", "x")
                 db.insert("y", "y")
@@ -140,8 +180,8 @@ class StyxObjectStoreTest : FeatureSpec() {
         feature("Watch") {
             scenario("Supports multiple watchers") {
                 val db = StyxObjectStore<String>()
-                val watchEvents1 = arrayListOf<ObjectStoreSnapshot<String>>()
-                val watchEvents2 = arrayListOf<ObjectStoreSnapshot<String>>()
+                val watchEvents1 = arrayListOf<ObjectStore<String>>()
+                val watchEvents2 = arrayListOf<ObjectStore<String>>()
 
                 val watcher1 = Flux.from(db.watch()).subscribe { watchEvents1.add(it) }
                 val watcher2 = Flux.from(db.watch()).subscribe { watchEvents2.add(it) }
@@ -188,7 +228,7 @@ class StyxObjectStoreTest : FeatureSpec() {
 
             scenario("Provides immutable snapshot") {
                 val db = StyxObjectStore<String>()
-                val watchEvents = arrayListOf<ObjectStoreSnapshot<String>>()
+                val watchEvents = arrayListOf<ObjectStore<String>>()
 
                 val watcher = Flux.from(db.watch()).subscribe { watchEvents.add(it) }
 
@@ -216,7 +256,7 @@ class StyxObjectStoreTest : FeatureSpec() {
 
             scenario("Provides current snapshot at subscription") {
                 val db = StyxObjectStore<String>()
-                val watchEvents = arrayListOf<ObjectStoreSnapshot<String>>()
+                val watchEvents = arrayListOf<ObjectStore<String>>()
 
                 db.insert("x", "x")
 

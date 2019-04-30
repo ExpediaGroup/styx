@@ -23,7 +23,7 @@ import java.util.Optional;
  *
  * @param <T> Stored object type
  */
-public interface ObjectStoreSnapshot<T> {
+public interface ObjectStore<T> {
 
     /**
      * A repository of named objects.
