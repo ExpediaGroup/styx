@@ -28,8 +28,8 @@ public interface ObjectStore<T> {
     /**
      * A repository of named objects.
      *
-     * @param key Object's name.
-     * @return An object if known.
+     * @param key object's name
+     * @return an object if known
      */
     Optional<T> get(String key);
 }
