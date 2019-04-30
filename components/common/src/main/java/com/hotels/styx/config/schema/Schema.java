@@ -158,19 +158,21 @@ public class Schema {
          * Validates a JsonNode value against this type.  Typically checks that a value
          * can be used as an instance of this type.
          *
-         * @param parents A parentage attribute stack.
-         * @param parent Value's parent node.
-         * @param value Value to be inspected.
-         * @param typeExtensions Provides type extensions.
+         *
+         * @param parents a parentage attribute stack
+         * @param parent value's parent node
+         * @param value value to be inspected
+         * @param typeExtensions provides type extensions
+         * @throws SchemaValidationException if validation fails
          */
-        void validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions);
+        void validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) throws SchemaValidationException;
 
         /**
          * Returns an user friendly description of the type that will be
          * used in validation error messages. Therefore the message ought to
          * be user friendly.
          *
-         * @return type description.
+         * @return type description
          */
         String describe();
     }
@@ -392,8 +394,8 @@ public class Schema {
                 }
 
                 if (value.get(field.name()) != null) {
-                    String name1 = field.name();
-                    field.value().validate(push(parents, name1), value, value.get(name1), typeExtensions);
+                    String name = field.name();
+                    field.value().validate(push(parents, name), value, value.get(name), typeExtensions);
                 }
             }
 

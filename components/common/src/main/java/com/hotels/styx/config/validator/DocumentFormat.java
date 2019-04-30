@@ -44,11 +44,6 @@ public class DocumentFormat {
     private final Schema.FieldType root;
     private final ImmutableMap<String, Schema.FieldType> additionalSchemas;
 
-    private DocumentFormat(Builder builder) {
-        this.root = requireNonNull(builder.root);
-        this.additionalSchemas = ImmutableMap.copyOf(builder.schemas);
-    }
-
     public void validateObject(JsonNode tree) {
         root.validate(new ArrayList<>(), tree, tree, this.additionalSchemas::get);
     }
@@ -57,18 +52,17 @@ public class DocumentFormat {
         return new Builder();
     }
 
+    private DocumentFormat(Builder builder) {
+        this.root = requireNonNull(builder.root);
+        this.additionalSchemas = ImmutableMap.copyOf(builder.schemas);
+    }
+
     /**
      * An object validator builder.
      */
     public static class Builder {
         private final Map<String, Schema.FieldType> schemas = new HashMap<>();
         private Schema.FieldType root;
-
-        private static void assertRootSchemaExists(Schema.FieldType schema) {
-            if (schema == null) {
-                throw new InvalidSchemaException("Root schema is not specified.");
-            }
-        }
 
         public Builder typeExtension(String typeName, Schema.FieldType schema) {
             this.schemas.put(requireNonNull(typeName), requireNonNull(schema));
@@ -85,6 +79,11 @@ public class DocumentFormat {
             return this;
         }
 
+        private static void assertRootSchemaExists(Schema.FieldType schema) {
+            if (schema == null) {
+                throw new InvalidSchemaException("Root schema is not specified.");
+            }
+        }
     }
 
 }

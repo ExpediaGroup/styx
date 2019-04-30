@@ -148,14 +148,29 @@ public final class SchemaDsl {
 
 
     /**
-     * A choice of alternative object layouts determined by a named discriminator field.
+     * A discriminated union type (https://en.wikipedia.org/wiki/Tagged_u…) that allows the attribute
+     * value to take the form of different object types.
      *
-     * The `discriminator` parameter is a name of the field that determines the
-     * union layout type. This field must 1) reside within the same object as
-     * the union field itself, and 2) must have a STRING type.
+     * The discriminated union consist of three parts:
      *
-     * The actual usage depends on the consumer of the Schema objects. The `DocumentFormat`
-     * class for example, specifies the unions as follows:
+     *   1) a discriminator (or tag) field
+     *   2) an union attribute
+     *   3) an enclosing object that contains both the tag and union attribute
+     *
+     * A discriminator is a `string` field that assumes the value of the union type.
+     *
+     * The `union` takes the name of the discriminator field as an argument. This field must reside within
+     * the same enclosing object as the union field itself, and must have a STRING type.
+     *
+     * If the discriminator field doesn't exist, or does not assume a valid type name,
+     * the validation will end up in a runtime exception. Use a `DocumentFormat` class
+     * to ensure discriminator field refers to a valid field name.
+     *
+     * In the following example, `httpPipeline` is the enclosing object that contains
+     * both the discriminator attribute ("type") and the union attribute ("config").
+     * The discriminator attribute has a type of `string`, and valid values for it are
+     * "ProxyTo" or "Redirection". The union field ("config") takes the discriminator
+     * attribute name as an argument ("type").
      *
      * <pre>
      * DocumentFormat validator = newDocument()
@@ -176,8 +191,25 @@ public final class SchemaDsl {
      *     .build();
      * </pre>
      *
-     * In this example the `httpPipeline.config` attribute can refer to, depending on the
-     * `type` attribute, either `ProxyTo` or `Redirection` object types.
+     * This schema will now correctly accept both inputs:
+     *
+     * <pre>
+     *     httpPipeline:
+     *       type: ProxyTo
+     *       config:
+     *         id: foo
+     *         destination: bar
+     * </pre>
+     *
+     * and
+     *
+     * <pre>
+     *     httpPipeline:
+     *       type: Redirection
+     *       config:
+     *         status: 301
+     *         location: http://localhost:8080/bar
+     * </pre>
      *
      * @param discriminator - the discriminator field name
      * @return an union field value

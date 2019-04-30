@@ -145,6 +145,8 @@ final class ServerConfigSchema {
                                     optional("tags", list(string())),
                                     optional("config", union("type")))))
                     ));
+
+        BUILTIN_HANDLER_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
     }
 
 
@@ -153,7 +155,6 @@ final class ServerConfigSchema {
 
     static Optional<String> validateServerConfiguration(YamlConfiguration yamlConfiguration) {
         try {
-            BUILTIN_HANDLER_SCHEMAS.forEach(STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER::typeExtension);
             STYX_SERVER_CONFIGURATION_SCHEMA_BUILDER.build().validateObject(yamlConfiguration.root());
             return Optional.empty();
         } catch (SchemaValidationException e) {

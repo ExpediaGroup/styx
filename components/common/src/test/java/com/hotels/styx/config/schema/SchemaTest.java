@@ -46,7 +46,7 @@ public class SchemaTest {
     private final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory())
             .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(AUTO_CLOSE_SOURCE, true);
-    private final Function<String, Schema.FieldType> EXTENSIONS = key -> null;
+    private final Function<String, Schema.FieldType> NO_EXTENSIONS = key -> null;
 
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -56,8 +56,8 @@ public class SchemaTest {
                 + "  myOkValue: 5 \n"
                 + "  myNokValue: true \n");
 
-        integer().validate(ImmutableList.of("myOkValue"), root, root.get("myOkValue"), EXTENSIONS);
-        integer().validate(ImmutableList.of("myNokValue"), root, root.get("myNokValue"), EXTENSIONS);
+        integer().validate(ImmutableList.of("myOkValue"), root, root.get("myOkValue"), NO_EXTENSIONS);
+        integer().validate(ImmutableList.of("myNokValue"), root, root.get("myNokValue"), NO_EXTENSIONS);
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -67,8 +67,8 @@ public class SchemaTest {
                 + "  myOkValue: abc \n"
                 + "  myNokValue: 34 \n");
 
-        string().validate(ImmutableList.of("myOkValue"), root, root.get("myOkValue"), EXTENSIONS);
-        string().validate(ImmutableList.of("myNokValue"), root, root.get("myNokValue"), EXTENSIONS);
+        string().validate(ImmutableList.of("myOkValue"), root, root.get("myOkValue"), NO_EXTENSIONS);
+        string().validate(ImmutableList.of("myNokValue"), root, root.get("myNokValue"), NO_EXTENSIONS);
     }
 
     @Test
@@ -76,7 +76,7 @@ public class SchemaTest {
         JsonNode root = YAML_MAPPER.readTree(""
                 + "  myInt: '5' \n");
 
-        integer().validate(ImmutableList.of("myInt"), root, root.get("myInt"), EXTENSIONS);
+        integer().validate(ImmutableList.of("myInt"), root, root.get("myInt"), NO_EXTENSIONS);
     }
 
 
@@ -88,9 +88,9 @@ public class SchemaTest {
                 + "  myOkValue2: false \n"
                 + "  myNokValue: x \n");
 
-        bool().validate(ImmutableList.of("myOkValue1"), root, root.get("myOkValue1"), EXTENSIONS);
-        bool().validate(ImmutableList.of("myOkValue2"), root, root.get("myOkValue2"), EXTENSIONS);
-        bool().validate(ImmutableList.of("myNokValue"), root, root.get("myNokValue"), EXTENSIONS);
+        bool().validate(ImmutableList.of("myOkValue1"), root, root.get("myOkValue1"), NO_EXTENSIONS);
+        bool().validate(ImmutableList.of("myOkValue2"), root, root.get("myOkValue2"), NO_EXTENSIONS);
+        bool().validate(ImmutableList.of("myNokValue"), root, root.get("myNokValue"), NO_EXTENSIONS);
     }
 
 
@@ -105,12 +105,12 @@ public class SchemaTest {
                 + "  myBool_06: 'FALSE' \n"
         );
 
-        bool().validate(ImmutableList.of(), rootObject, rootObject.get("myBool_01"), EXTENSIONS);
-        bool().validate(ImmutableList.of(), rootObject, rootObject.get("myBool_02"), EXTENSIONS);
-        bool().validate(ImmutableList.of(), rootObject, rootObject.get("myBool_03"), EXTENSIONS);
-        bool().validate(ImmutableList.of(), rootObject, rootObject.get("myBool_04"), EXTENSIONS);
-        bool().validate(ImmutableList.of(), rootObject, rootObject.get("myBool_05"), EXTENSIONS);
-        bool().validate(ImmutableList.of(), rootObject, rootObject.get("myBool_06"), EXTENSIONS);
+        bool().validate(ImmutableList.of(), rootObject, rootObject.get("myBool_01"), NO_EXTENSIONS);
+        bool().validate(ImmutableList.of(), rootObject, rootObject.get("myBool_02"), NO_EXTENSIONS);
+        bool().validate(ImmutableList.of(), rootObject, rootObject.get("myBool_03"), NO_EXTENSIONS);
+        bool().validate(ImmutableList.of(), rootObject, rootObject.get("myBool_04"), NO_EXTENSIONS);
+        bool().validate(ImmutableList.of(), rootObject, rootObject.get("myBool_05"), NO_EXTENSIONS);
+        bool().validate(ImmutableList.of(), rootObject, rootObject.get("myBool_06"), NO_EXTENSIONS);
     }
 
 
@@ -144,7 +144,7 @@ public class SchemaTest {
                         optional("favouriteFood", string()),
                         field("age", integer())
                 ))
-        ).validate(ImmutableList.of("root"), rootObject, rootObject, EXTENSIONS);
+        ).validate(ImmutableList.of("root"), rootObject, rootObject, NO_EXTENSIONS);
     }
 
 
@@ -163,7 +163,7 @@ public class SchemaTest {
                         optional("favouriteFood", string()),
                         field("age", integer())
                 ))
-        ).validate(ImmutableList.of(), rootObject, rootObject, EXTENSIONS);
+        ).validate(ImmutableList.of(), rootObject, rootObject, NO_EXTENSIONS);
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -182,7 +182,7 @@ public class SchemaTest {
                         field("surname", string()),
                         field("age", integer())
                 ))
-        ).validate(ImmutableList.of(), rootObject, rootObject, EXTENSIONS);
+        ).validate(ImmutableList.of(), rootObject, rootObject, NO_EXTENSIONS);
     }
 
 
@@ -197,7 +197,7 @@ public class SchemaTest {
                 field("root", object(
                         field("myInt", integer())
                 ))
-        ).validate(ImmutableList.of(), rootObject, rootObject, EXTENSIONS);
+        ).validate(ImmutableList.of(), rootObject, rootObject, NO_EXTENSIONS);
     }
 
 
@@ -212,7 +212,7 @@ public class SchemaTest {
                 field("root", object(
                         field("myString", string())
                 ))
-        ).validate(ImmutableList.of(), rootObject, rootObject, EXTENSIONS);
+        ).validate(ImmutableList.of(), rootObject, rootObject, NO_EXTENSIONS);
     }
 
 
@@ -227,7 +227,7 @@ public class SchemaTest {
                 field("root", object(
                         field("myBool", bool())
                 ))
-        ).validate(ImmutableList.of(), rootObject, rootObject, EXTENSIONS);
+        ).validate(ImmutableList.of(), rootObject, rootObject, NO_EXTENSIONS);
     }
 
 
@@ -241,7 +241,7 @@ public class SchemaTest {
                 field("myChild", object(
                         field("age", integer())
                 ))
-        ).validate(emptyList(), rootObject, rootObject, EXTENSIONS);
+        ).validate(emptyList(), rootObject, rootObject, NO_EXTENSIONS);
     }
 
     @Test
@@ -261,7 +261,7 @@ public class SchemaTest {
                         field("surname", string()),
                         field("age", integer())
                 ))
-        ).validate(emptyList(), rootObject, rootObject.get("person"), EXTENSIONS);
+        ).validate(emptyList(), rootObject, rootObject.get("person"), NO_EXTENSIONS);
     }
 
     @Test
@@ -272,7 +272,7 @@ public class SchemaTest {
                 + "    y: 6\n"
         );
 
-        object(opaque()).validate(emptyList(), root, root.get("opaque"), EXTENSIONS);
+        object(opaque()).validate(emptyList(), root, root.get("opaque"), NO_EXTENSIONS);
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -285,7 +285,7 @@ public class SchemaTest {
         object(
                 field("parent", object(
                         field("child", string())))
-        ).validate(ImmutableList.of("parent"), root, root.get("parent"), EXTENSIONS);
+        ).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
 
@@ -329,10 +329,10 @@ public class SchemaTest {
                         atLeastOne("http", "https")
                 )));
 
-        objectType.validate(ImmutableList.of(), first, first, EXTENSIONS);
-        objectType.validate(ImmutableList.of(), second, second, EXTENSIONS);
-        objectType.validate(ImmutableList.of(), both, both, EXTENSIONS);
-        objectType.validate(ImmutableList.of(), neither, neither, EXTENSIONS);
+        objectType.validate(ImmutableList.of(), first, first, NO_EXTENSIONS);
+        objectType.validate(ImmutableList.of(), second, second, NO_EXTENSIONS);
+        objectType.validate(ImmutableList.of(), both, both, NO_EXTENSIONS);
+        objectType.validate(ImmutableList.of(), neither, neither, NO_EXTENSIONS);
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -344,7 +344,7 @@ public class SchemaTest {
                 + "   - 5 \n"
         );
 
-        list(string()).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), EXTENSIONS);
+        list(string()).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS);
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -356,7 +356,7 @@ public class SchemaTest {
                 + "   - 5 \n"
         );
 
-        list(integer()).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), EXTENSIONS);
+        list(integer()).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS);
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -373,7 +373,7 @@ public class SchemaTest {
         list(object(
                 field("x", integer()),
                 field("y", integer())
-        )).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), EXTENSIONS);
+        )).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS);
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -391,7 +391,7 @@ public class SchemaTest {
                 field("y", integer())
         );
 
-        list(subObject).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), EXTENSIONS);
+        list(subObject).validate(ImmutableList.of("myList"), rootObject, rootObject.get("myList"), NO_EXTENSIONS);
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -401,7 +401,7 @@ public class SchemaTest {
                 "myList: 'or not'\n"
         );
 
-        list(integer()).validate(ImmutableList.of("myList"), root, root.get("myList"), EXTENSIONS);
+        list(integer()).validate(ImmutableList.of("myList"), root, root.get("myList"), NO_EXTENSIONS);
 
     }
 
@@ -414,7 +414,7 @@ public class SchemaTest {
                         + "  y: 0\n"
         );
 
-        list(integer()).validate(ImmutableList.of("myList"), root, root.get("myList"), EXTENSIONS);
+        list(integer()).validate(ImmutableList.of("myList"), root, root.get("myList"), NO_EXTENSIONS);
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -427,7 +427,7 @@ public class SchemaTest {
         );
 
         list(object(field("a", integer()), field("b", integer())))
-                .validate(ImmutableList.of("myList"), root, root.get("myList"), EXTENSIONS);
+                .validate(ImmutableList.of("myList"), root, root.get("myList"), NO_EXTENSIONS);
     }
 
 
@@ -476,7 +476,7 @@ public class SchemaTest {
         object(
                 field("config", union("type")),
                 field("type", string())
-        ).validate(ImmutableList.of("httpPipeline"), root, root.get("httpPipeline"), EXTENSIONS);
+        ).validate(ImmutableList.of("httpPipeline"), root, root.get("httpPipeline"), NO_EXTENSIONS);
     }
 
 
@@ -494,7 +494,7 @@ public class SchemaTest {
         object(
                 field("type", string()),
                 field("config", union("type"))
-        ).validate(ImmutableList.of("httpPipeline"), root, root.get("httpPipeline"), EXTENSIONS);
+        ).validate(ImmutableList.of("httpPipeline"), root, root.get("httpPipeline"), NO_EXTENSIONS);
     }
 
 
@@ -542,7 +542,7 @@ public class SchemaTest {
                 "parent: x\n"
         );
 
-        map(string()).validate(ImmutableList.of("parent"), root, root.get("parent"), EXTENSIONS);
+        map(string()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test
@@ -560,7 +560,7 @@ public class SchemaTest {
         map(object(
                 field("x", integer()),
                 field("y", integer())
-        )).validate(ImmutableList.of("parent"), root, root.get("parent"), EXTENSIONS);
+        )).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
 
     }
 
@@ -576,7 +576,7 @@ public class SchemaTest {
         map(object(
                 field("x", integer()),
                 field("y", integer())
-        )).validate(ImmutableList.of("parent"), root, root.get("parent"), EXTENSIONS);
+        )).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test
@@ -587,7 +587,7 @@ public class SchemaTest {
                         + "  key2: 24\n"
         );
 
-        map(integer()).validate(ImmutableList.of("parent"), root, root.get("parent"), EXTENSIONS);
+        map(integer()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -599,7 +599,7 @@ public class SchemaTest {
                         + "  key2: 24\n"
         );
 
-        map(integer()).validate(ImmutableList.of("parent"), root, root.get("parent"), EXTENSIONS);
+        map(integer()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test
@@ -610,7 +610,7 @@ public class SchemaTest {
                         + "  key2: 'two'\n"
         );
 
-        map(string()).validate(ImmutableList.of("parent"), root, root.get("parent"), EXTENSIONS);
+        map(string()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -622,7 +622,7 @@ public class SchemaTest {
                         + "  key2: 'two'\n"
         );
 
-        map(string()).validate(ImmutableList.of("parent"), root, root.get("parent"), EXTENSIONS);
+        map(string()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test
@@ -633,7 +633,7 @@ public class SchemaTest {
                         + "  nok: False\n"
         );
 
-        map(bool()).validate(ImmutableList.of("parent"), root, root.get("parent"), EXTENSIONS);
+        map(bool()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -645,7 +645,7 @@ public class SchemaTest {
                         + "  nok: False\n"
         );
 
-        map(bool()).validate(ImmutableList.of("parent"), root, root.get("parent"), EXTENSIONS);
+        map(bool()).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test
@@ -660,7 +660,7 @@ public class SchemaTest {
                         + "    - 4\n"
         );
 
-        map(list(integer())).validate(ImmutableList.of("parent"), root, root.get("parent"), EXTENSIONS);
+        map(list(integer())).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -676,7 +676,7 @@ public class SchemaTest {
                         + "    - 4\n"
         );
 
-        map(list(integer())).validate(ImmutableList.of("parent"), root, root.get("parent"), EXTENSIONS);
+        map(list(integer())).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test
@@ -696,7 +696,7 @@ public class SchemaTest {
                         field("y", integer()
                         )
                 )
-        )).validate(ImmutableList.of("parent"), root, root.get("parent"), EXTENSIONS);
+        )).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test(expectedExceptions = SchemaValidationException.class,
@@ -716,7 +716,7 @@ public class SchemaTest {
                         field("y", integer()
                         )
                 )
-        )).validate(ImmutableList.of("parent"), root, root.get("parent"), EXTENSIONS);
+        )).validate(ImmutableList.of("parent"), root, root.get("parent"), NO_EXTENSIONS);
     }
 
     @Test(expectedExceptions = InvalidSchemaException.class,
