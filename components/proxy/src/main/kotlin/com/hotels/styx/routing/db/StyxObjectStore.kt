@@ -74,7 +74,7 @@ class StyxObjectStore<T> : ObjectStore<T> {
      *
      * Watchers are notified after successful removal.
      *
-     * If `key` doesn't exist, then nothing happens and watcher's are not notified.
+     * If `key` doesn't exist, then nothing happens and watchers are not notified.
      *
      * This method is thread safe. It can be called simultaneously from many threads.
      *

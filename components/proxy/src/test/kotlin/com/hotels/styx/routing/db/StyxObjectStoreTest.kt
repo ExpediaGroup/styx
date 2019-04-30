@@ -57,7 +57,7 @@ class StyxObjectStoreTest : FeatureSpec() {
             scenario("Notifies watchers for any change") {
                 val db = StyxObjectStore<String>()
 
-                StepVerifier.create<ObjectStore<String>>(db.watch())
+                StepVerifier.create(db.watch())
                         .expectNextCount(1)
                         .then { db.insert("x", "x") }
                         .assertNext {
@@ -96,7 +96,7 @@ class StyxObjectStoreTest : FeatureSpec() {
             scenario("Replaces already existing object") {
                 val db = StyxObjectStore<String>()
 
-                StepVerifier.create<ObjectStore<String>>(db.watch())
+                StepVerifier.create(db.watch())
                         .expectNextCount(1)
                         .then { db.insert("x", "x") }
                         .assertNext {
@@ -137,7 +137,7 @@ class StyxObjectStoreTest : FeatureSpec() {
             scenario("Non-existent object doesn't trigger watchers") {
                 val db = StyxObjectStore<String>()
 
-                StepVerifier.create<ObjectStore<String>>(db.watch())
+                StepVerifier.create(db.watch())
                         .expectNextCount(1)
                         .then { db.remove("x") }
                         .expectNoEvent(250.milliseconds)
@@ -146,7 +146,7 @@ class StyxObjectStoreTest : FeatureSpec() {
 
                 db.insert("y", "Y")
 
-                StepVerifier.create<ObjectStore<String>>(db.watch())
+                StepVerifier.create(db.watch())
                         .expectNextCount(1)
                         .then { db.remove("x") }
                         .expectNoEvent(250.milliseconds)
