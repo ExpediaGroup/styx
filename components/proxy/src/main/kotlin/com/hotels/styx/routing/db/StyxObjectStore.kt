@@ -20,6 +20,7 @@ import org.pcollections.HashTreePMap
 import org.pcollections.PMap
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
+import reactor.core.publisher.FluxSink
 import java.util.Optional
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
@@ -107,15 +108,18 @@ class StyxObjectStore<T> : ObjectStore<T> {
             }
 
             watchers.add(watcher)
-
             queue {
-                sink.next(ObjectStore { key ->
-                    Optional
-                            .ofNullable(objects().get(key))
-                            .map { it.payload }
-                })
+                emitInitialSnapshot(sink)
             }
         }
+    }
+
+    private fun emitInitialSnapshot(sink: FluxSink<ObjectStore<T>>) {
+        sink.next(ObjectStore { key ->
+            Optional
+                    .ofNullable(objects().get(key))
+                    .map { it.payload }
+        })
     }
 
     internal fun watchers() = watchers.size
