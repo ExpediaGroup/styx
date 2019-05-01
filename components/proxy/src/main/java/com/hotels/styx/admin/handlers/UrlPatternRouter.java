@@ -36,6 +36,9 @@ import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.LiveHttpResponse.response;
 
+/**
+ * A configurable router.
+ */
 public class UrlPatternRouter implements HttpHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(UrlPatternRouter.class);
     private static final String PLACEHOLDERS_KEY = "UrlRouter.placeholders";
@@ -54,6 +57,9 @@ public class UrlPatternRouter implements HttpHandler {
         for (RouteDescriptor route : alternatives) {
             if (request.method().equals(route.method())) {
                 Matcher match = route.pattern().matcher(request.path());
+
+                LOGGER.debug("Request path '{}' matching against route pattern '{}' matches: {}", new Object[] {
+                        request.path(), route.pattern(), match.matches()});
 
                 if (match.matches()) {
                     Map<String, String> placeholders = route.placeholderNames().stream()
@@ -74,6 +80,9 @@ public class UrlPatternRouter implements HttpHandler {
         return Eventual.of(response(NOT_FOUND).build());
     }
 
+    /**
+     * A builder class.
+     */
     public static class Builder {
         private final List<RouteDescriptor> alternatives = new LinkedList<>();
 

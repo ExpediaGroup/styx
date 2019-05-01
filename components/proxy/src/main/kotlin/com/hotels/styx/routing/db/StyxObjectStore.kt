@@ -93,7 +93,7 @@ class StyxObjectStore<T> : ObjectStore<T> {
      * @property key object name
      * @property payload the object itself
      */
-    fun remove(key: T) {
+    fun remove(key: String) {
         var current = objects.get()
         var new = current.minus(key)
 
