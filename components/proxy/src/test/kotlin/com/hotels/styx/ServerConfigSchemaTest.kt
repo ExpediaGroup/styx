@@ -100,7 +100,7 @@ class ServerConfigSchemaTest : DescribeSpec({
             validateServerConfiguration(yamlConfig(minimalConfig + """
                 jvmRouteName: 101
                 """.trimIndent()
-            )) shouldBe (Optional.of("Unexpected field type. Field 'jvmRouteName' should be STRING, but it is INTEGER"))
+            )) shouldBe (Optional.of("Unexpected field type. Field 'jvmRouteName' should be STRING, but it is NUMBER"))
         }
 
         it("Accepts 'request-logging' field as an OBJECT") {
@@ -160,6 +160,14 @@ class ServerConfigSchemaTest : DescribeSpec({
                     name: "X-Request-Id"
               """.trimIndent()
             )) shouldBe (Optional.empty())
+        }
+    }
+
+    describe("Incorrect configuration") {
+        it("Detects unknown configuration options") {
+            validateServerConfiguration(yamlConfig(minimalConfig + """
+                abc: 1
+            """.trimIndent())) shouldBe (Optional.of("Unexpected field: 'abc'"))
         }
     }
 
@@ -280,27 +288,73 @@ class ServerConfigSchemaTest : DescribeSpec({
 
     describe("Plugins configuration") {
         it("Accepts plugins.active as string") {
-            validateServerConfiguration(yamlConfig("""
-                $minimalConfig
+            validateServerConfiguration(yamlConfig(minimalConfig + """
                 plugins:
                   active: xyz
             """.trimIndent()))
         }
 
         it("Accepts an absent plugins.active field") {
-            validateServerConfiguration(yamlConfig("""
-                    $minimalConfig
+            validateServerConfiguration(yamlConfig(minimalConfig + """
                     plugins:
                       all: xyz
             """.trimIndent()))
         }
 
         it("Accepts an plugins.all as an opaque object") {
-            validateServerConfiguration(yamlConfig("""
-                    $minimalConfig
+            validateServerConfiguration(yamlConfig(minimalConfig + """
                     plugins:
                       all: xyz
             """.trimIndent()))
+        }
+    }
+
+    describe("HttpHandlers") {
+        it("Is a map of routing objects") {
+            validateServerConfiguration(yamlConfig(minimalConfig + """
+                httpHandlers: x
+            """.trimIndent())) shouldBe Optional.of(
+                    "Unexpected field type. Field 'httpHandlers' should be MAP(OBJECT(name, type, tags, config)), but it is STRING")
+        }
+
+        it("Validates nested HTTP handlers") {
+            validateServerConfiguration(yamlConfig(minimalConfig + """
+                httpHandlers:
+                  staticResponse:
+                    type: StaticResponseHandler
+                    config:
+                      status: 200
+                      content: "Hello, world"
+            """.trimIndent())) shouldBe Optional.empty()
+        }
+
+        it("Detects configuration errors in nested routing objects") {
+            validateServerConfiguration(yamlConfig(minimalConfig + """
+                    httpHandlers:
+                      staticResponse:
+                        type: StaticResponseHandler
+                        config:
+                          status: 200
+                          content: "Hello, world"
+                      condition:
+                        type: ConditionRouter
+                        config:
+                          routes:
+                            - condition: "some condition"
+                              destination: "destination 1"
+                            - condition: "another condition"
+                              destination: "destination 2"
+                          fallback:
+                            type: InterceptorPipeline
+                            config:
+                              pipeline:
+                                - "bar"
+                              handler:
+                                type: StaticResponseHandler
+                                config:
+                                  status: 200
+                                  contentS: "Fallback"
+                """.trimIndent())) shouldBe Optional.of("Unexpected field: 'httpHandlers[condition].config.fallback.config.handler.config.contentS'")
         }
     }
 })

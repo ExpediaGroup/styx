@@ -23,6 +23,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
@@ -37,6 +38,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.hotels.styx.config.schema.SchemaDsl.field;
+import static com.hotels.styx.config.schema.SchemaDsl.list;
+import static com.hotels.styx.config.schema.SchemaDsl.object;
+import static com.hotels.styx.config.schema.SchemaDsl.routingObject;
+import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
@@ -49,6 +55,11 @@ import static java.util.stream.StreamSupport.stream;
  * A HTTP handler that contains HTTP interceptor pipeline.
  */
 public class HttpInterceptorPipeline implements HttpHandler {
+    public static final Schema.FieldType SCHEMA = object(
+            field("pipeline", list(string())),
+            field("handler", routingObject())
+    );
+
     private final StandardHttpPipeline handler;
 
     public HttpInterceptorPipeline(List<HttpInterceptor> interceptors, HttpHandler handler, boolean trackRequests) {

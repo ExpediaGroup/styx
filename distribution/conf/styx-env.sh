@@ -57,6 +57,9 @@ APP_JVM_ROUTE_NAME=$APP_jvmRouteName
 # Enable extended Java DTrace probes
 # JAVA_OPTS="$JAVA_OPTS -XX:+ExtendedDTraceProbes"
 
+# Uncomment to enable server config validation (experimental)
+# JAVA_OPTS="$JAVA_OPTS -DvalidateServerConfig=yes"
+
 export JAVA_OPTS
 
 for var in ${!APP_*}; do

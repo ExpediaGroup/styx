@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.config.schema;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -23,7 +24,16 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
+import static com.hotels.styx.config.schema.SchemaDsl.field;
+import static com.hotels.styx.config.schema.SchemaDsl.list;
+import static com.hotels.styx.config.schema.SchemaDsl.object;
+import static com.hotels.styx.config.schema.SchemaDsl.optional;
+import static com.hotels.styx.config.schema.SchemaDsl.string;
+import static com.hotels.styx.config.schema.SchemaDsl.union;
+import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -70,8 +80,10 @@ public class Schema {
         this.name = builder.name.length() > 0 ? builder.name : Joiner.on(", ").join(this.fieldNames);
     }
 
-    public Schema.Builder newBuilder() {
-        return new Schema.Builder(this);
+    private static String sanitise(String string) {
+        return string
+                .replaceFirst("^\\.", "")
+                .replaceAll("\\.\\[", "[");
     }
 
     public Set<String> optionalFields() {
@@ -98,16 +110,71 @@ public class Schema {
         return ignore;
     }
 
+    private static List<String> push(List<String> currentList, String element) {
+        List<String> newList = new ArrayList<>(currentList);
+        newList.add(element);
+        return newList;
+    }
+
+    private static List<String> pop(List<String> currentList) {
+        if (currentList.size() > 0) {
+            List<String> newList = new ArrayList<>(currentList);
+            newList.remove(newList.size() - 1);
+            return newList;
+        } else {
+            return currentList;
+        }
+    }
+
+    private static String top(List<String> currentList) {
+        if (currentList.size() > 0) {
+            return currentList.get(currentList.size() - 1);
+        } else {
+            return "";
+        }
+    }
+
+    private static String message(List<String> parents, String self, JsonNode value) {
+        String fullName = sanitise(Joiner.on(".").join(parents));
+        return format("Unexpected field type. Field '%s' should be %s, but it is %s", fullName, self, value.getNodeType());
+    }
+
+    private static void assertNoUnknownFields(String prefix, Schema schema, List<String> fieldsPresent) {
+        Set<String> knownFields = ImmutableSet.copyOf(schema.fieldNames());
+
+        fieldsPresent.forEach(name -> {
+            if (!knownFields.contains(name)) {
+                throw new SchemaValidationException(format("Unexpected field: '%s'", sanitise(prefix + "." + name)));
+            }
+        });
+    }
+
+
     /**
-     * Field type.
+     * Represents a schema field type.
      */
-    public enum FieldType {
-        STRING,
-        INTEGER,
-        BOOLEAN,
-        OBJECT,
-        LIST,
-        MAP;
+    public interface FieldType {
+        /**
+         * Validates a JsonNode value against this type.  Typically checks that a value
+         * can be used as an instance of this type.
+         *
+         *
+         * @param parents a parentage attribute stack
+         * @param parent value's parent node
+         * @param value value to be inspected
+         * @param typeExtensions provides type extensions
+         * @throws SchemaValidationException if validation fails
+         */
+        void validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) throws SchemaValidationException;
+
+        /**
+         * Returns an user friendly description of the type that will be
+         * used in validation error messages. Therefore the message ought to
+         * be user friendly.
+         *
+         * @return type description
+         */
+        String describe();
     }
 
     /**
@@ -116,9 +183,9 @@ public class Schema {
     public static class Field implements SchemaDirective {
         private final String name;
         private final boolean optional;
-        private final FieldValue value;
+        private final FieldType value;
 
-        Field(String name, boolean optional, FieldValue value) {
+        Field(String name, boolean optional, FieldType value) {
             this.name = requireNonNull(name);
             this.optional = optional;
             this.value = requireNonNull(value);
@@ -132,97 +199,173 @@ public class Schema {
             return optional;
         }
 
-        public FieldValue value() {
+        public FieldType value() {
             return value;
         }
     }
 
     /**
-     * Represents a type of a schema field.
+     * Represents Styx routing object specification, which is either
+     * a named reference to an already declared object, or a new
+     * object declaration.
      */
-    public static class FieldValue {
-        public FieldType type() {
-            if (this instanceof IntegerField) {
-                return FieldType.INTEGER;
+    public static class RoutingObjectSpec implements FieldType {
+
+        @Override
+        public void validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
+
+            FieldType routingObjectDefinition = object(
+                    field("type", string()),
+                    optional("name", string()),
+                    optional("tags", list(string())),
+                    field("config", union("type"))
+            );
+
+            try {
+                new StringField().validate(parents, parent, value, typeExtensions);
+                return;
+            } catch (SchemaValidationException e) {
+                // Is not reference type - PASS
             }
 
-            if (this instanceof StringField) {
-                return FieldType.STRING;
-            }
+            routingObjectDefinition.validate(parents, parent, value, typeExtensions);
+        }
 
-            if (this instanceof BoolField) {
-                return FieldType.BOOLEAN;
-            }
-
-            if (this instanceof ObjectField || this instanceof ObjectFieldLazy || this instanceof DiscriminatedUnionObject) {
-                return FieldType.OBJECT;
-            }
-
-            if (this instanceof ListField) {
-                return FieldType.LIST;
-            }
-
-            if (this instanceof MapField) {
-                return FieldType.MAP;
-            }
-
-            throw new IllegalStateException("Unknown field type: " + this.getClass() + " " + this);
+        @Override
+        public String describe() {
+            return "ROUTING-OBJECT-SPEC";
         }
     }
 
     /**
      * Integer schema field type.
      */
-    public static class IntegerField extends FieldValue {
+    public static class IntegerField implements FieldType {
+        @Override
+        public void validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
+            if (!value.isInt() && !canParseAsInteger(value)) {
+                throw new SchemaValidationException(message(parents, describe(), value));
+            }
+        }
+
+        @Override
+        public String describe() {
+            return "INTEGER";
+        }
+
+        private static boolean canParseAsInteger(JsonNode value) {
+            try {
+                parseInt(value.textValue());
+                return true;
+            } catch (NumberFormatException cause) {
+                return false;
+            }
+        }
     }
 
     /**
      * String schema field type.
      */
-    public static class StringField extends FieldValue {
+    public static class StringField implements FieldType {
+        @Override
+        public void validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
+            if (!value.isTextual()) {
+                throw new SchemaValidationException(message(parents, describe(), value));
+            }
+        }
+
+        @Override
+        public String describe() {
+            return "STRING";
+        }
+
     }
 
     /**
      * Boolean schema field type.
      */
-    public static class BoolField extends FieldValue {
+    public static class BoolField implements FieldType {
+        private static final Pattern YAML_BOOLEAN_VALUES = Pattern.compile("(?i)true|false");
+
+        @Override
+        public void validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
+            if (!value.isBoolean() && !canParseAsBoolean(value)) {
+                throw new SchemaValidationException(message(parents, describe(), value));
+            }
+        }
+
+        @Override
+        public String describe() {
+            return "BOOLEAN";
+        }
+
+        private static boolean canParseAsBoolean(JsonNode value) {
+            return YAML_BOOLEAN_VALUES.matcher(value.asText()).matches();
+        }
     }
 
     /**
      * List schema field type.
      */
-    public static class ListField extends FieldValue {
-        private final FieldValue elementType;
+    public static class ListField implements FieldType {
+        private final FieldType elementType;
 
-        ListField(FieldValue elementType) {
+        ListField(FieldType elementType) {
             this.elementType = requireNonNull(elementType);
         }
 
-        public FieldValue elementType() {
-            return elementType;
+        @Override
+        public void validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
+            if (!value.isArray()) {
+                throw new SchemaValidationException(message(parents, describe(), value));
+            }
+
+            for (int i = 0; i < value.size(); i++) {
+                elementType.validate(push(pop(parents), format("%s[%d]", top(parents), i)), value, value.get(i), typeExtensions);
+            }
         }
 
+        @Override
+        public String describe() {
+            return format("LIST(%s)", elementType.describe());
+        }
+
+    }
+
+    public Builder newBuilder() {
+        return new Builder(this);
     }
 
     /**
      * Map schema field type.
      */
-    public static class MapField extends FieldValue {
-        private final FieldValue elementType;
+    public static class MapField implements FieldType {
+        private final FieldType elementType;
 
-        MapField(FieldValue elementType) {
+        MapField(FieldType elementType) {
             this.elementType = requireNonNull(elementType);
         }
 
-        public FieldValue elementType() {
-            return elementType;
+        @Override
+        public void validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
+            if (!value.isObject()) {
+                throw new SchemaValidationException(message(parents, describe(), value));
+            }
+
+            value.fieldNames().forEachRemaining(key -> elementType.validate(push(parents, format("[%s]", key)), value, value.get(key), typeExtensions));
         }
+
+        @Override
+        public String describe() {
+            return format("MAP(%s)", elementType.describe());
+        }
+
     }
 
     /**
      * Object field type with inlined sub-schema.
      */
-    public static class ObjectField extends FieldValue {
+    public static class ObjectField implements FieldType {
         private final Schema schema;
 
         ObjectField(Schema schema) {
@@ -232,21 +375,48 @@ public class Schema {
         public Schema schema() {
             return schema;
         }
-    }
 
-    /**
-     * Object field type with a named reference to its schema object.
-     */
-    public static class ObjectFieldLazy extends FieldValue {
-        private final String schemaName;
+        @Override
+        public void validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
+            if (!value.isObject()) {
+                throw new SchemaValidationException(message(parents, describe(), value));
+            }
 
-        ObjectFieldLazy(String schemaName) {
-            this.schemaName = requireNonNull(schemaName);
+            if (schema.ignore()) {
+                return;
+            }
+
+            for (Field field : schema.fields()) {
+                if (isMandatory(schema, field) && value.get(field.name()) == null) {
+                    throw new SchemaValidationException(format(
+                            "Missing a mandatory field '%s'",
+                            sanitise(Joiner.on(".").join(push(parents, field.name())))));
+                }
+
+                if (value.get(field.name()) != null) {
+                    String name = field.name();
+                    field.value().validate(push(parents, name), value, value.get(name), typeExtensions);
+                }
+            }
+
+            schema.constraints().forEach(constraint -> {
+                if (!constraint.evaluate(schema, value)) {
+                    throw new SchemaValidationException("Schema constraint failed. " + constraint.describe());
+                }
+            });
+
+            assertNoUnknownFields(Joiner.on(".").join(parents), schema, ImmutableList.copyOf(value.fieldNames()));
         }
 
-        public String schemaName() {
-            return schemaName;
+        @Override
+        public String describe() {
+            return format("OBJECT(%s)", schema.name());
         }
+
+        private static boolean isMandatory(Schema schema, Field field) {
+            return !schema.optionalFields().contains(field.name());
+        }
+
     }
 
     /**
@@ -259,7 +429,7 @@ public class Schema {
      * The value of the discriminator attribute field is used as a named schema
      * reference when the subobject layout is determined.
      */
-    public static class DiscriminatedUnionObject extends FieldValue {
+    public static class DiscriminatedUnionObject implements FieldType {
 
         private final String discriminatorField;
 
@@ -267,8 +437,34 @@ public class Schema {
             this.discriminatorField = requireNonNull(discriminatorField);
         }
 
-        public String discriminatorFieldName() {
+        String discriminatorFieldName() {
             return discriminatorField;
+        }
+
+        @Override
+        public void validate(List<String> parents, JsonNode parent, JsonNode value, Function<String, FieldType> typeExtensions) {
+            JsonNode type = parent.get(discriminatorField);
+
+            try {
+                string().validate(push(parents, discriminatorField), parent, type, typeExtensions);
+            } catch (SchemaValidationException e) {
+                String fullName = Joiner.on(".").join(push(parents, discriminatorField));
+                throw new SchemaValidationException(format("Union discriminator '%s': %s", fullName, e.getMessage()));
+            }
+
+            String typeValue = type.textValue();
+            FieldType schema = typeExtensions.apply(typeValue);
+            if (schema == null) {
+                String fullName = Joiner.on(".").join(parents);
+                throw new SchemaValidationException(format("Unknown union discriminator type '%s' for union '%s'. Union type is %s", typeValue, fullName, describe()));
+            }
+
+            schema.validate(parents, parent, value, typeExtensions);
+        }
+
+        @Override
+        public String describe() {
+            return format("UNION(%s)", discriminatorField);
         }
     }
 

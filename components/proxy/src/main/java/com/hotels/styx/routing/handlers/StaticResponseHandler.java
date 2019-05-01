@@ -23,6 +23,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
@@ -32,6 +33,11 @@ import java.util.List;
 
 import static com.hotels.styx.api.HttpResponseStatus.statusWithCode;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static com.hotels.styx.config.schema.SchemaDsl.field;
+import static com.hotels.styx.config.schema.SchemaDsl.integer;
+import static com.hotels.styx.config.schema.SchemaDsl.object;
+import static com.hotels.styx.config.schema.SchemaDsl.optional;
+import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
@@ -39,6 +45,10 @@ import static java.util.Objects.requireNonNull;
  * A HTTP handler for returning a static response.
  */
 public class StaticResponseHandler implements HttpHandler {
+    public static final Schema.FieldType SCHEMA = object(
+            field("status", integer()),
+            optional("content", string()));
+
     private final int status;
     private final String text;
 

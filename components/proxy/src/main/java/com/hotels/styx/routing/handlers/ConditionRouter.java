@@ -24,6 +24,7 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
+import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectConfiguration;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
@@ -40,6 +41,12 @@ import java.util.stream.Collectors;
 
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode;
+import static com.hotels.styx.config.schema.SchemaDsl.field;
+import static com.hotels.styx.config.schema.SchemaDsl.list;
+import static com.hotels.styx.config.schema.SchemaDsl.object;
+import static com.hotels.styx.config.schema.SchemaDsl.optional;
+import static com.hotels.styx.config.schema.SchemaDsl.routingObject;
+import static com.hotels.styx.config.schema.SchemaDsl.string;
 import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.format;
@@ -49,6 +56,14 @@ import static java.lang.String.join;
  * Condition predicate based HTTP router.
  */
 public class ConditionRouter implements HttpRouter {
+    public static final Schema.FieldType SCHEMA = object(
+            field("routes", list(object(
+                    field("condition", string()),
+                    field("destination", routingObject()))
+            )),
+            optional("fallback", routingObject())
+    );
+
     private final List<Route> routes;
     private final HttpHandler fallback;
 

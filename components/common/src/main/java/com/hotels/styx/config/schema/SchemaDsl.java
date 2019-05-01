@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public final class SchemaDsl {
      * @param value  The vield value type.
      * @return       The Field class instance
      */
-    public static Schema.Field field(String name, Schema.FieldValue value) {
+    public static Schema.Field field(String name, Schema.FieldType value) {
         return new Schema.Field(name, false, value);
     }
 
@@ -55,34 +55,34 @@ public final class SchemaDsl {
      * @param value  The vield value type.
      * @return       The Field class instance
      */
-    public static Schema.Field optional(String name, Schema.FieldValue value) {
+    public static Schema.Field optional(String name, Schema.FieldType value) {
         return new Schema.Field(name, true, value);
     }
 
     /**
      * An integer field value type.
      *
-     * @return A FieldValue instance.
+     * @return A FieldType instance.
      */
-    public static Schema.FieldValue integer() {
+    public static Schema.FieldType integer() {
         return new Schema.IntegerField();
     }
 
     /**
      * A string field value type.
      *
-     * @return A FieldValue instance.
+     * @return A FieldType instance.
      */
-    public static Schema.FieldValue string() {
+    public static Schema.FieldType string() {
         return new Schema.StringField();
     }
 
     /**
      * A boolean field value type.
      *
-     * @return A FieldValue instance.
+     * @return A FieldType instance.
      */
-    public static Schema.FieldValue bool() {
+    public static Schema.FieldType bool() {
         return new Schema.BoolField();
     }
 
@@ -125,45 +125,60 @@ public final class SchemaDsl {
      * </pre>
      *
      *
-     * @return A FieldValue instance.
+     * @return A FieldType instance.
      */
-    public static Schema.FieldValue object(SchemaDirective... schemaDirectives) {
+    public static Schema.FieldType object(SchemaDirective... schemaDirectives) {
         Schema.Builder builder = new Schema.Builder();
         Stream.of(schemaDirectives).forEach(builder::add);
         return new Schema.ObjectField(builder.build());
     }
 
     /**
-     * An object field value type.
+     * A Styx routing object.
      *
-     * The object layout is declared elsewhere and it is determined via a named reference.
-     * This feature is used by a DocumentFormat class which validates fasterxml JsonNode
-     * objects against its document schema specification.
+     * This can be a named reference to another routing object, or an inline
+     * declaration.
      *
-     * @param schemaName  Schema name
-     * @return An object field value type
+     * @return A validator for Styx routing object.
      */
-    public static Schema.FieldValue object(String schemaName) {
-        return new Schema.ObjectFieldLazy(schemaName);
+    public static Schema.FieldType routingObject() {
+        return new Schema.RoutingObjectSpec();
     }
 
+
+
     /**
-     * A choice of alternative object layouts determined by a named discriminator field.
+     * A discriminated union type (https://en.wikipedia.org/wiki/Tagged_u…) that allows the attribute
+     * value to take the form of different object types.
      *
-     * The `discriminator` parameter is a name of the field that determines the
-     * union layout type. This field must 1) reside within the same object as
-     * the union field itself, and 2) must have a STRING type.
+     * The discriminated union consist of three parts:
      *
-     * The actual usage depends on the consumer of the Schema objects. The `DocumentFormat`
-     * class for example, specifies the unions as follows:
+     *   1) a discriminator (or tag) field
+     *   2) an union attribute
+     *   3) an enclosing object that contains both the tag and union attribute
+     *
+     * A discriminator is a `string` field that assumes the value of the union type.
+     *
+     * The `union` takes the name of the discriminator field as an argument. This field must reside within
+     * the same enclosing object as the union field itself, and must have a STRING type.
+     *
+     * If the discriminator field doesn't exist, or does not assume a valid type name,
+     * the validation will end up in a runtime exception. Use a `DocumentFormat` class
+     * to ensure discriminator field refers to a valid field name.
+     *
+     * In the following example, `httpPipeline` is the enclosing object that contains
+     * both the discriminator attribute ("type") and the union attribute ("config").
+     * The discriminator attribute has a type of `string`, and valid values for it are
+     * "ProxyTo" or "Redirection". The union field ("config") takes the discriminator
+     * attribute name as an argument ("type").
      *
      * <pre>
      * DocumentFormat validator = newDocument()
-     *     .subSchema("ProxyTo", schema(
+     *     .typeExtension("ProxyTo", schema(
      *         field("id", string()),
      *         field("destination", string())
      *     ))
-     *     .subSchema("Redirection", schema(
+     *     .typeExtension("Redirection", schema(
      *         field("status", integer()),
      *         field("location", string())
      *     ))
@@ -176,13 +191,30 @@ public final class SchemaDsl {
      *     .build();
      * </pre>
      *
-     * In this example the `httpPipeline.config` attribute can refer to, depending on the
-     * `type` attribute, either `ProxyTo` or `Redirection` object types.
+     * This schema will now correctly accept both inputs:
+     *
+     * <pre>
+     *     httpPipeline:
+     *       type: ProxyTo
+     *       config:
+     *         id: foo
+     *         destination: bar
+     * </pre>
+     *
+     * and
+     *
+     * <pre>
+     *     httpPipeline:
+     *       type: Redirection
+     *       config:
+     *         status: 301
+     *         location: http://localhost:8080/bar
+     * </pre>
      *
      * @param discriminator - the discriminator field name
      * @return an union field value
      */
-    public static Schema.FieldValue union(String discriminator) {
+    public static Schema.FieldType union(String discriminator) {
         return new Schema.DiscriminatedUnionObject(discriminator);
     }
 
@@ -200,7 +232,7 @@ public final class SchemaDsl {
      * @param elementType A type of list entries.
      * @return a list field value type
      */
-    public static Schema.FieldValue list(Schema.FieldValue elementType) {
+    public static Schema.FieldType list(Schema.FieldType elementType) {
         return new Schema.ListField(elementType);
     }
 
@@ -210,7 +242,7 @@ public final class SchemaDsl {
      * A map declares a JSON object type whose field names are treated as
      * arbitrary (string) keys associated with some elementary or object type.
      */
-    public static Schema.FieldValue map(Schema.FieldValue elementType) {
+    public static Schema.FieldType map(Schema.FieldType elementType) {
         return new Schema.MapField(elementType);
     }
 
