@@ -36,20 +36,31 @@ import java.util.concurrent.TimeUnit.SECONDS
 class StyxObjectStoreTest : FeatureSpec() {
 
     init {
-        feature("Retrieve") {
-            scenario("A stored object") {
+        feature("Retrieval") {
+            scenario("Retrieves object by key") {
                 val db = StyxObjectStore<String>()
                 db.insert("redirect", "Record")
 
-                eventually(1.seconds, AssertionError::class.java) {
-                    db.get("redirect") shouldBe Optional.of("Record")
-                }
+                db.get("redirect") shouldBe Optional.of("Record")
             }
 
             scenario("Returns empty if object is not found") {
                 val db = StyxObjectStore<String>()
 
                 db.get("notfound") shouldBe Optional.empty()
+            }
+
+            scenario("Retrieves all entries") {
+                val db = StyxObjectStore<String>()
+                db.insert("x", "x")
+                db.insert("y", "y")
+                db.insert("z", "z")
+
+                db.entrySet() shouldBe listOf(
+                        "x" to "x",
+                        "y" to "y",
+                        "z" to "z"
+                )
             }
         }
 
@@ -77,19 +88,17 @@ class StyxObjectStoreTest : FeatureSpec() {
 
             scenario("Maintains database integrity in concurrent operations") {
                 val db = StyxObjectStore<String>()
-                val executor = Executors.newFixedThreadPool(4)
+                val executor = Executors.newFixedThreadPool(8)
 
-                for (i in 1..1000) {
+                for (i in 1..10000) {
                     executor.execute { db.insert("redirect-$i", "Record-$i") }
                 }
 
                 executor.shutdown()
                 executor.awaitTermination(2, SECONDS)
 
-                eventually(1.seconds, AssertionError::class.java) {
-                    for (i in 1..1000) {
-                        db.get("redirect-$i") shouldBe (Optional.of("Record-$i"))
-                    }
+                for (i in 1..10000) {
+                    db.get("redirect-$i") shouldBe (Optional.of("Record-$i"))
                 }
             }
 
@@ -120,18 +129,14 @@ class StyxObjectStoreTest : FeatureSpec() {
                 db.insert("x", "x")
                 db.insert("y", "y")
 
-                eventually(1.seconds, java.lang.AssertionError::class.java) {
-                    db.get("x") shouldBe Optional.of("x")
-                    db.get("y") shouldBe Optional.of("y")
-                }
+                db.get("x") shouldBe Optional.of("x")
+                db.get("y") shouldBe Optional.of("y")
 
                 db.remove("x")
                 db.remove("y")
 
-                eventually(1.seconds, java.lang.AssertionError::class.java) {
-                    db.get("x") shouldBe Optional.empty()
-                    db.get("y") shouldBe Optional.empty()
-                }
+                db.get("x") shouldBe Optional.empty()
+                db.get("y") shouldBe Optional.empty()
             }
 
             scenario("Non-existent object doesn't trigger watchers") {
@@ -140,7 +145,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 StepVerifier.create(db.watch())
                         .expectNextCount(1)
                         .then { db.remove("x") }
-                        .expectNoEvent(250.milliseconds)
+                        .expectNoEvent(500.milliseconds)
                         .thenCancel()
                         .verify()
 
@@ -149,7 +154,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 StepVerifier.create(db.watch())
                         .expectNextCount(1)
                         .then { db.remove("x") }
-                        .expectNoEvent(250.milliseconds)
+                        .expectNoEvent(500.milliseconds)
                         .thenCancel()
                         .verify()
             }
@@ -175,6 +180,27 @@ class StyxObjectStoreTest : FeatureSpec() {
                     watchEvents.last().get("y") shouldBe Optional.empty()
                 }
             }
+
+            scenario("Maintains database integrity in concurrent operations") {
+                val db = StyxObjectStore<String>()
+
+                // Populate database with data:
+                for (i in 1..10000) {
+                    db.insert("redirect-$i", "Record-$i")
+                }
+
+                // Then remove everyting, concurrently:
+                val executor = Executors.newFixedThreadPool(8)
+                for (i in 1..10000) {
+                    executor.execute { db.remove("redirect-$i") }
+                }
+
+                executor.shutdown()
+                executor.awaitTermination(2, SECONDS)
+
+                db.entrySet() shouldBe emptyList()
+            }
+
         }
 
         feature("Watch") {

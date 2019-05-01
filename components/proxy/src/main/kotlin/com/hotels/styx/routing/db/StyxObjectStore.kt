@@ -25,6 +25,7 @@ import java.util.Optional
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.streams.toList
 
 /**
  * Styx Route Database.
@@ -52,6 +53,16 @@ class StyxObjectStore<T> : ObjectStore<T> {
         return Optional.ofNullable(objects().get(name))
                 .map { it.payload }
     }
+
+    /**
+     * Retrieves all entries.
+     */
+    fun entrySet(): List<Pair<String, T>> {
+        return objects.get().entries.stream()
+                .map { Pair(it.key, it.value.payload) }
+                .toList()
+    }
+
 
     /**
      * Inserts a new object in object store.
@@ -83,12 +94,17 @@ class StyxObjectStore<T> : ObjectStore<T> {
      * @property payload the object itself
      */
     fun remove(key: T) {
-        queue {
-            val nextVersion = objects().minus(key)
+        var current = objects.get()
+        var new = current.minus(key)
 
-            if (nextVersion != objects()) {
-                objects.set(nextVersion)
-                notifyWatchers(nextVersion)
+        while (!objects.compareAndSet(current, new)) {
+            current = objects.get()
+            new = current.minus(key)
+        }
+
+        queue {
+            if (current != new) {
+                notifyWatchers(new)
             }
         }
     }
@@ -131,10 +147,16 @@ class StyxObjectStore<T> : ObjectStore<T> {
     }
 
     private fun insert(key: String, tags: Set<String>, payload: T) {
+        var current = objects.get()
+        var new = current.plus(key, Record(key, tags, payload))
+
+        while (!objects.compareAndSet(current, new)) {
+            current = objects.get()
+            new = current.plus(key, Record(key, tags, payload))
+        }
+
         queue {
-            val nextVersion = objects().plus(key, Record(key, tags, payload))
-            objects.set(nextVersion)
-            notifyWatchers(nextVersion)
+            notifyWatchers(new)
         }
     }
 
