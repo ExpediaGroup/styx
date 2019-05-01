@@ -26,21 +26,10 @@ import java.util.Optional;
 public interface ObjectStore<T> {
 
     /**
-     * Gets an object with given key.
+     * A repository of named objects.
      *
-     * @param key
-     * @return
+     * @param key object's name
+     * @return an object if known
      */
     Optional<T> get(String key);
-
-    /**
-     * Inserts an object against key.
-     *
-     * If a key already exists, the object registered is replaced.
-     *
-     * @param key
-     * @param payload
-     */
-    void insert(String key, T payload);
-
 }

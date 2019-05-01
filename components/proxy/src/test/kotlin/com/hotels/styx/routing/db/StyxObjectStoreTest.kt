@@ -15,25 +15,259 @@
  */
 package com.hotels.styx.routing.db
 
+import com.hotels.styx.api.configuration.ObjectStore
+import io.kotlintest.eventually
+import io.kotlintest.matchers.boolean.shouldBeTrue
+import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
+import io.kotlintest.milliseconds
+import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
+import reactor.core.publisher.Flux
+import reactor.test.StepVerifier
 import java.util.Optional
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit.SECONDS
 
+// We can remove AssertionError::class.java argument from the
+// calls to `eventually`, after this bug fix is released:
+// https://github.com/kotlintest/kotlintest/issues/753
+//
 class StyxObjectStoreTest : FeatureSpec() {
 
     init {
-        feature("Get") {
-            scenario("Retrieves a stored object") {
+        feature("Retrieve") {
+            scenario("A stored object") {
                 val db = StyxObjectStore<String>()
                 db.insert("redirect", "Record")
 
-                db.get("redirect") shouldBe Optional.of("Record")
+                eventually(1.seconds, AssertionError::class.java) {
+                    db.get("redirect") shouldBe Optional.of("Record")
+                }
             }
 
             scenario("Returns empty if object is not found") {
                 val db = StyxObjectStore<String>()
 
                 db.get("notfound") shouldBe Optional.empty()
+            }
+        }
+
+        feature("Insert") {
+            scenario("Notifies watchers for any change") {
+                val db = StyxObjectStore<String>()
+
+                StepVerifier.create(db.watch())
+                        .expectNextCount(1)
+                        .then { db.insert("x", "x") }
+                        .assertNext {
+                            it.get("x") shouldBe Optional.of("x")
+                            it.get("y") shouldBe Optional.empty()
+                        }
+                        .then { db.insert("y", "y") }
+                        .assertNext {
+                            it.get("x") shouldBe Optional.of("x")
+                            it.get("y") shouldBe Optional.of("y")
+                        }
+                        .thenCancel()
+                        .verify(4.seconds)
+
+                db.watchers() shouldBe 0
+            }
+
+            scenario("Maintains database integrity in concurrent operations") {
+                val db = StyxObjectStore<String>()
+                val executor = Executors.newFixedThreadPool(4)
+
+                for (i in 1..1000) {
+                    executor.execute { db.insert("redirect-$i", "Record-$i") }
+                }
+
+                executor.shutdown()
+                executor.awaitTermination(2, SECONDS)
+
+                eventually(1.seconds, AssertionError::class.java) {
+                    for (i in 1..1000) {
+                        db.get("redirect-$i") shouldBe (Optional.of("Record-$i"))
+                    }
+                }
+            }
+
+            scenario("Replaces already existing object") {
+                val db = StyxObjectStore<String>()
+
+                StepVerifier.create(db.watch())
+                        .expectNextCount(1)
+                        .then { db.insert("x", "x") }
+                        .assertNext {
+                            it.get("x") shouldBe Optional.of("x")
+                        }
+                        .then { db.insert("x", "x2") }
+                        .assertNext {
+                            it.get("x") shouldBe Optional.of("x2")
+                        }
+                        .thenCancel()
+                        .verify(1.seconds)
+
+                db.get("x") shouldBe Optional.of("x2")
+            }
+        }
+
+        feature("Remove") {
+            scenario("Removes previously stored objects") {
+                val db = StyxObjectStore<String>()
+
+                db.insert("x", "x")
+                db.insert("y", "y")
+
+                eventually(1.seconds, java.lang.AssertionError::class.java) {
+                    db.get("x") shouldBe Optional.of("x")
+                    db.get("y") shouldBe Optional.of("y")
+                }
+
+                db.remove("x")
+                db.remove("y")
+
+                eventually(1.seconds, java.lang.AssertionError::class.java) {
+                    db.get("x") shouldBe Optional.empty()
+                    db.get("y") shouldBe Optional.empty()
+                }
+            }
+
+            scenario("Non-existent object doesn't trigger watchers") {
+                val db = StyxObjectStore<String>()
+
+                StepVerifier.create(db.watch())
+                        .expectNextCount(1)
+                        .then { db.remove("x") }
+                        .expectNoEvent(250.milliseconds)
+                        .thenCancel()
+                        .verify()
+
+                db.insert("y", "Y")
+
+                StepVerifier.create(db.watch())
+                        .expectNextCount(1)
+                        .then { db.remove("x") }
+                        .expectNoEvent(250.milliseconds)
+                        .thenCancel()
+                        .verify()
+            }
+
+            scenario("Notifies watchers") {
+                val db = StyxObjectStore<String>()
+                val watchEvents = arrayListOf<ObjectStore<String>>()
+
+                db.insert("x", "x")
+                db.insert("y", "y")
+
+                Flux.from(db.watch()).subscribe { watchEvents.add(it) }
+                eventually(1.seconds, java.lang.AssertionError::class.java) {
+                    watchEvents.size shouldBeGreaterThanOrEqual 1
+                    watchEvents.last().get("x") shouldBe Optional.of("x")
+                }
+
+                db.remove("x")
+                db.remove("y")
+
+                eventually(1.seconds, java.lang.AssertionError::class.java) {
+                    watchEvents.last().get("x") shouldBe Optional.empty()
+                    watchEvents.last().get("y") shouldBe Optional.empty()
+                }
+            }
+        }
+
+        feature("Watch") {
+            scenario("Supports multiple watchers") {
+                val db = StyxObjectStore<String>()
+                val watchEvents1 = arrayListOf<ObjectStore<String>>()
+                val watchEvents2 = arrayListOf<ObjectStore<String>>()
+
+                val watcher1 = Flux.from(db.watch()).subscribe { watchEvents1.add(it) }
+                val watcher2 = Flux.from(db.watch()).subscribe { watchEvents2.add(it) }
+
+                // Wait for the initial watch event ...
+                eventually(1.seconds, java.lang.AssertionError::class.java) {
+                    watchEvents1.size shouldBe 1
+                    watchEvents1[0].get("x") shouldBe Optional.empty()
+
+                    watchEvents2.size shouldBe 1
+                    watchEvents2[0].get("x") shouldBe Optional.empty()
+                }
+
+                db.insert("x", "x")
+                db.insert("y", "y")
+
+                // ... otherwise we aren't guaranteed what events are going show up.
+                //
+                // The ordering between initial watch event in relation to db.inserts are
+                // non-deterministic.
+                eventually(1.seconds, AssertionError::class.java) {
+                    watchEvents1.size shouldBe 3
+                    watchEvents2.size shouldBe 3
+
+                    watchEvents1[1].get("x") shouldBe Optional.of("x")
+                    watchEvents2[1].get("x") shouldBe Optional.of("x")
+
+                    watchEvents1[1].get("y") shouldBe Optional.empty()
+                    watchEvents2[1].get("y") shouldBe Optional.empty()
+
+                    watchEvents1[2].get("x") shouldBe Optional.of("x")
+                    watchEvents2[2].get("x") shouldBe Optional.of("x")
+
+                    watchEvents1[2].get("y") shouldBe Optional.of("y")
+                    watchEvents2[2].get("y") shouldBe Optional.of("y")
+                }
+
+                watcher1.dispose()
+                db.watchers() shouldBe 1
+
+                watcher2.dispose()
+                db.watchers() shouldBe 0
+            }
+
+            scenario("Provides immutable snapshot") {
+                val db = StyxObjectStore<String>()
+                val watchEvents = arrayListOf<ObjectStore<String>>()
+
+                val watcher = Flux.from(db.watch()).subscribe { watchEvents.add(it) }
+
+                eventually(1.seconds, AssertionError::class.java) {
+                    watchEvents.isNotEmpty().shouldBeTrue()
+                    watchEvents[0].get("x") shouldBe Optional.empty()
+                    watchEvents[0].get("y") shouldBe Optional.empty()
+                }
+
+                db.insert("x", "x")
+                db.insert("y", "y")
+
+                eventually(1.seconds, AssertionError::class.java) {
+                    watchEvents.size shouldBe 3
+                    watchEvents[1].get("x") shouldBe Optional.of("x")
+                    watchEvents[1].get("y") shouldBe Optional.empty()
+
+                    watchEvents[2].get("x") shouldBe Optional.of("x")
+                    watchEvents[2].get("y") shouldBe Optional.of("y")
+                }
+
+                watcher.dispose()
+                db.watchers() shouldBe 0
+            }
+
+            scenario("Provides current snapshot at subscription") {
+                val db = StyxObjectStore<String>()
+                val watchEvents = arrayListOf<ObjectStore<String>>()
+
+                db.insert("x", "x")
+
+                Flux.from(db.watch()).subscribe() {
+                    watchEvents.add(it)
+                }
+
+                eventually(1.seconds, AssertionError::class.java) {
+                    watchEvents.isNotEmpty().shouldBeTrue()
+                    watchEvents[0].get("x") shouldBe Optional.of("x")
+                }
             }
         }
     }
