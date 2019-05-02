@@ -229,7 +229,7 @@
         <artifactId>build-helper-maven-plugin</artifactId>
         <executions>
           <execution>
-            <id>add-kotlin-test-sources</id>
+            <id>add-kotlin-sources</id>
             <phase>generate-sources</phase>
             <goals>
               <goal>add-source</goal>
