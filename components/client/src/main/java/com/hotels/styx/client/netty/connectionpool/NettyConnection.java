@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,9 +27,11 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AttributeKey;
 import rx.Observable;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Objects.toStringHelper;
@@ -52,26 +54,33 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
     /**
      * Constructs an instance with an arbitrary UUID.
      *
-     * @param origin  the origin connected to
-     * @param channel the netty channel used
+     * @param origin                  the origin connected to
+     * @param channel                 the netty channel used
      * @param requestOperationFactory used to create operation objects that send http requests via this connection
+     * @param httpConfig              configuration settings for the <b>origin</b>
+     * @param sslContext              TLS context in case of secure connections
+     * @param sendSni                 include the servername extension (server name indicator) in the TLS handshake
+     * @param sniHost                 hostname override for the server name indicator
      */
-    public NettyConnection(Origin origin, Channel channel, HttpRequestOperationFactory requestOperationFactory, HttpConfig httpConfig, SslContext sslContext) {
+    public NettyConnection(Origin origin, Channel channel, HttpRequestOperationFactory requestOperationFactory,
+                           HttpConfig httpConfig, SslContext sslContext, boolean sendSni, Optional<String> sniHost) {
         this.origin = requireNonNull(origin);
         this.channel = requireNonNull(channel);
         this.requestOperationFactory = requestOperationFactory;
         this.channel.pipeline().addLast(new TimeToFirstByteHandler(this));
         this.channel.closeFuture().addListener(future ->
                 listeners.announce().connectionClosed(NettyConnection.this));
-
-        addChannelHandlers(channel, httpConfig, sslContext);
+        addChannelHandlers(channel, httpConfig, sslContext, sendSni, sniHost.orElse(origin.host()));
     }
 
-    private static void addChannelHandlers(Channel channel, HttpConfig httpConfig, SslContext sslContext) {
+    private static void addChannelHandlers(Channel channel, HttpConfig httpConfig, SslContext sslContext, boolean sendSni, String targetHost) {
         ChannelPipeline pipeline = channel.pipeline();
 
         if (sslContext != null) {
-            pipeline.addLast("ssl", sslContext.newHandler(channel.alloc()));
+            SslHandler sslHandler = sendSni ?
+                    sslContext.newHandler(channel.alloc(), targetHost, -1) :
+                    sslContext.newHandler(channel.alloc());
+            pipeline.addLast("ssl", sslHandler);
         }
 
         pipeline.addLast("http-codec", new HttpClientCodec(httpConfig.maxInitialLineLength(), httpConfig.maxHeadersSize(), httpConfig.maxChunkSize()));

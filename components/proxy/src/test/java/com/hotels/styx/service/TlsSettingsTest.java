@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static com.hotels.styx.api.extension.service.Certificate.certificate;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
@@ -54,6 +55,8 @@ public class TlsSettingsTest {
                 .trustStorePassword("bar")
                 .protocols(ImmutableList.of("TLSv1.2"))
                 .cipherSuites(ImmutableList.of("TLS_RSA_WITH_AES_128_CBC_SHA"))
+                .sendSni(false)
+                .sniHost("some.sni.host")
                 .build();
 
         String result = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(tlsSettings);
@@ -67,6 +70,10 @@ public class TlsSettingsTest {
         assertThat(result, containsString("\"trustStorePassword\" : \"bar"));
 
         assertThat(result, containsString("TLS_RSA_WITH_AES_128_CBC_SHA"));
+
+        assertThat(result, containsString("\"sendSni\" : " + tlsSettings.sendSni()));
+        assertThat(result, containsString("\"sniHost\" : \"" + tlsSettings.sniHost().orElse("") + "\""));
+
     }
 
     @Test
@@ -81,6 +88,8 @@ public class TlsSettingsTest {
         assertThat(tlsSettings.trustStorePassword(), is("".toCharArray()));
         assertThat(tlsSettings.protocols(), is(Collections.emptyList()));
         assertThat(tlsSettings.cipherSuites(), is(Collections.emptyList()));
+        assertThat(tlsSettings.sendSni(), is(true));
+        assertThat(tlsSettings.sniHost(), is(Optional.empty()));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -215,9 +224,13 @@ public class TlsSettingsTest {
 
     @Test
     public void isImmutable() throws Exception {
-        List<String> protocols = new ArrayList<String>() {{ add("TLSv1"); }};
-        List<String> cipherSuites = new ArrayList<String>() {{ add("x"); }};
-        Certificate[] certificates = new Certificate[] { certificate("x", "x") };
+        List<String> protocols = new ArrayList<String>() {{
+            add("TLSv1");
+        }};
+        List<String> cipherSuites = new ArrayList<String>() {{
+            add("x");
+        }};
+        Certificate[] certificates = new Certificate[]{certificate("x", "x")};
 
         TlsSettings tlsSettings = new TlsSettings.Builder()
                 .additionalCerts(certificates)

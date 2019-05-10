@@ -140,7 +140,11 @@ be specified as separate backends.
     When absent, enables all default protocols for the `sslProvider`.
     Possible protocol names are: `TLS`, `TLSv1`, `TLSv1.1`, and `TLSv1.2`.
 
-Attributes that accept lists can be defined with the following format: ['ITEM1', 'ITEM2']
+  - *sendSni* - Send the Origin server hostname in the TLS handshake as per the SNI extension (https://tools.ietf.org/html/rfc6066). This feature is enabled by default.
+  
+  - *sniHost* - Override the hostname of the Origin server that will be sent in the SNI (server_name) extension. When this value is not set, the hostname will be the configured in `Origins\Host`. 
+  
+Attributes that accept lists can be defined with the following format: ['ITEM1', 'ITEM2']  
 
 ## Troubleshooting TLS Configuration
 

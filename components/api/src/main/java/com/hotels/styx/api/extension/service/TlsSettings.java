@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.base.Objects.firstNonNull;
@@ -47,6 +48,8 @@ public class TlsSettings {
     private final char[] trustStorePassword;
     private final List<String> protocols;
     private final List<String> cipherSuites;
+    private final boolean sendSni;
+    private final Optional<String> sniHost;
 
     private TlsSettings(Builder builder) {
         this.trustAllCerts = requireNonNull(builder.trustAllCerts);
@@ -56,6 +59,8 @@ public class TlsSettings {
         this.trustStorePassword = toCharArray(builder.trustStorePassword);
         this.protocols = ImmutableList.copyOf(builder.protocols);
         this.cipherSuites = ImmutableList.copyOf(builder.cipherSuites);
+        this.sendSni = builder.sendSni;
+        this.sniHost = builder.sniHost;
     }
 
     private char[] toCharArray(String password) {
@@ -94,6 +99,18 @@ public class TlsSettings {
         return this.cipherSuites;
     }
 
+    public boolean sendSni() {
+        return sendSni;
+    }
+
+    public Optional<String> sniHost() {
+        return sniHost;
+    }
+
+    public  String getSniHost() {
+        return sniHost.orElse(null);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -109,7 +126,9 @@ public class TlsSettings {
                 && Objects.equals(this.trustStorePath, other.trustStorePath)
                 && Arrays.equals(this.trustStorePassword, other.trustStorePassword)
                 && Objects.equals(this.protocols, other.protocols)
-                && Objects.equals(this.cipherSuites, other.cipherSuites);
+                && Objects.equals(this.cipherSuites, other.cipherSuites)
+                && Objects.equals(this.sniHost, other.sniHost)
+                && Objects.equals(this.sendSni, other.sendSni);
     }
 
     @Override
@@ -122,13 +141,15 @@ public class TlsSettings {
                 .add("trustStorePassword", this.trustStorePassword)
                 .add("protocols", this.protocols)
                 .add("cipherSuites", this.cipherSuites)
+                .add("sendSni", this.sendSni)
+                .add("sniHost", this.sniHost)
                 .toString();
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(trustAllCerts, sslProvider, additionalCerts,
-                trustStorePath, Arrays.hashCode(trustStorePassword), protocols, cipherSuites);
+                trustStorePath, Arrays.hashCode(trustStorePassword), protocols, cipherSuites, sendSni, sniHost);
     }
 
 
@@ -144,6 +165,8 @@ public class TlsSettings {
         private String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");
         private List<String> protocols = Collections.emptyList();
         private List<String> cipherSuites = Collections.emptyList();
+        private boolean sendSni = true;
+        private Optional<String> sniHost = Optional.empty();
 
         /**
          * Skips origin authentication.
@@ -217,6 +240,17 @@ public class TlsSettings {
             this.cipherSuites = cipherSuites;
             return this;
         }
+
+        public Builder sendSni(boolean sendSni) {
+            this.sendSni = sendSni;
+            return this;
+        }
+
+        public Builder sniHost(String sniHost) {
+            this.sniHost = Optional.ofNullable(sniHost);
+            return this;
+        }
+
 
         public TlsSettings build() {
             if (!trustAllCerts && trustStorePassword == null) {
