@@ -17,6 +17,7 @@ package com.hotels.styx.routing.handlers
 
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHandler
+import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
@@ -40,7 +41,7 @@ import reactor.core.publisher.Mono
 
 class HttpInterceptorPipelineTest : StringSpec({
     val hwaRequest = LiveHttpRequest.get("/x").build()
-    val routeDatabase = mockk<StyxObjectStore<RoutingObjectRecord>>()
+    val routeDatabase = StyxObjectStore<RoutingObjectRecord>()
 
     "it errors when there is a reference to non-existing pipeline" {
 
@@ -151,6 +152,24 @@ class HttpInterceptorPipelineTest : StringSpec({
         response?.status() shouldBe (OK)
     }
 
+    "Fallback handler can be an object reference" {
+        val handler = HttpInterceptorPipeline.Factory().build(
+                listOf("config"),
+                RoutingContext(
+                        plugins = listOf(),
+                        routeDb = routeDatabase,
+                        routingObjectFactory = routingObjectFactory())
+                        .get(),
+                configBlock("""
+                    config:
+                      type: InterceptorPipeline
+                      config:
+                        handler: referenceToAnotherRoutingObject
+                      """.trimIndent()))
+
+        val response = Mono.from(handler.handle(hwaRequest, null)).block()
+        response?.status() shouldBe NOT_FOUND
+    }
 
     "Supports inline interceptor definitions" {
 
@@ -231,4 +250,4 @@ fun mockHandlerFactory(): HttpHandlerFactory {
     return handlerFactory
 }
 
-fun routingObjectFactory() = RoutingObjectFactory(mapOf("BackendServiceProxy" to mockHandlerFactory()), mockk(), mockk(), mockk(), mockk(), false)
+fun routingObjectFactory() = RoutingObjectFactory(mapOf("BackendServiceProxy" to mockHandlerFactory()), mockk(), StyxObjectStore(), mockk(), mockk(), false)

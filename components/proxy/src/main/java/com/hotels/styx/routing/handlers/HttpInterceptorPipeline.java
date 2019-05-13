@@ -82,13 +82,13 @@ public class HttpInterceptorPipeline implements HttpHandler {
             JsonNode pipeline = configBlock.config().get("pipeline");
             List<HttpInterceptor> interceptors = getHttpInterceptors(append(parents, "pipeline"), toMap(context.plugins()), context.builtinInterceptorsFactory(), pipeline);
 
-            RoutingObjectDefinition handlerConfig = new JsonNodeConfig(configBlock.config())
-                    .get("handler", RoutingObjectDefinition.class)
+            JsonNode handlerConfig = new JsonNodeConfig(configBlock.config())
+                    .get("handler", JsonNode.class)
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", parents), "handler"));
 
             return new HttpInterceptorPipeline(
                     interceptors,
-                    context.factory().build(append(parents, "handler"), handlerConfig),
+                    context.factory().build(append(parents, "handler"), toRoutingConfigNode(handlerConfig)),
                     context.requestTracking());
         }
 
