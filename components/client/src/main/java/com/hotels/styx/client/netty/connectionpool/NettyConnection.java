@@ -77,9 +77,9 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
         ChannelPipeline pipeline = channel.pipeline();
 
         if (sslContext != null) {
-            SslHandler sslHandler = sendSni ?
-                    sslContext.newHandler(channel.alloc(), targetHost, -1) :
-                    sslContext.newHandler(channel.alloc());
+            SslHandler sslHandler = sendSni
+                    ? sslContext.newHandler(channel.alloc(), targetHost, -1)
+                    : sslContext.newHandler(channel.alloc());
             pipeline.addLast("ssl", sslHandler);
         }
 
