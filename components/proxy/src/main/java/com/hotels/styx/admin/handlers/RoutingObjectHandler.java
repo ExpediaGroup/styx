@@ -33,12 +33,9 @@ import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.AUTO_CLOSE_SOURCE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
@@ -50,12 +47,15 @@ import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.joining;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Provides admin interface access to Styx routing configuration.
  */
 public class RoutingObjectHandler implements HttpHandler  {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RoutingObjectHandler.class);
+    private static final Logger LOGGER = getLogger(RoutingObjectHandler.class);
 
     private static final ObjectMapper YAML_MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()))
             .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -70,7 +70,7 @@ public class RoutingObjectHandler implements HttpHandler  {
                     String output = routeDatabase.entrySet()
                             .stream()
                             .map(entry -> serialise(entry.getFirst(), entry.getSecond()))
-                            .collect(Collectors.joining("\n"));
+                            .collect(joining("\n"));
 
                     return Eventual.of(response(OK)
                             .body(output, UTF_8)
@@ -81,7 +81,7 @@ public class RoutingObjectHandler implements HttpHandler  {
 
                     try {
                         String object = routeDatabase.get(name)
-                                .map(record-> serialise(name, record))
+                                .map(record -> serialise(name, record))
                                 .orElseThrow(ResourceNotFoundException::new);
 
                         return Eventual.of(response(OK).body(object, UTF_8).build());
@@ -95,7 +95,7 @@ public class RoutingObjectHandler implements HttpHandler  {
 
                     try {
                         RoutingObjectDefinition payload = YAML_MAPPER.readValue(body, RoutingObjectDefinition.class);
-                        HttpHandler httpHandler = objectFactory.build(Collections.emptyList(), payload);
+                        HttpHandler httpHandler = objectFactory.build(emptyList(), payload);
 
                         routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), payload.config(), httpHandler));
 
@@ -120,7 +120,7 @@ public class RoutingObjectHandler implements HttpHandler  {
     private static String serialise(String name, RoutingObjectRecord app) {
         JsonNode node = YAML_MAPPER
                 .addMixIn(RoutingObjectDefinition.class, RoutingObjectDefMixin.class)
-                .valueToTree(new RoutingObjectDefinition(name, app.getType(), Collections.emptyList(), app.getConfig()));
+                .valueToTree(new RoutingObjectDefinition(name, app.getType(), emptyList(), app.getConfig()));
 
         ((ObjectNode) node).set("config", app.getConfig());
 

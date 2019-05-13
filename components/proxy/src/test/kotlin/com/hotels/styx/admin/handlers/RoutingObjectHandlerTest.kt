@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.hotels.styx.Environment
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.HttpRequest.delete
+import com.hotels.styx.api.HttpRequest.put
 import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.HttpResponseStatus.OK
@@ -48,7 +50,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             val handler = RoutingObjectHandler(routeDatabase, objectFactory)
 
             handler.handle(
-                    HttpRequest.put("/admin/routing/objects/staticResponse")
+                    put("/admin/routing/objects/staticResponse")
                             .body("""
                             name: "staticResponse"
                             type: "StaticResponseHandler"
@@ -75,7 +77,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             val handler = RoutingObjectHandler(routeDatabase, objectFactory)
 
             handler.handle(
-                    HttpRequest.put("/admin/routing/objects/staticResponse")
+                    put("/admin/routing/objects/staticResponse")
                             .body("""
                             type: StaticResponseHandler
                             config:
@@ -113,7 +115,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             val handler = RoutingObjectHandler(routeDatabase, objectFactory)
 
             handler.handle(
-                    HttpRequest.put("/admin/routing/objects/staticResponse")
+                    put("/admin/routing/objects/staticResponse")
                             .body("""
                             type: StaticResponseHandler
                             config:
@@ -129,7 +131,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
                     ?.status() shouldBe CREATED
 
             val r = handler.handle(
-                    HttpRequest.put("/admin/routing/objects/conditionRouter")
+                    put("/admin/routing/objects/conditionRouter")
                             .body("""
                             type: ConditionRouter
                             config:
@@ -183,7 +185,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             val handler = RoutingObjectHandler(routeDatabase, objectFactory)
 
             handler.handle(
-                    HttpRequest.put("/admin/routing/objects/staticResponse")
+                    put("/admin/routing/objects/staticResponse")
                             .body("""
                             type: StaticResponseHandler
                             config:
@@ -203,7 +205,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             val previousHandler = routeDatabase.get("staticResponse").get().handler
 
             handler.handle(
-                    HttpRequest.put("/admin/routing/objects/staticResponse")
+                    put("/admin/routing/objects/staticResponse")
                             .body("""
                             type: StaticResponseHandler
                             config:
@@ -228,7 +230,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             val handler = RoutingObjectHandler(routeDatabase, objectFactory)
 
             handler.handle(
-                    HttpRequest.put("/admin/routing/objects/staticResponse")
+                    put("/admin/routing/objects/staticResponse")
                             .body("""
                             type: StaticResponseHandler
                             config:
@@ -246,7 +248,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             routeDatabase.get("staticResponse").isPresent shouldBe true
 
             handler.handle(
-                    HttpRequest.delete("/admin/routing/objects/staticResponse").build().stream(),
+                    delete("/admin/routing/objects/staticResponse").build().stream(),
                     HttpInterceptorContext.create())
                     .flatMap { it.aggregate(2000) }
                     .toMono()
@@ -260,7 +262,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             val handler = RoutingObjectHandler(routeDatabase, objectFactory)
 
             handler.handle(
-                    HttpRequest.delete("/admin/routing/objects/staticResponse").build().stream(),
+                    delete("/admin/routing/objects/staticResponse").build().stream(),
                     HttpInterceptorContext.create())
                     .flatMap { it.aggregate(2000) }
                     .toMono()

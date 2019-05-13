@@ -102,8 +102,8 @@ class StyxObjectStore<T> : ObjectStore<T> {
             new = current.minus(key)
         }
 
-        queue {
-            if (current != new) {
+        if (current != new) {
+            queue {
                 notifyWatchers(new)
             }
         }

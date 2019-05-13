@@ -18,9 +18,9 @@ package com.hotels.styx.admin.handlers
 import ch.qos.logback.classic.Level
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpInterceptor
-import com.hotels.styx.api.HttpResponseStatus
 import com.hotels.styx.api.HttpResponseStatus.ACCEPTED
 import com.hotels.styx.api.HttpResponseStatus.CREATED
+import com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR
 import com.hotels.styx.api.HttpResponseStatus.NO_CONTENT
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
@@ -183,7 +183,7 @@ class UrlPatternRouterTest : FeatureSpec({
                             .flatMap { it.aggregate(10000) })
                     .block()
 
-            response!!.status() shouldBe HttpResponseStatus.INTERNAL_SERVER_ERROR
+            response!!.status() shouldBe INTERNAL_SERVER_ERROR
 
             LOGGER.lastMessage().level shouldBe Level.ERROR
             LOGGER.lastMessage().formattedMessage shouldBe "ERROR: POST /admin/apps/appx/appx-01"

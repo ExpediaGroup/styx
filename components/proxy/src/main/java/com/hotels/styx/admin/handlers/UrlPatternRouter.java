@@ -15,6 +15,7 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
@@ -22,7 +23,6 @@ import com.hotels.styx.api.HttpMethod;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -30,22 +30,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
+import static com.hotels.styx.api.HttpMethod.DELETE;
+import static com.hotels.styx.api.HttpMethod.GET;
+import static com.hotels.styx.api.HttpMethod.POST;
+import static com.hotels.styx.api.HttpMethod.PUT;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.LiveHttpResponse.response;
+import static java.util.stream.Collectors.toMap;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * A configurable router.
  */
 public class UrlPatternRouter implements HttpHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UrlPatternRouter.class);
+    private static final Logger LOGGER = getLogger(UrlPatternRouter.class);
     private static final String PLACEHOLDERS_KEY = "UrlRouter.placeholders";
     private final List<RouteDescriptor> alternatives;
 
     private UrlPatternRouter(List<RouteDescriptor> alternatives) {
-        this.alternatives = alternatives;
+        this.alternatives = ImmutableList.copyOf(alternatives);
     }
 
     public static Map<String, String> placeholders(HttpInterceptor.Context context) {
@@ -63,7 +68,7 @@ public class UrlPatternRouter implements HttpHandler {
 
                 if (match.matches()) {
                     Map<String, String> placeholders = route.placeholderNames().stream()
-                            .collect(Collectors.toMap(name -> name, match::group));
+                            .collect(toMap(name -> name, match::group));
 
                     context.add(PLACEHOLDERS_KEY, placeholders);
 
@@ -87,22 +92,22 @@ public class UrlPatternRouter implements HttpHandler {
         private final List<RouteDescriptor> alternatives = new LinkedList<>();
 
         public Builder get(String regexp, HttpHandler handler) {
-            alternatives.add(new RouteDescriptor(HttpMethod.GET, regexp, handler));
+            alternatives.add(new RouteDescriptor(GET, regexp, handler));
             return this;
         }
 
         public Builder post(String regexp, HttpHandler handler) {
-            alternatives.add(new RouteDescriptor(HttpMethod.POST, regexp, handler));
+            alternatives.add(new RouteDescriptor(POST, regexp, handler));
             return this;
         }
 
         public Builder put(String regexp, HttpHandler handler) {
-            alternatives.add(new RouteDescriptor(HttpMethod.PUT, regexp, handler));
+            alternatives.add(new RouteDescriptor(PUT, regexp, handler));
             return this;
         }
 
         public Builder delete(String regexp, HttpHandler handler) {
-            alternatives.add(new RouteDescriptor(HttpMethod.DELETE, regexp, handler));
+            alternatives.add(new RouteDescriptor(DELETE, regexp, handler));
             return this;
         }
 
@@ -116,11 +121,12 @@ public class UrlPatternRouter implements HttpHandler {
         private final Pattern pattern;
         private final HttpHandler handler;
         private final List<String> placeholderNames;
+        private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile(":([a-zA-Z0-9-_]+)");
 
         public RouteDescriptor(HttpMethod method, String pattern, HttpHandler handler) {
             this.method = method;
             this.handler = handler;
-            this.placeholderNames = placeholcers(pattern);
+            this.placeholderNames = placeholders(pattern);
             this.pattern = compilePattern(pattern);
         }
 
@@ -140,15 +146,14 @@ public class UrlPatternRouter implements HttpHandler {
             return placeholderNames;
         }
 
-        private Pattern compilePattern(String pattern) {
-            Pattern x = Pattern.compile(":([a-zA-Z0-9-_]+)");
-            Matcher matcher = x.matcher(pattern);
+        private static Pattern compilePattern(String pattern) {
+            Matcher matcher = PLACEHOLDER_PATTERN.matcher(pattern);
+
             return Pattern.compile(matcher.replaceAll("(?<$1>[a-zA-Z0-9-_]+)"));
         }
 
-        private List<String> placeholcers(String pattern) {
-            Pattern x = Pattern.compile(":([a-zA-Z0-9-_]+)");
-            Matcher matcher = x.matcher(pattern);
+        private static List<String> placeholders(String pattern) {
+            Matcher matcher = PLACEHOLDER_PATTERN.matcher(pattern);
 
             List<String> outcome = new ArrayList<>();
 

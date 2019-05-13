@@ -26,7 +26,7 @@ import io.kotlintest.specs.FeatureSpec
 import reactor.core.publisher.Flux
 import reactor.test.StepVerifier
 import java.util.Optional
-import java.util.concurrent.Executors
+import java.util.concurrent.Executors.newFixedThreadPool
 import java.util.concurrent.TimeUnit.SECONDS
 
 // We can remove AssertionError::class.java argument from the
@@ -88,7 +88,7 @@ class StyxObjectStoreTest : FeatureSpec() {
 
             scenario("Maintains database integrity in concurrent operations") {
                 val db = StyxObjectStore<String>()
-                val executor = Executors.newFixedThreadPool(8)
+                val executor = newFixedThreadPool(8)
 
                 for (i in 1..10000) {
                     executor.execute { db.insert("redirect-$i", "Record-$i") }
@@ -190,7 +190,7 @@ class StyxObjectStoreTest : FeatureSpec() {
                 }
 
                 // Then remove everyting, concurrently:
-                val executor = Executors.newFixedThreadPool(8)
+                val executor = newFixedThreadPool(8)
                 for (i in 1..10000) {
                     executor.execute { db.remove("redirect-$i") }
                 }

@@ -88,11 +88,11 @@ public class AdminServerBuilder {
 
     private Registry<BackendService> backendServicesRegistry;
 
-    public AdminServerBuilder(Environment environment, StyxServerComponents serverComponents) {
-        this.environment = environment;
-        this.configuration = environment.configuration();
+    public AdminServerBuilder(StyxServerComponents serverComponents) {
+        this.environment = requireNonNull(serverComponents.environment());
         this.routeDatabase = requireNonNull(serverComponents.routeDatabase());
         this.routingObjectFactory = requireNonNull(serverComponents.routingObjectFactory());
+        this.configuration = this.environment.configuration();
     }
 
     public AdminServerBuilder backendServicesRegistry(Registry<BackendService> backendServicesRegistry) {
@@ -133,7 +133,6 @@ public class AdminServerBuilder {
 
         RoutingObjectHandler routingObjectHandler = new RoutingObjectHandler(routeDatabase, routingObjectFactory);
         httpRouter.add("/admin/routing", routingObjectHandler);
-
         httpRouter.add("/admin/routing/", routingObjectHandler);
 
         // Dashboard
