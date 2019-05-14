@@ -142,14 +142,14 @@ public class TlsSettings {
                 .add("protocols", this.protocols)
                 .add("cipherSuites", this.cipherSuites)
                 .add("sendSni", this.sendSni)
-                .add("sniHost", this.sniHost.orElse(""))
+                .add("sniHost", this.getSniHost())
                 .toString();
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(trustAllCerts, sslProvider, additionalCerts,
-                trustStorePath, Arrays.hashCode(trustStorePassword), protocols, cipherSuites, sendSni, sniHost.orElse(""));
+                trustStorePath, Arrays.hashCode(trustStorePassword), protocols, cipherSuites, sendSni, this.getSniHost());
     }
 
 
