@@ -60,7 +60,7 @@ public class TlsSettings {
         this.protocols = ImmutableList.copyOf(builder.protocols);
         this.cipherSuites = ImmutableList.copyOf(builder.cipherSuites);
         this.sendSni = builder.sendSni;
-        this.sniHost = builder.sniHost;
+        this.sniHost = Optional.ofNullable(builder.sniHost);
     }
 
     private char[] toCharArray(String password) {
@@ -142,14 +142,14 @@ public class TlsSettings {
                 .add("protocols", this.protocols)
                 .add("cipherSuites", this.cipherSuites)
                 .add("sendSni", this.sendSni)
-                .add("sniHost", this.sniHost)
+                .add("sniHost", this.sniHost.orElse(""))
                 .toString();
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(trustAllCerts, sslProvider, additionalCerts,
-                trustStorePath, Arrays.hashCode(trustStorePassword), protocols, cipherSuites, sendSni, sniHost);
+                trustStorePath, Arrays.hashCode(trustStorePassword), protocols, cipherSuites, sendSni, sniHost.orElse(""));
     }
 
 
@@ -166,7 +166,7 @@ public class TlsSettings {
         private List<String> protocols = Collections.emptyList();
         private List<String> cipherSuites = Collections.emptyList();
         private boolean sendSni = true;
-        private Optional<String> sniHost = Optional.empty();
+        private String sniHost;
 
         /**
          * Skips origin authentication.
@@ -247,7 +247,7 @@ public class TlsSettings {
         }
 
         public Builder sniHost(String sniHost) {
-            this.sniHost = Optional.ofNullable(sniHost);
+            this.sniHost = sniHost;
             return this;
         }
 

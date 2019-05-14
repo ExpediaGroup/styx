@@ -42,6 +42,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class NettyConnection implements Connection, TimeToFirstByteListener {
     private static final AttributeKey<Object> CLOSED_BY_STYX = AttributeKey.newInstance("CLOSED_BY_STYX");
+    private static final int IGNORED_PORT_NUMBER = -1;
 
     private final Origin origin;
     private final Channel channel;
@@ -78,7 +79,7 @@ public class NettyConnection implements Connection, TimeToFirstByteListener {
 
         if (sslContext != null) {
             SslHandler sslHandler = sendSni
-                    ? sslContext.newHandler(channel.alloc(), targetHost, -1)
+                    ? sslContext.newHandler(channel.alloc(), targetHost, IGNORED_PORT_NUMBER)
                     : sslContext.newHandler(channel.alloc());
             pipeline.addLast("ssl", sslHandler);
         }
