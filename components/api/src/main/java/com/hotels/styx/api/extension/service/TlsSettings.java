@@ -107,6 +107,10 @@ public class TlsSettings {
         return sniHost;
     }
 
+    /**
+     * This method will be invoked during the serialization process to return the SNI host name in a JSON-friendly format.
+     * @return configured SNI hostname or null if none
+     */
     public  String getSniHost() {
         return sniHost.orElse(null);
     }
