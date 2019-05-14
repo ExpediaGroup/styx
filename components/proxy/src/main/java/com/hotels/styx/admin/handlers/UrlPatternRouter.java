@@ -61,10 +61,10 @@ public class UrlPatternRouter implements HttpHandler {
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
         for (RouteDescriptor route : alternatives) {
             if (request.method().equals(route.method())) {
-                Matcher match = route.pattern().matcher(request.path());
+                Matcher match = route.uriPattern().matcher(request.path());
 
                 LOGGER.debug("Request path '{}' matching against route pattern '{}' matches: {}", new Object[] {
-                        request.path(), route.pattern(), match.matches()});
+                        request.path(), route.uriPattern(), match.matches()});
 
                 if (match.matches()) {
                     Map<String, String> placeholders = route.placeholderNames().stream()
@@ -91,23 +91,23 @@ public class UrlPatternRouter implements HttpHandler {
     public static class Builder {
         private final List<RouteDescriptor> alternatives = new LinkedList<>();
 
-        public Builder get(String regexp, HttpHandler handler) {
-            alternatives.add(new RouteDescriptor(GET, regexp, handler));
+        public Builder get(String uriPattern, HttpHandler handler) {
+            alternatives.add(new RouteDescriptor(GET, uriPattern, handler));
             return this;
         }
 
-        public Builder post(String regexp, HttpHandler handler) {
-            alternatives.add(new RouteDescriptor(POST, regexp, handler));
+        public Builder post(String uriPattern, HttpHandler handler) {
+            alternatives.add(new RouteDescriptor(POST, uriPattern, handler));
             return this;
         }
 
-        public Builder put(String regexp, HttpHandler handler) {
-            alternatives.add(new RouteDescriptor(PUT, regexp, handler));
+        public Builder put(String uriPattern, HttpHandler handler) {
+            alternatives.add(new RouteDescriptor(PUT, uriPattern, handler));
             return this;
         }
 
-        public Builder delete(String regexp, HttpHandler handler) {
-            alternatives.add(new RouteDescriptor(DELETE, regexp, handler));
+        public Builder delete(String uriPattern, HttpHandler handler) {
+            alternatives.add(new RouteDescriptor(DELETE, uriPattern, handler));
             return this;
         }
 
@@ -117,25 +117,26 @@ public class UrlPatternRouter implements HttpHandler {
     }
 
     private static class RouteDescriptor {
-        private final HttpMethod method;
-        private final Pattern pattern;
-        private final HttpHandler handler;
-        private final List<String> placeholderNames;
         private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile(":([a-zA-Z0-9-_]+)");
 
-        public RouteDescriptor(HttpMethod method, String pattern, HttpHandler handler) {
+        private final HttpMethod method;
+        private final Pattern uriPattern;
+        private final HttpHandler handler;
+        private final List<String> placeholderNames;
+
+        public RouteDescriptor(HttpMethod method, String uriPattern, HttpHandler handler) {
             this.method = method;
             this.handler = handler;
-            this.placeholderNames = placeholders(pattern);
-            this.pattern = compilePattern(pattern);
+            this.placeholderNames = placeholders(uriPattern);
+            this.uriPattern = compilePattern(uriPattern);
         }
 
         public HttpMethod method() {
             return method;
         }
 
-        public Pattern pattern() {
-            return pattern;
+        public Pattern uriPattern() {
+            return uriPattern;
         }
 
         public HttpHandler handler() {
