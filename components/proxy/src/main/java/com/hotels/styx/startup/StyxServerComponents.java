@@ -36,6 +36,7 @@ import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
+import com.hotels.styx.routing.handlers.RouteRefLookup;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 
 import java.util.HashMap;
@@ -44,6 +45,7 @@ import java.util.Map;
 
 import static com.hotels.styx.Version.readVersionFrom;
 import static com.hotels.styx.infrastructure.logging.LOGBackConfigurer.initLogging;
+import static com.hotels.styx.routing.config.RoutingObjectFactory.BUILTIN_HANDLER_FACTORIES;
 import static com.hotels.styx.startup.ServicesLoader.SERVICES_FROM_CONFIG;
 import static com.hotels.styx.startup.StyxServerComponents.LoggingSetUp.DO_NOT_MODIFY;
 import static com.hotels.styx.startup.extensions.PluginLoadingForStartup.loadPlugins;
@@ -74,6 +76,8 @@ public class StyxServerComponents {
                 : loadPlugins(environment, builder.configuredPluginFactories);
 
         this.routingObjectFactory = new RoutingObjectFactory(
+                new RouteRefLookup(this.routeObjectStore),
+                BUILTIN_HANDLER_FACTORIES,
                 this.environment,
                 this.routeObjectStore,
                 this.plugins,

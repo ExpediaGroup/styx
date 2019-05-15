@@ -16,15 +16,15 @@
 package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.common.Pair;
+import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
-import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
-import com.hotels.styx.routing.config.RoutingObjectReference;
 import com.hotels.styx.server.NoServiceConfiguredException;
 
 import java.util.List;
@@ -33,31 +33,49 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import static com.hotels.styx.common.Pair.pair;
+import static com.hotels.styx.config.schema.SchemaDsl.field;
+import static com.hotels.styx.config.schema.SchemaDsl.list;
+import static com.hotels.styx.config.schema.SchemaDsl.object;
+import static com.hotels.styx.config.schema.SchemaDsl.routingObject;
+import static com.hotels.styx.config.schema.SchemaDsl.string;
+import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.toList;
 
+/**
+ * Makes a routing decision based on a request path prefix.
+ *
+ * Chooses a destination according to longest matching path prefix.
+ * The destination can be a routing object reference or an inline definition.
+ */
 public class PathPrefixRouter {
-    private final ConcurrentSkipListMap<String, String> routes = new ConcurrentSkipListMap<>(
+    public static final Schema.FieldType SCHEMA = object(
+            field("routes", list(object(
+                    field("prefix", string()),
+                    field("destination", routingObject()))
+            ))
+    );
+
+    private final ConcurrentSkipListMap<String, HttpHandler> routes = new ConcurrentSkipListMap<>(
                     comparingInt(String::length)
                             .reversed()
                             .thenComparing(naturalOrder())
     );
 
-    PathPrefixRouter(List<Pair<String, String>> routes) {
+    PathPrefixRouter(List<Pair<String, HttpHandler>> routes) {
         routes.forEach(entry -> this.routes.put(entry.key(), entry.value()));
     }
 
-    public Optional<RoutingObjectReference> route(LiveHttpRequest request) {
+    public Optional<HttpHandler> route(LiveHttpRequest request) {
         String path = request.path();
 
         return routes.entrySet().stream()
                 .filter(entry -> path.startsWith(entry.getKey()))
                 .findFirst()
-                .map(Map.Entry::getValue)
-                .map(RoutingObjectReference::new);
+                .map(Map.Entry::getValue);
     }
 
     public static class Factory implements HttpHandlerFactory {
@@ -71,26 +89,21 @@ public class PathPrefixRouter {
 
             PathPrefixRouter pathPrefixRouter = new PathPrefixRouter(
                     config.routes.stream()
-                            .map(route -> pair(route.prefix, route.destination))
+                            .map(route -> pair(route.prefix, context.factory().build(toRoutingConfigNode(route.destination))))
                             .collect(toList())
             );
 
-            // TODO: Tidy this up:
-            return (request, ctx) -> pathPrefixRouter
-                    .route(request)
-                    .flatMap(reference -> context.routeDb().get(reference.name()))
-                    .map(RoutingObjectRecord::getHandler)
-
-                    .map(handler -> handler.handle(request, ctx))
-                    .orElse(Eventual.error(new NoServiceConfiguredException(request.path())));
+            return (request, ctx) -> pathPrefixRouter.route(request)
+                            .orElse((x, y) -> Eventual.error(new NoServiceConfiguredException(request.path())))
+                            .handle(request, ctx);
         }
 
         private static class PathPrefixConfig {
             private final String prefix;
-            private final String destination;
+            private final JsonNode destination;
 
             public PathPrefixConfig(@JsonProperty("prefix") String prefix,
-                                    @JsonProperty("destination") String destination) {
+                                    @JsonProperty("destination") JsonNode destination) {
                 this.prefix = prefix;
                 this.destination = destination;
             }

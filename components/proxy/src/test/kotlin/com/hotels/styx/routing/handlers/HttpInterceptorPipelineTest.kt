@@ -37,7 +37,7 @@ import io.kotlintest.specs.StringSpec
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import reactor.core.publisher.Mono
+import reactor.core.publisher.toMono
 
 class HttpInterceptorPipelineTest : StringSpec({
     val hwaRequest = LiveHttpRequest.get("/x").build()
@@ -116,12 +116,13 @@ class HttpInterceptorPipelineTest : StringSpec({
                           - interceptor2
                         handler:
                           name: MyHandler
-                          type: BackendServiceProxy
+                          type: StaticResponseHandler
                           config:
-                            backendProvider: backendProvider
+                            status: 200
+                            content: hello
                     """.trimIndent()))
 
-        val response = Mono.from(handler.handle(hwaRequest, null)).block()
+        val response = handler.handle(hwaRequest, null).toMono().block()
         response?.headers("X-Test-Header") shouldBe (listOf("B", "A"))
     }
 
@@ -139,12 +140,13 @@ class HttpInterceptorPipelineTest : StringSpec({
                       config:
                         handler:
                           name: MyHandler
-                          type: BackendServiceProxy
+                          type: StaticResponseHandler
                           config:
-                            backendProvider: backendProvider
+                            status: 200
+                            content: hello
                       """.trimIndent()))
 
-        val response = Mono.from(handler.handle(hwaRequest, null)).block()
+        val response = handler.handle(hwaRequest, null).toMono().block()
         response?.status() shouldBe (OK)
     }
 
@@ -162,7 +164,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                         handler: referenceToAnotherRoutingObject
                       """.trimIndent()))
 
-        val response = Mono.from(handler.handle(hwaRequest, null)).block()
+        val response = handler.handle(hwaRequest, null).toMono().block()
         response?.status() shouldBe NOT_FOUND
     }
 
@@ -191,12 +193,13 @@ class HttpInterceptorPipelineTest : StringSpec({
                           - interceptor2
                         handler:
                           name: MyHandler
-                          type: BackendServiceProxy
+                          type: StaticResponseHandler
                           config:
-                            backendProvider: backendProvider
+                            status: 200
+                            content: hello
                      """.trimIndent()))
 
-        val response = Mono.from(handler.handle(hwaRequest, null)).block()
+        val response = handler.handle(hwaRequest, null).toMono().block()
         response?.headers("X-Test-Header") shouldBe (listOf("B", "A"))
     }
 
@@ -243,4 +246,4 @@ fun mockHandlerFactory(): HttpHandlerFactory {
     return handlerFactory
 }
 
-fun routingObjectFactory() = RoutingObjectFactory(mapOf("BackendServiceProxy" to mockHandlerFactory()), mockk(), StyxObjectStore(), mockk(), mockk(), false)
+fun routingObjectFactory() = RoutingObjectFactory(StyxObjectStore())

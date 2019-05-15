@@ -33,7 +33,7 @@ import io.kotlintest.specs.StringSpec
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import reactor.core.publisher.Mono
+import reactor.core.publisher.toMono
 import java.util.Optional
 
 class ConditionRouterConfigTest : StringSpec({
@@ -53,7 +53,7 @@ class ConditionRouterConfigTest : StringSpec({
                     mockk(),
                     HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "fallback").build()) }))
 
-    val routeHandlerFactory = RoutingObjectFactory(mapOf("StaticResponseHandler" to StaticResponseHandler.Factory()), mockk(), routeObjectStore, mockk(), mockk(), false)
+    val routeHandlerFactory = RoutingObjectFactory(RouteRefLookup(routeObjectStore))
 
     val context = RoutingContext(
             routeDb = routeObjectStore,
@@ -82,16 +82,16 @@ class ConditionRouterConfigTest : StringSpec({
 
     "Builds an instance with fallback handler" {
         val router = ConditionRouter.Factory().build(listOf(), context, config)
-        val response = Mono.from(router.handle(request, HttpInterceptorContext(true))).block()
+        val response = router.handle(request, HttpInterceptorContext(true)).toMono().block()
 
-        response.status() shouldBe (OK)
+        response?.status() shouldBe (OK)
     }
 
     "Builds condition router instance routes" {
         val router = ConditionRouter.Factory().build(listOf(), context, config)
-        val response = Mono.from(router.handle(request, HttpInterceptorContext())).block()
+        val response = router.handle(request, HttpInterceptorContext()).toMono().block()
 
-        response.status().code() shouldBe (301)
+        response?.status()?.code() shouldBe (301)
     }
 
 
@@ -106,9 +106,9 @@ class ConditionRouterConfigTest : StringSpec({
                 fallback: fallbackHandler
           """.trimIndent()))
 
-        val resp = Mono.from(router.handle(request, HttpInterceptorContext())).block()
+        val response = router.handle(request, HttpInterceptorContext()).toMono().block()
 
-        resp.header("source").get() shouldBe ("fallback")
+        response?.header("source")?.get() shouldBe ("fallback")
     }
 
     "Route destination can be specified as a handler reference" {
@@ -123,8 +123,8 @@ class ConditionRouterConfigTest : StringSpec({
           """.trimIndent())
         )
 
-        val resp = Mono.from(router.handle(request, HttpInterceptorContext(true))).block()
-        resp.header("source").get() shouldBe ("secure")
+        val response = router.handle(request, HttpInterceptorContext(true)).toMono().block()
+        response?.header("source")?.get() shouldBe ("secure")
     }
 
 
@@ -162,9 +162,9 @@ class ConditionRouterConfigTest : StringSpec({
                           content: "secure"
         """.trimIndent()))
 
-        val resp = Mono.from(router.handle(request, HttpInterceptorContext())).block()
+        val response = router.handle(request, HttpInterceptorContext()).toMono().block()
 
-        resp.status() shouldBe (BAD_GATEWAY)
+        response?.status() shouldBe (BAD_GATEWAY)
     }
 
     "Indicates the condition when fails to compile an DSL expression due to Syntax Error" {

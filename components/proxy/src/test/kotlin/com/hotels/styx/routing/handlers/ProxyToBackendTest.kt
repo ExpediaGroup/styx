@@ -29,6 +29,7 @@ import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
 import reactor.core.publisher.Mono
+import reactor.core.publisher.toMono
 
 class ProxyToBackendTest : StringSpec({
     val environment = Environment.Builder().build()
@@ -53,7 +54,7 @@ class ProxyToBackendTest : StringSpec({
     "builds ProxyToBackend handler" {
         val handler = ProxyToBackend.Factory.build(listOf(), context, config, clientFactory());
 
-        val response = Mono.from(handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create())).block()
+        val response = handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create()).toMono().block()
         response?.status() shouldBe (OK)
     }
 

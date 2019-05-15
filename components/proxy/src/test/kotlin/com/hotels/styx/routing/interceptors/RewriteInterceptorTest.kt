@@ -24,7 +24,7 @@ import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.routing.routingObjectDef
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
-import reactor.core.publisher.Mono
+import reactor.core.publisher.toMono
 
 class RewriteInterceptorTest : StringSpec({
 
@@ -42,7 +42,7 @@ class RewriteInterceptorTest : StringSpec({
         val interceptor = RewriteInterceptor.Factory().build(config)
         val capturingChain = CapturingChain()
 
-        val response = Mono.from(interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain)).block()
+        interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain).toMono().block()
         capturingChain.request()?.path() shouldBe ("/app/foo")
     }
 
@@ -57,7 +57,7 @@ class RewriteInterceptorTest : StringSpec({
         val interceptor = RewriteInterceptor.Factory().build(config)
         val capturingChain = CapturingChain()
 
-        val response = Mono.from(interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain)).block()
+        interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain).toMono().block()
         capturingChain.request()?.path() shouldBe ("/foo")
     }
 

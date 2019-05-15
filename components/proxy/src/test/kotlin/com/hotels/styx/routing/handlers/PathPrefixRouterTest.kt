@@ -15,10 +15,13 @@
  */
 package com.hotels.styx.routing.handlers
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.hotels.styx.admin.handlers.toMono
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.common.Pair.pair
+import com.hotels.styx.config.schema.SchemaValidationException
+import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.HttpHandlerFactory
 import com.hotels.styx.routing.config.RoutingObjectFactory
@@ -26,8 +29,8 @@ import com.hotels.styx.routing.config.RoutingObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handle
 import com.hotels.styx.routing.routingObjectDef
-import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
+import io.kotlintest.shouldThrow
 import io.kotlintest.specs.FeatureSpec
 import io.mockk.mockk
 import java.nio.charset.StandardCharsets.UTF_8
@@ -35,7 +38,17 @@ import java.util.Optional
 
 class PathPrefixRouterTest : FeatureSpec({
 
-    val context = HttpInterceptorContext.create()
+    val factory = RoutingObjectFactory()
+
+    val emptyObjectStore = StyxObjectStore<RoutingObjectRecord>()
+    val defaultFactoryContext = HttpHandlerFactory.Context(
+            mockk(),
+            emptyObjectStore,
+            RoutingObjectFactory(RouteRefLookup(emptyObjectStore)),
+            mockk(),
+            mockk(),
+            false)
+
 
     feature("PathPrefixRouter") {
         scenario("No path prefixes configured") {
@@ -45,38 +58,43 @@ class PathPrefixRouterTest : FeatureSpec({
         }
 
         scenario("Root path") {
-            val router = PathPrefixRouter(listOf(pair("/", "root")))
+            val rootHandler = factory.build(RoutingObjectReference("root"))
+            val router = PathPrefixRouter(listOf(pair("/", rootHandler)))
 
-            router.route(get("/").build()) shouldBe Optional.of(RoutingObjectReference("root"))
-            router.route(get("/foo/bar").build()) shouldBe Optional.of(RoutingObjectReference("root"))
-            router.route(get("/foo/bar/").build()) shouldBe Optional.of(RoutingObjectReference("root"))
-            router.route(get("/foo").build()) shouldBe Optional.of(RoutingObjectReference("root"))
+            router.route(get("/").build()) shouldBe Optional.of(rootHandler)
+            router.route(get("/foo/bar").build()) shouldBe Optional.of(rootHandler)
+            router.route(get("/foo/bar/").build()) shouldBe Optional.of(rootHandler)
+            router.route(get("/foo").build()) shouldBe Optional.of(rootHandler)
         }
 
         scenario("Choice of most specific path") {
+            val fooFileHandler = factory.build(RoutingObjectReference("foo-file"))
+            val fooPathHandler = factory.build(RoutingObjectReference("foo-path"))
+            val fooBarFileHandler = factory.build(RoutingObjectReference("foo-bar-file"))
+            val fooBarPathHandler = factory.build(RoutingObjectReference("foo-bar-path"))
+            val fooBazFileHandler = factory.build(RoutingObjectReference("foo-baz-file"))
+
             val router = PathPrefixRouter(listOf(
-                    pair("/foo", "foo-file"),
-                    pair("/foo/", "foo-path"),
-                    pair("/foo/bar", "foo-bar-file"),
-                    pair("/foo/bar/", "foo-bar-path"),
-                    pair("/foo/baz", "foo-baz-file")
+                    pair("/foo", fooFileHandler),
+                    pair("/foo/", fooPathHandler),
+                    pair("/foo/bar", fooBarFileHandler),
+                    pair("/foo/bar/", fooBarPathHandler),
+                    pair("/foo/baz", fooBazFileHandler)
             ))
 
             router.route(get("/").build()) shouldBe Optional.empty()
-            router.route(get("/foo").build()) shouldBe Optional.of(RoutingObjectReference("foo-file"))
-            router.route(get("/foo/x").build()) shouldBe Optional.of(RoutingObjectReference("foo-path"))
-            router.route(get("/foo/").build()) shouldBe Optional.of(RoutingObjectReference("foo-path"))
-            router.route(get("/foo/bar").build()) shouldBe Optional.of(RoutingObjectReference("foo-bar-file"))
-            router.route(get("/foo/bar/x").build()) shouldBe Optional.of(RoutingObjectReference("foo-bar-path"))
-            router.route(get("/foo/bar/").build()) shouldBe Optional.of(RoutingObjectReference("foo-bar-path"))
-            router.route(get("/foo/baz/").build()) shouldBe Optional.of(RoutingObjectReference("foo-baz-file"))
-            router.route(get("/foo/baz/y").build()) shouldBe Optional.of(RoutingObjectReference("foo-baz-file"))
+            router.route(get("/foo").build()) shouldBe Optional.of(fooFileHandler)
+            router.route(get("/foo/x").build()) shouldBe Optional.of(fooPathHandler)
+            router.route(get("/foo/").build()) shouldBe Optional.of(fooPathHandler)
+            router.route(get("/foo/bar").build()) shouldBe Optional.of(fooBarFileHandler)
+            router.route(get("/foo/bar/x").build()) shouldBe Optional.of(fooBarPathHandler)
+            router.route(get("/foo/bar/").build()) shouldBe Optional.of(fooBarPathHandler)
+            router.route(get("/foo/baz/").build()) shouldBe Optional.of(fooBazFileHandler)
+            router.route(get("/foo/baz/y").build()) shouldBe Optional.of(fooBazFileHandler)
         }
     }
 
     feature("PathPrefixRouterFactory") {
-        val objectStore = StyxObjectStore<RoutingObjectRecord>()
-        val factory = RoutingObjectFactory(mockk(), objectStore, mockk(), mockk(), false)
 
         val rootHandler = factory.build(listOf(), routingObjectDef("""
                 type: StaticResponseHandler
@@ -92,31 +110,23 @@ class PathPrefixRouterTest : FeatureSpec({
                   content: foo
                 """.trimIndent()))
 
-        val barHandler = factory.build(listOf(), routingObjectDef("""
-                type: StaticResponseHandler
-                config:
-                  status: 200
-                  content: bar
-                """.trimIndent()))
-
-        scenario("") {
+        scenario("Builds a PathPrefixRouter instance") {
             val routingDef = routingObjectDef("""
                   type: PathPrefixRouter
                   config:
                     routes:
                       - { prefix: /, destination: root }
                       - { prefix: /foo/, destination: foo }
-                      - { prefix: /foo/bar, destination: bar }
                 """.trimIndent())
 
+            val objectStore = StyxObjectStore<RoutingObjectRecord>()
             objectStore.insert("root", RoutingObjectRecord("X", routingDef.config(), rootHandler))
             objectStore.insert("foo", RoutingObjectRecord("X", routingDef.config(), fooHandler))
-            objectStore.insert("bar", RoutingObjectRecord("X", routingDef.config(), barHandler))
 
             val factoryContext = HttpHandlerFactory.Context(
                     mockk(),
                     objectStore,
-                    mockk(),
+                    RoutingObjectFactory(RouteRefLookup(objectStore)),
                     mockk(),
                     mockk(),
                     false)
@@ -128,30 +138,118 @@ class PathPrefixRouterTest : FeatureSpec({
                     ?.block()
                     ?.bodyAs(UTF_8) shouldBe "root"
 
-            handler.handle(HttpRequest.get("/foo").build())
-                    .toMono()
-                    ?.block()
-                    ?.bodyAs(UTF_8) shouldBe "root"
-
             handler.handle(HttpRequest.get("/foo/").build())
                     .toMono()
                     ?.block()
                     ?.bodyAs(UTF_8) shouldBe "foo"
+        }
 
-            handler.handle(HttpRequest.get("/foo/x").build())
+        scenario("Supports inline routing object definitions") {
+            val routingDef = routingObjectDef("""
+                  type: PathPrefixRouter
+                  config:
+                    routes:
+                      - prefix: /foo
+                        destination:
+                          type: StaticResponseHandler
+                          config:
+                             status: 200
+                             content: hello
+                """.trimIndent())
+
+            val handler = PathPrefixRouter.Factory().build(listOf(), defaultFactoryContext, routingDef);
+
+            handler.handle(HttpRequest.get("/foo").build())
                     .toMono()
                     ?.block()
-                    ?.bodyAs(UTF_8) shouldBe "foo"
+                    ?.bodyAs(UTF_8) shouldBe "hello"
+        }
 
-            handler.handle(HttpRequest.get("/foo/bar/").build())
-                    .toMono()
-                    ?.block()
-                    ?.bodyAs(UTF_8) shouldBe "bar"
+        scenario("Missing routes attribute") {
+            val routingDef = routingObjectDef("""
+                  type: PathPrefixRouter
+                  config:
+                    bar: 1
+                """.trimIndent())
 
-            handler.handle(HttpRequest.get("/foo/bar").build())
-                    .toMono()
-                    ?.block()
-                    ?.bodyAs(UTF_8) shouldBe "bar"
+            val e = shouldThrow<IllegalArgumentException> {
+                PathPrefixRouter.Factory().build(listOf(), defaultFactoryContext, routingDef);
+            }
+
+            e.message shouldBe "Routing object definition of type 'PathPrefixRouter', attribute='', is missing a mandatory 'routes' attribute."
+        }
+    }
+
+    feature("Schema validation") {
+        val EXTENSIONS = { key: String -> RoutingObjectFactory.BUILTIN_HANDLER_SCHEMAS[key] }
+
+        scenario("Accepts inlined routing object definitions") {
+            val jsonNode = YamlConfig("""
+                    routes:
+                      - prefix: /foo
+                        destination:
+                          type: StaticResponseHandler
+                          config:
+                             status: 200
+                             content: hello
+                      - prefix: /bar
+                        destination:
+                          type: StaticResponseHandler
+                          config:
+                             status: 200
+                             content: hello
+                """.trimIndent()).`as`(JsonNode::class.java)
+
+            PathPrefixRouter.SCHEMA.validate(listOf(), jsonNode, jsonNode, EXTENSIONS)
+        }
+
+        scenario("Accepts named routing object references") {
+            val jsonNode = YamlConfig("""
+                    routes:
+                      - prefix: /foo
+                        destination: foo
+                      - prefix: /bar
+                        destination: bar
+                """.trimIndent()).`as`(JsonNode::class.java)
+
+            PathPrefixRouter.SCHEMA.validate(listOf(), jsonNode, jsonNode, EXTENSIONS)
+        }
+
+        scenario("Accepts a mix of routing object references and inline definitions") {
+            val jsonNode = YamlConfig("""
+                    routes:
+                      - prefix: /foo
+                        destination: bar
+                      - prefix: /bar
+                        destination:
+                          type: StaticResponseHandler
+                          config:
+                             status: 200
+                             content: hello
+                """.trimIndent()).`as`(JsonNode::class.java)
+
+            PathPrefixRouter.SCHEMA.validate(listOf(), jsonNode, jsonNode, EXTENSIONS)
+        }
+
+        scenario("Accepts an empty routes list") {
+            val jsonNode = YamlConfig("""
+                    routes: []
+                """.trimIndent()).`as`(JsonNode::class.java)
+
+            PathPrefixRouter.SCHEMA.validate(listOf(), jsonNode, jsonNode, EXTENSIONS)
+        }
+
+        scenario("Rejects unrelated attributes") {
+            val jsonNode = YamlConfig("""
+                    routes: []
+                    notAllowed: here
+                """.trimIndent()).`as`(JsonNode::class.java)
+
+            val e = shouldThrow<SchemaValidationException> {
+                PathPrefixRouter.SCHEMA.validate(listOf(), jsonNode, jsonNode, EXTENSIONS)
+            }
+
+            e.message shouldBe "Unexpected field: 'notAllowed'"
         }
     }
 })

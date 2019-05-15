@@ -16,7 +16,6 @@
 package com.hotels.styx.admin.handlers
 
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.hotels.styx.Environment
 import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.delete
@@ -39,11 +38,9 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 class RoutingObjectHandlerTest : FeatureSpec({
 
-    val environment = Environment.Builder().build()
-
     val routeDatabase = StyxObjectStore<RoutingObjectRecord>()
 
-    val objectFactory = RoutingObjectFactory(environment, routeDatabase, listOf(), mockk(), true)
+    val objectFactory = RoutingObjectFactory(routeDatabase)
 
     feature("Route database management") {
         scenario("Injecting new objects") {

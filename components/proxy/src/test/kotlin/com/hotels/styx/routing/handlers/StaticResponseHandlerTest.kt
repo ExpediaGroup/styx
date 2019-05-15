@@ -22,7 +22,7 @@ import com.hotels.styx.routing.routingObjectDef
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
-import reactor.core.publisher.Mono
+import reactor.core.publisher.toMono
 
 
 class StaticResponseHandlerTest: StringSpec({
@@ -38,7 +38,7 @@ class StaticResponseHandlerTest: StringSpec({
 
     "builds static response handler" {
         val handler = StaticResponseHandler.Factory().build(listOf(), context, config)
-        val response = Mono.from(handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create())).block()
+        val response = handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create()).toMono().block()
 
         response?.status() shouldBe (CREATED)
     }
