@@ -21,7 +21,7 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.LiveHttpResponse.response
-import com.hotels.styx.routing.configBlock
+import com.hotels.styx.routing.routingObjectDef
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import reactor.core.publisher.Mono
@@ -29,8 +29,7 @@ import reactor.core.publisher.Mono
 class RewriteInterceptorTest : StringSpec({
 
     "performs replacement" {
-        val config = configBlock("""
-            config:
+        val config = routingObjectDef("""
                 name: rewrite
                 type: Rewrite
                 config:
@@ -49,8 +48,7 @@ class RewriteInterceptorTest : StringSpec({
 
 
     "Empty config block does nothing" {
-        val config = configBlock("""
-            config:
+        val config = routingObjectDef("""
                 name: rewrite
                 type: Rewrite
                 config:

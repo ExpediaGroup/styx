@@ -24,8 +24,8 @@ import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.routing.RoutingContext
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
-import com.hotels.styx.routing.configBlock
 import com.hotels.styx.routing.db.StyxObjectStore
+import com.hotels.styx.routing.routingObjectDef
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
@@ -35,7 +35,6 @@ import io.mockk.mockk
 import io.mockk.verify
 import reactor.core.publisher.Mono
 import java.util.Optional
-import java.lang.IllegalArgumentException
 
 class ConditionRouterConfigTest : StringSpec({
 
@@ -61,8 +60,7 @@ class ConditionRouterConfigTest : StringSpec({
             routingObjectFactory = routeHandlerFactory)
             .get()
 
-    val config = configBlock("""
-          config:
+    val config = routingObjectDef("""
               name: main-router
               type: ConditionRouter
               config:
@@ -98,8 +96,7 @@ class ConditionRouterConfigTest : StringSpec({
 
 
     "Fallback handler can be specified as a handler reference" {
-        val router = ConditionRouter.Factory().build(listOf(), context, configBlock("""
-          config:
+        val router = ConditionRouter.Factory().build(listOf(), context, routingObjectDef("""
               name: main-router
               type: ConditionRouter
               config:
@@ -115,8 +112,7 @@ class ConditionRouterConfigTest : StringSpec({
     }
 
     "Route destination can be specified as a handler reference" {
-        val router = ConditionRouter.Factory().build(listOf(), context, configBlock("""
-          config:
+        val router = ConditionRouter.Factory().build(listOf(), context, routingObjectDef("""
               name: main-router
               type: ConditionRouter
               config:
@@ -135,8 +131,7 @@ class ConditionRouterConfigTest : StringSpec({
     "Throws exception when routes attribute is missing" {
 
         val e = shouldThrow<IllegalArgumentException> {
-            ConditionRouter.Factory().build(listOf("config", "config"), context, configBlock("""
-            config:
+            ConditionRouter.Factory().build(listOf("config", "config"), context, routingObjectDef("""
                 name: main-router
                 type: ConditionRouter
                 config:
@@ -153,8 +148,7 @@ class ConditionRouterConfigTest : StringSpec({
 
     "Responds with 502 Bad Gateway when fallback attribute is not specified." {
 
-        val router = ConditionRouter.Factory().build(listOf(), context, configBlock("""
-            config:
+        val router = ConditionRouter.Factory().build(listOf(), context, routingObjectDef("""
                 name: main-router
                 type: ConditionRouter
                 config:
@@ -176,8 +170,7 @@ class ConditionRouterConfigTest : StringSpec({
     "Indicates the condition when fails to compile an DSL expression due to Syntax Error" {
 
         val e = shouldThrow<IllegalArgumentException> {
-            ConditionRouter.Factory().build(listOf("config", "config"), context, configBlock("""
-                    config:
+            ConditionRouter.Factory().build(listOf("config", "config"), context, routingObjectDef("""
                         name: main-router
                         type: ConditionRouter
                         config:
@@ -197,8 +190,7 @@ class ConditionRouterConfigTest : StringSpec({
     "Indicates the condition when fails to compile an DSL expression due to unrecognised DSL function name" {
 
         val e = shouldThrow<IllegalArgumentException> {
-            ConditionRouter.Factory().build(listOf("config", "config"), context, configBlock("""
-                config:
+            ConditionRouter.Factory().build(listOf("config", "config"), context, routingObjectDef("""
                     name: main-router
                     type: ConditionRouter
                     config:
@@ -222,8 +214,7 @@ class ConditionRouterConfigTest : StringSpec({
 
         val context = RoutingContext(routeDb = routeObjectStore, routingObjectFactory = builtinsFactory).get()
 
-        ConditionRouter.Factory().build(listOf("config", "config"), context, configBlock("""
-            config:
+        ConditionRouter.Factory().build(listOf("config", "config"), context, routingObjectDef("""
                 name: main-router
                 type: ConditionRouter
                 config:

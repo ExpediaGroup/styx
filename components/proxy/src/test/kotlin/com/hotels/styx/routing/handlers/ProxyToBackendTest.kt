@@ -23,7 +23,7 @@ import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.RoutingContext
-import com.hotels.styx.routing.configBlock
+import com.hotels.styx.routing.routingObjectDef
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
@@ -33,8 +33,7 @@ import reactor.core.publisher.Mono
 class ProxyToBackendTest : StringSpec({
     val environment = Environment.Builder().build()
 
-    val config = configBlock("""
-          config:
+    val config = routingObjectDef("""
               name: ProxyToBackend
               type: ProxyToBackend
               config:
@@ -59,8 +58,7 @@ class ProxyToBackendTest : StringSpec({
     }
 
     "throws for missing mandatory 'backend' attribute" {
-        val config = configBlock("""
-                config:
+        val config = routingObjectDef("""
                     name: myProxy
                     type: ProxyToBackend
                     config:
@@ -75,8 +73,7 @@ class ProxyToBackendTest : StringSpec({
     }
 
     "throws for a missing mandatory backend.origins attribute" {
-        val config = configBlock("""
-                config:
+        val config = routingObjectDef("""
                     name: ProxyToBackend
                     type: ProxyToBackend
                     config:

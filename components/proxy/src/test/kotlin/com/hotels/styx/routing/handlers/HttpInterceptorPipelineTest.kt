@@ -28,9 +28,9 @@ import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory
 import com.hotels.styx.routing.config.HttpHandlerFactory
 import com.hotels.styx.routing.config.RoutingObjectFactory
-import com.hotels.styx.routing.configBlock
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.interceptors.RewriteInterceptor
+import com.hotels.styx.routing.routingObjectDef
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
@@ -56,8 +56,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                             routeDb = routeDatabase,
                             routingObjectFactory = routingObjectFactory())
                             .get(),
-                    configBlock("""
-                        config:
+                    routingObjectDef("""
                           type: InterceptorPipeline
                           config:
                             pipeline:
@@ -86,8 +85,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                             routeDb = routeDatabase,
                             routingObjectFactory = routingObjectFactory())
                             .get(),
-                    configBlock("""
-                        config:
+                    routingObjectDef("""
                           type: InterceptorPipeline
                           config:
                             pipeline:
@@ -110,8 +108,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                         routeDb = routeDatabase,
                         routingObjectFactory = routingObjectFactory())
                         .get(),
-                configBlock("""
-                    config:
+                routingObjectDef("""
                       type: InterceptorPipeline
                       config:
                         pipeline:
@@ -137,8 +134,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                         routeDb = routeDatabase,
                         routingObjectFactory = routingObjectFactory())
                         .get(),
-                configBlock("""
-                    config:
+                routingObjectDef("""
                       type: InterceptorPipeline
                       config:
                         handler:
@@ -160,8 +156,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                         routeDb = routeDatabase,
                         routingObjectFactory = routingObjectFactory())
                         .get(),
-                configBlock("""
-                    config:
+                routingObjectDef("""
                       type: InterceptorPipeline
                       config:
                         handler: referenceToAnotherRoutingObject
@@ -183,8 +178,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                         routingObjectFactory = routingObjectFactory(),
                         interceptorsFactory = BuiltinInterceptorsFactory(mapOf("Rewrite" to RewriteInterceptor.Factory()))
                 ).get(),
-                configBlock("""
-                    config:
+                routingObjectDef("""
                       type: InterceptorPipeline
                       config:
                         pipeline:
@@ -221,8 +215,7 @@ class HttpInterceptorPipelineTest : StringSpec({
                         routeDb = routeDatabase,
                         routingObjectFactory = builtinsFactory)
                         .get(),
-                configBlock("""
-                    config:
+                routingObjectDef("""
                       type: InterceptorPipeline
                       config:
                         handler:

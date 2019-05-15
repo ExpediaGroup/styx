@@ -18,7 +18,7 @@ package com.hotels.styx.routing.handlers
 import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.routing.RoutingContext
-import com.hotels.styx.routing.configBlock
+import com.hotels.styx.routing.routingObjectDef
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
@@ -28,8 +28,7 @@ import reactor.core.publisher.Mono
 class StaticResponseHandlerTest: StringSpec({
     val context = RoutingContext().get()
 
-    val config = configBlock("""
-          config:
+    val config = routingObjectDef("""
               name: proxy-and-log-to-https
               type: StaticResponseHandler
               config:

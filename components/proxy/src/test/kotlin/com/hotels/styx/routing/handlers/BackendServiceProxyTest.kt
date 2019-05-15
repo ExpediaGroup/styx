@@ -27,7 +27,7 @@ import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded
 import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.RoutingContext
-import com.hotels.styx.routing.configBlock
+import com.hotels.styx.routing.routingObjectDef
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
@@ -47,8 +47,7 @@ class BackendServiceProxyTest : StringSpec({
 
 
     "builds a backend service proxy from the configuration " {
-        val config = configBlock("""
-                config:
+        val config = routingObjectDef("""
                   type: BackendServiceProxy
                   config:
                     backendProvider: backendServicesRegistry
@@ -75,8 +74,7 @@ class BackendServiceProxyTest : StringSpec({
     }
 
     "errors when backendProvider attribute is not specified" {
-        val config = configBlock("""
-                config:
+        val config = routingObjectDef("""
                   type: BackendServiceProxy
                   config:
                     foo: bar
@@ -91,8 +89,7 @@ class BackendServiceProxyTest : StringSpec({
 
 
     "errors when backendProvider does not exists" {
-        val config = configBlock("""
-                config:
+        val config = routingObjectDef("""
                   type: BackendServiceProxy
                   config:
                     backendProvider: bar
