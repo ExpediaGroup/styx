@@ -34,7 +34,8 @@ class VersionFilesPropertySpec extends FunSpec with StyxProxySpec with Matchers 
 
   override val styxConfig = StyxConfig(
     yamlText = s"""
-        |versionFiles: $fileLocation
+        |userDefined:
+        |  versionFiles: $fileLocation
         """.stripMargin('|')
   )
 

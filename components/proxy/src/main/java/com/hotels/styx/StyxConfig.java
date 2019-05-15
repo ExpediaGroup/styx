@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ public final class StyxConfig implements Configuration {
     }
 
     public Iterable<Resource> versionFiles() {
-        String versionFilesAsString = get("versionFiles", String.class)
+        String versionFilesAsString = get("userDefined.versionFiles", String.class)
                 .orElseGet(() -> rootPath().resolve("styx-version.txt").toString());
 
         Iterable<String> versionFiles = versionFiles(versionFilesAsString);
