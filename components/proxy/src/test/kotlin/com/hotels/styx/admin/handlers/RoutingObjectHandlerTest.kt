@@ -16,9 +16,8 @@
 package com.hotels.styx.admin.handlers
 
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.hotels.styx.api.Eventual
-import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.HttpRequest.delete
+import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpRequest.put
 import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
@@ -26,13 +25,12 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.db.StyxObjectStore
+import com.hotels.styx.routing.handle
 import com.hotels.styx.routing.handlers.StaticResponseHandler
-import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.matchers.types.shouldBeTypeOf
 import io.kotlintest.matchers.types.shouldNotBeSameInstanceAs
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
-import io.mockk.mockk
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 
@@ -42,24 +40,21 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
     val objectFactory = RoutingObjectFactory(routeDatabase)
 
+    val staticResponseObject = """
+                            type: "StaticResponseHandler"
+                            config:
+                               status: 200
+                               content: "Hello, world!"
+                            """.trimIndent()
+
     feature("Route database management") {
         scenario("Injecting new objects") {
             val handler = RoutingObjectHandler(routeDatabase, objectFactory)
 
             handler.handle(
                     put("/admin/routing/objects/staticResponse")
-                            .body("""
-                            name: "staticResponse"
-                            type: "StaticResponseHandler"
-                            tags: []
-                            config:
-                               status: 200
-                               content: "Hello, world!"
-                            """.trimIndent(),
-                                    UTF_8)
-                            .build()
-                            .stream(), HttpInterceptorContext.create())
-                    .flatMap { it.aggregate(2000) }
+                            .body(staticResponseObject, UTF_8)
+                            .build())
                     .toMono()
                     .block()
                     ?.status() shouldBe CREATED
@@ -75,22 +70,13 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
             handler.handle(
                     put("/admin/routing/objects/staticResponse")
-                            .body("""
-                            type: StaticResponseHandler
-                            config:
-                               status: 200
-                               content: "Hello, world!"
-                            """.trimIndent(),
-                                    UTF_8)
-                            .build()
-                            .stream(), HttpInterceptorContext.create())
-                    .flatMap { it.aggregate(2000) }
+                            .body(staticResponseObject, UTF_8)
+                            .build())
                     .toMono()
                     .block()
                     ?.status() shouldBe CREATED
 
-            val response = handler.handle(HttpRequest.get("/admin/routing/objects/staticResponse").build().stream(), HttpInterceptorContext.create())
-                    .flatMap { it.aggregate(2000) }
+            val response = handler.handle(get("/admin/routing/objects/staticResponse").build())
                     .toMono()
                     .block()
 
@@ -113,16 +99,8 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
             handler.handle(
                     put("/admin/routing/objects/staticResponse")
-                            .body("""
-                            type: StaticResponseHandler
-                            config:
-                               status: 200
-                               content: "Hello, world!"
-                            """.trimIndent(),
-                                    UTF_8)
-                            .build()
-                            .stream(), HttpInterceptorContext.create())
-                    .flatMap { it.aggregate(2000) }
+                            .body(staticResponseObject, UTF_8)
+                            .build())
                     .toMono()
                     .block()
                     ?.status() shouldBe CREATED
@@ -130,17 +108,14 @@ class RoutingObjectHandlerTest : FeatureSpec({
             val r = handler.handle(
                     put("/admin/routing/objects/conditionRouter")
                             .body("""
-                            type: ConditionRouter
-                            config:
-                               routes:
-                                 - condition: path() == "/bar"
-                                   destination: b
-                               fallback: fb
-                            """.trimIndent(),
-                                    UTF_8)
-                            .build()
-                            .stream(), HttpInterceptorContext.create())
-                    .flatMap { it.aggregate(2000) }
+                                type: ConditionRouter
+                                config:
+                                   routes:
+                                     - condition: path() == "/bar"
+                                       destination: b
+                                   fallback: fb
+                                """.trimIndent(), UTF_8)
+                            .build())
                     .toMono()
                     .block()
 
@@ -148,10 +123,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             r?.status() shouldBe CREATED
 
 
-            val response = handler.handle(
-                    HttpRequest.get("/admin/routing/objects").build()
-                            .stream(), HttpInterceptorContext.create())
-                    .flatMap { it.aggregate(2000) }
+            val response = handler.handle(get("/admin/routing/objects").build())
                     .toMono()
                     .block()
 
@@ -183,16 +155,8 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
             handler.handle(
                     put("/admin/routing/objects/staticResponse")
-                            .body("""
-                            type: StaticResponseHandler
-                            config:
-                               status: 200
-                               content: "Hello, world!"
-                            """.trimIndent(),
-                                    UTF_8)
-                            .build()
-                            .stream(), HttpInterceptorContext.create())
-                    .flatMap { it.aggregate(2000) }
+                            .body(staticResponseObject, UTF_8)
+                            .build())
                     .toMono()
                     .block()
                     ?.status() shouldBe CREATED
@@ -204,15 +168,12 @@ class RoutingObjectHandlerTest : FeatureSpec({
             handler.handle(
                     put("/admin/routing/objects/staticResponse")
                             .body("""
-                            type: StaticResponseHandler
-                            config:
-                               status: 200
-                               content: "Hey man!"
-                            """.trimIndent(),
-                                    UTF_8)
-                            .build()
-                            .stream(), HttpInterceptorContext.create())
-                    .flatMap { it.aggregate(2000) }
+                                type: StaticResponseHandler
+                                config:
+                                   status: 200
+                                   content: "Hey man!"
+                                """.trimIndent(), UTF_8)
+                            .build())
                     .toMono()
                     .block()
                     ?.status() shouldBe CREATED
@@ -228,16 +189,8 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
             handler.handle(
                     put("/admin/routing/objects/staticResponse")
-                            .body("""
-                            type: StaticResponseHandler
-                            config:
-                               status: 200
-                               content: "Hello, world!"
-                            """.trimIndent(),
-                                    UTF_8)
-                            .build()
-                            .stream(), HttpInterceptorContext.create())
-                    .flatMap { it.aggregate(2000) }
+                            .body(staticResponseObject, UTF_8)
+                            .build())
                     .toMono()
                     .block()
                     ?.status() shouldBe CREATED
@@ -245,9 +198,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             routeDatabase.get("staticResponse").isPresent shouldBe true
 
             handler.handle(
-                    delete("/admin/routing/objects/staticResponse").build().stream(),
-                    HttpInterceptorContext.create())
-                    .flatMap { it.aggregate(2000) }
+                    delete("/admin/routing/objects/staticResponse").build())
                     .toMono()
                     .block()
                     ?.status() shouldBe OK
@@ -259,9 +210,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             val handler = RoutingObjectHandler(routeDatabase, objectFactory)
 
             handler.handle(
-                    delete("/admin/routing/objects/staticResponse").build().stream(),
-                    HttpInterceptorContext.create())
-                    .flatMap { it.aggregate(2000) }
+                    delete("/admin/routing/objects/staticResponse").build())
                     .toMono()
                     .block()
                     ?.status() shouldBe NOT_FOUND

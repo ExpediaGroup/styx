@@ -15,7 +15,6 @@
  */
 package com.hotels.styx.routing.handlers
 
-import com.hotels.styx.admin.handlers.toMono
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
@@ -27,6 +26,7 @@ import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import io.mockk.every
 import io.mockk.mockk
+import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Optional
 

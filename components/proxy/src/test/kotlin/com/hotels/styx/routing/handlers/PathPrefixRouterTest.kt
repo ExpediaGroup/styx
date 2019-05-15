@@ -16,7 +16,6 @@
 package com.hotels.styx.routing.handlers
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.hotels.styx.admin.handlers.toMono
 import com.hotels.styx.api.HttpRequest
 import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.common.Pair.pair
@@ -33,6 +32,7 @@ import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.FeatureSpec
 import io.mockk.mockk
+import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Optional
 
