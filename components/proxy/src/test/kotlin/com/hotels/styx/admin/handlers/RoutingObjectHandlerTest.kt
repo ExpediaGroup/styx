@@ -34,7 +34,7 @@ import io.kotlintest.matchers.types.shouldNotBeSameInstanceAs
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
 import io.mockk.mockk
-import reactor.core.publisher.Mono
+import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 
 class RoutingObjectHandlerTest : FeatureSpec({
@@ -272,5 +272,3 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
     }
 })
-
-fun <T> Eventual<T>.toMono() = Mono.from(this)
