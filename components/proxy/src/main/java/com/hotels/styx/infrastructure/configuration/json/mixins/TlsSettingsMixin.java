@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -54,6 +54,12 @@ public interface TlsSettingsMixin {
     @JsonProperty("cipherSuites")
     List<String> cipherSuites();
 
+    @JsonProperty("sendSni")
+    boolean sendSni();
+
+    @JsonProperty("sniHost")
+    String getSniHost();
+
     /**
      * The builder for SSL settings.
      */
@@ -82,6 +88,12 @@ public interface TlsSettingsMixin {
 
         @JsonProperty("cipherSuites")
         Builder cipherSuites(List<String> cipherSuites);
+
+        @JsonProperty("sendSni")
+        Builder sendSni(boolean sendSni);
+
+        @JsonProperty("sniHost")
+        Builder sniHost(String sniHost);
     }
 }
 

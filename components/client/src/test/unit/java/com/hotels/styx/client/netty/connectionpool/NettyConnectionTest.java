@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package com.hotels.styx.client.netty.connectionpool;
 
-import com.hotels.styx.client.Connection;
 import com.hotels.styx.api.extension.Origin;
+import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.HttpConfig;
 import io.netty.channel.Channel;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -66,7 +66,7 @@ public class NettyConnectionTest {
     }
 
     private Connection createConnection() {
-        return new NettyConnection(origin, channel, null, httpConfig, null);
+        return new NettyConnection(origin, channel, null, httpConfig, null, false, Optional.empty());
     }
 
     static class EventCapturingListener implements Connection.Listener {

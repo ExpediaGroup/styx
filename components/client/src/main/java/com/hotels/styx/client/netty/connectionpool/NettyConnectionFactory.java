@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
 import reactor.core.publisher.Mono;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hotels.styx.client.HttpConfig.defaultHttpConfig;
@@ -51,6 +52,8 @@ import static java.util.Objects.requireNonNull;
 public class NettyConnectionFactory implements Connection.Factory {
     private final HttpConfig httpConfig;
     private final SslContext sslContext;
+    private final boolean sendSni;
+    private final Optional<String> sniHost;
     private final HttpRequestOperationFactory httpRequestOperationFactory;
     private Bootstrap bootstrap;
     private EventLoopGroup eventLoopGroup;
@@ -66,6 +69,8 @@ public class NettyConnectionFactory implements Connection.Factory {
         this.sslContext = builder.tlsSettings == null ? null : SslContextFactory.get(builder.tlsSettings);
         this.clientSocketChannelClass = eventLoopGroupFactory.clientSocketChannelClass();
         this.httpRequestOperationFactory = requireNonNull(builder.httpRequestOperationFactory);
+        this.sendSni = builder.tlsSettings != null && builder.tlsSettings.sendSni();
+        this.sniHost = builder.tlsSettings != null ? builder.tlsSettings.sniHost() : Optional.empty();
     }
 
     @Override
@@ -79,7 +84,8 @@ public class NettyConnectionFactory implements Connection.Factory {
 
             channelFuture.addListener(future -> {
                 if (future.isSuccess()) {
-                    sink.success(new NettyConnection(origin, channelFuture.channel(), httpRequestOperationFactory, httpConfig, sslContext));
+                    sink.success(new NettyConnection(origin, channelFuture.channel(), httpRequestOperationFactory,
+                            httpConfig, sslContext, sendSni, sniHost));
                 } else {
                     sink.error(new OriginUnreachableException(origin, future.cause()));
                 }
