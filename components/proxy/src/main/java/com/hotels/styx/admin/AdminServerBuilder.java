@@ -32,6 +32,7 @@ import com.hotels.styx.admin.handlers.OriginsInventoryHandler;
 import com.hotels.styx.admin.handlers.PingHandler;
 import com.hotels.styx.admin.handlers.PluginListHandler;
 import com.hotels.styx.admin.handlers.PluginToggleHandler;
+import com.hotels.styx.admin.handlers.RoutingObjectHandler;
 import com.hotels.styx.admin.handlers.StartupConfigHandler;
 import com.hotels.styx.admin.handlers.StyxConfigurationHandler;
 import com.hotels.styx.admin.handlers.ThreadsHandler;
@@ -45,12 +46,16 @@ import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.common.http.handler.HttpMethodFilteringHandler;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.routing.RoutingObjectRecord;
+import com.hotels.styx.routing.config.RoutingObjectFactory;
+import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.server.HttpServer;
 import com.hotels.styx.server.StandardHttpRouter;
 import com.hotels.styx.server.handlers.ClassPathResourceHandler;
 import com.hotels.styx.server.netty.NettyServerBuilderSpec;
 import com.hotels.styx.server.netty.WebServerConnectorFactory;
 import com.hotels.styx.server.track.CurrentRequestTracker;
+import com.hotels.styx.startup.StyxServerComponents;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -78,12 +83,16 @@ public class AdminServerBuilder {
 
     private final Environment environment;
     private final Configuration configuration;
+    private final RoutingObjectFactory routingObjectFactory;
+    private StyxObjectStore<RoutingObjectRecord> routeDatabase;
 
     private Registry<BackendService> backendServicesRegistry;
 
-    public AdminServerBuilder(Environment environment) {
-        this.environment = environment;
-        this.configuration = environment.configuration();
+    public AdminServerBuilder(StyxServerComponents serverComponents) {
+        this.environment = requireNonNull(serverComponents.environment());
+        this.routeDatabase = requireNonNull(serverComponents.routeDatabase());
+        this.routingObjectFactory = requireNonNull(serverComponents.routingObjectFactory());
+        this.configuration = this.environment.configuration();
     }
 
     public AdminServerBuilder backendServicesRegistry(Registry<BackendService> backendServicesRegistry) {
@@ -121,6 +130,10 @@ public class AdminServerBuilder {
         httpRouter.add("/admin/origins/status", new OriginsInventoryHandler(environment.eventBus()));
         httpRouter.add("/admin/configuration/logging", new LoggingConfigurationHandler(styxConfig.startupConfig().logConfigLocation()));
         httpRouter.add("/admin/configuration/startup", new StartupConfigHandler(styxConfig.startupConfig()));
+
+        RoutingObjectHandler routingObjectHandler = new RoutingObjectHandler(routeDatabase, routingObjectFactory);
+        httpRouter.add("/admin/routing", routingObjectHandler);
+        httpRouter.add("/admin/routing/", routingObjectHandler);
 
         // Dashboard
         httpRouter.add("/admin/dashboard/data.json", dashboardDataHandler(styxConfig));

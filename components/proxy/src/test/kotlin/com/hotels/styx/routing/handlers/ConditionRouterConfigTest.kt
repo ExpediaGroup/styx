@@ -44,15 +44,13 @@ class ConditionRouterConfigTest : StringSpec({
     val routeObjectStore = mockk<StyxObjectStore<RoutingObjectRecord>>()
     every { routeObjectStore.get("secureHandler") } returns
             Optional.of(RoutingObjectRecord(
-                    "secureHandler",
-                    setOf(),
+                    "StaticResponseHandler",
                     mockk(),
                     HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "secure").build()) }))
 
     every { routeObjectStore.get("fallbackHandler") } returns
             Optional.of(RoutingObjectRecord(
-                    "fallbackHandler",
-                    setOf(),
+                    "StaticResponseHandler",
                     mockk(),
                     HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "fallback").build()) }))
 

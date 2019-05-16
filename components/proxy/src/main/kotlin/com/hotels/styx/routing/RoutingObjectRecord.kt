@@ -15,11 +15,10 @@
  */
 package com.hotels.styx.routing
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.hotels.styx.api.HttpHandler
-import com.hotels.styx.routing.config.RoutingObjectDefinition
 
 data class RoutingObjectRecord(
-        val name: String,
-        val tags: Set<String>,
-        val routingObjectDefinition: RoutingObjectDefinition,
+        val type: String,
+        val config: JsonNode,
         val handler: HttpHandler)

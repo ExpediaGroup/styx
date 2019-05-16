@@ -32,6 +32,34 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 
 class ConditionRoutingSpec : StringSpec() {
 
+    init {
+        "Routes HTTP protocol" {
+            val request = get("/11")
+                    .header(HOST, "${styxServer.proxyHttpAddress().hostName}:${styxServer.proxyHttpAddress().port}")
+                    .build();
+
+            val response = Mono.fromCompletionStage(client.send(request))
+                    .block();
+
+            response?.status() shouldBe (OK)
+            response?.bodyAs(UTF_8) shouldBe ("Hello, from http server!")
+        }
+
+        "Routes HTTPS protocol" {
+            val request = get("/2")
+                    .header(HOST, "${styxServer.proxyHttpsAddress().hostName}:${styxServer.proxyHttpsAddress().port}")
+                    .build();
+
+            val response = Mono.fromCompletionStage(
+                    client.secure()
+                            .send(request))
+                    .block();
+
+            response?.status() shouldBe (OK)
+            response?.bodyAs(UTF_8) shouldBe ("Hello, from secure server!")
+        }
+    }
+
     val originsOk = fixturesHome(ConditionRoutingSpec::class.java, "/conf/origins/origins-correct.yml")
     val yamlText = """
         proxy:
@@ -76,34 +104,6 @@ class ConditionRoutingSpec : StringSpec() {
                     status: 200
                     content: "Hello, from http server!"
       """.trimIndent()
-
-    init {
-        "Routes HTTP protocol" {
-            val request = get("/11")
-                    .header(HOST, "${styxServer.proxyHttpAddress().hostName}:${styxServer.proxyHttpAddress().port}")
-                    .build();
-
-            val response = Mono.fromCompletionStage(client.send(request))
-                    .block();
-
-            response?.status() shouldBe (OK)
-            response?.bodyAs(UTF_8) shouldBe ("Hello, from http server!")
-        }
-
-        "Routes HTTPS protocol" {
-            val request = get("/2")
-                    .header(HOST, "${styxServer.proxyHttpsAddress().hostName}:${styxServer.proxyHttpsAddress().port}")
-                    .build();
-
-            val response = Mono.fromCompletionStage(
-                    client.secure()
-                            .send(request))
-                    .block();
-
-            response?.status() shouldBe (OK)
-            response?.bodyAs(UTF_8) shouldBe ("Hello, from secure server!")
-        }
-    }
 
     val client: StyxHttpClient = StyxHttpClient.Builder()
             .threadName("functional-test-client")
