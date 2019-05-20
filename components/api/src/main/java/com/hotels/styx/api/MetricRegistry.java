@@ -61,7 +61,8 @@ public interface MetricRegistry {
 
 
     /**
-     * Creates a new {@link com.codahale.metrics.Counter} and registers it under the given name.
+     * Return the {@link com.codahale.metrics.Counter} registered under {@code name} or create
+     * a new {@link com.codahale.metrics.Counter} and register it under {@code name}.
      *
      * @param name the name of the metric
      * @return a new {@link com.codahale.metrics.Counter}
@@ -69,7 +70,8 @@ public interface MetricRegistry {
     Counter counter(String name);
 
     /**
-     * Creates a new {@link com.codahale.metrics.Histogram} and registers it under the given name.
+     * Return the {@link com.codahale.metrics.Histogram} registered under {@code name} or create
+     * a new {@link com.codahale.metrics.Histogram} and register it under {@code name}.
      *
      * @param name the name of the metric
      * @return a new {@link com.codahale.metrics.Histogram}
@@ -77,7 +79,8 @@ public interface MetricRegistry {
     Histogram histogram(String name);
 
     /**
-     * Creates a new {@link com.codahale.metrics.Meter} and registers it under the given name.
+     * Return the {@link com.codahale.metrics.Meter} registered under {@code name} or create
+     * a new {@link com.codahale.metrics.Meter} and register it under {@code name}.
      *
      * @param name the name of the metric
      * @return a new {@link com.codahale.metrics.Meter}
@@ -85,7 +88,8 @@ public interface MetricRegistry {
     Meter meter(String name);
 
     /**
-     * Creates a new {@link com.codahale.metrics.Timer} and registers it under the given name.
+     * Return the {@link com.codahale.metrics.Timer} registered under {@code name} or create
+     * a new {@link com.codahale.metrics.Timer} and register it under {@code name}.
      *
      * @param name the name of the metric
      * @return a new {@link com.codahale.metrics.Timer}

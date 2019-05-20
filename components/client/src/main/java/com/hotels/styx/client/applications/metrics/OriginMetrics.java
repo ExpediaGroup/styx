@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ import static java.util.Objects.requireNonNull;
  * connections scheduled on different event loops.
  */
 public class OriginMetrics implements OriginStats {
-    private static final String PREFIX = "origins";
     private static final Logger LOG = LoggerFactory.getLogger(OriginMetrics.class);
     private static final int SERVER_ERROR_CLASS = 5;
 
@@ -86,19 +85,8 @@ public class OriginMetrics implements OriginStats {
      * @return a new OriginMetrics
      */
     public static OriginMetrics create(Origin origin, MetricRegistry metricRegistry) {
-        MetricRegistry originsRootRegistry = metricRegistry.scope(OriginMetrics.PREFIX);
-        ApplicationMetrics appMetrics = new ApplicationMetrics(origin.applicationId(), originsRootRegistry);
+        ApplicationMetrics appMetrics = new ApplicationMetrics(origin.applicationId(), metricRegistry);
         return new OriginMetrics(appMetrics, origin);
-    }
-
-    /**
-     * Gets a naming scope for metrics pertaining to the given origin.
-     *
-     * @param origin an origin
-     * @return naming scope
-     */
-    public static String originMetricsScope(Origin origin) {
-        return name(OriginMetrics.PREFIX, origin.applicationId().toString(), originName(origin));
     }
 
     @Override

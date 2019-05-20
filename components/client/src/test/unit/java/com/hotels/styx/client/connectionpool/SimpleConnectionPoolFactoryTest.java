@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,17 +28,21 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.mockito.Mockito.mock;
 
 public class SimpleConnectionPoolFactoryTest {
-    private final Origin origin = newOriginBuilder("localhost", 12345).id("origin-X").applicationId("test-app").build();
+    private final Origin origin = newOriginBuilder("localhost", 12345)
+            .id("origin-X")
+            .applicationId("test-app")
+            .build();
 
     @Test
     public void registersMetricsUnderOriginsScope() {
-        MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
+        MetricRegistry metricRegistry = new CodaHaleMetricRegistry()
+                .scope("origins");
+
         SimpleConnectionPoolFactory factory = new SimpleConnectionPoolFactory.Builder()
                 .connectionFactory(mock(Connection.Factory.class))
                 .connectionPoolSettings(defaultConnectionPoolSettings())
                 .metricRegistry(metricRegistry)
                 .build();
-
         factory.create(origin);
 
         assertThat(metricRegistry.getGauges().keySet(), hasItems(

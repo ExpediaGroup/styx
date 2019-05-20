@@ -27,6 +27,7 @@ import com.hotels.styx.api.extension.service.ConnectionPoolSettings;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.OriginStatsFactory;
+import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.connectionpool.ConnectionPool;
 import com.hotels.styx.client.connectionpool.ExpiringConnectionFactory;
@@ -91,7 +92,7 @@ public class ProxyToBackend implements HttpHandler {
                     .get("backend.origins", JsonNode.class)
                     .orElseThrow(() -> missingAttributeError(configBlock, join(".", append(parents, "backend")), "origins"));
 
-            OriginStatsFactory originStatsFactory = new OriginStatsFactory(context.environment().metricRegistry());
+            OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(context.environment().metricRegistry());
 
             Connection.Factory connectionFactory = new NettyConnectionFactory.Builder()
                     .name("Styx")

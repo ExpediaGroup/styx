@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.any;
@@ -91,7 +92,9 @@ public class StyxBackendServiceClientTest {
 
     @BeforeMethod
     public void setUp() {
-        metricRegistry = new CodaHaleMetricRegistry();
+        metricRegistry = new CodaHaleMetricRegistry()
+                .scope("origins")
+        ;
     }
 
     @Test
@@ -358,8 +361,14 @@ public class StyxBackendServiceClientTest {
                 .thenCancel()
                 .verify();
 
-        assertThat(metricRegistry.counter("origins.App-X.requests.cancelled").getCount(), is(1L));
-        assertThat(metricRegistry.counter("origins.App-X.Origin-Y.requests.cancelled").getCount(), is(1L));
+        assertThat(metricRegistry.getNames(), hasItems(
+                "origins.App-X.requests.cancelled",
+                "origins.App-X.Origin-Y.requests.cancelled"));
+
+        // metricRegistry is already scoped at "origins". Therefore the following metric
+        // names don't need to be prefixed with it:
+        assertThat(metricRegistry.counter("App-X.requests.cancelled").getCount(), is(1L));
+        assertThat(metricRegistry.counter("App-X.Origin-Y.requests.cancelled").getCount(), is(1L));
     }
 
     @Test
