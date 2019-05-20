@@ -15,19 +15,25 @@
  */
 package com.hotels.styx.routing.handlers
 
+import com.hotels.styx.api.Buffer
+import com.hotels.styx.api.ByteStream
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
+import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handle
 import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup
+import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import io.mockk.every
 import io.mockk.mockk
+import reactor.core.publisher.Flux
 import reactor.core.publisher.toMono
+import reactor.test.publisher.PublisherProbe
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Optional
 
@@ -52,6 +58,31 @@ class RouteRefLookupTest : StringSpec({
 
         response?.status() shouldBe NOT_FOUND
         response?.bodyAs(UTF_8) shouldBe "Not found: handler1"
+    }
+
+    "Error handler consumes the request body" {
+        val routeDb = mockk<StyxObjectStore<RoutingObjectRecord>>()
+        every { routeDb.get(any()) } returns Optional.empty()
+
+        val probe = PublisherProbe.of(
+                Flux.just(
+                        Buffer("aaa", UTF_8),
+                        Buffer("bbb", UTF_8)))
+
+        val response = RouteDbRefLookup(routeDb).apply(RoutingObjectReference("handler1"))
+                .handle(LiveHttpRequest.post("/")
+                        .body(ByteStream(probe.flux()))
+                        .build(), HttpInterceptorContext.create())
+                .toMono()
+                .flatMap { it.aggregate(1000).toMono() }
+                .block()
+
+        response?.status() shouldBe NOT_FOUND
+        response?.bodyAs(UTF_8) shouldBe "Not found: handler1"
+
+        probe.wasSubscribed() shouldBe true
+        probe.wasRequested() shouldBe true
+        probe.wasCancelled() shouldBe false
     }
 
 })
