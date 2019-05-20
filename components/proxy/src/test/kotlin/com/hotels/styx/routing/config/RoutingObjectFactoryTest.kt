@@ -24,6 +24,7 @@ import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory.DEFAULT_REFERENCE_LOOKUP
 import com.hotels.styx.routing.db.StyxObjectStore
+import com.hotels.styx.routing.handlers.RouteRefLookup
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.matchers.withClue
 import io.kotlintest.shouldBe
@@ -87,7 +88,7 @@ class RoutingObjectFactoryTest : StringSpec({
     }
 
     "Looks up handler for every request" {
-        val referenceLookup = mockk<java.util.function.Function<RoutingObjectReference, HttpHandler>>()
+        val referenceLookup = mockk<RouteRefLookup>()
         every {referenceLookup.apply(RoutingObjectReference("aHandler")) } returns HttpHandler { request, context -> Eventual.of(response(OK).build().stream()) }
 
         val routingObjectFactory = RoutingObjectFactory(referenceLookup)

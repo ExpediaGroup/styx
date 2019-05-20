@@ -25,6 +25,7 @@ import com.hotels.styx.routing.RoutingContext
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.db.StyxObjectStore
+import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup
 import com.hotels.styx.routing.routingObjectDef
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
@@ -53,7 +54,7 @@ class ConditionRouterConfigTest : StringSpec({
                     mockk(),
                     HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "fallback").build()) }))
 
-    val routeHandlerFactory = RoutingObjectFactory(RouteRefLookup(routeObjectStore))
+    val routeHandlerFactory = RoutingObjectFactory(RouteDbRefLookup(routeObjectStore))
 
     val context = RoutingContext(
             routeDb = routeObjectStore,

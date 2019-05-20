@@ -27,6 +27,7 @@ import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.RoutingObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handle
+import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup
 import com.hotels.styx.routing.routingObjectDef
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
@@ -44,7 +45,7 @@ class PathPrefixRouterTest : FeatureSpec({
     val defaultFactoryContext = HttpHandlerFactory.Context(
             mockk(),
             emptyObjectStore,
-            RoutingObjectFactory(RouteRefLookup(emptyObjectStore)),
+            RoutingObjectFactory(RouteDbRefLookup(emptyObjectStore)),
             mockk(),
             mockk(),
             false)
@@ -126,7 +127,7 @@ class PathPrefixRouterTest : FeatureSpec({
             val factoryContext = HttpHandlerFactory.Context(
                     mockk(),
                     objectStore,
-                    RoutingObjectFactory(RouteRefLookup(objectStore)),
+                    RoutingObjectFactory(RouteDbRefLookup(objectStore)),
                     mockk(),
                     mockk(),
                     false)
@@ -135,12 +136,12 @@ class PathPrefixRouterTest : FeatureSpec({
 
             handler.handle(HttpRequest.get("/x").build())
                     .toMono()
-                    ?.block()
+                    .block()
                     ?.bodyAs(UTF_8) shouldBe "root"
 
             handler.handle(HttpRequest.get("/foo/").build())
                     .toMono()
-                    ?.block()
+                    .block()
                     ?.bodyAs(UTF_8) shouldBe "foo"
         }
 
@@ -161,7 +162,7 @@ class PathPrefixRouterTest : FeatureSpec({
 
             handler.handle(HttpRequest.get("/foo").build())
                     .toMono()
-                    ?.block()
+                    .block()
                     ?.bodyAs(UTF_8) shouldBe "hello"
         }
 

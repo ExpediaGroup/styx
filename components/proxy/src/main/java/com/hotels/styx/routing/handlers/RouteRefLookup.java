@@ -21,8 +21,6 @@ import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectReference;
 import com.hotels.styx.routing.db.StyxObjectStore;
 
-import java.util.function.Function;
-
 import static com.hotels.styx.api.HttpResponse.response;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -31,20 +29,28 @@ import static java.util.Objects.requireNonNull;
 /**
  * Resolves a routing object reference from route database.
  */
-public class RouteRefLookup implements Function<RoutingObjectReference, HttpHandler> {
-    private final StyxObjectStore<RoutingObjectRecord> routeDatabase;
+public interface RouteRefLookup {
+    HttpHandler apply(RoutingObjectReference route);
 
-    public RouteRefLookup(StyxObjectStore<RoutingObjectRecord> handler) {
-        this.routeDatabase = requireNonNull(handler);
-    }
+    /**
+     * A StyxObjectStore based route reference lookup function.
+     */
+    class RouteDbRefLookup implements RouteRefLookup {
+        private final StyxObjectStore<RoutingObjectRecord> routeDatabase;
 
-    public HttpHandler apply(RoutingObjectReference route) {
-        return this.routeDatabase.get(route.name())
-                .map(RoutingObjectRecord::getHandler)
-                .orElse((x, y) -> Eventual.of(response(NOT_FOUND)
-                        .body("Not found: " + route.name(), UTF_8)
-                        .build()
-                        .stream()
-                ));
+        public RouteDbRefLookup(StyxObjectStore<RoutingObjectRecord> routeDatabase) {
+            this.routeDatabase = requireNonNull(routeDatabase);
+        }
+
+        @Override
+        public HttpHandler apply(RoutingObjectReference route) {
+            return this.routeDatabase.get(route.name())
+                    .map(RoutingObjectRecord::getHandler)
+                    .orElse((x, y) -> Eventual.of(response(NOT_FOUND)
+                            .body("Not found: " + route.name(), UTF_8)
+                            .build()
+                            .stream()
+                    ));
+        }
     }
 }

@@ -29,11 +29,11 @@ import com.hotels.styx.routing.handlers.ConditionRouter;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.routing.handlers.PathPrefixRouter;
 import com.hotels.styx.routing.handlers.ProxyToBackend;
+import com.hotels.styx.routing.handlers.RouteRefLookup;
 import com.hotels.styx.routing.handlers.StaticResponseHandler;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.hotels.styx.api.HttpResponse.response;
@@ -48,10 +48,11 @@ import static java.util.Objects.requireNonNull;
 public class RoutingObjectFactory {
     public static final ImmutableMap<String, Schema.FieldType> BUILTIN_HANDLER_SCHEMAS;
     public static final ImmutableMap<String, HttpHandlerFactory> BUILTIN_HANDLER_FACTORIES;
-    public static final Function<RoutingObjectReference, HttpHandler> DEFAULT_REFERENCE_LOOKUP = reference -> (request, ctx) -> Eventual.of(response(NOT_FOUND)
-            .body(format("Handler not found for '%s'.", reference), UTF_8)
-            .build()
-            .stream());
+    public static final RouteRefLookup DEFAULT_REFERENCE_LOOKUP = reference -> (request, ctx) ->
+            Eventual.of(response(NOT_FOUND)
+                    .body(format("Handler not found for '%s'.", reference), UTF_8)
+                    .build()
+                    .stream());
     private static final String STATIC_RESPONSE = "StaticResponseHandler";
     private static final String CONDITION_ROUTER = "ConditionRouter";
     private static final String INTERCEPTOR_PIPELINE = "InterceptorPipeline";
@@ -77,7 +78,7 @@ public class RoutingObjectFactory {
                 .build();
     }
 
-    private final Function<RoutingObjectReference, HttpHandler> refLookup;
+    private final RouteRefLookup refLookup;
     private final Environment environment;
     private final StyxObjectStore<RoutingObjectRecord> routeObjectStore;
     private final Iterable<NamedPlugin> plugins;
@@ -87,7 +88,7 @@ public class RoutingObjectFactory {
 
     @VisibleForTesting
     public RoutingObjectFactory(
-            Function<RoutingObjectReference, HttpHandler> refLookup,
+            RouteRefLookup refLookup,
             Map<String, HttpHandlerFactory> builtInObjectTypes,
             Environment environment,
             StyxObjectStore<RoutingObjectRecord> routeObjectStore,
@@ -107,11 +108,11 @@ public class RoutingObjectFactory {
         this(DEFAULT_REFERENCE_LOOKUP, BUILTIN_HANDLER_FACTORIES, new Environment.Builder().build(), routeObjectStore, ImmutableList.of(), new BuiltinInterceptorsFactory(), false);
     }
 
-    public RoutingObjectFactory(Function<RoutingObjectReference, HttpHandler> refLookup, Map<String, HttpHandlerFactory> handlerFactories) {
+    public RoutingObjectFactory(RouteRefLookup refLookup, Map<String, HttpHandlerFactory> handlerFactories) {
         this(refLookup, handlerFactories, new Environment.Builder().build(), new StyxObjectStore<>(), ImmutableList.of(), new BuiltinInterceptorsFactory(), false);
     }
 
-    public RoutingObjectFactory(Function<RoutingObjectReference, HttpHandler> refLookup) {
+    public RoutingObjectFactory(RouteRefLookup refLookup) {
         this(refLookup, BUILTIN_HANDLER_FACTORIES, new Environment.Builder().build(), new StyxObjectStore<>(), ImmutableList.of(), new BuiltinInterceptorsFactory(), false);
     }
 

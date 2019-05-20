@@ -22,6 +22,7 @@ import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handle
+import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import io.mockk.every
@@ -37,17 +38,17 @@ class RouteRefLookupTest : StringSpec({
         val routeDb = mockk<StyxObjectStore<RoutingObjectRecord>>()
         every { routeDb.get(any()) } returns Optional.of(RoutingObjectRecord("StaticResponseHandler", mockk(), handler))
 
-        RouteRefLookup(routeDb).apply(RoutingObjectReference("handler1")) shouldBe handler
+        RouteDbRefLookup(routeDb).apply(RoutingObjectReference("handler1")) shouldBe handler
     }
 
     "Returns error handler when route object is not found" {
         val routeDb = mockk<StyxObjectStore<RoutingObjectRecord>>()
         every { routeDb.get(any()) } returns Optional.empty()
 
-        val response = RouteRefLookup(routeDb).apply(RoutingObjectReference("handler1"))
+        val response = RouteDbRefLookup(routeDb).apply(RoutingObjectReference("handler1"))
                 .handle(get("/").build())
                 .toMono()
-                ?.block()
+                .block()
 
         response?.status() shouldBe NOT_FOUND
         response?.bodyAs(UTF_8) shouldBe "Not found: handler1"

@@ -36,7 +36,7 @@ import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
 import com.hotels.styx.routing.db.StyxObjectStore;
-import com.hotels.styx.routing.handlers.RouteRefLookup;
+import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup;
 import com.hotels.styx.startup.extensions.ConfiguredPluginFactory;
 
 import java.util.HashMap;
@@ -76,7 +76,7 @@ public class StyxServerComponents {
                 : loadPlugins(environment, builder.configuredPluginFactories);
 
         this.routingObjectFactory = new RoutingObjectFactory(
-                new RouteRefLookup(this.routeObjectStore),
+                new RouteDbRefLookup(this.routeObjectStore),
                 BUILTIN_HANDLER_FACTORIES,
                 this.environment,
                 this.routeObjectStore,
