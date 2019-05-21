@@ -93,8 +93,7 @@ public class StyxBackendServiceClientTest {
     @BeforeMethod
     public void setUp() {
         metricRegistry = new CodaHaleMetricRegistry()
-                .scope("origins")
-        ;
+                .scope("origins");
     }
 
     @Test
