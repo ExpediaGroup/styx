@@ -36,16 +36,16 @@ public interface RouteRefLookup {
      * A StyxObjectStore based route reference lookup function.
      */
     class RouteDbRefLookup implements RouteRefLookup {
-    private final StyxObjectStore<RoutingObjectRecord> routeDatabase;
+        private final StyxObjectStore<RoutingObjectRecord> routeDatabase;
 
         public RouteDbRefLookup(StyxObjectStore<RoutingObjectRecord> routeDatabase) {
             this.routeDatabase = requireNonNull(routeDatabase);
-    }
+        }
 
         @Override
-    public HttpHandler apply(RoutingObjectReference route) {
-        return this.routeDatabase.get(route.name())
-                .map(RoutingObjectRecord::getHandler)
+        public HttpHandler apply(RoutingObjectReference route) {
+            return this.routeDatabase.get(route.name())
+                    .map(RoutingObjectRecord::getHandler)
                     .orElse((liveRequest, na) -> {
                         liveRequest.consume();
 
