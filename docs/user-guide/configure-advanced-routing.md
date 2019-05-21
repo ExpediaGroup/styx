@@ -31,83 +31,33 @@ backends.
           - bad-cookie-fixer
         handler:
           name: protocol-router
-          destination: protocolCheck
-
- ----- 
-
-    routingObjects:
-      proxyToSecure:
-         type: BackendServiceProxy
-         config:
-           backendProvider: "https-backends"
-
-      proxyToInsecure:
-         type: BackendServiceProxy
-         config:
-           backendProvider: "http-backends"
-           
-           
-      proxyToEdgeAuthSrv:
-         type: BackendServiceProxy
-         config:
-           ..
-           connectionPool:
-             ...
-           tlsSettings:
-             ...
-           healthCheck:
-             ...
-
-      proxyToErrorLoggingService:
-         type: BackendServiceProxy
-         config:
-           ..
-           connectionPool:
-             ...
-           tlsSettings:
-             ...
-           healthCheck:
-             ...
-
-      pathPrefixForSecureApps:
-         type: PathPrefix
-         config:
-
-      pathPrefixForInsecureApps:
-         type: PathPrefix
-         config:
-
-      protocolCheck:
           type: ConditionRouter
           config:
-            choice:
+            routes:
               - condition: protocol() == "https"
-                destination: pathPrefixForSecureApps
-            default:
-              destination: proxyToErrorLoggingService
+                destination:
+                  name: secure-backends
+                  type: BackendServiceProxy
+                  config:
+                    backendProvider: "https-backends"
+            fallback:
+              name: insecure-backends
+              type: BackendServiceProxy
+              config:
+                backendProvider: "http-backends"
 
-      trySecureFirst:
-          type: Duplicate
-          config:
-            copyTo: errorLogger
-            next: protocolCheck 
-              
 
-
-Without going too much into details (specifics will be explained later)
-a hierarchical structure should be apparent. The pipeline itself is an
-*InterceptorPipeline* object which runs the traffic through a pipeline of
-two interceptors, in this case plugins:
+The forwarding pipeline in this example is an *InterceptorPipeline* object 
+which runs the traffic through a pipeline of two interceptor plugins:
 
  - *redirect-old-domain*
  - *bad-cookie-fixer* before
 
-After this pipeline, the traffic is handled by a *ConditionRouter* which
-sends all traffic satisfying the condition *protocol() == "https" to a 
-BackendServiceProxy called *secure-backends*, and all the other traffic to
-another BackendServiceProxy called *insecure-backends*.
+Finally the traffic reaches a *ConditionRouter* object which
+sends all https traffic to a BackendServiceProxy called *secure-backends*,
+and everything else to *insecure-backends*.
 
-Graphically the object model can be represented as:
+Here is a graphical representation:
 
     entrypoint
     <InterceptorPipeline>
@@ -120,7 +70,7 @@ Graphically the object model can be represented as:
      protocol-router
      <ConditionRouter>
          |       |
-         |       +------------------+
+         |       \------------------\
          |                          |
          |                          |
          v                          v
@@ -193,17 +143,15 @@ the next handler in the processing chain.
     type: InterceptorPipeline
     config:
         pipeline:
-           <ROUTING-CONFIG-NODE-LIST>
+           <A LIST OF PLUGIN NAMES>
         handler:
-           <ROUTING-CONFIG-DEFINITION>
+           <ROUTING-CONFIG-DEF>
 
 *Pipeline*:
 
-Routing config node list can have both routing config references and
-definitions mixed together. A routing config reference must always
-refer to a valid plugin name that has been declared in the Styx *plugins*
-section. A routing config definition can be used to insert styx built-in
-interceptors.
+A list of strings. Each string must be a valid plugin name that has been 
+declared in the Styx *plugins* section. A routing config definition can 
+be used to insert styx built-in interceptors.
 
 *Handler*:
 
@@ -223,7 +171,7 @@ which handler to pass the request to next.
         routes:
            <CONDITION-DESTINATION-LIST>
         fallback:
-           <ROUTING-CONFIG-DEFINITION>
+           <ROUTING-CONFIG-DEF>
 
 *Routes*:
 
@@ -232,7 +180,7 @@ This block contains a list of destinations that are activated depending on the o
     CONDITION-DESTINATION:
        condition: <STRING, DSL predicate>
        destination:
-         <ROUTING-CONFIG-DEFINITION>
+         <ROUTING-CONFIG-DEF>
 
 Conditions are evaluated in the order in which they appear in the routes list.
 The request is sent to the first destination that results in a positive
