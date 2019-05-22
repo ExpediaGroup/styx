@@ -37,7 +37,7 @@ import static java.util.Objects.requireNonNull;
  */
 
 public class ModifyContentByAggregationExample implements Plugin {
-    private Config config;
+    private final Config config;
 
     public ModifyContentByAggregationExample(Config config) {
         this.config = requireNonNull(config);
@@ -57,7 +57,7 @@ public class ModifyContentByAggregationExample implements Plugin {
     }
 
     public static class Config {
-        private String extraText;
+        private final String extraText;
 
         public Config(String extraText) {
             this.extraText = requireNonNull(extraText);
