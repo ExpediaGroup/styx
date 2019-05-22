@@ -44,13 +44,9 @@ public class ReplaceLiveContentExample implements Plugin {
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
-        LiveHttpRequest newRequest = request.newBuilder()
-                .header("myRequestHeader", config.requestHeaderValue())
-                .build();
-
-        return chain.proceed(newRequest)
+        return chain.proceed(request)
                 .map(response -> response.newBuilder()
-                        .body(body -> body.replaceWith(ByteStream.from("replacement", UTF_8)))
+                        .body(body -> body.replaceWith(ByteStream.from(config.replacement(), UTF_8)))
                         .build());
     }
 }
