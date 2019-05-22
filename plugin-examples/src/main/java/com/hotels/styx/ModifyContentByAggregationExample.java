@@ -21,7 +21,10 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 
+import java.util.Objects;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 
 /**
  * You can replace content after aggregating it in memory.
@@ -33,10 +36,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *Please note that this uses more heap space as the full response is transiently stored in the heap.
  */
 
-public class ReplaceContentByAggregationExample implements Plugin {
-    ModifyHeadersExamplePluginConfig config;
+public class ModifyContentByAggregationExample implements Plugin {
+    private Config config;
 
-    private Modifier modifier; // modifier is an interface representing a class that performs some modification
+    public ModifyContentByAggregationExample(Config config) {
+        this.config = requireNonNull(config);
+    }
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
@@ -45,10 +50,22 @@ public class ReplaceContentByAggregationExample implements Plugin {
                 .map(response -> {
                     String body = response.bodyAs(UTF_8);
                     return response.newBuilder()
-                            .body(modifier.modify(body), UTF_8)
+                            .body(body + config.extraText(), UTF_8)
                             .build();
                 })
                 .map(HttpResponse::stream);
+    }
+
+    public static class Config {
+        private String extraText;
+
+        public Config(String extraText) {
+            this.extraText = requireNonNull(extraText);
+        }
+
+        public String extraText() {
+            return extraText;
+        }
     }
 }
 
