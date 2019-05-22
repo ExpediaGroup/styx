@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
  */
 package com.hotels.styx.admin.handlers;
 
+import com.hotels.styx.api.HttpInterceptor;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.common.http.handler.BaseHttpHandler;
 import com.hotels.styx.server.track.CurrentRequestTracker;
 
@@ -48,7 +48,7 @@ public class CurrentRequestsHandler extends BaseHttpHandler {
     }
 
     @Override
-    public LiveHttpResponse doHandle(LiveHttpRequest request) {
+    public HttpResponse doHandle(HttpRequest request, HttpInterceptor.Context context) {
         boolean withStackTrace = request.queryParam("withStackTrace")
                 .map("true"::equals)
                 .orElse(false);
@@ -58,8 +58,7 @@ public class CurrentRequestsHandler extends BaseHttpHandler {
                 .disableCaching()
                 .header(CONTENT_TYPE, PLAIN_TEXT_UTF_8)
                 .body(getCurrentRequestContent(withStackTrace), UTF_8, true)
-                .build()
-                .stream();
+                .build();
     }
 
     private String getCurrentRequestContent(boolean withStackTrace) {

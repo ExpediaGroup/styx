@@ -22,13 +22,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.routing.RoutingObject;
+import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
@@ -55,7 +53,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Provides admin interface access to Styx routing configuration.
  */
-public class RoutingObjectHandler implements HttpHandler {
+public class RoutingObjectHandler implements WebServiceHandler {
     private static final Logger LOGGER = getLogger(RoutingObjectHandler.class);
 
     private static final ObjectMapper YAML_MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()))
@@ -67,7 +65,7 @@ public class RoutingObjectHandler implements HttpHandler {
 
     public RoutingObjectHandler(StyxObjectStore<RoutingObjectRecord> routeDatabase, RoutingObjectFactory objectFactory) {
         urlRouter = new UrlPatternRouter.Builder()
-                .get("/admin/routing/objects", httpHandler((request, context) -> {
+                .get("/admin/routing/objects", (request, context) -> {
                     String output = routeDatabase.entrySet()
                             .stream()
                             .map(entry -> serialise(entry.getFirst(), entry.getSecond()))
@@ -76,8 +74,8 @@ public class RoutingObjectHandler implements HttpHandler {
                     return Eventual.of(response(OK)
                             .body(output, UTF_8)
                             .build());
-                }))
-                .get("/admin/routing/objects/:objectName", httpHandler((request, context) -> {
+                })
+                .get("/admin/routing/objects/:objectName", (request, context) -> {
                     String name = placeholders(context).get("objectName");
 
                     try {
@@ -89,8 +87,8 @@ public class RoutingObjectHandler implements HttpHandler {
                     } catch (ResourceNotFoundException e) {
                         return Eventual.of(response(NOT_FOUND).build());
                     }
-                }))
-                .put("/admin/routing/objects/:objectName", httpHandler((request, context) -> {
+                })
+                .put("/admin/routing/objects/:objectName", (request, context) -> {
                     String body = request.bodyAs(UTF_8);
                     String name = placeholders(context).get("objectName");
 
@@ -105,15 +103,15 @@ public class RoutingObjectHandler implements HttpHandler {
                     } catch (IOException | RuntimeException cause) {
                         return Eventual.of(response(BAD_REQUEST).body(cause.toString(), UTF_8).build());
                     }
-                }))
-                .delete("/admin/routing/objects/:objectName", httpHandler((request, context) -> {
+                })
+                .delete("/admin/routing/objects/:objectName", (request, context) -> {
                     String name = placeholders(context).get("objectName");
 
                     return routeDatabase.remove(name)
                             .map(previous -> previous.getRoutingObject().stop())
                             .map(previous -> Eventual.of(response(OK).build()))
                             .orElse(Eventual.of(response(NOT_FOUND).build()));
-                }))
+                })
                 .build();
     }
 
@@ -131,14 +129,8 @@ public class RoutingObjectHandler implements HttpHandler {
         }
     }
 
-    private static HttpHandler httpHandler(FullHttpHandler delegate) {
-        return (request, context) -> request.aggregate(1000000)
-                .flatMap(fullRequest -> delegate.handle(fullRequest, context))
-                .map(HttpResponse::stream);
-    }
-
     @Override
-    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return urlRouter.handle(request, context);
     }
 

@@ -22,7 +22,7 @@ import com.google.common.net.HostAndPort
 import com.google.common.net.HostAndPort._
 import com.google.common.net.MediaType.PLAIN_TEXT_UTF_8
 import com.hotels.styx.api._
-import com.hotels.styx.common.http.handler.StaticBodyHttpHandler
+import com.hotels.styx.common.http.handler.{HttpAggregator, StaticBodyHttpHandler}
 import com.hotels.styx.support.backends.FakeHttpServer
 import com.hotels.styx.support.configuration.{HttpBackend, Origins, StyxConfig}
 import com.hotels.styx.{PluginAdapter, StyxClientSupplier, StyxProxySpec}
@@ -115,8 +115,8 @@ class PluginAdminInterfaceSpec extends FunSpec with StyxProxySpec with StyxClien
     override def intercept(request: LiveHttpRequest, chain: HttpInterceptor.Chain): Eventual[LiveHttpResponse] = chain.proceed(request)
 
     override def adminInterfaceHandlers(): util.Map[String, HttpHandler] = Map[String, HttpHandler](
-      "/path/one" -> new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "X: Response from first admin interface"),
-      "/path/two" -> new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "X: Response from second admin interface")
+      "/path/one" -> new HttpAggregator(new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "X: Response from first admin interface")),
+      "/path/two" -> new HttpAggregator(new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "X: Response from second admin interface"))
     ).asJava
   }
 
@@ -124,8 +124,8 @@ class PluginAdminInterfaceSpec extends FunSpec with StyxProxySpec with StyxClien
     override def intercept(request: LiveHttpRequest, chain: HttpInterceptor.Chain): Eventual[LiveHttpResponse] = chain.proceed(request)
 
     override def adminInterfaceHandlers(): util.Map[String, HttpHandler] = Map[String, HttpHandler](
-      "/path/one" -> new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Y: Response from first admin interface"),
-      "/path/two" -> new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Y: Response from second admin interface")
+      "/path/one" -> new HttpAggregator(new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Y: Response from first admin interface")),
+      "/path/two" -> new HttpAggregator(new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Y: Response from second admin interface"))
     ).asJava
   }
 
@@ -133,8 +133,8 @@ class PluginAdminInterfaceSpec extends FunSpec with StyxProxySpec with StyxClien
     override def intercept(request: LiveHttpRequest, chain: HttpInterceptor.Chain): Eventual[LiveHttpResponse] = chain.proceed(request)
 
     override def adminInterfaceHandlers(): util.Map[String, HttpHandler] = Map[String, HttpHandler](
-      "path/one" -> new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Z: Response from first admin interface"),
-      "path/two" -> new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Z: Response from second admin interface")
+      "path/one" -> new HttpAggregator(new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Z: Response from first admin interface")),
+      "path/two" -> new HttpAggregator(new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, "Z: Response from second admin interface"))
     ).asJava
   }
 

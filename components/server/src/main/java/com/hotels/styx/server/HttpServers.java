@@ -33,7 +33,7 @@ public class HttpServers {
         return NettyServerBuilder.newBuilder()
                 .name("NettyServer")
                 .setHttpConnector(new WebServerConnectorFactory().create(new HttpConnectorConfig(port)))
-                .handlerFactory(() -> new StandardHttpRouter().add("/", handler))
+                .handlerFactory(() -> handler)
                 .build();
     }
 

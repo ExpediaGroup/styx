@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 package com.hotels.styx.server.handlers;
 
 import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
-import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.FORBIDDEN;
 import static com.hotels.styx.api.HttpResponseStatus.NOT_FOUND;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.is;
@@ -36,8 +36,8 @@ public class ClassPathResourceHandlerTest {
 
     @Test
     public void readsClassPathResources() {
-        LiveHttpRequest request = get("/admin/dashboard/expected.txt").build();
-        HttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
+        HttpRequest request = get("/admin/dashboard/expected.txt").build();
+        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
 
         assertThat(response.status(), is(OK));
         assertThat(body(response), is("Foo\nBar\n"));
@@ -49,8 +49,8 @@ public class ClassPathResourceHandlerTest {
 
     @Test
     public void returns404IfResourceDoesNotExist() {
-        LiveHttpRequest request = get("/admin/dashboard/unexpected.txt").build();
-        HttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
+        HttpRequest request = get("/admin/dashboard/unexpected.txt").build();
+        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
 
         assertThat(response.status(), is(NOT_FOUND));
     }
@@ -67,8 +67,8 @@ public class ClassPathResourceHandlerTest {
 
     @Test(dataProvider = "forbiddenPaths")
     public void returns403IfTryingToAccessResourcesOutsidePermittedRoot(String path) {
-        LiveHttpRequest request = get(path).build();
-        HttpResponse response = waitForResponse(handler.handle(request, HttpInterceptorContext.create()));
+        HttpRequest request = get(path).build();
+        HttpResponse response = Mono.from(handler.handle(request, HttpInterceptorContext.create())).block();
 
         assertThat(response.status(), is(FORBIDDEN));
     }

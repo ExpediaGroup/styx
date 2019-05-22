@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ package com.hotels.styx.admin.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.WebServiceHandler;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.common.http.handler.StaticBodyHttpHandler;
 
@@ -33,7 +33,7 @@ import static com.hotels.styx.admin.support.Json.PRETTY_PRINTER;
 /**
  * Returns a response consisting of the configuration variables.
  */
-public class StyxConfigurationHandler implements HttpHandler {
+public class StyxConfigurationHandler implements WebServiceHandler {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final StaticBodyHttpHandler styxConfigHandler;
@@ -49,21 +49,21 @@ public class StyxConfigurationHandler implements HttpHandler {
             prettyStyxConfigHandler = new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, prettify(configuration));
     }
 
-    @Override
-    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
-        return configHandler(request.queryParam("pretty").isPresent())
-                .handle(request, context)
-                .map(StyxConfigurationHandler::disableCaching);
+    private static HttpResponse disableCaching(HttpResponse response) {
+        return response.newBuilder()
+                .disableCaching()
+                .build();
     }
 
     private StaticBodyHttpHandler configHandler(boolean pretty) {
         return pretty ? prettyStyxConfigHandler : styxConfigHandler;
     }
 
-    private static LiveHttpResponse disableCaching(LiveHttpResponse response) {
-        return response.newBuilder()
-                .disableCaching()
-                .build();
+    @Override
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return configHandler(request.queryParam("pretty").isPresent())
+                .handle(request, context)
+                .map(StyxConfigurationHandler::disableCaching);
     }
 
     private static String body(Configuration styxConfig) {

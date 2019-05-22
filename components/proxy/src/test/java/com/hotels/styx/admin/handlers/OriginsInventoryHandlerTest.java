@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.eventbus.EventBus;
 import com.hotels.styx.admin.tasks.StubConnectionPool;
-import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.Id;
 import com.hotels.styx.api.extension.Origin;
 import com.hotels.styx.api.extension.OriginsSnapshot;
@@ -29,6 +29,7 @@ import com.hotels.styx.api.extension.RemoteHost;
 import com.hotels.styx.api.extension.loadbalancing.spi.LoadBalancingMetricSupplier;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -36,12 +37,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hotels.styx.api.LiveHttpRequest.get;
+import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.Id.id;
 import static com.hotels.styx.api.extension.Origin.newOriginBuilder;
 import static com.hotels.styx.api.extension.RemoteHost.remoteHost;
 import static com.hotels.styx.infrastructure.configuration.json.ObjectMappers.addStyxMixins;
-import static com.hotels.styx.support.api.BlockingObservables.waitForResponse;
 import static com.hotels.styx.support.matchers.RegExMatcher.matchesRegex;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptySet;
@@ -67,7 +67,7 @@ public class OriginsInventoryHandlerTest {
 
         eventBus.post(new OriginsSnapshot(APP_ID, pool(activeOrigins), pool(inactiveOrigins), pool(disabledOrigins)));
 
-        HttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
+        HttpResponse response = Mono.from(handler.handle(get("/").build(), HttpInterceptorContext.create())).block();
         assertThat(response.bodyAs(UTF_8).split("\n").length, is(1));
 
         Map<Id, OriginsSnapshot> output = deserialiseJson(response.bodyAs(UTF_8));
@@ -91,7 +91,7 @@ public class OriginsInventoryHandlerTest {
 
         eventBus.post(new OriginsSnapshot(APP_ID, pool(emptySet()), pool(emptySet()), pool(disabledOrigins)));
 
-        HttpResponse response = waitForResponse(handler.handle(get("/?pretty=1").build(), HttpInterceptorContext.create()));
+        HttpResponse response = Mono.from(handler.handle(get("/?pretty=1").build(), HttpInterceptorContext.create())).block();
         assertThat(body(response).replace("\r\n", "\n"),
                 matchesRegex("\\{\n" +
                         "  \"" + APP_ID + "\" : \\{\n" +
@@ -113,7 +113,7 @@ public class OriginsInventoryHandlerTest {
     public void returnsEmptyObjectWhenNoOrigins() {
         OriginsInventoryHandler handler = new OriginsInventoryHandler(new EventBus());
 
-        HttpResponse response = waitForResponse(handler.handle(get("/").build(), HttpInterceptorContext.create()));
+        HttpResponse response = Mono.from(handler.handle(get("/").build(), HttpInterceptorContext.create())).block();
 
         assertThat(response.bodyAs(UTF_8), is("{}"));
     }

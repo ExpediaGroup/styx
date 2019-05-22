@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,13 +15,12 @@
  */
 package com.hotels.styx.common.http.handler;
 
-import com.hotels.styx.api.HttpResponse;
-import com.hotels.styx.api.HttpHandler;
-import com.hotels.styx.api.HttpInterceptor;
-import com.hotels.styx.api.LiveHttpRequest;
-import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpMethod;
+import com.hotels.styx.api.HttpRequest;
+import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.WebServiceHandler;
 
 import java.nio.charset.StandardCharsets;
 
@@ -33,25 +32,24 @@ import static java.util.Objects.requireNonNull;
  * A handler that checks whether incoming messages have the expected HTTP method. If the method is correct, this handler
  * delegates to its child handler. Otherwise, it responds with a 405 error.
  */
-public class HttpMethodFilteringHandler implements HttpHandler {
+public class HttpMethodFilteringHandler implements WebServiceHandler {
     private final HttpMethod method;
-    private final HttpHandler httpHandler;
+    private final WebServiceHandler httpHandler;
     private final String errorBody;
 
-    public HttpMethodFilteringHandler(HttpMethod method, HttpHandler httpHandler) {
+    public HttpMethodFilteringHandler(HttpMethod method, WebServiceHandler httpHandler) {
         this.method = requireNonNull(method);
         this.httpHandler = requireNonNull(httpHandler);
         this.errorBody = format("%s. Only [%s] is allowed for this request.", METHOD_NOT_ALLOWED.description(), method);
     }
 
     @Override
-    public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         if (!method.equals(request.method())) {
             return Eventual.of(
                     HttpResponse.response(METHOD_NOT_ALLOWED)
                             .body(errorBody, StandardCharsets.UTF_8)
                             .build()
-                            .stream()
             );
         }
 

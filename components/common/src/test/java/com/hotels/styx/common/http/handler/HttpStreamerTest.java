@@ -13,32 +13,39 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.admin.handlers;
+package com.hotels.styx.common.http.handler;
 
-
+import com.hotels.styx.api.ByteStream;
+import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Mono;
 
-import static com.hotels.styx.api.HttpRequest.get;
 import static com.hotels.styx.api.HttpResponseStatus.OK;
-import static com.hotels.styx.support.api.matchers.HttpHeadersMatcher.isNotCacheable;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.core.StringContains.containsString;
 
-public class ThreadsHandlerTest {
-    final ThreadsHandler handler = new ThreadsHandler();
-
+public class HttpStreamerTest {
     @Test
-    public void dumpsCurrentThreadsState() {
-        HttpResponse response = Mono.from(handler.handle(get("/threads").build(), HttpInterceptorContext.create())).block();
-        assertThat(response.status(), is(OK));
-        assertThat(response.headers(), isNotCacheable());
-        assertThat(response.contentType().get(), is("text/plain; charset=utf-8"));
-        assertThat(response.bodyAs(UTF_8), containsString("Finalizer"));
-    }
+    public void streamsRequestAndAggregatesResponses() {
+        HttpHandler httpHandler = (request, ctx) -> Eventual.of(
+                LiveHttpResponse.response(OK)
+                        .body(ByteStream.from("abcdef", UTF_8))
+                        .build());
 
+        HttpResponse response = Mono.from(
+                new HttpStreamer(500, httpHandler)
+                        .handle(HttpRequest.post("/")
+                                        .body("ABCDEF", UTF_8)
+                                        .build(),
+                                HttpInterceptorContext.create()))
+                .block();
+
+        assertThat(response.bodyAs(UTF_8), is("abcdef"));
+    }
 }

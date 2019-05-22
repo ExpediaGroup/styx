@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.common.http.handler.HttpAggregator;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -64,7 +65,7 @@ public class StaticFileHandler implements HttpHandler {
                             .build()
                             .stream())
                     .map(Eventual::of)
-                    .orElseGet(() -> NOT_FOUND_HANDLER.handle(request, context));
+                    .orElseGet(() -> new HttpAggregator(NOT_FOUND_HANDLER).handle(request, context));
         } catch (IOException e) {
             return Eventual.of(HttpResponse.response(INTERNAL_SERVER_ERROR).build().stream());
         }
