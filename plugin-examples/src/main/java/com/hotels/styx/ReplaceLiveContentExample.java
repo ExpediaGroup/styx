@@ -36,7 +36,7 @@ import static java.util.Objects.requireNonNull;
  */
 
 public class ReplaceLiveContentExample implements Plugin {
-    private ReplaceLiveContentExampleConfig config;
+    private final ReplaceLiveContentExampleConfig config;
 
     public ReplaceLiveContentExample(ReplaceLiveContentExampleConfig config) {
         this.config = requireNonNull(config);
