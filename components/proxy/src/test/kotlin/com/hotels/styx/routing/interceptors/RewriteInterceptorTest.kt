@@ -21,16 +21,15 @@ import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.api.LiveHttpResponse.response
-import com.hotels.styx.routing.configBlock
+import com.hotels.styx.routing.routingObjectDef
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
-import reactor.core.publisher.Mono
+import reactor.core.publisher.toMono
 
 class RewriteInterceptorTest : StringSpec({
 
     "performs replacement" {
-        val config = configBlock("""
-            config:
+        val config = routingObjectDef("""
                 name: rewrite
                 type: Rewrite
                 config:
@@ -43,14 +42,13 @@ class RewriteInterceptorTest : StringSpec({
         val interceptor = RewriteInterceptor.Factory().build(config)
         val capturingChain = CapturingChain()
 
-        val response = Mono.from(interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain)).block()
+        interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain).toMono().block()
         capturingChain.request()?.path() shouldBe ("/app/foo")
     }
 
 
     "Empty config block does nothing" {
-        val config = configBlock("""
-            config:
+        val config = routingObjectDef("""
                 name: rewrite
                 type: Rewrite
                 config:
@@ -59,7 +57,7 @@ class RewriteInterceptorTest : StringSpec({
         val interceptor = RewriteInterceptor.Factory().build(config)
         val capturingChain = CapturingChain()
 
-        val response = Mono.from(interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain)).block()
+        interceptor.intercept(LiveHttpRequest.get("/foo").build(), capturingChain).toMono().block()
         capturingChain.request()?.path() shouldBe ("/foo")
     }
 

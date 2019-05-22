@@ -27,12 +27,13 @@ import com.hotels.styx.api.extension.service.spi.Registry.ReloadResult.reloaded
 import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.RoutingContext
-import com.hotels.styx.routing.configBlock
+import com.hotels.styx.routing.routingObjectDef
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
 import reactor.core.publisher.Mono
+import reactor.core.publisher.toMono
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 
@@ -47,8 +48,7 @@ class BackendServiceProxyTest : StringSpec({
 
 
     "builds a backend service proxy from the configuration " {
-        val config = configBlock("""
-                config:
+        val config = routingObjectDef("""
                   type: BackendServiceProxy
                   config:
                     backendProvider: backendServicesRegistry
@@ -64,19 +64,18 @@ class BackendServiceProxyTest : StringSpec({
         val handler = BackendServiceProxy.Factory(environment, clientFactory(), services).build(listOf(), context, config)
         backendRegistry.reload()
 
-        val hwaResponse = Mono.from(handler.handle(hwaRequest, HttpInterceptorContext.create())).block()
-        hwaResponse.header("X-Backend-Service").get() shouldBe("hwa")
+        val hwaResponse = handler.handle(hwaRequest, HttpInterceptorContext.create()).toMono().block()
+        hwaResponse?.header("X-Backend-Service")?.get() shouldBe("hwa")
 
-        val laResponse = Mono.from(handler.handle(laRequest, HttpInterceptorContext.create())).block()
-        laResponse.header("X-Backend-Service").get() shouldBe("la")
+        val laResponse = handler.handle(laRequest, HttpInterceptorContext.create()).toMono().block()
+        laResponse?.header("X-Backend-Service")?.get() shouldBe("la")
 
-        val baResponse = Mono.from(handler.handle(baRequest, HttpInterceptorContext.create())).block()
-        baResponse.header("X-Backend-Service").get() shouldBe("ba")
+        val baResponse = handler.handle(baRequest, HttpInterceptorContext.create()).toMono().block()
+        baResponse?.header("X-Backend-Service")?.get() shouldBe("ba")
     }
 
     "errors when backendProvider attribute is not specified" {
-        val config = configBlock("""
-                config:
+        val config = routingObjectDef("""
                   type: BackendServiceProxy
                   config:
                     foo: bar
@@ -88,11 +87,8 @@ class BackendServiceProxyTest : StringSpec({
         e.message shouldBe("Routing object definition of type 'BackendServiceProxy', attribute='config.config', is missing a mandatory 'backendProvider' attribute.")
     }
 
-
-
     "errors when backendProvider does not exists" {
-        val config = configBlock("""
-                config:
+        val config = routingObjectDef("""
                   type: BackendServiceProxy
                   config:
                     backendProvider: bar
@@ -103,7 +99,6 @@ class BackendServiceProxyTest : StringSpec({
         }
         e.message shouldBe("No such backend service provider exists, attribute='config.config.backendProvider', name='bar'")
     }
-
 
 })
 

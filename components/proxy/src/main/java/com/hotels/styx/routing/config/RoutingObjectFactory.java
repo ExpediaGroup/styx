@@ -16,6 +16,7 @@
 package com.hotels.styx.routing.config;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.Eventual;
@@ -26,7 +27,9 @@ import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.ConditionRouter;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
+import com.hotels.styx.routing.handlers.PathPrefixRouter;
 import com.hotels.styx.routing.handlers.ProxyToBackend;
+import com.hotels.styx.routing.handlers.RouteRefLookup;
 import com.hotels.styx.routing.handlers.StaticResponseHandler;
 
 import java.util.List;
@@ -44,28 +47,38 @@ import static java.util.Objects.requireNonNull;
  */
 public class RoutingObjectFactory {
     public static final ImmutableMap<String, Schema.FieldType> BUILTIN_HANDLER_SCHEMAS;
-    private static final ImmutableMap<String, HttpHandlerFactory> BUILTIN_HANDLER_FACTORIES;
+    public static final ImmutableMap<String, HttpHandlerFactory> BUILTIN_HANDLER_FACTORIES;
+    public static final RouteRefLookup DEFAULT_REFERENCE_LOOKUP = reference -> (request, ctx) ->
+            Eventual.of(response(NOT_FOUND)
+                    .body(format("Handler not found for '%s'.", reference), UTF_8)
+                    .build()
+                    .stream());
     private static final String STATIC_RESPONSE = "StaticResponseHandler";
     private static final String CONDITION_ROUTER = "ConditionRouter";
     private static final String INTERCEPTOR_PIPELINE = "InterceptorPipeline";
     private static final String PROXY_TO_BACKEND = "ProxyToBackend";
+    private static final String PATH_PREFIX_ROUTER = "PathPrefixRouter";
+
 
     static {
         BUILTIN_HANDLER_FACTORIES = ImmutableMap.<String, HttpHandlerFactory>builder()
-                    .put(STATIC_RESPONSE, new StaticResponseHandler.Factory())
-                    .put(CONDITION_ROUTER, new ConditionRouter.Factory())
-                    .put(INTERCEPTOR_PIPELINE, new HttpInterceptorPipeline.Factory())
-                    .put(PROXY_TO_BACKEND, new ProxyToBackend.Factory())
-                    .build();
+                .put(STATIC_RESPONSE, new StaticResponseHandler.Factory())
+                .put(CONDITION_ROUTER, new ConditionRouter.Factory())
+                .put(INTERCEPTOR_PIPELINE, new HttpInterceptorPipeline.Factory())
+                .put(PROXY_TO_BACKEND, new ProxyToBackend.Factory())
+                .put(PATH_PREFIX_ROUTER, new PathPrefixRouter.Factory())
+                .build();
 
         BUILTIN_HANDLER_SCHEMAS = ImmutableMap.<String, Schema.FieldType>builder()
-                    .put(STATIC_RESPONSE, StaticResponseHandler.SCHEMA)
-                    .put(CONDITION_ROUTER, ConditionRouter.SCHEMA)
-                    .put(INTERCEPTOR_PIPELINE, HttpInterceptorPipeline.SCHEMA)
-                    .put(PROXY_TO_BACKEND, ProxyToBackend.SCHEMA)
-                    .build();
+                .put(STATIC_RESPONSE, StaticResponseHandler.SCHEMA)
+                .put(CONDITION_ROUTER, ConditionRouter.SCHEMA)
+                .put(INTERCEPTOR_PIPELINE, HttpInterceptorPipeline.SCHEMA)
+                .put(PROXY_TO_BACKEND, ProxyToBackend.SCHEMA)
+                .put(PATH_PREFIX_ROUTER, PathPrefixRouter.SCHEMA)
+                .build();
     }
 
+    private final RouteRefLookup refLookup;
     private final Environment environment;
     private final StyxObjectStore<RoutingObjectRecord> routeObjectStore;
     private final Iterable<NamedPlugin> plugins;
@@ -75,11 +88,14 @@ public class RoutingObjectFactory {
 
     @VisibleForTesting
     public RoutingObjectFactory(
+            RouteRefLookup refLookup,
             Map<String, HttpHandlerFactory> builtInObjectTypes,
             Environment environment,
-            StyxObjectStore<RoutingObjectRecord> routeObjectStore, Iterable<NamedPlugin> plugins,
+            StyxObjectStore<RoutingObjectRecord> routeObjectStore,
+            Iterable<NamedPlugin> plugins,
             BuiltinInterceptorsFactory interceptorFactory,
             boolean requestTracking) {
+        this.refLookup = requireNonNull(refLookup);
         this.builtInObjectTypes = requireNonNull(builtInObjectTypes);
         this.environment = requireNonNull(environment);
         this.routeObjectStore = requireNonNull(routeObjectStore);
@@ -88,13 +104,30 @@ public class RoutingObjectFactory {
         this.requestTracking = requestTracking;
     }
 
-    public RoutingObjectFactory(
-            Environment environment,
-            StyxObjectStore<RoutingObjectRecord> routeObjectStore,
-            List<NamedPlugin> plugins,
-            BuiltinInterceptorsFactory interceptorFactory,
-            boolean requestTracking) {
-        this(BUILTIN_HANDLER_FACTORIES, environment, routeObjectStore, plugins, interceptorFactory, requestTracking);
+    public RoutingObjectFactory(StyxObjectStore<RoutingObjectRecord> routeObjectStore) {
+        this(DEFAULT_REFERENCE_LOOKUP, BUILTIN_HANDLER_FACTORIES, new Environment.Builder().build(), routeObjectStore, ImmutableList.of(), new BuiltinInterceptorsFactory(), false);
+    }
+
+    public RoutingObjectFactory(RouteRefLookup refLookup, Map<String, HttpHandlerFactory> handlerFactories) {
+        this(refLookup, handlerFactories, new Environment.Builder().build(), new StyxObjectStore<>(), ImmutableList.of(), new BuiltinInterceptorsFactory(), false);
+    }
+
+    public RoutingObjectFactory(RouteRefLookup refLookup) {
+        this(refLookup, BUILTIN_HANDLER_FACTORIES, new Environment.Builder().build(), new StyxObjectStore<>(), ImmutableList.of(), new BuiltinInterceptorsFactory(), false);
+    }
+
+    public RoutingObjectFactory() {
+        this(DEFAULT_REFERENCE_LOOKUP,
+                BUILTIN_HANDLER_FACTORIES,
+                new Environment.Builder().build(),
+                new StyxObjectStore<>(),
+                ImmutableList.of(),
+                new BuiltinInterceptorsFactory(),
+                false);
+    }
+
+    public HttpHandler build(RoutingObjectConfiguration configNode) {
+        return build(ImmutableList.of(), configNode);
     }
 
     public HttpHandler build(List<String> parents, RoutingObjectConfiguration configNode) {
@@ -115,15 +148,9 @@ public class RoutingObjectFactory {
 
             return factory.build(parents, context, configBlock);
         } else if (configNode instanceof RoutingObjectReference) {
-            RoutingObjectReference reference = (RoutingObjectReference) configNode;
-
-            return (request, context) -> routeObjectStore.get(reference.name())
-                    .map(handler -> handler.getHandler().handle(request, context))
-                    .orElse(Eventual.of(
-                            response(NOT_FOUND)
-                                    .body("Not found: " + String.join(".", parents) + "." + reference.name(), UTF_8)
-                                    .build()
-                                    .stream()));
+            return (request, context) -> refLookup
+                    .apply((RoutingObjectReference) configNode)
+                    .handle(request, context);
         } else {
             throw new UnsupportedOperationException(format("Unsupported configuration node type: '%s'", configNode.getClass().getName()));
         }

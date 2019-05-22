@@ -18,18 +18,17 @@ package com.hotels.styx.routing.handlers
 import com.hotels.styx.api.HttpResponseStatus.CREATED
 import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.routing.RoutingContext
-import com.hotels.styx.routing.configBlock
+import com.hotels.styx.routing.routingObjectDef
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
-import reactor.core.publisher.Mono
+import reactor.core.publisher.toMono
 
 
 class StaticResponseHandlerTest: StringSpec({
     val context = RoutingContext().get()
 
-    val config = configBlock("""
-          config:
+    val config = routingObjectDef("""
               name: proxy-and-log-to-https
               type: StaticResponseHandler
               config:
@@ -39,7 +38,7 @@ class StaticResponseHandlerTest: StringSpec({
 
     "builds static response handler" {
         val handler = StaticResponseHandler.Factory().build(listOf(), context, config)
-        val response = Mono.from(handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create())).block()
+        val response = handler.handle(LiveHttpRequest.get("/foo").build(), HttpInterceptorContext.create()).toMono().block()
 
         response?.status() shouldBe (CREATED)
     }

@@ -24,8 +24,9 @@ import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.routing.RoutingContext
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory
-import com.hotels.styx.routing.configBlock
 import com.hotels.styx.routing.db.StyxObjectStore
+import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup
+import com.hotels.styx.routing.routingObjectDef
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
@@ -33,9 +34,8 @@ import io.kotlintest.specs.StringSpec
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import reactor.core.publisher.Mono
+import reactor.core.publisher.toMono
 import java.util.Optional
-import java.lang.IllegalArgumentException
 
 class ConditionRouterConfigTest : StringSpec({
 
@@ -54,15 +54,14 @@ class ConditionRouterConfigTest : StringSpec({
                     mockk(),
                     HttpHandler { _, _ -> Eventual.of(response(OK).header("source", "fallback").build()) }))
 
-    val routeHandlerFactory = RoutingObjectFactory(mapOf("StaticResponseHandler" to StaticResponseHandler.Factory()), mockk(), routeObjectStore, mockk(), mockk(), false)
+    val routeHandlerFactory = RoutingObjectFactory(RouteDbRefLookup(routeObjectStore))
 
     val context = RoutingContext(
             routeDb = routeObjectStore,
             routingObjectFactory = routeHandlerFactory)
             .get()
 
-    val config = configBlock("""
-          config:
+    val config = routingObjectDef("""
               name: main-router
               type: ConditionRouter
               config:
@@ -84,22 +83,21 @@ class ConditionRouterConfigTest : StringSpec({
 
     "Builds an instance with fallback handler" {
         val router = ConditionRouter.Factory().build(listOf(), context, config)
-        val response = Mono.from(router.handle(request, HttpInterceptorContext(true))).block()
+        val response = router.handle(request, HttpInterceptorContext(true)).toMono().block()
 
-        response.status() shouldBe (OK)
+        response?.status() shouldBe (OK)
     }
 
     "Builds condition router instance routes" {
         val router = ConditionRouter.Factory().build(listOf(), context, config)
-        val response = Mono.from(router.handle(request, HttpInterceptorContext())).block()
+        val response = router.handle(request, HttpInterceptorContext()).toMono().block()
 
-        response.status().code() shouldBe (301)
+        response?.status()?.code() shouldBe (301)
     }
 
 
     "Fallback handler can be specified as a handler reference" {
-        val router = ConditionRouter.Factory().build(listOf(), context, configBlock("""
-          config:
+        val router = ConditionRouter.Factory().build(listOf(), context, routingObjectDef("""
               name: main-router
               type: ConditionRouter
               config:
@@ -109,14 +107,13 @@ class ConditionRouterConfigTest : StringSpec({
                 fallback: fallbackHandler
           """.trimIndent()))
 
-        val resp = Mono.from(router.handle(request, HttpInterceptorContext())).block()
+        val response = router.handle(request, HttpInterceptorContext()).toMono().block()
 
-        resp.header("source").get() shouldBe ("fallback")
+        response?.header("source")?.get() shouldBe ("fallback")
     }
 
     "Route destination can be specified as a handler reference" {
-        val router = ConditionRouter.Factory().build(listOf(), context, configBlock("""
-          config:
+        val router = ConditionRouter.Factory().build(listOf(), context, routingObjectDef("""
               name: main-router
               type: ConditionRouter
               config:
@@ -127,16 +124,15 @@ class ConditionRouterConfigTest : StringSpec({
           """.trimIndent())
         )
 
-        val resp = Mono.from(router.handle(request, HttpInterceptorContext(true))).block()
-        resp.header("source").get() shouldBe ("secure")
+        val response = router.handle(request, HttpInterceptorContext(true)).toMono().block()
+        response?.header("source")?.get() shouldBe ("secure")
     }
 
 
     "Throws exception when routes attribute is missing" {
 
         val e = shouldThrow<IllegalArgumentException> {
-            ConditionRouter.Factory().build(listOf("config", "config"), context, configBlock("""
-            config:
+            ConditionRouter.Factory().build(listOf("config", "config"), context, routingObjectDef("""
                 name: main-router
                 type: ConditionRouter
                 config:
@@ -153,8 +149,7 @@ class ConditionRouterConfigTest : StringSpec({
 
     "Responds with 502 Bad Gateway when fallback attribute is not specified." {
 
-        val router = ConditionRouter.Factory().build(listOf(), context, configBlock("""
-            config:
+        val router = ConditionRouter.Factory().build(listOf(), context, routingObjectDef("""
                 name: main-router
                 type: ConditionRouter
                 config:
@@ -168,16 +163,15 @@ class ConditionRouterConfigTest : StringSpec({
                           content: "secure"
         """.trimIndent()))
 
-        val resp = Mono.from(router.handle(request, HttpInterceptorContext())).block()
+        val response = router.handle(request, HttpInterceptorContext()).toMono().block()
 
-        resp.status() shouldBe (BAD_GATEWAY)
+        response?.status() shouldBe (BAD_GATEWAY)
     }
 
     "Indicates the condition when fails to compile an DSL expression due to Syntax Error" {
 
         val e = shouldThrow<IllegalArgumentException> {
-            ConditionRouter.Factory().build(listOf("config", "config"), context, configBlock("""
-                    config:
+            ConditionRouter.Factory().build(listOf("config", "config"), context, routingObjectDef("""
                         name: main-router
                         type: ConditionRouter
                         config:
@@ -197,8 +191,7 @@ class ConditionRouterConfigTest : StringSpec({
     "Indicates the condition when fails to compile an DSL expression due to unrecognised DSL function name" {
 
         val e = shouldThrow<IllegalArgumentException> {
-            ConditionRouter.Factory().build(listOf("config", "config"), context, configBlock("""
-                config:
+            ConditionRouter.Factory().build(listOf("config", "config"), context, routingObjectDef("""
                     name: main-router
                     type: ConditionRouter
                     config:
@@ -222,8 +215,7 @@ class ConditionRouterConfigTest : StringSpec({
 
         val context = RoutingContext(routeDb = routeObjectStore, routingObjectFactory = builtinsFactory).get()
 
-        ConditionRouter.Factory().build(listOf("config", "config"), context, configBlock("""
-            config:
+        ConditionRouter.Factory().build(listOf("config", "config"), context, routingObjectDef("""
                 name: main-router
                 type: ConditionRouter
                 config:
