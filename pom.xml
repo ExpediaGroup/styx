@@ -67,6 +67,7 @@
     <module>components</module>
     <module>support</module>
     <module>system-tests</module>
+    <module>plugin-examples</module>
   </modules>
 
   <properties>

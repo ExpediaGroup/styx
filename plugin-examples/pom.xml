@@ -1,205 +1,78 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <groupId>com.hotels.styx</groupId>
+    <artifactId>styx-components</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
 
   <modelVersion>4.0.0</modelVersion>
-  <packaging>jar</packaging>
 
-  <groupId>com.hotels.styx</groupId>
   <artifactId>plugin-examples</artifactId>
   <name>Styx proxy plugin examples</name>
-  <version>0.0.1-SNAPSHOT</version>
-
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
-
-    <!-- Styx Version -->
-    <styx.version>0.9-SNAPSHOT</styx.version>
-    <rxjava.version>1.1.6</rxjava.version>
-    <jackson.version>2.9.9</jackson.version>
-    <!--Testing-->
-    <testng.version>6.8</testng.version>
-
-    <!-- apache plugin versions and configurations, please sort alphabetically -->
-    <maven-compiler-plugin.version>3.0</maven-compiler-plugin.version>
-    <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
-    <maven-resources-plugin.version>2.6</maven-resources-plugin.version>
-    <maven-surefire-plugin.version>2.16</maven-surefire-plugin.version>
-  </properties>
-
 
   <dependencies>
     <dependency>
       <groupId>com.hotels.styx</groupId>
       <artifactId>styx-api</artifactId>
-      <version>${styx.version}</version>
-      <!-- The dependency is explicitlu needed only during compile time, styx is already available in the runtime-->
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>io.reactivex</groupId>
       <artifactId>rxjava</artifactId>
-      <version>${rxjava.version}</version>
-      <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
-      <version>${testng.version}</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
 
   </dependencies>
 
   <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>${maven-resources-plugin.version}</version>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven-compiler-plugin.version}</version>
-        <configuration>
-          <source>${maven.compiler.source}</source>
-          <target>${maven.compiler.target}</target>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>${maven-jar-plugin.version}</version>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven-surefire-plugin.version}</version>
-      </plugin>
-
-
-      <plugin>
-        <groupId>org.codehaus.groovy.maven</groupId>
-        <artifactId>gmaven-plugin</artifactId>
-        <version>1.0</version>
-        <executions>
-          <execution>
-            <id>get-local-ip</id>
-            <phase>initialize</phase>
-            <goals>
-              <goal>execute</goal>
-            </goals>
-            <configuration>
-              <classpath>
-                <element>
-                  <groupId>commons-lang</groupId>
-                  <artifactId>commons-lang</artifactId>
-                  <version>2.4</version>
-                </element>
-              </classpath>
-              <source>
-                project.properties.localIP = java.net.InetAddress.getLocalHost().getHostAddress()
-              </source>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-    </plugins>
-
     <resources>
       <resource>
         <directory>src/main/resources</directory>
         <filtering>true</filtering>
+        <includes>
+          <include>**/*</include>
+        </includes>
       </resource>
     </resources>
+    <testResources>
+      <testResource>
+        <directory>src/test/resources</directory>
+      </testResource>
+    </testResources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+
   </build>
-
-  <profiles>
-    <profile>
-      <id>styx</id>
-      <properties>
-        <use.docker>false</use.docker>
-      </properties>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-jar-plugin</artifactId>
-          </plugin>
-
-          <!-- We use the Shade plugin to bundle all the plugin dependencies together and ensure classloader-level
-          isolation for different plugins.
-          This sample plugin does not have any external dependencies.
-          -->
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-shade-plugin</artifactId>
-            <version>2.4.3</version>
-            <executions>
-              <execution>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
-                  <outputDirectory>${pluginsDir}</outputDirectory>
-                  <!--
-                  Since we are creating a single shaded JAR, signed JARs will not be valid anymore. To avoid this issue,
-                  we just remove the signature files in the JARs.
-                  For filters, see:
-                  http://stackoverflow.com/questions/999489/invalid-signature-file-when-attempting-to-run-a-jar
-                  -->
-                  <filters>
-                    <filter>
-                      <artifact>*:*</artifact>
-                      <excludes>
-                        <exclude>META-INF/*.SF</exclude>
-                        <exclude>META-INF/*.DSA</exclude>
-                        <exclude>META-INF/*.RSA</exclude>
-                      </excludes>
-                    </filter>
-                  </filters>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>

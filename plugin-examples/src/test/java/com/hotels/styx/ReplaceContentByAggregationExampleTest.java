@@ -1,8 +1,7 @@
 package com.hotels.styx;
 
 import com.hotels.styx.api.*;
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.annotations.Test;
 import reactor.core.publisher.Mono;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
