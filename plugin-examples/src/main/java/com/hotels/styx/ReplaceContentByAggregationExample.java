@@ -16,15 +16,12 @@
 package com.hotels.styx;
 
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 
-import java.util.Map;
-
-import static java.util.Collections.emptyMap;
-import static java.util.Objects.requireNonNull;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * You can replace content after aggregating it in memory.
@@ -43,9 +40,8 @@ public class ReplaceContentByAggregationExample implements Plugin {
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
-
-        chain.proceed(request)
-                .flatMap(response -> it.aggregate(10000))
+        return chain.proceed(request)
+                .flatMap(response -> response.aggregate(10000))
                 .map(response -> {
                     String body = response.bodyAs(UTF_8);
                     return response.newBuilder()

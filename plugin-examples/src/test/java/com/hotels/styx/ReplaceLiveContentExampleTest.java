@@ -1,14 +1,12 @@
 package com.hotels.styx;
 
 import com.hotels.styx.api.*;
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.annotations.Test;
 import reactor.core.publisher.Mono;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.testng.Assert.assertEquals;
 
 
 public class ReplaceLiveContentExampleTest {
@@ -17,9 +15,11 @@ public class ReplaceLiveContentExampleTest {
     private HttpInterceptor.Chain chain;
 
     @Test
-    public void intercept() {
+    public void replacesLiveContent() {
         // Set up
-        ReplaceLiveContentExample plugin = new ReplaceLiveContentExample();
+        ReplaceLiveContentExampleConfig config = new ReplaceLiveContentExampleConfig();
+
+        ReplaceLiveContentExample plugin = new ReplaceLiveContentExample(config);
 
         LiveHttpRequest request = LiveHttpRequest.get("/")
                 .header("X-Respond", "foo")

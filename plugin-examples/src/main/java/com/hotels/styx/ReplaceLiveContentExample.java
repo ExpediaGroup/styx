@@ -15,38 +15,40 @@
  */
 package com.hotels.styx;
 
+import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 
-import java.util.Map;
-
-import static java.util.Collections.emptyMap;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 /**
  * You can replace without aggregating it first, if the replacement does not depend on the original contents.
  * For example, if you need to replace a message body based on information in the message headers , regardless of
  * the original message body. (E.g you need to add a HTTP message body based on a HTTP error code)
- *
+ * <p>
  * You can transform a live HTTP message body using the `replaceWith` Bytestream operator such as shown in the example below.
- *
+ * <p>
  * This can be used to replace a message body without having to look into it, which will also save heap space as the
- *  live upstream response body is never stored in the heap in full.
+ * live upstream response body is never stored in the heap in full.
  */
 
 public class ReplaceLiveContentExample implements Plugin {
+    private ReplaceLiveContentExampleConfig config;
+
+    public ReplaceLiveContentExample(ReplaceLiveContentExampleConfig config) {
+        this.config = requireNonNull(config);
+    }
 
     @Override
     public Eventual<LiveHttpResponse> intercept(LiveHttpRequest request, Chain chain) {
-
         LiveHttpRequest newRequest = request.newBuilder()
                 .header("myRequestHeader", config.requestHeaderValue())
                 .build();
 
-        return chain.proceed(request)
+        return chain.proceed(newRequest)
                 .map(response -> response.newBuilder()
                         .body(body -> body.replaceWith(ByteStream.from("replacement", UTF_8)))
                         .build());
