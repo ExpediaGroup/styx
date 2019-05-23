@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,26 +30,35 @@ import static java.util.Objects.requireNonNull;
  * A factory that creates {@link OriginStats} instances using a metric registry it wraps. If an {@link OriginStats} already
  * exists for an origin, the same instance will be returned again.
  */
-public class OriginStatsFactory {
-    private final ConcurrentMap<Origin, OriginMetrics> metricsByOrigin = new ConcurrentHashMap<>();
-    private final MetricRegistry metricRegistry;
+
+public interface OriginStatsFactory {
+    OriginStats originStats(Origin origin);
 
     /**
-     * Constructs a new instance.
-     *
-     * @param metricRegistry a metric registry
+     * A caching OriginStatsFactory. A newly created OriginStats object is cached,
+     * and the cached copy is returned for future invocations.
      */
-    public OriginStatsFactory(MetricRegistry metricRegistry) {
-        this.metricRegistry = requireNonNull(metricRegistry);
-    }
+    class CachingOriginStatsFactory implements OriginStatsFactory {
+        private final ConcurrentMap<Origin, OriginMetrics> metricsByOrigin = new ConcurrentHashMap<>();
+        private final MetricRegistry metricRegistry;
 
-    /**
-     * Construct a new {@link OriginStats} for an origin, or return a previously created one if it exists.
-     *
-     * @param origin origin to collect stats for
-     * @return the {@link OriginStats}
-     */
-    public OriginStats originStats(Origin origin) {
-        return metricsByOrigin.computeIfAbsent(origin, theOrigin -> OriginMetrics.create(theOrigin, metricRegistry));
+        /**
+         * Constructs a new instance.
+         *
+         * @param metricRegistry a metric registry
+         */
+        public CachingOriginStatsFactory(MetricRegistry metricRegistry) {
+            this.metricRegistry = requireNonNull(metricRegistry);
+        }
+
+        /**
+         * Construct a new {@link OriginStats} for an origin, or return a previously created one if it exists.
+         *
+         * @param origin origin to collect stats for
+         * @return the {@link OriginStats}
+         */
+        public OriginStats originStats(Origin origin) {
+            return metricsByOrigin.computeIfAbsent(origin, theOrigin -> OriginMetrics.create(theOrigin, metricRegistry));
+        }
     }
 }
