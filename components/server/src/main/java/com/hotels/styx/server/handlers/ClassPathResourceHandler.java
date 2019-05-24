@@ -48,18 +48,6 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
         return root.endsWith("/") ? root : root + "/";
     }
 
-    private static HttpResponse error(HttpResponseStatus status) {
-        return new HttpResponse.Builder(status)
-                .body(status.description(), UTF_8)
-                .build();
-    }
-
-    private static byte[] resourceBody(String path) throws IOException {
-        try (InputStream stream = classPathResourceAsStream(path)) {
-            return readStream(stream);
-        }
-    }
-
     @Override
     protected HttpResponse doHandle(HttpRequest request, HttpInterceptor.Context context) {
         try {
@@ -78,6 +66,18 @@ public class ClassPathResourceHandler extends BaseHttpHandler {
         } catch (IOException e) {
             return error(INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private static byte[] resourceBody(String path) throws IOException {
+        try (InputStream stream = classPathResourceAsStream(path)) {
+            return readStream(stream);
+        }
+    }
+
+    private static HttpResponse error(HttpResponseStatus status) {
+        return new HttpResponse.Builder(status)
+                .body(status.description(), UTF_8)
+                .build();
     }
 
     private static InputStream classPathResourceAsStream(String resource) throws FileNotFoundException {

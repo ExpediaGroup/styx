@@ -70,12 +70,72 @@ public class PluginToggleHandler implements WebServiceHandler {
         this.configStore = requireNonNull(configStore);
     }
 
+    @Override
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return getCurrentOrPutNewState(request, context)
+                .onError(cause -> handleErrors(cause, context));
+    }
+
+    private Eventual<HttpResponse> getCurrentOrPutNewState(HttpRequest request, HttpInterceptor.Context context) {
+        if (GET.equals(request.method())) {
+            return getCurrentState(request, context);
+        } else if (PUT.equals(request.method())) {
+            return putNewState(request, context);
+        } else {
+            return Eventual.of(response(METHOD_NOT_ALLOWED).build());
+        }
+    }
+
+    private Eventual<HttpResponse> getCurrentState(HttpRequest request, HttpInterceptor.Context context) {
+        return Eventual.of(request)
+                .map(this::plugin)
+                .map(PluginToggleHandler::currentState)
+                .map(state -> responseWith(OK, state.toString()));
+    }
+
+    private static PluginEnabledState currentState(NamedPlugin plugin) {
+        return plugin.enabled() ? PluginEnabledState.ENABLED : PluginEnabledState.DISABLED;
+    }
+
+    private Eventual<HttpResponse> putNewState(HttpRequest request, HttpInterceptor.Context context) {
+        return Eventual.of(request)
+                .flatMap(this::requestedUpdate)
+                .map(PluginToggleHandler::applyUpdate);
+    }
+
+    private Eventual<RequestedUpdate> requestedUpdate(HttpRequest request) {
+        return requestedNewState(request)
+                .map(state -> {
+                    NamedPlugin plugin = plugin(request);
+
+                    return new RequestedUpdate(plugin, state);
+                });
+    }
+
     private static HttpResponse applyUpdate(RequestedUpdate requestedUpdate) {
         boolean changed = requestedUpdate.apply();
 
         String message = responseMessage(requestedUpdate, changed);
 
         return responseWith(OK, message);
+    }
+
+    private static String responseMessage(RequestedUpdate requestedUpdate, boolean changed) {
+        String message = changed ? wasChangedMessage(requestedUpdate) : wasNotChangedMessage(requestedUpdate);
+
+        try {
+            return JSON_MAPPER.writeValueAsString(new JsonResponse(requestedUpdate, message));
+        } catch (JsonProcessingException e) {
+            throw propagate(e);
+        }
+    }
+
+    private static String wasNotChangedMessage(RequestedUpdate requestedUpdate) {
+        return format("State of '%s' was already '%s'", requestedUpdate.plugin().name(), requestedUpdate.newState());
+    }
+
+    private static String wasChangedMessage(RequestedUpdate requestedUpdate) {
+        return format("State of '%s' changed to '%s'", requestedUpdate.plugin().name(), requestedUpdate.newState());
     }
 
     private static Matcher urlMatcher(HttpRequest request) {
@@ -93,10 +153,6 @@ public class PluginToggleHandler implements WebServiceHandler {
                 .map(fullRequest -> fullRequest.bodyAs(UTF_8))
                 .map(PluginToggleHandler::parseToBoolean)
                 .map(PluginEnabledState::fromBoolean);
-    }
-
-    private static PluginEnabledState currentState(NamedPlugin plugin) {
-        return plugin.enabled() ? PluginEnabledState.ENABLED : PluginEnabledState.DISABLED;
     }
 
     private static HttpResponse responseWith(HttpResponseStatus status, String message) {
@@ -120,65 +176,10 @@ public class PluginToggleHandler implements WebServiceHandler {
         return Eventual.of(responseWith(INTERNAL_SERVER_ERROR, ""));
     }
 
-    private static String responseMessage(RequestedUpdate requestedUpdate, boolean changed) {
-        String message = changed ? wasChangedMessage(requestedUpdate) : wasNotChangedMessage(requestedUpdate);
-
-        try {
-            return JSON_MAPPER.writeValueAsString(new JsonResponse(requestedUpdate, message));
-        } catch (JsonProcessingException e) {
-            throw propagate(e);
-        }
-    }
-
-    private static String wasNotChangedMessage(RequestedUpdate requestedUpdate) {
-        return format("State of '%s' was already '%s'", requestedUpdate.plugin().name(), requestedUpdate.newState());
-    }
-
-    private static String wasChangedMessage(RequestedUpdate requestedUpdate) {
-        return format("State of '%s' changed to '%s'", requestedUpdate.plugin().name(), requestedUpdate.newState());
-    }
-
-    @Override
-    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return getCurrentOrPutNewState(request, context)
-                .onError(cause -> handleErrors(cause, context));
-    }
-
-    private Eventual<HttpResponse> getCurrentOrPutNewState(HttpRequest request, HttpInterceptor.Context context) {
-        if (GET.equals(request.method())) {
-            return getCurrentState(request, context);
-        } else if (PUT.equals(request.method())) {
-            return putNewState(request, context);
-        } else {
-            return Eventual.of(response(METHOD_NOT_ALLOWED).build());
-        }
-    }
-
-    private NamedPlugin plugin(String pluginName) {
-        return configStore.get("plugins." + pluginName, NamedPlugin.class)
-                .orElseThrow(() -> new PluginNotFoundException("No such plugin: pluginName=" + pluginName));
-    }
-
-    private Eventual<HttpResponse> getCurrentState(HttpRequest request, HttpInterceptor.Context context) {
-        return Eventual.of(request)
-                .map(this::plugin)
-                .map(PluginToggleHandler::currentState)
-                .map(state -> responseWith(OK, state.toString()));
-    }
-
-    private Eventual<HttpResponse> putNewState(HttpRequest request, HttpInterceptor.Context context) {
-        return Eventual.of(request)
-                .flatMap(this::requestedUpdate)
-                .map(PluginToggleHandler::applyUpdate);
-    }
-
-    private Eventual<RequestedUpdate> requestedUpdate(HttpRequest request) {
-        return requestedNewState(request)
-                .map(state -> {
-                    NamedPlugin plugin = plugin(request);
-
-                    return new RequestedUpdate(plugin, state);
-                });
+    private NamedPlugin plugin(HttpRequest request) {
+        Matcher matcher = urlMatcher(request);
+        String pluginName = matcher.group(1);
+        return plugin(pluginName);
     }
 
     private static boolean parseToBoolean(String string) {
@@ -192,10 +193,9 @@ public class PluginToggleHandler implements WebServiceHandler {
         }
     }
 
-    private NamedPlugin plugin(HttpRequest request) {
-        Matcher matcher = urlMatcher(request);
-        String pluginName = matcher.group(1);
-        return plugin(pluginName);
+    private NamedPlugin plugin(String pluginName) {
+        return configStore.get("plugins." + pluginName, NamedPlugin.class)
+                .orElseThrow(() -> new PluginNotFoundException("No such plugin: pluginName=" + pluginName));
     }
 
     private enum PluginEnabledState {

@@ -104,63 +104,6 @@ public class AdminServerBuilder {
         return this;
     }
 
-    private static List<Route> routesForPlugin(NamedPlugin namedPlugin) {
-        List<PluginAdminEndpointRoute> routes = pluginAdminEndpointRoutes(namedPlugin);
-
-        List<IndexHandler.Link> endpointLinks = routes.stream()
-                .map(PluginAdminEndpointRoute::link)
-                .collect(toList());
-
-        WebServiceHandler handler = endpointLinks.isEmpty()
-                ? new StaticBodyHttpHandler(HTML_UTF_8, format("This plugin (%s) does not expose any admin interfaces", namedPlugin.name()))
-                : new IndexHandler(endpointLinks);
-
-        Route indexRoute = new Route(pluginPath(namedPlugin), handler);
-
-        return concatenate(indexRoute, routes);
-    }
-
-    private static List<PluginAdminEndpointRoute> pluginAdminEndpointRoutes(NamedPlugin namedPlugin) {
-        Map<String, HttpHandler> adminInterfaceHandlers = namedPlugin.adminInterfaceHandlers();
-
-        return mapToList(adminInterfaceHandlers, (relativePath, handler) ->
-                new PluginAdminEndpointRoute(namedPlugin, relativePath, new HttpStreamer(MEGABYTE, handler)));
-    }
-
-    private static Iterable<IndexHandler.Link> indexLinkPaths() {
-        return ImmutableSortedSet.of(
-                link("version.txt", "/version.txt"),
-                link("Ping", "/admin/ping"),
-                link("Threads", "/admin/threads"),
-                link("Current Requests", "/admin/current_requests?withStackTrace=true"),
-                link("Metrics", "/admin/metrics?pretty"),
-                link("Configuration", "/admin/configuration?pretty"),
-                link("Log Configuration", "/admin/configuration/logging"),
-                link("Origins Configuration", "/admin/configuration/origins?pretty"),
-                link("Startup Configuration", "/admin/configuration/startup"),
-                link("JVM", "/admin/jvm?pretty"),
-                link("Origins Status", "/admin/origins/status?pretty"),
-                link("Dashboard", "/admin/dashboard/index.html"),
-                link("Plugins", "/admin/plugins"));
-    }
-
-    private static <T> List<T> concatenate(T item, List<? extends T> items) {
-        List<T> list = new ArrayList<>(items.size() + 1);
-        list.add(item);
-        list.addAll(items);
-        return list;
-    }
-
-    private static String pluginPath(NamedPlugin namedPlugin) {
-        return "/admin/plugins/" + namedPlugin.name();
-    }
-
-    private JsonHandler<DashboardData> dashboardDataHandler(StyxConfig styxConfig) {
-        return new JsonHandler<>(new DashboardDataSupplier(backendServicesRegistry, environment, styxConfig),
-                Optional.of(Duration.ofSeconds(10)),
-                new MetricsModule(SECONDS, MILLISECONDS, false));
-    }
-
     public HttpServer build() {
         LOG.info("event bus that will be used is {}", environment.eventBus());
         StyxConfig styxConfig = environment.configuration();
@@ -217,6 +160,63 @@ public class AdminServerBuilder {
 
         httpRouter.add("/admin/plugins", new PluginListHandler(environment.configStore()));
         return httpRouter;
+    }
+
+    private static Iterable<IndexHandler.Link> indexLinkPaths() {
+        return ImmutableSortedSet.of(
+                link("version.txt", "/version.txt"),
+                link("Ping", "/admin/ping"),
+                link("Threads", "/admin/threads"),
+                link("Current Requests", "/admin/current_requests?withStackTrace=true"),
+                link("Metrics", "/admin/metrics?pretty"),
+                link("Configuration", "/admin/configuration?pretty"),
+                link("Log Configuration", "/admin/configuration/logging"),
+                link("Origins Configuration", "/admin/configuration/origins?pretty"),
+                link("Startup Configuration", "/admin/configuration/startup"),
+                link("JVM", "/admin/jvm?pretty"),
+                link("Origins Status", "/admin/origins/status?pretty"),
+                link("Dashboard", "/admin/dashboard/index.html"),
+                link("Plugins", "/admin/plugins"));
+    }
+
+    private static List<Route> routesForPlugin(NamedPlugin namedPlugin) {
+        List<PluginAdminEndpointRoute> routes = pluginAdminEndpointRoutes(namedPlugin);
+
+        List<IndexHandler.Link> endpointLinks = routes.stream()
+                .map(PluginAdminEndpointRoute::link)
+                .collect(toList());
+
+        WebServiceHandler handler = endpointLinks.isEmpty()
+                ? new StaticBodyHttpHandler(HTML_UTF_8, format("This plugin (%s) does not expose any admin interfaces", namedPlugin.name()))
+                : new IndexHandler(endpointLinks);
+
+        Route indexRoute = new Route(pluginPath(namedPlugin), handler);
+
+        return concatenate(indexRoute, routes);
+    }
+
+    private static <T> List<T> concatenate(T item, List<? extends T> items) {
+        List<T> list = new ArrayList<>(items.size() + 1);
+        list.add(item);
+        list.addAll(items);
+        return list;
+    }
+
+    private static String pluginPath(NamedPlugin namedPlugin) {
+        return "/admin/plugins/" + namedPlugin.name();
+    }
+
+    private static List<PluginAdminEndpointRoute> pluginAdminEndpointRoutes(NamedPlugin namedPlugin) {
+        Map<String, HttpHandler> adminInterfaceHandlers = namedPlugin.adminInterfaceHandlers();
+
+        return mapToList(adminInterfaceHandlers, (relativePath, handler) ->
+                new PluginAdminEndpointRoute(namedPlugin, relativePath, new HttpStreamer(MEGABYTE, handler)));
+    }
+
+    private JsonHandler<DashboardData> dashboardDataHandler(StyxConfig styxConfig) {
+        return new JsonHandler<>(new DashboardDataSupplier(backendServicesRegistry, environment, styxConfig),
+                Optional.of(Duration.ofSeconds(10)),
+                new MetricsModule(SECONDS, MILLISECONDS, false));
     }
 
     // allows key and value to be labelled in lambda instead of having to use Entry.getKey, Entry.getValue

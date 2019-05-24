@@ -49,6 +49,13 @@ public class StyxConfigurationHandler implements WebServiceHandler {
             prettyStyxConfigHandler = new StaticBodyHttpHandler(PLAIN_TEXT_UTF_8, prettify(configuration));
     }
 
+    @Override
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return configHandler(request.queryParam("pretty").isPresent())
+                .handle(request, context)
+                .map(StyxConfigurationHandler::disableCaching);
+    }
+
     private static HttpResponse disableCaching(HttpResponse response) {
         return response.newBuilder()
                 .disableCaching()
@@ -57,13 +64,6 @@ public class StyxConfigurationHandler implements WebServiceHandler {
 
     private StaticBodyHttpHandler configHandler(boolean pretty) {
         return pretty ? prettyStyxConfigHandler : styxConfigHandler;
-    }
-
-    @Override
-    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return configHandler(request.queryParam("pretty").isPresent())
-                .handle(request, context)
-                .map(StyxConfigurationHandler::disableCaching);
     }
 
     private static String body(Configuration styxConfig) {

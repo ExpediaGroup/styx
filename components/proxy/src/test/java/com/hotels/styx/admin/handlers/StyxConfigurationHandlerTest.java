@@ -34,25 +34,6 @@ import static org.hamcrest.core.Is.is;
 public class StyxConfigurationHandlerTest {
     private static final String ORIGINS_FILE = fixturesHome() + "conf/origins/origins-development.yml";
 
-    private static Eventual<HttpResponse> browseForCurrentConfiguration(String yaml, boolean pretty) {
-        return configurationBrowserHandler(yaml).handle(adminRequest(pretty), HttpInterceptorContext.create());
-    }
-
-    private static HttpRequest adminRequest(boolean pretty) {
-        if (pretty) {
-            return get("/?pretty=").build();
-        } else {
-            return get("/").build();
-        }
-    }
-
-    private static String formatPathLikeYamlConfig(String path) {
-        if (File.separator.equals("\\")) {
-            return path.replace("\\", "\\\\");
-        }
-        return path;
-    }
-
     @Test
     public void outputsConfiguration() {
         String yaml = "" +
@@ -97,6 +78,25 @@ public class StyxConfigurationHandlerTest {
                 "  },\n" +
                 "  \"originsFile\" : \"" + formatPathLikeYamlConfig(ORIGINS_FILE) + "\"\n" +
                 "}"));
+    }
+
+    private static String formatPathLikeYamlConfig(String path) {
+        if (File.separator.equals("\\")) {
+            return path.replace("\\", "\\\\");
+        }
+        return path;
+    }
+
+    private static Eventual<HttpResponse> browseForCurrentConfiguration(String yaml, boolean pretty) {
+        return configurationBrowserHandler(yaml).handle(adminRequest(pretty), HttpInterceptorContext.create());
+    }
+
+    private static HttpRequest adminRequest(boolean pretty) {
+        if (pretty) {
+            return get("/?pretty=").build();
+        } else {
+            return get("/").build();
+        }
     }
 
     private static StyxConfigurationHandler configurationBrowserHandler(String yaml) {
