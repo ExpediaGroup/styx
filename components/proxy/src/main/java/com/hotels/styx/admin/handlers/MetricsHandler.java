@@ -80,17 +80,17 @@ public class MetricsHandler implements WebServiceHandler {
         this.metricRegistry = metricRegistry;
     }
 
+    @Override
+    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
+        return this.urlMatcher.handle(request, context);
+    }
+
     private static boolean matchesRoot(String metricName, String root) {
         return root == null || metricName.equals(root) || metricName.startsWith(root + ".");
     }
 
     private static boolean containsSearchTerm(String name, String searchTerm) {
         return searchTerm == null || name.contains(searchTerm);
-    }
-
-    @Override
-    public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
-        return this.urlMatcher.handle(request, context);
     }
 
     private HttpResponse filteredMetricResponse(HttpRequest request) {
@@ -129,7 +129,7 @@ public class MetricsHandler implements WebServiceHandler {
         }
     }
 
-    static class RootMetricsHandler extends JsonHandler<MetricRegistry> {
+    private static class RootMetricsHandler extends JsonHandler<MetricRegistry> {
         public RootMetricsHandler(MetricRegistry data, Optional<Duration> cacheExpiration, Module... modules) {
             super(data, cacheExpiration, modules);
         }
