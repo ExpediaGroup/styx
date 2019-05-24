@@ -40,7 +40,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode;
@@ -88,27 +87,10 @@ public class ConditionRouter implements HttpRouter {
         return Optional.ofNullable(fallback);
     }
 
-    private static class Route {
-        private final AntlrMatcher matcher;
-        private final RoutingObject routingObject;
-
-        Route(String condition, RoutingObject routingObject) {
-            this.matcher = AntlrMatcher.antlrMatcher(condition);
-            this.routingObject = routingObject;
-        }
-
-        public HttpHandler match(LiveHttpRequest request, HttpInterceptor.Context context) {
-            return matcher.apply(request, context) ? routingObject : null;
-        }
-    }
-
     /**
      * Builds a condition router from the yaml routing configuration.
      */
     public static class Factory implements HttpHandlerFactory {
-
-        public Factory() {
-        }
 
         private static RoutingObject buildFallbackHandler(
                 List<String> parents,
@@ -172,7 +154,6 @@ public class ConditionRouter implements HttpRouter {
                     return completedFuture(null);
                 }
             };
-
         }
 
         private static class ConditionRouterConfig {
@@ -196,6 +177,20 @@ public class ConditionRouter implements HttpRouter {
                 this.destination = toRoutingConfigNode(destination);
             }
         }
-
     }
+
+    private static class Route {
+        private final AntlrMatcher matcher;
+        private final RoutingObject routingObject;
+
+        Route(String condition, RoutingObject routingObject) {
+            this.matcher = AntlrMatcher.antlrMatcher(condition);
+            this.routingObject = routingObject;
+        }
+
+        public HttpHandler match(LiveHttpRequest request, HttpInterceptor.Context context) {
+            return matcher.apply(request, context) ? routingObject : null;
+        }
+    }
+
 }
