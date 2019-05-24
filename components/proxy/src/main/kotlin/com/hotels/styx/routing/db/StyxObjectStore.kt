@@ -76,10 +76,10 @@ class StyxObjectStore<T> : ObjectStore<T> {
      *
      * @property key object name
      * @property payload the object itself
+     * @return the previous value
      */
-    fun insert(key: String, payload: T) {
-        insert(key, setOf(), payload)
-    }
+    fun insert(key: String, payload: T) = insert(key, setOf(), payload)
+
 
     /**
      * Removes an object from this object store.
@@ -92,8 +92,9 @@ class StyxObjectStore<T> : ObjectStore<T> {
      *
      * @property key object name
      * @property payload the object itself
+     * @return the removed value
      */
-    fun remove(key: String) {
+    fun remove(key: String): Optional<T> {
         var current = objects.get()
         var new = current.minus(key)
 
@@ -107,6 +108,8 @@ class StyxObjectStore<T> : ObjectStore<T> {
                 notifyWatchers(new)
             }
         }
+
+        return Optional.ofNullable(current[key]?.payload)
     }
 
     /**
@@ -146,7 +149,7 @@ class StyxObjectStore<T> : ObjectStore<T> {
         executor.submit(task)
     }
 
-    private fun insert(key: String, tags: Set<String>, payload: T) {
+    private fun insert(key: String, tags: Set<String>, payload: T): Optional<T> {
         var current = objects.get()
         var new = current.plus(key, Record(key, tags, payload))
 
@@ -158,6 +161,8 @@ class StyxObjectStore<T> : ObjectStore<T> {
         queue {
             notifyWatchers(new)
         }
+
+        return Optional.ofNullable(current[key]?.payload)
     }
 
     private fun notifyWatchers(objectsV2: PMap<String, Record<T>>) {

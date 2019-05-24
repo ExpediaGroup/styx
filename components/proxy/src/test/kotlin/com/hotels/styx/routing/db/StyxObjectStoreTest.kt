@@ -120,6 +120,19 @@ class StyxObjectStoreTest : FeatureSpec() {
 
                 db.get("x") shouldBe Optional.of("x2")
             }
+
+            scenario("Returns Optional.empty, when no previous value exists") {
+                val db = StyxObjectStore<String>()
+
+                db.insert("key", "a-value") shouldBe Optional.empty()
+            }
+
+            scenario("Returns previous, replaced value") {
+                val db = StyxObjectStore<String>()
+
+                db.insert("key", "old-value") shouldBe Optional.empty()
+                db.insert("key", "new-value") shouldBe Optional.of("old-value")
+            }
         }
 
         feature("Remove") {
@@ -176,8 +189,8 @@ class StyxObjectStoreTest : FeatureSpec() {
                 db.remove("y")
 
                 eventually(1.seconds, java.lang.AssertionError::class.java) {
-                    watchEvents.last().get("x") shouldBe Optional.empty()
-                    watchEvents.last().get("y") shouldBe Optional.empty()
+                    watchEvents.last()["x"] shouldBe Optional.empty()
+                    watchEvents.last()["y"] shouldBe Optional.empty()
                 }
             }
 
@@ -199,6 +212,20 @@ class StyxObjectStoreTest : FeatureSpec() {
                 executor.awaitTermination(2, SECONDS)
 
                 db.entrySet() shouldBe emptyList()
+            }
+
+            scenario("Returns Optional.empty, when previous value doesn't exist") {
+                val db = StyxObjectStore<String>()
+
+                db.remove("key") shouldBe Optional.empty()
+            }
+
+            scenario("Returns previous, replaced value") {
+                val db = StyxObjectStore<String>()
+
+                db.insert("key", "a-value") shouldBe Optional.empty()
+
+                db.remove("key") shouldBe Optional.of("a-value")
             }
 
         }

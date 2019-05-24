@@ -55,7 +55,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Provides admin interface access to Styx routing configuration.
  */
-public class RoutingObjectHandler implements HttpHandler  {
+public class RoutingObjectHandler implements HttpHandler {
     private static final Logger LOGGER = getLogger(RoutingObjectHandler.class);
 
     private static final ObjectMapper YAML_MAPPER = addStyxMixins(new ObjectMapper(new YAMLFactory()))
@@ -98,7 +98,9 @@ public class RoutingObjectHandler implements HttpHandler  {
                         RoutingObjectDefinition payload = YAML_MAPPER.readValue(body, RoutingObjectDefinition.class);
                         RoutingObject httpHandler = objectFactory.build(emptyList(), payload);
 
-                        routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), payload.config(), httpHandler));
+                        routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), payload.config(), httpHandler))
+                                .ifPresent(previous -> previous.getRoutingObject().stop())
+                        ;
 
                         return Eventual.of(response(CREATED).build());
                     } catch (IOException | RuntimeException cause) {
@@ -108,12 +110,10 @@ public class RoutingObjectHandler implements HttpHandler  {
                 .delete("/admin/routing/objects/:objectName", httpHandler((request, context) -> {
                     String name = placeholders(context).get("objectName");
 
-                    if (!routeDatabase.get(name).isPresent()) {
-                        return Eventual.of(response(NOT_FOUND).build());
-                    }
-
-                    routeDatabase.remove(name);
-                    return Eventual.of(response(OK).build());
+                    return routeDatabase.remove(name)
+                            .map(previous -> previous.getRoutingObject().stop())
+                            .map(previous -> Eventual.of(response(OK).build()))
+                            .orElse(Eventual.of(response(NOT_FOUND).build()));
                 }))
                 .build();
     }
@@ -147,7 +147,8 @@ public class RoutingObjectHandler implements HttpHandler  {
         Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context);
     }
 
-    private static class ResourceNotFoundException extends RuntimeException { }
+    private static class ResourceNotFoundException extends RuntimeException {
+    }
 
     private abstract static class RoutingObjectDefMixin {
         @JsonProperty("name")

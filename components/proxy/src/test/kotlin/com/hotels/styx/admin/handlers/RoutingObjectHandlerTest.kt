@@ -27,10 +27,13 @@ import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handle
 import com.hotels.styx.routing.handlers.StaticResponseHandler
+import com.hotels.styx.routing.mockObject
 import io.kotlintest.matchers.types.shouldBeTypeOf
 import io.kotlintest.matchers.types.shouldNotBeSameInstanceAs
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FeatureSpec
+import io.mockk.mockk
+import io.mockk.verify
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 
@@ -150,20 +153,14 @@ class RoutingObjectHandlerTest : FeatureSpec({
             """.trimIndent().trim()
         }
 
-        scenario("Replacing existing objects") {
-            val handler = RoutingObjectHandler(routeDatabase, objectFactory)
+        scenario("Replacing existing objects triggers lifecycle methods") {
+            val db = StyxObjectStore<RoutingObjectRecord>()
+            val mockObject = mockObject()
 
-            handler.handle(
-                    put("/admin/routing/objects/staticResponse")
-                            .body(staticResponseObject, UTF_8)
-                            .build())
-                    .toMono()
-                    .block()
-                    ?.status() shouldBe CREATED
+            db.insert("staticResponse", RoutingObjectRecord("StaticResponseHandler", mockk(), mockObject))
+            db.get("staticResponse").isPresent shouldBe true
 
-            routeDatabase.get("staticResponse").isPresent shouldBe true
-            val previousConfig = routeDatabase.get("staticResponse").get().config
-            val previousHandler = routeDatabase.get("staticResponse").get().routingObject
+            val handler = RoutingObjectHandler(db, objectFactory)
 
             handler.handle(
                     put("/admin/routing/objects/staticResponse")
@@ -178,24 +175,19 @@ class RoutingObjectHandlerTest : FeatureSpec({
                     .block()
                     ?.status() shouldBe CREATED
 
-            routeDatabase.get("staticResponse").isPresent shouldBe true
-            routeDatabase.get("staticResponse").get().type shouldBe "StaticResponseHandler"
-            routeDatabase.get("staticResponse").get().config shouldNotBeSameInstanceAs previousConfig
-            routeDatabase.get("staticResponse").get().routingObject shouldNotBeSameInstanceAs previousHandler
+            db.get("staticResponse").isPresent shouldBe true
+            db.get("staticResponse").get().type shouldBe "StaticResponseHandler"
+
+            verify(exactly = 1) { mockObject.stop() }
         }
 
-        scenario("Removing existing objects") {
-            val handler = RoutingObjectHandler(routeDatabase, objectFactory)
+        scenario("Removing existing objects triggers lifecycle methods") {
+            val db = StyxObjectStore<RoutingObjectRecord>()
+            val mockObject = mockObject()
 
-            handler.handle(
-                    put("/admin/routing/objects/staticResponse")
-                            .body(staticResponseObject, UTF_8)
-                            .build())
-                    .toMono()
-                    .block()
-                    ?.status() shouldBe CREATED
+            db.insert("staticResponse", RoutingObjectRecord("StaticResponseHandler", mockk(), mockObject))
 
-            routeDatabase.get("staticResponse").isPresent shouldBe true
+            val handler = RoutingObjectHandler(db, objectFactory)
 
             handler.handle(
                     delete("/admin/routing/objects/staticResponse").build())
@@ -203,11 +195,15 @@ class RoutingObjectHandlerTest : FeatureSpec({
                     .block()
                     ?.status() shouldBe OK
 
-            routeDatabase.get("staticResponse").isPresent shouldBe false
+            db.get("staticResponse").isPresent shouldBe false
+
+            verify(exactly = 1) { mockObject.stop() }
         }
 
         scenario("Removing a non-existent object") {
-            val handler = RoutingObjectHandler(routeDatabase, objectFactory)
+            val db = StyxObjectStore<RoutingObjectRecord>()
+
+            val handler = RoutingObjectHandler(db, objectFactory)
 
             handler.handle(
                     delete("/admin/routing/objects/staticResponse").build())
