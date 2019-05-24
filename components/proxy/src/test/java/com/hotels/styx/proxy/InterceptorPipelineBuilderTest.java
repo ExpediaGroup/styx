@@ -24,6 +24,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.server.HttpInterceptorContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -43,7 +44,7 @@ import static org.mockito.Mockito.when;
 public class InterceptorPipelineBuilderTest {
     private Environment environment;
     private Iterable<NamedPlugin> plugins;
-    private HttpHandler handler;
+    private RoutingObject handler;
 
     @BeforeMethod
     public void setUp() {
@@ -65,7 +66,7 @@ public class InterceptorPipelineBuilderTest {
                                                 .build()))
         );
 
-        handler = mock(HttpHandler.class);
+        handler = mock(RoutingObject.class);
         when(handler.handle(any(LiveHttpRequest.class), any(HttpInterceptor.Context.class))).thenReturn(Eventual.of(response(OK).build()));
     }
 

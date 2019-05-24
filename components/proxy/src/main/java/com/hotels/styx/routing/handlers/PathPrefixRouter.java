@@ -18,7 +18,9 @@ package com.hotels.styx.routing.handlers;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.api.Eventual;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
@@ -30,6 +32,7 @@ import com.hotels.styx.server.NoServiceConfiguredException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import static com.hotels.styx.common.Pair.pair;
@@ -43,6 +46,7 @@ import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeErro
 import static java.lang.String.join;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -78,6 +82,8 @@ public class PathPrefixRouter {
                 .map(Map.Entry::getValue);
     }
 
+
+
     /**
      * A factory for constructing PathPrefixRouter objects.
      */
@@ -96,9 +102,20 @@ public class PathPrefixRouter {
                             .collect(toList())
             );
 
-            return (request, ctx) -> pathPrefixRouter.route(request)
+            return new RoutingObject() {
+                @Override
+                public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+                    return pathPrefixRouter.route(request)
                             .orElse((x, y) -> Eventual.error(new NoServiceConfiguredException(request.path())))
-                            .handle(request, ctx);
+                            .handle(request, context);
+                }
+
+                @Override
+                public CompletableFuture<Void> stop() {
+                    pathPrefixRouter.routes.forEach((route, value) -> value.stop());
+                    return completedFuture(null);
+                }
+            };
         }
 
         private static class PathPrefixConfig {

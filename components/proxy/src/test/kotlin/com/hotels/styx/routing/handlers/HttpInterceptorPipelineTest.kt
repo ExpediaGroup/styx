@@ -20,6 +20,7 @@ import com.hotels.styx.api.LiveHttpRequest
 import com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin
 import com.hotels.styx.routing.RoutingContext
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory
+import com.hotels.styx.routing.config.HttpHandlerFactory
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.interceptors.RewriteInterceptor
 import com.hotels.styx.routing.mockObject
@@ -93,7 +94,7 @@ class HttpInterceptorPipelineTest : FeatureSpec({
             val context = RoutingContext(
                     plugins = listOf(
                             namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
-                            namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "B").build() }) })) )
+                            namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "B").build() }) })))
 
             val handler = HttpInterceptorPipeline.Factory().build(
                     listOf("config"),
@@ -204,13 +205,11 @@ class HttpInterceptorPipelineTest : FeatureSpec({
 
             HttpInterceptorPipeline.Factory().build(
                     listOf("config", "config"),
-                    context
-                            .get(),
+                    context.get(),
                     routingObjectDef("""
                       type: InterceptorPipeline
                       config:
                         handler:
-                          name: MyHandler
                           type: BackendServiceProxy
                           config:
                             backendProvider: backendProvider
@@ -225,11 +224,51 @@ class HttpInterceptorPipelineTest : FeatureSpec({
 
     feature("Lifecycle management") {
         scenario("Calls stop() for inlined handler") {
-            TODO("Implement this")
+            val childHandler = mockObject()
+
+            val context = RoutingContext(factory = routingObjectFactory(
+                    builtins = mapOf("BackendServiceProxy" to HttpHandlerFactory { _, _, _ -> childHandler })
+            ))
+
+            val interceptorPipeline = HttpInterceptorPipeline.Factory().build(
+                    listOf(),
+                    context.get(),
+                    routingObjectDef("""
+                      type: InterceptorPipeline
+                      config:
+                        handler:
+                          type: BackendServiceProxy
+                          config:
+                            backendProvider: backendProvider
+                    """.trimIndent()))
+
+            interceptorPipeline.stop()
+
+            verify(exactly = 1) { childHandler.stop() }
         }
 
-        scenario("Does not call stop() for inlined handler") {
-            TODO("Implement this")
+        scenario("Does not call stop() for referenced handler") {
+            val childHandler = mockObject()
+
+            val context = RoutingContext(
+                    factory = routingObjectFactory(
+                            lookup = routeLookup {
+                                ref("handlerRef" to childHandler)
+                            }
+                    ))
+
+            val interceptorPipeline = HttpInterceptorPipeline.Factory().build(
+                    listOf(),
+                    context.get(),
+                    routingObjectDef("""
+                      type: InterceptorPipeline
+                      config:
+                        handler: handlerRef
+                    """.trimIndent()))
+
+            interceptorPipeline.stop()
+
+            verify(exactly = 0) { childHandler.stop() }
         }
     }
 

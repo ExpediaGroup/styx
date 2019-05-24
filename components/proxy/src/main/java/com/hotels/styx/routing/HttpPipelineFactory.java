@@ -21,5 +21,5 @@ import com.hotels.styx.api.HttpHandler;
  * A base type for HTTP pipeline builders.
  */
 public interface HttpPipelineFactory {
-    HttpHandler build();
+    RoutingObject build();
 }

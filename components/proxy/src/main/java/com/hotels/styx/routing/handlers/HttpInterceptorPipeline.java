@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -37,6 +36,7 @@ import com.hotels.styx.server.track.RequestTracker;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static com.hotels.styx.config.schema.SchemaDsl.field;
@@ -61,16 +61,23 @@ public class HttpInterceptorPipeline implements RoutingObject {
             field("handler", routingObject())
     );
 
-    private final StandardHttpPipeline handler;
+    private final RoutingObject handler;
+    private final StandardHttpPipeline pipeline;
 
-    public HttpInterceptorPipeline(List<HttpInterceptor> interceptors, HttpHandler handler, boolean trackRequests) {
+    public HttpInterceptorPipeline(List<HttpInterceptor> interceptors, RoutingObject handler, boolean trackRequests) {
         RequestTracker tracker = trackRequests ? CurrentRequestTracker.INSTANCE : RequestTracker.NO_OP;
-        this.handler = new StandardHttpPipeline(interceptors, handler, tracker);
+        this.handler = handler;
+        this.pipeline = new StandardHttpPipeline(interceptors, handler, tracker);
     }
 
     @Override
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
-        return handler.handle(request, context);
+        return pipeline.handle(request, context);
+    }
+
+    @Override
+    public CompletableFuture<Void> stop() {
+        return handler.stop();
     }
 
     /**
@@ -100,6 +107,7 @@ public class HttpInterceptorPipeline implements RoutingObject {
                     .collect(Collectors.toList());
         }
 
+        // TODO: MIKKO: This code is likely to be replicated in every object factory:
         private static RoutingObjectConfiguration toRoutingConfigNode(JsonNode jsonNode) {
             if (jsonNode.getNodeType() == JsonNodeType.STRING) {
                 return new RoutingObjectReference(jsonNode.asText());

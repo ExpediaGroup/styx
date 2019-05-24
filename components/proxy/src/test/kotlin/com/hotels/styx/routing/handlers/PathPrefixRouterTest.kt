@@ -22,6 +22,7 @@ import com.hotels.styx.common.Pair.pair
 import com.hotels.styx.config.schema.SchemaValidationException
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.routing.RoutingContext
+import com.hotels.styx.routing.config.HttpHandlerFactory
 import com.hotels.styx.routing.config.RoutingObjectFactory
 import com.hotels.styx.routing.config.RoutingObjectFactory.BUILTIN_HANDLER_SCHEMAS
 import com.hotels.styx.routing.config.RoutingObjectReference
@@ -34,6 +35,7 @@ import com.hotels.styx.routing.routingObjectFactory
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.FeatureSpec
+import io.mockk.verify
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Optional
@@ -232,12 +234,68 @@ class PathPrefixRouterTest : FeatureSpec({
     }
 
     feature("Lifecycle management") {
-        scenario("Calls stop() for inlined handler") {
-            TODO("Implement this")
+        scenario("Calls stop() for inlined handlers") {
+            val child1 = mockObject()
+            val child2 = mockObject()
+
+            val context = RoutingContext(
+                    factory = routingObjectFactory(
+                            builtins = mapOf(
+                                    "FirstTestHandler" to HttpHandlerFactory { _, _, _ -> child1 },
+                                    "SecondTestHandler" to HttpHandlerFactory { _, _, _ -> child2 }
+                            )
+                    ))
+
+            val routingDef = routingObjectDef("""
+                  type: PathPrefixRouter
+                  config:
+                    routes:
+                      - prefix: /foo
+                        destination:
+                          type: FirstTestHandler
+                          config:
+                            na: na
+                      - prefix: /bar
+                        destination:
+                          type: SecondTestHandler
+                          config:
+                            na: na
+                """.trimIndent())
+
+            PathPrefixRouter.Factory().build(listOf(), context.get(), routingDef)
+                    .stop()
+
+            verify(exactly = 1) { child1.stop() }
+            verify(exactly = 1) { child2.stop() }
         }
 
-        scenario("Does not call stop() for inlined handler") {
-            TODO("Implement this")
+        scenario("Does not call stop() referenced handlers") {
+            val child1 = mockObject()
+            val child2 = mockObject()
+
+            val context = RoutingContext(
+                    factory = routingObjectFactory(
+                            lookup = routeLookup {
+                                ref("destinationNameOne" to child1)
+                                ref("destinationNameTwo" to child2)
+                            }
+                    ))
+
+            val routingDef = routingObjectDef("""
+                  type: PathPrefixRouter
+                  config:
+                    routes:
+                      - prefix: /foo
+                        destination: destinationNameOne
+                      - prefix: /bar
+                        destination: destinationNameTwo
+                """.trimIndent())
+
+            PathPrefixRouter.Factory().build(listOf(), context.get(), routingDef)
+                    .stop()
+
+            verify(exactly = 0) { child1.stop() }
+            verify(exactly = 0) { child2.stop() }
         }
     }
 

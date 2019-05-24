@@ -23,6 +23,7 @@ import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.api.extension.service.spi.StyxService;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.HttpPipelineFactory;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.StaticPipelineFactory;
 import com.hotels.styx.routing.config.RoutingObjectConfiguration;
@@ -74,7 +75,7 @@ public final class StyxPipelineFactory implements PipelineFactory {
                 requestTracking);
     }
 
-    private HttpHandler configuredPipeline(RoutingObjectFactory routingObjectFactory) {
+    private RoutingObject configuredPipeline(RoutingObjectFactory routingObjectFactory) {
         boolean requestTracking = environment.configuration().get("requestTracking", Boolean.class).orElse(false);
 
         Optional<JsonNode> rootHandlerNode = environment.configuration().get("httpPipeline", JsonNode.class);

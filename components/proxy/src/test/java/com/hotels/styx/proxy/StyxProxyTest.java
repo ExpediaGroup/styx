@@ -75,10 +75,11 @@ public class StyxProxyTest extends SSLSetup {
     @Test
     public void startsServerWithHttpConnector() {
         HttpInterceptor echoInterceptor = (request, chain) -> textResponse("Response from http connector");
+        StandardHttpRouter handler = new StandardHttpRouter();
 
         HttpServer server = NettyServerBuilder.newBuilder()
                 .setHttpConnector(connector(0))
-                .handlerFactory(() -> new HttpInterceptorPipeline(ImmutableList.of(echoInterceptor), new StandardHttpRouter(), false))
+                .handlerFactory(() -> new HttpInterceptorPipeline(ImmutableList.of(echoInterceptor), handler::handle, false))
                 .build();
         server.startAsync().awaitRunning();
         assertThat("Server should be running", server.isRunning());
