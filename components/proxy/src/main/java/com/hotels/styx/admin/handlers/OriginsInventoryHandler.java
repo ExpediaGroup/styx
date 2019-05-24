@@ -64,8 +64,13 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsC
         eventBus.post(new GetOriginsInventorySnapshot());
     }
 
-    private static boolean isPrettyPrint(HttpRequest request) {
-        return request.queryParam("pretty").isPresent();
+    @Override
+    protected HttpResponse doHandle(HttpRequest request, HttpInterceptor.Context context) {
+        return response(OK)
+                .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
+                .disableCaching()
+                .body(content(isPrettyPrint(request)), UTF_8)
+                .build();
     }
 
     private String content(boolean pretty) {
@@ -86,13 +91,8 @@ public class OriginsInventoryHandler extends BaseHttpHandler implements OriginsC
                 : this.mapper.writer();
     }
 
-    @Override
-    protected HttpResponse doHandle(HttpRequest request, HttpInterceptor.Context context) {
-        return response(OK)
-                .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
-                .disableCaching()
-                .body(content(isPrettyPrint(request)), UTF_8)
-                .build();
+    private static boolean isPrettyPrint(HttpRequest request) {
+        return request.queryParam("pretty").isPresent();
     }
 
     @Subscribe
