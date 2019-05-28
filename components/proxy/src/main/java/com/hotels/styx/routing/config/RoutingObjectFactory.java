@@ -26,7 +26,6 @@ import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.ConditionRouter;
-import com.hotels.styx.routing.handlers.HostProxy;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 import com.hotels.styx.routing.handlers.PathPrefixRouter;
 import com.hotels.styx.routing.handlers.ProxyToBackend;
@@ -69,7 +68,6 @@ public class RoutingObjectFactory {
                 .put(INTERCEPTOR_PIPELINE, new HttpInterceptorPipeline.Factory())
                 .put(PROXY_TO_BACKEND, new ProxyToBackend.Factory())
                 .put(PATH_PREFIX_ROUTER, new PathPrefixRouter.Factory())
-                .put(HOST_PROXY, new HostProxy.Factory())
                 .build();
 
         BUILTIN_HANDLER_SCHEMAS = ImmutableMap.<String, Schema.FieldType>builder()
@@ -78,7 +76,6 @@ public class RoutingObjectFactory {
                 .put(INTERCEPTOR_PIPELINE, HttpInterceptorPipeline.SCHEMA)
                 .put(PROXY_TO_BACKEND, ProxyToBackend.SCHEMA)
                 .put(PATH_PREFIX_ROUTER, PathPrefixRouter.SCHEMA)
-                .put(HOST_PROXY, HostProxy.SCHEMA)
                 .build();
     }
 

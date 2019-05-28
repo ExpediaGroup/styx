@@ -99,8 +99,7 @@ public class RoutingObjectHandler implements HttpHandler {
                         RoutingObject httpHandler = objectFactory.build(emptyList(), payload);
 
                         routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), payload.config(), httpHandler))
-                                .ifPresent(previous -> previous.getRoutingObject().stop())
-                        ;
+                                .ifPresent(previous -> previous.getRoutingObject().stop());
 
                         return Eventual.of(response(CREATED).build());
                     } catch (IOException | RuntimeException cause) {
