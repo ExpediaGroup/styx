@@ -62,7 +62,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             routeDatabase.get("staticResponse").isPresent shouldBe true
             routeDatabase.get("staticResponse").get().type shouldBe "StaticResponseHandler"
             routeDatabase.get("staticResponse").get().config.shouldBeTypeOf<ObjectNode>()
-            routeDatabase.get("staticResponse").get().handler.shouldBeTypeOf<StaticResponseHandler>()
+            routeDatabase.get("staticResponse").get().routingObject.shouldBeTypeOf<StaticResponseHandler>()
         }
 
         scenario("Retrieving objects") {
@@ -163,7 +163,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
 
             routeDatabase.get("staticResponse").isPresent shouldBe true
             val previousConfig = routeDatabase.get("staticResponse").get().config
-            val previousHandler = routeDatabase.get("staticResponse").get().handler
+            val previousHandler = routeDatabase.get("staticResponse").get().routingObject
 
             handler.handle(
                     put("/admin/routing/objects/staticResponse")
@@ -181,7 +181,7 @@ class RoutingObjectHandlerTest : FeatureSpec({
             routeDatabase.get("staticResponse").isPresent shouldBe true
             routeDatabase.get("staticResponse").get().type shouldBe "StaticResponseHandler"
             routeDatabase.get("staticResponse").get().config shouldNotBeSameInstanceAs previousConfig
-            routeDatabase.get("staticResponse").get().handler shouldNotBeSameInstanceAs previousHandler
+            routeDatabase.get("staticResponse").get().routingObject shouldNotBeSameInstanceAs previousHandler
         }
 
         scenario("Removing existing objects") {

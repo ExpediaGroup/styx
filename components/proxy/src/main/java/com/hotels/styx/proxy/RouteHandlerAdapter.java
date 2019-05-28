@@ -20,13 +20,14 @@ import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.server.HttpRouter;
 import com.hotels.styx.server.NoServiceConfiguredException;
 
 /**
  * A {@link HttpHandler} implementation.
  */
-public class RouteHandlerAdapter implements HttpHandler {
+public class RouteHandlerAdapter implements RoutingObject {
     private final HttpRouter router;
 
     public RouteHandlerAdapter(HttpRouter router) {

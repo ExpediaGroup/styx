@@ -15,48 +15,43 @@
  */
 package com.hotels.styx.routing.handlers
 
-import com.hotels.styx.api.Eventual
-import com.hotels.styx.api.HttpHandler
-import com.hotels.styx.api.HttpResponseStatus.NOT_FOUND
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpRequest
-import com.hotels.styx.api.LiveHttpResponse
-import com.hotels.styx.api.LiveHttpResponse.response
 import com.hotels.styx.proxy.plugin.NamedPlugin.namedPlugin
 import com.hotels.styx.routing.RoutingContext
-import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory
-import com.hotels.styx.routing.config.HttpHandlerFactory
 import com.hotels.styx.routing.config.RoutingObjectFactory
-import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.interceptors.RewriteInterceptor
+import com.hotels.styx.routing.mockObject
+import com.hotels.styx.routing.ref
+import com.hotels.styx.routing.routeLookup
 import com.hotels.styx.routing.routingObjectDef
+import com.hotels.styx.routing.routingObjectFactory
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
-import io.kotlintest.specs.StringSpec
+import io.kotlintest.specs.FeatureSpec
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import reactor.core.publisher.toMono
 
-class HttpInterceptorPipelineTest : StringSpec({
+class HttpInterceptorPipelineTest : FeatureSpec({
     val hwaRequest = LiveHttpRequest.get("/x").build()
-    val routeDatabase = StyxObjectStore<RoutingObjectRecord>()
 
-    "it errors when there is a reference to non-existing pipeline" {
+    feature("Factory") {
+        scenario("it errors when there is a reference to non-existing pipeline") {
 
-        val e = shouldThrow<java.lang.IllegalArgumentException> {
-            HttpInterceptorPipeline.Factory().build(
-                    listOf("config"),
-                    RoutingContext(
-                            plugins = listOf(
-                                    namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
-                                    namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) })
-                            ),
-                            routeDb = routeDatabase,
-                            routingObjectFactory = routingObjectFactory())
-                            .get(),
-                    routingObjectDef("""
+            val context = RoutingContext(
+                    plugins = listOf(
+                            namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
+                            namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) })
+                    ))
+
+            val e = shouldThrow<java.lang.IllegalArgumentException> {
+                HttpInterceptorPipeline.Factory().build(
+                        listOf("config"),
+                        context.get(),
+                        routingObjectDef("""
                           type: InterceptorPipeline
                           config:
                             pipeline:
@@ -67,48 +62,43 @@ class HttpInterceptorPipelineTest : StringSpec({
                               config:
                                 bar
                         """.trimIndent()))
+            }
+
+            e.message shouldBe ("No such plugin or interceptor exists, attribute='config.pipeline', name='non-existing'")
         }
 
-        e.message shouldBe ("No such plugin or interceptor exists, attribute='config.pipeline', name='non-existing'")
-    }
+        scenario("it errors when handler configuration is missing") {
+            val context = RoutingContext(
+                    plugins = listOf(
+                            namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
+                            namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) })
+                    ))
 
-    "it errors when handler configuration is missing" {
-
-        val e = shouldThrow<IllegalArgumentException> {
-            HttpInterceptorPipeline.Factory().build(
-                    listOf("config"),
-                    RoutingContext(
-                            plugins = listOf(
-                                    namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
-                                    namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) })
-                            ),
-                            routeDb = routeDatabase,
-                            routingObjectFactory = routingObjectFactory())
-                            .get(),
-                    routingObjectDef("""
+            val e = shouldThrow<IllegalArgumentException> {
+                HttpInterceptorPipeline.Factory().build(
+                        listOf("config"),
+                        context.get(),
+                        routingObjectDef("""
                           type: InterceptorPipeline
                           config:
                             pipeline:
                               - interceptor2
                         """.trimIndent()))
+            }
+
+            e.message shouldBe ("Routing object definition of type 'InterceptorPipeline', attribute='config', is missing a mandatory 'handler' attribute.")
         }
 
-        e.message shouldBe ("Routing object definition of type 'InterceptorPipeline', attribute='config', is missing a mandatory 'handler' attribute.")
-    }
+        scenario("it builds an interceptor pipeline from the configuration") {
+            val context = RoutingContext(
+                    plugins = listOf(
+                            namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
+                            namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "B").build() }) })) )
 
-    "it builds an interceptor pipeline from the configuration" {
-
-        val handler = HttpInterceptorPipeline.Factory().build(
-                listOf("config"),
-                RoutingContext(
-                        plugins = listOf(
-                                namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
-                                namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "B").build() }) })
-                        ),
-                        routeDb = routeDatabase,
-                        routingObjectFactory = routingObjectFactory())
-                        .get(),
-                routingObjectDef("""
+            val handler = HttpInterceptorPipeline.Factory().build(
+                    listOf("config"),
+                    context.get(),
+                    routingObjectDef("""
                       type: InterceptorPipeline
                       config:
                         pipeline:
@@ -122,20 +112,17 @@ class HttpInterceptorPipelineTest : StringSpec({
                             content: hello
                     """.trimIndent()))
 
-        val response = handler.handle(hwaRequest, null).toMono().block()
-        response?.headers("X-Test-Header") shouldBe (listOf("B", "A"))
-    }
+            val response = handler.handle(hwaRequest, null).toMono().block()
+            response?.headers("X-Test-Header") shouldBe (listOf("B", "A"))
+        }
 
-    "it Treats absent 'pipeline' attribute as empty pipeline" {
+        scenario("it Treats absent 'pipeline' attribute as empty pipeline") {
+            val context = RoutingContext()
 
-        val handler = HttpInterceptorPipeline.Factory().build(
-                listOf("config"),
-                RoutingContext(
-                        plugins = listOf(),
-                        routeDb = routeDatabase,
-                        routingObjectFactory = routingObjectFactory())
-                        .get(),
-                routingObjectDef("""
+            val handler = HttpInterceptorPipeline.Factory().build(
+                    listOf("config"),
+                    context.get(),
+                    routingObjectDef("""
                       type: InterceptorPipeline
                       config:
                         handler:
@@ -146,41 +133,44 @@ class HttpInterceptorPipelineTest : StringSpec({
                             content: hello
                       """.trimIndent()))
 
-        val response = handler.handle(hwaRequest, null).toMono().block()
-        response?.status() shouldBe (OK)
-    }
+            val response = handler.handle(hwaRequest, null).toMono().block()
+            response?.status() shouldBe (OK)
+        }
 
-    "Fallback handler can be an object reference" {
-        val handler = HttpInterceptorPipeline.Factory().build(
-                listOf("config"),
-                RoutingContext(
-                        plugins = listOf(),
-                        routeDb = routeDatabase,
-                        routingObjectFactory = routingObjectFactory())
-                        .get(),
-                routingObjectDef("""
+        scenario("Handler can be an object reference") {
+            val context = RoutingContext(
+                    factory = routingObjectFactory(
+                            routeLookup {
+                                ref("referenceToAnotherRoutingObject" to mockObject())
+                            }
+                    )
+            )
+
+            val handler = HttpInterceptorPipeline.Factory().build(
+                    listOf("config"),
+                    context.get(),
+                    routingObjectDef("""
                       type: InterceptorPipeline
                       config:
                         handler: referenceToAnotherRoutingObject
                       """.trimIndent()))
 
-        val response = handler.handle(hwaRequest, null).toMono().block()
-        response?.status() shouldBe NOT_FOUND
-    }
+            val response = handler.handle(hwaRequest, null).toMono().block()
+            response?.status() shouldBe OK
+        }
 
-    "Supports inline interceptor definitions" {
+        scenario("Supports inline interceptor definitions") {
+            val context = RoutingContext(
+                    plugins = listOf(
+                            namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
+                            namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "B").build() }) })
+                    ),
+                    builtinInterceptorsFactory = BuiltinInterceptorsFactory(mapOf("Rewrite" to RewriteInterceptor.Factory()))
+            )
 
-        val handler = HttpInterceptorPipeline.Factory().build(listOf("config"),
-                RoutingContext(
-                        plugins = listOf(
-                                namedPlugin("interceptor1", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "A").build() }) }),
-                                namedPlugin("interceptor2", { request, chain -> chain.proceed(request).map({ response -> response.newBuilder().addHeader("X-Test-Header", "B").build() }) })
-                        ),
-                        routeDb = routeDatabase,
-                        routingObjectFactory = routingObjectFactory(),
-                        interceptorsFactory = BuiltinInterceptorsFactory(mapOf("Rewrite" to RewriteInterceptor.Factory()))
-                ).get(),
-                routingObjectDef("""
+            val handler = HttpInterceptorPipeline.Factory().build(listOf("config"),
+                    context.get(),
+                    routingObjectDef("""
                       type: InterceptorPipeline
                       config:
                         pipeline:
@@ -199,26 +189,24 @@ class HttpInterceptorPipelineTest : StringSpec({
                             content: hello
                      """.trimIndent()))
 
-        val response = handler.handle(hwaRequest, null).toMono().block()
-        response?.headers("X-Test-Header") shouldBe (listOf("B", "A"))
-    }
-
-
-    "passes full configuration attribute path (config.config.handler) to the builtins factory" {
-
-        val builtinsFactory = mockk<RoutingObjectFactory> {
-            every { build(any(), any()) } returns HttpHandler { _, _ -> Eventual.of(response(OK).build()) }
+            val response = handler.handle(hwaRequest, null).toMono().block()
+            response?.headers("X-Test-Header") shouldBe (listOf("B", "A"))
         }
 
 
-        HttpInterceptorPipeline.Factory().build(
-                listOf("config", "config"),
-                RoutingContext(
-                        plugins = listOf(),
-                        routeDb = routeDatabase,
-                        routingObjectFactory = builtinsFactory)
-                        .get(),
-                routingObjectDef("""
+        scenario("passes full configuration attribute path (config.config.handler) to the builtins factory") {
+
+            val builtinsFactory = mockk<RoutingObjectFactory> {
+                every { build(any(), any()) } returns mockObject()
+            }
+
+            val context = RoutingContext(factory = builtinsFactory)
+
+            HttpInterceptorPipeline.Factory().build(
+                    listOf("config", "config"),
+                    context
+                            .get(),
+                    routingObjectDef("""
                       type: InterceptorPipeline
                       config:
                         handler:
@@ -228,22 +216,21 @@ class HttpInterceptorPipelineTest : StringSpec({
                             backendProvider: backendProvider
                     """.trimIndent()))
 
-        verify {
-            builtinsFactory.build(listOf("config", "config", "handler"), any())
+            verify {
+                builtinsFactory.build(listOf("config", "config", "handler"), any())
+            }
+        }
+
+    }
+
+    feature("Lifecycle management") {
+        scenario("Calls stop() for inlined handler") {
+            TODO("Implement this")
+        }
+
+        scenario("Does not call stop() for inlined handler") {
+            TODO("Implement this")
         }
     }
 
 })
-
-
-fun mockHandlerFactory(): HttpHandlerFactory {
-    val handlerFactory = mockk<HttpHandlerFactory>()
-
-    every {
-        handlerFactory.build(any(), any(), any())
-    } returns HttpHandler { _, _ -> Eventual.of(LiveHttpResponse.response(OK).build()) }
-
-    return handlerFactory
-}
-
-fun routingObjectFactory() = RoutingObjectFactory(StyxObjectStore())

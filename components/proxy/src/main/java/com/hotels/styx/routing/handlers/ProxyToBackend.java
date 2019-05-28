@@ -18,7 +18,6 @@ package com.hotels.styx.routing.handlers;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
@@ -37,6 +36,7 @@ import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
 import com.hotels.styx.proxy.StyxBackendServiceClientFactory;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 
@@ -53,7 +53,7 @@ import static java.lang.String.join;
 /**
  * Routing object that proxies a request to a configured backend.
  */
-public class ProxyToBackend implements HttpHandler {
+public class ProxyToBackend implements RoutingObject {
     public static final Schema.FieldType SCHEMA = object(
             field("backend", object(opaque()))
     );
@@ -73,7 +73,7 @@ public class ProxyToBackend implements HttpHandler {
      */
     public static class Factory implements HttpHandlerFactory {
         @VisibleForTesting
-        static HttpHandler build(List<String> parents, Context context, RoutingObjectDefinition configBlock, BackendServiceClientFactory clientFactory) {
+        static RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock, BackendServiceClientFactory clientFactory) {
             JsonNodeConfig jsConfig = new JsonNodeConfig(configBlock.config());
 
             BackendService backendService = jsConfig
@@ -130,7 +130,7 @@ public class ProxyToBackend implements HttpHandler {
         }
 
         @Override
-        public HttpHandler build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
             return build(parents, context, configBlock, new StyxBackendServiceClientFactory(context.environment()));
         }
 

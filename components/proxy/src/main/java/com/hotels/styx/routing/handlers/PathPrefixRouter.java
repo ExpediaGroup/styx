@@ -18,11 +18,11 @@ package com.hotels.styx.routing.handlers;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.server.NoServiceConfiguredException;
@@ -59,17 +59,17 @@ public class PathPrefixRouter {
             ))
     );
 
-    private final ConcurrentSkipListMap<String, HttpHandler> routes = new ConcurrentSkipListMap<>(
+    private final ConcurrentSkipListMap<String, RoutingObject> routes = new ConcurrentSkipListMap<>(
                     comparingInt(String::length)
                             .reversed()
                             .thenComparing(naturalOrder())
     );
 
-    PathPrefixRouter(List<Pair<String, HttpHandler>> routes) {
+    PathPrefixRouter(List<Pair<String, RoutingObject>> routes) {
         routes.forEach(entry -> this.routes.put(entry.key(), entry.value()));
     }
 
-    public Optional<HttpHandler> route(LiveHttpRequest request) {
+    public Optional<RoutingObject> route(LiveHttpRequest request) {
         String path = request.path();
 
         return routes.entrySet().stream()
@@ -78,10 +78,13 @@ public class PathPrefixRouter {
                 .map(Map.Entry::getValue);
     }
 
+    /**
+     * A factory for constructing PathPrefixRouter objects.
+     */
     public static class Factory implements HttpHandlerFactory {
 
         @Override
-        public HttpHandler build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
             PathPrefixRouterConfig config = new JsonNodeConfig(configBlock.config()).as(PathPrefixRouterConfig.class);
             if (config.routes == null) {
                 throw missingAttributeError(configBlock, join(".", parents), "routes");

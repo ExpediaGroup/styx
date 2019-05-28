@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ import static io.netty.channel.ChannelOption.AUTO_READ;
 import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
 import static io.netty.channel.ChannelOption.TCP_NODELAY;
 import static io.netty.util.ReferenceCountUtil.releaseLater;
-import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class HttpTestClient {
@@ -54,7 +53,7 @@ public class HttpTestClient {
     private ChannelFuture channelFuture;
 
     public HttpTestClient(HostAndPort destination, ChannelInitializer<Channel> initializer) {
-        this.destination = requireNonNull(destination);
+        this.destination = destination;
 
         this.bootstrap = lazy(() -> new Bootstrap()
                 .group(eventLoopGroup)
@@ -66,14 +65,22 @@ public class HttpTestClient {
                 .option(CONNECT_TIMEOUT_MILLIS, 1000));
     }
 
-    public HttpTestClient connect() throws InterruptedException {
+    public HttpTestClient(ChannelInitializer<Channel> initializer) {
+        this(null, initializer);
+    }
+
+    public HttpTestClient connect(String host, int port) throws InterruptedException {
         Bootstrap bootstrap = this.bootstrap.get();
 
-        channelFuture = bootstrap.connect(destination.getHostText(), destination.getPort())
+        channelFuture = bootstrap.connect(host, port)
                 .addListener((ChannelFutureListener) future -> future.channel().pipeline().addLast(new ReceivedResponseHandler()));
 
         channelFuture.await();
         return this;
+    }
+
+    public HttpTestClient connect() throws InterruptedException {
+        return connect(this.destination.getHostText(), this.destination.getPort());
     }
 
     public CompletableFuture<Void> disconnect() {

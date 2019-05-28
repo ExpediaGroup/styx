@@ -16,7 +16,7 @@
 package com.hotels.styx.routing.handlers;
 
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectReference;
 import com.hotels.styx.routing.db.StyxObjectStore;
@@ -30,7 +30,10 @@ import static java.util.Objects.requireNonNull;
  * Resolves a routing object reference from route database.
  */
 public interface RouteRefLookup {
-    HttpHandler apply(RoutingObjectReference route);
+    // TODO: Mikko: this interface should return Optional<RoutingObject>
+    // Then we can move .orElse handler to RoutingObjectFactory.
+    // This will prevent NPEs in test RouteRefLookup implementations.
+    RoutingObject apply(RoutingObjectReference route);
 
     /**
      * A StyxObjectStore based route reference lookup function.
@@ -43,9 +46,9 @@ public interface RouteRefLookup {
         }
 
         @Override
-        public HttpHandler apply(RoutingObjectReference route) {
+        public RoutingObject apply(RoutingObjectReference route) {
             return this.routeDatabase.get(route.name())
-                    .map(RoutingObjectRecord::getHandler)
+                    .map(RoutingObjectRecord::getRoutingObject)
                     .orElse((liveRequest, na) -> {
                         liveRequest.consume();
 

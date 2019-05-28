@@ -28,6 +28,7 @@ import com.hotels.styx.api.HttpRequest;
 import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectFactory;
@@ -95,7 +96,7 @@ public class RoutingObjectHandler implements HttpHandler  {
 
                     try {
                         RoutingObjectDefinition payload = YAML_MAPPER.readValue(body, RoutingObjectDefinition.class);
-                        HttpHandler httpHandler = objectFactory.build(emptyList(), payload);
+                        RoutingObject httpHandler = objectFactory.build(emptyList(), payload);
 
                         routeDatabase.insert(name, new RoutingObjectRecord(payload.type(), payload.config(), httpHandler));
 

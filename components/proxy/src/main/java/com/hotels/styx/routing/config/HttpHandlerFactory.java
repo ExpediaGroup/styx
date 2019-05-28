@@ -16,8 +16,8 @@
 package com.hotels.styx.routing.config;
 
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.db.StyxObjectStore;
 
@@ -44,7 +44,7 @@ public interface HttpHandlerFactory {
      * @param configBlock
      * @return
      */
-    HttpHandler build(List<String> parents, HttpHandlerFactory.Context context, RoutingObjectDefinition configBlock);
+    RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock);
 
     /**
      * Contextual information for factory class.
@@ -63,15 +63,15 @@ public interface HttpHandlerFactory {
         public Context(
                 Environment environment,
                 StyxObjectStore<RoutingObjectRecord> routeDb,
-                RoutingObjectFactory routingObjectFactory,
+                RoutingObjectFactory factory,
                 Iterable<NamedPlugin> plugins,
-                BuiltinInterceptorsFactory interceptorsFactory,
+                BuiltinInterceptorsFactory builtinInterceptorsFactory,
                 boolean requestTracking) {
             this.environment = requireNonNull(environment);
             this.routeDb = requireNonNull(routeDb);
-            this.routingObjectFactory = requireNonNull(routingObjectFactory);
+            this.routingObjectFactory = requireNonNull(factory);
             this.plugins = requireNonNull(plugins);
-            this.interceptorsFactory = requireNonNull(interceptorsFactory);
+            this.interceptorsFactory = requireNonNull(builtinInterceptorsFactory);
             this.requestTracking = requestTracking;
         }
 

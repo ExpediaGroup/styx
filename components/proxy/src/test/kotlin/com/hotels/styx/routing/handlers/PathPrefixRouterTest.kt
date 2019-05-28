@@ -21,18 +21,19 @@ import com.hotels.styx.api.LiveHttpRequest.get
 import com.hotels.styx.common.Pair.pair
 import com.hotels.styx.config.schema.SchemaValidationException
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
-import com.hotels.styx.routing.RoutingObjectRecord
-import com.hotels.styx.routing.config.HttpHandlerFactory
+import com.hotels.styx.routing.RoutingContext
 import com.hotels.styx.routing.config.RoutingObjectFactory
+import com.hotels.styx.routing.config.RoutingObjectFactory.BUILTIN_HANDLER_SCHEMAS
 import com.hotels.styx.routing.config.RoutingObjectReference
-import com.hotels.styx.routing.db.StyxObjectStore
 import com.hotels.styx.routing.handle
-import com.hotels.styx.routing.handlers.RouteRefLookup.RouteDbRefLookup
+import com.hotels.styx.routing.mockObject
+import com.hotels.styx.routing.ref
+import com.hotels.styx.routing.routeLookup
 import com.hotels.styx.routing.routingObjectDef
+import com.hotels.styx.routing.routingObjectFactory
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.FeatureSpec
-import io.mockk.mockk
 import reactor.core.publisher.toMono
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Optional
@@ -41,14 +42,7 @@ class PathPrefixRouterTest : FeatureSpec({
 
     val factory = RoutingObjectFactory()
 
-    val emptyObjectStore = StyxObjectStore<RoutingObjectRecord>()
-    val defaultFactoryContext = HttpHandlerFactory.Context(
-            mockk(),
-            emptyObjectStore,
-            RoutingObjectFactory(RouteDbRefLookup(emptyObjectStore)),
-            mockk(),
-            mockk(),
-            false)
+    val context = RoutingContext()
 
 
     feature("PathPrefixRouter") {
@@ -97,20 +91,6 @@ class PathPrefixRouterTest : FeatureSpec({
 
     feature("PathPrefixRouterFactory") {
 
-        val rootHandler = factory.build(listOf(), routingObjectDef("""
-                type: StaticResponseHandler
-                config:
-                  status: 200
-                  content: root
-                """.trimIndent()))
-
-        val fooHandler = factory.build(listOf(), routingObjectDef("""
-                type: StaticResponseHandler
-                config:
-                  status: 200
-                  content: foo
-                """.trimIndent()))
-
         scenario("Builds a PathPrefixRouter instance") {
             val routingDef = routingObjectDef("""
                   type: PathPrefixRouter
@@ -118,21 +98,18 @@ class PathPrefixRouterTest : FeatureSpec({
                     routes:
                       - { prefix: /, destination: root }
                       - { prefix: /foo/, destination: foo }
-                """.trimIndent())
+                    """.trimIndent())
 
-            val objectStore = StyxObjectStore<RoutingObjectRecord>()
-            objectStore.insert("root", RoutingObjectRecord("X", routingDef.config(), rootHandler))
-            objectStore.insert("foo", RoutingObjectRecord("X", routingDef.config(), fooHandler))
+            val context = RoutingContext(
+                    factory = routingObjectFactory(
+                            lookup = routeLookup {
+                                ref("root" to mockObject("root"))
+                                ref("foo" to mockObject("foo"))
+                            }
+                    )
+            )
 
-            val factoryContext = HttpHandlerFactory.Context(
-                    mockk(),
-                    objectStore,
-                    RoutingObjectFactory(RouteDbRefLookup(objectStore)),
-                    mockk(),
-                    mockk(),
-                    false)
-
-            val handler = PathPrefixRouter.Factory().build(listOf(), factoryContext, routingDef);
+            val handler = PathPrefixRouter.Factory().build(listOf(), context.get(), routingDef);
 
             handler.handle(HttpRequest.get("/x").build())
                     .toMono()
@@ -158,7 +135,7 @@ class PathPrefixRouterTest : FeatureSpec({
                              content: hello
                 """.trimIndent())
 
-            val handler = PathPrefixRouter.Factory().build(listOf(), defaultFactoryContext, routingDef);
+            val handler = PathPrefixRouter.Factory().build(listOf(), context.get(), routingDef);
 
             handler.handle(HttpRequest.get("/foo").build())
                     .toMono()
@@ -174,7 +151,7 @@ class PathPrefixRouterTest : FeatureSpec({
                 """.trimIndent())
 
             val e = shouldThrow<IllegalArgumentException> {
-                PathPrefixRouter.Factory().build(listOf(), defaultFactoryContext, routingDef);
+                PathPrefixRouter.Factory().build(listOf(), context.get(), routingDef);
             }
 
             e.message shouldBe "Routing object definition of type 'PathPrefixRouter', attribute='', is missing a mandatory 'routes' attribute."
@@ -182,7 +159,7 @@ class PathPrefixRouterTest : FeatureSpec({
     }
 
     feature("Schema validation") {
-        val EXTENSIONS = { key: String -> RoutingObjectFactory.BUILTIN_HANDLER_SCHEMAS[key] }
+        val EXTENSIONS = { key: String -> BUILTIN_HANDLER_SCHEMAS[key] }
 
         scenario("Accepts inlined routing object definitions") {
             val jsonNode = YamlConfig("""
@@ -253,5 +230,16 @@ class PathPrefixRouterTest : FeatureSpec({
             e.message shouldBe "Unexpected field: 'notAllowed'"
         }
     }
+
+    feature("Lifecycle management") {
+        scenario("Calls stop() for inlined handler") {
+            TODO("Implement this")
+        }
+
+        scenario("Does not call stop() for inlined handler") {
+            TODO("Implement this")
+        }
+    }
+
 })
 

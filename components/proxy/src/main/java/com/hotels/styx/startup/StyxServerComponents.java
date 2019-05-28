@@ -23,7 +23,6 @@ import com.google.common.eventbus.AsyncEventBus;
 import com.hotels.styx.Environment;
 import com.hotels.styx.StyxConfig;
 import com.hotels.styx.Version;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.MetricRegistry;
 import com.hotels.styx.api.configuration.Configuration;
 import com.hotels.styx.api.extension.service.spi.StyxService;
@@ -31,6 +30,7 @@ import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.Plugin;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
@@ -95,7 +95,7 @@ public class StyxServerComponents {
                 .map(StyxServerComponents::readHttpHandlers)
                 .orElse(ImmutableMap.of())
                 .forEach((name, record) -> {
-                    HttpHandler handler = routingObjectFactory.build(ImmutableList.of(name), record);
+                    RoutingObject handler = routingObjectFactory.build(ImmutableList.of(name), record);
                     routeObjectStore.insert(name, new RoutingObjectRecord(record.type(), record.config(), handler));
                 });
     }

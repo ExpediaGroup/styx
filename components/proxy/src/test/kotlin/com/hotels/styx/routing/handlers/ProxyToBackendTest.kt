@@ -23,7 +23,9 @@ import com.hotels.styx.api.LiveHttpResponse
 import com.hotels.styx.client.BackendServiceClient
 import com.hotels.styx.proxy.BackendServiceClientFactory
 import com.hotels.styx.routing.RoutingContext
+import com.hotels.styx.routing.routeLookup
 import com.hotels.styx.routing.routingObjectDef
+import com.hotels.styx.routing.routingObjectFactory
 import com.hotels.styx.server.HttpInterceptorContext
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
@@ -49,7 +51,11 @@ class ProxyToBackendTest : StringSpec({
 
           """.trimIndent())
 
-    val context = RoutingContext(environment = environment, routingObjectFactory = routingObjectFactory()).get()
+    val context = RoutingContext(
+            environment = environment,
+            factory = routingObjectFactory(
+                    routeLookup { }
+            )).get()
 
     "builds ProxyToBackend handler" {
         val handler = ProxyToBackend.Factory.build(listOf(), context, config, clientFactory());
@@ -97,15 +103,15 @@ class ProxyToBackendTest : StringSpec({
 
 private fun clientFactory() = BackendServiceClientFactory { backendService, originsInventory, originStatsFactory ->
     BackendServiceClient { request ->
-                backendService.id() shouldBe (id("ba"))
+        backendService.id() shouldBe (id("ba"))
         backendService.connectionPoolConfig().maxConnectionsPerHost() shouldBe (45)
         backendService.connectionPoolConfig().maxPendingConnectionsPerHost() shouldBe (15)
         backendService.responseTimeoutMillis() shouldBe (60000)
-        backendService.origins().first()?.id() shouldBe(id("ba1"))
-        backendService.origins().first()?.port() shouldBe(9094)
+        backendService.origins().first()?.id() shouldBe (id("ba1"))
+        backendService.origins().first()?.port() shouldBe (9094)
         Mono.just(LiveHttpResponse.response(OK)
-                    .addHeader("X-Backend-Service", "y")
-                    .build())
+                .addHeader("X-Backend-Service", "y")
+                .build())
 
     }
 }

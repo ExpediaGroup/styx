@@ -59,6 +59,12 @@
       <artifactId>jackson-annotations</artifactId>
       <version>${jackson.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.hotels.styx</groupId>
+      <artifactId>styx-e2e-testsupport</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <scope>test</scope>
+    </dependency>
 
   </dependencies>
 
