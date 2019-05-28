@@ -30,9 +30,9 @@ import static java.util.Objects.requireNonNull;
  * Resolves a routing object reference from route database.
  */
 public interface RouteRefLookup {
-    // TODO: Mikko: this interface should return Optional<RoutingObject>
-    // Then we can move .orElse handler to RoutingObjectFactory.
-    // This will prevent NPEs in test RouteRefLookup implementations.
+    // Consider modifying this interface to return Optional<RoutingObject>.
+    // Then we can move .orElse handler to RoutingObjectFactory. This will
+    // prevent NPEs in test RouteRefLookup implementations.
     RoutingObject apply(RoutingObjectReference route);
 
     /**
