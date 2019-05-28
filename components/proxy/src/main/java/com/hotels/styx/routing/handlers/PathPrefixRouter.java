@@ -112,7 +112,7 @@ public class PathPrefixRouter {
 
                 @Override
                 public CompletableFuture<Void> stop() {
-                    pathPrefixRouter.routes.forEach((route, value) -> value.stop());
+                    pathPrefixRouter.routes.forEach((route, routingObject) -> routingObject.stop());
                     return completedFuture(null);
                 }
             };

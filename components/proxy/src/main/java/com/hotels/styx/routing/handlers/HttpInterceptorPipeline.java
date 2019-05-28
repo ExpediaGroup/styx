@@ -48,6 +48,7 @@ import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfig
 import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
+import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.StreamSupport.stream;
 
@@ -65,7 +66,7 @@ public class HttpInterceptorPipeline implements RoutingObject {
 
     public HttpInterceptorPipeline(List<HttpInterceptor> interceptors, RoutingObject handler, boolean trackRequests) {
         RequestTracker tracker = trackRequests ? CurrentRequestTracker.INSTANCE : RequestTracker.NO_OP;
-        this.handler = handler;
+        this.handler = requireNonNull(handler);
         this.pipeline = new StandardHttpPipeline(interceptors, handler, tracker);
     }
 

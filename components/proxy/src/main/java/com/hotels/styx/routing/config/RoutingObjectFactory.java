@@ -58,7 +58,6 @@ public class RoutingObjectFactory {
     private static final String INTERCEPTOR_PIPELINE = "InterceptorPipeline";
     private static final String PROXY_TO_BACKEND = "ProxyToBackend";
     private static final String PATH_PREFIX_ROUTER = "PathPrefixRouter";
-    private static final String HOST_PROXY = "HostProxy";
 
 
     static {
