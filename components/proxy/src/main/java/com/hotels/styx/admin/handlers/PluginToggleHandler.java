@@ -148,11 +148,7 @@ public class PluginToggleHandler implements WebServiceHandler {
     }
 
     private static Eventual<PluginEnabledState> requestedNewState(HttpRequest request) {
-        // TODO: Mikko: Crappy coding, fix this:
-        return Eventual.of(request)
-                .map(fullRequest -> fullRequest.bodyAs(UTF_8))
-                .map(PluginToggleHandler::parseToBoolean)
-                .map(PluginEnabledState::fromBoolean);
+        return Eventual.of(PluginEnabledState.fromBoolean(parseToBoolean(request.bodyAs(UTF_8))));
     }
 
     private static HttpResponse responseWith(HttpResponseStatus status, String message) {

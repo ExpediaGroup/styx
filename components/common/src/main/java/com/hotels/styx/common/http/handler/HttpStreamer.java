@@ -30,17 +30,17 @@ import static java.util.Objects.requireNonNull;
 public class HttpStreamer implements WebServiceHandler {
     private static final int KILOBYTE = 1024;
 
-    private int bytes;
+    private int maxContentBytes;
     private HttpHandler delegate;
 
     /**
      * HttpStreamer constructor.
      *
-     * @param bytes max number of content bytes to aggregate
+     * @param maxContentBytes max number of content maxContentBytes to aggregate
      * @param delegate adapted HttpHandler instance
      */
-    public HttpStreamer(int bytes, HttpHandler delegate) {
-        this.bytes = bytes;
+    public HttpStreamer(int maxContentBytes, HttpHandler delegate) {
+        this.maxContentBytes = maxContentBytes;
         this.delegate = requireNonNull(delegate);
     }
 
@@ -56,6 +56,6 @@ public class HttpStreamer implements WebServiceHandler {
     @Override
     public Eventual<HttpResponse> handle(HttpRequest request, HttpInterceptor.Context context) {
         return delegate.handle(request.stream(), context)
-                .flatMap(live -> live.aggregate(bytes));
+                .flatMap(live -> live.aggregate(maxContentBytes));
     }
 }

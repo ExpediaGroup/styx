@@ -56,14 +56,14 @@ public class StyxConfigurationHandler implements WebServiceHandler {
                 .map(StyxConfigurationHandler::disableCaching);
     }
 
+    private StaticBodyHttpHandler configHandler(boolean pretty) {
+        return pretty ? prettyStyxConfigHandler : styxConfigHandler;
+    }
+
     private static HttpResponse disableCaching(HttpResponse response) {
         return response.newBuilder()
                 .disableCaching()
                 .build();
-    }
-
-    private StaticBodyHttpHandler configHandler(boolean pretty) {
-        return pretty ? prettyStyxConfigHandler : styxConfigHandler;
     }
 
     private static String body(Configuration styxConfig) {

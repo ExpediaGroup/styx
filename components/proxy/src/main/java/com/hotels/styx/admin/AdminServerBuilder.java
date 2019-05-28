@@ -162,6 +162,12 @@ public class AdminServerBuilder {
         return httpRouter;
     }
 
+    private JsonHandler<DashboardData> dashboardDataHandler(StyxConfig styxConfig) {
+        return new JsonHandler<>(new DashboardDataSupplier(backendServicesRegistry, environment, styxConfig),
+                Optional.of(Duration.ofSeconds(10)),
+                new MetricsModule(SECONDS, MILLISECONDS, false));
+    }
+
     private static Iterable<IndexHandler.Link> indexLinkPaths() {
         return ImmutableSortedSet.of(
                 link("version.txt", "/version.txt"),
@@ -211,12 +217,6 @@ public class AdminServerBuilder {
 
         return mapToList(adminInterfaceHandlers, (relativePath, handler) ->
                 new PluginAdminEndpointRoute(namedPlugin, relativePath, new HttpStreamer(MEGABYTE, handler)));
-    }
-
-    private JsonHandler<DashboardData> dashboardDataHandler(StyxConfig styxConfig) {
-        return new JsonHandler<>(new DashboardDataSupplier(backendServicesRegistry, environment, styxConfig),
-                Optional.of(Duration.ofSeconds(10)),
-                new MetricsModule(SECONDS, MILLISECONDS, false));
     }
 
     // allows key and value to be labelled in lambda instead of having to use Entry.getKey, Entry.getValue
