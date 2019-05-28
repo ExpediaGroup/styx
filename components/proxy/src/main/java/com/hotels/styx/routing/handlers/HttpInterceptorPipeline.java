@@ -16,7 +16,6 @@
 package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
 import com.hotels.styx.api.HttpInterceptor;
@@ -28,6 +27,7 @@ import com.hotels.styx.proxy.plugin.NamedPlugin;
 import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
+import com.hotels.styx.routing.config.RoutingConfigParser;
 import com.hotels.styx.routing.config.RoutingObjectConfiguration;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectReference;
@@ -44,11 +44,10 @@ import static com.hotels.styx.config.schema.SchemaDsl.list;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
 import static com.hotels.styx.config.schema.SchemaDsl.routingObject;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
+import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode;
 import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
-import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static java.util.stream.StreamSupport.stream;
 
@@ -103,26 +102,11 @@ public class HttpInterceptorPipeline implements RoutingObject {
         // Note: `pipeline` has to represent a JSON array:
         private static List<RoutingObjectConfiguration> styxHttpPipeline(JsonNode pipeline) {
             return stream(pipeline.spliterator(), false)
-                    .map(Factory::toRoutingConfigNode)
+                    .map(RoutingConfigParser::toRoutingConfigNode)
                     .collect(Collectors.toList());
         }
 
-        // TODO: MIKKO: This code is likely to be replicated in every object factory:
-        private static RoutingObjectConfiguration toRoutingConfigNode(JsonNode jsonNode) {
-            if (jsonNode.getNodeType() == JsonNodeType.STRING) {
-                return new RoutingObjectReference(jsonNode.asText());
-            } else if (jsonNode.getNodeType() == JsonNodeType.OBJECT) {
-                String name = ofNullable(jsonNode.get("name"))
-                        .map(JsonNode::asText)
-                        .orElse("");
-                String type = requireNonNull(jsonNode.get("type").asText());
-                JsonNode conf = jsonNode.get("config");
-                return new RoutingObjectDefinition(name, type, conf);
-            }
-            throw new IllegalArgumentException("Invalid configuration. Expected a reference (string) or a configuration block.");
-        }
-
-        private List<HttpInterceptor> getHttpInterceptors(
+        private static List<HttpInterceptor> getHttpInterceptors(
                 List<String> parents,
                 Map<String, NamedPlugin> plugins,
                 BuiltinInterceptorsFactory interceptorFactory,
@@ -157,7 +141,7 @@ public class HttpInterceptorPipeline implements RoutingObject {
             });
         }
 
-        private Map<String, NamedPlugin> toMap(Iterable<NamedPlugin> plugins) {
+        private static Map<String, NamedPlugin> toMap(Iterable<NamedPlugin> plugins) {
             return stream(plugins.spliterator(), false)
                     .collect(Collectors.toMap(NamedPlugin::name, identity()));
         }
