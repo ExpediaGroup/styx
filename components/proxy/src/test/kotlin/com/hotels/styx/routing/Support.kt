@@ -41,7 +41,7 @@ import java.util.concurrent.CompletableFuture
 fun routingObjectDef(text: String) = YamlConfig(text).`as`((RoutingObjectDefinition::class.java))
 
 data class RoutingContext(
-        val environment: Environment = mockk(),
+        val environment: Environment = Environment.Builder().build(),
         val routeDb: StyxObjectStore<RoutingObjectRecord> = StyxObjectStore(),
         val factory: RoutingObjectFactory = routingObjectFactory(),
         val plugins: Iterable<NamedPlugin> = listOf(),

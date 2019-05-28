@@ -137,3 +137,8 @@ fun StyxServer.removeRoutingObject(name: String): HttpResponseStatus {
 
     return response?.status() ?: HttpResponseStatus.statusWithCode(666)
 }
+
+fun threadCount(namePattern: String) = Thread.getAllStackTraces().keys
+        .map { it.name }
+        .filter { it.contains(namePattern) }
+        .count()
