@@ -10,17 +10,20 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 
 /**
- * This tests the behaviours added in the example plugin.
+ * This tests the behaviours added in the EarlyReturnExamplePlugin.
  */
 
 public class EarlyReturnExamplePluginTest {
+
     @Test
     public void returnsEarlyWhenHeaderIsPresent() {
+
         EarlyReturnExamplePlugin plugin = new EarlyReturnExamplePlugin();
 
         LiveHttpRequest request = LiveHttpRequest.get("/")
                 .header("X-Respond", "foo")
                 .build();
+
         HttpInterceptor.Chain chain = request1 -> Eventual.of(LiveHttpResponse.response().build());
 
         Eventual<LiveHttpResponse> eventualLive = plugin.intercept(request, chain);
