@@ -20,6 +20,7 @@ import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Mono;
 
 import static com.hotels.styx.api.HttpResponseStatus.OK;
 import static com.hotels.styx.api.LiveHttpRequest.get;
@@ -35,10 +36,10 @@ public class ModifyHeadersExamplePluginTest {
     private final ModifyHeadersExamplePlugin plugin = new ModifyHeadersExamplePlugin(config);
 
     /**
-     * This tests the behaviours added in the example plugin.
+     * This tests the behaviours added in the ModifyHeadersExamplePlugin.
      */
     @Test
-    public void addsExtraHeaders() throws Exception {
+    public void addsExtraHeaders() {
         // a simple way to mock the downstream system
         HttpInterceptor.Chain chain = request -> {
             assertThat(request.header("myRequestHeader").orElse(null), is("foo"));
@@ -51,9 +52,9 @@ public class ModifyHeadersExamplePluginTest {
                 .build();
 
 
-        // since this is a test, we want to wait for the response, so we call CompletableFuture.get
-//        LiveHttpResponse response = plugin.intercept(request, chain).asCompletableFuture().get();
-//
-//        assertThat(response.header("myResponseheader").orElse(null), is("bar"));
+        // since this is a test, we want to wait for the response
+        LiveHttpResponse response = Mono.from(plugin.intercept(request, chain)).block();
+
+        assertThat(response.header("myResponseHeader").orElse(null), is("bar"));
     }
 }
