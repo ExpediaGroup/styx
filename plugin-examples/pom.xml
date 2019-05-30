@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <groupId>com.hotels.styx</groupId>
-    <artifactId>styx-components</artifactId>
+    <artifactId>styx-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
 
@@ -11,6 +11,10 @@
 
   <artifactId>plugin-examples</artifactId>
   <name>Styx proxy plugin examples</name>
+
+  <properties>
+    <main.basedir>${project.parent.basedir}</main.basedir>
+  </properties>
 
   <dependencies>
     <dependency>

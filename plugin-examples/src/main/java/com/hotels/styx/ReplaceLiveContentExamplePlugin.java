@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -35,10 +35,10 @@ import static java.util.Objects.requireNonNull;
  * live upstream response body is never stored in the heap in full.
  */
 
-public class ReplaceLiveContentExample implements Plugin {
+public class ReplaceLiveContentExamplePlugin implements Plugin {
     private final ReplaceLiveContentExampleConfig config;
 
-    public ReplaceLiveContentExample(ReplaceLiveContentExampleConfig config) {
+    public ReplaceLiveContentExamplePlugin(ReplaceLiveContentExampleConfig config) {
         this.config = requireNonNull(config);
     }
 
