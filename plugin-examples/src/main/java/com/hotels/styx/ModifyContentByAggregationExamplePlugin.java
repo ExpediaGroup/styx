@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.plugins.spi.Plugin;
 
-import java.util.Objects;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
@@ -36,10 +34,10 @@ import static java.util.Objects.requireNonNull;
  *Please note that this uses more heap space as the full response is transiently stored in the heap.
  */
 
-public class ModifyContentByAggregationExample implements Plugin {
+public class ModifyContentByAggregationExamplePlugin implements Plugin {
     private final Config config;
 
-    public ModifyContentByAggregationExample(Config config) {
+    public ModifyContentByAggregationExamplePlugin(Config config) {
         this.config = requireNonNull(config);
     }
 
@@ -56,6 +54,9 @@ public class ModifyContentByAggregationExample implements Plugin {
                 .map(HttpResponse::stream);
     }
 
+    /**
+     * Config for example plugin.
+     */
     public static class Config {
         private final String extraText;
 
