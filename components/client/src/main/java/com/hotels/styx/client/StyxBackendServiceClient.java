@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hotels.styx.api.extension.retrypolicy.spi.RetryPolicy;
 import com.hotels.styx.api.extension.service.RewriteRule;
 import com.hotels.styx.api.extension.service.StickySessionConfig;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
+import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.retry.RetryNTimes;
 import com.hotels.styx.client.stickysession.StickySessionLoadBalancingStrategy;
 import com.hotels.styx.server.HttpInterceptorContext;
@@ -398,7 +399,7 @@ public final class StyxBackendServiceClient implements BackendServiceClient {
 
         public StyxBackendServiceClient build() {
             if (originStatsFactory == null) {
-                originStatsFactory = new OriginStatsFactory(metricsRegistry);
+                originStatsFactory = new CachingOriginStatsFactory(metricsRegistry);
             }
             return new StyxBackendServiceClient(this);
         }

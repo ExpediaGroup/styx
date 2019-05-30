@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.hotels.styx.client.Connection;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 
-import static com.hotels.styx.client.applications.metrics.OriginMetrics.originMetricsScope;
+import static com.codahale.metrics.MetricRegistry.name;
 import static java.util.Arrays.asList;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -98,7 +98,7 @@ class StatsReportingConnectionPool implements ConnectionPool {
         }
     }
 
-    private void registerMetrics(ConnectionPool hostConnectionPool, MetricRegistry scopedRegistry) {
+    private static void registerMetrics(ConnectionPool hostConnectionPool, MetricRegistry scopedRegistry) {
         ConnectionPool.Stats stats = hostConnectionPool.stats();
         scopedRegistry.register("busy-connections", (Gauge<Integer>) stats::busyConnectionCount);
         scopedRegistry.register("pending-connections", (Gauge<Integer>) stats::pendingConnectionCount);
@@ -110,6 +110,9 @@ class StatsReportingConnectionPool implements ConnectionPool {
     }
 
     private MetricRegistry getMetricScope(ConnectionPool hostConnectionPool) {
-        return this.metricRegistry.scope(com.codahale.metrics.MetricRegistry.name(originMetricsScope(hostConnectionPool.getOrigin()), METRICS_NAME));
+        return this.metricRegistry.scope(
+                name(hostConnectionPool.getOrigin().applicationId().toString(),
+                        hostConnectionPool.getOrigin().id().toString(),
+                        METRICS_NAME));
     }
 }

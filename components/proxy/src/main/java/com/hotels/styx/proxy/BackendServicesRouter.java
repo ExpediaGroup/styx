@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.client.BackendServiceClient;
 import com.hotels.styx.client.Connection;
 import com.hotels.styx.client.OriginStatsFactory;
+import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxHeaderConfig;
 import com.hotels.styx.client.StyxHostHttpClient;
@@ -109,7 +110,8 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             boolean longFormat = environment.styxConfig().get("request-logging.outbound.longFormat", Boolean.class)
                     .orElse(false);
 
-            OriginStatsFactory originStatsFactory = new OriginStatsFactory(environment.metricRegistry());
+            MetricRegistry originsMetrics = environment.metricRegistry().scope("origins");
+            OriginStatsFactory originStatsFactory = new CachingOriginStatsFactory(originsMetrics);
             ConnectionPoolSettings poolSettings = backendService.connectionPoolConfig();
 
             Connection.Factory connectionFactory = connectionFactory(
@@ -122,7 +124,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             ConnectionPool.Factory connectionPoolFactory = new SimpleConnectionPoolFactory.Builder()
                     .connectionFactory(connectionFactory)
                     .connectionPoolSettings(backendService.connectionPoolConfig())
-                    .metricRegistry(environment.metricRegistry())
+                    .metricRegistry(originsMetrics)
                     .build();
 
             StyxHttpClient healthCheckClient = healthCheckClient(backendService);
@@ -136,7 +138,7 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
 
             OriginsInventory inventory = new OriginsInventory.Builder(backendService.id())
                     .eventBus(environment.eventBus())
-                    .metricsRegistry(environment.metricRegistry())
+                    .metricsRegistry(originsMetrics)
                     .connectionPoolFactory(connectionPoolFactory)
                     .originHealthMonitor(healthStatusMonitor)
                     .initialOrigins(backendService.origins())

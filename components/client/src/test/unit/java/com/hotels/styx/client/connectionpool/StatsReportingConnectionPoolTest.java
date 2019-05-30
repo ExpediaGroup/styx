@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -31,8 +31,11 @@ public class StatsReportingConnectionPoolTest {
     final Origin origin = newOriginBuilder("localhost", 9090)
             .id("backend-01")
             .build();
+
+    final MetricRegistry metricRegistry = new CodaHaleMetricRegistry()
+            .scope("origins");
+
     final ConnectionPool delegate = new StubConnectionPool(origin);
-    final MetricRegistry metricRegistry = new CodaHaleMetricRegistry();
     final StatsReportingConnectionPool pool = new StatsReportingConnectionPool(delegate, metricRegistry);
 
     @Test

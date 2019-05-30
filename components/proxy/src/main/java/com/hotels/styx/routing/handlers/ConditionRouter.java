@@ -111,7 +111,6 @@ public class ConditionRouter implements HttpRouter {
                 this.routes = routes;
                 this.fallback = fallback.isNull() ? null : toRoutingConfigNode(fallback);
             }
-
         }
 
         private static class ConditionRouterRouteConfig {

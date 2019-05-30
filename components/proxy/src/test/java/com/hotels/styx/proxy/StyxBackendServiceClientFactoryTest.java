@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hotels.styx.api.configuration.Configuration.MapBackedConfiguration;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.client.OriginStatsFactory;
+import com.hotels.styx.client.OriginStatsFactory.CachingOriginStatsFactory;
 import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.StyxHostHttpClient;
 import com.hotels.styx.client.StyxBackendServiceClient;
@@ -122,7 +123,7 @@ public class StyxBackendServiceClientFactoryTest {
                                     }
                                 })
                                 .build(),
-                        new OriginStatsFactory(new CodaHaleMetricRegistry()));
+                        new CachingOriginStatsFactory(new CodaHaleMetricRegistry()));
 
         LiveHttpRequest requestz = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("z").toString())).build();
         LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(STICKY_COOKIE, id("x").toString())).build();
@@ -167,7 +168,7 @@ public class StyxBackendServiceClientFactoryTest {
                                     }
                                 })
                                 .build(),
-                        new OriginStatsFactory(new CodaHaleMetricRegistry()));
+                        new CachingOriginStatsFactory(new CodaHaleMetricRegistry()));
 
         LiveHttpRequest requestz = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("z").toString())).build();
         LiveHttpRequest requestx = get("/some-req").cookies(requestCookie(ORIGINS_RESTRICTION_COOKIE, id("x").toString())).build();
