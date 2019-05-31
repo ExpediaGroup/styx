@@ -17,7 +17,6 @@ package com.hotels.styx.routing;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.extension.service.BackendService;
 import com.hotels.styx.api.extension.service.spi.Registry;
 import com.hotels.styx.proxy.BackendServiceClientFactory;
@@ -63,7 +62,7 @@ public class StaticPipelineFactory implements HttpPipelineFactory {
     }
 
     @Override
-    public HttpHandler build() {
+    public RoutingObject build() {
         BackendServicesRouter backendServicesRouter = new BackendServicesRouter(clientFactory, environment);
         registry.addListener(backendServicesRouter);
         RouteHandlerAdapter router = new RouteHandlerAdapter(backendServicesRouter);

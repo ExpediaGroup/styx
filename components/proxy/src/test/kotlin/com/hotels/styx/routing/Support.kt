@@ -16,29 +16,62 @@
 package com.hotels.styx.routing
 
 import com.hotels.styx.Environment
+import com.hotels.styx.api.Eventual
 import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpRequest
+import com.hotels.styx.api.HttpResponse
+import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.infrastructure.configuration.yaml.YamlConfig
 import com.hotels.styx.proxy.plugin.NamedPlugin
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory
 import com.hotels.styx.routing.config.HttpHandlerFactory
 import com.hotels.styx.routing.config.RoutingObjectDefinition
 import com.hotels.styx.routing.config.RoutingObjectFactory
+import com.hotels.styx.routing.config.RoutingObjectFactory.BUILTIN_HANDLER_FACTORIES
+import com.hotels.styx.routing.config.RoutingObjectReference
 import com.hotels.styx.routing.db.StyxObjectStore
+import com.hotels.styx.routing.handlers.RouteRefLookup
 import com.hotels.styx.server.HttpInterceptorContext
+import io.mockk.every
 import io.mockk.mockk
+import java.nio.charset.StandardCharsets.UTF_8
+import java.util.concurrent.CompletableFuture
 
 fun routingObjectDef(text: String) = YamlConfig(text).`as`((RoutingObjectDefinition::class.java))
 
 data class RoutingContext(
         val environment: Environment = mockk(),
-        val routeDb: StyxObjectStore<RoutingObjectRecord> = mockk(),
-        val routingObjectFactory: RoutingObjectFactory = mockk(),
-        val plugins: Iterable<NamedPlugin> = mockk(),
-        val interceptorsFactory: BuiltinInterceptorsFactory = mockk(),
+        val routeDb: StyxObjectStore<RoutingObjectRecord> = StyxObjectStore(),
+        val factory: RoutingObjectFactory = routingObjectFactory(),
+        val plugins: Iterable<NamedPlugin> = listOf(),
+        val builtinInterceptorsFactory: BuiltinInterceptorsFactory = mockk(),
         val requestTracking: Boolean = false) {
-    fun get() = HttpHandlerFactory.Context(environment, routeDb, routingObjectFactory, plugins, interceptorsFactory, requestTracking)
+    fun get() = HttpHandlerFactory.Context(environment, routeDb, factory, plugins, builtinInterceptorsFactory, requestTracking)
+
 }
 
 fun HttpHandler.handle(request: HttpRequest, count: Int = 10000) = this.handle(request.stream(), HttpInterceptorContext.create())
         .flatMap { it.aggregate(count) }
+
+// DSL for routing object database & object creation:
+fun HashMap<RoutingObjectReference, RoutingObject>.ref(pair: Pair<String, RoutingObject>) {
+    put(RoutingObjectReference(pair.first), pair.second)
+}
+
+fun routeLookup(block: HashMap<RoutingObjectReference, RoutingObject>.() -> Unit): RouteRefLookup {
+    val refLookup = HashMap<RoutingObjectReference, RoutingObject>()
+    refLookup.block()
+    return RouteRefLookup { refLookup[it] }
+}
+
+fun routingObjectFactory(lookup: RouteRefLookup = routeLookup { }, builtins: Map<String, HttpHandlerFactory> = BUILTIN_HANDLER_FACTORIES) =
+        RoutingObjectFactory(lookup, builtins)
+
+fun mockObject(content: String = "") = mockk<RoutingObject> {
+    every { handle(any(), any()) } returns Eventual.of(HttpResponse.response(OK).body(content, UTF_8).build().stream())
+    every { stop() } returns CompletableFuture.completedFuture(null)
+}
+
+fun mockObjectFactory(objects: List<RoutingObject>) = mockk<HttpHandlerFactory> {
+    every { build(any(), any(), any()) } returnsMany objects
+}

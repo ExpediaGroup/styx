@@ -19,12 +19,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import reactor.core.publisher.Flux;
@@ -44,7 +44,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * A HTTP handler for returning a static response.
  */
-public class StaticResponseHandler implements HttpHandler {
+public class StaticResponseHandler implements RoutingObject {
     public static final Schema.FieldType SCHEMA = object(
             field("status", integer()),
             optional("content", string()));
@@ -77,7 +77,7 @@ public class StaticResponseHandler implements HttpHandler {
      * Builds a static response handler from Yaml configuration.
      */
     public static class Factory implements HttpHandlerFactory {
-        public HttpHandler build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
             requireNonNull(configBlock.config());
 
             StaticResponseConfig config = new JsonNodeConfig(configBlock.config())

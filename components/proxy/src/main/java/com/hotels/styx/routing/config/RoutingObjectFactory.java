@@ -20,9 +20,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.hotels.styx.Environment;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.RoutingObjectRecord;
 import com.hotels.styx.routing.db.StyxObjectStore;
 import com.hotels.styx.routing.handlers.ConditionRouter;
@@ -108,8 +108,8 @@ public class RoutingObjectFactory {
         this(DEFAULT_REFERENCE_LOOKUP, BUILTIN_HANDLER_FACTORIES, new Environment.Builder().build(), routeObjectStore, ImmutableList.of(), new BuiltinInterceptorsFactory(), false);
     }
 
-    public RoutingObjectFactory(RouteRefLookup refLookup, Map<String, HttpHandlerFactory> handlerFactories) {
-        this(refLookup, handlerFactories, new Environment.Builder().build(), new StyxObjectStore<>(), ImmutableList.of(), new BuiltinInterceptorsFactory(), false);
+    public RoutingObjectFactory(RouteRefLookup refLookup, Map<String, HttpHandlerFactory> builtinObjectTypes) {
+        this(refLookup, builtinObjectTypes, new Environment.Builder().build(), new StyxObjectStore<>(), ImmutableList.of(), new BuiltinInterceptorsFactory(), false);
     }
 
     public RoutingObjectFactory(RouteRefLookup refLookup) {
@@ -126,11 +126,11 @@ public class RoutingObjectFactory {
                 false);
     }
 
-    public HttpHandler build(RoutingObjectConfiguration configNode) {
+    public RoutingObject build(RoutingObjectConfiguration configNode) {
         return build(ImmutableList.of(), configNode);
     }
 
-    public HttpHandler build(List<String> parents, RoutingObjectConfiguration configNode) {
+    public RoutingObject build(List<String> parents, RoutingObjectConfiguration configNode) {
         if (configNode instanceof RoutingObjectDefinition) {
             RoutingObjectDefinition configBlock = (RoutingObjectDefinition) configNode;
             String type = configBlock.type();

@@ -13,11 +13,21 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-package com.hotels.styx.routing
+package com.hotels.styx.routing;
 
-import com.fasterxml.jackson.databind.JsonNode
+import com.hotels.styx.api.HttpHandler;
 
-data class RoutingObjectRecord(
-        val type: String,
-        val config: JsonNode,
-        val routingObject: RoutingObject)
+import java.util.concurrent.CompletableFuture;
+
+import static java.util.concurrent.CompletableFuture.completedFuture;
+
+/**
+ * A Styx routing object interface.
+ *
+ * It is a HttpHandler associated with lifecycle methods.
+ */
+public interface RoutingObject extends HttpHandler {
+    default CompletableFuture<Void> stop() {
+        return completedFuture(null);
+    };
+}

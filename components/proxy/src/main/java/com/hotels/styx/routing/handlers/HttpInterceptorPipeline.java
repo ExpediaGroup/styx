@@ -16,18 +16,18 @@
 package com.hotels.styx.routing.handlers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.BuiltinInterceptorsFactory;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
+import com.hotels.styx.routing.config.RoutingConfigParser;
 import com.hotels.styx.routing.config.RoutingObjectConfiguration;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.routing.config.RoutingObjectReference;
@@ -36,6 +36,7 @@ import com.hotels.styx.server.track.RequestTracker;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static com.hotels.styx.config.schema.SchemaDsl.field;
@@ -43,33 +44,40 @@ import static com.hotels.styx.config.schema.SchemaDsl.list;
 import static com.hotels.styx.config.schema.SchemaDsl.object;
 import static com.hotels.styx.config.schema.SchemaDsl.routingObject;
 import static com.hotels.styx.config.schema.SchemaDsl.string;
+import static com.hotels.styx.routing.config.RoutingConfigParser.toRoutingConfigNode;
 import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.join;
 import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static java.util.stream.StreamSupport.stream;
 
 /**
  * A HTTP handler that contains HTTP interceptor pipeline.
  */
-public class HttpInterceptorPipeline implements HttpHandler {
+public class HttpInterceptorPipeline implements RoutingObject {
     public static final Schema.FieldType SCHEMA = object(
             field("pipeline", list(string())),
             field("handler", routingObject())
     );
 
-    private final StandardHttpPipeline handler;
+    private final RoutingObject handler;
+    private final StandardHttpPipeline pipeline;
 
-    public HttpInterceptorPipeline(List<HttpInterceptor> interceptors, HttpHandler handler, boolean trackRequests) {
+    public HttpInterceptorPipeline(List<HttpInterceptor> interceptors, RoutingObject handler, boolean trackRequests) {
         RequestTracker tracker = trackRequests ? CurrentRequestTracker.INSTANCE : RequestTracker.NO_OP;
-        this.handler = new StandardHttpPipeline(interceptors, handler, tracker);
+        this.handler = requireNonNull(handler);
+        this.pipeline = new StandardHttpPipeline(interceptors, handler, tracker);
     }
 
     @Override
     public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
-        return handler.handle(request, context);
+        return pipeline.handle(request, context);
+    }
+
+    @Override
+    public CompletableFuture<Void> stop() {
+        return handler.stop();
     }
 
     /**
@@ -78,7 +86,7 @@ public class HttpInterceptorPipeline implements HttpHandler {
     public static class Factory implements HttpHandlerFactory {
 
         @Override
-        public HttpHandler build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
             JsonNode pipeline = configBlock.config().get("pipeline");
             List<HttpInterceptor> interceptors = getHttpInterceptors(append(parents, "pipeline"), toMap(context.plugins()), context.builtinInterceptorsFactory(), pipeline);
 
@@ -95,25 +103,11 @@ public class HttpInterceptorPipeline implements HttpHandler {
         // Note: `pipeline` has to represent a JSON array:
         private static List<RoutingObjectConfiguration> styxHttpPipeline(JsonNode pipeline) {
             return stream(pipeline.spliterator(), false)
-                    .map(Factory::toRoutingConfigNode)
+                    .map(RoutingConfigParser::toRoutingConfigNode)
                     .collect(Collectors.toList());
         }
 
-        private static RoutingObjectConfiguration toRoutingConfigNode(JsonNode jsonNode) {
-            if (jsonNode.getNodeType() == JsonNodeType.STRING) {
-                return new RoutingObjectReference(jsonNode.asText());
-            } else if (jsonNode.getNodeType() == JsonNodeType.OBJECT) {
-                String name = ofNullable(jsonNode.get("name"))
-                        .map(JsonNode::asText)
-                        .orElse("");
-                String type = requireNonNull(jsonNode.get("type").asText());
-                JsonNode conf = jsonNode.get("config");
-                return new RoutingObjectDefinition(name, type, conf);
-            }
-            throw new IllegalArgumentException("Invalid configuration. Expected a reference (string) or a configuration block.");
-        }
-
-        private List<HttpInterceptor> getHttpInterceptors(
+        private static List<HttpInterceptor> getHttpInterceptors(
                 List<String> parents,
                 Map<String, NamedPlugin> plugins,
                 BuiltinInterceptorsFactory interceptorFactory,
@@ -148,7 +142,7 @@ public class HttpInterceptorPipeline implements HttpHandler {
             });
         }
 
-        private Map<String, NamedPlugin> toMap(Iterable<NamedPlugin> plugins) {
+        private static Map<String, NamedPlugin> toMap(Iterable<NamedPlugin> plugins) {
             return stream(plugins.spliterator(), false)
                     .collect(Collectors.toMap(NamedPlugin::name, identity()));
         }

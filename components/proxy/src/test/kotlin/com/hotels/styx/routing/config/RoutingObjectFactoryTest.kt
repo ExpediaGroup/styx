@@ -16,11 +16,11 @@
 package com.hotels.styx.routing.config
 
 import com.hotels.styx.api.Eventual
-import com.hotels.styx.api.HttpHandler
 import com.hotels.styx.api.HttpRequest.get
 import com.hotels.styx.api.HttpResponse.response
 import com.hotels.styx.api.HttpResponseStatus.OK
 import com.hotels.styx.api.LiveHttpResponse
+import com.hotels.styx.routing.RoutingObject
 import com.hotels.styx.routing.RoutingObjectRecord
 import com.hotels.styx.routing.config.RoutingObjectFactory.DEFAULT_REFERENCE_LOOKUP
 import com.hotels.styx.routing.db.StyxObjectStore
@@ -38,7 +38,7 @@ import java.util.Optional
 
 class RoutingObjectFactoryTest : StringSpec({
 
-    val mockHandler = mockk<HttpHandler> {
+    val mockHandler = mockk<RoutingObject> {
         every { handle(any(), any()) } returns Eventual.of(LiveHttpResponse.response(OK).build())
     }
 
@@ -75,7 +75,7 @@ class RoutingObjectFactoryTest : StringSpec({
     }
 
     "Returns handler from a configuration reference" {
-        val routeDb = mapOf("aHandler" to HttpHandler { request, context -> Eventual.of(response(OK).build().stream()) })
+        val routeDb = mapOf("aHandler" to RoutingObject { request, context -> Eventual.of(response(OK).build().stream()) })
         val routingObjectFactory = RoutingObjectFactory( { ref -> routeDb[ref.name()] } )
 
         val handler = routingObjectFactory.build(listOf(), RoutingObjectReference("aHandler"))
@@ -89,7 +89,7 @@ class RoutingObjectFactoryTest : StringSpec({
 
     "Looks up handler for every request" {
         val referenceLookup = mockk<RouteRefLookup>()
-        every {referenceLookup.apply(RoutingObjectReference("aHandler")) } returns HttpHandler { request, context -> Eventual.of(response(OK).build().stream()) }
+        every {referenceLookup.apply(RoutingObjectReference("aHandler")) } returns RoutingObject { request, context -> Eventual.of(response(OK).build().stream()) }
 
         val routingObjectFactory = RoutingObjectFactory(referenceLookup)
 
@@ -108,7 +108,7 @@ class RoutingObjectFactoryTest : StringSpec({
 })
 
 
-fun httpHandlerFactory(handler: HttpHandler): HttpHandlerFactory {
+fun httpHandlerFactory(handler: RoutingObject): HttpHandlerFactory {
     val factory: HttpHandlerFactory = mockk()
 
     every {

@@ -25,6 +25,7 @@ import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
 import com.hotels.styx.proxy.RouteHandlerAdapter;
 import com.hotels.styx.config.schema.Schema;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectConfiguration;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
@@ -36,6 +37,7 @@ import com.hotels.styx.server.routing.antlr.DslSyntaxError;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -51,6 +53,7 @@ import static com.hotels.styx.routing.config.RoutingSupport.append;
 import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeError;
 import static java.lang.String.format;
 import static java.lang.String.join;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * Condition predicate based HTTP router.
@@ -65,9 +68,9 @@ public class ConditionRouter implements HttpRouter {
     );
 
     private final List<Route> routes;
-    private final HttpHandler fallback;
+    private final RoutingObject fallback;
 
-    private ConditionRouter(List<Route> routes, HttpHandler fallback) {
+    private ConditionRouter(List<Route> routes, RoutingObject fallback) {
         this.routes = routes;
         this.fallback = fallback;
     }
@@ -84,24 +87,75 @@ public class ConditionRouter implements HttpRouter {
         return Optional.ofNullable(fallback);
     }
 
-    private static class Route {
-        private final AntlrMatcher matcher;
-        private final HttpHandler handler;
-
-        Route(String condition, HttpHandler handler) {
-            this.matcher = AntlrMatcher.antlrMatcher(condition);
-            this.handler = handler;
-        }
-
-        public HttpHandler match(LiveHttpRequest request, HttpInterceptor.Context context) {
-            return matcher.apply(request, context) ? handler : null;
-        }
-    }
-
     /**
      * Builds a condition router from the yaml routing configuration.
      */
     public static class Factory implements HttpHandlerFactory {
+
+        private static RoutingObject buildFallbackHandler(
+                List<String> parents,
+                Context context,
+                ConditionRouterConfig config) {
+            if (config.fallback == null) {
+                return (request, na) -> Eventual.of(LiveHttpResponse.response(BAD_GATEWAY).build());
+            } else {
+                return context.factory().build(append(parents, "fallback"), config.fallback);
+            }
+        }
+
+        private static Route buildRoute(
+                List<String> parents,
+                RoutingObjectFactory routingObjectFactory,
+                int index,
+                String condition,
+                RoutingObjectConfiguration destination) {
+            try {
+                String attribute = format("destination[%d]", index);
+                RoutingObject handler = routingObjectFactory.build(append(parents, attribute), destination);
+                return new Route(condition, handler);
+            } catch (DslSyntaxError | DslFunctionResolutionError e) {
+                String attribute = format("condition[%d]", index);
+                String path = join(".", append(parents, attribute));
+                String msg = format("Routing object definition of type 'ConditionRouter', attribute='%s', failed to compile routing expression condition='%s'", path, condition);
+                throw new IllegalArgumentException(msg, e);
+            }
+        }
+
+        @Override
+        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+            ConditionRouterConfig config = new JsonNodeConfig(configBlock.config()).as(ConditionRouterConfig.class);
+            if (config.routes == null) {
+                throw missingAttributeError(configBlock, join(".", parents), "routes");
+            }
+
+            AtomicInteger index = new AtomicInteger(0);
+            List<Route> routes = config.routes.stream()
+                    .map(routeConfig -> buildRoute(
+                            append(parents, "routes"),
+                            context.factory(),
+                            index.getAndIncrement(),
+                            routeConfig.condition,
+                            routeConfig.destination))
+                    .collect(Collectors.toList());
+
+            RoutingObject fallbackHandler = buildFallbackHandler(parents, context, config);
+
+            ConditionRouter router = new ConditionRouter(routes, fallbackHandler);
+
+            return new RouteHandlerAdapter(router) {
+                @Override
+                public CompletableFuture<Void> stop() {
+                    fallbackHandler.stop();
+
+                    routes.stream()
+                            .map(route -> route.routingObject)
+                            .forEach(RoutingObject::stop);
+
+                    return completedFuture(null);
+                }
+            };
+        }
+
         private static class ConditionRouterConfig {
             private final List<ConditionRouterRouteConfig> routes;
             private final RoutingObjectConfiguration fallback;
@@ -123,58 +177,20 @@ public class ConditionRouter implements HttpRouter {
                 this.destination = toRoutingConfigNode(destination);
             }
         }
-
-        @Override
-        public HttpHandler build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
-            ConditionRouterConfig config = new JsonNodeConfig(configBlock.config()).as(ConditionRouterConfig.class);
-            if (config.routes == null) {
-                throw missingAttributeError(configBlock, join(".", parents), "routes");
-            }
-
-            AtomicInteger index = new AtomicInteger(0);
-            List<Route> routes = config.routes.stream()
-                    .map(routeConfig -> buildRoute(
-                            append(parents, "routes"),
-                            context.factory(),
-                            index.getAndIncrement(),
-                            routeConfig.condition,
-                            routeConfig.destination))
-                    .collect(Collectors.toList());
-
-            return new RouteHandlerAdapter(
-                    new ConditionRouter(
-                            routes,
-                            buildFallbackHandler(parents, context, config)));
-        }
-
-        private static HttpHandler buildFallbackHandler(
-                List<String> parents,
-                Context context,
-                ConditionRouterConfig config) {
-            if (config.fallback == null) {
-                return (request, na) -> Eventual.of(LiveHttpResponse.response(BAD_GATEWAY).build());
-            } else {
-                return context.factory().build(append(parents, "fallback"), config.fallback);
-            }
-        }
-
-        private static Route buildRoute(
-                List<String> parents,
-                RoutingObjectFactory routingObjectFactory,
-                int index,
-                String condition,
-                RoutingObjectConfiguration destination) {
-            try {
-                String attribute = format("destination[%d]", index);
-                HttpHandler handler = routingObjectFactory.build(append(parents, attribute), destination);
-                return new Route(condition, handler);
-            } catch (DslSyntaxError | DslFunctionResolutionError e) {
-                String attribute = format("condition[%d]", index);
-                String path = join(".", append(parents, attribute));
-                String msg = format("Routing object definition of type 'ConditionRouter', attribute='%s', failed to compile routing expression condition='%s'", path, condition);
-                throw new IllegalArgumentException(msg, e);
-            }
-        }
-
     }
+
+    private static class Route {
+        private final AntlrMatcher matcher;
+        private final RoutingObject routingObject;
+
+        Route(String condition, RoutingObject routingObject) {
+            this.matcher = AntlrMatcher.antlrMatcher(condition);
+            this.routingObject = routingObject;
+        }
+
+        public HttpHandler match(LiveHttpRequest request, HttpInterceptor.Context context) {
+            return matcher.apply(request, context) ? routingObject : null;
+        }
+    }
+
 }

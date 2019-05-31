@@ -17,10 +17,10 @@ package com.hotels.styx.proxy;
 
 import com.google.common.collect.ImmutableList;
 import com.hotels.styx.Environment;
-import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.proxy.plugin.InstrumentedPlugin;
 import com.hotels.styx.proxy.plugin.NamedPlugin;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.handlers.HttpInterceptorPipeline;
 
 import java.util.List;
@@ -35,17 +35,17 @@ import static java.util.stream.StreamSupport.stream;
 public class InterceptorPipelineBuilder {
     private final Environment environment;
     private final Iterable<NamedPlugin> plugins;
-    private final HttpHandler handler;
+    private final RoutingObject handler;
     private final boolean trackRequests;
 
-    public InterceptorPipelineBuilder(Environment environment, Iterable<NamedPlugin> plugins, HttpHandler handler, boolean trackRequests) {
+    public InterceptorPipelineBuilder(Environment environment, Iterable<NamedPlugin> plugins, RoutingObject handler, boolean trackRequests) {
         this.environment = requireNonNull(environment);
         this.plugins = requireNonNull(plugins);
         this.handler = requireNonNull(handler);
         this.trackRequests = trackRequests;
     }
 
-    public HttpHandler build() {
+    public RoutingObject build() {
         List<HttpInterceptor> interceptors = ImmutableList.copyOf(instrument(plugins, environment));
         return new HttpInterceptorPipeline(interceptors, handler, trackRequests);
     }

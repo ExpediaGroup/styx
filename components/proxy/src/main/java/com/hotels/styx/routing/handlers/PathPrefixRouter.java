@@ -18,11 +18,13 @@ package com.hotels.styx.routing.handlers;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.styx.api.Eventual;
-import com.hotels.styx.api.HttpHandler;
+import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.LiveHttpRequest;
+import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.common.Pair;
 import com.hotels.styx.config.schema.Schema;
 import com.hotels.styx.infrastructure.configuration.yaml.JsonNodeConfig;
+import com.hotels.styx.routing.RoutingObject;
 import com.hotels.styx.routing.config.HttpHandlerFactory;
 import com.hotels.styx.routing.config.RoutingObjectDefinition;
 import com.hotels.styx.server.NoServiceConfiguredException;
@@ -30,6 +32,7 @@ import com.hotels.styx.server.NoServiceConfiguredException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import static com.hotels.styx.common.Pair.pair;
@@ -43,6 +46,7 @@ import static com.hotels.styx.routing.config.RoutingSupport.missingAttributeErro
 import static java.lang.String.join;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.naturalOrder;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -59,17 +63,17 @@ public class PathPrefixRouter {
             ))
     );
 
-    private final ConcurrentSkipListMap<String, HttpHandler> routes = new ConcurrentSkipListMap<>(
+    private final ConcurrentSkipListMap<String, RoutingObject> routes = new ConcurrentSkipListMap<>(
                     comparingInt(String::length)
                             .reversed()
                             .thenComparing(naturalOrder())
     );
 
-    PathPrefixRouter(List<Pair<String, HttpHandler>> routes) {
+    PathPrefixRouter(List<Pair<String, RoutingObject>> routes) {
         routes.forEach(entry -> this.routes.put(entry.key(), entry.value()));
     }
 
-    public Optional<HttpHandler> route(LiveHttpRequest request) {
+    public Optional<RoutingObject> route(LiveHttpRequest request) {
         String path = request.path();
 
         return routes.entrySet().stream()
@@ -78,10 +82,15 @@ public class PathPrefixRouter {
                 .map(Map.Entry::getValue);
     }
 
+
+
+    /**
+     * A factory for constructing PathPrefixRouter objects.
+     */
     public static class Factory implements HttpHandlerFactory {
 
         @Override
-        public HttpHandler build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
+        public RoutingObject build(List<String> parents, Context context, RoutingObjectDefinition configBlock) {
             PathPrefixRouterConfig config = new JsonNodeConfig(configBlock.config()).as(PathPrefixRouterConfig.class);
             if (config.routes == null) {
                 throw missingAttributeError(configBlock, join(".", parents), "routes");
@@ -93,9 +102,20 @@ public class PathPrefixRouter {
                             .collect(toList())
             );
 
-            return (request, ctx) -> pathPrefixRouter.route(request)
+            return new RoutingObject() {
+                @Override
+                public Eventual<LiveHttpResponse> handle(LiveHttpRequest request, HttpInterceptor.Context context) {
+                    return pathPrefixRouter.route(request)
                             .orElse((x, y) -> Eventual.error(new NoServiceConfiguredException(request.path())))
-                            .handle(request, ctx);
+                            .handle(request, context);
+                }
+
+                @Override
+                public CompletableFuture<Void> stop() {
+                    pathPrefixRouter.routes.forEach((route, routingObject) -> routingObject.stop());
+                    return completedFuture(null);
+                }
+            };
         }
 
         private static class PathPrefixConfig {
