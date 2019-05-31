@@ -24,7 +24,6 @@ import com.hotels.styx.api.HttpResponse;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
-import com.hotels.styx.client.StyxClientException;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.RequestStatsCollector;
@@ -700,13 +699,13 @@ public class HttpPipelineHandlerTest {
     }
 
     @Test
-    public void mapsStyxClientExceptionToInternalServerErrorInWaitingForResponseState() throws Exception {
+    public void mapsExceptionToInternalServerErrorInWaitingForResponseState() throws Exception {
         // In Waiting For Response state,
         // The response observable emits a StyxClientException.
         // Then, respond with INTERNAL_SERVER_ERROR and close the channel.
         setupHandlerTo(WAITING_FOR_RESPONSE);
 
-        responseObservable.onError(new StyxClientException("Client error occurred", new RuntimeException("Something went wrong")));
+        responseObservable.onError(new RuntimeException("Client error occurred"));
 
         assertThat(responseUnsubscribed.get(), is(true));
         verify(responseWriter).write(HttpResponse.response(INTERNAL_SERVER_ERROR)

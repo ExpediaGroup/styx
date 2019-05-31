@@ -22,11 +22,6 @@
 
     <dependency>
       <groupId>com.hotels.styx</groupId>
-      <artifactId>styx-client</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.hotels.styx</groupId>
       <artifactId>styx-common</artifactId>
     </dependency>
 
