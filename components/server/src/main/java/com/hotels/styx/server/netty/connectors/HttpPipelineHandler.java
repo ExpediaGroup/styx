@@ -19,22 +19,14 @@ package com.hotels.styx.server.netty.connectors;
 import com.google.common.annotations.VisibleForTesting;
 import com.hotels.styx.api.Buffer;
 import com.hotels.styx.api.ByteStream;
-import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.HttpInterceptor;
 import com.hotels.styx.api.HttpResponseStatus;
 import com.hotels.styx.api.LiveHttpRequest;
 import com.hotels.styx.api.LiveHttpResponse;
 import com.hotels.styx.api.MetricRegistry;
-import com.hotels.styx.api.exceptions.NoAvailableHostsException;
-import com.hotels.styx.api.exceptions.OriginUnreachableException;
-import com.hotels.styx.api.exceptions.ResponseTimeoutException;
-import com.hotels.styx.api.exceptions.TransportLostException;
 import com.hotels.styx.api.metrics.codahale.CodaHaleMetricRegistry;
 import com.hotels.styx.api.plugins.spi.PluginException;
-import com.hotels.styx.client.BadHttpResponseException;
-import com.hotels.styx.client.StyxClientException;
-import com.hotels.styx.client.connectionpool.ResourceExhaustedException;
 import com.hotels.styx.client.netty.ConsumerDisconnectedException;
 import com.hotels.styx.common.FsmEventProcessor;
 import com.hotels.styx.common.QueueDrainingEventProcessor;
@@ -42,9 +34,7 @@ import com.hotels.styx.common.StateMachine;
 import com.hotels.styx.server.BadRequestException;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.HttpInterceptorContext;
-import com.hotels.styx.server.NoServiceConfiguredException;
 import com.hotels.styx.server.RequestProgressListener;
-import com.hotels.styx.server.RequestTimeoutException;
 import com.hotels.styx.server.track.RequestTracker;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -64,13 +54,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static com.hotels.styx.api.HttpHeaderNames.CONTENT_LENGTH;
-import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
 import static com.hotels.styx.api.HttpResponseStatus.BAD_REQUEST;
-import static com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT;
 import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static com.hotels.styx.api.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
-import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
-import static com.hotels.styx.api.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import static com.hotels.styx.api.HttpVersion.HTTP_1_1;
 import static com.hotels.styx.server.HttpErrorStatusListener.IGNORE_ERROR_STATUS;
 import static com.hotels.styx.server.RequestProgressListener.IGNORE_REQUEST_PROGRESS;
@@ -95,21 +81,6 @@ import static rx.RxReactiveStreams.toObservable;
  */
 public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpRequest> {
     private static final Logger LOGGER = getLogger(HttpPipelineHandler.class);
-
-    private static final ExceptionStatusMapper EXCEPTION_STATUSES = new ExceptionStatusMapper.Builder()
-            .add(REQUEST_TIMEOUT, RequestTimeoutException.class)
-            .add(BAD_GATEWAY,
-                    OriginUnreachableException.class,
-                    NoAvailableHostsException.class,
-                    NoServiceConfiguredException.class,
-                    BadHttpResponseException.class,
-                    ContentOverflowException.class,
-                    TransportLostException.class
-            )
-            .add(SERVICE_UNAVAILABLE, ResourceExhaustedException.class)
-            .add(GATEWAY_TIMEOUT, ResponseTimeoutException.class)
-            .add(INTERNAL_SERVER_ERROR, StyxClientException.class)
-            .build();
 
     private final HttpHandler httpPipeline;
     private final HttpErrorStatusListener httpErrorStatusListener;
@@ -143,7 +114,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         this.metrics = builder.metricRegistry.get();
         this.secure = builder.secure;
         this.tracker = tracker;
-        this.exceptionStatuses = builder.exceptionStatuses;
+        this.exceptionStatuses = requireNonNull(builder.exceptionStatuses);
     }
 
     private StateMachine<State> createStateMachine() {
@@ -644,8 +615,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         private Supplier<MetricRegistry> metricRegistry = CodaHaleMetricRegistry::new;
         private RequestTracker tracker = RequestTracker.NO_OP;
         private boolean secure;
-        // TODO move outside this class
-        private ExceptionStatusMapper exceptionStatuses = EXCEPTION_STATUSES;
+        private ExceptionStatusMapper exceptionStatuses = new ExceptionStatusMapper.Builder().build();
 
         /**
          * Constructs a new builder.

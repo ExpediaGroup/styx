@@ -16,17 +16,28 @@
 package com.hotels.styx.proxy;
 
 import com.codahale.metrics.Histogram;
+import com.hotels.styx.api.ContentOverflowException;
 import com.hotels.styx.api.HttpHandler;
 import com.hotels.styx.api.MetricRegistry;
+import com.hotels.styx.api.exceptions.NoAvailableHostsException;
+import com.hotels.styx.api.exceptions.OriginUnreachableException;
+import com.hotels.styx.api.exceptions.ResponseTimeoutException;
+import com.hotels.styx.api.exceptions.TransportLostException;
+import com.hotels.styx.client.BadHttpResponseException;
+import com.hotels.styx.client.StyxClientException;
+import com.hotels.styx.client.connectionpool.ResourceExhaustedException;
 import com.hotels.styx.proxy.encoders.ConfigurableUnwiseCharsEncoder;
 import com.hotels.styx.server.HttpConnectorConfig;
 import com.hotels.styx.server.HttpErrorStatusListener;
 import com.hotels.styx.server.HttpsConnectorConfig;
+import com.hotels.styx.server.NoServiceConfiguredException;
 import com.hotels.styx.server.RequestStatsCollector;
+import com.hotels.styx.server.RequestTimeoutException;
 import com.hotels.styx.server.netty.NettyServerConfig;
 import com.hotels.styx.server.netty.ServerConnector;
 import com.hotels.styx.server.netty.ServerConnectorFactory;
 import com.hotels.styx.server.netty.codec.NettyToStyxRequestDecoder;
+import com.hotels.styx.server.netty.connectors.ExceptionStatusMapper;
 import com.hotels.styx.server.netty.connectors.HttpPipelineHandler;
 import com.hotels.styx.server.netty.connectors.ResponseEnhancer;
 import com.hotels.styx.server.netty.handlers.ChannelActivityEventConstrainer;
@@ -51,6 +62,11 @@ import org.slf4j.Logger;
 
 import java.util.Optional;
 
+import static com.hotels.styx.api.HttpResponseStatus.BAD_GATEWAY;
+import static com.hotels.styx.api.HttpResponseStatus.GATEWAY_TIMEOUT;
+import static com.hotels.styx.api.HttpResponseStatus.INTERNAL_SERVER_ERROR;
+import static com.hotels.styx.api.HttpResponseStatus.REQUEST_TIMEOUT;
+import static com.hotels.styx.api.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import static com.hotels.styx.server.netty.SslContexts.newSSLContext;
 import static io.netty.handler.timeout.IdleState.ALL_IDLE;
 import static java.util.Objects.requireNonNull;
@@ -61,6 +77,21 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Factory for proxy connectors.
  */
 class ProxyConnectorFactory implements ServerConnectorFactory {
+    private static final ExceptionStatusMapper EXCEPTION_STATUSES = new ExceptionStatusMapper.Builder()
+            .add(REQUEST_TIMEOUT, RequestTimeoutException.class)
+            .add(BAD_GATEWAY,
+                    OriginUnreachableException.class,
+                    NoAvailableHostsException.class,
+                    NoServiceConfiguredException.class,
+                    BadHttpResponseException.class,
+                    ContentOverflowException.class,
+                    TransportLostException.class
+            )
+            .add(SERVICE_UNAVAILABLE, ResourceExhaustedException.class)
+            .add(GATEWAY_TIMEOUT, ResponseTimeoutException.class)
+            .add(INTERNAL_SERVER_ERROR, StyxClientException.class)
+            .build();
+
     private final MetricRegistry metrics;
     private final HttpErrorStatusListener errorStatusListener;
     private final NettyServerConfig serverConfig;
@@ -172,6 +203,7 @@ class ProxyConnectorFactory implements ServerConnectorFactory {
                             .metricRegistry(metrics)
                             .secure(sslContext.isPresent())
                             .requestTracker(requestTracker)
+                            .exceptionStatuses(EXCEPTION_STATUSES)
                             .build());
         }
 

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2013-2018 Expedia Inc.
+  Copyright (C) 2013-2019 Expedia Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 /**
  * Default list of exception mappers.
  */
-final class ExceptionStatusMapper {
+public final class ExceptionStatusMapper {
     private static final Logger LOG = getLogger(ExceptionStatusMapper.class);
 
     private final Multimap<HttpResponseStatus, Class<? extends Exception>> multimap;
@@ -57,7 +57,10 @@ final class ExceptionStatusMapper {
         return matchingStatuses.stream().findFirst();
     }
 
-    static final class Builder {
+    /**
+     * Builds exception status mapper.
+     */
+    public static final class Builder {
         private final Multimap<HttpResponseStatus, Class<? extends Exception>> multimap;
 
         public Builder() {
