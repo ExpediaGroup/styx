@@ -121,6 +121,9 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
     private final ResponseEnhancer responseEnhancer;
     private final boolean secure;
 
+    private final RequestTracker tracker;
+    private final ExceptionStatusMapper exceptionStatuses;
+
     private volatile Subscription subscription;
     private volatile LiveHttpRequest ongoingRequest;
     private volatile LiveHttpResponse ongoingResponse;
@@ -128,8 +131,6 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
     private volatile CompletableFuture<Void> future;
     private volatile QueueDrainingEventProcessor eventProcessor;
-
-    private final RequestTracker tracker;
 
     private HttpPipelineHandler(Builder builder, RequestTracker tracker) {
         this.responseEnhancer = requireNonNull(builder.responseEnhancer);
@@ -141,6 +142,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         this.metrics = builder.metricRegistry.get();
         this.secure = builder.secure;
         this.tracker = tracker;
+        this.exceptionStatuses = builder.exceptionStatuses;
     }
 
     private StateMachine<State> createStateMachine() {
@@ -520,8 +522,8 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
                 .build();
     }
 
-    private static HttpResponseStatus status(Throwable exception) {
-        return EXCEPTION_STATUSES.statusFor(exception)
+    private HttpResponseStatus status(Throwable exception) {
+        return exceptionStatuses.statusFor(exception)
                 .orElseGet(() -> {
                     if (exception instanceof DecoderException) {
                         Throwable cause = exception.getCause();
@@ -643,6 +645,8 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
         private Supplier<MetricRegistry> metricRegistry = CodaHaleMetricRegistry::new;
         private RequestTracker tracker = RequestTracker.NO_OP;
         private boolean secure;
+        // TODO move outside this class
+        private ExceptionStatusMapper exceptionStatuses = EXCEPTION_STATUSES;
 
         /**
          * Constructs a new builder.
@@ -651,6 +655,17 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
          */
         public Builder(HttpHandler httpPipeline) {
             this.httpPipeline = requireNonNull(httpPipeline);
+        }
+
+        /**
+         * Maps exceptions to HTTP status codes.
+         *
+         * @param exceptionStatuses mappings
+         * @return this
+         */
+        public Builder exceptionStatuses(ExceptionStatusMapper exceptionStatuses) {
+            this.exceptionStatuses = requireNonNull(exceptionStatuses);
+            return this;
         }
 
         /**
