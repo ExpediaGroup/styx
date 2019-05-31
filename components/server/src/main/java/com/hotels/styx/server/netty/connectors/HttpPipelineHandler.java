@@ -103,7 +103,8 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
                     NoAvailableHostsException.class,
                     NoServiceConfiguredException.class,
                     BadHttpResponseException.class,
-                    ContentOverflowException.class
+                    ContentOverflowException.class,
+                    TransportLostException.class
             )
             .add(SERVICE_UNAVAILABLE, ResourceExhaustedException.class)
             .add(GATEWAY_TIMEOUT, ResponseTimeoutException.class)
@@ -535,8 +536,6 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
 
                             return BAD_REQUEST;
                         }
-                    } else if (exception instanceof TransportLostException) {
-                        return BAD_GATEWAY;
                     }
 
                     return INTERNAL_SERVER_ERROR;
