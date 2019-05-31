@@ -630,7 +630,7 @@ public class HttpPipelineHandler extends SimpleChannelInboundHandler<LiveHttpReq
          * Maps exceptions to HTTP status codes.
          *
          * @param exceptionStatuses mappings
-         * @return this
+         * @return this builder
          */
         public Builder exceptionStatuses(ExceptionStatusMapper exceptionStatuses) {
             this.exceptionStatuses = requireNonNull(exceptionStatuses);
