@@ -64,10 +64,8 @@ public class NettyConnectionFactory implements Connection.Factory {
     private Class<? extends Channel> clientSocketChannelClass;
 
     private NettyConnectionFactory(Builder builder) {
-        this.clientSocketChannelClass = builder.channelClass;
-
-        this.eventLoopGroup = builder.eventLoopGroup;
-
+        this.clientSocketChannelClass = requireNonNull(builder.channelClass);
+        this.eventLoopGroup = requireNonNull(builder.eventLoopGroup);
         this.httpConfig = requireNonNull(builder.httpConfig);
         this.sslContext = builder.tlsSettings == null ? null : SslContextFactory.get(builder.tlsSettings);
         this.httpRequestOperationFactory = requireNonNull(builder.httpRequestOperationFactory);
@@ -133,8 +131,8 @@ public class NettyConnectionFactory implements Connection.Factory {
         private Class<? extends Channel> channelClass = GLOBAL_CLIENT_EVENT_LOOP_CLASS;
 
         public Builder nettyEventLoop(EventLoopGroup eventLoopGroup, Class<? extends Channel> channelClass) {
-            this.eventLoopGroup = eventLoopGroup;
-            this.channelClass = channelClass;
+            this.eventLoopGroup = requireNonNull(eventLoopGroup);
+            this.channelClass = requireNonNull(channelClass);
             return this;
         }
 

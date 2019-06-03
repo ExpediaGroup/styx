@@ -29,11 +29,10 @@ import com.hotels.styx.client.OriginsInventory;
 import com.hotels.styx.client.netty.ClientEventLoopFactory;
 import com.hotels.styx.client.netty.eventloop.PlatformAwareClientEventLoopGroupFactory;
 import com.hotels.styx.server.HttpInterceptorContext;
-import io.kotlintest.specs.AbstractAnnotationSpec;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import org.mockito.ArgumentCaptor;
-import org.testng.annotations.AfterMethod;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
@@ -73,7 +72,7 @@ public class BackendServicesRouterTest {
     private EventLoopGroup eventLoopGroup = this.factory.newClientWorkerEventLoopGroup();
     private Class<? extends SocketChannel> channelClass = this.factory.clientSocketChannelClass();
 
-    @AbstractAnnotationSpec.AfterAll
+    @AfterClass
     public void tearDown() {
         eventLoopGroup.shutdown();
     }

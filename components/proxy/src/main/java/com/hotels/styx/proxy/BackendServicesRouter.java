@@ -124,7 +124,8 @@ public class BackendServicesRouter implements HttpRouter, Registry.ChangeListene
             ConnectionPoolSettings poolSettings = backendService.connectionPoolConfig();
 
             Connection.Factory connectionFactory = connectionFactory(
-                    nettyEventLoopGroup, socketChannelClass,
+                    nettyEventLoopGroup,
+                    socketChannelClass,
                     backendService.responseTimeoutMillis(),
                     backendService.tlsSettings().orElse(null),
                     requestLoggingEnabled,
