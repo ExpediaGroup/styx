@@ -36,6 +36,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 
 class OriginResourcesSpec : StringSpec() {
+    val count = 20
 
     val mockServer = MockOriginServer.create("", "", 0, HttpConnectorConfig(0))
             .start()
@@ -46,7 +47,7 @@ class OriginResourcesSpec : StringSpec() {
 
     init {
         "Cleans up threads after use" {
-            "---" + (1..100)
+            "---" + (1..count)
                     .map { appDeclaration("aaa-$it") }
                     .joinToString("\n")
                     .let { writeConfig(styxOriginsFile, it) }
@@ -54,7 +55,7 @@ class OriginResourcesSpec : StringSpec() {
             // Wait for styx to pick up the configuration
             Thread.sleep(2000)
 
-            (1..100).forEach {
+            (1..count).forEach {
                 client.send(get("/aaa-$it").header(HOST, styxServer().proxyHttpHostHeader()).build())
                         .wait(debug = false)
                         .status() shouldBe OK
@@ -62,7 +63,7 @@ class OriginResourcesSpec : StringSpec() {
 
             val threadCountBefore = threadCount("Styx-Client-Worker")
 
-            "---" + (1..100)
+            "---" + (1..count)
                     .map { appDeclaration("bbb-$it") }
                     .joinToString("\n")
                     .let { writeConfig(styxOriginsFile, it) }
@@ -70,7 +71,7 @@ class OriginResourcesSpec : StringSpec() {
             // Wait for styx to pick up the new configuration
             Thread.sleep(2000)
 
-            (1..100).forEach {
+            (1..count).forEach {
                 client.send(get("/bbb-$it").header(HOST, styxServer().proxyHttpHostHeader()).build())
                         .wait(debug = false)
                         .status() shouldBe OK
